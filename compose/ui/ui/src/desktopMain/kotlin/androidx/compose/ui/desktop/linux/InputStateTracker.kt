@@ -58,8 +58,15 @@ internal class InputStateTracker(
     private var pointerPosition: Offset? = null
     private var lastNativeEventUptimeMillis: Long? = null
     private var pointerButtons = PointerButtons()
+    private var hasKeyboardFocus: Boolean = false
     private var syntheticPointerEventAfterRelayoutGeneration: Long = 0
     internal var keyboardModifiers by mutableStateOf(PointerKeyboardModifiers())
+
+    /** Test seam: KDT linux Event constructors are internal, so tests drive state directly. */
+    internal fun overridePointerStateForTest(pointerInWindow: Boolean, pointerPosition: Offset? = this.pointerPosition) {
+        this.pointerInWindow = pointerInWindow
+        this.pointerPosition = pointerPosition
+    }
 
     fun updateStateAndSendEvents(
         event: Event,
@@ -202,6 +209,14 @@ internal class InputStateTracker(
                     inputModeManager.requestInputMode(InputMode.Touch)
                 }
                 pointerInWindow = false
+                // Interactive resize/move (e.g. on KDE) grabs the pointer and eats the matching
+                // MouseUp; the compositor sends Exit when the grab starts, so clearing here keeps
+                // buttons from wedging pressed (AIR-5571). Modifiers survive while the window still
+                // has keyboard focus.
+                pointerButtons = PointerButtons()
+                if (!hasKeyboardFocus) {
+                    keyboardModifiers = PointerKeyboardModifiers()
+                }
                 val result =
                     density.updatePointerPosition(
                         event.locationInWindow.toDpOffset(),
@@ -236,9 +251,12 @@ internal class InputStateTracker(
                         uptime = uptime,
                         position = position,
                         buttons = pointerButtons,
-                        scrollDelta = DpOffset(
-                            event.horizontalScroll.delta.dp,
-                            event.verticalScroll.delta.dp,
+                        scrollDelta = computeLinuxScrollDelta(
+                            horizontalDelta = event.horizontalScroll.delta,
+                            horizontalWheelValue120 = event.horizontalScroll.wheelValue120,
+                            verticalDelta = event.verticalScroll.delta,
+                            verticalWheelValue120 = event.verticalScroll.wheelValue120,
+                            shiftPressed = keyboardModifiers.isShiftPressed,
                         ).toPxOffset(density),
                         keyboardModifiers = keyboardModifiers,
                         button = null,
@@ -302,31 +320,39 @@ internal class InputStateTracker(
                 else org.jetbrains.desktop.linux.EventHandlerResult.Continue
             }
 
-            is Event.ModifiersChanged -> {
-                keyboardModifiers = event.modifiers.toPointerKeyboardModifiers()
-                org.jetbrains.desktop.linux.EventHandlerResult.Continue
-            }
+            is Event.ModifiersChanged -> updateStateForModifiersChanged(event)
 
             is Event.WindowKeyboardEnter -> {
-                keyboardModifiers = event.keySyms.toPointerKeyboardModifiers()
-                pointerButtons = PointerButtons()
+                updateStateForKeyboardEnter()
                 org.jetbrains.desktop.linux.EventHandlerResult.Continue
             }
 
-            is Event.WindowKeyboardLeave -> {
-                keyboardModifiers = PointerKeyboardModifiers()
-                pointerButtons = PointerButtons()
-                org.jetbrains.desktop.linux.EventHandlerResult.Continue
-            }
+            is Event.WindowKeyboardLeave -> updateStateForKeyboardLeave()
 
             else -> org.jetbrains.desktop.linux.EventHandlerResult.Continue
         }
     }
 
-    fun clearPointerButtons() {
-        pointerButtons = PointerButtons()
+    fun updateStateForModifiersChanged(
+        event: Event.ModifiersChanged,
+    ): org.jetbrains.desktop.linux.EventHandlerResult {
+        keyboardModifiers = event.modifiers.toPointerKeyboardModifiers()
+        return org.jetbrains.desktop.linux.EventHandlerResult.Continue
     }
-    
+
+    fun updateStateForKeyboardEnter() {
+        hasKeyboardFocus = true
+    }
+
+    fun updateStateForKeyboardLeave(): org.jetbrains.desktop.linux.EventHandlerResult {
+        hasKeyboardFocus = false
+        if (!pointerInWindow) {
+            keyboardModifiers = PointerKeyboardModifiers()
+        }
+        return org.jetbrains.desktop.linux.EventHandlerResult.Continue
+    }
+
+
     private fun Density.updatePointerPosition(
         positionInWindow: DpOffset,
         pointerEventType: PointerEventType,
@@ -500,13 +526,34 @@ private fun MouseButton.toKey(): Key = when (this) {
     }
 }
 
-private fun List<org.jetbrains.desktop.linux.KeySym>.toPointerKeyboardModifiers(): PointerKeyboardModifiers {
-    return PointerKeyboardModifiers(
-        isCtrlPressed = any { it.toKey() == Key.CtrlLeft || it.toKey() == Key.CtrlRight },
-        isMetaPressed = any { it.toKey() == Key.MetaLeft || it.toKey() == Key.MetaRight },
-        isAltPressed = any { it.toKey() == Key.AltLeft || it.toKey() == Key.AltRight },
-        isShiftPressed = any { it.toKey() == Key.ShiftLeft || it.toKey() == Key.ShiftRight },
-    )
+/**
+ * Scroll delta per Noria (AIR-5233 + AIR-5621): discrete wheel detents scroll 100.dp per notch
+ * (`wheelValue120` reports 120 per notch), smooth/touchpad deltas scale by 15.dp, and Shift swaps
+ * the axes so a vertical wheel scrolls horizontally.
+ */
+internal fun computeLinuxScrollDelta(
+    horizontalDelta: Double,
+    horizontalWheelValue120: Int,
+    verticalDelta: Double,
+    verticalWheelValue120: Int,
+    shiftPressed: Boolean,
+): DpOffset {
+    val rawDelta = if (verticalWheelValue120 != 0 || horizontalWheelValue120 != 0) {
+        DpOffset(
+            ((horizontalWheelValue120.toFloat() / 120f) * 100).dp,
+            ((verticalWheelValue120.toFloat() / 120f) * 100).dp,
+        )
+    } else {
+        DpOffset(
+            (horizontalDelta * 15).dp,
+            (verticalDelta * 15).dp,
+        )
+    }
+    return if (shiftPressed) {
+        DpOffset(rawDelta.y, rawDelta.x)
+    } else {
+        rawDelta
+    }
 }
 
 private operator fun PointerButtons.plus(other: PointerButton): PointerButtons = copy(

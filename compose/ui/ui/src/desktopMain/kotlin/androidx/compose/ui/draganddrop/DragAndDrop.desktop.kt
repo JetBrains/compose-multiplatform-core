@@ -198,8 +198,7 @@ fun DragAndDropEvent.containsFormat(format: ClipboardFormat<*>, actions: List<Dr
             (nativeEvent as MacOsDragAndDropClipboardEntry).containsFormat(format, actions)
         }
         DesktopPlatform.Linux -> {
-//            (nativeEvent as LinuxDragAndDropClipboardEntry).containsFormat(format, actions)
-            throw UnsupportedOperationException("Drag and drop is not supported on Linux")
+            (nativeEvent as LinuxDragAndDropClipboardEntry).containsFormat(format, actions)
         }
         DesktopPlatform.Windows -> {
             throw UnsupportedOperationException("Drag and drop is not supported on Windows")

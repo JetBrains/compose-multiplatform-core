@@ -21,18 +21,14 @@ internal enum class LinuxWindowSystem {
     Gtk,
 }
 
-internal fun currentLinuxWindowSystem(): LinuxWindowSystem {
-    val gdkBackend = System.getenv("GDK_BACKEND")?.lowercase()
-    val xdgSessionType = System.getenv("XDG_SESSION_TYPE")?.lowercase()
-    val waylandDisplay = System.getenv("WAYLAND_DISPLAY")
-
-    return when {
-        !waylandDisplay.isNullOrBlank() -> LinuxWindowSystem.Wayland
-        xdgSessionType == "wayland" -> LinuxWindowSystem.Wayland
-        gdkBackend
-            ?.split(',')
-            ?.map(String::trim)
-            ?.any { it == "wayland" } == true -> LinuxWindowSystem.Wayland
-        else -> LinuxWindowSystem.Gtk
+internal fun currentLinuxWindowSystem(
+    getenv: (String) -> String? = System::getenv,
+): LinuxWindowSystem {
+    val waylandDisplay: String? = getenv("WAYLAND_DISPLAY")
+    val waylandSocket: String? = getenv("WAYLAND_SOCKET")
+    return if (!waylandDisplay.isNullOrBlank() || !waylandSocket.isNullOrBlank()) {
+        LinuxWindowSystem.Wayland
+    } else {
+        LinuxWindowSystem.Gtk
     }
 }
