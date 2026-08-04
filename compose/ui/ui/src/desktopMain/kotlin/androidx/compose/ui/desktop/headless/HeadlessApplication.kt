@@ -295,6 +295,12 @@ object HeadlessApplication : Application {
     override val nativeApplication: Any
         get() = Unit
 
+    override fun invokeOnUiThread(block: () -> Unit) {
+        eventLoop.dispatch { block() }
+    }
+
+    override fun isUiThread(): Boolean = eventLoop.isCurrentThread()
+
     @Composable
     override fun withCompositionLocal(content: @Composable () -> Unit) {
         CompositionLocalProvider(

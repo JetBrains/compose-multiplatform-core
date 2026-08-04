@@ -1,5 +1,6 @@
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardFormat
 import androidx.compose.ui.desktop.ClipboardItem
@@ -23,7 +24,7 @@ object MacOsClipboard : Clipboard {
         clipEntry ?: return
         val entry = clipEntry.nativeClipEntry
         require(entry is ClipboardItemsEntry)
-        withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+        withContext(KdtMainDispatcher.INSTANCE.immediate) {
             Pasteboard.clear()
             Pasteboard.writeObjects(entry.items.toPasteboardItems())
         }
@@ -81,7 +82,7 @@ internal fun List<ClipboardItem>.toPasteboardItems(): List<Pasteboard.Item> {
 
 class MacOsClipboardEntry(private val pasteboardType: PasteboardType) : ClipboardEntry {
     override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> {
-        return withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+        return withContext(KdtMainDispatcher.INSTANCE.immediate) {
             getForFormatSync(format)
         }
     }

@@ -196,6 +196,12 @@ object LinuxApplication : Application {
     override val nativeApplication: org.jetbrains.desktop.linux.Application
         get() = checkNotNull(nativeApplicationOrNull) { "LinuxApplication has not been initialized" }
 
+    override fun invokeOnUiThread(block: () -> Unit) {
+        nativeApplication.runOnEventLoopAsync { block() }
+    }
+
+    override fun isUiThread(): Boolean = nativeApplication.isEventLoopThread()
+
     @Composable
     override fun withCompositionLocal(content: @Composable (() -> Unit)) {
         CompositionLocalProvider(
@@ -894,3 +900,6 @@ private fun toTitleBarElement(name: String): WindowDecoration.TitleBarElement =
         "close" -> WindowDecoration.TitleBarElement.CloseButton
         else -> WindowDecoration.TitleBarElement.Spacer
     }
+
+internal fun currentLinuxNativeApplication(): org.jetbrains.desktop.linux.Application =
+    LinuxApplication.current().nativeApplication

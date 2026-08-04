@@ -16,13 +16,7 @@
 
 package androidx.compose.ui
 
-import androidx.compose.ui.desktop.LinuxWindowSystem
-import androidx.compose.ui.desktop.currentLinuxWindowSystem
-import androidx.compose.ui.desktop.gtk.GtkKdtMainDispatcher
-import androidx.compose.ui.desktop.linux.LinuxKdtMainDispatcher
-import androidx.compose.ui.desktop.macos.MacOsKdtMainDispatcher
-import androidx.compose.ui.desktop.windows.WindowsKdtMainDispatcher
-import androidx.compose.ui.platform.DesktopPlatform
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,18 +33,9 @@ import kotlinx.coroutines.MainCoroutineDispatcher
 
 actual val ComposeUIDispatcher: MainCoroutineDispatcher
     get() =
-        ComposeUIDispatcherOverride
-            ?: when (DesktopPlatform.Current) {
-                DesktopPlatform.MacOS -> MacOsKdtMainDispatcher.INSTANCE
-                DesktopPlatform.Linux ->
-                    when (currentLinuxWindowSystem()) {
-                        LinuxWindowSystem.Wayland -> LinuxKdtMainDispatcher.INSTANCE
-                        LinuxWindowSystem.Gtk -> GtkKdtMainDispatcher.INSTANCE
-                    }
-                DesktopPlatform.Windows -> WindowsKdtMainDispatcher.INSTANCE
-                DesktopPlatform.Unknown ->
-                    error("Unsupported desktop platform: ${DesktopPlatform.Current}")
-            }
+        // Single dispatcher for every backend; it resolves the active Application and delegates
+        // to its UI-thread primitives, so no per-platform switch is needed here.
+        ComposeUIDispatcherOverride ?: KdtMainDispatcher.INSTANCE
 
 /**
  * The dispatcher Compose's internal scheduling posts to: the global snapshot manager's

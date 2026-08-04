@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.desktop.windows
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardFormat
 import androidx.compose.ui.desktop.ClipboardItem
@@ -76,14 +77,14 @@ class WindowsClipboard : Clipboard {
     }
 
     override suspend fun getClipEntry(): ClipEntry =
-        withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) {
+        withContext(KdtMainDispatcher.INSTANCE.immediate) {
             val dataObject = clipboardMutex.withLock { Win32Clipboard.withRetry { get() } }
             ClipEntry(WindowsClipboardEntry(dataObject))
         }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?): Unit {
         clipEntry ?: return
-        withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) {
+        withContext(KdtMainDispatcher.INSTANCE.immediate) {
             val entry = clipEntry.nativeClipEntry
             when (entry) {
                 is ClipboardItemsEntry -> {
@@ -162,7 +163,7 @@ class WindowsClipboardEntry(internal val dataObject: DataObject) : ClipboardEntr
         )
 
     override suspend fun <T : Any> getForFormat(format: ClipboardFormat<T>): List<T> =
-        withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) { getForFormatSync(format) }
+        withContext(KdtMainDispatcher.INSTANCE.immediate) { getForFormatSync(format) }
 
     override fun <T : Any> getForFormatSync(format: ClipboardFormat<T>): List<T> {
         checkOnDispatcherThread()

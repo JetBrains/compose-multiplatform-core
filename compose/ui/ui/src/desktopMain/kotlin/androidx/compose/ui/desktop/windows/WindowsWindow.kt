@@ -19,6 +19,7 @@
 
 package androidx.compose.ui.desktop.windows
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -547,7 +548,7 @@ class WindowsWindow internal constructor(
     private val framePacer = FramePacer(MIN_FRAME_INTERVAL_NS, System::nanoTime)
 
     private val frameDispatcher: FrameDispatcher = FrameDispatcher(
-        CoroutineScope(session.coroutineScope.coroutineContext + WindowsKdtMainDispatcher.INSTANCE),
+        CoroutineScope(session.coroutineScope.coroutineContext + KdtMainDispatcher.INSTANCE),
     ) {
         framePacer.awaitNextFrameSlot()
         var presented = false
@@ -582,7 +583,7 @@ class WindowsWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            WindowsKdtMainDispatcher.INSTANCE,
+            KdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { frameDispatcher.scheduleFrame() },
@@ -735,7 +736,7 @@ class WindowsWindow internal constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): Path? = withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) {
+    ): Path? = withContext(KdtMainDispatcher.INSTANCE.immediate) {
         FileDialog.showOpenFileDialog(
             owner = nativeWindow,
             options = mapWindowsFileDialogOptions(title, prompt, nameFieldStringValue, directoryPath),
@@ -759,7 +760,7 @@ class WindowsWindow internal constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): List<Path> = withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) {
+    ): List<Path> = withContext(KdtMainDispatcher.INSTANCE.immediate) {
         FileDialog.showOpenFileDialog(
             owner = nativeWindow,
             options = mapWindowsFileDialogOptions(title, prompt, nameFieldStringValue, directoryPath),
@@ -784,7 +785,7 @@ class WindowsWindow internal constructor(
         canSelectHiddenExtensions: Boolean,
         showsHiddenFiles: Boolean,
         isExtensionHidden: Boolean,
-    ): Path? = withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) {
+    ): Path? = withContext(KdtMainDispatcher.INSTANCE.immediate) {
         FileDialog.showSaveFileDialog(
             owner = nativeWindow,
             options = mapWindowsFileDialogOptions(title, prompt, nameFieldStringValue, directoryPath),

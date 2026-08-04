@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -506,7 +507,7 @@ class MacOsWindow internal constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            MacOsKdtMainDispatcher.INSTANCE,
+            KdtMainDispatcher.INSTANCE,
         platformContext = this@MacOsWindow.platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },
