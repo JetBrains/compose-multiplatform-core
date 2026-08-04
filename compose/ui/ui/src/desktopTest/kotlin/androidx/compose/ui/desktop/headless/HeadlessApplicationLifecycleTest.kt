@@ -124,6 +124,28 @@ class HeadlessApplicationLifecycleTest {
         }
     }
 
+    /**
+     * The default budget is a deadlock guard, so it must not be a performance assertion: a caller
+     * stepping frames would otherwise fail whenever a machine was slow. This drives a tail far longer
+     * than shutdown's 1s budget and expects it to be waited out, then shows a deliberately tight
+     * budget still reports.
+     */
+    @Test
+    fun awaitIdleToleratesASlowTailButHonoursAnExplicitBudget() = runBlocking {
+        val app = HeadlessApplication.initialize(libraryFolder())
+        try {
+            app.eventLoop.dispatch { Thread.sleep(1_500) }
+            app.awaitIdle() // default budget: must outlast a tail longer than shutdown's
+
+            app.eventLoop.dispatch { Thread.sleep(1_000) }
+            val failure = assertFailsWith<IllegalStateException> { app.awaitIdle(timeoutMillis = 50) }
+            assertTrue(failure.message!!.contains("did not become idle"), failure.message)
+            app.awaitIdle() // let the tail finish so teardown is clean
+        } finally {
+            app.resetForReuse()
+        }
+    }
+
     @Test
     fun clipboardIsInMemoryAndClearedOnReset() = runBlocking {
         val app = HeadlessApplication.initialize(libraryFolder())
