@@ -39,6 +39,7 @@ unsplitPackage {
     dependency(libs.atomicFu)
 
     dependency(project(":compose:runtime:runtime"))
+    dependency(project(":compose:runtime:runtime-retain"))
     dependency(project(":compose:runtime:runtime-saveable"))
     dependency(project(":lifecycle:lifecycle-common"))
     dependency(project(":lifecycle:lifecycle-runtime"))
