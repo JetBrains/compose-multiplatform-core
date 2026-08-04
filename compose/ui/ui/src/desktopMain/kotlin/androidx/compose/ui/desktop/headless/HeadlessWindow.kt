@@ -269,8 +269,19 @@ class HeadlessWindow internal constructor(
         return surface!!
     }
 
-    /** Renders one scene frame into the raster surface. */
-    fun render(nanoTime: Long = System.nanoTime()) {
+    private var lastRenderNanoTime = 0L
+
+    /**
+     * Renders one scene frame into the raster surface.
+     *
+     * [nanoTime] is the frame clock the scene, its animations and its `withFrameNanos` awaiters see.
+     * There being no display link here, it belongs entirely to the caller, so a frame this class
+     * schedules for itself repeats the last one's time rather than reading the wall clock: a test
+     * that drives a virtual clock from zero would otherwise get one enormous `System.nanoTime()`
+     * frame first and see the clock jump backwards on its next render.
+     */
+    fun render(nanoTime: Long = lastRenderNanoTime) {
+        lastRenderNanoTime = nanoTime
         isFrameRequestedState.value = false
         val target = surfaceForCurrentSize()
         target.canvas.clear(Color.TRANSPARENT)
