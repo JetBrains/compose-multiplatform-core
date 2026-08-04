@@ -197,6 +197,16 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
 
     val nativeApplication: Any
 
+    /**
+     * Posts [block] to this application's UI thread (the KDT event-loop / main thread). The single
+     * [androidx.compose.ui.desktop.KdtMainDispatcher] delegates here, so it needs no per-platform
+     * switch — each backend forwards to its own native dispatch primitive.
+     */
+    fun invokeOnUiThread(block: () -> Unit)
+
+    /** Whether the caller is already on this application's UI thread. */
+    fun isUiThread(): Boolean
+
     // these locals are the same as compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/CompositionLocals.kt,
     // but we want to provide outside a scene too
     @Composable

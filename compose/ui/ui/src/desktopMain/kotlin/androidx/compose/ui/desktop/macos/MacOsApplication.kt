@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.desktop.macos
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -441,6 +442,12 @@ object MacOsApplication : Application,
     override val nativeApplication: org.jetbrains.desktop.macos.Application
         get() = org.jetbrains.desktop.macos.Application
 
+    override fun invokeOnUiThread(block: () -> Unit) {
+        GrandCentralDispatch.dispatchOnMain { block() }
+    }
+
+    override fun isUiThread(): Boolean = GrandCentralDispatch.isMainThread()
+
     @Composable
     override fun withCompositionLocal(content: @Composable (() -> Unit)) {
         CompositionLocalProvider(
@@ -464,7 +471,7 @@ object MacOsApplication : Application,
             // Reachable from several paths (structured quit, JVM shutdown hook); stop the
             // native event loop exactly once, matching the other backends.
             if (eventLoopStopped.compareAndSet(expectedValue = false, newValue = true)) {
-                withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+                withContext(KdtMainDispatcher.INSTANCE.immediate) {
                     nativeApplication.stopEventLoop()
                 }
             }
@@ -562,7 +569,7 @@ object MacOsApplication : Application,
     }
 
     private suspend fun resetState() {
-        withContext(MacOsKdtMainDispatcher.INSTANCE.immediate) {
+        withContext(KdtMainDispatcher.INSTANCE.immediate) {
             windows.values.toList().forEach { it.dispose() }
             reusableNativeWindowResources.drainWith { resources ->
                 resources.nativeWindow.close()

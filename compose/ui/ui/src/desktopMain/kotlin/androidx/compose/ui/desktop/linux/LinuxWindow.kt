@@ -3,6 +3,7 @@
 
 package androidx.compose.ui.desktop.linux
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -455,7 +456,7 @@ class LinuxWindow private constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            LinuxKdtMainDispatcher.INSTANCE,
+            KdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },

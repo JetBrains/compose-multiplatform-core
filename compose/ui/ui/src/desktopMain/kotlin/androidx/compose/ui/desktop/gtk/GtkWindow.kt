@@ -3,6 +3,7 @@
 
 package androidx.compose.ui.desktop.gtk
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -413,7 +414,7 @@ class GtkWindow private constructor(
         layoutDirection = layoutDirection,
         size = contentSizeInPx(),
         coroutineContext = session.coroutineScope.coroutineContext +
-            GtkKdtMainDispatcher.INSTANCE,
+            KdtMainDispatcher.INSTANCE,
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
         invalidate = { isFrameRequested = true },

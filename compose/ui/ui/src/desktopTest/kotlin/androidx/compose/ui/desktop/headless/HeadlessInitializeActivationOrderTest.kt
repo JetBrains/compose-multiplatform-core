@@ -58,6 +58,12 @@ class HeadlessInitializeActivationOrderTest {
         override val nativeApplication: Any = Unit
         override val nativeClipboard: Any = Unit
 
+        override fun invokeOnUiThread(block: () -> Unit): Unit =
+            error("StubApplication members must never be invoked")
+
+        override fun isUiThread(): Boolean =
+            error("StubApplication members must never be invoked")
+
         override fun createWindow(
             session: ApplicationSession,
             onCloseRequest: (WindowCloseRequestReason) -> Unit,
