@@ -51,7 +51,9 @@ import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.PositionAwareWindow
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
+import androidx.compose.ui.desktop.LocalWindow
 import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultTextToolbar
@@ -64,6 +66,7 @@ import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.semantics.TestDataMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -85,10 +88,6 @@ import kotlin.math.ceil
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
-import noria.ui.core.LocalWindow
-import noria.ui.core.TestDataMode
-import noria.ui.core.UIRoot
-import noria.ui.core.WindowData
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.desktop.macos.AppMenuManager
 import org.jetbrains.desktop.macos.Appearance
@@ -455,8 +454,6 @@ class MacOsWindow internal constructor(
 
     private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
-    private val uiRoot = UIRoot { semanticsOwners }
-
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
         PlatformContext.SemanticsOwnerListener {
         override val windowInfo: WindowInfo
@@ -756,7 +753,7 @@ class MacOsWindow internal constructor(
     @ApiStatus.Internal
     override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(WindowData(id, uiRoot))
+        onLayout(WindowData(id, semanticsOwners))
     }
 
     private fun preparePicture(): PresentablePicture? {

@@ -97,7 +97,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window as browserWindow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
-import noria.ui.core.LocalWindow
+import androidx.compose.ui.desktop.LocalWindow
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.HTMLCanvasElement
@@ -657,7 +657,7 @@ class WasmJsWindow internal constructor(
     }
 
     @Composable
-    override fun Content(onLayout: (noria.ui.core.WindowData) -> Unit) {
+    override fun Content(onLayout: (androidx.compose.ui.desktop.WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
     }
 }
