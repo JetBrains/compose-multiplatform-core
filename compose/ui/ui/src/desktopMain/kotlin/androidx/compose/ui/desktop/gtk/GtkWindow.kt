@@ -579,7 +579,11 @@ class GtkWindow private constructor(
 
     override fun requestClose(reason: WindowCloseRequestReason) {
         if (!isDisposed) {
-            onCloseRequest(reason)
+            // Join the current frame slice, mirroring the sibling requestCloseFromSystem below, so
+            // DataSource reads in onCloseRequest observe the frame's pinned view under isolation.
+            composeScene.withFrameTransaction {
+                onCloseRequest(reason)
+            }
         }
     }
 
@@ -777,9 +781,14 @@ class GtkWindow private constructor(
             // IME commit is driven by the editor's own bubble key handler
             // (TextInputSessionOwner.handleEventWithInputSession), so the window must not pre-empt
             // here: doing so would swallow keys before onPreviewKeyEvent and the focus dispatch.
-            onPreviewKeyEvent(keyEvent) ||
-                composeScene.sendKeyEvent(keyEvent) ||
-                onKeyEvent(keyEvent)
+            // The dispatch chain joins the current frame slice (as macOS does, and as this backend
+            // already does for IME and DnD ingress), so DataSource reads in key handlers observe
+            // the frame's pinned view under isolation.
+            composeScene.withFrameTransaction {
+                onPreviewKeyEvent(keyEvent) ||
+                    composeScene.sendKeyEvent(keyEvent) ||
+                    onKeyEvent(keyEvent)
+            }
         },
     )
 
