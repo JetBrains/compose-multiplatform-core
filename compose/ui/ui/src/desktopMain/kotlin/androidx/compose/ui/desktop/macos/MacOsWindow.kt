@@ -544,7 +544,7 @@ class MacOsWindow internal constructor(
         // initialized; see the init block at the bottom of the class.
     }
 
-    override fun showOpenSingleDialog(
+    override suspend fun showOpenSingleDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -587,7 +587,7 @@ class MacOsWindow internal constructor(
         }?.let { Path(it) }
     }
 
-    override fun showOpenMultipleDialog(
+    override suspend fun showOpenMultipleDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -622,7 +622,7 @@ class MacOsWindow internal constructor(
         ).map { Path(it) }
     }
 
-    override fun showSaveDialog(
+    override suspend fun showSaveDialog(
         title: String,
         prompt: String,
         message: String?,
