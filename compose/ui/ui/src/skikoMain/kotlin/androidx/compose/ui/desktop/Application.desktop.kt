@@ -140,14 +140,36 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window
 
+    /**
+     * Marks the native resources of the window [id] as reclaimable so a later [reuseWindow] can
+     * adopt the same native window instead of creating a fresh one. Part of the window-reuse
+     * contract; see [reuseWindow].
+     *
+     * Called by the host (Fleet) on `Dispatchers.Main.immediate`. Backends implement one of two
+     * models: macOS and Windows *park* the native resources in a side map; Linux and GTK *mark in
+     * place*, leaving the window registered. Either way the resources remain live for structured
+     * quit until reclaimed or disposed — a prepared-but-unreused window still keeps the application
+     * from terminating.
+     */
     fun prepareNativeWindowResourcesForReuse(id: LightweightWindowId)
 
+    /**
+     * Adopts the native resources previously marked by [prepareNativeWindowResourcesForReuse] for
+     * [id], returning a fresh [Window] wrapping the surviving native window, or `null` if no
+     * reclaimable resources exist for [id] — in which case the caller must fall back to
+     * [createWindow]. Called by the host on `Dispatchers.Main.immediate`.
+     */
     fun reuseWindow(
         id: LightweightWindowId,
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): Window?
 
+    /**
+     * Releases native resources marked by [prepareNativeWindowResourcesForReuse] for [id] that will
+     * not be reclaimed, and re-checks whether a pending structured quit can now finish. Called by
+     * the host on `Dispatchers.Main.immediate`.
+     */
     fun disposeReusableNativeWindowResources(id: LightweightWindowId)
 
     //    val mainWindow: KdtWindow?
