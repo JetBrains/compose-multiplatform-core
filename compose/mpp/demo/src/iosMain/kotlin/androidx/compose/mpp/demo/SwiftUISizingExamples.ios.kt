@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,14 @@
 
 package androidx.compose.mpp.demo
 
-val IosSpecificFeatures = Screen.Selection(
-    "iOS-specific features",
-    NativeModalWithNavigationExample,
-    NativePopupWithComposePopupExample,
-    HapticFeedbackExample,
-    IosPredictiveBackExample,
-    LazyColumnWithInteropViewsExample,
-    AccessibilityLiveRegionExample,
-    InteropViewAndSemanticsConfigMerge,
-    InteropExample,
-    ReusableMapsExample,
-    UpdatableInteropPropertiesExample,
-    IosImeOptionsExample,
-    NativeTextInputTextFields,
+import platform.UIKit.UIView
+import platform.UIKit.UIViewController
+
+internal fun IosSizing(
+    makeSizingDemoController: (UIView, Int) -> UIViewController,
+) = Screen.Selection(
+    "iOS Sizing",
+    swiftUISizeThatFitsSizingExamples(makeSizingDemoController),
+    swiftUIIntrinsicSizingExamples(makeSizingDemoController),
+    uiKitSizingExamples(makeSizingDemoController),
 )

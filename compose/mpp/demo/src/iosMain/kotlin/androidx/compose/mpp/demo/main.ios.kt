@@ -24,6 +24,7 @@ import platform.UIKit.UISceneConfiguration
 import platform.UIKit.UISceneConnectionOptions
 import platform.UIKit.UISceneDelegateProtocol
 import platform.UIKit.UISceneSession
+import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -49,16 +50,30 @@ fun main(vararg args: String) {
 }
 
 @Composable
-fun IosDemo(arg: String, makeHostingController: ((Int) -> UIViewController)? = null) {
+fun IosDemo(
+    arg: String,
+    makeHostingController: ((Int) -> UIViewController)? = null,
+    makeSizingDemoController: ((UIView, Int) -> UIViewController)? = null,
+) {
     val app = remember {
+        val swiftUiExamples = listOfNotNull(
+            makeHostingController?.let(::SwiftUIInteropExample),
+        )
         App(
             extraScreens = listOf(
                 IosBugs,
                 IosSpecificFeatures,
-            ) + listOf(makeHostingController).mapNotNull {
-                it?.let {
-                    SwiftUIInteropExample(it)
-                }
+            ) + listOfNotNull(
+                makeSizingDemoController?.let(::IosSizing),
+            ) + if (swiftUiExamples.isEmpty()) {
+                emptyList()
+            } else {
+                listOf(
+                    Screen.Selection(
+                        "SwiftUI",
+                        swiftUiExamples,
+                    )
+                )
             }
         )
     }
