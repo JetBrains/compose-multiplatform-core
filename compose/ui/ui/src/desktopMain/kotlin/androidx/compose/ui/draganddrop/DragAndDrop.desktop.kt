@@ -20,6 +20,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.desktop.ClipboardEntry
 import androidx.compose.ui.desktop.ClipboardFormat
 import androidx.compose.ui.desktop.LinuxDragAndDropClipboardEntry
+import androidx.compose.ui.desktop.windows.WindowsDragAndDropClipboardEntry
 import androidx.compose.ui.desktop.macos.MacOsDragAndDropClipboardEntry
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -186,7 +187,7 @@ val DragAndDropEvent.clipboardEntry: ClipboardEntry
         return when (DesktopPlatform.Current) {
             DesktopPlatform.MacOS -> nativeEvent as MacOsDragAndDropClipboardEntry
             DesktopPlatform.Linux -> nativeEvent as LinuxDragAndDropClipboardEntry
-            DesktopPlatform.Windows -> throw UnsupportedOperationException("Drag and drop is not supported on Windows")
+            DesktopPlatform.Windows -> nativeEvent as WindowsDragAndDropClipboardEntry
             DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
         }
     }
@@ -201,7 +202,7 @@ fun DragAndDropEvent.containsFormat(format: ClipboardFormat<*>, actions: List<Dr
             (nativeEvent as LinuxDragAndDropClipboardEntry).containsFormat(format, actions)
         }
         DesktopPlatform.Windows -> {
-            throw UnsupportedOperationException("Drag and drop is not supported on Windows")
+            (nativeEvent as WindowsDragAndDropClipboardEntry).containsFormat(format, actions)
         }
         DesktopPlatform.Unknown -> false
     }
@@ -216,7 +217,7 @@ fun DragAndDropEvent.acceptsFormat(format: ClipboardFormat<*>, actions: List<Dra
             (nativeEvent as LinuxDragAndDropClipboardEntry).acceptsFormat(format, actions)
         }
         DesktopPlatform.Windows -> {
-            throw UnsupportedOperationException("Drag and drop is not supported on Windows")
+            (nativeEvent as WindowsDragAndDropClipboardEntry).acceptsFormat(format, actions)
         }
         DesktopPlatform.Unknown -> {}
     }

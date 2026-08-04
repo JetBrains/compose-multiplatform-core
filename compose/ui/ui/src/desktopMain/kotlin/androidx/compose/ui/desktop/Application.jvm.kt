@@ -31,8 +31,8 @@ import androidx.compose.ui.desktop.linux.LinuxApplication
 import androidx.compose.ui.desktop.linux.LinuxUriHandler
 import androidx.compose.ui.desktop.macos.MacOsApplication
 import androidx.compose.ui.desktop.macos.MacOsUriHandler
-//import androidx.compose.ui.kdt.windows.WindowsApplication
-//import androidx.compose.ui.kdt.windows.WindowsUriHandler
+import androidx.compose.ui.desktop.windows.WindowsApplication
+import androidx.compose.ui.desktop.windows.WindowsUriHandler
 import androidx.compose.ui.platform.DesktopPlatform
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.UriHandler
@@ -101,8 +101,7 @@ internal actual fun defaultUriHandler(): UriHandler =
             LinuxWindowSystem.Wayland -> LinuxUriHandler()
             LinuxWindowSystem.Gtk -> GtkUriHandler()
         }
-//        DesktopPlatform.Windows -> WindowsUriHandler()
-        DesktopPlatform.Windows -> TODO()
+        DesktopPlatform.Windows -> WindowsUriHandler()
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
     }
 
@@ -150,8 +149,7 @@ private fun initializeJvmApplication(
                 GtkApplication.current()
             }
         }
-//        DesktopPlatform.Windows -> WindowsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { WindowsApplication.current() }
-        DesktopPlatform.Windows -> TODO()
+        DesktopPlatform.Windows -> WindowsApplication.initialize(identifier, openUrls, libraryFolderPath, logFolderPath, uriHandler, customQuit).let { WindowsApplication.current() }
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
     }
 }

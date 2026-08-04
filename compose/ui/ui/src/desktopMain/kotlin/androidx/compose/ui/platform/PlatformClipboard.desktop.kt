@@ -22,6 +22,7 @@ import androidx.compose.ui.desktop.currentLinuxWindowSystem
 import androidx.compose.ui.desktop.gtk.GtkApplication
 import androidx.compose.ui.desktop.linux.LinuxApplication
 import androidx.compose.ui.desktop.macos.MacOsClipboard
+import androidx.compose.ui.desktop.windows.WindowsApplication
 import androidx.compose.ui.text.AnnotatedString
 import java.awt.HeadlessException
 import java.awt.Toolkit
@@ -164,7 +165,7 @@ internal actual fun createPlatformClipboard(): Clipboard =
             LinuxWindowSystem.Wayland -> LinuxApplication.current()
             LinuxWindowSystem.Gtk -> GtkApplication.current()
         }
-        DesktopPlatform.Windows -> TODO()
+        DesktopPlatform.Windows -> WindowsApplication.current()
         DesktopPlatform.Unknown -> error("Unsupported desktop platform: ${DesktopPlatform.Current}")
     }
 //internal actual fun createPlatformClipboard(): Clipboard = AwtPlatformClipboard()
