@@ -20,9 +20,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.desktop.macos.PlatformTextInputSessionMacOs
 import androidx.compose.ui.desktop.macos.toMacOsRequest
+import androidx.compose.ui.desktop.windows.PlatformTextInputMethodRequestWindows
+import androidx.compose.ui.desktop.windows.PlatformTextInputSessionWindows
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.awaitCancellation
@@ -44,6 +47,7 @@ suspend fun PlatformTextInputSession<*>.startComposeTextInputMethod(
     when (this) {
         is PlatformTextInputSessionMacOs -> startInputMethod(request.toMacOsRequest(density))
         is PlatformTextInputSessionLinux -> startInputMethod(request.toLinuxRequest())
+        is PlatformTextInputSessionWindows -> startInputMethod(request.toWindowsRequest(density))
         else -> error("Unexpected desktop text input session: $this")
     }
 }
@@ -104,5 +108,80 @@ private fun PlatformTextInputMethodRequest.toLinuxRequest(): PlatformTextInputMe
 
         override suspend fun waitForEditorStateChange():
             Pair<LinuxTextInputContext, LinuxTextInputSurroundingText> = awaitCancellation()
+    }
+}
+
+/**
+ * Minimal adapter from Compose's generic [PlatformTextInputMethodRequest] to the win32 (IMM32)
+ * [PlatformTextInputMethodRequestWindows] used by [PlatformTextInputSessionWindows]. It applies IME
+ * commit/compose directly to the text field via [PlatformTextInputMethodRequest.editText], mirroring
+ * the macOS `toMacOsRequest` adapter (win32's protocol is NSTextInputClient-shaped).
+ *
+ * As with the Linux/macOS adapters this is enough for Compose's own `BasicTextField`; external
+ * editors (fleet) supply their own richer [PlatformTextInputMethodRequestWindows] and do not go
+ * through this adapter.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+private fun PlatformTextInputMethodRequest.toWindowsRequest(
+    density: () -> Density,
+): PlatformTextInputMethodRequestWindows {
+    val request = this
+    return object : PlatformTextInputMethodRequestWindows {
+        override fun selectedRange(): TextRange = request.state.selection
+
+        override fun insertText(text: String, replacementRange: TextRange?) {
+            request.editText {
+                if (replacementRange != null) {
+                    setSelection(replacementRange)
+                }
+                commitText(text, 1)
+            }
+        }
+
+        override fun setMarkedText(
+            text: String,
+            selectedRange: TextRange?,
+            replacementRange: TextRange?,
+        ) {
+            request.editText {
+                val potentialReplacementRange =
+                    request.state.let { it.composition ?: it.selection }
+                val effectiveStart = replacementRange?.start ?: potentialReplacementRange.start
+                val effectiveEnd = replacementRange?.end ?: potentialReplacementRange.end
+                setComposition(TextRange(effectiveStart, effectiveEnd))
+                setComposingText(text, 1)
+                selectedRange?.let {
+                    val start = effectiveStart + it.start
+                    setSelection(TextRange(start, start + it.length))
+                }
+            }
+        }
+
+        override fun unmarkText() {
+            request.editText { finishComposingText() }
+        }
+
+        override fun discardMarkedText() {
+            request.editText {
+                // Abandon the in-progress composition without committing it: replace the composing
+                // text with nothing, then clear the composing region.
+                if (request.state.composition != null) {
+                    setComposingText("", 1)
+                }
+                finishComposingText()
+            }
+        }
+
+        override fun boundingRectForCharacterRange(range: TextRange): DpRect {
+            val (_, firstRect) = request.firstTextRangeAndRectInRoot(range)
+            return with(density()) {
+                DpRect(
+                    left = firstRect.left.toDp(),
+                    top = firstRect.top.toDp(),
+                    right = firstRect.right.toDp(),
+                    bottom = firstRect.bottom.toDp(),
+                )
+            }
+        }
     }
 }

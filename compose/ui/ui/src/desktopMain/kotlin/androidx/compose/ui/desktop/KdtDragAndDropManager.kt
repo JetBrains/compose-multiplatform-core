@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.desktop.gtk.GtkWindow
 import androidx.compose.ui.desktop.linux.LinuxWindow
 import androidx.compose.ui.desktop.macos.MacOsWindow
+import androidx.compose.ui.desktop.windows.WindowsWindow
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
 
@@ -70,8 +71,12 @@ internal class KdtDragAndDropManager(
                 decorationSize,
                 drawDragDecoration,
             )
-            // TODO: add androidx.compose.ui.desktop.windows.WindowsWindow when the Windows
-            //  backend lands (drag source is not supported there; the branch should be a no-op).
+            is WindowsWindow -> window.startDragSession(
+                offset,
+                transferData,
+                decorationSize,
+                drawDragDecoration,
+            )
             else -> error("Unsupported drag source window: ${window::class.qualifiedName}")
         }
     }
