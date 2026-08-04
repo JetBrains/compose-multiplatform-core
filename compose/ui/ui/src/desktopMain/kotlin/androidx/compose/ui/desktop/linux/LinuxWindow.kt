@@ -337,15 +337,10 @@ class LinuxWindow private constructor(
 
     override fun requestClose(reason: WindowCloseRequestReason) {
         if (!isDisposed) {
-            // requestClose is reachable from a non-event-loop thread (Window.requestClose is public
-            // API; Application.quit() -> requestStructuredQuit() -> requestClose too), so the hop
-            // marshals onto the event-loop thread. The frame transaction must run there — where the
-            // scene's sources bind (withFrameTransaction installs them on the calling thread) — so
-            // it goes INSIDE the hop, mirroring the system-close path (Event.WindowCloseRequest).
-            application.onEventLoopAsync {
-                composeScene.withFrameTransaction {
-                    onCloseRequest(reason)
-                }
+            // Runs on the main/event-loop thread by the @MainThread contract (see the Window
+            // interface); withFrameTransaction joins the frame slice like the system-close path.
+            composeScene.withFrameTransaction {
+                onCloseRequest(reason)
             }
         }
     }

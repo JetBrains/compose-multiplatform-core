@@ -344,6 +344,8 @@ class WindowsWindow internal constructor(
 
     override fun requestClose(reason: WindowCloseRequestReason) {
         if (!isDisposed) {
+            // Runs on the main/event-loop thread by the @MainThread contract (see the Window
+            // interface); withFrameTransaction joins the frame slice like the system-close path.
             composeScene.withFrameTransaction {
                 onCloseRequest(reason)
             }

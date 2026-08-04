@@ -187,6 +187,9 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
     @MainThread
     fun showEmojiAndSymbolsPopup()
 
+    // @MainThread: quit() fans out to each window's @MainThread requestClose (via
+    // requestStructuredQuit), so it must itself be called on the UI thread — no backend marshals it.
+    @MainThread
     fun quit()
     fun putQuitHandler(id: String, quitHandler: () -> Boolean)
     fun removeQuitHandler(id: String)
