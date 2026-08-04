@@ -115,7 +115,11 @@ class PlatformLocalizationTest {
             override val copy = emptyAction
             override val paste = emptyAction
             override val selectAll = emptyAction
+            // This test only covers menu-item localization, so the stub takes the no-link path:
+            // no link is ever selected, hence no url to offer.
+            override val copyLinkUrl = null
             override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) { }
+            override fun selectLinkAtPositionIfAny(offset: Offset): Boolean = false
         }
 
         setContent {
