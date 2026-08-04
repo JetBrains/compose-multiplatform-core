@@ -14,44 +14,27 @@
  * limitations under the License.
  */
 
-package noria.ui.core
+package androidx.compose.ui.desktop
 
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.desktop.LightweightWindowId
-import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.semantics.SemanticsOwner
 
+// TODO these used to live in `noria.ui.core`, which is now owned entirely by Fleet's
+//  `fleet.compose.noria` module. Fleet still spells them `noria.ui.core.WindowData` /
+//  `noria.ui.core.LocalWindow` and aliases them there; drop the aliases once the noria façade goes.
 /**
- * The test-data view of one window.
+ * What a window publishes about itself once its content is laid out.
  *
- * Wraps a live view of the [SemanticsOwner]s the window's scene owns.
+ * [semanticsOwners] is a live view of the owners the window's scene currently has — the scene's
+ * main owner plus one per attached `ComposeSceneLayer` — so a consumer that walks it observes
+ * layer attach and detach. It is exposed as a plain [Collection] rather than as a query object
+ * because any richer, product-specific view of it belongs outside Compose.
  */
-class UIRoot internal constructor(
-    private val semanticsOwners: () -> Collection<SemanticsOwner>,
-) {
-    /**
-     * Every test node in this [UIRoot], in registration order across every [SemanticsOwner] the
-     * window's scene owns, so that `ComposeSceneLayer`-based popups are visible. Air does not use
-     * those today.
-     *
-     * KNOWN DIVERGENCE FROM NORIA: see the note on [noria.ui.core.markTestSubtree] about overlays.
-     */
-    fun getAllTestNodes(): Sequence<TestNode> {
-        check(TestDataMode.isEnabled) {
-            "Test data was not collected: TestDataMode.isEnabled is false. Set it before the " +
-                "first composition that uses Modifier.testData."
-        }
-        val owners = semanticsOwners().toList()
-        return sequence {
-            for (owner in owners) {
-                yieldAll(flattenTestNodes(owner.unmergedRootSemanticsNode))
-            }
-        }
-    }
-}
-
-data class WindowData(val windowId: LightweightWindowId, val uiRoot: UIRoot)
+data class WindowData(
+    val windowId: LightweightWindowId,
+    val semanticsOwners: Collection<SemanticsOwner>,
+)
 
 val LocalWindow: ProvidableCompositionLocal<Window> = staticCompositionLocalOf {
     error("LocalWindow is not provided")

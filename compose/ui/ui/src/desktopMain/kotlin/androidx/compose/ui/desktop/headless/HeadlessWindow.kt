@@ -36,10 +36,12 @@ import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.LightweightWindowId
 import androidx.compose.ui.desktop.LocalTextInputSessionOwner
+import androidx.compose.ui.desktop.LocalWindow
 import androidx.compose.ui.desktop.Screen
 import androidx.compose.ui.desktop.TextInputSessionOwner
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeCanvas
@@ -56,6 +58,7 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.semantics.TestDataMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -70,10 +73,6 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.io.files.Path
-import noria.ui.core.LocalWindow
-import noria.ui.core.TestDataMode
-import noria.ui.core.UIRoot
-import noria.ui.core.WindowData
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.Surface
@@ -201,8 +200,6 @@ class HeadlessWindow internal constructor(
     }
 
     private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
-
-    private val uiRoot = UIRoot { semanticsOwners }
 
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
         PlatformContext.SemanticsOwnerListener {
@@ -395,7 +392,7 @@ class HeadlessWindow internal constructor(
     @ApiStatus.Internal
     override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(WindowData(id, uiRoot))
+        onLayout(WindowData(id, semanticsOwners))
     }
 
     // ----- Input -----

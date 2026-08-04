@@ -23,9 +23,11 @@ import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
 import androidx.compose.ui.desktop.LightweightWindowId
+import androidx.compose.ui.desktop.LocalWindow
 import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
+import androidx.compose.ui.desktop.WindowData
 import androidx.compose.ui.desktop.WindowScope
 import androidx.compose.ui.desktop.draganddrop.DragAndDropImage
 import androidx.compose.ui.desktop.linux.decodeFileChooserPath
@@ -71,6 +73,7 @@ import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.semantics.TestDataMode
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextInputContext
 import androidx.compose.ui.unit.Density
@@ -94,10 +97,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
-import noria.ui.core.LocalWindow
-import noria.ui.core.TestDataMode
-import noria.ui.core.UIRoot
-import noria.ui.core.WindowData
 import org.jetbrains.desktop.gtk.DragAndDropAction
 import org.jetbrains.desktop.gtk.DragAndDropQueryData
 import org.jetbrains.desktop.gtk.DragAndDropQueryResponse
@@ -377,8 +376,6 @@ class GtkWindow private constructor(
     }
 
     private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
-
-    private val uiRoot = UIRoot { semanticsOwners }
 
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
         PlatformContext.SemanticsOwnerListener {
@@ -753,7 +750,7 @@ class GtkWindow private constructor(
     @Composable
     override fun Content(onLayout: (WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
-        onLayout(WindowData(id, uiRoot))
+        onLayout(WindowData(id, semanticsOwners))
     }
 
     private val inputStateTracker = InputStateTracker(
