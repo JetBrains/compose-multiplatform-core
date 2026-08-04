@@ -90,7 +90,6 @@ import kotlin.coroutines.resume
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.files.Path
 import noria.CallbackInterceptor
@@ -465,22 +464,12 @@ class LinuxWindow private constructor(
 
     // The registration init block lives at the BOTTOM of the class; see there.
 
-    // WARNING — blocking bridge over an event-driven native API.
-    //
-    // KDT's Wayland file chooser is asynchronous: showOpenFileDialog/showSaveFileDialog only
-    // ISSUE a request and the selection arrives later as an Event.FileChooserResponse dispatched
-    // on the KDT event loop (see handleEvent). The [Window] interface, however, is blocking
-    // (: Path?) because it was shaped for macOS, whose native panel runs its own nested modal
-    // loop. To honor that contract these methods runBlocking on the real suspend core.
-    //
-    // Consequently they MUST NOT be called on the KDT event-loop thread: blocking it stops the
-    // loop that would deliver FileChooserResponse, so the wait can never complete — a guaranteed
-    // deadlock. Note that Dispatchers.Main dispatches ONTO this loop, and Fleet's FileChooser
-    // invokes these via withContext(Dispatchers.Main); off-loop callers (or a future suspend
-    // Window signature) are required. Prefer the suspend core [openFileDialog]/[saveFileDialog]
-    // directly. See AIR-6085 WS3 task-9 report (blocking-vs-suspend decision, needs maintainer
-    // confirmation).
-    override fun showOpenSingleDialog(
+    // KDT's file chooser is asynchronous: showOpenFileDialog/showSaveFileDialog only ISSUE a
+    // request and the selection arrives later as an Event.FileChooserResponse dispatched on the
+    // KDT event loop (see handleEvent). The dialog methods are therefore suspend: they post the
+    // request and suspend until the response event resumes them, which makes them safe to call
+    // from any thread — including the event-loop thread itself, which they never block.
+    override suspend fun showOpenSingleDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -493,17 +482,15 @@ class LinuxWindow private constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): Path? = runBlocking {
-        openFileDialog(
-            mapCommonDialogParams(title, prompt, message, directoryPath),
-            FileDialog.OpenDialogParams(
-                selectDirectories = canChooseDirectories && !canChooseFiles,
-                allowsMultipleSelections = false,
-            ),
-        )?.firstOrNull()
-    }
+    ): Path? = openFileDialog(
+        mapCommonDialogParams(title, prompt, message, directoryPath),
+        FileDialog.OpenDialogParams(
+            selectDirectories = canChooseDirectories && !canChooseFiles,
+            allowsMultipleSelections = false,
+        ),
+    )?.firstOrNull()
 
-    override fun showOpenMultipleDialog(
+    override suspend fun showOpenMultipleDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -516,17 +503,15 @@ class LinuxWindow private constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): List<Path> = runBlocking {
-        openFileDialog(
-            mapCommonDialogParams(title, prompt, message, directoryPath),
-            FileDialog.OpenDialogParams(
-                selectDirectories = canChooseDirectories && !canChooseFiles,
-                allowsMultipleSelections = true,
-            ),
-        ) ?: emptyList()
-    }
+    ): List<Path> = openFileDialog(
+        mapCommonDialogParams(title, prompt, message, directoryPath),
+        FileDialog.OpenDialogParams(
+            selectDirectories = canChooseDirectories && !canChooseFiles,
+            allowsMultipleSelections = true,
+        ),
+    ) ?: emptyList()
 
-    override fun showSaveDialog(
+    override suspend fun showSaveDialog(
         title: String,
         prompt: String,
         message: String?,
@@ -537,12 +522,10 @@ class LinuxWindow private constructor(
         canSelectHiddenExtensions: Boolean,
         showsHiddenFiles: Boolean,
         isExtensionHidden: Boolean,
-    ): Path? = runBlocking {
-        saveFileDialog(
-            mapCommonDialogParams(title, prompt, message, directoryPath),
-            FileDialog.SaveDialogParams(nameFieldStringValue = nameFieldStringValue),
-        )?.firstOrNull()
-    }
+    ): Path? = saveFileDialog(
+        mapCommonDialogParams(title, prompt, message, directoryPath),
+        FileDialog.SaveDialogParams(nameFieldStringValue = nameFieldStringValue),
+    )?.firstOrNull()
 
     /**
      * Suspending core of the open-file dialogs. Issues the native request on the KDT event loop,
@@ -550,7 +533,8 @@ class LinuxWindow private constructor(
      * handleEvent, which URL-decodes and resumes), and suspends until the response arrives.
      *
      * Returns `null` only when the native side rejected the request (null [RequestId]); an empty
-     * list means the user cancelled. Safe to call from any thread EXCEPT the event-loop thread.
+     * list means the user cancelled. Suspends without blocking, so it is safe to call from any
+     * thread — including the event-loop thread itself.
      */
     internal suspend fun openFileDialog(
         commonParams: FileDialog.CommonDialogParams,

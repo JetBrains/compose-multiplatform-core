@@ -114,7 +114,7 @@ interface Window {
     fun requestPlacement(placement: WindowPlacement)
 
     @MainThread
-    fun showOpenSingleDialog(
+    suspend fun showOpenSingleDialog(
         title: String = "Open",
         prompt: String = "Open",
         message: String? = null,
@@ -130,7 +130,7 @@ interface Window {
     ): Path?
 
     @MainThread
-    fun showOpenMultipleDialog(
+    suspend fun showOpenMultipleDialog(
         title: String = "Open",
         prompt: String = "Open",
         message: String? = null,
@@ -146,7 +146,7 @@ interface Window {
     ): List<Path>
 
     @MainThread
-    fun showSaveDialog(
+    suspend fun showSaveDialog(
         title: String = "Save",
         prompt: String = "Save",
         message: String? = null,
