@@ -478,14 +478,10 @@ tasks.findByName("desktopTest").configure {
 //   initialSize/initialPosition API can't provide.
 // - PointerTest.kt's `customPointerChanges` test builds custom cursors via
 //   `PointerIcon(cursor: java.awt.Cursor)`, which was removed with no replacement.
-// - PlatformLocalizationTest.kt's anonymous `TextContextMenu.TextManager` impl doesn't implement
-//   `selectLinkAtPositionIfAny`/`copyLinkUrl`, members the interface gained since this test was
-//   written — pre-existing fork drift, reproduced before any Task 1 change.
 // Every other desktopTest file compiles.
 tasks.named("compileTestKotlinDesktop").configure {
     exclude { it.file.name == "WindowStateTest.kt" }
     exclude { it.file.name == "PointerTest.kt" }
-    exclude { it.file.name == "PlatformLocalizationTest.kt" }
 }
 
 tasks.register("desktopHeadlessTest", Test) {
