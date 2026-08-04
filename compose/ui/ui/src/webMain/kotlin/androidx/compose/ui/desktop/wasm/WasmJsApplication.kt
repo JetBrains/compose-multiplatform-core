@@ -169,6 +169,12 @@ object WasmJsApplication : Application, Clipboard by createPlatformClipboard() {
 
     override val nativeApplication: Any = Unit
 
+    // The browser is single-threaded: the caller is always on the UI thread, so run inline. (The
+    // desktop KdtMainDispatcher that consumes these lives in desktopMain and never reaches here.)
+    override fun invokeOnUiThread(block: () -> Unit) = block()
+
+    override fun isUiThread(): Boolean = true
+
     internal val fontFamilyResolver: FontFamily.Resolver by lazy { createFontFamilyResolver() }
 
     @Composable

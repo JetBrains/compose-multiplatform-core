@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.desktop.windows
 
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -187,6 +188,12 @@ object WindowsApplication : Application, Clipboard by WindowsClipboard() {
     private var nativeApplicationOrNull: org.jetbrains.desktop.win32.Application? = null
     override val nativeApplication: org.jetbrains.desktop.win32.Application
         get() = checkNotNull(nativeApplicationOrNull) { "WindowsApplication has not been initialized" }
+
+    override fun invokeOnUiThread(block: () -> Unit) {
+        nativeApplication.invokeOnDispatcher { block() }
+    }
+
+    override fun isUiThread(): Boolean = nativeApplication.isDispatcherThread()
 
     // Clipboard access (getClipEntry/setClipEntry/nativeClipboard/getClipEntrySync) is provided by
     // the delegated WindowsClipboard (OLE over Win32Clipboard/DataObject), mirroring how
@@ -421,7 +428,7 @@ object WindowsApplication : Application, Clipboard by WindowsClipboard() {
         // dispatcher thread. Without this hop, resetState() (called from resetForReuse()/stopAndJoin()
         // on whatever thread the caller's coroutine is on) marshals OLE calls onto the wrong thread and
         // fails with RPC_E_WRONG_THREAD (0x8001010E).
-        withContext(WindowsKdtMainDispatcher.INSTANCE.immediate) {
+        withContext(KdtMainDispatcher.INSTANCE.immediate) {
             windows.values.toList().forEach { it.dispose() }
             reusableNativeWindowResources.drainWith { resources ->
                 resources.angleViewContext.close()
@@ -469,3 +476,6 @@ internal fun <R : Any, W : Any> ParkedWindowResources<R>.reuseParkedResources(
     val resources = take(id) ?: return null
     return build(resources)
 }
+
+internal fun currentWindowsNativeApplication(): org.jetbrains.desktop.win32.Application =
+    WindowsApplication.current().nativeApplication

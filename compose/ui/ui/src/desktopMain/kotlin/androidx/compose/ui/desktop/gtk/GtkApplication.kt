@@ -151,6 +151,12 @@ object GtkApplication : Application {
             return nativeApplicationImpl
         }
 
+    override fun invokeOnUiThread(block: () -> Unit) {
+        nativeApplication.runOnEventLoopAsync { block() }
+    }
+
+    override fun isUiThread(): Boolean = nativeApplication.isEventLoopThread()
+
     @Composable
     override fun withCompositionLocal(content: @Composable (() -> Unit)) {
         CompositionLocalProvider(
@@ -740,3 +746,6 @@ private fun Event.windowIdOrNull(): LightweightWindowId? =
         is Event.DragAndDropFeedbackFinished -> windowId.toLightweightWindowId()
         else -> null
     }
+
+internal fun currentGtkNativeApplication(): org.jetbrains.desktop.gtk.Application =
+    GtkApplication.current().nativeApplication
