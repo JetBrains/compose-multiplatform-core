@@ -33,6 +33,11 @@ class GtkNotificationCenter(
         vararg actions: Action,
     ): NotificationId? {
         return withContext(Dispatchers.Main.immediate) {
+            // Wait for the launch job before any native notification call, matching macOS's
+            // ordering gate (requests issued before the launch completes may be dropped or
+            // misordered). Called on the object directly rather than current() so a
+            // notification racing shutdown resolves the already-completed job instead of throwing.
+            GtkApplication.awaitWhenReady()
             if (isNotificationsAllowed().not()) {
                 return@withContext null
             }
@@ -62,6 +67,7 @@ class GtkNotificationCenter(
 
     suspend fun removeNotification(notificationId: NotificationId) {
         withContext(Dispatchers.Main.immediate) {
+            GtkApplication.awaitWhenReady()
             actionCallbacks.remove(notificationId)
             application.closeNotification(notificationId.value)
         }
