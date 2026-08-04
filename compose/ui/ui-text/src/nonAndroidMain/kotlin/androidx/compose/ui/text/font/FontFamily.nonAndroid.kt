@@ -25,11 +25,11 @@ import androidx.compose.ui.text.platform.SystemFont
  * doesn't match any available family in the system, the lookup will return
  * a fallback font family.
  *
- * If you're trying to use an AWT `java.awt.Font` in Compose, use the
- * `Font.asComposeFontFamily` function instead (in ui-skiko), which will take
- * care of some AWT-specific quirks, too. If you want to load a font family
- * embedded in the JetBrains Runtime, you can use `EmbeddedFontFamily` (in
- * ui-skiko).
+ * On the JVM, if you're trying to use an AWT `java.awt.Font` in Compose, use
+ * the `Font.asComposeFontFamily` function instead (in ui-skiko), which will
+ * take care of some AWT-specific quirks, too. If you want to load a font
+ * family embedded in the JetBrains Runtime, you can use `EmbeddedFontFamily`
+ * (in ui-skiko).
  *
  * @param familyName The name of the system font family to load.
  * @return the requested system font family, or a fallback if [familyName]

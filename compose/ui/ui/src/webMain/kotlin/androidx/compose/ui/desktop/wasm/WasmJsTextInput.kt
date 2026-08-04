@@ -18,6 +18,7 @@ package androidx.compose.ui.desktop.wasm
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.desktop.NativePlatformTextInputMethodRequest
 import androidx.compose.ui.desktop.TextInputSessionOwner
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.InternalKeyEvent
@@ -38,9 +39,11 @@ import org.w3c.dom.events.KeyboardEvent
 
 /**
  * The browser text-input request contract. Mirrors Noria's API of the same FQN so that product
- * IME integrations compile against either runtime.
+ * IME integrations compile against either runtime. Based on [NativePlatformTextInputMethodRequest]
+ * so implementations only provide the semantic browser surface, not the generic text-field
+ * accessors.
  */
-interface PlatformTextInputMethodRequestWasmJs : PlatformTextInputMethodRequest {
+interface PlatformTextInputMethodRequestWasmJs : NativePlatformTextInputMethodRequest {
     /** Rect of the current caret in the scene's root coordinates, or null if not available. */
     fun caretRectInRoot(): Rect?
 
