@@ -27,12 +27,4 @@ class SwiftHelper {
         makeHostingViewController = makeHostingViewController,
         makeSizingDemoViewController = makeSizingDemoViewController,
     )
-
-    fun getComposeSizingDemoView(): UIView = androidx.compose.mpp.demo.getComposeSizingDemoView()
-
-    fun getComposeHostedSizingDemoView(): UIView =
-        androidx.compose.mpp.demo.getComposeHostedSizingDemoView()
-
-    fun getUIKitInteropSizingDemoView(): UIView =
-        androidx.compose.mpp.demo.getUIKitInteropSizingDemoView()
 }

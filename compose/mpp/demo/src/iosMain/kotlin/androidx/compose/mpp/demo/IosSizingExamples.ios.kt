@@ -26,4 +26,5 @@ internal fun IosSizing(
     swiftUISizeThatFitsSizingExamples(makeSizingDemoController),
     swiftUIIntrinsicSizingExamples(makeSizingDemoController),
     uiKitSizingExamples(makeSizingDemoController),
+    uiKitInComposeSizingExamples(),
 )
