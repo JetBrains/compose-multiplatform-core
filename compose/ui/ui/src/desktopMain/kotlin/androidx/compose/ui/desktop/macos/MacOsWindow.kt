@@ -277,7 +277,12 @@ class MacOsWindow internal constructor(
 
     override fun requestClose(reason: WindowCloseRequestReason) {
         if (!isDisposed) {
-            onCloseRequest(reason)
+            // Join the current frame slice, mirroring the system WindowCloseRequest path in
+            // handleEvent, so DataSource reads in onCloseRequest observe the frame's pinned view
+            // under isolation.
+            composeScene.withFrameTransaction {
+                onCloseRequest(reason)
+            }
         }
     }
 

@@ -337,8 +337,15 @@ class LinuxWindow private constructor(
 
     override fun requestClose(reason: WindowCloseRequestReason) {
         if (!isDisposed) {
+            // requestClose is reachable from a non-event-loop thread (Window.requestClose is public
+            // API; Application.quit() -> requestStructuredQuit() -> requestClose too), so the hop
+            // marshals onto the event-loop thread. The frame transaction must run there — where the
+            // scene's sources bind (withFrameTransaction installs them on the calling thread) — so
+            // it goes INSIDE the hop, mirroring the system-close path (Event.WindowCloseRequest).
             application.onEventLoopAsync {
-                onCloseRequest(reason)
+                composeScene.withFrameTransaction {
+                    onCloseRequest(reason)
+                }
             }
         }
     }
@@ -781,9 +788,13 @@ class LinuxWindow private constructor(
             // IME commit is driven by the editor's own bubble key handler
             // (TextInputSessionOwner.handleEventWithInputSession), so the window must not pre-empt
             // here: doing so would swallow keys before onPreviewKeyEvent and the focus dispatch.
-            onPreviewKeyEvent(keyEvent) ||
-                composeScene.sendKeyEvent(keyEvent) ||
-                onKeyEvent(keyEvent)
+            // The dispatch chain joins the current frame slice (as macOS does), so DataSource reads
+            // in key handlers observe the frame's pinned view under isolation.
+            composeScene.withFrameTransaction {
+                onPreviewKeyEvent(keyEvent) ||
+                    composeScene.sendKeyEvent(keyEvent) ||
+                    onKeyEvent(keyEvent)
+            }
         },
     )
 
