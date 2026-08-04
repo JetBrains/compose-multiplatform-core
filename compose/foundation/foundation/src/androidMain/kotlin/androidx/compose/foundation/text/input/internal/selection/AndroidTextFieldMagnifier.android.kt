@@ -22,7 +22,6 @@ import androidx.compose.foundation.MagnifierNode
 import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.text.input.internal.TextLayoutState
 import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
-import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState.InputType
 import androidx.compose.foundation.text.selection.MagnifierSpringSpec
 import androidx.compose.foundation.text.selection.OffsetDisplacementThreshold
 import androidx.compose.foundation.text.selection.UnspecifiedSafeOffsetVectorConverter
@@ -39,6 +38,7 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -46,7 +46,7 @@ internal class TextFieldMagnifierNodeImpl28(
     private var textFieldState: TransformedTextFieldState,
     private var textFieldSelectionState: TextFieldSelectionState,
     private var textLayoutState: TextLayoutState,
-    private var visible: Boolean
+    private var visible: Boolean,
 ) : TextFieldMagnifierNode(), CompositionLocalConsumerModifierNode {
 
     private var magnifierSize: IntSize by mutableStateOf(IntSize.Zero)
@@ -59,10 +59,10 @@ internal class TextFieldMagnifierNodeImpl28(
                     textFieldState = textFieldState,
                     selectionState = textFieldSelectionState,
                     textLayoutState = textLayoutState,
-                    magnifierSize = magnifierSize
+                    magnifierSize = magnifierSize,
                 ),
             typeConverter = UnspecifiedSafeOffsetVectorConverter,
-            visibilityThreshold = OffsetDisplacementThreshold
+            visibilityThreshold = OffsetDisplacementThreshold,
         )
 
     private val magnifierNode =
@@ -75,7 +75,7 @@ internal class TextFieldMagnifierNodeImpl28(
                             IntSize(size.width.roundToPx(), size.height.roundToPx())
                         }
                 },
-                useTextDefault = true
+                useTextDefault = true,
             )
         )
 
@@ -89,7 +89,7 @@ internal class TextFieldMagnifierNodeImpl28(
         textFieldState: TransformedTextFieldState,
         textFieldSelectionState: TextFieldSelectionState,
         textLayoutState: TextLayoutState,
-        visible: Boolean
+        visible: Boolean,
     ) {
         val previousTextFieldState = this.textFieldState
         val previousSelectionState = this.textFieldSelectionState
@@ -116,29 +116,24 @@ internal class TextFieldMagnifierNodeImpl28(
         animationJob = null
         // never start an expensive animation job if magnifier is not supported.
         if (!isPlatformMagnifierSupported()) return
+        // Do not launch observations if not visible. `update` is responsible for calling
+        // `restartAnimationJob` everytime the value of `visible` changes.
+        if (!visible) {
+            if (animatable.value.isSpecified) {
+                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    animatable.snapTo(Offset.Unspecified)
+                }
+            }
+        }
         animationJob =
             coroutineScope.launch {
                 val animationScope = this
                 snapshotFlow {
-                        // Although `visible` is not backed by snapshot state,
-                        // TextFieldMagnifierNode is
-                        // responsible for calling `restartAnimationJob` everytime the value of
-                        // `visible`
-                        // changes. So we don't have to worry about whether snapshotFlow invalidates
-                        // for
-                        // `visible`.
-                        if (
-                            !visible &&
-                                textFieldSelectionState.directDragGestureInitiator !=
-                                    InputType.Touch
-                        ) {
-                            return@snapshotFlow Offset.Unspecified
-                        }
                         calculateSelectionMagnifierCenterAndroid(
                             textFieldState,
                             textFieldSelectionState,
                             textLayoutState,
-                            magnifierSize
+                            magnifierSize,
                         )
                     }
                     .collect { targetValue ->
@@ -192,14 +187,14 @@ internal actual fun textFieldMagnifierNode(
     textFieldState: TransformedTextFieldState,
     textFieldSelectionState: TextFieldSelectionState,
     textLayoutState: TextLayoutState,
-    visible: Boolean
+    visible: Boolean,
 ): TextFieldMagnifierNode {
     return if (isPlatformMagnifierSupported()) {
         TextFieldMagnifierNodeImpl28(
             textFieldState = textFieldState,
             textFieldSelectionState = textFieldSelectionState,
             textLayoutState = textLayoutState,
-            visible = visible
+            visible = visible,
         )
     } else {
         object : TextFieldMagnifierNode() {
@@ -207,7 +202,7 @@ internal actual fun textFieldMagnifierNode(
                 textFieldState: TransformedTextFieldState,
                 textFieldSelectionState: TextFieldSelectionState,
                 textLayoutState: TextLayoutState,
-                visible: Boolean
+                visible: Boolean,
             ) {}
         }
     }

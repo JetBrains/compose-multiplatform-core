@@ -40,27 +40,21 @@ public class DeviceQuirksLoader {
         final List<Quirk> quirks = new ArrayList<>();
 
         if (quirkSettings.shouldEnableQuirk(
-                ExtensionDisabledQuirk.class,
-                ExtensionDisabledQuirk.load())) {
-            quirks.add(new ExtensionDisabledQuirk());
+                EnsurePostviewFormatEquivalenceQuirk.class,
+                EnsurePostviewFormatEquivalenceQuirk.load())) {
+            quirks.add(new EnsurePostviewFormatEquivalenceQuirk());
         }
 
         if (quirkSettings.shouldEnableQuirk(
-                CrashWhenOnDisableTooSoon.class,
-                CrashWhenOnDisableTooSoon.load())) {
-            quirks.add(new CrashWhenOnDisableTooSoon());
+                AvoidPostviewAvailabilityCheckQuirk.class,
+                AvoidPostviewAvailabilityCheckQuirk.load())) {
+            quirks.add(new AvoidPostviewAvailabilityCheckQuirk());
         }
 
         if (quirkSettings.shouldEnableQuirk(
-                GetAvailableKeysNeedsOnInit.class,
-                GetAvailableKeysNeedsOnInit.load())) {
-            quirks.add(new GetAvailableKeysNeedsOnInit());
-        }
-
-        if (quirkSettings.shouldEnableQuirk(
-                CaptureOutputSurfaceOccupiedQuirk.class,
-                CaptureOutputSurfaceOccupiedQuirk.load())) {
-            quirks.add(new CaptureOutputSurfaceOccupiedQuirk());
+                AvoidCaptureProcessProgressAvailabilityCheckQuirk.class,
+                AvoidCaptureProcessProgressAvailabilityCheckQuirk.load())) {
+            quirks.add(new AvoidCaptureProcessProgressAvailabilityCheckQuirk());
         }
 
         return quirks;

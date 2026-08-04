@@ -175,7 +175,7 @@ open class OngoingActivityTest {
             statuses.add(status)
             OngoingActivity.recoverOngoingActivity(context, i)!!.update(
                 context,
-                Status.forPart(Status.TextPart(status))
+                Status.forPart(Status.TextPart(status)),
             )
         }
         assertEquals(n, statuses.size) // Just in case.

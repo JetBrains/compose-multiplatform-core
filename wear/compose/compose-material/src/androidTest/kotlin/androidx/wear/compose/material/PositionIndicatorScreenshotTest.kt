@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
@@ -25,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,7 +38,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PositionIndicatorScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -54,7 +53,7 @@ class PositionIndicatorScreenshotTest {
             position = PositionIndicatorAlignment.Left,
             value = 0.2f,
             ltr = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -63,7 +62,7 @@ class PositionIndicatorScreenshotTest {
             position = PositionIndicatorAlignment.Left,
             value = 0.4f,
             ltr = false,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -72,7 +71,7 @@ class PositionIndicatorScreenshotTest {
             position = PositionIndicatorAlignment.Right,
             value = 0.3f,
             ltr = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -81,7 +80,7 @@ class PositionIndicatorScreenshotTest {
             position = PositionIndicatorAlignment.Right,
             value = 0.5f,
             ltr = false,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -90,7 +89,7 @@ class PositionIndicatorScreenshotTest {
             position = PositionIndicatorAlignment.End,
             value = 0.1f,
             ltr = true,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     @Test
@@ -99,7 +98,7 @@ class PositionIndicatorScreenshotTest {
             position = PositionIndicatorAlignment.End,
             value = 0.8f,
             ltr = false,
-            goldenIdentifier = testName.methodName
+            goldenIdentifier = testName.methodName,
         )
 
     private fun position_indicator_position_test(
@@ -114,7 +113,7 @@ class PositionIndicatorScreenshotTest {
                 PositionIndicator(
                     value = { value },
                     position = position,
-                    modifier = Modifier.testTag(TEST_TAG).background(Color.Black)
+                    modifier = Modifier.testTag(TEST_TAG).background(Color.Black),
                 )
             }
         }

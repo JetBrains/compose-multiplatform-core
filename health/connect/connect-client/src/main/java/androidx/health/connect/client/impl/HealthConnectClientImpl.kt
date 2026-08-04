@@ -19,6 +19,7 @@ import android.content.Context
 import android.os.DeadObjectException
 import android.os.RemoteException
 import android.os.TransactionTooLargeException
+import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
 import androidx.health.connect.client.ExperimentalDeduplicationApi
 import androidx.health.connect.client.HealthConnectClient
@@ -62,6 +63,7 @@ import androidx.health.platform.client.impl.logger.Logger
 import androidx.health.platform.client.proto.DataProto
 import androidx.health.platform.client.proto.PermissionProto
 import androidx.health.platform.client.proto.RequestProto
+import androidx.health.platform.client.service.HealthDataServiceConstants.DEFAULT_PROVIDER_PACKAGE_NAME
 import kotlin.reflect.KClass
 import kotlinx.coroutines.guava.await
 
@@ -73,20 +75,20 @@ class HealthConnectClientImpl
 @VisibleForTesting
 internal constructor(
     private val delegate: HealthDataAsyncClient,
-    override val features: HealthConnectFeatures
+    override val features: HealthConnectFeatures,
 ) : HealthConnectClient, PermissionController {
 
     internal constructor(
         context: Context,
-        providerPackageName: String
+        providerPackageName: String,
     ) : this(
         delegate = HealthDataService.getClient(context, providerPackageName),
         features =
-            if (providerPackageName == HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME) {
+            if (providerPackageName == DEFAULT_PROVIDER_PACKAGE_NAME) {
                 HealthConnectFeaturesApkImpl(context, providerPackageName)
             } else {
                 HealthConnectFeaturesUnavailableImpl
-            }
+            },
     )
 
     override suspend fun getGrantedPermissions(): Set<String> {
@@ -104,7 +106,7 @@ internal constructor(
         }
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Granted ${grantedPermissions.size} out of ${ALL_PERMISSIONS.size} permissions."
+            "Granted ${grantedPermissions.size} out of ${ALL_PERMISSIONS.size} permissions.",
         )
         return grantedPermissions
     }
@@ -139,13 +141,13 @@ internal constructor(
             delegate
                 .deleteData(
                     toDataTypeIdPairProtoList(recordType, recordIdsList),
-                    toDataTypeIdPairProtoList(recordType, clientRecordIdsList)
+                    toDataTypeIdPairProtoList(recordType, clientRecordIdsList),
                 )
                 .await()
         }
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "${recordIdsList.size + clientRecordIdsList.size} records deleted."
+            "${recordIdsList.size + clientRecordIdsList.size} records deleted.",
         )
     }
 
@@ -192,31 +194,39 @@ internal constructor(
                 .await()
         }
         val changeToken = proto.changesToken
-        Logger.debug(HEALTH_CONNECT_CLIENT_TAG, "Retrieved change token $changeToken.")
         return changeToken
     }
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
-        val proto = wrapRemoteException {
-            delegate
-                .getChanges(
-                    RequestProto.GetChangesRequest.newBuilder()
-                        .setChangesToken(changesToken)
-                        .build()
-                )
-                .await()
+        return getChanges(
+            RequestProto.GetChangesRequest.newBuilder().setChangesToken(changesToken).build()
+        )
+    }
+
+    // At the moment pageSize argument supported only on Android 34+.
+    override suspend fun getChanges(
+        changesToken: String,
+        @IntRange(from = 1, to = 5000) pageSize: Int,
+    ): ChangesResponse {
+        require(pageSize in 1..5000) {
+            "Received illegal value of change logs pageSize = ${pageSize} getChanges, expected to be" +
+                "within [1, 5000]"
         }
-        val nextToken = proto.nextChangesToken
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Retrieved changes successful with $changesToken, next token $nextToken."
+            "Passing getChanges request with pageSize = ${pageSize}",
         )
-        return toChangesResponse(proto)
+        return getChanges(
+            RequestProto.GetChangesRequest.newBuilder()
+                .setChangesToken(changesToken)
+                .setPageSize(pageSize)
+                .build()
+        )
     }
 
     @OptIn(ExperimentalDeduplicationApi::class)
     override suspend fun <T : Record> readRecords(
-        request: ReadRecordsRequest<T>,
+        request: ReadRecordsRequest<T>
     ): ReadRecordsResponse<T> {
         if (request.deduplicateStrategy != DEDUPLICATION_STRATEGY_DISABLED) {
             TODO("Not yet implemented")
@@ -238,13 +248,13 @@ internal constructor(
     }
 
     override suspend fun aggregateGroupByDuration(
-        request: AggregateGroupByDurationRequest,
+        request: AggregateGroupByDurationRequest
     ): List<AggregationResultGroupedByDuration> {
         val responseProto = wrapRemoteException { delegate.aggregate(request.toProto()).await() }
         val result = responseProto.rowsList.map { it.toAggregateDataRowGroupByDuration() }.toList()
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Retrieved ${result.size} duration aggregation buckets."
+            "Retrieved ${result.size} duration aggregation buckets.",
         )
         return result
     }
@@ -256,7 +266,7 @@ internal constructor(
         val result = responseProto.rowsList.map { it.toAggregateDataRowGroupByPeriod() }.toList()
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Retrieved ${result.size} period aggregation buckets."
+            "Retrieved ${result.size} period aggregation buckets.",
         )
         return result
     }
@@ -278,5 +288,13 @@ internal constructor(
             wrapper.initCause(e)
             throw wrapper
         }
+    }
+
+    private suspend fun getChanges(
+        getChangesRequest: RequestProto.GetChangesRequest
+    ): ChangesResponse {
+        return toChangesResponse(
+            wrapRemoteException { delegate.getChanges(getChangesRequest).await() }
+        )
     }
 }

@@ -92,6 +92,7 @@ public class Button implements LayoutElement {
     }
 
     /** Builder class for {@link Button}. */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class Builder implements LayoutElement.Builder {
         private final @NonNull Context mContext;
         private @Nullable LayoutElement mCustomContent;
@@ -275,6 +276,7 @@ public class Button implements LayoutElement {
             return new Button(mCoreBuilder.build());
         }
 
+        @SuppressWarnings("deprecation") // Using Image.Builder as legacy
         private @NonNull LayoutElement getCorrectContent() {
             LayoutElement.Builder content;
             switch (mType) {

@@ -20,6 +20,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.safeparcel.AbstractSafeParcelable;
 import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.SearchResultPageCreator;
@@ -32,13 +33,16 @@ import java.util.List;
 
 /**
  * This class represents a page of {@link SearchResult}s
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SafeParcelable.Class(creator = "SearchResultPageCreator")
 public class SearchResultPage extends AbstractSafeParcelable {
     public static final Parcelable.@NonNull Creator<SearchResultPage> CREATOR =
             new SearchResultPageCreator();
+
+    /** A value 0 means that there are no more pages in the search results. */
+    public static final long EMPTY_PAGE_TOKEN = 0;
 
     @Field(id = 1, getter = "getNextPageToken")
     private final long mNextPageToken;
@@ -55,7 +59,7 @@ public class SearchResultPage extends AbstractSafeParcelable {
 
     /** Default constructor for {@link SearchResultPage}. */
     public SearchResultPage() {
-        mNextPageToken = 0;
+        mNextPageToken = EMPTY_PAGE_TOKEN;
         mResults = Collections.emptyList();
     }
 

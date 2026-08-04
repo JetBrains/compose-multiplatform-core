@@ -41,50 +41,39 @@ import kotlin.math.ceil
 private const val DefaultCacheSize = 8
 
 /**
- * TextMeasurer is responsible for measuring a text in its entirety so that it's ready to be drawn.
+ * Measures text to prepare it for drawing.
  *
- * A TextMeasurer instance should be created via `androidx.compose.ui.rememberTextMeasurer` in a
- * Composable context to use fallback values from default composition locals.
+ * Create instances using [rememberTextMeasurer] in Composable contexts to inherit default
+ * composition locals.
  *
- * Text layout is a computationally expensive task. Therefore, this class holds an internal LRU
- * Cache of layout input and output pairs to optimize the repeated measure calls that use the same
- * input parameters.
+ * Caches layout results internally using an LRU cache to optimize repeated measure calls.
  *
- * Although most input parameters have a direct influence on layout, some parameters like color,
- * brush, and shadow can be ignored during layout and set at the end. Using TextMeasurer with
- * appropriate [cacheSize] should provide significant improvements while animating
- * non-layout-affecting attributes like color.
+ * Reuses the cached layout when changing only draw-affected parameters:
+ * - [TextStyle.color] or [TextStyle.brush]
+ * - [TextStyle.shadow]
+ * - [TextStyle.textDecoration]
+ * - [TextStyle.drawStyle]
  *
- * Moreover, if there is a need to render multiple static texts, you can provide the number of texts
- * by [cacheSize] and their layouts should be cached for repeating calls. Be careful that even a
- * slight change in input parameters like fontSize, maxLines, an additional character in text would
- * create a distinct set of input parameters. As a result, a new layout would be calculated and a
- * new set of input and output pair would be placed in LRU Cache, possibly evicting an earlier
- * result.
+ * This makes animating draw-only parameters highly efficient.
  *
- * [FontFamily.Resolver], [LayoutDirection], and [Density] are required parameters to construct a
- * text layout but they have no safe fallbacks outside of composition. These parameters must be
- * provided during the construction of a TextMeasurer to be used as default values when they are
- * skipped in [TextMeasurer.measure] call.
+ * Layout-affecting changes like text, font size, or constraints calculate a new layout. These new
+ * layouts may evict older entries once the cache reaches capacity.
  *
- * @param defaultFontFamilyResolver to be used to load fonts given in [TextStyle] and [SpanStyle]s
- *   in [AnnotatedString].
- * @param defaultLayoutDirection layout direction of the measurement environment.
- * @param defaultDensity density of the measurement environment. Density controls the scaling factor
- *   for fonts.
- * @param cacheSize Capacity of internal cache inside TextMeasurer. Size unit is the number of
- *   unique text layout inputs that are measured. Value of this parameter highly depends on the
- *   consumer use case. Provide a cache size that is in line with how many distinct text layouts are
- *   going to be calculated by this measurer repeatedly. If you are animating font attributes, or
- *   any other layout affecting input, cache can be skipped because most repeated measure calls
- *   would miss the cache.
+ * Provide [FontFamily.Resolver], [LayoutDirection], and [Density] during construction.
+ * [TextMeasurer] uses these as defaults when skipped in [measure] calls.
+ *
+ * @param defaultFontFamilyResolver resolver to load fonts defined in styles
+ * @param defaultLayoutDirection layout direction of the measurement environment
+ * @param defaultDensity density of the measurement environment, used for scaling fonts
+ * @param cacheSize sets the maximum number of cached layouts. Match this to the number of distinct
+ *   layouts calculated repeatedly
  */
 @Immutable
-class TextMeasurer(
+public class TextMeasurer(
     private val defaultFontFamilyResolver: FontFamily.Resolver,
     private val defaultDensity: Density,
     private val defaultLayoutDirection: LayoutDirection,
-    private val cacheSize: Int = DefaultCacheSize
+    private val cacheSize: Int = DefaultCacheSize,
 ) {
     private val textLayoutCache: TextLayoutCache? =
         if (cacheSize > 0) {
@@ -138,7 +127,7 @@ class TextMeasurer(
      * @sample androidx.compose.ui.text.samples.measureTextAnnotatedString
      */
     @Stable
-    fun measure(
+    public fun measure(
         text: AnnotatedString,
         style: TextStyle = TextStyle.Default,
         overflow: TextOverflow = TextOverflow.Clip,
@@ -149,7 +138,7 @@ class TextMeasurer(
         layoutDirection: LayoutDirection = this.defaultLayoutDirection,
         density: Density = this.defaultDensity,
         fontFamilyResolver: FontFamily.Resolver = this.defaultFontFamilyResolver,
-        skipCache: Boolean = false
+        skipCache: Boolean = false,
     ): TextLayoutResult {
         val requestedTextLayoutInput =
             TextLayoutInput(
@@ -162,7 +151,7 @@ class TextMeasurer(
                 density,
                 layoutDirection,
                 fontFamilyResolver,
-                constraints
+                constraints,
             )
 
         val cacheResult =
@@ -177,9 +166,9 @@ class TextMeasurer(
                     constraints.constrain(
                         IntSize(
                             cacheResult.multiParagraph.width.ceilToInt(),
-                            cacheResult.multiParagraph.height.ceilToInt()
+                            cacheResult.multiParagraph.height.ceilToInt(),
                         )
-                    )
+                    ),
             )
         } else {
             layout(requestedTextLayoutInput).also {
@@ -231,7 +220,7 @@ class TextMeasurer(
      * @sample androidx.compose.ui.text.samples.measureTextStringWithConstraints
      */
     @Stable
-    fun measure(
+    public fun measure(
         text: String,
         style: TextStyle = TextStyle.Default,
         overflow: TextOverflow = TextOverflow.Clip,
@@ -241,7 +230,7 @@ class TextMeasurer(
         layoutDirection: LayoutDirection = this.defaultLayoutDirection,
         density: Density = this.defaultDensity,
         fontFamilyResolver: FontFamily.Resolver = this.defaultFontFamilyResolver,
-        skipCache: Boolean = false
+        skipCache: Boolean = false,
     ): TextLayoutResult {
         return measure(
             text = AnnotatedString(text),
@@ -253,7 +242,7 @@ class TextMeasurer(
             layoutDirection = layoutDirection,
             density = density,
             fontFamilyResolver = fontFamilyResolver,
-            skipCache = skipCache
+            skipCache = skipCache,
         )
     }
 
@@ -273,7 +262,8 @@ class TextMeasurer(
                         style = resolveDefaults(style, layoutDirection),
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
-                        placeholders = placeholders
+                        placeholders = placeholders,
+                        softWrap = softWrap,
                     )
 
                 val minWidth = constraints.minWidth
@@ -328,11 +318,11 @@ class TextMeasurer(
                                 minWidth = 0,
                                 maxWidth = width,
                                 minHeight = 0,
-                                maxHeight = constraints.maxHeight
+                                maxHeight = constraints.maxHeight,
                             ),
                         // This is a fallback behavior for ellipsis. Native
                         maxLines = finalMaxLines,
-                        overflow = overflow
+                        overflow = overflow,
                     )
 
                 return TextLayoutResult(
@@ -342,9 +332,9 @@ class TextMeasurer(
                         constraints.constrain(
                             IntSize(
                                 ceil(multiParagraph.width).toInt(),
-                                ceil(multiParagraph.height).toInt()
+                                ceil(multiParagraph.height).toInt(),
                             )
-                        )
+                        ),
                 )
             }
     }

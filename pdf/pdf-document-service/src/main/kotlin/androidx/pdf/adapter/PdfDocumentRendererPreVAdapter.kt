@@ -42,10 +42,8 @@ internal class PdfDocumentRendererPreVAdapter(pfd: ParcelFileDescriptor, passwor
         PdfRendererPreV(pfd, /* params= */ LoadParams.Builder().setPassword(password).build())
     private val pageCache: PdfPageCache = PdfPageCache()
 
-    override val isLinearized: Boolean
-        get() =
-            pdfRendererPreV.documentLinearizationType ==
-                PdfRendererPreV.DOCUMENT_LINEARIZED_TYPE_LINEARIZED
+    override val linearizationStatus: Int
+        get() = pdfRendererPreV.documentLinearizationType
 
     override val pageCount: Int
         get() = pdfRendererPreV.pageCount
@@ -67,11 +65,18 @@ internal class PdfDocumentRendererPreVAdapter(pfd: ParcelFileDescriptor, passwor
             page?.close()
         } else {
             removedPage.close()
+            if (page != removedPage) {
+                page?.close()
+            }
         }
     }
 
     override fun close() {
         pageCache.clearAll()
         pdfRendererPreV.close()
+    }
+
+    override fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean) {
+        pdfRendererPreV.write(destination, removePasswordProtection)
     }
 }

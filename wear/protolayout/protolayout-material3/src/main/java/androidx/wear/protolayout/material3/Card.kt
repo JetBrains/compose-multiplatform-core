@@ -63,6 +63,12 @@ import androidx.wear.protolayout.modifiers.padding
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
  *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
+ *
  * @param onClick Associated [Clickable] for click events. When the card is clicked it will fire the
  *   associated action.
  * @param title A slot for displaying the title of the card, expected to be one or two lines of
@@ -102,7 +108,6 @@ import androidx.wear.protolayout.modifiers.padding
  *   recommended.
  * @sample androidx.wear.protolayout.material3.samples.titleCardSample
  */
-// TODO: b/346958146 - link Card visuals in DAC
 public fun MaterialScope.titleCard(
     onClick: Clickable,
     title: (MaterialScope.() -> LayoutElement),
@@ -121,7 +126,7 @@ public fun MaterialScope.titleCard(
     style: TitleCardStyle = defaultTitleCardStyle(),
     contentPadding: Padding = style.innerPadding,
     @HorizontalAlignment
-    horizontalAlignment: Int = if (time == null) HORIZONTAL_ALIGN_CENTER else HORIZONTAL_ALIGN_START
+    horizontalAlignment: Int = if (time == null) HORIZONTAL_ALIGN_CENTER else HORIZONTAL_ALIGN_START,
 ): LayoutElement =
     card(
         onClick = onClick,
@@ -129,46 +134,49 @@ public fun MaterialScope.titleCard(
         width = expand(),
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForTitleCard(
             title =
                 withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.titleTypography,
-                                color = colors.titleColor,
-                                maxLines = 2,
-                                alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                            )
-                    )
-                    .title(),
+                    defaultTextElementStyle =
+                        TextElementStyle(
+                            typography = style.titleTypography,
+                            color = colors.titleColor,
+                            maxLines = 2,
+                            alignment = horizontalAlignment.horizontalAlignToTextAlign(),
+                        )
+                ) {
+                    title()
+                },
             content =
                 content?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.contentTypography,
-                                    color = colors.contentColor,
-                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.contentTypography,
+                                color = colors.contentColor,
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
+                            )
+                    ) {
+                        it()
+                    }
                 },
             time =
                 time?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.timeTypography,
-                                    color = colors.timeColor,
-                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.timeTypography,
+                                color = colors.timeColor,
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
+                            )
+                    ) {
+                        it()
+                    }
                 },
             horizontalAlignment = horizontalAlignment,
-            style = style
+            style = style,
         )
     }
 
@@ -190,6 +198,12 @@ public fun MaterialScope.titleCard(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the card is clicked it will fire the
  *   associated action.
@@ -231,7 +245,6 @@ public fun MaterialScope.titleCard(
  *   card's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.appCardSample
  */
-// TODO: b/346958146 - link Card visuals in DAC
 public fun MaterialScope.appCard(
     onClick: Clickable,
     title: (MaterialScope.() -> LayoutElement),
@@ -258,68 +271,73 @@ public fun MaterialScope.appCard(
         width = expand(),
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForAppCard(
             title =
                 withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.titleTypography,
-                                color = colors.titleColor,
-                                alignment = TEXT_ALIGN_START,
-                                maxLines = 2,
-                            )
-                    )
-                    .title(),
+                    defaultTextElementStyle =
+                        TextElementStyle(
+                            typography = style.titleTypography,
+                            color = colors.titleColor,
+                            alignment = TEXT_ALIGN_START,
+                            maxLines = 2,
+                        )
+                ) {
+                    title()
+                },
             content =
                 content?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.contentTypography,
-                                    color = colors.contentColor,
-                                    alignment = TEXT_ALIGN_START
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.contentTypography,
+                                color = colors.contentColor,
+                                alignment = TEXT_ALIGN_START,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             time =
                 time?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.timeTypography,
-                                    color = colors.timeColor,
-                                    alignment = TEXT_ALIGN_END
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.timeTypography,
+                                color = colors.timeColor,
+                                alignment = TEXT_ALIGN_END,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             label =
                 label?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.labelTypography,
-                                    color = colors.labelColor,
-                                    alignment = TEXT_ALIGN_START
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.labelTypography,
+                                color = colors.labelColor,
+                                alignment = TEXT_ALIGN_START,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             avatar =
                 avatar?.let {
                     withStyle(
-                            defaultAvatarImageStyle =
-                                AvatarImageStyle(
-                                    width = style.avatarSize.toDp(),
-                                    height = style.avatarSize.toDp(),
-                                )
-                        )
-                        .it()
+                        defaultAvatarImageStyle =
+                            AvatarImageStyle(
+                                width = style.avatarSize.toDp(),
+                                height = style.avatarSize.toDp(),
+                            )
+                    ) {
+                        it()
+                    }
                 },
-            style = style
+            style = style,
         )
     }
 
@@ -333,6 +351,12 @@ public fun MaterialScope.appCard(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the card is clicked it will fire the
  *   associated action.
@@ -377,7 +401,6 @@ public fun MaterialScope.appCard(
  *   card's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.dataCardSample
  */
-// TODO: b/346958146 - link Card visuals in DAC
 public fun MaterialScope.textDataCard(
     onClick: Clickable,
     title: (MaterialScope.() -> LayoutElement),
@@ -403,39 +426,42 @@ public fun MaterialScope.textDataCard(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForDataCard(
             title =
                 withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.titleTypography,
-                                color = colors.titleColor
-                            )
-                    )
-                    .title(),
+                    defaultTextElementStyle =
+                        TextElementStyle(
+                            typography = style.titleTypography,
+                            color = colors.titleColor,
+                        )
+                ) {
+                    title()
+                },
             content =
                 content?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.contentTypography,
-                                    color = colors.contentColor
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.contentTypography,
+                                color = colors.contentColor,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             secondaryText =
                 secondaryText?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.secondaryLabelTypography,
-                                    color = colors.secondaryTextColor
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.secondaryLabelTypography,
+                                color = colors.secondaryTextColor,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             style = style,
         )
@@ -458,6 +484,12 @@ public fun MaterialScope.textDataCard(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the card is clicked it will fire the
  *   associated action.
@@ -504,7 +536,6 @@ public fun MaterialScope.textDataCard(
  *   card's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.dataCardSample
  */
-// TODO: b/346958146 - link Card visuals in DAC
 public fun MaterialScope.iconDataCard(
     onClick: Clickable,
     title: (MaterialScope.() -> LayoutElement),
@@ -531,43 +562,46 @@ public fun MaterialScope.iconDataCard(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForDataCard(
             title =
                 withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.titleTypography,
-                                color = colors.titleColor
-                            )
-                    )
-                    .title(),
+                    defaultTextElementStyle =
+                        TextElementStyle(
+                            typography = style.titleTypography,
+                            color = colors.titleColor,
+                        )
+                ) {
+                    title()
+                },
             content =
                 content?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.contentTypography,
-                                    color = colors.contentColor
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.contentTypography,
+                                color = colors.contentColor,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             secondaryIcon =
                 secondaryIcon?.let {
                     withStyle(
-                            defaultIconStyle =
-                                IconStyle(
-                                    width = style.iconSize.toDp(),
-                                    height = style.iconSize.toDp(),
-                                    tintColor = colors.secondaryIconColor
-                                )
-                        )
-                        .it()
+                        defaultIconStyle =
+                            IconStyle(
+                                width = style.iconSize.toDp(),
+                                height = style.iconSize.toDp(),
+                                tintColor = colors.secondaryIconColor,
+                            )
+                    ) {
+                        it()
+                    }
                 },
             style = style,
-            titleContentPlacement = titleContentPlacement
+            titleContentPlacement = titleContentPlacement,
         )
     }
 
@@ -582,6 +616,12 @@ public fun MaterialScope.iconDataCard(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the card is clicked it will fire the
  *   associated action.
@@ -622,7 +662,6 @@ public fun MaterialScope.iconDataCard(
  *   card's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.graphicDataCardSample
  */
-// TODO: b/346958146 - link Card visuals in DAC
 public fun MaterialScope.graphicDataCard(
     onClick: Clickable,
     graphic: (MaterialScope.() -> LayoutElement),
@@ -641,41 +680,42 @@ public fun MaterialScope.graphicDataCard(
         modifier = modifier.background(colors.backgroundColor).clip(shape),
         width = expand(),
         height = height,
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         buildContentForGraphicDataCard(
             title =
                 withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.titleTypography,
-                                color = colors.titleColor,
-                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
-                            )
-                    )
-                    .title(),
+                    defaultTextElementStyle =
+                        TextElementStyle(
+                            typography = style.titleTypography,
+                            color = colors.titleColor,
+                            alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
+                        )
+                ) {
+                    title()
+                },
             content =
                 content?.let {
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.contentTypography,
-                                    color = colors.contentColor,
-                                    alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .it()
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.contentTypography,
+                                color = colors.contentColor,
+                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
+                            )
+                    ) {
+                        it()
+                    }
                 },
             graphic =
                 withStyle(
-                        defaultProgressIndicatorStyle =
-                            ProgressIndicatorStyle(color = colors.graphicProgressIndicatorColors),
-                        defaultIconStyle =
-                            IconStyle(
-                                tintColor = colors.graphicIconColor ?: defaultIconStyle.tintColor
-                            )
-                    )
-                    .graphic(),
+                    defaultProgressIndicatorStyle =
+                        ProgressIndicatorStyle(color = colors.graphicProgressIndicatorColors),
+                    defaultIconStyle =
+                        IconStyle(tintColor = colors.graphicIconColor ?: defaultIconStyle.tintColor),
+                ) {
+                    graphic()
+                },
             style = style,
             height = height,
             // Only support start and end align.
@@ -687,7 +727,7 @@ public fun MaterialScope.graphicDataCard(
                     HORIZONTAL_ALIGN_START
                 } else {
                     horizontalAlignment
-                }
+                },
         )
     }
 
@@ -705,6 +745,12 @@ public fun MaterialScope.graphicDataCard(
  *
  * It is highly recommended to set its height to fill the available space, with [expand] for optimal
  * experience across different screen sizes.
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the card is clicked it will fire the
  *   associated action.
@@ -728,7 +774,6 @@ public fun MaterialScope.graphicDataCard(
  * @param content The inner content to be put inside of this card.
  * @sample androidx.wear.protolayout.material3.samples.cardSample
  */
-// TODO: b/346958146 - link Card visuals in DAC
 public fun MaterialScope.card(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
@@ -736,7 +781,7 @@ public fun MaterialScope.card(
     height: ContainerDimension = wrapWithMinTapTargetDimension(),
     backgroundContent: (MaterialScope.() -> LayoutElement)? = null,
     contentPadding: Padding = padding(DEFAULT_CONTENT_PADDING),
-    content: (MaterialScope.() -> LayoutElement)
+    content: (MaterialScope.() -> LayoutElement),
 ): LayoutElement =
     componentContainer(
         onClick = onClick,
@@ -746,5 +791,5 @@ public fun MaterialScope.card(
         backgroundContent = backgroundContent,
         contentPadding = contentPadding,
         metadataTag = METADATA_TAG,
-        content = content
+        content = content,
     )

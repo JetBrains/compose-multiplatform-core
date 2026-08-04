@@ -17,11 +17,13 @@
 package androidx.compose.ui.text.font
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.text.font.FontVariation.Settings
+import androidx.compose.ui.text.font.FontVariation.grade
+import androidx.compose.ui.text.font.FontVariation.italic
 import androidx.compose.ui.text.internal.requirePrecondition
 import androidx.compose.ui.text.internal.requirePreconditionNotNull
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.util.fastAny
 
 /**
  * Set font variation settings.
@@ -29,17 +31,21 @@ import androidx.compose.ui.util.fastAny
  * To learn more about the font variation settings, see the list supported by
  * [fonts.google.com](https://fonts.google.com/variablefonts#axis-definitions).
  */
-object FontVariation {
+public object FontVariation {
+    /** An empty [Settings] instance. */
+    public val Empty: Settings = Settings(emptyList())
+
     /**
      * A collection of settings to apply to a single font.
      *
      * Settings must be unique on [Setting.axisName]
      */
     @Immutable
-    class Settings(vararg settings: Setting) {
+    public class Settings
+    internal constructor(
         /** All settings, unique by [FontVariation.Setting.axisName] */
-        val settings: List<Setting>
-
+        public val settings: List<Setting>
+    ) {
         /**
          * True if density is required to resolve any of these settings
          *
@@ -48,22 +54,58 @@ object FontVariation {
         internal val needsDensity: Boolean
 
         init {
-            this.settings =
-                ArrayList(
-                    settings
-                        .groupBy { it.axisName }
-                        .flatMap { (key, value) ->
-                            require(value.size == 1) {
-                                "'$key' must be unique. Actual [ [${value.joinToString()}]"
-                            }
-                            value
-                        }
-                )
-
-            needsDensity = this.settings.fastAny { it.needsDensity }
+            validateUniqueAxes(settings)
+            var needsDensity = false
+            for (i in 0 until settings.size) {
+                needsDensity = needsDensity || settings[i].needsDensity
+            }
+            this.needsDensity = needsDensity
         }
 
-        override fun equals(other: Any?): Boolean {
+        /**
+         * A collection of settings to apply to a single font.
+         *
+         * Settings must be unique on [Setting.axisName]
+         */
+        public constructor(vararg settings: Setting) : this(settings.asList())
+
+        /**
+         * Merges the given [other] settings into this [Settings] instance.
+         *
+         * If there are duplicate axes, settings in [other] will override settings in this instance.
+         *
+         * @sample androidx.compose.ui.text.samples.FontVariationSettingsMergeSettingsSample
+         * @param other The settings to merge into this instance. If `null`, this instance is
+         *   returned.
+         */
+        public fun merge(other: Settings?): Settings {
+            if (other == null || other.settings.isEmpty()) return this
+            if (this.settings.isEmpty()) return other
+            return Settings(mergeLists(settings, other.settings))
+        }
+
+        /**
+         * Merges the given [overrides] into this [Settings] instance.
+         *
+         * If there are duplicate axes, settings in [overrides] will override settings in this
+         * instance. Note that [overrides] itself must not contain duplicate axes.
+         *
+         * @sample androidx.compose.ui.text.samples.FontVariationSettingsMergeVarargSample
+         * @param overrides The individual settings to merge into this instance.
+         * @throws IllegalArgumentException if [overrides] contains duplicate axes.
+         */
+        public fun merge(vararg overrides: Setting): Settings {
+            if (overrides.isEmpty()) return this
+
+            val overridesList = overrides.asList()
+            // Validate overrides
+            validateUniqueAxes(overridesList)
+
+            if (this.settings.isEmpty()) return Settings(overridesList)
+            return Settings(mergeLists(settings, overridesList))
+        }
+
+        public override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Settings) return false
 
@@ -72,14 +114,18 @@ object FontVariation {
             return true
         }
 
-        override fun hashCode(): Int {
+        public override fun hashCode(): Int {
             return settings.hashCode()
+        }
+
+        public override fun toString(): String {
+            return "Settings(settings=$settings)"
         }
     }
 
     /** Represents a single point in a variation, such as 0.7 or 100 */
     @Immutable
-    sealed interface Setting {
+    public sealed interface Setting {
         /**
          * Convert a value to a final value for use as a font variation setting.
          *
@@ -87,17 +133,17 @@ object FontVariation {
          *
          * @param density to resolve from Compose types to feature-specific ranges.
          */
-        fun toVariationValue(density: Density?): Float
+        public fun toVariationValue(density: Density?): Float
 
         /**
          * True if this setting requires density to resolve
          *
          * When false, may toVariationValue may be called with null or any Density
          */
-        val needsDensity: Boolean
+        public val needsDensity: Boolean
 
         /** The font variation axis, such as 'wdth' or 'ital' */
-        val axisName: String
+        public val axisName: String
     }
 
     @Immutable
@@ -207,7 +253,7 @@ object FontVariation {
      * @param name axis name, must be 4 characters
      * @param value value for axis, not validated and directly passed to font
      */
-    fun Setting(name: String, value: Float): Setting {
+    public fun Setting(name: String, value: Float): Setting {
         requirePrecondition(name.length == 4) {
             "Name must be exactly four characters. Actual: '$name'"
         }
@@ -229,7 +275,7 @@ object FontVariation {
      *
      * @param value [0.0f, 1.0f]
      */
-    fun italic(value: Float): Setting {
+    public fun italic(value: Float): Setting {
         requirePrecondition(value in 0.0f..1.0f) { "'ital' must be in 0.0f..1.0f. Actual: $value" }
         return SettingFloat("ital", value)
     }
@@ -251,7 +297,7 @@ object FontVariation {
      *
      * @param textSize font-size at the expected display, must be in sp
      */
-    fun opticalSizing(textSize: TextUnit): Setting {
+    public fun opticalSizing(textSize: TextUnit): Setting {
         requirePrecondition(textSize.isSp) { "'opsz' must be provided in sp units" }
         return SettingTextUnit("opsz", textSize)
     }
@@ -266,7 +312,7 @@ object FontVariation {
      *
      * @param value -90f to 90f, represents an angle
      */
-    fun slant(value: Float): Setting {
+    public fun slant(value: Float): Setting {
         requirePrecondition(value in -90f..90f) { "'slnt' must be in -90f..90f. Actual: $value" }
         return SettingFloat("slnt", value)
     }
@@ -282,7 +328,7 @@ object FontVariation {
      *
      * @param value > 0.0f represents the width
      */
-    fun width(value: Float): Setting {
+    public fun width(value: Float): Setting {
         requirePrecondition(value > 0.0f) { "'wdth' must be strictly > 0.0f. Actual: $value" }
         return SettingFloat("wdth", value)
     }
@@ -307,7 +353,7 @@ object FontVariation {
      *
      * @param value weight, in 1..1000
      */
-    fun weight(value: Int): Setting {
+    public fun weight(value: Int): Setting {
         requirePrecondition(value in 1..1000) {
             "'wght' value must be in [1, 1000]. Actual: $value"
         }
@@ -329,7 +375,7 @@ object FontVariation {
      *
      * @param value grade, in -1000..1000
      */
-    fun grade(value: Int): Setting {
+    public fun grade(value: Int): Setting {
         requirePrecondition(value in -1000..1000) { "'GRAD' must be in -1000..1000" }
         return SettingInt("GRAD", value)
     }
@@ -343,7 +389,45 @@ object FontVariation {
      * @return settings that configure [FontWeight] and [FontStyle] on a font that supports 'wght'
      *   and 'ital'
      */
-    fun Settings(weight: FontWeight, style: FontStyle, vararg settings: Setting): Settings {
+    public fun Settings(weight: FontWeight, style: FontStyle, vararg settings: Setting): Settings {
         return Settings(weight(weight.weight), italic(style.value.toFloat()), *settings)
+    }
+
+    private fun mergeLists(base: List<Setting>, overrides: List<Setting>): List<Setting> {
+        val result = ArrayList<Setting>(base.size + overrides.size)
+        result.addAll(base)
+        for (i in 0 until overrides.size) {
+            val override = overrides[i]
+            var index = -1
+            for (j in 0 until result.size) {
+                if (result[j].axisName == override.axisName) {
+                    index = j
+                    break
+                }
+            }
+            if (index >= 0) {
+                result[index] = override
+            } else {
+                result.add(override)
+            }
+        }
+        return result
+    }
+
+    private fun validateUniqueAxes(settings: List<Setting>) {
+        for (i in 0 until settings.size) {
+            val name = settings[i].axisName
+            for (j in (i + 1) until settings.size) {
+                if (name == settings[j].axisName) {
+                    val duplicates = ArrayList<Setting>()
+                    for (k in 0 until settings.size) {
+                        if (settings[k].axisName == name) {
+                            duplicates.add(settings[k])
+                        }
+                    }
+                    requirePrecondition(false) { "'$name' must be unique. Actual [$duplicates]" }
+                }
+            }
+        }
     }
 }

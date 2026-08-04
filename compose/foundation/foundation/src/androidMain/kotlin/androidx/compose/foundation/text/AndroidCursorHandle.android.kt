@@ -30,9 +30,9 @@ import androidx.compose.foundation.text.selection.createHandleImage
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.semantics.semantics
@@ -41,14 +41,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 
 private const val Sqrt2 = 1.41421356f
-internal val CursorHandleHeight = 25.dp
-internal val CursorHandleWidth = CursorHandleHeight * 2f / (1 + Sqrt2)
+internal val CursorHandleHeight
+    get() = 25.dp
+internal val CursorHandleWidth
+    get() = CursorHandleHeight * 2f / (1 + Sqrt2)
 
 @Composable
 internal actual fun CursorHandle(
     offsetProvider: OffsetProvider,
     modifier: Modifier,
-    minTouchTargetSize: DpSize
+    minTouchTargetSize: DpSize,
 ) {
     val finalModifier =
         modifier.semantics {
@@ -66,9 +68,9 @@ internal actual fun CursorHandle(
                 modifier =
                     finalModifier.requiredSizeIn(
                         minWidth = minTouchTargetSize.width,
-                        minHeight = minTouchTargetSize.height
+                        minHeight = minTouchTargetSize.height,
                     ),
-                contentAlignment = Alignment.TopCenter
+                contentAlignment = Alignment.TopCenter,
             ) {
                 DefaultCursorHandle()
             }
@@ -81,26 +83,25 @@ internal actual fun CursorHandle(
 @Composable
 /*@VisibleForTesting*/
 private fun DefaultCursorHandle(modifier: Modifier = Modifier) {
-    Spacer(modifier.size(CursorHandleWidth, CursorHandleHeight).drawCursorHandle())
+    Spacer(
+        modifier
+            .size(CursorHandleWidth, CursorHandleHeight)
+            .drawCursorHandle(LocalTextSelectionColors.current.handleColor)
+    )
 }
 
-private fun Modifier.drawCursorHandle() = composed {
-    val handleColor = LocalTextSelectionColors.current.handleColor
-    this.then(
-        Modifier.drawWithCache {
-            // Cursor handle is the same as a SelectionHandle rotated 45 degrees clockwise.
-            val radius = size.width / 2f
-            val imageBitmap = createHandleImage(radius = radius)
-            val colorFilter = ColorFilter.tint(handleColor)
-            onDrawWithContent {
-                drawContent()
-                withTransform({
-                    translate(left = radius)
-                    rotate(degrees = 45f, pivot = Offset.Zero)
-                }) {
-                    drawImage(image = imageBitmap, colorFilter = colorFilter)
-                }
-            }
+private fun Modifier.drawCursorHandle(handleColor: Color) = drawWithCache {
+    // Cursor handle is the same as a SelectionHandle rotated 45 degrees clockwise.
+    val radius = size.width / 2f
+    val imageBitmap = createHandleImage(radius = radius)
+    val colorFilter = ColorFilter.tint(handleColor)
+    onDrawWithContent {
+        drawContent()
+        withTransform({
+            translate(left = radius)
+            rotate(degrees = 45f, pivot = Offset.Zero)
+        }) {
+            drawImage(image = imageBitmap, colorFilter = colorFilter)
         }
-    )
+    }
 }

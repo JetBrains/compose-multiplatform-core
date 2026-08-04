@@ -19,7 +19,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher_adaptive"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
@@ -33,6 +33,54 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".DeepLinkActivity"
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:exported="true"
+            android:label="DeepLinkActivity">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="app"
+                    android:host="androidx.wear.compose.navigation.demos" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SimpleNavHostActivity"
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:label="SimpleNavHostActivity">
+        </activity>
+
+        <activity
+            android:name=".NavHostWithNamedArgumentActivity"
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:label="NavHostWithNamedArgumentActivity">
+        </activity>
+
+        <activity
+            android:name=".ListDetailNavDisplaySampleActivity"
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:label="ListDetailNavDisplaySampleActivity">
+        </activity>
+
+        <activity
+            android:name=".NavDisplayWithOnBackBehaviorSampleActivity"
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:label="NavDisplayWithOnBackBehaviorSampleActivity">
+        </activity>
+
+        <activity
+            android:name="androidx.wear.compose.material3.demos.OneHandedGestureSwipeDismissableNavHostDemoActivity"
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:label="OneHandedGestureSwipeDismissableNavHostDemoActivity">
+        </activity>
+
     </application>
 
     <uses-feature android:name="android.hardware.type.watch"/>

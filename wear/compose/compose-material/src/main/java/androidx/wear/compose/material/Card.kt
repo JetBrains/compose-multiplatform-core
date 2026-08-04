@@ -162,11 +162,11 @@ public fun Card(
  *
  * @param onClick Will be called when the user clicks the card
  * @param appName A slot for displaying the application name, expected to be a single line of start
- *   aligned text of [Typography.title3]
+ *   aligned text
  * @param time A slot for displaying the time relevant to the contents of the card, expected to be a
  *   short piece of end aligned text.
  * @param title A slot for displaying the title of the card, expected to be one or two lines of
- *   start aligned text of [Typography.button]
+ *   start aligned
  * @param modifier Modifier to be applied to the card
  * @param enabled Controls the enabled state of the card. When false, this card will not be
  *   clickable and there will be no ripple effect on click. Wear cards do not have any specific
@@ -213,7 +213,7 @@ public fun AppCard(
         appName = {
             CompositionLocalProvider(
                 LocalContentColor provides appColor,
-                LocalTextStyle provides MaterialTheme.typography.caption1
+                LocalTextStyle provides MaterialTheme.typography.caption1,
             ) {
                 appName()
             }
@@ -229,11 +229,11 @@ public fun AppCard(
         title = {
             CompositionLocalProvider(
                 LocalContentColor provides titleColor,
-                LocalTextStyle provides MaterialTheme.typography.title3
+                LocalTextStyle provides MaterialTheme.typography.title3,
             ) {
                 title()
             }
-        }
+        },
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
@@ -259,7 +259,7 @@ public fun AppCard(
  * [Image].
  *
  * If the content is text it can be single or multiple line and is expected to be Top and Start
- * aligned and of type of [Typography.body1].
+ * aligned.
  *
  * Overall the [title] and [content] text should be no more than 5 rows of text combined.
  *
@@ -279,7 +279,6 @@ public fun AppCard(
  *
  * @param onClick Will be called when the user clicks the card
  * @param title A slot for displaying the title of the card, expected to be one or two lines of text
- *   of [Typography.button]
  * @param modifier Modifier to be applied to the card
  * @param enabled Controls the enabled state of the card. When false, this card will not be
  *   clickable and there will be no ripple effect on click. Wear cards do not have any specific
@@ -323,7 +322,7 @@ public fun TitleCard(
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 CompositionLocalProvider(
                     LocalContentColor provides titleColor,
@@ -377,12 +376,12 @@ public object CardDefaults {
             MaterialTheme.colors.onSurfaceVariant
                 .copy(alpha = 0.20f)
                 .compositeOver(MaterialTheme.colors.background),
-        gradientDirection: LayoutDirection = LocalLayoutDirection.current
+        gradientDirection: LayoutDirection = LocalLayoutDirection.current,
     ): Painter {
         return BrushPainter(
             FortyFiveDegreeLinearGradient(
                 colors = listOf(startBackgroundColor, endBackgroundColor),
-                ltr = gradientDirection == LayoutDirection.Ltr
+                ltr = gradientDirection == LayoutDirection.Ltr,
             )
         )
     }
@@ -408,13 +407,13 @@ public object CardDefaults {
                 colors =
                     listOf(
                         MaterialTheme.colors.surface.copy(alpha = 1.0f),
-                        MaterialTheme.colors.surface.copy(alpha = 0f)
+                        MaterialTheme.colors.surface.copy(alpha = 0f),
                     )
-            )
+            ),
     ): Painter {
         return ImageWithScrimPainter(
             imagePainter = backgroundImagePainter,
-            brush = backgroundImageScrimBrush
+            brush = backgroundImageScrimBrush,
         )
     }
 
@@ -427,7 +426,7 @@ public object CardDefaults {
             start = CardHorizontalPadding,
             top = CardVerticalPadding,
             end = CardHorizontalPadding,
-            bottom = CardVerticalPadding
+            bottom = CardVerticalPadding,
         )
 
     /** The default size of the app icon/image when used inside a [AppCard]. */
@@ -441,7 +440,7 @@ internal constructor(
     private val colors: List<Color>,
     private val stops: List<Float>? = null,
     private val tileMode: TileMode = TileMode.Clamp,
-    private val ltr: Boolean
+    private val ltr: Boolean,
 ) : ShaderBrush() {
 
     override fun createShader(size: Size): Shader {
@@ -453,7 +452,7 @@ internal constructor(
             colorStops = stops,
             from = from,
             to = to,
-            tileMode = tileMode
+            tileMode = tileMode,
         )
     }
 

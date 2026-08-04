@@ -19,12 +19,14 @@
 
 package androidx.compose.ui.text.googlefonts
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.ArrayRes
 import androidx.annotation.WorkerThread
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.AndroidFont
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontLoadingStrategy
@@ -49,6 +51,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 /**
  * Load a font from Google Fonts via Downloadable Fonts.
  *
+ * This function allows specifying a custom font provider. For most common use cases with Google
+ * Play Services, consider using the overload that omits the [fontProvider] parameter.
+ *
  * To learn more about the features supported by Google Fonts, see
  * [Get Started with the Google Fonts for Android](https://developers.google.com/fonts/docs/android)
  *
@@ -57,20 +62,108 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * @param weight font weight to load
  * @param style italic or normal font
  */
-// contains Google in name because this function provides integration with fonts.google.com
+@Deprecated(
+    "Use the new Font overload without [GoogleFont.Provider]",
+    ReplaceWith("Font(googleFont, fontProvider, weight, style, variationSettings)"),
+    level = DeprecationLevel.HIDDEN,
+)
 @Suppress("MentionsGoogle")
-fun Font(
+public fun Font(
     googleFont: GoogleFont,
     fontProvider: GoogleFont.Provider,
-    weight: FontWeight = FontWeight.W400,
-    style: FontStyle = FontStyle.Normal
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+): Font {
+    return Font(
+        googleFont = googleFont,
+        fontProvider = fontProvider,
+        weight = weight,
+        style = style,
+        variationSettings = FontVariation.Settings(),
+    )
+}
+
+/**
+ * Load a font from Google Fonts via Downloadable Fonts.
+ *
+ * This function allows specifying a custom font provider. For most common use cases with Google
+ * Play Services, consider using the overload that omits the [fontProvider] parameter.
+ *
+ * If the requested [GoogleFont] is available as a variable font in Google Fonts and the non-empty
+ * [FontVariation.Settings] is provided for `variationSettings`, the returned [Font] will be a
+ * variable font. Variable font settings are only applied on API level 26 and above.
+ *
+ * @sample androidx.compose.ui.text.googlefonts.samples.GoogleFontWithCustomFontProviderSample
+ * @sample androidx.compose.ui.text.googlefonts.samples.GoogleFontWithCustomFontProviderAndVariationSettingsSample
+ * @param googleFont A font to load from fonts.google.com
+ * @param fontProvider configuration for downloadable font provider
+ * @param weight font weight to load
+ * @param style italic or normal font
+ * @param variationSettings The [FontVariation.Settings] to apply to the variable font.
+ */
+// contains Google in name because this function provides integration with fonts.google.com
+@Suppress("MentionsGoogle")
+public fun Font(
+    googleFont: GoogleFont,
+    fontProvider: GoogleFont.Provider,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(),
 ): Font {
     return GoogleFontImpl(
         name = googleFont.name,
         fontProvider = fontProvider,
         weight = weight,
         style = style,
-        bestEffort = googleFont.bestEffort
+        // Sorting ensures that containing the same variation axes result in identical cache
+        // identifier regardless of their initial declaration order.
+        fontVariationSettings = variationSettings.sortedByAxis(),
+        bestEffort = googleFont.bestEffort,
+    )
+}
+
+/**
+ * Load a font from Google Fonts via Downloadable Fonts using the default [GoogleFont.Provider].
+ *
+ * If the requested [GoogleFont] is available as a variable font in Google Fonts and the non-empty
+ * [FontVariation.Settings] is provided for `variationSettings`, the returned [Font] will be a
+ * variable font. Variable font settings are only applied on API level 26 and above.
+ *
+ * This overload function simplifies the setup by automatically configuring the
+ * [GoogleFont.Provider] with the default font certificates required to fetch fonts from Google Play
+ * Services.
+ *
+ * @sample androidx.compose.ui.text.googlefonts.samples.GoogleFontWithoutVariationSettingsSample
+ * @sample androidx.compose.ui.text.googlefonts.samples.GoogleFontWithVariationSettingsSample
+ * @param googleFont A font to load from fonts.google.com
+ * @param weight font weight to load
+ * @param style italic or normal font
+ * @param variationSettings The [FontVariation.Settings] to apply to the variable font.
+ */
+// contains Google in name because this function provides integration with fonts.google.com
+@Suppress("MentionsGoogle")
+public fun Font(
+    googleFont: GoogleFont,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
+): Font {
+    val fontProvider =
+        GoogleFont.Provider(
+            providerAuthority = "com.google.android.gms.fonts",
+            providerPackage = "com.google.android.gms",
+            certificates = R.array.com_google_android_gms_fonts_certs,
+        )
+
+    return GoogleFontImpl(
+        name = googleFont.name,
+        fontProvider = fontProvider,
+        weight = weight,
+        style = style,
+        // Sorting ensures that containing the same variation axes result in identical cache
+        // identifier regardless of their initial declaration order.
+        fontVariationSettings = variationSettings.sortedByAxis(),
+        bestEffort = googleFont.bestEffort,
     )
 }
 
@@ -91,7 +184,7 @@ fun Font(
  */
 // contains Google in name because this function provides integration with fonts.google.com
 @Suppress("MentionsGoogle")
-class GoogleFont(val name: String, val bestEffort: Boolean = true) {
+public class GoogleFont(public val name: String, public val bestEffort: Boolean = true) {
     init {
         require(name.isNotEmpty()) { "name cannot be empty" }
     }
@@ -103,12 +196,12 @@ class GoogleFont(val name: String, val bestEffort: Boolean = true) {
      */
     // contains Google in name because this function provides integration with fonts.google.com
     @Suppress("MentionsGoogle")
-    class Provider
+    public class Provider
     private constructor(
         internal val providerAuthority: String,
         internal val providerPackage: String,
         internal val certificates: List<List<ByteArray>>?,
-        @ArrayRes internal val certificatesRes: Int
+        @ArrayRes internal val certificatesRes: Int,
     ) {
 
         /**
@@ -130,10 +223,10 @@ class GoogleFont(val name: String, val bestEffort: Boolean = true) {
          *   list represents one collection of signature hashes. Refer to your font provider's
          *   documentation for these values.
          */
-        constructor(
+        public constructor(
             providerAuthority: String,
             providerPackage: String,
-            certificates: List<List<ByteArray>>
+            certificates: List<List<ByteArray>>,
         ) : this(providerAuthority, providerPackage, certificates, 0)
 
         /**
@@ -155,10 +248,10 @@ class GoogleFont(val name: String, val bestEffort: Boolean = true) {
          *   provider. Each set in the list represents one collection of signature hashes. Refer to
          *   your font provider's documentation for these values.
          */
-        constructor(
+        public constructor(
             providerAuthority: String,
             providerPackage: String,
-            @ArrayRes certificates: Int
+            @ArrayRes certificates: Int,
         ) : this(providerAuthority, providerPackage, null, certificates)
 
         override fun equals(other: Any?): Boolean {
@@ -194,19 +287,19 @@ class GoogleFont(val name: String, val bestEffort: Boolean = true) {
  * @throws IllegalStateException if the provider is on device, but certificates don't match
  */
 @WorkerThread
-fun GoogleFont.Provider.isAvailableOnDevice(
-    @Suppress("ContextFirst") context: Context, // extension function
+public fun GoogleFont.Provider.isAvailableOnDevice(
+    @Suppress("ContextFirst") context: Context // extension function
 ): Boolean = checkAvailable(context.packageManager, context.resources)
 
-internal data class GoogleFontImpl
-constructor(
+internal data class GoogleFontImpl(
     val name: String,
     private val fontProvider: GoogleFont.Provider,
     override val weight: FontWeight,
     override val style: FontStyle,
-    val bestEffort: Boolean
-) : AndroidFont(FontLoadingStrategy.Async, GoogleFontTypefaceLoader, FontVariation.Settings()) {
-    fun toFontRequest(): FontRequest {
+    val fontVariationSettings: FontVariation.Settings,
+    val bestEffort: Boolean,
+) : AndroidFont(FontLoadingStrategy.Async, GoogleFontTypefaceLoader, fontVariationSettings) {
+    fun toFontRequest(context: Context): FontRequest {
         // note: name is not encoded or quoted per spec
         val query =
             "name=$name&weight=${weight.weight}" +
@@ -214,13 +307,20 @@ constructor(
 
         val certs = fontProvider.certificates
         return if (certs != null) {
-            FontRequest(fontProvider.providerAuthority, fontProvider.providerPackage, query, certs)
+            FontRequest(
+                /* providerAuthority = */ fontProvider.providerAuthority,
+                /* providerPackage = */ fontProvider.providerPackage,
+                /* query = */ query,
+                /* certificates = */ certs,
+                /* variationSettings = */ variationSettings.toAndroidString(context),
+            )
         } else {
             FontRequest(
-                fontProvider.providerAuthority,
-                fontProvider.providerPackage,
-                query,
-                fontProvider.certificatesRes
+                /* providerAuthority = */ fontProvider.providerAuthority,
+                /* providerPackage = */ fontProvider.providerPackage,
+                /* query = */ query,
+                /* certificates = */ fontProvider.certificatesRes,
+                /* variationSettings = */ variationSettings.toAndroidString(context),
             )
         }
     }
@@ -244,7 +344,7 @@ constructor(
 
     override fun toString(): String {
         return "Font(GoogleFont(\"$name\", bestEffort=$bestEffort), weight=$weight, " +
-            "style=$style)"
+            "style=$style, fontVariationSettings=$fontVariationSettings)"
     }
 
     override fun equals(other: Any?): Boolean {
@@ -256,6 +356,7 @@ constructor(
         if (weight != other.weight) return false
         if (style != other.style) return false
         if (bestEffort != other.bestEffort) return false
+        if (fontVariationSettings != other.fontVariationSettings) return false
 
         return true
     }
@@ -266,11 +367,14 @@ constructor(
         result = 31 * result + weight.hashCode()
         result = 31 * result + style.hashCode()
         result = 31 * result + bestEffort.hashCode()
+        result = 31 * result + fontVariationSettings.hashCode()
         return result
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 internal object GoogleFontTypefaceLoader : AndroidFont.TypefaceLoader {
+
     override fun loadBlocking(context: Context, font: AndroidFont): Typeface? {
         error("GoogleFont only support async loading: $font")
     }
@@ -282,10 +386,10 @@ internal object GoogleFontTypefaceLoader : AndroidFont.TypefaceLoader {
     internal suspend fun awaitLoad(
         context: Context,
         font: AndroidFont,
-        loader: FontsContractCompatLoader
+        loader: FontsContractCompatLoader,
     ): Typeface? {
         require(font is GoogleFontImpl) { "Only GoogleFontImpl supported (actual $font)" }
-        val fontRequest = font.toFontRequest()
+        val fontRequest = font.toFontRequest(context)
         val typefaceStyle = font.toTypefaceStyle()
 
         return suspendCancellableCoroutine { continuation ->
@@ -293,7 +397,9 @@ internal object GoogleFontTypefaceLoader : AndroidFont.TypefaceLoader {
                 object : FontRequestCallback() {
                     override fun onTypefaceRetrieved(typeface: Typeface?) {
                         // this is entered from any thread
-                        continuation.resume(typeface)
+                        continuation.resume(
+                            typeface.setFontVariationSettings(font.variationSettings, context)
+                        )
                     }
 
                     override fun onTypefaceRequestFailed(reason: Int) {
@@ -312,7 +418,7 @@ internal object GoogleFontTypefaceLoader : AndroidFont.TypefaceLoader {
                 fontRequest = fontRequest,
                 typefaceStyle = typefaceStyle,
                 handler = asyncHandlerForCurrentThreadOrMainIfNoLooper(),
-                callback = callback
+                callback = callback,
             )
         }
     }
@@ -330,7 +436,7 @@ internal interface FontsContractCompatLoader {
         fontRequest: FontRequest,
         typefaceStyle: Int,
         handler: Handler,
-        callback: FontRequestCallback
+        callback: FontRequestCallback,
     )
 }
 
@@ -341,7 +447,7 @@ private object DefaultFontsContractCompatLoader : FontsContractCompatLoader {
         fontRequest: FontRequest,
         typefaceStyle: Int,
         handler: Handler,
-        callback: FontRequestCallback
+        callback: FontRequestCallback,
     ) {
         FontsContractCompat.requestFont(
             context,
@@ -350,7 +456,7 @@ private object DefaultFontsContractCompatLoader : FontsContractCompatLoader {
             false, /* isBlockingFetch*/
             0, /* timeout - not used when isBlockingFetch=false */
             handler,
-            callback
+            callback,
         )
     }
 }
@@ -373,4 +479,26 @@ private fun reasonToString(@FontRequestFailReason reasonCode: Int): String {
                 "usually means the font was attempted to load in a restricted context"
         else -> "Unknown error code"
     }
+}
+
+/**
+ * Returns a sorted [FontVariation.Settings] by [FontVariation.Setting.axisName].
+ *
+ * @return This instance if already sorted or empty; otherwise, a new sorted instance.
+ */
+@SuppressLint("ListIterator")
+private fun FontVariation.Settings.sortedByAxis(): FontVariation.Settings {
+    if (settings.size <= 1) return this
+
+    var needsSorting = false
+    for (i in 0 until settings.size - 1) {
+        if (settings[i].axisName > settings[i + 1].axisName) {
+            needsSorting = true
+            break
+        }
+    }
+
+    if (!needsSorting) return this
+
+    return FontVariation.Settings(*settings.sortedBy { it.axisName }.toTypedArray())
 }

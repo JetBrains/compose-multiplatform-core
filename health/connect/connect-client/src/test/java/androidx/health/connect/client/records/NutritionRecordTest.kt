@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.calories
@@ -40,7 +41,7 @@ class NutritionRecordTest {
                     endTime = Instant.ofEpochMilli(1678900002L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    energy = Energy.calories(150.0)
+                    energy = Energy.calories(150.0),
                 )
             )
             .isEqualTo(
@@ -50,7 +51,7 @@ class NutritionRecordTest {
                     endTime = Instant.ofEpochMilli(1678900002L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    energy = Energy.calories(150.0)
+                    energy = Energy.calories(150.0),
                 )
             )
     }
@@ -64,7 +65,7 @@ class NutritionRecordTest {
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                energy = Energy.calories(-1.0)
+                energy = Energy.calories(-1.0),
             )
         }
         assertFailsWith<IllegalArgumentException> {
@@ -74,16 +75,30 @@ class NutritionRecordTest {
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                energy = Energy.calories(100000001.0)
+                energy = Energy.calories(100000001.0),
             )
         }
     }
 
+    @Config(maxSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun invalidTimes_throws() {
         assertFailsWith<IllegalArgumentException> {
             NutritionRecord(
                 startTime = Instant.ofEpochMilli(1234L),
+                startZoneOffset = null,
+                endTime = Instant.ofEpochMilli(1234L),
+                endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
+            )
+        }
+    }
+
+    @Test
+    fun startTimeAfterEndTime_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            NutritionRecord(
+                startTime = Instant.ofEpochMilli(1235L),
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
@@ -101,7 +116,7 @@ class NutritionRecordTest {
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
                         metadata = Metadata.unknownRecordingMethod(),
-                        energy = 240.calories
+                        energy = 240.calories,
                     )
                     .toString()
             )

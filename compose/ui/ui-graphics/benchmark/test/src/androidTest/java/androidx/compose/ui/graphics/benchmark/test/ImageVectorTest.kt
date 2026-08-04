@@ -35,7 +35,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -111,7 +111,7 @@ class ImageVectorTest {
                             painterResource(
                                 androidx.compose.ui.graphics.benchmark.R.drawable.ic_auto_mirror
                             ),
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 }
             }
@@ -154,11 +154,11 @@ class ImageVectorTest {
             assertEquals(Color.Red.toArgb(), getPixel(width - insetRectSize - 2, insetRectSize + 2))
             assertEquals(
                 Color.Red.toArgb(),
-                getPixel(insetRectSize + 2, height - insetRectSize - 2)
+                getPixel(insetRectSize + 2, height - insetRectSize - 2),
             )
             assertEquals(
                 Color.Red.toArgb(),
-                getPixel(width - insetRectSize - 2, height - insetRectSize - 2)
+                getPixel(width - insetRectSize - 2, height - insetRectSize - 2),
             )
         }
     }

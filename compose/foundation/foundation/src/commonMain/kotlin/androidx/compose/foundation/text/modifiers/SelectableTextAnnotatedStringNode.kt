@@ -25,14 +25,22 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.PinnableContainer
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.UnplacedAwareModifierNode
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateMeasurement
+import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.TextLayoutResult
@@ -60,8 +68,16 @@ internal class SelectableTextAnnotatedStringNode(
     private var selectionController: SelectionController? = null,
     overrideColor: ColorProducer? = null,
     autoSize: TextAutoSize? = null,
-    private var onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null
-) : DelegatingNode(), LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode {
+    private var onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null,
+) :
+    DelegatingNode(),
+    LayoutModifierNode,
+    DrawModifierNode,
+    GlobalPositionAwareModifierNode,
+    CompositionLocalConsumerModifierNode,
+    ObserverModifierNode,
+    LayoutAwareModifierNode,
+    UnplacedAwareModifierNode {
     override val shouldAutoInvalidate: Boolean
         get() = false
 
@@ -81,7 +97,7 @@ internal class SelectableTextAnnotatedStringNode(
                 selectionController = selectionController,
                 overrideColor = overrideColor,
                 autoSize = autoSize,
-                onShowTranslation = onShowTranslation
+                onShowTranslation = onShowTranslation,
             )
         )
 
@@ -91,35 +107,67 @@ internal class SelectableTextAnnotatedStringNode(
         }
     }
 
+    private var isPlaced = false
+
+    override fun onPlaced(coordinates: LayoutCoordinates) {
+        if (isPlaced) return
+        isPlaced = true
+        selectionController?.onPlaced()
+    }
+
+    override fun onUnplaced() {
+        if (!isPlaced) return
+        isPlaced = false
+        selectionController?.onUnplaced()
+    }
+
+    override fun onAttach() {
+        selectionController?.updatePinnableContainer(retrievePinnableContainer())
+    }
+
+    override fun onDetach() {
+        selectionController?.updatePinnableContainer(null)
+    }
+
+    override fun onObservedReadsChanged() {
+        selectionController?.updatePinnableContainer(retrievePinnableContainer())
+    }
+
+    private fun retrievePinnableContainer(): PinnableContainer? {
+        var container: PinnableContainer? = null
+        observeReads { container = currentValueOf(LocalPinnableContainer) }
+        return container
+    }
+
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        selectionController?.updateGlobalPosition(coordinates)
+        selectionController?.updateLayoutCoordinates(coordinates)
     }
 
     override fun ContentDrawScope.draw() = textAnnotatedStringNode.drawNonExtension(this)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult = textAnnotatedStringNode.measureNonExtension(this, measurable, constraints)
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = textAnnotatedStringNode.minIntrinsicWidthNonExtension(this, measurable, height)
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = textAnnotatedStringNode.minIntrinsicHeightNonExtension(this, measurable, width)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = textAnnotatedStringNode.maxIntrinsicWidthNonExtension(this, measurable, height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = textAnnotatedStringNode.maxIntrinsicHeightNonExtension(this, measurable, width)
 
     fun update(
@@ -135,7 +183,7 @@ internal class SelectableTextAnnotatedStringNode(
         onPlaceholderLayout: ((List<Rect?>) -> Unit)?,
         selectionController: SelectionController?,
         color: ColorProducer?,
-        autoSize: TextAutoSize?
+        autoSize: TextAutoSize?,
     ) {
         textAnnotatedStringNode.doInvalidations(
             drawChanged = textAnnotatedStringNode.updateDraw(color, style),
@@ -149,17 +197,24 @@ internal class SelectableTextAnnotatedStringNode(
                     softWrap = softWrap,
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = overflow,
-                    autoSize = autoSize
+                    autoSize = autoSize,
                 ),
             callbacksChanged =
                 textAnnotatedStringNode.updateCallbacks(
                     onTextLayout = onTextLayout,
                     onPlaceholderLayout = onPlaceholderLayout,
                     selectionController = selectionController,
-                    onShowTranslation = onShowTranslation
+                    onShowTranslation = onShowTranslation,
                 ),
         )
+        if (isPlaced && (selectionController != this.selectionController)) {
+            this.selectionController?.onUnplaced()
+            selectionController?.onPlaced()
+        }
+        selectionController?.updatePinnableContainer(retrievePinnableContainer())
+
         this.selectionController = selectionController
+
         // we always relayout when we're selectable
         invalidateMeasurement()
     }

@@ -30,20 +30,24 @@ import androidx.credentials.registry.provider.digitalcredentials.DigitalCredenti
  * highlighted as a warning (e.g. bolded, in a red background). For example, you can use it to
  * display a warning if the calling app is requesting very sensitive information.
  *
- * @constructor
  * @property title the title to display for this entry in the Credential Manager selector UI
  * @property subtitle the subtitle to display for this entry
  * @property icon the icon to display for this entry; this icon should be 32x32 and if not will be
  *   rescaled into a 32x32 pixel PGN for display
  * @property explainer the additional note or explainer to display for this entry, if applicable
  * @property warning the warning to display for this entry, if applicable
+ * @property metadataDisplayText the metadata text to display for this entry, if applicable
+ * @constructor
  */
-public class VerificationEntryDisplayProperties(
+public class VerificationEntryDisplayProperties
+@JvmOverloads
+constructor(
     public val title: CharSequence,
     public val subtitle: CharSequence?,
     public val icon: Bitmap,
     public val explainer: CharSequence? = null,
     public val warning: CharSequence? = null,
+    public val metadataDisplayText: CharSequence? = null,
 ) : EntryDisplayProperties(DISPLAY_TYPE_VERIFICATION) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -52,7 +56,8 @@ public class VerificationEntryDisplayProperties(
             this.subtitle == other.subtitle &&
             this.icon == other.icon &&
             this.explainer == other.explainer &&
-            this.warning == other.warning
+            this.warning == other.warning &&
+            this.metadataDisplayText == other.metadataDisplayText
     }
 
     override fun hashCode(): Int {
@@ -62,6 +67,7 @@ public class VerificationEntryDisplayProperties(
         result = 31 * result + icon.hashCode()
         result = 31 * result + (explainer?.hashCode() ?: 0)
         result = 31 * result + (warning?.hashCode() ?: 0)
+        result = 31 * result + (metadataDisplayText?.hashCode() ?: 0)
         return result
     }
 }

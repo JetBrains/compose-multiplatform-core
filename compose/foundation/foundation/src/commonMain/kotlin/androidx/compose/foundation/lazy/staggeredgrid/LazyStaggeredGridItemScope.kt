@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.IntOffset
 /** Receiver scope for itemContent in [LazyStaggeredGridScope.item] */
 @Stable
 @LazyStaggeredGridScopeMarker
-sealed interface LazyStaggeredGridItemScope {
+public sealed interface LazyStaggeredGridItemScope {
     /**
      * This modifier animates the item appearance (fade in), disappearance (fade out) and placement
      * changes (such as an item reordering).
@@ -45,12 +45,12 @@ sealed interface LazyStaggeredGridItemScope {
      * @param fadeOutSpec an animation specs to use for animating the item disappearance. When null
      *   is provided the item will be disappearance without animations.
      */
-    fun Modifier.animateItem(
+    public fun Modifier.animateItem(
         fadeInSpec: FiniteAnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
         placementSpec: FiniteAnimationSpec<IntOffset>? =
             spring(
                 stiffness = Spring.StiffnessMediumLow,
-                visibilityThreshold = IntOffset.VisibilityThreshold
+                visibilityThreshold = IntOffset.VisibilityThreshold,
             ),
         fadeOutSpec: FiniteAnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
     ): Modifier
@@ -60,7 +60,7 @@ internal object LazyStaggeredGridItemScopeImpl : LazyStaggeredGridItemScope {
     override fun Modifier.animateItem(
         fadeInSpec: FiniteAnimationSpec<Float>?,
         placementSpec: FiniteAnimationSpec<IntOffset>?,
-        fadeOutSpec: FiniteAnimationSpec<Float>?
+        fadeOutSpec: FiniteAnimationSpec<Float>?,
     ): Modifier =
         if (fadeInSpec == null && placementSpec == null && fadeOutSpec == null) {
             this

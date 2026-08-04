@@ -21,8 +21,8 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 
 /**
  * Allow specifying semantic properties on a curved component. Note that currently only
- * [contentDescription] and [traversalIndex] are supported, and they can be applied to curved text
- * and curvedComposable
+ * [CurvedSemanticsScope.contentDescription] and [CurvedSemanticsScope.traversalIndex] are
+ * supported, and they can be applied to curved text and curvedComposable
  *
  * Sample for setting content description and traversal order:
  *
@@ -37,8 +37,9 @@ public fun CurvedModifier.semantics(properties: CurvedSemanticsScope.() -> Unit)
 
 /**
  * Allow specifying semantic properties on a curved component, and clearing the existing properties.
- * Note that currently only [contentDescription] and [traversalIndex] are supported, and they can be
- * applied to curved text and curvedComposable
+ * Note that currently only [CurvedSemanticsScope.contentDescription] and
+ * [CurvedSemanticsScope.traversalIndex] are supported, and they can be applied to curved text and
+ * curvedComposable
  *
  * Sample for clearing semantics:
  *
@@ -88,7 +89,7 @@ public class CurvedSemanticsScope {
 internal class SemanticWrapper(
     child: CurvedChild,
     private val isClearingSemantics: Boolean,
-    private val properties: CurvedSemanticsScope.() -> Unit
+    private val properties: CurvedSemanticsScope.() -> Unit,
 ) : BaseCurvedChildWrapper(child) {
     @Composable
     override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
@@ -99,7 +100,7 @@ internal class SemanticWrapper(
                 CurvedSemanticProperties(
                     scope.contentDescription,
                     scope.traversalIndex,
-                    isClearingSemantics
+                    isClearingSemantics,
                 )
             )
         )

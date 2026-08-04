@@ -36,7 +36,7 @@ class ExperimentalPropertyAnnotationDetectorTest :
         annotation class ExperimentalKotlinAnnotation
     """
                 )
-            )
+            ),
     ) {
     @Test
     fun `Test var properties annotated with all targets`() {
@@ -214,7 +214,7 @@ class ExperimentalPropertyAnnotationDetectorTest :
 
                 annotation class NonExperimentalAnnotation
             """
-                )
+                ),
             )
 
         check(*input).expectClean()
@@ -268,7 +268,7 @@ class ExperimentalPropertyAnnotationDetectorTest :
                             }
                         }
                     """
-                )
+                ),
             )
 
         val expected =
@@ -448,13 +448,13 @@ class ExperimentalPropertyAnnotationDetectorTest :
             arrayOf(
                 kotlin(
                     """
-                package java.androidx
+                    package java.androidx
 
-                fun functionWithProperty() {
-                    @ExperimentalKotlinAnnotation
-                    val experimentalProperty = 3
-                }
-                """
+                    fun functionWithProperty() {
+                        @ExperimentalKotlinAnnotation
+                        val experimentalProperty = 3
+                    }
+                    """
                         .trimIndent()
                 )
             )
@@ -505,13 +505,13 @@ class ExperimentalPropertyAnnotationDetectorTest :
             arrayOf(
                 kotlin(
                     """
-                package java.androidx
+                    package java.androidx
 
-                private class AnnotatedProperty {
-                    @ExperimentalKotlinAnnotation
-                    var experimentalProperty = 3
-                }
-                """
+                    private class AnnotatedProperty {
+                        @ExperimentalKotlinAnnotation
+                        var experimentalProperty = 3
+                    }
+                    """
                         .trimIndent()
                 )
             )

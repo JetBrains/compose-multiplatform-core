@@ -134,6 +134,8 @@ class SizeTest {
         assertTrue(Size(Float.NEGATIVE_INFINITY, 0.0f).isEmpty())
         assertTrue(Size(Float.NEGATIVE_INFINITY, 20.0f).isEmpty())
         assertTrue(Size(10.0f, Float.NEGATIVE_INFINITY).isEmpty())
+        assertFalse(Size(1f, 2f).isEmpty())
+        assertFalse(Size(114.87094f, 0.00793457f).isEmpty())
 
         assertTrue(Size.Unspecified.isEmpty())
     }

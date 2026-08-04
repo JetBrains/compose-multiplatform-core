@@ -32,11 +32,12 @@ import androidx.compose.ui.graphics.toArgb
  * dynamic color scheme can be used and returns null otherwise. It is expected that callers will
  * check the return value and fallback to their own default color scheme if it is null.
  *
+ * Example using a dynamic color scheme to theme buttons in a column:
+ *
+ * @sample androidx.wear.compose.material3.samples.DynamicColorSchemeSample
  * @param context The context required to get system resource data.
  */
-public fun dynamicColorScheme(
-    context: Context,
-): ColorScheme? =
+public fun dynamicColorScheme(context: Context): ColorScheme? =
     if (!isDynamicColorSchemeEnabled(context)) {
         null
     } else {
@@ -58,7 +59,7 @@ public fun dynamicColorScheme(
             onSecondaryContainer =
                 ResourceHelper.getColor(
                     context,
-                    android.R.color.system_on_secondary_container_dark
+                    android.R.color.system_on_secondary_container_dark,
                 ),
             tertiary = ResourceHelper.getColor(context, android.R.color.system_tertiary_fixed),
             tertiaryDim =
@@ -75,7 +76,7 @@ public fun dynamicColorScheme(
             surfaceContainerHigh =
                 ResourceHelper.getColor(
                     context,
-                    android.R.color.system_surface_container_high_dark
+                    android.R.color.system_surface_container_high_dark,
                 ),
             onSurface = ResourceHelper.getColor(context, android.R.color.system_on_surface_dark),
             onSurfaceVariant =

@@ -16,15 +16,20 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
+import android.util.Log;
+
 import androidx.wear.protolayout.expression.proto.DynamicProto.InstantToZonedDateTimeOp;
 
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.function.Function;
 
 /** Dynamic data nodes which yield {@link ZonedDateTime}. */
 class ZonedDateTimeNodes {
+    private static final String TAG = "InstantToZonedDateTime";
+
     private ZonedDateTimeNodes() {}
 
     /** Dynamic instant node that has a fixed value. */
@@ -33,18 +38,25 @@ class ZonedDateTimeNodes {
         InstantToZonedDateTimeOpNode(
                 InstantToZonedDateTimeOp protoNode,
                 DynamicTypeValueReceiverWithPreUpdate<ZonedDateTime> downstream) {
-            super(
-                    downstream,
-                    t -> {
-                        try {
-                            return ZonedDateTime.ofInstant(t, ZoneId.of(protoNode.getZoneId()));
-                        } catch (DateTimeException e) {
-                            // Converting the exception to clarify that the error is happening
-                            // because of a bad input.
-                            throw new IllegalArgumentException(
-                                    "Invalid zone ID: " + protoNode.getZoneId(), e);
-                        }
-                    });
+            super(downstream, createTransformer(protoNode));
+        }
+
+        private static Function<Instant, ZonedDateTime> createTransformer(
+                InstantToZonedDateTimeOp protoNode) {
+            try {
+                final ZoneId zoneId = ZoneId.of(protoNode.getZoneId());
+                return t -> {
+                    try {
+                        return ZonedDateTime.ofInstant(t, zoneId);
+                    } catch (DateTimeException | ArithmeticException e) {
+                        Log.e(TAG, "Exception in InstantToZonedDateTimeOpNode", e);
+                        return null;
+                    }
+                };
+            } catch (DateTimeException e) {
+                Log.w(TAG, "Invalid zone ID: " + protoNode.getZoneId(), e);
+                throw new IllegalArgumentException("Invalid zone ID: " + protoNode.getZoneId(), e);
+            }
         }
     }
 }

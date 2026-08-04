@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.IntOffset
 /** Receiver scope being used by the item content parameter of [LazyVerticalGrid]. */
 @Stable
 @LazyGridScopeMarker
-sealed interface LazyGridItemScope {
+public sealed interface LazyGridItemScope {
     /**
      * This modifier animates the item appearance (fade in), disappearance (fade out) and placement
      * changes (such as an item reordering).
@@ -44,12 +44,12 @@ sealed interface LazyGridItemScope {
      * @param fadeOutSpec an animation specs to use for animating the item disappearance. When null
      *   is provided the item will be disappearance without animations.
      */
-    fun Modifier.animateItem(
+    public fun Modifier.animateItem(
         fadeInSpec: FiniteAnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
         placementSpec: FiniteAnimationSpec<IntOffset>? =
             spring(
                 stiffness = Spring.StiffnessMediumLow,
-                visibilityThreshold = IntOffset.VisibilityThreshold
+                visibilityThreshold = IntOffset.VisibilityThreshold,
             ),
         fadeOutSpec: FiniteAnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
     ): Modifier

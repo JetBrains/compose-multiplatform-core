@@ -43,11 +43,11 @@ import androidx.compose.ui.layout.PinnableContainer
  * change.
  */
 @Composable
-fun LazyLayoutPinnableItem(
+public fun LazyLayoutPinnableItem(
     key: Any?,
     index: Int,
     pinnedItemList: LazyLayoutPinnedItemList,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val pinnableItem = remember(key, pinnedItemList) { LazyLayoutPinnableItem(key, pinnedItemList) }
     pinnableItem.index = index
@@ -63,9 +63,10 @@ fun LazyLayoutPinnableItem(
  * Note: this class is a part of [LazyLayout] harness that allows for building custom lazy layouts.
  * LazyLayout and all corresponding APIs are still under development and are subject to change.
  */
-class LazyLayoutPinnedItemList private constructor(private val items: MutableList<PinnedItem>) :
+public class LazyLayoutPinnedItemList
+private constructor(private val items: MutableList<PinnedItem>) :
     List<LazyLayoutPinnedItemList.PinnedItem> by items {
-    constructor() : this(SnapshotStateList())
+    public constructor() : this(SnapshotStateList())
 
     internal fun pin(item: PinnedItem) {
         items.add(item)
@@ -75,6 +76,9 @@ class LazyLayoutPinnedItemList private constructor(private val items: MutableLis
         items.remove(item)
     }
 
+    // helper for more efficient access to the snapshot of the list
+    internal fun toList(): List<PinnedItem> = (items as SnapshotStateList<PinnedItem>).toList()
+
     /**
      * Item pinned in a lazy layout. Pinned item should be always measured and laid out, even if the
      * item is beyond the boundaries of the layout.
@@ -83,15 +87,15 @@ class LazyLayoutPinnedItemList private constructor(private val items: MutableLis
      * layouts. LazyLayout and all corresponding APIs are still under development and are subject to
      * change.
      */
-    sealed interface PinnedItem {
+    public sealed interface PinnedItem {
         /** Key of the pinned item. */
-        val key: Any?
+        public val key: Any?
 
         /**
          * Last known index of the pinned item. Note: it is possible for index to change during
          * lifetime of the object.
          */
-        val index: Int
+        public val index: Int
     }
 }
 
@@ -143,18 +147,24 @@ private class LazyLayoutPinnableItem(
         return this
     }
 
+    private fun unpin() {
+        pinnedItemList.release(this)
+        parentHandle?.release()
+        parentHandle = null
+    }
+
     override fun release() {
         if (isDisposed) return // already during item disposal.
         checkPrecondition(pinsCount > 0) { "Release should only be called once" }
         pinsCount--
         if (pinsCount == 0) {
-            pinnedItemList.release(this)
-            parentHandle?.release()
-            parentHandle = null
+            unpin()
         }
     }
 
     fun onDisposed() {
         isDisposed = true
+        pinsCount = 0
+        unpin()
     }
 }

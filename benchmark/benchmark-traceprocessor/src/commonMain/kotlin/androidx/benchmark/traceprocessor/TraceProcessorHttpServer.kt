@@ -50,7 +50,7 @@ internal class TraceProcessorHttpServer(
 
         // Note that trace processor http server has a hard limit of 64Mb for payload size.
         // https://cs.android.com/android/platform/superproject/+/master:external/perfetto/src/base/http/http_server.cc;l=33
-        private const val PARSE_PAYLOAD_SIZE = 16 * 1024 * 1024 // 16Mb
+        private const val PARSE_PAYLOAD_SIZE = 512 * 1024 // 512 KB
     }
 
     private var hasStarted = false
@@ -63,24 +63,21 @@ internal class TraceProcessorHttpServer(
      */
     @Suppress("BanThreadSleep") // needed for awaiting trace processor instance
     fun startServer() {
-        if (hasStarted) {
-            log("Tried to start a trace shell processor that is already running.")
-        } else {
-            port = serverLifecycleManager.start()
-            // Wait for the trace_processor_shell server to start.
-            var elapsed = 0.milliseconds
-            while (!isRunning()) {
-                Thread.sleep(WAIT_INTERVAL.toLong(DurationUnit.MILLISECONDS))
-                elapsed += WAIT_INTERVAL
-                if (elapsed >= timeoutMs.toDuration(DurationUnit.MILLISECONDS)) {
-                    throw IllegalStateException(serverLifecycleManager.timeoutMessage())
-                }
+        if (hasStarted) return // Nothing to do.
+
+        port = serverLifecycleManager.start()
+        // Wait for the trace_processor_shell server to start.
+        var elapsed = 0.milliseconds
+        while (!isRunning()) {
+            Thread.sleep(WAIT_INTERVAL.toLong(DurationUnit.MILLISECONDS))
+            elapsed += WAIT_INTERVAL
+            if (elapsed >= timeoutMs.toDuration(DurationUnit.MILLISECONDS)) {
+                throw IllegalStateException(serverLifecycleManager.timeoutMessage())
             }
-
-            hasStarted = true
-
-            log("Perfetto trace processor shell server started (port=$port).")
         }
+
+        hasStarted = true
+        log("Perfetto trace processor shell server started (port=$port).")
     }
 
     /** Stops the server killing the associated process */
@@ -115,13 +112,13 @@ internal class TraceProcessorHttpServer(
             method = METHOD_POST,
             url = PATH_QUERY,
             encodeBlock = { QueryArgs.ADAPTER.encode(it, QueryArgs(sqlQuery)) },
-            decodeBlock = decodeBlock
+            decodeBlock = decodeBlock,
         )
 
     /** Computes the given metrics on a previously parsed trace. */
     fun computeMetric(
         metrics: List<String>,
-        resultFormat: ComputeMetricArgs.ResultFormat
+        resultFormat: ComputeMetricArgs.ResultFormat,
     ): ComputeMetricResult =
         httpRequest(
             method = METHOD_POST,
@@ -129,7 +126,7 @@ internal class TraceProcessorHttpServer(
             encodeBlock = {
                 ComputeMetricArgs.ADAPTER.encode(it, ComputeMetricArgs(metrics, resultFormat))
             },
-            decodeBlock = { ComputeMetricResult.ADAPTER.decode(it) }
+            decodeBlock = { ComputeMetricResult.ADAPTER.decode(it) },
         )
 
     /**
@@ -138,16 +135,21 @@ internal class TraceProcessorHttpServer(
      */
     fun parse(inputStream: InputStream): List<AppendTraceDataResult> {
         val responses = mutableListOf<AppendTraceDataResult>()
+        var read = 0
+        val buffer = ByteArray(PARSE_PAYLOAD_SIZE)
         while (true) {
-            val buffer = ByteArray(PARSE_PAYLOAD_SIZE)
-            val read = inputStream.read(buffer)
+            // Reset
+            if (read > 0) {
+                buffer.fill(element = 0, fromIndex = 0, toIndex = read)
+            }
+            read = inputStream.read(buffer)
             if (read <= 0) break
             responses.add(
                 httpRequest(
                     method = METHOD_POST,
                     url = PATH_PARSE,
                     encodeBlock = { it.write(buffer, 0, read) },
-                    decodeBlock = { AppendTraceDataResult.ADAPTER.decode(it) }
+                    decodeBlock = { AppendTraceDataResult.ADAPTER.decode(it) },
                 )
             )
         }
@@ -160,7 +162,7 @@ internal class TraceProcessorHttpServer(
             method = METHOD_GET,
             url = PATH_NOTIFY_EOF,
             encodeBlock = null,
-            decodeBlock = {}
+            decodeBlock = {},
         )
 
     /** Clears the loaded trace and restore the state of the initial tables */
@@ -169,7 +171,7 @@ internal class TraceProcessorHttpServer(
             method = METHOD_GET,
             url = PATH_RESTORE_INITIAL_TABLES,
             encodeBlock = null,
-            decodeBlock = {}
+            decodeBlock = {},
         )
 
     /** Checks the status of the trace_shell_processor http server. */
@@ -178,7 +180,7 @@ internal class TraceProcessorHttpServer(
             method = METHOD_GET,
             url = PATH_STATUS,
             encodeBlock = null,
-            decodeBlock = { StatusResult.ADAPTER.decode(it) }
+            decodeBlock = { StatusResult.ADAPTER.decode(it) },
         )
 
     private fun <T> httpRequest(
@@ -186,7 +188,7 @@ internal class TraceProcessorHttpServer(
         url: String,
         contentType: String = "application/octet-stream",
         encodeBlock: ((OutputStream) -> Unit)?,
-        decodeBlock: ((InputStream) -> T)
+        decodeBlock: ((InputStream) -> T),
     ): T {
         with(URL("$HTTP_ADDRESS:${port}$url").openConnection() as HttpURLConnection) {
             requestMethod = method

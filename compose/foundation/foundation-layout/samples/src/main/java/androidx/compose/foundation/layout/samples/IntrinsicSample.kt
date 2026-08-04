@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,14 +68,14 @@ fun MatchParentDividerForText() {
         Row(Modifier.height(IntrinsicSize.Min)) {
             Text(
                 text = "This is a really short text",
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier.weight(1f).fillMaxHeight(),
             )
             Box(Modifier.width(1.dp).fillMaxHeight().background(Color.Black))
             Text(
                 text =
                     "This is a much much much much much much much much much much" +
                         " much much much much much much longer text",
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier.weight(1f).fillMaxHeight(),
             )
         }
     }

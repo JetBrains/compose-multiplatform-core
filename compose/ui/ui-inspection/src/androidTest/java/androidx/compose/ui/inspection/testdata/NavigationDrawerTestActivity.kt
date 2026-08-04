@@ -62,25 +62,25 @@ class NavigationDrawerTestActivity : ComponentActivity() {
                             Text(
                                 "Drawer Title",
                                 modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.titleLarge
+                                style = MaterialTheme.typography.titleLarge,
                             )
                             HorizontalDivider()
 
                             Text(
                                 "Section 1",
                                 modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
                             )
                             NavigationDrawerItem(
                                 label = { Text("Item 1") },
                                 selected = false,
-                                onClick = { /* Handle click */ }
+                                onClick = { /* Handle click */ },
                             )
                             Spacer(Modifier.height(12.dp))
                         }
                     }
                 },
-                drawerState = drawerState
+                drawerState = drawerState,
             ) {
                 Column {
                     Row {
@@ -100,7 +100,7 @@ class NavigationDrawerTestActivity : ComponentActivity() {
                         Text(
                             "Navigation Drawer Test App",
                             modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
                         )
                     }
                     Text("Hello world")

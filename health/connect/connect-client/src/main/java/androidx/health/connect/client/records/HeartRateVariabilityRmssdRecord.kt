@@ -44,7 +44,7 @@ public class HeartRateVariabilityRmssdRecord(
             heartRateVariabilityMillis.requireInRange(
                 min = MIN_HRV_RMSSD,
                 max = MAX_HRV_RMSSD,
-                name = "heartRateVariabilityMillis"
+                name = "heartRateVariabilityMillis",
             )
         }
     }

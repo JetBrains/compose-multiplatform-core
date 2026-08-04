@@ -68,7 +68,7 @@ import androidx.compose.ui.text.style.TextOverflow
     "Use Text or BasicText and pass an AnnotatedString that contains a LinkAnnotation. " +
         "Check LinkAnnotation's documentation for more details and samples."
 )
-fun ClickableText(
+public fun ClickableText(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     style: TextStyle = TextStyle.Default,
@@ -76,7 +76,7 @@ fun ClickableText(
     overflow: TextOverflow = TextOverflow.Clip,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    onClick: (Int) -> Unit
+    onClick: (Int) -> Unit,
 ) {
     val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
     val pressIndicator =
@@ -98,6 +98,6 @@ fun ClickableText(
         onTextLayout = {
             layoutResult.value = it
             onTextLayout(it)
-        }
+        },
     )
 }

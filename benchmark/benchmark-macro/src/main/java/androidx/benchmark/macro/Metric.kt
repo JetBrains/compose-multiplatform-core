@@ -22,6 +22,8 @@ import androidx.annotation.RestrictTo
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.Shell
 import androidx.benchmark.macro.BatteryCharge.hasMinimumCharge
+import androidx.benchmark.macro.PowerMetric.Companion.Energy
+import androidx.benchmark.macro.PowerMetric.Companion.Power
 import androidx.benchmark.macro.PowerMetric.Companion.deviceSupportsHighPrecisionTracking
 import androidx.benchmark.macro.PowerRail.hasMetrics
 import androidx.benchmark.macro.perfetto.BatteryDischargeQuery
@@ -48,7 +50,7 @@ sealed class Metric {
     /** After stopping, collect metrics */
     internal abstract fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement>
 
     /**
@@ -111,7 +113,7 @@ sealed class Metric {
                     targetPackageName = targetPackageName,
                     testPackageName =
                         InstrumentationRegistry.getInstrumentation().context.packageName,
-                    startupMode = startupMode
+                    startupMode = startupMode,
                 )
         }
     }
@@ -140,7 +142,7 @@ sealed class Metric {
          * True if the [data] param is a single value per measurement, false if it contains an
          * arbitrary number of samples.
          */
-        val requireSingleValue: Boolean
+        val requireSingleValue: Boolean,
     ) {
 
         /**
@@ -151,7 +153,7 @@ sealed class Metric {
          */
         constructor(
             name: String,
-            data: Double
+            data: Double,
         ) : this(name, listOf(data), requireSingleValue = true)
 
         /**
@@ -165,7 +167,7 @@ sealed class Metric {
          */
         constructor(
             name: String,
-            dataSamples: List<Double>
+            dataSamples: List<Double>,
         ) : this(name, dataSamples, requireSingleValue = false)
 
         init {
@@ -200,16 +202,36 @@ private fun Long.nsToDoubleMs(): Double = this / 1_000_000.0
  * framerate rendering) more naturally.
  */
 @Suppress("CanSealedSubClassBeObject")
-class FrameTimingMetric : Metric() {
+class FrameTimingMetric() : Metric() {
+    private var processSuffix: String = ""
+    private var metricSuffix: String = ""
+
+    /**
+     * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This
+     *   is useful when there are separate subprocesses of the app.
+     * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish
+     *   metrics collected from different subprocesses in the app. Defaults to [processNameSuffix]
+     *   with ":" replaced by "_".
+     */
+    @ExperimentalMetricApi
+    @JvmOverloads
+    constructor(
+        processNameSuffix: String,
+        metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
+    ) : this() {
+        processSuffix = processNameSuffix
+        metricSuffix = metricNameSuffix
+    }
+
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val frameData =
             FrameTimingQuery.getFrameData(
                 session = traceSession,
                 captureApiLevel = captureInfo.apiLevel,
-                packageName = captureInfo.targetPackageName
+                packageName = captureInfo.targetPackageName + processSuffix,
             )
         return frameData
             .getFrameSubMetrics(captureInfo.apiLevel)
@@ -218,13 +240,13 @@ class FrameTimingMetric : Metric() {
                 Measurement(
                     name =
                         if (it.key == SubMetric.FrameDurationCpuNs) {
-                            "frameDurationCpuMs"
+                            "frameDurationCpuMs$metricSuffix"
                         } else {
-                            "frameOverrunMs"
+                            "frameOverrunMs$metricSuffix"
                         },
-                    dataSamples = it.value.map { timeNs -> timeNs.nsToDoubleMs() }
+                    dataSamples = it.value.map { timeNs -> timeNs.nsToDoubleMs() },
                 )
-            } + listOf(Measurement("frameCount", frameData.size.toDouble()))
+            } + listOf(Measurement("frameCount$metricSuffix", frameData.size.toDouble()))
     }
 }
 
@@ -305,7 +327,7 @@ class FrameTimingGfxInfoMetric : Metric() {
             "slow_issue_draw_cmds" to "slowIssueDrawCommandsFrameCount",
             "total_frames" to "gfxFrameTotalCount",
             "janky_frames_percent" to "gfxFrameJankPercent",
-            "janky_frames_legacy_percent" to "jankyFramePercentLegacy"
+            "janky_frames_legacy_percent" to "jankyFramePercentLegacy",
         )
 
     /** Filters output to only frameTimeXXthPercentileMs and totalFrameCount */
@@ -321,7 +343,7 @@ class FrameTimingGfxInfoMetric : Metric() {
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         return metrics
             .map {
@@ -353,7 +375,7 @@ class FrameTimingGfxInfoMetric : Metric() {
 class StartupTimingMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         return StartupTimingQuery.getFrameSubMetrics(
                 session = traceSession,
@@ -363,12 +385,12 @@ class StartupTimingMetric : Metric() {
                 // Pick an arbitrary startup mode if unspecified. In the future, consider throwing
                 // an
                 // error if startup mode not defined
-                startupMode = captureInfo.startupMode ?: StartupMode.COLD
+                startupMode = captureInfo.startupMode ?: StartupMode.COLD,
             )
             ?.run {
                 mapOf(
                         "timeToInitialDisplayMs" to timeToInitialDisplayNs.nsToDoubleMs(),
-                        "timeToFullDisplayMs" to timeToFullDisplayNs?.nsToDoubleMs()
+                        "timeToFullDisplayMs" to timeToFullDisplayNs?.nsToDoubleMs(),
                     )
                     .filterValues { it != null }
                     .map { Measurement(it.key, it.value!!) }
@@ -383,7 +405,7 @@ class StartupTimingMetric : Metric() {
 class StartupTimingLegacyMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         // Acquires perfetto metrics
         val traceMetrics = traceSession.getTraceMetrics("android_startup")
@@ -465,16 +487,18 @@ abstract class TraceMetric : Metric() {
     /**
      * Get the metric result for a given iteration given information about the target process and a
      * TraceProcessor session
+     *
+     * @sample androidx.benchmark.samples.getMeasurementsSample
      */
     public abstract override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement>
 }
 
 /**
  * Captures the time taken by named trace section - a named begin / end pair matching the provided
- * [sectionName].
+ * [sectionNames].
  *
  * Select how matching sections are resolved into a duration metric with [mode], and configure if
  * sections outside the target process are included with [targetPackageOnly].
@@ -496,27 +520,49 @@ abstract class TraceMetric : Metric() {
  * @see androidx.tracing.trace
  */
 @ExperimentalMetricApi
-class TraceSectionMetric
-@JvmOverloads
-constructor(
+class TraceSectionMetric(
     /**
-     * Section name or pattern to match.
+     * List of section names or patterns to match.
      *
      * "%" can be used as a wildcard, as this is supported by the underlying [TraceProcessor] query.
      * For example `"JIT %"` will match a section named `"JIT compiling int
      * com.package.MyClass.method(int)"` present in the trace.
+     *
+     * The resulting metric will be calculated based on all the names in this list.
      */
-    private val sectionName: String,
+    private val sectionNames: List<String>,
+    /** Metric label that is presented in the results */
+    private val label: String,
     /**
-     * Defines how slices matching [sectionName] should be confirmed to metrics, by default uses
+     * Defines how slices matching [sectionNames] should be confirmed to metrics, by default uses
      * [Mode.Sum] to count and sum durations of all matching trace sections.
      */
     private val mode: Mode = Mode.Sum,
-    /** Metric label, defaults to [sectionName]. */
-    private val label: String = sectionName,
     /** Filter results to trace sections only from the target process, defaults to true. */
-    private val targetPackageOnly: Boolean = true
+    private val targetPackageOnly: Boolean = true,
 ) : Metric() {
+
+    @JvmOverloads
+    constructor(
+        /**
+         * Section name or pattern to match.
+         *
+         * "%" can be used as a wildcard, as this is supported by the underlying [TraceProcessor]
+         * query. For example `"JIT %"` will match a section named `"JIT compiling int
+         * com.package.MyClass.method(int)"` present in the trace.
+         */
+        sectionName: String,
+        /**
+         * Defines how slices matching [sectionName] should be confirmed to metrics, by default uses
+         * [Mode.Sum] to count and sum durations of all matching trace sections.
+         */
+        mode: Mode = Mode.Sum,
+        /** Metric label, defaults to [sectionName]. */
+        label: String = sectionName,
+        /** Filter results to trace sections only from the target process, defaults to true. */
+        targetPackageOnly: Boolean = true,
+    ) : this(listOf(sectionName), label, mode, targetPackageOnly)
+
     sealed class Mode(internal val name: String) {
         /**
          * Captures the duration of the first instance of `sectionName` in the trace.
@@ -578,12 +624,12 @@ constructor(
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val slices =
             traceSession.querySlices(
-                sectionName,
-                packageName = if (targetPackageOnly) captureInfo.targetPackageName else null
+                *sectionNames.toTypedArray(),
+                packageName = if (targetPackageOnly) captureInfo.targetPackageName else null,
             )
 
         return when (mode) {
@@ -598,9 +644,9 @@ constructor(
                     Measurement(
                         name = label + "SumMs",
                         // note, this duration assumes non-reentrant slices
-                        data = slices.sumOf { it.dur } / 1_000_000.0
+                        data = slices.sumOf { it.dur } / 1_000_000.0,
                     ),
-                    Measurement(name = label + "Count", data = slices.size.toDouble())
+                    Measurement(name = label + "Count", data = slices.size.toDouble()),
                 )
             }
             Mode.Min -> {
@@ -610,7 +656,7 @@ constructor(
                     listOf(
                         Measurement(
                             name = label + "MinMs",
-                            data = slices.minOf { it.dur } / 1_000_000.0
+                            data = slices.minOf { it.dur } / 1_000_000.0,
                         )
                     )
             }
@@ -621,7 +667,7 @@ constructor(
                     listOf(
                         Measurement(
                             name = label + "MaxMs",
-                            data = slices.maxOf { it.dur } / 1_000_000.0
+                            data = slices.maxOf { it.dur } / 1_000_000.0,
                         )
                     )
             }
@@ -632,7 +678,7 @@ constructor(
                 listOf(
                     Measurement(
                         name = label + "AverageMs",
-                        data = slices.sumOf { it.dur } / 1_000_000.0 / slices.size
+                        data = slices.sumOf { it.dur } / 1_000_000.0 / slices.size,
                     )
                 )
             }
@@ -716,11 +762,10 @@ constructor(
  * Some classes will be verified at runtime rather than install time due to limitations in the
  * compiler and runtime or due to being malformed.
  */
-@RequiresApi(24)
 class ArtMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         return traceSession
             .querySlices("JIT Compiling %", packageName = captureInfo.targetPackageName)
@@ -731,11 +776,11 @@ class ArtMetric : Metric() {
             if (
                 DeviceInfo.isClassLoadTracingAvailable(
                     sdkInt = captureInfo.apiLevel,
-                    artVersion = captureInfo.artMainlineVersion
+                    artVersion = captureInfo.artMainlineVersion,
                 )
             ) {
                 traceSession
-                    .querySlices("L%/%;", packageName = captureInfo.targetPackageName)
+                    .querySlices("L%;", packageName = captureInfo.targetPackageName)
                     .asMeasurements("artClassLoad")
             } else emptyList()
     }
@@ -746,9 +791,9 @@ class ArtMetric : Metric() {
                 name = label + "SumMs",
                 // note, this duration assumes non-reentrant slices,
                 // which is true for art trace sections
-                data = sumOf { it.dur } / 1_000_000.0
+                data = sumOf { it.dur } / 1_000_000.0,
             ),
-            Measurement(name = label + "Count", data = size.toDouble())
+            Measurement(name = label + "Count", data = size.toDouble()),
         )
 }
 
@@ -817,6 +862,7 @@ class PowerMetric(private val type: Type) : Metric() {
             return Type.Battery()
         }
 
+        @JvmOverloads
         @JvmStatic
         fun Energy(
             categories: Map<PowerCategory, PowerCategoryDisplayLevel> = emptyMap()
@@ -824,6 +870,7 @@ class PowerMetric(private val type: Type) : Metric() {
             return Type.Energy(categories)
         }
 
+        @JvmOverloads
         @JvmStatic
         fun Power(
             categories: Map<PowerCategory, PowerCategoryDisplayLevel> = emptyMap()
@@ -915,7 +962,7 @@ class PowerMetric(private val type: Type) : Metric() {
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         // collect metrics between trace point flags
         val slice =
@@ -931,7 +978,7 @@ class PowerMetric(private val type: Type) : Metric() {
 
     private fun getBatteryDischargeMetrics(
         session: TraceProcessor.Session,
-        slice: Slice
+        slice: Slice,
     ): List<Measurement> {
         val metrics = BatteryDischargeQuery.getBatteryDischargeMetrics(session, slice)
         return metrics.map { measurement ->
@@ -970,7 +1017,7 @@ class PowerMetric(private val type: Type) : Metric() {
                     metrics
                         .filter { (category, _) -> !type.categories.containsKey(category) }
                         .values
-                        .fold(0.0) { total, next -> total + next.getValue(type) }
+                        .fold(0.0) { total, next -> total + next.getValue(type) },
             )
             .filter { (_, measurement) -> measurement != 0.0 }
     }
@@ -1006,28 +1053,40 @@ class PowerMetric(private val type: Type) : Metric() {
 /**
  * Metric for tracking the memory usage of the target application.
  *
- * There are two modes for measurement - `Last`, which represents the last observed value during an
- * iteration, and `Max`, which represents the largest sample observed per measurement.
- *
- * By default, reports:
- * * `memoryRssAnonKb` - Anonymous resident/allocated memory owned by the process, not including
- *   memory mapped files or shared memory.
- * * `memoryRssAnonFileKb` - Memory allocated by the process to map files.
- * * `memoryHeapSizeKb` - Heap memory allocations from the Android Runtime, sampled after each GC.
- * * `memoryGpuKb` - GPU Memory allocated for the process.
+ * @param mode There are two modes for measurement - `Last`, which represents the last observed
+ *   value during an iteration, and `Max`, which represents the largest sample observed per
+ *   measurement.
+ * @param subMetrics By default, reports:
+ * * `memoryRssAnonKb` - Measures anonymous resident set size memory. This represents memory
+ *   allocated directly by the process—such as via malloc or `mmap`—that is not backed by any file
+ *   on disk. It is often the primary indicator of the app's dynamic memory consumption.
+ * * `memoryRssAnonFileKb` - Measures memory used to map files from disk into the process's address
+ *   space. This includes shared libraries, dex files, and other resource assets loaded by the
+ *   application.
+ * * `memoryHeapSizeKb` - Tracks the total size of the Android Runtime (ART) heap. These samples are
+ *   typically captured immediately after a Garbage Collection (GC) event, providing a look at the
+ *   "live" set of objects in the application's managed memory.
+ * * `memoryGpuKb` - Measures the amount of GPU-specific memory allocated for the process. This is
+ *   particularly useful for identifying high memory usage related to textures, shaders, or other
+ *   graphics-heavy components.
  *
  * By passing a custom `subMetrics` list, you can enable other [SubMetric]s.
+ *
+ * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This is
+ *   useful when there are separate subprocesses of the app.
+ * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish metrics
+ *   collected from different subprocesses in the app. Defaults to [processNameSuffix] with ":"
+ *   replaced by "_".
  */
 @ExperimentalMetricApi
-class MemoryUsageMetric(
+class MemoryUsageMetric
+@JvmOverloads
+constructor(
     private val mode: Mode,
     private val subMetrics: List<SubMetric> =
-        listOf(
-            SubMetric.HeapSize,
-            SubMetric.RssAnon,
-            SubMetric.RssFile,
-            SubMetric.Gpu,
-        )
+        listOf(SubMetric.HeapSize, SubMetric.RssAnon, SubMetric.RssFile, SubMetric.Gpu),
+    private val processNameSuffix: String = "",
+    private val metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
 ) : TraceMetric() {
     enum class Mode {
         /**
@@ -1042,7 +1101,7 @@ class MemoryUsageMetric(
          * Useful for inspecting the worst case state, e.g. finding worst heap size during a given
          * scenario.
          */
-        Max
+        Max,
     }
 
     enum class SubMetric(
@@ -1052,29 +1111,60 @@ class MemoryUsageMetric(
          * False if the metric is represented in the trace in bytes, and must be divided by 1024 to
          * be converted to KB.
          */
-        internal val alreadyInKb: Boolean
+        internal val alreadyInKb: Boolean,
     ) {
+        /**
+         * Tracks the total size of the Android Runtime (ART) heap. These samples are typically
+         * captured immediately after a Garbage Collection (GC) event, providing a look at the
+         * "live" set of objects in the application's managed memory.
+         */
         HeapSize("Heap size (KB)", alreadyInKb = true),
+
+        /**
+         * Measures anonymous resident set size memory. This represents memory allocated directly by
+         * the process—such as via malloc or mmap—that is not backed by any file on disk. It is
+         * often the primary indicator of the app's dynamic memory consumption.
+         */
         RssAnon("mem.rss.anon", alreadyInKb = false),
+
+        /**
+         * Measures memory used to map files from disk into the process's address space. This
+         * includes shared libraries, dex files, and other resource assets loaded by the
+         * application.
+         */
         RssFile("mem.rss.file", alreadyInKb = false),
+
+        /**
+         * Tracks shared memory resident in the process. This includes memory shared between
+         * processes, such as shared buffers or specialized memory regions.
+         */
         RssShmem("mem.rss.shmem", alreadyInKb = false),
-        Gpu("GPU Memory", alreadyInKb = false)
+
+        /**
+         * Measures the amount of GPU-specific memory allocated for the process. This is
+         * particularly useful for identifying high memory usage related to textures, shaders, or
+         * other graphics-heavy components.
+         */
+        Gpu("GPU Memory", alreadyInKb = false),
     }
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
 
         val suffix = mode.toString()
         return MemoryUsageQuery.getMemoryUsageKb(
                 session = traceSession,
-                targetPackageName = captureInfo.targetPackageName,
-                mode = mode
+                targetPackageName = captureInfo.targetPackageName + processNameSuffix,
+                mode = mode,
             )
             ?.mapNotNull {
                 if (it.key in subMetrics) {
-                    Measurement("memory${it.key}${suffix}Kb", it.value.toDouble())
+                    Measurement(
+                        "memory${metricNameSuffix}${it.key}${suffix}Kb",
+                        it.value.toDouble(),
+                    )
                 } else {
                     null
                 }
@@ -1082,26 +1172,48 @@ class MemoryUsageMetric(
     }
 }
 
-/** Captures the number of page faults over time for a target package name. */
+/**
+ * Captures the number of page faults over time for a target package name.
+ *
+ * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This is
+ *   useful when there are separate subprocesses of the app.
+ * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish metrics
+ *   collected from different subprocesses in the app. Defaults to [processNameSuffix] with ":"
+ *   replaced by "_".
+ */
 @ExperimentalMetricApi
-class MemoryCountersMetric : TraceMetric() {
+class MemoryCountersMetric
+@JvmOverloads
+constructor(
+    private val processNameSuffix: String = "",
+    private val metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
+) : TraceMetric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val metrics =
             MemoryCountersQuery.getMemoryCounters(
                 session = traceSession,
-                targetPackageName = captureInfo.targetPackageName
+                targetPackageName = captureInfo.targetPackageName + processNameSuffix,
             ) ?: return listOf()
 
         return listOf(
-            Measurement("minorPageFaults", metrics.minorPageFaults),
-            Measurement("majorPageFaults", metrics.majorPageFaults),
-            Measurement("pageFaultsBackedBySwapCache", metrics.pageFaultsBackedBySwapCache),
-            Measurement("pageFaultsBackedByReadIO", metrics.pageFaultsBackedByReadIO),
-            Measurement("memoryCompactionEvents", metrics.memoryCompactionEvents),
-            Measurement("memoryReclaimEvents", metrics.memoryReclaimEvents),
+            Measurement("minorPageFaults${metricNameSuffix}", metrics.minorPageFaults),
+            Measurement("majorPageFaults${metricNameSuffix}", metrics.majorPageFaults),
+            Measurement(
+                "pageFaultsBackedBySwapCache${metricNameSuffix}",
+                metrics.pageFaultsBackedBySwapCache,
+            ),
+            Measurement(
+                "pageFaultsBackedByReadIO${metricNameSuffix}",
+                metrics.pageFaultsBackedByReadIO,
+            ),
+            Measurement(
+                "memoryCompactionEvents${metricNameSuffix}",
+                metrics.memoryCompactionEvents,
+            ),
+            Measurement("memoryReclaimEvents${metricNameSuffix}", metrics.memoryReclaimEvents),
         )
     }
 }

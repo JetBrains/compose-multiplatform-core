@@ -23,11 +23,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ElevatedAssistChip
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -96,7 +96,6 @@ internal class ChipTestCase(private val type: ChipType) : LayeredComposeTestCase
 
     private var selected by mutableStateOf(false)
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun MeasuredContent() {
         when (type) {
@@ -108,9 +107,9 @@ internal class ChipTestCase(private val type: ChipType) : LayeredComposeTestCase
                         Icon(
                             Icons.Filled.Settings,
                             contentDescription = "Localized description",
-                            Modifier.size(AssistChipDefaults.IconSize)
+                            Modifier.size(AssistChipDefaults.IconSize),
                         )
-                    }
+                    },
                 )
             ChipType.ElevatedAssist ->
                 ElevatedAssistChip(
@@ -120,9 +119,9 @@ internal class ChipTestCase(private val type: ChipType) : LayeredComposeTestCase
                         Icon(
                             Icons.Filled.Settings,
                             contentDescription = "Localized description",
-                            Modifier.size(AssistChipDefaults.IconSize)
+                            Modifier.size(AssistChipDefaults.IconSize),
                         )
-                    }
+                    },
                 )
             ChipType.Filter ->
                 FilterChip(
@@ -135,12 +134,12 @@ internal class ChipTestCase(private val type: ChipType) : LayeredComposeTestCase
                                 Icon(
                                     imageVector = Icons.Filled.Done,
                                     contentDescription = "Localized Description",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
                                 )
                             }
                         } else {
                             null
-                        }
+                        },
                 )
             ChipType.Input ->
                 InputChip(
@@ -156,9 +155,35 @@ internal class ChipTestCase(private val type: ChipType) : LayeredComposeTestCase
                         Icon(
                             Icons.Filled.Settings,
                             contentDescription = "Localized description",
-                            Modifier.size(AssistChipDefaults.IconSize)
+                            Modifier.size(AssistChipDefaults.IconSize),
                         )
-                    }
+                    },
+                )
+            ChipType.FilterWithCornerMorphing ->
+                FilterChip(
+                    selected = selected,
+                    onClick = { selected = !selected },
+                    label = { Text("Filter chip") },
+                    shapes = FilterChipDefaults.shapes(),
+                    leadingIcon =
+                        if (selected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Filled.Done,
+                                    contentDescription = "Localized Description",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                )
+            ChipType.InputWithCornerMorphing ->
+                InputChip(
+                    selected = selected,
+                    onClick = { selected = !selected },
+                    label = { Text("Input Chip") },
+                    shapes = InputChipDefaults.shapes(),
                 )
         }
     }
@@ -175,4 +200,6 @@ enum class ChipType {
     Filter,
     Input,
     Suggestion,
+    FilterWithCornerMorphing,
+    InputWithCornerMorphing,
 }

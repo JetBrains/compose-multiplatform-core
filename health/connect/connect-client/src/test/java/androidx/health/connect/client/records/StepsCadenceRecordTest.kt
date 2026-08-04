@@ -36,7 +36,7 @@ class StepsCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
             .isEqualTo(
@@ -46,7 +46,7 @@ class StepsCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
     }
@@ -60,7 +60,7 @@ class StepsCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
             .isEqualTo(
@@ -70,7 +70,7 @@ class StepsCadenceRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
     }
@@ -84,7 +84,7 @@ class StepsCadenceRecordTest {
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                samples = listOf()
+                samples = listOf(),
             )
         }
     }
@@ -99,7 +99,7 @@ class StepsCadenceRecordTest {
                         endZoneOffset = null,
                         metadata = Metadata.unknownRecordingMethod(),
                         samples =
-                            listOf(StepsCadenceRecord.Sample(Instant.ofEpochMilli(1234L), 85.0))
+                            listOf(StepsCadenceRecord.Sample(Instant.ofEpochMilli(1234L), 85.0)),
                     )
                     .toString()
             )

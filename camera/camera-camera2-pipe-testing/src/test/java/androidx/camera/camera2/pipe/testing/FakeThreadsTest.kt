@@ -16,8 +16,8 @@
 
 package androidx.camera.camera2.pipe.testing
 
-import android.os.Build
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -31,7 +31,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FakeThreadsTest {
     private val testScope = TestScope()
     private val fakeThreads = FakeThreads.fromTestScope(testScope)
@@ -39,9 +39,9 @@ class FakeThreadsTest {
     @Test
     fun fakeThreadsUseDelaySkipping() =
         testScope.runTest {
-            launch(fakeThreads.backgroundDispatcher) { delay(1000000) }.join()
-            launch(fakeThreads.lightweightDispatcher) { delay(1000000) }.join()
-            fakeThreads.globalScope.launch { delay(1000000) }.join()
+            launch(fakeThreads.backgroundDispatcher) { delay(1000.seconds) }.join()
+            launch(fakeThreads.lightweightDispatcher) { delay(1000.seconds) }.join()
+            fakeThreads.cameraPipeScope.launch { delay(1000.seconds) }.join()
 
             var backgroundTaskExecuted = false
             var lightweightTaskExecuted = false
@@ -56,12 +56,14 @@ class FakeThreadsTest {
     @Test
     fun exceptionsInDispatcherPropagateToTestScopeFailure() {
 
-        // Exceptions in GlobalScope is propagated out of the test.
+        // Exceptions in CameraPipeScope is propagated out of the test.
         assertThrows(RuntimeException::class.java) {
             val scope = TestScope()
             val localFakeThreads = FakeThreads.fromTestScope(scope)
             scope.runTest {
-                localFakeThreads.globalScope.launch { throw RuntimeException("globalScope") }
+                localFakeThreads.cameraPipeScope.launch {
+                    throw RuntimeException("cameraPipeScope")
+                }
             }
         }
 

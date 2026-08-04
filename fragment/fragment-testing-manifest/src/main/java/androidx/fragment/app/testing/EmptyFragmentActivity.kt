@@ -17,8 +17,10 @@
 package androidx.fragment.app.testing
 
 import android.os.Bundle
+import android.view.ViewGroup.LayoutParams
 import androidx.annotation.RestrictTo
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.testing.manifest.R
 
 /**
@@ -26,12 +28,12 @@ import androidx.fragment.testing.manifest.R
  * FragmentScenario.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class EmptyFragmentActivity : FragmentActivity() {
+public class EmptyFragmentActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(
             intent.getIntExtra(
                 THEME_EXTRAS_BUNDLE_KEY,
-                R.style.FragmentScenarioEmptyFragmentActivityTheme
+                R.style.FragmentScenarioEmptyFragmentActivityTheme,
             )
         )
 
@@ -41,14 +43,22 @@ class EmptyFragmentActivity : FragmentActivity() {
             supportFragmentManager.fragmentFactory = factory
         }
 
+        val container =
+            FragmentContainerView(this).apply {
+                id = R.id.androidx_fragment_testing_container
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            }
+
+        setContentView(container)
+
         // FragmentFactory needs to be set before calling the super.onCreate, otherwise the
         // Activity crashes when it is recreating and there is a fragment which has no
         // default constructor.
         super.onCreate(savedInstanceState)
     }
 
-    companion object {
-        const val THEME_EXTRAS_BUNDLE_KEY =
+    public companion object {
+        public const val THEME_EXTRAS_BUNDLE_KEY: String =
             "androidx.fragment.app.testing.FragmentScenario" +
                 ".EmptyFragmentActivity.THEME_EXTRAS_BUNDLE_KEY"
     }

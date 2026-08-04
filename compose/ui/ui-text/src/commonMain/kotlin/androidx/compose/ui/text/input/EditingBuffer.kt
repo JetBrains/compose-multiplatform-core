@@ -27,7 +27,7 @@ import androidx.compose.ui.text.internal.requirePrecondition
  * This class manages the all editing relate states, editing buffers, selection, styles, etc.
  */
 @OptIn(InternalTextApi::class)
-class EditingBuffer(
+public class EditingBuffer(
     /** The initial text of this editing buffer */
     text: AnnotatedString,
     /**
@@ -36,7 +36,7 @@ class EditingBuffer(
      * selection must points the valid index of the initialText, otherwise IndexOutOfBoundsException
      * will be thrown.
      */
-    selection: TextRange
+    selection: TextRange,
 ) {
     internal companion object {
         internal const val NOWHERE = -1
@@ -118,7 +118,7 @@ class EditingBuffer(
 
     internal constructor(
         text: String,
-        selection: TextRange
+        selection: TextRange,
     ) : this(AnnotatedString(text), selection)
 
     init {
@@ -290,7 +290,7 @@ class EditingBuffer(
         compositionEnd = NOWHERE
     }
 
-    override fun toString(): String = gapBuffer.toString()
+    public override fun toString(): String = gapBuffer.toString()
 
     internal fun toAnnotatedString(): AnnotatedString = AnnotatedString(toString())
 }

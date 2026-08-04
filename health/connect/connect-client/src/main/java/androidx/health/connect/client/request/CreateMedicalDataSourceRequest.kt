@@ -57,7 +57,7 @@ import kotlin.String
 class CreateMedicalDataSourceRequest(
     val fhirBaseUri: Uri,
     val displayName: String,
-    val fhirVersion: FhirVersion
+    val fhirVersion: FhirVersion,
 ) {
     @SuppressLint("NewApi") // already checked with a feature availability check
     internal val platformCreateMedicalDataSourceRequest: PlatformCreateMedicalDataSourceRequest =
@@ -65,7 +65,7 @@ class CreateMedicalDataSourceRequest(
             PlatformCreateMedicalDataSourceRequestBuilder(
                     fhirBaseUri,
                     displayName,
-                    fhirVersion.platformFhirVersion
+                    fhirVersion.platformFhirVersion,
                 )
                 .build()
         }
@@ -76,8 +76,8 @@ class CreateMedicalDataSourceRequest(
             mapOf(
                 "fhirBaseUri" to fhirBaseUri,
                 "displayName" to displayName,
-                "fhirVersion" to fhirVersion
-            )
+                "fhirVersion" to fhirVersion,
+            ),
         )
 
     override fun equals(other: Any?): Boolean {

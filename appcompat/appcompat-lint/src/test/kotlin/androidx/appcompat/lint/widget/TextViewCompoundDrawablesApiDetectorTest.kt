@@ -42,7 +42,7 @@ class TextViewCompoundDrawablesApiDetectorTest {
                     textView.setCompoundDrawableTintList(csl)
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -56,10 +56,10 @@ class TextViewCompoundDrawablesApiDetectorTest {
             .run()
             .expect(
                 """
-src/com/example/CustomActivity.kt:11: Warning: Use TextViewCompat.setCompoundDrawableTintList() [UseCompatTextViewDrawableApis]
-        textView.setCompoundDrawableTintList(csl)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                src/com/example/CustomActivity.kt:11: Warning: Use TextViewCompat.setCompoundDrawableTintList() [UseCompatTextViewDrawableApis]
+                        textView.setCompoundDrawableTintList(csl)
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )
@@ -84,7 +84,7 @@ src/com/example/CustomActivity.kt:11: Warning: Use TextViewCompat.setCompoundDra
                     textView.setCompoundDrawableTintMode(PorterDuff.Mode.DST)
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -98,10 +98,10 @@ src/com/example/CustomActivity.kt:11: Warning: Use TextViewCompat.setCompoundDra
             .run()
             .expect(
                 """
-src/com/example/CustomActivity.kt:11: Warning: Use TextViewCompat.setCompoundDrawableTintMode() [UseCompatTextViewDrawableApis]
-        textView.setCompoundDrawableTintMode(PorterDuff.Mode.DST)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                src/com/example/CustomActivity.kt:11: Warning: Use TextViewCompat.setCompoundDrawableTintMode() [UseCompatTextViewDrawableApis]
+                        textView.setCompoundDrawableTintMode(PorterDuff.Mode.DST)
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )

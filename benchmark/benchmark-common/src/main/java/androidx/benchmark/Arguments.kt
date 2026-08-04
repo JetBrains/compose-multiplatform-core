@@ -16,11 +16,11 @@
 
 package androidx.benchmark
 
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.benchmark.Arguments.startupInsightsHelpUrlBaseOverride
 import androidx.test.platform.app.InstrumentationRegistry
 
 /** This allows tests to override arguments from code */
@@ -60,12 +60,19 @@ object Arguments {
     private val _startupInsightsHelpUrlBase: String?
     @VisibleForTesting var startupInsightsHelpUrlBaseOverride: String? = null
 
+    /**
+     * Whether to require clocks to be locked. Important: This is *disabled* by default as it was
+     * introduced in later versions of benchmark, and running with unlocked clocks is a legitimate
+     * use case for Macrobenchmarks.
+     */
+    val requireLockedClocks: Boolean
+
     val enabledRules: Set<RuleType>
 
     enum class RuleType {
         Microbenchmark,
         Macrobenchmark,
-        BaselineProfile
+        BaselineProfile,
     }
 
     val enableCompilation: Boolean
@@ -97,7 +104,6 @@ object Arguments {
 
     internal var error: String? = null
     internal val additionalTestOutputDir: String?
-
     private val targetPackageName: String?
 
     val payload: Map<String, String>
@@ -122,12 +128,7 @@ object Arguments {
         val argumentName = "profiling.mode"
         val argumentValue = getBenchmarkArgument(argumentName, "DEFAULT_VAL")
         if (argumentValue == "DEFAULT_VAL") {
-            return if (Build.VERSION.SDK_INT <= 21) {
-                // Have observed stack corruption on API 21, we haven't spent the time to find out
-                // why, or if it's better on other low API levels. See b/300658578
-                // TODO: consider adding warning here
-                null to true
-            } else if (DeviceInfo.methodTracingAffectsMeasurements) {
+            return if (DeviceInfo.methodTracingAffectsMeasurements) {
                 // We warn here instead of in Errors since this doesn't affect all measurements -
                 // BenchmarkState throws rather than measuring incorrectly, and the first benchmark
                 // can still measure with a trace safely
@@ -210,7 +211,7 @@ object Arguments {
             arguments
                 .getBenchmarkArgument(
                     key = "enabledRules",
-                    defaultValue = RuleType.values().joinToString(separator = ",") { it.toString() }
+                    defaultValue = RuleType.values().joinToString(separator = ",") { it.toString() },
                 )
                 .run {
                     if (this.lowercase() == "none") {
@@ -264,7 +265,7 @@ object Arguments {
             Log.d(
                 BenchmarkState.TAG,
                 "Profiler ${profiler.javaClass.simpleName}, freq " +
-                    "$profilerSampleFrequencyHz, duration $profilerSampleDurationSeconds"
+                    "$profilerSampleFrequencyHz, duration $profilerSampleDurationSeconds",
             )
         }
 
@@ -278,14 +279,14 @@ object Arguments {
                 dryRunMode -> {
                     Log.d(
                         BenchmarkState.TAG,
-                        "Ignoring request for cpuEventCounter due to dryRunMode=true"
+                        "Ignoring request for cpuEventCounter due to dryRunMode=true",
                     )
                     false
                 }
                 !DeviceInfo.supportsCpuEventCounters -> {
                     Log.d(
                         BenchmarkState.TAG,
-                        "Ignoring request for cpuEventCounter due to unrooted device"
+                        "Ignoring request for cpuEventCounter due to unrooted device",
                     )
                     false
                 }
@@ -296,7 +297,7 @@ object Arguments {
                 arguments
                     .getBenchmarkArgument(
                         "cpuEventCounter.events",
-                        "Instructions,CpuCycles,BranchMisses"
+                        "Instructions,CpuCycles,BranchMisses",
                     )
                     .split(",")
                     .map { eventName -> CpuEventCounter.Event.valueOf(eventName) }
@@ -335,12 +336,14 @@ object Arguments {
                 .getBenchmarkArgument("measureRepeatedOnMainThread.throwOnDeadline")
                 ?.toBoolean() ?: true
 
-        requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: false
+        requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: true
         requireJitDisabledIfRooted =
             arguments.getBenchmarkArgument("requireJitDisabledIfRooted")?.toBoolean() ?: false
+        requireLockedClocks =
+            arguments.getBenchmarkArgument("requireLockedClocks")?.toBoolean() ?: false
 
         throwOnMainThreadMeasureRepeated =
-            arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: false
+            arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: true
 
         killExistingPerfettoRecordings =
             arguments.getBenchmarkArgument("killExistingPerfettoRecordings")?.toBoolean()
@@ -351,12 +354,12 @@ object Arguments {
         if (arguments.getString("orchestratorService") != null) {
             InstrumentationResults.scheduleIdeWarningOnNextReport(
                 """
-                    AndroidX Benchmark does not support running with the AndroidX Test Orchestrator.
+                AndroidX Benchmark does not support running with the AndroidX Test Orchestrator.
 
-                    AndroidX benchmarks (micro and macro) produce one JSON file per test module,
-                    which together with Test Orchestrator restarting the process frequently causes
-                    benchmark output JSON files to be repeatedly overwritten during the test.
-                    """
+                AndroidX benchmarks (micro and macro) produce one JSON file per test module,
+                which together with Test Orchestrator restarting the process frequently causes
+                benchmark output JSON files to be repeatedly overwritten during the test.
+                """
                     .trimIndent()
             )
         }
@@ -386,11 +389,11 @@ object Arguments {
         targetPackageName
             ?: throw IllegalArgumentException(
                 """
-        Can't retrieve the target package name from instrumentation arguments.
-        This feature requires the baseline profile gradle plugin with minimum version 1.3.0-alpha01
-        and the Android Gradle Plugin minimum version 8.3.0-alpha10.
-        Please ensure your project has the correct versions in order to use this feature.
-    """
+                Can't retrieve the target package name from instrumentation arguments.
+                This feature requires the baseline profile gradle plugin with minimum version 1.3.0-alpha01
+                and the Android Gradle Plugin minimum version 8.3.0-alpha10.
+                Please ensure your project has the correct versions in order to use this feature.
+                """
                     .trimIndent()
             )
 }

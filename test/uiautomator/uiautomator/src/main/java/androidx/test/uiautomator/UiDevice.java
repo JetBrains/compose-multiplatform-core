@@ -67,6 +67,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -188,6 +189,60 @@ public class UiDevice implements Searchable {
         return ret;
     }
 
+    // Window searches
+
+    /** Returns whether there is a window match for the given {@code selector} criteria. */
+    public boolean hasWindow(@NonNull ByWindowSelector selector) {
+        waitForIdle();
+        AccessibilityWindowInfo window =
+                ByWindowMatcher.findMatch(
+                        this, selector,
+                        getWindows(getUiAutomation()).toArray(new AccessibilityWindowInfo[0]));
+        if (window != null) {
+            window.recycle();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the first top-level window that matches the {@code selector} criteria, or null if no
+     * matching windows are found.
+     */
+    public @Nullable UiWindow findWindow(@NonNull ByWindowSelector selector) {
+        waitForIdle();
+        AccessibilityWindowInfo window =
+                ByWindowMatcher.findMatch(
+                        this, selector,
+                        getWindows(getUiAutomation()).toArray(new AccessibilityWindowInfo[0]));
+        if (window == null) {
+            return null;
+        }
+        return UiWindow.create(this, window);
+    }
+
+    /**
+     * Returns all windows that match the {@code selector} criteria. For convenience the returned
+     * list
+     * is sorted in descending layer Z-order, ensuring the root of the topmost interactable
+     * window is
+     * reported first.
+     */
+    public @NonNull List<UiWindow> findWindows(@NonNull ByWindowSelector selector) {
+        waitForIdle();
+        List<UiWindow> ret = new ArrayList<>();
+        for (AccessibilityWindowInfo window :
+                ByWindowMatcher.findMatches(
+                        this,
+                        selector,
+                        getWindows(getUiAutomation()).toArray(new AccessibilityWindowInfo[0]))) {
+            UiWindow instance = UiWindow.create(this, window);
+            if (instance != null) {
+                ret.add(instance);
+            }
+        }
+        return ret;
+    }
 
     /**
      * Waits for given the {@code condition} to be met.
@@ -624,8 +679,8 @@ public class UiDevice implements Searchable {
 
     /**
      * Performs a swipe from one coordinate to another on the default display using the number of
-     * steps to determine smoothness and speed. Each step execution is throttled to 5ms per step.
-     * So for a 100 steps, the swipe will take about 1/2 second to complete.
+     * steps to determine smoothness and speed. Each step execution is throttled to the length
+     * of a frame per step (throttled by VSync).
      *
      * @param startX X-axis value for the starting coordinate
      * @param startY Y-axis value for the starting coordinate
@@ -644,8 +699,7 @@ public class UiDevice implements Searchable {
     /**
      * Performs a swipe from one coordinate to another coordinate on the default display. You can
      * control the smoothness and speed of the swipe by specifying the number of steps. Each step
-     * execution is throttled to 5 milliseconds per step, so for a 100 steps, the swipe will take
-     * around 0.5 seconds to complete.
+     * execution is throttled to the length of a frame per step (throttled by VSync).
      *
      * @param startX X-axis value for the starting coordinate
      * @param startY Y-axis value for the starting coordinate
@@ -664,8 +718,7 @@ public class UiDevice implements Searchable {
 
     /**
      * Performs a swipe between points in the Point array on the default display. Each step
-     * execution is throttled to 5ms per step. So for a 100 steps, the swipe will take about 1/2
-     * second to complete.
+     * execution is throttled to the length of a frame per step (throttled by VSync).
      *
      * @param segments is Point array containing at least one Point object
      * @param segmentSteps steps to inject between two Points
@@ -679,6 +732,11 @@ public class UiDevice implements Searchable {
 
     /**
      * Waits for the current application to idle.
+     * <p>
+     * <b>Note:</b> Usage of this API in tests will result in non-deterministic tests. So this
+     * API should only be used as a last resort and <b>only</b> when there are no other
+     * alternatives available.
+     * <p>
      * Default wait timeout is 10 seconds
      */
     public void waitForIdle() {
@@ -689,6 +747,11 @@ public class UiDevice implements Searchable {
 
     /**
      * Waits for the current application to idle.
+     * <p>
+     * <b>Note:</b> Usage of this API in tests will result in non-deterministic tests. So this
+     * API should only be used as a last resort and <b>only</b> when there are no other
+     * alternatives available.
+     * <p>
      * @param timeout in milliseconds
      */
     public void waitForIdle(long timeout) {
@@ -1274,7 +1337,19 @@ public class UiDevice implements Searchable {
     }
 
     /**
-     * Take a screenshot of current window and store it as PNG
+     * Take a screenshot of the default display.
+     *
+     * <p>The screenshot is adjusted per screen rotation.
+     *
+     * @return The screenshot bitmap on success, {@code null} otherwise
+     * @see android.app.UiAutomation#takeScreenshot()
+     */
+    public @Nullable Bitmap takeScreenshot() {
+        return getUiAutomation().takeScreenshot();
+    }
+
+    /**
+     * Take a screenshot of the default display and store it as PNG
      *
      * Default scale of 1.0f (original size) and 90% quality is used
      * The screenshot is adjusted per screen rotation
@@ -1287,7 +1362,7 @@ public class UiDevice implements Searchable {
     }
 
     /**
-     * Take a screenshot of current window and store it as PNG
+     * Take a screenshot of the default display and store it as PNG
      *
      * The screenshot is adjusted per screen rotation
      *
@@ -1299,7 +1374,7 @@ public class UiDevice implements Searchable {
     public boolean takeScreenshot(@NonNull File storePath, float scale, int quality) {
         Log.d(TAG, String.format("Taking screenshot (scale=%f, quality=%d) and storing at %s.",
                 scale, quality, storePath));
-        Bitmap screenshot = getUiAutomation().takeScreenshot();
+        Bitmap screenshot = takeScreenshot();
         if (screenshot == null) {
             Log.w(TAG, "Failed to take screenshot.");
             return false;
@@ -1467,16 +1542,8 @@ public class UiDevice implements Searchable {
     }
 
     UiAutomation getUiAutomation() {
-        UiAutomation uiAutomation;
         int flags = Configurator.getInstance().getUiAutomationFlags();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            uiAutomation = Api24Impl.getUiAutomationWithRetry(getInstrumentation(), flags);
-        } else {
-            if (flags != Configurator.DEFAULT_UIAUTOMATION_FLAGS) {
-                Log.w(TAG, "UiAutomation flags not supported prior to API 24");
-            }
-            uiAutomation = getInstrumentation().getUiAutomation();
-        }
+        UiAutomation uiAutomation = getUiAutomationWithRetry(getInstrumentation(), flags);
 
         if (uiAutomation == null) {
             throw new NullPointerException("Got null UiAutomation from instrumentation.");
@@ -1523,25 +1590,35 @@ public class UiDevice implements Searchable {
         return mInteractionController;
     }
 
-    @RequiresApi(24)
-    static class Api24Impl {
-        private Api24Impl() {
+    /**
+     * Performs accessibility checks on the given {@link AccessibilityNodeInfo} using the
+     * validators set in
+     * {@link Configurator#addUiAccessibilityValidator(UiAccessibilityValidator)}.
+     *
+     * @param node The {@link AccessibilityNodeInfo} to validate.
+     */
+    void performAccessibilityChecks(@NonNull AccessibilityNodeInfo node) {
+        Objects.requireNonNull(node);
+        for (UiAccessibilityValidator validator : Configurator.getInstance()
+                .getUiAccessibilityValidators()) {
+            validator.validate(node);
         }
+    }
 
-        static UiAutomation getUiAutomationWithRetry(Instrumentation instrumentation, int flags) {
-            UiAutomation uiAutomation = null;
-            for (int i = 0; i < MAX_UIAUTOMATION_RETRY; i++) {
-                uiAutomation = instrumentation.getUiAutomation(flags);
-                if (uiAutomation != null) {
-                    break;
-                }
-                if (i < MAX_UIAUTOMATION_RETRY - 1) {
-                    Log.e(TAG, "Got null UiAutomation from instrumentation - Retrying...");
-                    SystemClock.sleep(UIAUTOMATION_RETRY_INTERVAL);
-                }
+    private static UiAutomation getUiAutomationWithRetry(
+            Instrumentation instrumentation, int flags) {
+        UiAutomation uiAutomation = null;
+        for (int i = 0; i < MAX_UIAUTOMATION_RETRY; i++) {
+            uiAutomation = instrumentation.getUiAutomation(flags);
+            if (uiAutomation != null) {
+                break;
             }
-            return uiAutomation;
+            if (i < MAX_UIAUTOMATION_RETRY - 1) {
+                Log.e(TAG, "Got null UiAutomation from instrumentation - Retrying...");
+                SystemClock.sleep(UIAUTOMATION_RETRY_INTERVAL);
+            }
         }
+        return uiAutomation;
     }
 
     @RequiresApi(30)

@@ -39,14 +39,14 @@ fun ButtonGroupSample() {
             Button(
                 onClick = {},
                 modifier = Modifier.animateWidth(interactionSource1),
-                interactionSource = interactionSource1
+                interactionSource = interactionSource1,
             ) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("L") }
             }
             Button(
                 onClick = {},
                 modifier = Modifier.animateWidth(interactionSource2),
-                interactionSource = interactionSource2
+                interactionSource = interactionSource2,
             ) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("R") }
             }
@@ -66,21 +66,21 @@ fun ButtonGroupThreeButtonsSample() {
             Button(
                 onClick = {},
                 modifier = Modifier.animateWidth(interactionSource1),
-                interactionSource = interactionSource1
+                interactionSource = interactionSource1,
             ) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("A") }
             }
             Button(
                 onClick = {},
                 modifier = Modifier.weight(1.5f).animateWidth(interactionSource2),
-                interactionSource = interactionSource2
+                interactionSource = interactionSource2,
             ) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("B") }
             }
             Button(
                 onClick = {},
                 modifier = Modifier.animateWidth(interactionSource3),
-                interactionSource = interactionSource3
+                interactionSource = interactionSource3,
             ) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("C") }
             }

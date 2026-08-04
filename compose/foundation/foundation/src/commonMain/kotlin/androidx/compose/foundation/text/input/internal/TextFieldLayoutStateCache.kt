@@ -16,14 +16,14 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextDelegate
 import androidx.compose.foundation.text.input.PlacedAnnotation
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.internal.TextFieldLayoutStateCache.MeasureInputs
-import androidx.compose.foundation.text.input.internal.TextFieldLayoutStateCache.NonMeasureInputs
 import androidx.compose.runtime.SnapshotMutationPolicy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -43,7 +43,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.text.intl.PlatformLocale
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -150,23 +149,33 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         return getOrComputeLayout(nonMeasureInputs, measureInputs)
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     private fun getOrComputeLayout(
         nonMeasureInputs: NonMeasureInputs,
-        measureInputs: MeasureInputs
+        measureInputs: MeasureInputs,
     ): TextLayoutResult {
         val visualText = nonMeasureInputs.textFieldState.visualText
+        val visualTextAnnotations =
+            if (ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled) {
+                mergeNullableLists(
+                    visualText.composingAnnotations,
+                    visualText.textFieldTextStyles?.textStyleBuffer?.getAllStyles(),
+                )
+            } else {
+                mergeNullableLists(visualText.composingAnnotations, visualText.outputAnnotations)
+            }
 
         // Use withCurrent here so the cache itself is never reported as a read state object. It
         // doesn't need to be, because it's always guaranteed to return the same value for the same
         // inputs, so it's good enough to read the input states and those will invalidate the
         // caller when they change.
-        record.withCurrent { cachedRecord ->
+        record.withCurrent(this) { cachedRecord ->
             val cachedResult = cachedRecord.layoutResult
 
             if (
                 cachedResult != null &&
                     cachedRecord.visualText?.contentEquals(visualText) == true &&
-                    cachedRecord.composingAnnotations == visualText.composingAnnotations &&
+                    cachedRecord.annotations == visualTextAnnotations &&
                     cachedRecord.composition == visualText.composition &&
                     cachedRecord.singleLine == nonMeasureInputs.singleLine &&
                     cachedRecord.softWrap == nonMeasureInputs.softWrap &&
@@ -209,36 +218,40 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                                 cachedResult.layoutInput.density,
                                 cachedResult.layoutInput.layoutDirection,
                                 cachedResult.layoutInput.fontFamilyResolver,
-                                cachedResult.layoutInput.constraints
+                                cachedResult.layoutInput.constraints,
                             )
                     )
                 }
             }
 
             // Slow path: Some input changed, need to re-layout.
-            return computeLayout(visualText, nonMeasureInputs, measureInputs).also { newResult ->
-                // Although the snapshot-aware cache is only updated when the current snapshot
-                // is writable, we still would like to cache the results of text layout
-                // computation since it's very likely that a follow-up access to the text layout
-                // result will use the same measure and non-measure inputs. Therefore, we use
-                // a `TextMeasurer` with a cache size of 1 to compute the text layout result.
-                if (newResult != cachedResult) {
-                    updateCacheIfWritable {
-                        this.visualText = visualText
-                        this.composingAnnotations = visualText.composingAnnotations
-                        this.composition = visualText.composition
-                        this.singleLine = nonMeasureInputs.singleLine
-                        this.softWrap = nonMeasureInputs.softWrap
-                        this.textStyle = nonMeasureInputs.textStyle
-                        this.layoutDirection = measureInputs.layoutDirection
-                        this.densityValue = measureInputs.densityValue
-                        this.fontScale = measureInputs.fontScale
-                        this.constraints = measureInputs.constraints
-                        this.fontFamilyResolver = measureInputs.fontFamilyResolver
-                        this.layoutResult = newResult
+            return computeLayout(visualText, visualTextAnnotations, nonMeasureInputs, measureInputs)
+                .also { newResult ->
+                    // Although the snapshot-aware cache is only updated when the current snapshot
+                    // is writable, we still would like to cache the results of text layout
+                    // computation since it's very likely that a follow-up access to the text layout
+                    // result will use the same measure and non-measure inputs. Therefore, we use
+                    // a `TextMeasurer` with a cache size of 1 to compute the text layout result.
+                    if (newResult != cachedResult) {
+                        updateCacheIfWritable {
+                            // it is ok that we put the entire TextFieldCharSequence into cache
+                            // because
+                            // the comparison only runs `contentEquals`.
+                            this.visualText = visualText
+                            this.annotations = visualTextAnnotations
+                            this.composition = visualText.composition
+                            this.singleLine = nonMeasureInputs.singleLine
+                            this.softWrap = nonMeasureInputs.softWrap
+                            this.textStyle = nonMeasureInputs.textStyle
+                            this.layoutDirection = measureInputs.layoutDirection
+                            this.densityValue = measureInputs.densityValue
+                            this.fontScale = measureInputs.fontScale
+                            this.constraints = measureInputs.constraints
+                            this.fontFamilyResolver = measureInputs.fontFamilyResolver
+                            this.layoutResult = newResult
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -266,15 +279,16 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
                     defaultFontFamilyResolver = measureInputs.fontFamilyResolver,
                     defaultDensity = measureInputs.density,
                     defaultLayoutDirection = measureInputs.layoutDirection,
-                    cacheSize = 1
+                    cacheSize = 1,
                 )
                 .also { textMeasurer = it }
     }
 
     private fun computeLayout(
         visualText: TextFieldCharSequence,
+        annotations: List<PlacedAnnotation>?,
         nonMeasureInputs: NonMeasureInputs,
-        measureInputs: MeasureInputs
+        measureInputs: MeasureInputs,
     ): TextLayoutResult {
         // TODO(b/294403840) Don't use TextMeasurer – it is not designed for this use case,
         //  optimized for re-use which we don't take a great advantage of here, and does its own
@@ -286,8 +300,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             if (nonMeasureInputs.isKeyboardTypePhone) {
                 val textStyle = nonMeasureInputs.textStyle
                 val currentLocale = textStyle.localeList?.let { it[0] } ?: Locale.current
-                val textDirection =
-                    resolveTextDirectionForKeyboardTypePhone(currentLocale.platformLocale)
+                val textDirection = resolveTextDirectionForKeyboardTypePhone(currentLocale)
                 nonMeasureInputs.textStyle.merge(TextStyle(textDirection = textDirection))
             } else {
                 nonMeasureInputs.textStyle
@@ -297,7 +310,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
             text =
                 AnnotatedString(
                     text = visualText.toString(),
-                    annotations = visualText.composingAnnotations ?: emptyList()
+                    annotations = annotations ?: emptyList(),
                 ),
             style = finalTextStyle,
             softWrap = nonMeasureInputs.softWrap,
@@ -321,7 +334,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord {
         // This is just a cache, so it's safe to always take the most recent record – worst case
         // we'll just re-compute the layout.
@@ -343,7 +356,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         // re-layout. Also if the TFS object _doesn't_ change but its text _does_, we do need to
         // re-layout. That state read happens in getOrComputeLayout to invalidate correctly.
         var visualText: CharSequence? = null
-        var composingAnnotations: List<PlacedAnnotation>? = null
+        var annotations: List<PlacedAnnotation>? = null
         // We keep composition separate from visualText because we do not want to invalidate text
         // layout when selection changes. Composition should invalidate the layout because it
         // adds an underline span.
@@ -367,7 +380,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         override fun assign(value: StateRecord) {
             value as CacheRecord
             visualText = value.visualText
-            composingAnnotations = value.composingAnnotations
+            annotations = value.annotations
             composition = value.composition
             textStyle = value.textStyle
             singleLine = value.singleLine
@@ -383,7 +396,7 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
         override fun toString(): String =
             "CacheRecord(" +
                 "visualText=$visualText, " +
-                "composingAnnotations=$composingAnnotations, " +
+                "annotations=$annotations, " +
                 "composition=$composition, " +
                 "textStyle=$textStyle, " +
                 "singleLine=$singleLine, " +
@@ -501,4 +514,20 @@ internal class TextFieldLayoutStateCache : State<TextLayoutResult?>, StateObject
  * We need to use the digit direction of the [locale] while deciding TextDirection if KeyboardType
  * is configured as [KeyboardType.Phone].
  */
-internal expect fun resolveTextDirectionForKeyboardTypePhone(locale: PlatformLocale): TextDirection
+internal expect fun resolveTextDirectionForKeyboardTypePhone(locale: Locale): TextDirection
+
+/**
+ * Efficiently concatenates two nullable lists. Semantically an empty list is equivalent to a null
+ * list reference for this function.
+ */
+private fun <T> mergeNullableLists(first: List<T>?, second: List<T>?): List<T>? {
+    if (first.isNullOrEmpty() && second.isNullOrEmpty()) return null
+
+    if (first.isNullOrEmpty()) return second
+    if (second.isNullOrEmpty()) return first
+
+    return buildList {
+        addAll(first)
+        addAll(second)
+    }
+}

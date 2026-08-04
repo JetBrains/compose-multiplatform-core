@@ -59,13 +59,7 @@ class ReadMedicalResourcesPageRequest(val pageToken: String, pageSize: Int = DEF
         }
 
     override fun toString(): String =
-        toString(
-            this,
-            mapOf(
-                "pageToken" to pageToken,
-                "pageSize" to pageSize,
-            )
-        )
+        toString(this, mapOf("pageToken" to pageToken, "pageSize" to pageSize))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

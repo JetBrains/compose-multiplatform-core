@@ -39,55 +39,55 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
             checksum = 0xb5f243fa,
             source =
                 """
-            package androidx.constraintlayout.compose
-    
-            class ConstraintSetScope {
-                private var generatedCount = 0
-                private fun nextId() = "androidx.constraintlayout.id" + generatedCount++
+                package androidx.constraintlayout.compose
 
-                fun createRefsFor(vararg ids: Any): ConstrainedLayoutReferences =
-                    ConstrainedLayoutReferences(arrayOf(*ids))
-                
-                inner class ConstrainedLayoutReferences internal constructor(
-                    private val ids: Array<Any>
-                ) {
-                    operator fun component1(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(0) { nextId() })
-                    operator fun component2(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(1) { nextId() })
-                    operator fun component3(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(2) { nextId() })
-                    operator fun component4(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(3) { nextId() })
-                    operator fun component5(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(4) { nextId() })
-                    operator fun component6(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(5) { nextId() })
-                    operator fun component7(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(6) { nextId() })
-                    operator fun component8(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(7) { nextId() })
-                    operator fun component9(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(8) { nextId() })
-                    operator fun component10(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(9) { nextId() })
-                    operator fun component11(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(10) { nextId() })
-                    operator fun component12(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(11) { nextId() })
-                    operator fun component13(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(12) { nextId() })
-                    operator fun component14(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(13) { nextId() })
-                    operator fun component15(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(14) { nextId() })
-                    operator fun component16(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(15) { nextId() })
+                class ConstraintSetScope {
+                    private var generatedCount = 0
+                    private fun nextId() = "androidx.constraintlayout.id" + generatedCount++
+
+                    fun createRefsFor(vararg ids: Any): ConstrainedLayoutReferences =
+                        ConstrainedLayoutReferences(arrayOf(*ids))
+                    
+                    inner class ConstrainedLayoutReferences internal constructor(
+                        private val ids: Array<Any>
+                    ) {
+                        operator fun component1(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(0) { nextId() })
+                        operator fun component2(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(1) { nextId() })
+                        operator fun component3(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(2) { nextId() })
+                        operator fun component4(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(3) { nextId() })
+                        operator fun component5(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(4) { nextId() })
+                        operator fun component6(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(5) { nextId() })
+                        operator fun component7(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(6) { nextId() })
+                        operator fun component8(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(7) { nextId() })
+                        operator fun component9(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(8) { nextId() })
+                        operator fun component10(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(9) { nextId() })
+                        operator fun component11(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(10) { nextId() })
+                        operator fun component12(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(11) { nextId() })
+                        operator fun component13(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(12) { nextId() })
+                        operator fun component14(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(13) { nextId() })
+                        operator fun component15(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(14) { nextId() })
+                        operator fun component16(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(15) { nextId() })
+                    }
                 }
-            }
 
-            class ConstrainedLayoutReference(val id: Any)
-        """
+                class ConstrainedLayoutReference(val id: Any)
+                """
                     .trimIndent(),
             """
         META-INF/main.kotlin_module:
@@ -176,7 +176,7 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
         K0w/m5yaev0Ss8f45DxZEumIbLCV0CZTVgEPyL/ajrtN8xr9Uqy1yA3jU3zW
         ZRMenudnHZswH/HHsE6jTtg0xZrox3dR1gqqNFcJX6DYLzYRM/HIxJcmvsIi
         mVgyUcbXm2AS32B5E30SusRjiaTEYGSMSTyRKET2LYneyDD/BWglTVUgCAAA
-        """
+        """,
         )
 
     private val MotionSceneScopeStub =
@@ -186,66 +186,66 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
             checksum = 0x499473bb,
             source =
                 """
-            package androidx.constraintlayout.compose
+                package androidx.constraintlayout.compose
 
-            import androidx.constraintlayout.compose.ConstrainedLayoutReference
+                import androidx.constraintlayout.compose.ConstrainedLayoutReference
 
-            private const val UNDEFINED_NAME_PREFIX = "androidx.constraintlayout"
+                private const val UNDEFINED_NAME_PREFIX = "androidx.constraintlayout"
 
-            class MotionSceneScope {
-                /**
-                 * Count of generated ConstraintSet & Transition names.
-                 */
-                private var generatedCount = 0
+                class MotionSceneScope {
+                    /**
+                     * Count of generated ConstraintSet & Transition names.
+                     */
+                    private var generatedCount = 0
 
-                /**
-                 * Count of generated ConstraintLayoutReference IDs.
-                 */
-                private var generatedIdCount = 0
+                    /**
+                     * Count of generated ConstraintLayoutReference IDs.
+                     */
+                    private var generatedIdCount = 0
 
-                private fun nextId() = UNDEFINED_NAME_PREFIX + "id" + generatedIdCount++
+                    private fun nextId() = UNDEFINED_NAME_PREFIX + "id" + generatedIdCount++
 
-                fun createRefsFor(vararg ids: Any): ConstrainedLayoutReferences =
-                    ConstrainedLayoutReferences(arrayOf(*ids))
+                    fun createRefsFor(vararg ids: Any): ConstrainedLayoutReferences =
+                        ConstrainedLayoutReferences(arrayOf(*ids))
 
-                inner class ConstrainedLayoutReferences internal constructor(
-                    private val ids: Array<Any>
-                ) {
-                    operator fun component1(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(0) { nextId() })
-                    operator fun component2(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(1) { nextId() })
-                    operator fun component3(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(2) { nextId() })
-                    operator fun component4(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(3) { nextId() })
-                    operator fun component5(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(4) { nextId() })
-                    operator fun component6(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(5) { nextId() })
-                    operator fun component7(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(6) { nextId() })
-                    operator fun component8(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(7) { nextId() })
-                    operator fun component9(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(8) { nextId() })
-                    operator fun component10(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(9) { nextId() })
-                    operator fun component11(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(10) { nextId() })
-                    operator fun component12(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(11) { nextId() })
-                    operator fun component13(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(12) { nextId() })
-                    operator fun component14(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(13) { nextId() })
-                    operator fun component15(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(14) { nextId() })
-                    operator fun component16(): ConstrainedLayoutReference =
-                        ConstrainedLayoutReference(ids.getOrElse(15) { nextId() })
+                    inner class ConstrainedLayoutReferences internal constructor(
+                        private val ids: Array<Any>
+                    ) {
+                        operator fun component1(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(0) { nextId() })
+                        operator fun component2(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(1) { nextId() })
+                        operator fun component3(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(2) { nextId() })
+                        operator fun component4(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(3) { nextId() })
+                        operator fun component5(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(4) { nextId() })
+                        operator fun component6(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(5) { nextId() })
+                        operator fun component7(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(6) { nextId() })
+                        operator fun component8(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(7) { nextId() })
+                        operator fun component9(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(8) { nextId() })
+                        operator fun component10(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(9) { nextId() })
+                        operator fun component11(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(10) { nextId() })
+                        operator fun component12(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(11) { nextId() })
+                        operator fun component13(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(12) { nextId() })
+                        operator fun component14(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(13) { nextId() })
+                        operator fun component15(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(14) { nextId() })
+                        operator fun component16(): ConstrainedLayoutReference =
+                            ConstrainedLayoutReference(ids.getOrElse(15) { nextId() })
+                    }
                 }
-            }
-        """
+                """
                     .trimIndent(),
             """
         META-INF/main.kotlin_module:
@@ -330,7 +330,7 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
         pzomN2Bn+SMaE0vY/OasC22vRZxJwuFVpq2aykDPVKoGsTx7d00o9kyWRPJC
         xSytvUqvPwjRgoeVF9t1rCLP3YEzjwJqnPPM191VTOovcR+HnFvMi6zf6CMX
         4FOAzQAlbAUoYztABTt9UIpdVPvwUqym2HsG4yzy1wsCAAA=
-        """
+        """,
         )
 
     @Test
@@ -368,7 +368,7 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
                     )
                     .indented(),
                 ConstraintSetScopeStub,
-                MotionSceneScopeStub
+                MotionSceneScopeStub,
             )
             .run()
             .expect(

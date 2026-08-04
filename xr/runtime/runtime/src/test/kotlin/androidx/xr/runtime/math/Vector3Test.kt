@@ -17,6 +17,8 @@
 package androidx.xr.runtime.math
 
 import com.google.common.truth.Truth.assertThat
+import java.lang.IllegalArgumentException
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -100,6 +102,27 @@ class Vector3Test {
     }
 
     @Test
+    fun normalized_zeroVector_returnsZero() {
+        // A zero-length vector has no direction; it must return Zero rather than NaN components.
+        assertThat(Vector3.Zero.toNormalized()).isEqualTo(Vector3.Zero)
+    }
+
+    @Test
+    fun normalized_smallVector_returnsNormalizedVector() {
+        // A vector with length smaller than 1e-3f (e.g. 1e-4f) but larger than 1e-15f
+        // should be successfully normalized instead of returning Zero.
+        val smallVector = Vector3(0.0001f, 0f, 0f)
+        assertThat(smallVector.toNormalized()).isEqualTo(Vector3(1f, 0f, 0f))
+    }
+
+    @Test
+    fun normalized_subThresholdVector_returnsZero() {
+        // A vector with length squared less than EPSILON (1e-30f) is treated as Zero.
+        val subThresholdVector = Vector3(1e-16f, 0f, 0f)
+        assertThat(subThresholdVector.toNormalized()).isEqualTo(Vector3.Zero)
+    }
+
+    @Test
     fun multiply_returnsVectorScaledByScalar() {
         assertThat(Vector3(3f, 4f, 5f) * 2f).isEqualTo(Vector3(6f, 8f, 10f))
 
@@ -125,10 +148,10 @@ class Vector3Test {
     }
 
     @Test
-    fun multiply_returnsTwoVectorsMultiplied() {
+    fun scale_returnsTwoVectorsMultiplied() {
         val underTest = Vector3(1f, 2f, 3f)
         val underTest2 = Vector3(3f, 4f, 5f)
-        val underTestMultiply = underTest * underTest2
+        val underTestMultiply = underTest.scale(underTest2)
 
         assertThat(underTestMultiply).isEqualTo(Vector3(3f, 8f, 15f))
     }
@@ -179,30 +202,40 @@ class Vector3Test {
 
     @Test
     fun angleBetweenVectors_returnsAngleBetweenTwoVectors1() {
-        assertThat(toDegrees(Vector3.angleBetween(Vector3(1f, 0f, 0f), Vector3(0f, 1f, 0f))))
+        assertThat(Vector3.angleBetween(Vector3(1f, 0f, 0f), Vector3(0f, 1f, 0f)))
             .isWithin(1e-5f)
             .of(90f)
     }
 
     @Test
     fun angleBetweenVectors_returnsAngleBetweenTwoVectors2() {
-        assertThat(toDegrees(Vector3.angleBetween(Vector3(0f, 0f, 1f), Vector3(0f, 0f, -1f))))
+        assertThat(Vector3.angleBetween(Vector3(0f, 0f, 1f), Vector3(0f, 0f, -1f)))
             .isWithin(1e-5f)
             .of(180f)
     }
 
     @Test
     fun angleBetweenVectors_returnsAngleBetweenTwoVectors3() {
-        assertThat(toDegrees(Vector3.angleBetween(Vector3(2f, 4f, 0f), Vector3(4f, 8f, 0f))))
+        assertThat(Vector3.angleBetween(Vector3(2f, 4f, 0f), Vector3(4f, 8f, 0f)))
             .isWithin(1e-5f)
             .of(0f)
     }
 
     @Test
     fun angleBetweenVectors_returnsAngleBetweenTwoVectors4() {
-        assertThat(toDegrees(Vector3.angleBetween(Vector3(2f, 2f, 0f), Vector3(0f, 3f, 0f))))
+        assertThat(Vector3.angleBetween(Vector3(2f, 2f, 0f), Vector3(0f, 3f, 0f)))
             .isWithin(1e-5f)
             .of(45f)
+    }
+
+    @Test
+    fun angleBetweenVectors_withSmallVectors_returnsAngle() {
+        // Two tiny vectors pointing in opposite directions.
+        // Their lengths product is 8.1e-11f (< 1e-10f).
+        val v1 = Vector3(9e-6f, 0f, 0f)
+        val v2 = Vector3(-9e-6f, 0f, 0f)
+
+        assertThat(Vector3.angleBetween(v1, v2)).isWithin(1e-5f).of(180f)
     }
 
     @Test
@@ -249,12 +282,27 @@ class Vector3Test {
     }
 
     @Test
-    fun divide_returnsVectorDividedByVector() {
+    fun componentwiseDivision_returnsVectorDividedByVector() {
         val underTest = Vector3(1f, 2f, 6f)
         val underTest2 = Vector3(-2f, 4f, -3f)
-        val underTestDiv = underTest / underTest2
+        val underTestDiv = underTest.scale(underTest2.inverse())
 
         assertThat(underTestDiv).isEqualTo(Vector3(-0.5f, 0.5f, -2f))
+    }
+
+    @Test
+    fun inverse_nonZeroComponentVector_returnsInverseVector() {
+        val underTest = Vector3(2f, 3f, 4f)
+        val underTestInverse = underTest.inverse()
+
+        assertThat(underTestInverse).isEqualTo(Vector3(1 / 2f, 1 / 3f, 1 / 4f))
+    }
+
+    @Test
+    fun inverse_zeroComponent_returnsIllegalArgumentException() {
+        val underTest = Vector3(0f, 1f, 2f)
+
+        assertThrows(IllegalArgumentException::class.java) { underTest.inverse() }
     }
 
     @Test

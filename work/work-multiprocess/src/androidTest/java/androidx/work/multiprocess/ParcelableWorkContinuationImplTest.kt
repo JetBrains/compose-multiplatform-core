@@ -37,6 +37,7 @@ import androidx.work.multiprocess.parcelable.ParcelConverters.marshall
 import androidx.work.multiprocess.parcelable.ParcelConverters.unmarshall
 import androidx.work.multiprocess.parcelable.ParcelableWorkContinuationImpl
 import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineScope
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -85,6 +86,7 @@ public class ParcelableWorkContinuationImplTest {
                     object : androidx.work.impl.utils.taskexecutor.TaskExecutor {
                         val executor = Executor { it.run() }
                         val serialExecutor = SerialExecutorImpl(executor)
+                        val workCoroutineScope = CoroutineScope(taskCoroutineDispatcher)
 
                         override fun getMainThreadExecutor(): Executor {
                             return serialExecutor
@@ -93,7 +95,9 @@ public class ParcelableWorkContinuationImplTest {
                         override fun getSerialTaskExecutor(): SerialExecutor {
                             return serialExecutor
                         }
-                    }
+
+                        override fun getCoroutineScope(): CoroutineScope = workCoroutineScope
+                    },
                 )
             )
         `when`<List<Scheduler>>(workManager.schedulers).thenReturn(listOf(scheduler))
@@ -167,7 +171,7 @@ public class ParcelableWorkContinuationImplTest {
         val continuation2 = parcelable.info.toWorkContinuationImpl(workManager)
         equal(
             ParcelableWorkContinuationImpl(continuation).info,
-            ParcelableWorkContinuationImpl(continuation2).info
+            ParcelableWorkContinuationImpl(continuation2).info,
         )
     }
 
@@ -203,7 +207,7 @@ public class ParcelableWorkContinuationImplTest {
 
     private fun equal(
         first: ParcelableWorkContinuationImpl.WorkContinuationImplInfo,
-        second: ParcelableWorkContinuationImpl.WorkContinuationImplInfo
+        second: ParcelableWorkContinuationImpl.WorkContinuationImplInfo,
     ) {
         assertEquals(first.name, second.name)
         assertEquals(first.existingWorkPolicy, second.existingWorkPolicy)

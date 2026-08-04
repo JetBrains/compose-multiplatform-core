@@ -17,7 +17,6 @@
 package androidx.core.telecom.test
 
 import androidx.core.telecom.extensions.Participant
-import androidx.core.telecom.util.ExperimentalAppActions
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +24,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /** Manages the extension in a Call */
-@OptIn(ExperimentalAppActions::class)
 class ParticipantsExtensionManager {
     companion object {
         // Represents "self" in participants window, which allows raise hand state modification and
@@ -36,7 +34,7 @@ class ParticipantsExtensionManager {
                 "Participant 0",
                 isHandRaised = false,
                 isActive = false,
-                isSelf = true
+                isSelf = true,
             )
     }
 
@@ -57,7 +55,7 @@ class ParticipantsExtensionManager {
                         name = "Participant $id",
                         isHandRaised = false,
                         isActive = false,
-                        isSelf = false
+                        isSelf = false,
                     )
                 )
             }
@@ -99,7 +97,7 @@ class ParticipantsExtensionManager {
                         } else {
                             p.isHandRaised
                         },
-                    isSelf = p.isSelf
+                    isSelf = p.isSelf,
                 )
             }
         }
@@ -117,7 +115,7 @@ class ParticipantsExtensionManager {
                             name = p.name,
                             isActive = p.isActive,
                             isHandRaised = isHandRaised,
-                            isSelf = p.isSelf
+                            isSelf = p.isSelf,
                         )
                     )
                 } else {

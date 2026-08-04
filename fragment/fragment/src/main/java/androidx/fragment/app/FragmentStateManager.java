@@ -715,7 +715,8 @@ class FragmentStateManager {
         stateBundle.putParcelable(FRAGMENT_STATE_KEY, fs);
 
         // Save the user state associated with the Fragment
-        if (mFragment.mState > Fragment.INITIALIZING) {
+        // only when the Fragment has at least reached the CREATED state
+        if (mFragment.mState > Fragment.ATTACHED) {
             Bundle savedInstanceState = new Bundle();
             mFragment.performSaveInstanceState(savedInstanceState);
             if (!savedInstanceState.isEmpty()) {
@@ -869,6 +870,7 @@ class FragmentStateManager {
                 mFragment, false);
         mFragment.mState = Fragment.INITIALIZING;
         mFragment.mHost = null;
+        mFragment.mContextAwareHelper.clearAvailableContext();
         mFragment.mParentFragment = null;
         mFragment.mFragmentManager = null;
         boolean beingRemoved = mFragment.mRemoving && !mFragment.isInBackStack();

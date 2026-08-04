@@ -90,7 +90,7 @@ internal fun <T> Modifier.swipeableV2(
     orientation: Orientation,
     enabled: Boolean = true,
     reverseDirection: Boolean = false,
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ): Modifier {
     // Swipeables publish scroll range semantics so they look like they can scroll between values
     // of 0 and 1, inclusive, so that AndroidComposeView can report a value from its canScroll
@@ -124,7 +124,7 @@ internal fun <T> Modifier.swipeableV2(
                             }
                         },
                         maxValue = { 1f },
-                        reverseScrolling = reverseDirection
+                        reverseScrolling = reverseDirection,
                     )
                 when (orientation) {
                     Orientation.Horizontal -> horizontalScrollAxisRange = range
@@ -143,7 +143,7 @@ internal fun <T> Modifier.swipeableV2(
             interactionSource = interactionSource,
             reverseDirection = reverseDirection,
             startDragImmediately = state.isAnimationRunning,
-            onDragStopped = { velocity -> launch { state.settle(velocity) } }
+            onDragStopped = { velocity -> launch { state.settle(velocity) } },
         )
 }
 
@@ -185,7 +185,7 @@ internal fun <T> Modifier.swipeAnchors(
                         anchorChangeHandler?.onAnchorsChanged(
                             previousTarget,
                             previousAnchors,
-                            newAnchors
+                            newAnchors,
                         )
                     }
                 }
@@ -197,7 +197,7 @@ internal fun <T> Modifier.swipeAnchors(
                     properties["possibleValues"] = possibleValues
                     properties["anchorChangeHandler"] = anchorChangeHandler
                     properties["calculateAnchor"] = calculateAnchor
-                }
+                },
         )
     )
 
@@ -228,7 +228,7 @@ internal class SwipeableV2State<T>(
     internal val positionalThreshold: Density.(totalDistance: Float) -> Float =
         SwipeableV2Defaults.PositionalThreshold,
     internal val velocityThreshold: Dp = SwipeableV2Defaults.VelocityThreshold,
-    private val nestedScrollDispatcher: NestedScrollDispatcher? = null
+    private val nestedScrollDispatcher: NestedScrollDispatcher? = null,
 ) {
 
     private val swipeMutex = InternalMutatorMutex()
@@ -244,7 +244,7 @@ internal class SwipeableV2State<T>(
 
             override suspend fun drag(
                 dragPriority: MutatePriority,
-                block: suspend DragScope.() -> Unit
+                block: suspend DragScope.() -> Unit,
             ) {
                 swipe(dragPriority) { dragScope.block() }
             }
@@ -397,10 +397,7 @@ internal class SwipeableV2State<T>(
      *   gesture interaction or another programmatic interaction like a [animateTo] or [snapTo]
      *   call.
      */
-    public suspend fun animateTo(
-        targetValue: T,
-        velocity: Float = lastVelocity,
-    ) {
+    public suspend fun animateTo(targetValue: T, velocity: Float = lastVelocity) {
         val targetOffset = anchors[targetValue]
         if (targetOffset != null) {
             try {
@@ -454,7 +451,7 @@ internal class SwipeableV2State<T>(
             computeTarget(
                 offset = requireOffset(),
                 currentValue = previousValue,
-                velocity = availableVelocity
+                velocity = availableVelocity,
             )
         if (confirmValueChange(targetValue)) {
             animateTo(targetValue, availableVelocity)
@@ -477,7 +474,7 @@ internal class SwipeableV2State<T>(
             val consumedByParent =
                 nestedScrollDispatcher.dispatchPreScroll(
                     available = offsetWithOrientation(remainingDelta),
-                    source = NestedScrollSource.UserInput
+                    source = NestedScrollSource.UserInput,
                 )
             remainingDelta -= (consumedByParent.x + consumedByParent.y)
         }
@@ -494,7 +491,7 @@ internal class SwipeableV2State<T>(
                 nestedScrollDispatcher.dispatchPostScroll(
                     consumed = offsetWithOrientation(deltaToConsume),
                     available = offsetWithOrientation(delta - deltaToConsume),
-                    source = NestedScrollSource.UserInput
+                    source = NestedScrollSource.UserInput,
                 )
             remainingDelta -= (deltaToConsume + consumedDelta.x + consumedDelta.y)
         }
@@ -559,7 +556,7 @@ internal class SwipeableV2State<T>(
 
     private suspend fun swipe(
         swipePriority: MutatePriority = MutatePriority.Default,
-        action: suspend () -> Unit
+        action: suspend () -> Unit,
     ): Unit = coroutineScope { swipeMutex.mutate(swipePriority, action) }
 
     /**
@@ -588,7 +585,7 @@ internal class SwipeableV2State<T>(
             animationSpec: AnimationSpec<Float>,
             confirmValueChange: (T) -> Boolean,
             positionalThreshold: Density.(distance: Float) -> Float,
-            velocityThreshold: Dp
+            velocityThreshold: Dp,
         ): Saver<SwipeableV2State<T>, T> =
             Saver<SwipeableV2State<T>, T>(
                 save = { it.currentValue },
@@ -598,9 +595,9 @@ internal class SwipeableV2State<T>(
                         animationSpec = animationSpec,
                         confirmValueChange = confirmValueChange,
                         positionalThreshold = positionalThreshold,
-                        velocityThreshold = velocityThreshold
+                        velocityThreshold = velocityThreshold,
                     )
-                }
+                },
             )
     }
 }
@@ -616,7 +613,7 @@ internal class SwipeableV2State<T>(
 internal fun <T : Any> rememberSwipeableV2State(
     initialValue: T,
     animationSpec: AnimationSpec<Float> = SwipeableV2Defaults.AnimationSpec,
-    confirmValueChange: (newValue: T) -> Boolean = { true }
+    confirmValueChange: (newValue: T) -> Boolean = { true },
 ): SwipeableV2State<T> {
     return rememberSaveable(
         initialValue,
@@ -627,7 +624,7 @@ internal fun <T : Any> rememberSwipeableV2State(
                 animationSpec = animationSpec,
                 confirmValueChange = confirmValueChange,
                 positionalThreshold = SwipeableV2Defaults.PositionalThreshold,
-                velocityThreshold = SwipeableV2Defaults.VelocityThreshold
+                velocityThreshold = SwipeableV2Defaults.VelocityThreshold,
             ),
     ) {
         SwipeableV2State(
@@ -635,7 +632,7 @@ internal fun <T : Any> rememberSwipeableV2State(
             animationSpec = animationSpec,
             confirmValueChange = confirmValueChange,
             positionalThreshold = SwipeableV2Defaults.PositionalThreshold,
-            velocityThreshold = SwipeableV2Defaults.VelocityThreshold
+            velocityThreshold = SwipeableV2Defaults.VelocityThreshold,
         )
     }
 }
@@ -697,7 +694,7 @@ internal object SwipeableV2Defaults {
     internal fun <T> ReconcileAnimationOnAnchorChangeHandler(
         state: SwipeableV2State<T>,
         animate: (target: T, velocity: Float) -> Unit,
-        snap: (target: T) -> Unit
+        snap: (target: T) -> Unit,
     ) = AnchorChangeHandler { previousTarget, previousAnchors, newAnchors ->
         val previousTargetOffset = previousAnchors[previousTarget]
         val newTargetOffset = newAnchors[previousTarget]
@@ -732,7 +729,7 @@ internal fun interface AnchorChangeHandler<T> {
     public fun onAnchorsChanged(
         previousTargetValue: T,
         previousAnchors: Map<T, Float>,
-        newAnchors: Map<T, Float>
+        newAnchors: Map<T, Float>,
     )
 }
 
@@ -748,7 +745,7 @@ private class SwipeAnchorsModifier(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         if (density != lastDensity || fontScale != lastFontScale) {
             onDensityChanged(Density(density, fontScale))

@@ -27,6 +27,7 @@ import org.jspecify.annotations.NonNull;
  *
  * @param <T> the type being built by this builder.
  */
+@SuppressWarnings("EmptyBuilder")
 public interface ExtendableBuilder<T> {
 
     /**
@@ -34,6 +35,7 @@ public interface ExtendableBuilder<T> {
      *
      * @return The underlying {@link MutableConfig}.
      */
+    @SuppressWarnings("HiddenAbstractMethodInInterface")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @NonNull MutableConfig getMutableConfig();
 

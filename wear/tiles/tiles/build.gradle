@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -29,46 +28,50 @@ plugins {
 }
 
 dependencies {
+    api(libs.androidx.annotation)
+    api(libs.guavaListenableFuture)
     api(libs.jspecify)
-    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:protolayout:protolayout"))
     api(project(":wear:protolayout:protolayout-expression"))
-    api(libs.guavaListenableFuture)
 
     compileOnly files("../../wear_sdk/wear-sdk.jar")
+    compileOnly(project(":annotation:annotation-sampled"))
 
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
+    implementation(project(":wear:protolayout:protolayout-material3"))
     implementation(project(":wear:tiles:tiles-proto"))
 
+    testImplementation(project(":wear:protolayout:protolayout-testing"))
+    testImplementation(libs.guavaAndroid)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.testCore)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
-    testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.androidx.core)
 }
 
 android {
+    compileSdk { version = release(35) }
+
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
     buildFeatures {
         aidl = true
     }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.tiles"
 }
 
 androidx {
     name = "Android Wear Tiles"
     type = SoftwareType.PUBLISHED_LIBRARY
+    samples(project(":wear:tiles:tiles-snippet-samples"))
     inceptionYear = "2020"
     description = "Android Wear Tiles"
+    enableRobolectric()
 }

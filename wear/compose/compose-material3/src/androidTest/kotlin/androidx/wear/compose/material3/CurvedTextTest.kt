@@ -18,12 +18,19 @@ package androidx.wear.compose.material3
 
 import android.os.Build
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -31,6 +38,7 @@ import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.curvedRow
 import androidx.wear.compose.material3.tokens.TypographyTokens
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,7 +59,7 @@ class CurvedTextTest {
                     curvedText(
                         text = testText,
                         color = Color.Red,
-                        style = CurvedTextStyle(color = Color.Blue)
+                        style = CurvedTextStyle(color = Color.Blue),
                     )
                 }
             }
@@ -83,13 +91,7 @@ class CurvedTextTest {
     fun uses_LocalContentColor_as_fallback() {
         rule.setContent {
             CompositionLocalProvider(LocalContentColor provides Color.Yellow) {
-                CurvedLayout {
-                    curvedRow {
-                        curvedText(
-                            text = testText,
-                        )
-                    }
-                }
+                CurvedLayout { curvedRow { curvedText(text = testText) } }
             }
         }
 
@@ -106,11 +108,7 @@ class CurvedTextTest {
                 typography =
                     Typography(arcMedium = TypographyTokens.ArcMedium.copy(color = Color.Yellow))
             ) {
-                CurvedLayout {
-                    curvedText(
-                        text = testText,
-                    )
-                }
+                CurvedLayout { curvedText(text = testText) }
             }
         }
 
@@ -118,5 +116,58 @@ class CurvedTextTest {
             .onNodeWithContentDescription(testText)
             .captureToImage()
             .assertContainsColor(Color.Yellow)
+    }
+
+    @Test
+    fun fontScaleIncreased_increasesWidth() {
+        val text = "SizeTest"
+        val fontScale = mutableStateOf(1f)
+
+        rule.setContent {
+            val currentDensity = LocalDensity.current.density
+            CompositionLocalProvider(
+                LocalDensity provides Density(density = currentDensity, fontScale = fontScale.value)
+            ) {
+                CurvedLayout { curvedText(text = text, fontFamily = FontFamily.Default) }
+            }
+        }
+
+        val width1 = rule.onNodeWithContentDescription(text).fetchSemanticsNode().size.width
+
+        fontScale.value = 2f
+        rule.waitForIdle()
+
+        val width2 = rule.onNodeWithContentDescription(text).fetchSemanticsNode().size.width
+
+        assertWithMessage("Expected width to increase with font scale")
+            .that(width2)
+            .isGreaterThan(width1)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    @Test
+    fun boldTextSetting_increasesWidth() {
+        val text = "WeightTest"
+        val fontWeightAdjustment = mutableIntStateOf(0)
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.FontWeightAdjustment(fontWeightAdjustment.intValue)
+            ) {
+                CurvedLayout { curvedText(text = text, fontFamily = FontFamily.Default) }
+            }
+        }
+
+        val width1 = rule.onNodeWithContentDescription(text).fetchSemanticsNode().size.width
+
+        // +300 corresponds to the system "Bold Text" accessibility setting weight adjustment
+        fontWeightAdjustment.intValue = 300
+        rule.waitForIdle()
+
+        val width2 = rule.onNodeWithContentDescription(text).fetchSemanticsNode().size.width
+
+        assertWithMessage("Expected curved text width to increase when system Bold Text is enabled")
+            .that(width2)
+            .isGreaterThan(width1)
     }
 }

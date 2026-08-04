@@ -15,13 +15,11 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
@@ -34,117 +32,61 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm()
     mac()
     linux()
     ios()
     watchos()
     tvos()
+    js()
+    wasmJs()
+    mingwX64()
+    desktop()
     androidLibrary {
         namespace = "androidx.paging.common"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
 
-    defaultPlatform(PlatformIdentifier.JVM)
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.9.1")
-            }
+        commonMain.dependencies {
+            api(libs.kotlinCoroutinesCore)
+            api("androidx.annotation:annotation:1.9.1")
         }
 
-        commonJvmAndroidMain {
-            dependsOn(commonMain)
-
-            dependencies {
-                api("androidx.arch.core:core-common:2.2.0")
-            }
+        commonTest.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            implementation(project(":kruth:kruth"))
+            implementation(project(":internal-testutils-paging"))
+            implementation(libs.kotlinTest)
         }
 
-        jvmMain {
-            dependsOn(commonJvmAndroidMain)
+        jvmAndAndroidMain.dependencies {
+            api("androidx.arch.core:core-common:2.2.0")
         }
 
-        androidMain {
-            dependsOn(commonJvmAndroidMain)
+        jvmAndAndroidTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.mockitoCore)
+            implementation(libs.mockitoKotlin)
+            implementation(project(":internal-testutils-common"))
+            implementation(project(":internal-testutils-ktx"))
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.kotlinTest)
-                implementation(project(":kruth:kruth"))
-                implementation(project(":internal-testutils-paging"))
-            }
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
+            implementation(libs.mockitoAndroid5)
         }
 
-        commonJvmAndroidTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.mockitoCore)
-                implementation(libs.mockitoKotlin)
-                implementation(project(":internal-testutils-common"))
-                implementation(project(":internal-testutils-ktx"))
-            }
+        nonJvmMain.dependencies {
+            implementation(libs.atomicFu)
         }
 
-        jvmTest {
-            dependsOn(commonJvmAndroidTest)
-        }
+        create("unixMain").dependsOn(nativeMain)
+        appleMain.dependsOn(unixMain)
+        linuxMain.dependsOn(unixMain)
 
-        androidInstrumentedTest {
-            dependsOn(commonJvmAndroidTest)
-            dependencies {
-                implementation(libs.testRunner)
-                implementation(libs.mockitoAndroid5)
-            }
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.atomicFu)
-            }
-        }
-        nativeTest {
-            dependsOn(commonTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        linuxMain {
-            dependsOn(nativeMain)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
-                        dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
-                        dependsOn(linuxMain)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-                target.compilations["test"].defaultSourceSet {
-                    dependsOn(nativeTest)
-                }
-            }
+        webMain.dependencies {
+            implementation(libs.atomicFu)
         }
     }
 }
@@ -157,3 +99,4 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":paging:paging-samples"))
 }
+

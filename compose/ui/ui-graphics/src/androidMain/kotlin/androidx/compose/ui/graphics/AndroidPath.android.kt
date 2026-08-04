@@ -23,16 +23,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 
-actual fun Path(): Path = AndroidPath()
+public actual fun Path(): Path = AndroidPath()
 
 /** Convert the [android.graphics.Path] instance into a Compose-compatible Path */
-fun PlatformPath.asComposePath(): Path = AndroidPath(this)
+public fun PlatformPath.asComposePath(): Path = AndroidPath(this)
 
 /**
  * @Throws UnsupportedOperationException if this Path is not backed by an [android.graphics.Path].
  */
 @Suppress("NOTHING_TO_INLINE")
-inline fun Path.asAndroidPath(): PlatformPath =
+public inline fun Path.asAndroidPath(): PlatformPath =
     if (this is AndroidPath) {
         internalPath
     } else {
@@ -40,7 +40,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
     }
 
 @Suppress("OVERRIDE_DEPRECATION") // b/407491706
-/* actual */ class AndroidPath(val internalPath: PlatformPath = PlatformPath()) : Path {
+public class AndroidPath(public val internalPath: PlatformPath = PlatformPath()) : Path {
 
     // Temporary value holders to reuse an object (not part of a state):
     private var rectF: PlatformRectF? = null
@@ -106,7 +106,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
         dx2: Float,
         dy2: Float,
         dx3: Float,
-        dy3: Float
+        dy3: Float,
     ) {
         internalPath.rCubicTo(dx1, dy1, dx2, dy2, dx3, dy3)
     }
@@ -115,7 +115,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
         rect: Rect,
         startAngleDegrees: Float,
         sweepAngleDegrees: Float,
-        forceMoveTo: Boolean
+        forceMoveTo: Boolean,
     ) {
         val left = rect.left
         val top = rect.top
@@ -126,7 +126,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
         internalPath.arcTo(rectF!!, startAngleDegrees, sweepAngleDegrees, forceMoveTo)
     }
 
-    override fun addRect(rect: Rect) {
+    override fun addRect(@Suppress("InvalidNullabilityOverride") rect: Rect) {
         addRect(rect, Path.Direction.CounterClockwise)
     }
 
@@ -137,7 +137,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
         internalPath.addRect(rectF!!, direction.toPlatformPathDirection())
     }
 
-    override fun addOval(oval: Rect) {
+    override fun addOval(@Suppress("InvalidNullabilityOverride") oval: Rect) {
         addOval(oval, Path.Direction.CounterClockwise)
     }
 
@@ -147,7 +147,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
         internalPath.addOval(rectF!!, direction.toPlatformPathDirection())
     }
 
-    override fun addRoundRect(roundRect: RoundRect) {
+    override fun addRoundRect(@Suppress("InvalidNullabilityOverride") roundRect: RoundRect) {
         addRoundRect(roundRect, Path.Direction.CounterClockwise)
     }
 

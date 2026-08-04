@@ -16,11 +16,12 @@
 
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.aggregate.AggregateMetric
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
+import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Duration
 import java.time.Instant
@@ -37,7 +38,6 @@ import java.time.ZoneOffset
  * installed on the device. To check if available: call [HealthConnectFeatures.getFeatureStatus] and
  * pass [HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION] as an argument.
  */
-@ExperimentalMindfulnessSessionApi
 class MindfulnessSessionRecord(
     override val startTime: Instant,
     override val startZoneOffset: ZoneOffset?,
@@ -53,7 +53,14 @@ class MindfulnessSessionRecord(
 ) : IntervalRecord {
 
     init {
-        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                isAtLeastSdkExtension15()
+        ) {
+            this.toPlatformRecord()
+        } else {
+            require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -131,7 +138,7 @@ class MindfulnessSessionRecord(
                 "movement" to MINDFULNESS_SESSION_TYPE_MOVEMENT,
                 "music" to MINDFULNESS_SESSION_TYPE_MUSIC,
                 "unguided" to MINDFULNESS_SESSION_TYPE_UNGUIDED,
-                "unknown" to MINDFULNESS_SESSION_TYPE_UNKNOWN
+                "unknown" to MINDFULNESS_SESSION_TYPE_UNKNOWN,
             )
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -151,7 +158,7 @@ class MindfulnessSessionRecord(
                 MINDFULNESS_SESSION_TYPE_MOVEMENT,
                 MINDFULNESS_SESSION_TYPE_MUSIC,
                 MINDFULNESS_SESSION_TYPE_UNGUIDED,
-                MINDFULNESS_SESSION_TYPE_UNKNOWN
+                MINDFULNESS_SESSION_TYPE_UNKNOWN,
             ]
     )
     annotation class MindfulnessSessionTypes

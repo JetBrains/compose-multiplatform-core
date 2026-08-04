@@ -111,45 +111,24 @@ public abstract class PagingSource<Key : Any, Value : Any> {
          * refresh triggered by [invalidate].
          */
         public class Refresh<Key : Any>
-        constructor(
-            override val key: Key?,
-            loadSize: Int,
-            placeholdersEnabled: Boolean,
-        ) :
-            LoadParams<Key>(
-                loadSize = loadSize,
-                placeholdersEnabled = placeholdersEnabled,
-            )
+        constructor(override val key: Key?, loadSize: Int, placeholdersEnabled: Boolean) :
+            LoadParams<Key>(loadSize = loadSize, placeholdersEnabled = placeholdersEnabled)
 
         /**
          * Params to load a page of data from a [PagingSource] via [PagingSource.load] to be
          * appended to the end of the list.
          */
         public class Append<Key : Any>
-        constructor(
-            override val key: Key,
-            loadSize: Int,
-            placeholdersEnabled: Boolean,
-        ) :
-            LoadParams<Key>(
-                loadSize = loadSize,
-                placeholdersEnabled = placeholdersEnabled,
-            )
+        constructor(override val key: Key, loadSize: Int, placeholdersEnabled: Boolean) :
+            LoadParams<Key>(loadSize = loadSize, placeholdersEnabled = placeholdersEnabled)
 
         /**
          * Params to load a page of data from a [PagingSource] via [PagingSource.load] to be
          * prepended to the start of the list.
          */
         public class Prepend<Key : Any>
-        constructor(
-            override val key: Key,
-            loadSize: Int,
-            placeholdersEnabled: Boolean,
-        ) :
-            LoadParams<Key>(
-                loadSize = loadSize,
-                placeholdersEnabled = placeholdersEnabled,
-            )
+        constructor(override val key: Key, loadSize: Int, placeholdersEnabled: Boolean) :
+            LoadParams<Key>(loadSize = loadSize, placeholdersEnabled = placeholdersEnabled)
 
         internal companion object {
             fun <Key : Any> create(
@@ -256,7 +235,7 @@ public abstract class PagingSource<Key : Any, Value : Any> {
              * Count of items after the loaded data. Must be implemented if
              * [jumping][PagingSource.jumpingSupported] is enabled. Optional otherwise.
              */
-            @IntRange(from = COUNT_UNDEFINED.toLong()) val itemsAfter: Int = COUNT_UNDEFINED
+            @IntRange(from = COUNT_UNDEFINED.toLong()) val itemsAfter: Int = COUNT_UNDEFINED,
         ) : LoadResult<Key, Value>(), Iterable<Value> {
 
             /**
@@ -271,7 +250,7 @@ public abstract class PagingSource<Key : Any, Value : Any> {
             public constructor(
                 data: List<Value>,
                 prevKey: Key?,
-                nextKey: Key?
+                nextKey: Key?,
             ) : this(data, prevKey, nextKey, COUNT_UNDEFINED, COUNT_UNDEFINED)
 
             init {

@@ -37,19 +37,24 @@ import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController
 import androidx.credentials.playservices.controllers.CredentialProviderController
 import androidx.credentials.playservices.controllers.identityauth.HiddenActivity
+import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SavePasswordRequest
 import com.google.android.gms.auth.api.identity.SignInPassword
+import com.google.android.gms.common.api.ApiException
+import java.lang.ref.WeakReference
 import java.util.concurrent.Executor
 
 /** A controller to handle the CreatePassword flow with play services. */
-internal class CredentialProviderCreatePasswordController(private val context: Context) :
+internal class CredentialProviderCreatePasswordController(context: Context) :
     CredentialProviderController<
         CreatePasswordRequest,
         SavePasswordRequest,
         Unit,
         CreateCredentialResponse,
-        CreateCredentialException
+        CreateCredentialException,
     >(context) {
+
+    private val contextReference = WeakReference(context)
 
     /** The callback object state, used in the protected handleResponse method. */
     @VisibleForTesting
@@ -68,18 +73,24 @@ internal class CredentialProviderCreatePasswordController(private val context: C
     private val resultReceiver =
         object : ResultReceiver(Handler(Looper.getMainLooper())) {
             public override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
+                val currentCallback = callback
                 if (
-                    maybeReportErrorFromResultReceiver(
+                    !maybeReportErrorFromResultReceiver(
                         resultData,
                         CredentialProviderBaseController.Companion::
                             createCredentialExceptionTypeToException,
                         executor = executor,
-                        callback = callback,
-                        cancellationSignal
+                        callback = currentCallback,
+                        cancellationSignal,
                     )
-                )
-                    return
-                handleResponse(resultData.getInt(ACTIVITY_REQUEST_CODE_TAG), resultCode)
+                ) {
+                    handleResponse(
+                        resultData.getInt(ACTIVITY_REQUEST_CODE_TAG),
+                        resultCode,
+                        currentCallback,
+                    )
+                }
+                callback = emptyCallback()
             }
         }
 
@@ -87,7 +98,7 @@ internal class CredentialProviderCreatePasswordController(private val context: C
         request: CreatePasswordRequest,
         callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ) {
         this.cancellationSignal = cancellationSignal
         this.callback = callback
@@ -97,29 +108,60 @@ internal class CredentialProviderCreatePasswordController(private val context: C
             return
         }
 
+        val context = contextReference.get() ?: return
         val convertedRequest: SavePasswordRequest = this.convertRequestToPlayServices(request)
-        val hiddenIntent = Intent(context, HiddenActivity::class.java)
-        hiddenIntent.putExtra(REQUEST_TAG, convertedRequest)
-        generateHiddenActivityIntent(resultReceiver, hiddenIntent, CREATE_PASSWORD_TAG)
-        try {
-            context.startActivity(hiddenIntent)
-        } catch (e: Exception) {
-            cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                this.executor.execute {
-                    this.callback.onError(
-                        CreateCredentialUnknownException(ERROR_MESSAGE_START_ACTIVITY_FAILED)
-                    )
+        Identity.getCredentialSavingClient(context)
+            .savePassword(convertedRequest)
+            .addOnSuccessListener { result ->
+                if (CredentialProviderPlayServicesImpl.cancellationReviewer(cancellationSignal)) {
+                    return@addOnSuccessListener
+                }
+                val hiddenIntent = Intent(context, HiddenActivity::class.java)
+                generateHiddenActivityIntent(resultReceiver, hiddenIntent, CREATE_PASSWORD_TAG)
+                hiddenIntent.putExtra(EXTRA_FLOW_PENDING_INTENT, result.pendingIntent)
+                try {
+                    context.startActivity(hiddenIntent)
+                } catch (_: Exception) {
+                    cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                        this.executor.execute {
+                            this.callback.onError(
+                                CreateCredentialUnknownException(
+                                    ERROR_MESSAGE_START_ACTIVITY_FAILED
+                                )
+                            )
+                        }
+                    }
                 }
             }
-        }
+            .addOnFailureListener { e ->
+                val createException = fromGmsException(e)
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    this.executor.execute { this.callback.onError(createException) }
+                }
+            }
     }
 
-    internal fun handleResponse(uniqueRequestCode: Int, resultCode: Int) {
+    private fun fromGmsException(e: Throwable): CreateCredentialException {
+        var errName = CREATE_UNKNOWN
+        if (e is ApiException && e.statusCode in retryables) {
+            errName = CREATE_INTERRUPTED
+        }
+        return createCredentialExceptionTypeToException(
+            errName,
+            "During save password, found " + "password failure response from one tap ${e.message}",
+        )
+    }
+
+    internal fun handleResponse(
+        uniqueRequestCode: Int,
+        resultCode: Int,
+        callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
+    ) {
         if (uniqueRequestCode != CONTROLLER_REQUEST_CODE) {
             Log.w(
                 TAG,
                 "Returned request code " +
-                    "${CONTROLLER_REQUEST_CODE} which does not match what was given $uniqueRequestCode"
+                    "${CONTROLLER_REQUEST_CODE} which does not match what was given $uniqueRequestCode",
             )
             return
         }
@@ -127,14 +169,14 @@ internal class CredentialProviderCreatePasswordController(private val context: C
             maybeReportErrorResultCodeCreate(
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
-                { e -> this.executor.execute { this.callback.onError(e) } },
-                cancellationSignal
+                { e -> this.executor.execute { callback.onError(e) } },
+                cancellationSignal,
             )
         )
             return
         val response: CreateCredentialResponse = convertResponseToCredentialManager(Unit)
         cancelOrCallbackExceptionOrResult(cancellationSignal) {
-            this.executor.execute { this.callback.onResult(response) }
+            this.executor.execute { callback.onResult(response) }
         }
     }
 

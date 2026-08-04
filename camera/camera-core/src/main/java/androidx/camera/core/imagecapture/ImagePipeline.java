@@ -209,7 +209,7 @@ public class ImagePipeline {
      *                      capture failure or abortion.
      */
     @MainThread
-    @NonNull Pair<CameraRequest, ProcessingRequest> createRequests(
+    public @NonNull Pair<CameraRequest, ProcessingRequest> createRequests(
             @NonNull TakePictureRequest takePictureRequest,
             @NonNull TakePictureCallback takePictureCallback,
             @NonNull ListenableFuture<Void> captureFuture) {
@@ -312,7 +312,13 @@ public class ImagePipeline {
                     && mPipelineIn.getSecondarySurface() != null) {
                 builder.addSurface(mPipelineIn.getSecondarySurface());
             }
-            builder.setPostviewEnabled(shouldEnablePostview());
+            boolean shouldEnablePostview = shouldEnablePostview();
+            if (shouldEnablePostview) {
+                // According to the javadoc of CameraExtensionSession#capture, postview surface
+                // should be added.
+                builder.addSurface(requireNonNull(mPipelineIn.getPostviewSurface()));
+            }
+            builder.setPostviewEnabled(shouldEnablePostview);
 
             // Sets the JPEG rotation and quality for JPEG and RAW formats. Some devices do not
             // handle these configs for non-JPEG images. See b/204375890.

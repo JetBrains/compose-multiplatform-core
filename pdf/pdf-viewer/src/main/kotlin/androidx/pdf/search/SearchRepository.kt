@@ -16,15 +16,27 @@
 
 package androidx.pdf.search
 
-import android.os.DeadObjectException
+import android.os.RemoteException
+import android.util.SparseArray
 import androidx.annotation.RestrictTo
+import androidx.core.util.isEmpty
 import androidx.core.util.isNotEmpty
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
+import androidx.pdf.content.PageMatchBounds
+import androidx.pdf.ocr.OcrContextRepository
+import androidx.pdf.ocr.OcrProvider
+import androidx.pdf.ocr.search
 import androidx.pdf.search.model.NoQuery
 import androidx.pdf.search.model.QueryResults
 import androidx.pdf.search.model.SearchResultState
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,15 +55,26 @@ import kotlinx.coroutines.withContext
  * search results in a reactive manner.
  *
  * @param pdfDocument: Interface to interact with pdf document
+ * @param ocrContextRepository: Optional repository for OCR-based search in images.
  * @param dispatcher: The [CoroutineDispatcher] to use for performing the search operation. Defaults
  *   to Dispatcher.IO.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
+@OptIn(ExperimentalPdfApi::class)
 public class SearchRepository(
     private val pdfDocument: PdfDocument,
+    private var ocrContextRepository: OcrContextRepository? = null,
     // TODO(b/384001800) Remove dispatcher
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
+
+    private val ocrDispatcher = Dispatchers.Default.limitedParallelism(2)
+
+    /** Sets the [OcrProvider] used for recognizing text in image-based PDF content. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun setOcrProvider(ocrProvider: OcrProvider?) {
+        ocrContextRepository = ocrProvider?.let { OcrContextRepository(pdfDocument, it) }
+    }
 
     private val _queryResults: MutableStateFlow<SearchResultState> = MutableStateFlow(NoQuery)
 
@@ -76,7 +99,7 @@ public class SearchRepository(
     public suspend fun produceSearchResults(
         query: String,
         currentVisiblePage: Int,
-        resultIndex: Int = 0
+        resultIndex: Int = 0,
     ) {
         if (query.isBlank()) {
             clearSearchResults()
@@ -90,9 +113,19 @@ public class SearchRepository(
         val searchResults =
             withContext(dispatcher) {
                 try {
-                    pdfDocument.searchDocument(query = query, pageRange = searchPageRange)
-                } catch (e: DeadObjectException) {
-                    // Ignore exception due to service disconnection. User will try again.
+                    // Native Text Search.
+                    val textResults =
+                        pdfDocument.searchDocument(query = query, pageRange = searchPageRange)
+                    // Image Text Search.
+                    val ocrResults =
+                        if (ocrContextRepository != null) fetchOcrResults(query, searchPageRange)
+                        else SparseArray()
+
+                    mergeResults(textResults, ocrResults)
+                } catch (e: RemoteException) {
+                    if (!e.isHandledRemoteException) throw e
+                    // Gracefully recover from known remote failures (e.g., service crashes or
+                    // IPC call rejection).
                     return@withContext null
                 }
             }
@@ -112,7 +145,7 @@ public class SearchRepository(
                 cyclicIterator =
                     CyclicSparseArrayIterator(
                         searchData = searchResults,
-                        visiblePage = currentVisiblePage
+                        visiblePage = currentVisiblePage,
                     )
 
                 // Restores the current index if required, or selects the first index of the page.
@@ -124,7 +157,7 @@ public class SearchRepository(
                     resultBounds = searchResults,
                     /* Set [queryResultsIndex] to cyclicIterator.current() which points to first result
                     on or nearest page to currentVisiblePage in forward direction. */
-                    queryResultsIndex = cyclicIterator.current()
+                    queryResultsIndex = cyclicIterator.current(),
                 )
             } else {
                 QueryResults.NoMatch(query = query, pageRange = searchPageRange)
@@ -155,7 +188,7 @@ public class SearchRepository(
                 query = currentResult.query,
                 resultBounds = currentResult.resultBounds,
                 pageRange = currentResult.pageRange,
-                queryResultsIndex = cyclicIterator.prev()
+                queryResultsIndex = cyclicIterator.prev(),
             )
 
         _queryResults.update { prevResult }
@@ -183,7 +216,7 @@ public class SearchRepository(
                 query = currentResult.query,
                 resultBounds = currentResult.resultBounds,
                 pageRange = currentResult.pageRange,
-                queryResultsIndex = cyclicIterator.next()
+                queryResultsIndex = cyclicIterator.next(),
             )
 
         _queryResults.update { nextResult }
@@ -194,5 +227,59 @@ public class SearchRepository(
      */
     public fun clearSearchResults() {
         _queryResults.update { NoQuery }
+    }
+
+    private suspend fun fetchOcrResults(
+        query: String,
+        pageRange: IntRange,
+    ): SparseArray<List<PageMatchBounds>> = coroutineScope {
+        val ocrResults = SparseArray<List<PageMatchBounds>>()
+
+        pageRange
+            .map { pageNum ->
+                async(ocrDispatcher) {
+                    ensureActive()
+                    val contexts = ocrContextRepository?.getOcrContexts(pageNum) ?: emptyList()
+                    val matches =
+                        contexts.flatMap { context ->
+                            context.search(query).map { bounds ->
+                                PageMatchBounds(bounds, textStartIndex = -1)
+                            }
+                        }
+
+                    pageNum to matches
+                }
+            }
+            .awaitAll()
+            .forEach { (pageNum, ocrMatches) ->
+                if (ocrMatches.isNotEmpty()) {
+                    ocrResults.put(pageNum, ocrMatches)
+                }
+            }
+        ocrResults
+    }
+
+    private fun mergeResults(
+        textResults: SparseArray<List<PageMatchBounds>>,
+        ocrResults: SparseArray<List<PageMatchBounds>>,
+    ): SparseArray<List<PageMatchBounds>> {
+        if (ocrResults.isEmpty()) {
+            return textResults
+        }
+
+        val combinedResults = textResults.clone()
+
+        // Merge OCR results into combinedResults and sort matches per page.
+        for (i in 0 until ocrResults.size()) {
+            val pageNum = ocrResults.keyAt(i)
+            val ocrMatches = ocrResults.valueAt(i)
+            val nativeMatches = combinedResults.get(pageNum) ?: emptyList()
+
+            val mergedAndSorted =
+                (nativeMatches + ocrMatches).sortedBy { it.bounds.firstOrNull()?.top }
+            combinedResults.put(pageNum, mergedAndSorted)
+        }
+
+        return combinedResults
     }
 }

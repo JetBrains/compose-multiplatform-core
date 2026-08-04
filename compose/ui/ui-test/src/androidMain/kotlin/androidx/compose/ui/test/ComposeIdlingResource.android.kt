@@ -27,12 +27,13 @@ import kotlin.math.max
  *
  * This makes sure that Espresso is able to wait for any pending changes in Compose. This resource
  * is automatically registered when any compose testing APIs are used including
- * [createAndroidComposeRule].
+ * [androidx.compose.ui.test.junit4.v2.createAndroidComposeRule].
  */
 internal class ComposeIdlingResource(
     private val composeRootRegistry: ComposeRootRegistry,
     private val clock: MainTestClockImpl,
-    private val mainRecomposer: Recomposer
+    private val mainRecomposer: Recomposer,
+    private val isStandardTestDispatcherSupportEnabled: Boolean,
 ) : IdlingResource {
 
     private var hadAwaitersOnMainClock = false
@@ -40,6 +41,29 @@ internal class ComposeIdlingResource(
     private var hadRecomposerChanges = false
     private var hadPendingSetContent = false
     private var hadPendingMeasureLayout = false
+
+    /**
+     * Returns whether Compose is currently idle.
+     *
+     * Unlike [isIdleNow], this property does not attempt to advance the clock, run pending tasks,
+     * or drain the main queue. It performs a passive check of the current state of the [clock],
+     * [Snapshot], and [mainRecomposer] to determine if there is any pending work.
+     *
+     * It returns `true` if and only if:
+     * - There are no awaiters on the main clock.
+     * - There are no pending snapshot changes.
+     * - The main recomposer has no pending work.
+     * - There are no pending setContent calls (roots busy attaching).
+     * - There are no pending measure/layout passes.
+     */
+    val isIdle: Boolean
+        get() {
+            // If we have pending recompositions, we are definitely not idle
+            if (checkRecompositionBusy()) return false
+
+            // If recomposition is done, check if we are waiting on layout/setContent
+            return !checkLayoutBusy()
+        }
 
     /**
      * Tries to get Compose to idle by advancing frames until Compose has no more work to do, then
@@ -58,19 +82,28 @@ internal class ComposeIdlingResource(
      */
     override val isIdleNow: Boolean
         get() {
-            fun shouldPumpTime(): Boolean {
-                hadAwaitersOnMainClock = clock.hasAwaiters
-                hadSnapshotChanges = Snapshot.current.hasPendingChanges()
-                hadRecomposerChanges = mainRecomposer.hasPendingWork
+            if (isStandardTestDispatcherSupportEnabled) {
+                require(isOnUiThread()) {
+                    "ComposeIdlingResource.isIdleNow may only be called from the UI thread"
+                }
+            }
 
-                val needsRecompose =
-                    hadAwaitersOnMainClock || hadSnapshotChanges || hadRecomposerChanges
+            fun shouldPumpTime(): Boolean {
+                val needsRecompose = checkRecompositionBusy()
                 return clock.autoAdvance && needsRecompose
             }
 
             // Apply any pending snapshot changes, so the recomposer can wake up if necessary
             // If there are no pending snapshot changes, this call does nothing
             Snapshot.sendApplyNotifications()
+
+            // Run all tasks that are due. They are starting or resuming coroutines, e.g. the
+            // recomposer that is resumed, or a launched effect being launched. If a task makes a
+            // write to a snapshot, it will be applied immediately by the
+            // ApplyingContinuationInterceptor so it will be seen by all subsequently running tasks.
+            if (isStandardTestDispatcherSupportEnabled) {
+                clock.runCurrent()
+            }
 
             var i = 0
             while (i < 100 && shouldPumpTime()) {
@@ -79,15 +112,7 @@ internal class ComposeIdlingResource(
             }
             val composeDidWork = i > 0
 
-            // pending set content needs all created compose roots,
-            // because by definition they will not be in resumed state
-            hadPendingSetContent =
-                composeRootRegistry.getCreatedComposeRoots().any { it.isBusyAttaching }
-
-            val composeRoots = composeRootRegistry.getRegisteredComposeRoots()
-            hadPendingMeasureLayout = composeRoots.any { it.shouldWaitForMeasureAndLayout }
-
-            return !composeDidWork && !hadPendingSetContent && !hadPendingMeasureLayout
+            return !composeDidWork && !checkLayoutBusy()
         }
 
     override fun getDiagnosticMessageIfBusy(): String? {
@@ -124,6 +149,34 @@ internal class ComposeIdlingResource(
             message += "hadAwaitersOnMainClock = $hadAwaitersOnMainClock"
         }
         return message
+    }
+
+    /**
+     * Updates internal flags regarding recomposition/clock status.
+     *
+     * @return true if there is pending work found.
+     */
+    private fun checkRecompositionBusy(): Boolean {
+        hadAwaitersOnMainClock = clock.hasAwaiters
+        hadSnapshotChanges = Snapshot.current.hasPendingChanges()
+        hadRecomposerChanges = mainRecomposer.hasPendingWork
+
+        return hadAwaitersOnMainClock || hadSnapshotChanges || hadRecomposerChanges
+    }
+
+    /**
+     * Updates internal flags regarding View/Layout status.
+     *
+     * @return true if there is pending layout or setContent work.
+     */
+    private fun checkLayoutBusy(): Boolean {
+        hadPendingSetContent =
+            composeRootRegistry.getCreatedComposeRoots().any { it.isBusyAttaching }
+
+        val composeRoots = composeRootRegistry.getRegisteredComposeRoots()
+        hadPendingMeasureLayout = composeRoots.any { it.shouldWaitForMeasureAndLayout }
+
+        return hadPendingSetContent || hadPendingMeasureLayout
     }
 }
 

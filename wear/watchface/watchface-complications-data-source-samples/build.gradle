@@ -17,26 +17,25 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(project(":wear:watchface:watchface-complications-data-source"))
     api(libs.guavaAndroid)
     implementation("androidx.core:core:1.1.0")
-    implementation("androidx.wear.protolayout:protolayout-expression:1.0.0-beta01")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.0.0")
 }
 
 android {
     defaultConfig {
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 
     buildTypes {
         release {
             minifyEnabled = true
             shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android.txt')
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
 
         /*
@@ -46,11 +45,6 @@ android {
         debug {
             applicationIdSuffix ".debug"
         }
-    }
-
-    compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
     }
     namespace = "androidx.wear.watchface.complications.datasource.samples"
 }

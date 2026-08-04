@@ -27,7 +27,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.OpenableColumns
-import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -61,15 +60,6 @@ class PageObjectPdfFragment : Fragment() {
             }
         }
 
-    // Register for activity result
-    private val manageExternalStorageLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
-            if (Environment.isExternalStorageManager()) {
-                // Permission granted
-                saveAsNewPdf()
-            }
-        }
-
     private fun getFileName(uri: Uri): String {
         var name: String = ""
         requireContext().contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -84,7 +74,7 @@ class PageObjectPdfFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
 
@@ -154,16 +144,6 @@ class PageObjectPdfFragment : Fragment() {
         }
     }
 
-    private fun checkFileCreatePermission(): Boolean {
-        if (!Environment.isExternalStorageManager()) {
-            // Request MANAGE_EXTERNAL_STORAGE permission
-            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-            intent.data = Uri.parse("package:${requireContext().packageName}")
-            manageExternalStorageLauncher.launch(intent)
-        }
-        return Environment.isExternalStorageManager()
-    }
-
     private fun saveAsNewPdf() {
         val pdfDocument = PdfDocument()
         try {
@@ -174,7 +154,7 @@ class PageObjectPdfFragment : Fragment() {
                 Bitmap.createBitmap(
                     sourcePage.getWidth(),
                     sourcePage.getHeight(),
-                    Bitmap.Config.ARGB_8888
+                    Bitmap.Config.ARGB_8888,
                 )
 
             sourcePage.render(bitmap)
@@ -194,7 +174,7 @@ class PageObjectPdfFragment : Fragment() {
             val outputFile =
                 File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
-                    mFileName + EDIT_PDF
+                    mFileName + EDIT_PDF,
                 )
 
             // Write the PDF to the file

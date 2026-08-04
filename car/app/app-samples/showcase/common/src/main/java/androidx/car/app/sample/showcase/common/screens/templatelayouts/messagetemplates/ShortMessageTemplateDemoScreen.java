@@ -26,9 +26,11 @@ import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Header;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Template;
+import androidx.car.app.navigation.model.MapWithContentTemplate;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.core.graphics.drawable.IconCompat;
@@ -44,6 +46,13 @@ public class ShortMessageTemplateDemoScreen extends Screen {
 
     @Override
     public @NonNull Template onGetTemplate() {
+        return buildMessageTemplate();
+    }
+
+    /**
+     * Helper method to build the MessageTemplate
+     */
+    private MessageTemplate buildMessageTemplate() {
         Action.Builder primaryActionBuilder = new Action.Builder()
                 .setOnClickListener(() -> {
                     CarToast.makeText(
@@ -52,21 +61,23 @@ public class ShortMessageTemplateDemoScreen extends Screen {
                             LENGTH_LONG
                     ).show();
                 })
-                .setTitle(getCarContext().getString(R.string.ok_action_title));
+                .setTitle(getCarContext().getString(R.string.ok_action_title))
+                .setIcon(new CarIcon.Builder(
+                        IconCompat.createWithResource(getCarContext(), R.drawable.baseline_task_24))
+                        .build());
         if (getCarContext().getCarAppApiLevel() >= CarAppApiLevels.LEVEL_4) {
             primaryActionBuilder.setFlags(FLAG_PRIMARY);
         }
 
-        Action settings = new Action.Builder()
-                .setTitle(getCarContext().getString(
-                        R.string.settings_action_title))
+        Action mapXAction = new Action.Builder()
+                .setTitle("Map+X this!")
                 .setOnClickListener(
-                        () -> CarToast.makeText(
-                                        getCarContext(),
-                                        getCarContext().getString(
-                                                R.string.settings_toast_msg),
-                                        LENGTH_LONG)
-                                .show())
+                        () -> getScreenManager().push(new MapMessageDemoScreen(getCarContext())))
+                .setIcon(new CarIcon.Builder(
+                        IconCompat.createWithResource(
+                                getCarContext(),
+                                R.drawable.ic_emoji_food_beverage_white_48dp))
+                        .build())
                 .build();
 
         return new MessageTemplate.Builder(
@@ -74,13 +85,14 @@ public class ShortMessageTemplateDemoScreen extends Screen {
                 .setHeader(new Header.Builder().setTitle(getCarContext()
                                 .getString(R.string.msg_template_demo_title))
                         .setStartHeaderAction(BACK)
-                        .addEndHeaderAction(settings).build())
+                        .addEndHeaderAction(mapXAction).build())
                 .setIcon(
                         new CarIcon.Builder(
                                 IconCompat.createWithResource(
                                         getCarContext(),
                                         R.drawable.ic_emoji_food_beverage_white_48dp))
-                                .setTint(CarColor.GREEN)
+                                .setStyle(
+                                        new CarIconStyle.Builder().setTint(CarColor.GREEN).build())
                                 .build())
                 .addAction(primaryActionBuilder.build())
                 .addAction(
@@ -91,7 +103,28 @@ public class ShortMessageTemplateDemoScreen extends Screen {
                                         () -> {
                                             throw new RuntimeException("Error");
                                         })
+                                .setIcon(CarIcon.ALERT)
                                 .build())
                 .build();
+    }
+
+    /**
+     * A new screen that displays the MapWithContentTemplate
+     * containing the exact same MessageTemplate.
+     */
+    private class MapMessageDemoScreen extends Screen {
+        protected MapMessageDemoScreen(@NonNull CarContext carContext) {
+            super(carContext);
+        }
+
+        @Override
+        public @NonNull Template onGetTemplate() {
+            MessageTemplate innerMessageTemplate = ShortMessageTemplateDemoScreen.this
+                    .buildMessageTemplate();
+
+            return new MapWithContentTemplate.Builder()
+                    .setContentTemplate(innerMessageTemplate)
+                    .build();
+        }
     }
 }

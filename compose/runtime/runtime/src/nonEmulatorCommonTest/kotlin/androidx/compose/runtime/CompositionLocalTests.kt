@@ -29,6 +29,7 @@ import androidx.compose.runtime.mock.revalidate
 import androidx.compose.runtime.mock.validate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,7 +67,7 @@ class CompositionLocalTests {
                 LocalSomeTextComposition provides "Test1",
                 LocalSomeIntComposition provides 12,
                 LocalSomeOtherIntProvider provides 42,
-                LocalSomeStaticInt provides 50
+                LocalSomeStaticInt provides 50,
             ) {
                 assertEquals("Test1", LocalSomeTextComposition.current)
                 assertEquals(12, LocalSomeIntComposition.current)
@@ -74,7 +75,7 @@ class CompositionLocalTests {
                 assertEquals(50, LocalSomeStaticInt.current)
                 CompositionLocalProvider(
                     LocalSomeTextComposition provides "Test2",
-                    LocalSomeStaticInt provides 60
+                    LocalSomeStaticInt provides 60,
                 ) {
                     assertEquals("Test2", LocalSomeTextComposition.current)
                     assertEquals(12, LocalSomeIntComposition.current)
@@ -147,7 +148,7 @@ class CompositionLocalTests {
 
             CompositionLocalProvider(
                 LocalSomeTextComposition provides someText,
-                LocalSomeIntComposition provides 0
+                LocalSomeIntComposition provides 0,
             ) {
                 ReadStringCompositionLocal(compositionLocal = LocalSomeTextComposition)
 
@@ -185,14 +186,12 @@ class CompositionLocalTests {
 
             CompositionLocalProvider(
                 staticSomeTextCompositionLocal provides someText,
-                staticSomeIntCompositionLocal provides 0
+                staticSomeIntCompositionLocal provides 0,
             ) {
                 assertEquals(someText, staticSomeTextCompositionLocal.current)
                 assertEquals(0, staticSomeIntCompositionLocal.current)
 
-                ReadStringCompositionLocal(
-                    compositionLocal = staticSomeTextCompositionLocal,
-                )
+                ReadStringCompositionLocal(compositionLocal = staticSomeTextCompositionLocal)
 
                 TestSubcomposition {
                     assertEquals(someText, staticSomeTextCompositionLocal.current)
@@ -227,11 +226,9 @@ class CompositionLocalTests {
 
             CompositionLocalProvider(
                 LocalSomeTextComposition provides someText,
-                LocalSomeIntComposition provides 0
+                LocalSomeIntComposition provides 0,
             ) {
-                ReadStringCompositionLocal(
-                    compositionLocal = LocalSomeTextComposition,
-                )
+                ReadStringCompositionLocal(compositionLocal = LocalSomeTextComposition)
 
                 doSubCompose = testDeferredSubcomposition {
                     assertEquals(someText, LocalSomeTextComposition.current)
@@ -272,7 +269,7 @@ class CompositionLocalTests {
 
             CompositionLocalProvider(
                 staticSomeTextCompositionLocal provides someText,
-                staticSomeIntCompositionLocal provides 0
+                staticSomeIntCompositionLocal provides 0,
             ) {
                 assertEquals(someText, staticSomeTextCompositionLocal.current)
                 assertEquals(0, staticSomeIntCompositionLocal.current)
@@ -319,7 +316,7 @@ class CompositionLocalTests {
 
             CompositionLocalProvider(
                 staticSomeTextCompositionLocal provides someText,
-                staticSomeIntCompositionLocal provides 0
+                staticSomeIntCompositionLocal provides 0,
             ) {
                 assertEquals(someText, staticSomeTextCompositionLocal.current)
                 assertEquals(0, staticSomeIntCompositionLocal.current)
@@ -428,7 +425,7 @@ class CompositionLocalTests {
             if (includeProviders) {
                 CompositionLocalProvider(
                     local provides providedValue.value,
-                    static provides providedStatic.value
+                    static provides providedStatic.value,
                 ) {
                     Validate(providedValue.value)
                 }
@@ -462,9 +459,7 @@ class CompositionLocalTests {
 
         @Composable
         fun Test() {
-            CompositionLocalProvider(
-                LocalTest provides 1,
-            ) {
+            CompositionLocalProvider(LocalTest provides 1) {
                 CompositionLocalProvider(
                     *locals.map { it provides 3 }.toTypedArray(),
                     LocalTest provides 2,
@@ -532,6 +527,7 @@ class CompositionLocalTests {
         var provided: Array<ProvidedValue<Int>> by mutableStateOf(emptyArray())
 
         var actualValues = emptySet<Any>()
+        var composition2ContentExecutionCount = 0
 
         @Composable
         fun LocalsConsumer() {
@@ -543,12 +539,8 @@ class CompositionLocalTests {
                 val composition2 = Composition(EmptyApplier(), recomposer)
                 composition2.setContent {
                     CompositionLocalProvider(locals) {
-                        actualValues =
-                            setOf(
-                                local1.current,
-                                local2.current,
-                                staticLocal.current,
-                            )
+                        actualValues = setOf(local1.current, local2.current, staticLocal.current)
+                        composition2ContentExecutionCount++
                     }
                 }
                 onDispose {
@@ -562,38 +554,55 @@ class CompositionLocalTests {
 
         advance()
         assertEquals(setOf(0, 0, 0), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 1)
         advance()
         assertEquals(setOf(1, 0, 0), actualValues)
+        assertEquals(2, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 2)
         advance()
         assertEquals(setOf(2, 0, 0), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 2, staticLocal provides 1)
         advance()
         assertEquals(setOf(2, 0, 1), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 2, staticLocal provides 2)
         advance()
         assertEquals(setOf(2, 0, 2), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 1, staticLocal provides 1)
         advance()
         assertEquals(setOf(1, 0, 1), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 1, local2 provides 1, staticLocal provides 1)
         advance()
         assertEquals(setOf(1, 1, 1), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = arrayOf(local1 provides 1, staticLocal provides 1)
         advance()
         assertEquals(setOf(1, 0, 1), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
 
+        composition2ContentExecutionCount = 0
         provided = emptyArray()
         advance()
         assertEquals(setOf(0, 0, 0), actualValues)
+        assertEquals(1, composition2ContentExecutionCount)
     }
 
     @Test // Regression test for b/233064044
@@ -777,6 +786,86 @@ class CompositionLocalTests {
         assertTrue(valueSeen)
     }
 
+    @Test
+    fun testProvidesCompositionLocalsAndReturnResult() = compositionTest {
+        val expected = "expected"
+
+        compose {
+            assertEquals("Default", LocalSomeTextComposition.current)
+            assertEquals(1, LocalSomeIntComposition.current)
+            val result =
+                withCompositionLocals(
+                    LocalSomeTextComposition provides "Test1",
+                    LocalSomeIntComposition provides 12,
+                    LocalSomeOtherIntProvider provides 42,
+                    LocalSomeStaticInt provides 50,
+                ) {
+                    assertEquals("Test1", LocalSomeTextComposition.current)
+                    assertEquals(12, LocalSomeIntComposition.current)
+                    assertEquals(42, LocalSomeOtherIntComposition.current)
+                    assertEquals(50, LocalSomeStaticInt.current)
+                    CompositionLocalProvider(
+                        LocalSomeTextComposition provides "Test2",
+                        LocalSomeStaticInt provides 60,
+                    ) {
+                        assertEquals("Test2", LocalSomeTextComposition.current)
+                        assertEquals(12, LocalSomeIntComposition.current)
+                        assertEquals(42, LocalSomeOtherIntComposition.current)
+                        assertEquals(60, LocalSomeStaticInt.current)
+                    }
+                    assertEquals("Test1", LocalSomeTextComposition.current)
+                    assertEquals(12, LocalSomeIntComposition.current)
+                    assertEquals(42, LocalSomeOtherIntComposition.current)
+                    assertEquals(50, LocalSomeStaticInt.current)
+
+                    return@withCompositionLocals expected
+                }
+            assertEquals("Default", LocalSomeTextComposition.current)
+            assertEquals(1, LocalSomeIntComposition.current)
+            assertEquals(expected, result)
+        }
+    }
+
+    @Test
+    fun testProvidesSingleCompositionLocalAndReturnsResult() = compositionTest {
+        val expected = "expected"
+
+        compose {
+            assertEquals("Default", LocalSomeTextComposition.current)
+            val result =
+                withCompositionLocal(LocalSomeTextComposition provides "Test1") {
+                    assertEquals("Test1", LocalSomeTextComposition.current)
+                    CompositionLocalProvider(LocalSomeTextComposition provides "Test2") {
+                        assertEquals("Test2", LocalSomeTextComposition.current)
+                    }
+                    assertEquals("Test1", LocalSomeTextComposition.current)
+
+                    return@withCompositionLocal expected
+                }
+            assertEquals("Default", LocalSomeTextComposition.current)
+            assertEquals(expected, result)
+        }
+    }
+
+    @Test
+    fun testProvidesSingleCompositionLocalAndReturnsNestedResults() = compositionTest {
+        val expected = "expected"
+
+        compose {
+            assertEquals("Default", LocalSomeTextComposition.current)
+            val result =
+                withCompositionLocal(LocalSomeTextComposition provides "Test1") {
+                    withCompositionLocal(LocalSomeTextComposition provides "Test2") {
+                        assertEquals("Test2", LocalSomeTextComposition.current)
+                        expected
+                    }
+                }
+            assertEquals("Default", LocalSomeTextComposition.current)
+            assertEquals(expected, result)
+        }
+    }
+
+    @Test
     fun staticLocalUpdateInvalidatesCorrectly_startProvides() = compositionTest {
         val SomeValue = staticCompositionLocalOf { 0 }
         val LocalValue = staticCompositionLocalOf<Boolean> { error("Not provided") }
@@ -788,7 +877,7 @@ class CompositionLocalTests {
                 CompositionLocalProvider(SomeValue provides 1, LocalOtherValue providesDefault 1) {
                     CompositionLocalProvider(
                         SomeValue provides 2,
-                        LocalOtherValue providesDefault 2
+                        LocalOtherValue providesDefault 2,
                     ) {
                         valueSeen = LocalValue.current
                     }
@@ -800,24 +889,309 @@ class CompositionLocalTests {
         advance()
         assertTrue(valueSeen)
     }
+
+    @Test
+    fun hostDefault_resolvesValueFromProvider() = compositionTest {
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        val provider = TestHostDefaultProvider(mapOf(key to "HostValue"))
+
+        compose {
+            CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                assertEquals("HostValue", local.current)
+            }
+        }
+    }
+
+    @Test
+    fun hostDefault_explicitValueOverridesHost() = compositionTest {
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        val provider = TestHostDefaultProvider(mapOf(key to "HostValue"))
+
+        compose {
+            CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                CompositionLocalProvider(local provides "Explicit") {
+                    assertEquals("Explicit", local.current)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun hostDefault_returnsNullForMissingNullableKey() = compositionTest {
+        // Key expects a nullable String
+        val key = TestHostDefaultKey<String?>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        // Provider is empty
+        val provider = TestHostDefaultProvider(emptyMap())
+
+        compose {
+            CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                assertEquals(null, local.current)
+            }
+        }
+    }
+
+    @Test
+    fun hostDefault_throwsForMissingNonNullableKey() = compositionTest {
+        // We use String (reference type) because Kotlin/Native's LLVM backend may 'segfault' when
+        // attempting to unbox a null 'Any' into a primitive (like Int). Using a reference type
+        // ensures we get a catchable runtime exception instead of a process crash.
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+        val provider = TestHostDefaultProvider(emptyMap())
+
+        val exception =
+            assertFailsWith<Throwable> {
+                compose {
+                    CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                        // We force access with !! because some platforms (e.g., JS) are more
+                        // "relaxed" about nullability at runtime. The assertion ensures the
+                        // failure happens here rather than leaking into later code.
+                        @Suppress("UnusedVariable", "unused", "UNNECESSARY_NOT_NULL_ASSERTION")
+                        val unused: String = local.current!!
+                    }
+                }
+            }
+
+        // Different Kotlin backends report "null-to-non-null" failures differently.
+        // JVM usually throws NPE on unboxing; Native/JS may throw ClassCastException.
+        assertTrue(
+            exception is NullPointerException || exception is ClassCastException,
+            "Expected NPE or CCE due to missing provider, but got: ${exception::class.simpleName}",
+        )
+    }
+
+    @Test
+    fun hostDefault_dynamicUpdatesFromProvider() = compositionTest {
+        val key = TestHostDefaultKey<String>()
+        val local = compositionLocalWithHostDefaultOf(key)
+
+        // We use mutable state to swap providers to simulate the host environment changing
+        var useProviderA by mutableStateOf(true)
+
+        val providerA = TestHostDefaultProvider(mapOf(key to "ValueA"))
+        val providerB = TestHostDefaultProvider(mapOf(key to "ValueB"))
+
+        compose {
+            val currentProvider = if (useProviderA) providerA else providerB
+            CompositionLocalProvider(LocalHostDefaultProvider provides currentProvider) {
+                Text(local.current)
+            }
+        }
+
+        validate { Text("ValueA") }
+
+        useProviderA = false
+        expectChanges()
+        validate { Text("ValueB") }
+    }
+
+    @Test
+    fun staticComputedLocal_fallbackAndStaticOverride() = compositionTest {
+        val baseLocal = compositionLocalOf { 10 }
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+            baseLocal.currentValue * 2
+        }
+
+        var overrideValue by mutableStateOf(100)
+        var recomposeCount = 0
+
+        compose {
+            CompositionLocalProvider(baseLocal provides 20) {
+                // Should fall back to baseLocal.currentValue * 2 = 40
+                Text("Fallback: ${staticComputedLocal.current}")
+            }
+
+            CompositionLocalProvider(staticComputedLocal provides overrideValue) {
+                recomposeCount++
+                Text("Override: ${staticComputedLocal.current}")
+            }
+        }
+
+        validate {
+            Text("Fallback: 40")
+            Text("Override: 100")
+        }
+
+        assertEquals(1, recomposeCount)
+
+        // Mutating overrideValue must structurally recompose the static override provider
+        overrideValue = 200
+        expectChanges()
+
+        validate {
+            Text("Fallback: 40")
+            Text("Override: 200")
+        }
+
+        assertEquals(2, recomposeCount)
+    }
+
+    @Test
+    fun staticComputedLocal_providesDefault_yieldsToExplicitOrOverridesFallback() =
+        compositionTest {
+            val baseLocal = compositionLocalOf { 1 }
+            val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+                baseLocal.currentValue * 10
+            }
+
+            compose {
+                // Scenario A: Omitted parent -> providesDefault overrides fallback
+                CompositionLocalProvider(staticComputedLocal providesDefault 50) {
+                    Text("OmittedParent: ${staticComputedLocal.current}")
+                }
+
+                // Scenario B: Provided parent -> providesDefault yields to explicit parent
+                CompositionLocalProvider(staticComputedLocal provides 100) {
+                    CompositionLocalProvider(staticComputedLocal providesDefault 50) {
+                        Text("ProvidedParent: ${staticComputedLocal.current}")
+                    }
+                }
+            }
+
+            validate {
+                Text("OmittedParent: 50")
+                Text("ProvidedParent: 100")
+            }
+        }
+
+    @Test
+    fun staticComputedLocal_propagationOfUpdatedBaseLocal() = compositionTest {
+        val baseLocal = compositionLocalOf { 10 }
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+            baseLocal.currentValue * 2
+        }
+
+        var baseValue by mutableStateOf(10)
+
+        compose {
+            CompositionLocalProvider(baseLocal provides baseValue) {
+                Text("Value: ${staticComputedLocal.current}")
+            }
+        }
+
+        validate { Text("Value: 20") }
+
+        baseValue = 20
+        expectChanges()
+
+        validate { Text("Value: 40") }
+    }
+
+    @Test
+    fun staticComputedLocal_tracksDynamicDefaults_onlyWhenUnprovided() = compositionTest {
+        val baseLocal = compositionLocalOf { 10 }
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+            baseLocal.currentValue * 2
+        }
+
+        var baseValue by mutableStateOf(10)
+        var recomposeCountUnprovided = 0
+        var recomposeCountProvided = 0
+
+        compose {
+            CompositionLocalProvider(baseLocal providesComputed { baseValue }) {
+                // Read staticComputedLocal when unprovided: should track baseLocal reads.
+                ReadIntLocal(staticComputedLocal) { recomposeCountUnprovided++ }
+
+                // Read staticComputedLocal when provided: should NOT track baseLocal reads.
+                CompositionLocalProvider(staticComputedLocal provides 100) {
+                    ReadIntLocal(staticComputedLocal) { recomposeCountProvided++ }
+                }
+            }
+        }
+
+        validate {
+            Text("Value: 20")
+            Text("Value: 100")
+        }
+        assertEquals(1, recomposeCountUnprovided)
+        assertEquals(1, recomposeCountProvided)
+
+        // Mutating baseValue should invalidate the unprovided reader scope
+        baseValue = 20
+        expectChanges()
+
+        validate {
+            Text("Value: 40")
+            Text("Value: 100")
+        }
+        assertEquals(2, recomposeCountUnprovided)
+        assertEquals(1, recomposeCountProvided) // Should NOT recompose!
+    }
+
+    @Test
+    fun staticComputedLocal_changingProvidedValueRecomposesSubtree() = compositionTest {
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf { 10 }
+
+        var providedValue by mutableStateOf(100)
+        var recomposeWithoutRead = 0
+        var recomposeWithRead = 0
+
+        compose {
+            CompositionLocalProvider(staticComputedLocal provides providedValue) {
+                NonReadChild { recomposeWithoutRead++ }
+                ReadChild(staticComputedLocal) { recomposeWithRead++ }
+            }
+        }
+
+        validate {
+            Text("NoRead")
+            Text("Read: 100")
+        }
+        assertEquals(1, recomposeWithoutRead)
+        assertEquals(1, recomposeWithRead)
+
+        providedValue = 200
+        expectChanges()
+
+        validate {
+            Text("NoRead")
+            Text("Read: 200")
+        }
+        // Since it is static when provided, changing the provided value invalidates the entire
+        // subtree
+        assertEquals(2, recomposeWithoutRead)
+        assertEquals(2, recomposeWithRead)
+    }
 }
 
-val cacheLocal = staticCompositionLocalOf { "Unset" }
+@Composable
+private fun ReadIntLocal(local: CompositionLocal<Int>, onRecompose: () -> Unit) {
+    onRecompose()
+    Text("Value: ${local.current}")
+}
+
+@Composable
+private fun NonReadChild(onRecompose: () -> Unit) {
+    onRecompose()
+    Text("NoRead")
+}
+
+@Composable
+private fun ReadChild(local: CompositionLocal<Int>, onRecompose: () -> Unit) {
+    onRecompose()
+    Text("Read: ${local.current}")
+}
+
+val LocalCache = staticCompositionLocalOf { "Unset" }
 
 @Composable
 fun CacheInvalidate(state: State<Int>) {
     Text("${state.value}")
-    Text(cacheLocal.current)
+    Text(LocalCache.current)
     CacheInvalidateSet {
         Text("${state.value}")
-        Text(cacheLocal.current)
+        Text(LocalCache.current)
     }
-    Text(cacheLocal.current)
+    Text(LocalCache.current)
 }
 
 @Composable
 fun CacheInvalidateSet(content: @Composable () -> Unit) {
-    CompositionLocalProvider(cacheLocal provides "Set") { content() }
+    CompositionLocalProvider(LocalCache provides "Set") { content() }
 }
 
 fun MockViewValidator.CacheInvalidate(state: State<Int>) {
@@ -831,3 +1205,13 @@ fun MockViewValidator.CacheInvalidate(state: State<Int>) {
 data class SomeData(val value: String = "default")
 
 @Stable class StableRef<T>(var value: T)
+
+private class TestHostDefaultKey<T> : HostDefaultKey<T>
+
+private class TestHostDefaultProvider(val values: Map<HostDefaultKey<*>, Any?>) :
+    HostDefaultProvider {
+    override fun <T> getHostDefault(key: HostDefaultKey<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return values[key] as T
+    }
+}

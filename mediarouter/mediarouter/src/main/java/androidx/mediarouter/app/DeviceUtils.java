@@ -25,26 +25,20 @@ import android.hardware.SensorManager;
 import android.os.Build;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.mediarouter.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Utility methods for checking properties of the current device. */
 final class DeviceUtils {
-    @Nullable
-    private static Boolean sIsPhone;
-    @Nullable
-    private static Boolean sIsTablet;
-    @Nullable
-    private static Boolean sIsFoldable;
-    @Nullable
-    private static Boolean sIsSevenInchTablet;
-    @Nullable
-    private static Boolean sIsWearable;
-    @Nullable
-    private static Boolean sIsAuto;
-    @Nullable
-    private static Boolean sIsTv;
+    private static @Nullable Boolean sIsPhone;
+    private static @Nullable Boolean sIsTablet;
+    private static @Nullable Boolean sIsFoldable;
+    private static @Nullable Boolean sIsSevenInchTablet;
+    private static @Nullable Boolean sIsWearable;
+    private static @Nullable Boolean sIsAuto;
+    private static @Nullable Boolean sIsTv;
 
     /** The feature name for Auto devices. */
     private static final String FEATURE_AUTO = "android.hardware.type.automotive";
@@ -64,12 +58,15 @@ final class DeviceUtils {
 
     /**
      * Returns a device specific string representation of wifi warning description. It can be one
-     * of the following values: {@link #{R.string.mr_chooser_wifi_warning_description_phone} and
-     * @link #{R.string.mr_chooser_wifi_warning_description_tablet} and
-     * @link #{R.string.mr_chooser_wifi_warning_description_tv} and
-     * @link #{R.string.mr_chooser_wifi_warning_description_watch} and
-     * @link #{R.string.mr_chooser_wifi_warning_description_car} and
-     * @link #{R.string.mr_chooser_wifi_warning_description_unknown}}
+     * of the following values:
+     * <ul>
+     *     <li>{@code R.string.mr_chooser_wifi_warning_description_phone}</li>
+     *     <li>{@code R.string.mr_chooser_wifi_warning_description_tablet}</li>
+     *     <li>{@code R.string.mr_chooser_wifi_warning_description_tv}</li>
+     *     <li>{@code R.string.mr_chooser_wifi_warning_description_watch}</li>
+     *     <li>{@code R.string.mr_chooser_wifi_warning_description_car}</li>
+     *     <li>{@code R.string.mr_chooser_wifi_warning_description_unknown}</li>
+     * </ul>
      */
     static String getDialogChooserWifiWarningDescription(@NonNull Context context) {
         if (isPhone(context) || isFoldable(context)) {
@@ -184,9 +181,7 @@ final class DeviceUtils {
      */
     private static boolean isWearable(@NonNull PackageManager packageManager) {
         if (sIsWearable == null) {
-            sIsWearable =
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH
-                            && packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH);
+            sIsWearable = packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH);
         }
         return sIsWearable;
     }

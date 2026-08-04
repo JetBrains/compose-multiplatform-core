@@ -38,7 +38,7 @@ class MedicalResourceIdTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -48,19 +48,19 @@ class MedicalResourceIdTest {
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_PATIENT,
-                "fhir_rs_id_1"
+                "fhir_rs_id_1",
             )
         val medicalResourceId2 =
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_PATIENT,
-                "fhir_rs_id_1"
+                "fhir_rs_id_1",
             )
         val medicalResourceId3 =
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_PATIENT,
-                "fhir_rs_id_2"
+                "fhir_rs_id_2",
             )
 
         assertThat(medicalResourceId1).isEqualTo(medicalResourceId2)
@@ -74,7 +74,7 @@ class MedicalResourceIdTest {
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_PATIENT,
-                "fhir_rs_id_1"
+                "fhir_rs_id_1",
             )
 
         val toString = medicalResourceId.toString()
@@ -92,7 +92,7 @@ class MedicalResourceIdTest {
             MedicalResourceId(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_RESOURCE_TYPE_PATIENT,
-                "fhir_rs_id_1"
+                "fhir_rs_id_1",
             )
 
         assertThat(sdk.platformMedicalResourceId)
@@ -100,7 +100,7 @@ class MedicalResourceIdTest {
                 PlatformMedicalResourceId(
                     MEDICAL_DATA_SOURCE_ID_STRING,
                     FHIR_RESOURCE_TYPE_PATIENT,
-                    "fhir_rs_id_1"
+                    "fhir_rs_id_1",
                 )
             )
     }
@@ -110,7 +110,7 @@ class MedicalResourceIdTest {
         val medicalResourceId =
             MedicalResourceId.fromFhirReference(
                 MEDICAL_DATA_SOURCE_ID_STRING,
-                "Immunization/034-AB16.0"
+                "Immunization/034-AB16.0",
             )
 
         assertThat(medicalResourceId)
@@ -118,7 +118,7 @@ class MedicalResourceIdTest {
                 MedicalResourceId(
                     MEDICAL_DATA_SOURCE_ID_STRING,
                     FHIR_RESOURCE_TYPE_IMMUNIZATION,
-                    "034-AB16.0"
+                    "034-AB16.0",
                 )
             )
     }

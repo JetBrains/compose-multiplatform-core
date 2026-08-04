@@ -1,0 +1,838 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.camera.camera2.pipe.framegraph
+
+import android.content.Context
+import android.graphics.Rect
+import android.hardware.camera2.CaptureRequest
+import android.util.Size
+import androidx.camera.camera2.pipe.AfMode
+import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.FrameBuffers.tryPeekFirst
+import androidx.camera.camera2.pipe.FrameGraph
+import androidx.camera.camera2.pipe.FrameReference.Companion.acquire
+import androidx.camera.camera2.pipe.GraphState.GraphStateStarting
+import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
+import androidx.camera.camera2.pipe.GraphState.GraphStateStopping
+import androidx.camera.camera2.pipe.Lock3ABehavior
+import androidx.camera.camera2.pipe.Metadata
+import androidx.camera.camera2.pipe.OutputStatus
+import androidx.camera.camera2.pipe.Request
+import androidx.camera.camera2.pipe.StreamFormat
+import androidx.camera.camera2.pipe.testing.CameraPipeSimulator
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.FakeMetadata.Companion.TEST_KEY
+import androidx.camera.camera2.pipe.testing.FrameGraphSimulator
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
+import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
+import androidx.test.core.app.ApplicationProvider
+import androidx.testutils.assertThrows
+import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
+class FrameGraphImplTest {
+    private val testScope = TestScope()
+    private val context = ApplicationProvider.getApplicationContext() as Context
+    private val metadata = FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
+    private val streamConfig1 =
+        CameraStream.Config.create(
+            Size(640, 480),
+            StreamFormat.YUV_420_888,
+            imageSourceConfig = androidx.camera.camera2.pipe.ImageSourceConfig(capacity = 10),
+        )
+    private val streamConfig2 = CameraStream.Config.create(Size(1080, 720), StreamFormat.PRIVATE)
+
+    private val streamConfig3 =
+        CameraStream.Config.create(
+            Size(640, 480),
+            StreamFormat.RAW10,
+            imageSourceConfig = androidx.camera.camera2.pipe.ImageSourceConfig(capacity = 2),
+        )
+
+    private val graphConfig =
+        CameraGraph.Config(
+            camera = metadata.camera,
+            streams = listOf(streamConfig1, streamConfig2, streamConfig3),
+        )
+
+    private val cameraPipeSimulator =
+        CameraPipeSimulator.create(testScope, context, listOf(metadata))
+    private val frameGraph: FrameGraphSimulator =
+        cameraPipeSimulator.createFrameGraph(FrameGraph.Config(graphConfig))
+
+    private fun initialize(scope: TestScope) {
+        frameGraph.start()
+        frameGraph.initializeSurfaces()
+        frameGraph.simulateCameraStarted()
+        scope.advanceUntilIdle()
+    }
+
+    @Test
+    fun startFrameGraph_CameraGraphStarts() =
+        testScope.runTest {
+            assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStopped)
+            frameGraph.start()
+            assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStarting)
+        }
+
+    @Test
+    fun stopFrameGraph_CameraGraphStops() =
+        testScope.runTest {
+            frameGraph.start()
+            assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStarting)
+
+            frameGraph.stop()
+
+            assertThat(frameGraph.graphState.value).isEqualTo(GraphStateStopping)
+        }
+
+    @Test
+    fun captureWithSingleStream_repeatingRequestUpdates() =
+        testScope.runTest {
+            initialize(this)
+            val stream = frameGraph.streams[streamConfig1]!!.id
+
+            frameGraph.captureWith(setOf(stream))
+            advanceUntilIdle()
+
+            val frame = frameGraph.simulateNextFrame()
+            advanceUntilIdle()
+            assertThat(frame.request.streams).isEqualTo(listOf(stream))
+        }
+
+    @Test
+    fun captureWithMultipleStreams_repeatingRequestUpdates() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+
+            frameGraph.captureWith(setOf(stream1, stream2))
+            advanceUntilIdle()
+
+            val frame = frameGraph.simulateNextFrame()
+            advanceUntilIdle()
+            assertThat(frame.request.streams).isEqualTo(listOf(stream1, stream2))
+        }
+
+    @Test
+    fun captureWithMultipleStreamsAndParameters_repeatingRequestUpdates() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+
+            frameGraph.captureWith(
+                setOf(stream1, stream2),
+                mapOf(CAPTURE_REQUEST_KEY to 2, TEST_NULLABLE_KEY to null, TEST_KEY to 5),
+            )
+            advanceUntilIdle()
+
+            val frame = frameGraph.simulateNextFrame()
+            advanceUntilIdle()
+            assertThat(frame.request.streams).isEqualTo(listOf(stream1, stream2))
+            val parameters: Map<CaptureRequest.Key<*>, Any?> =
+                mapOf(CAPTURE_REQUEST_KEY to 2, TEST_NULLABLE_KEY to null)
+            assertThat(frame.request.parameters).isEqualTo(parameters)
+            val extras: Map<Metadata.Key<*>, Any?> = mapOf(TEST_KEY to 5)
+            assertThat(frame.request.extras).isEqualTo(extras)
+        }
+
+    @Test
+    fun captureWithConflictingParameters_throwException() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+            frameGraph.captureWith(setOf(stream1, stream2), mapOf(CAPTURE_REQUEST_KEY to 2))
+
+            assertThrows<IllegalStateException> {
+                frameGraph.captureWith(setOf(stream1, stream2), mapOf(CAPTURE_REQUEST_KEY to 3))
+            }
+        }
+
+    @Test
+    fun captureWithNullParameter_propagatesNullToRequest() =
+        testScope.runTest {
+            initialize(this)
+            val stream = frameGraph.streams[streamConfig1]!!.id
+
+            val buffer1 = frameGraph.captureWith(setOf(stream), mapOf(TEST_NULLABLE_KEY to 42))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .containsEntry(TEST_NULLABLE_KEY, 42)
+            buffer1.close()
+
+            val buffer2 = frameGraph.captureWith(setOf(stream), mapOf(TEST_NULLABLE_KEY to null))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .containsEntry(TEST_NULLABLE_KEY, null)
+
+            buffer2.close()
+        }
+
+    @Test
+    fun captureWithNullParameter_nullToNonNullToNull() =
+        testScope.runTest {
+            initialize(this)
+            val stream = frameGraph.streams[streamConfig1]!!.id
+
+            val buffer1 = frameGraph.captureWith(setOf(stream), mapOf(TEST_NULLABLE_KEY to null))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .containsEntry(TEST_NULLABLE_KEY, null)
+            buffer1.close()
+            advanceUntilIdle()
+
+            val buffer2 = frameGraph.captureWith(setOf(stream), mapOf(TEST_NULLABLE_KEY to 42))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .containsEntry(TEST_NULLABLE_KEY, 42)
+            buffer2.close()
+            advanceUntilIdle()
+
+            val buffer3 = frameGraph.captureWith(setOf(stream), mapOf(TEST_NULLABLE_KEY to null))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .containsEntry(TEST_NULLABLE_KEY, null)
+            buffer3.close()
+        }
+
+    @Test
+    fun detachAllStream_stopRepeating() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+
+            val buffer =
+                frameGraph.captureWith(setOf(stream1, stream2), mapOf(CAPTURE_REQUEST_KEY to 2))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.streams)
+                .isEqualTo(listOf(stream1, stream2))
+
+            buffer.close()
+            advanceUntilIdle()
+            assertThrows<IllegalStateException> { frameGraph.simulateNextFrame() }
+        }
+
+    @Test
+    fun testAcquireSession() =
+        testScope.runTest {
+            val session = frameGraph.acquireSession()
+            assertThat(session).isNotNull()
+        }
+
+    @Test
+    fun testAcquireSessionOrNull() =
+        testScope.runTest {
+            val session = frameGraph.acquireSessionOrNull()
+            assertThat(session).isNotNull()
+        }
+
+    @Test
+    fun testAcquireSessionOrNullAfterAcquireSession() =
+        testScope.runTest {
+            val session = frameGraph.acquireSession()
+            assertThat(session).isNotNull()
+
+            // Since a session is already active, an attempt to acquire another session will fail.
+            val session1 = frameGraph.acquireSessionOrNull()
+            assertThat(session1).isNull()
+
+            // Closing an active session should allow a new session instance to be created.
+            session.close()
+            advanceUntilIdle()
+
+            val session2 = frameGraph.acquireSessionOrNull()
+            assertThat(session2).isNotNull()
+        }
+
+    @Test
+    fun testUseSessionClosesAndDoesNotBlock() =
+        testScope.runTest {
+            initialize(this)
+            val events = mutableListOf<Int>()
+            frameGraph.useSession { events += 1 }
+            frameGraph.useSession { events += 2 }
+
+            assertThat(events).containsExactly(1, 2).inOrder()
+        }
+
+    @Test
+    fun testUseSessionInClosesAndDoesNotBlock() =
+        testScope.runTest {
+            initialize(this)
+            val events = mutableListOf<Int>()
+            val scope = CoroutineScope(Job())
+            val job1 = frameGraph.useSessionIn(this) { events += 1 }
+            val job2 = frameGraph.useSessionIn(scope) { events += 2 }
+            job1.await()
+            job2.await()
+
+            assertThat(events.size).isEqualTo(2)
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsCaptureStreams() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+            val initialStreams = listOf(stream1)
+            val repeatingRequestStreams = listOf(stream2)
+
+            frameGraph.captureWith(initialStreams.toSet())
+            advanceUntilIdle()
+
+            assertThat(frameGraph.simulateNextFrame().request.streams).isEqualTo(initialStreams)
+            frameGraph.useSession {
+                it.startRepeating(Request(streams = repeatingRequestStreams))
+                advanceUntilIdle()
+                assertThat(frameGraph.simulateNextFrame().request.streams)
+                    .isEqualTo(repeatingRequestStreams)
+            }
+            advanceUntilIdle()
+
+            assertThat(frameGraph.simulateNextFrame().request.streams).isEqualTo(initialStreams)
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsParameters() =
+        testScope.runTest {
+            initialize(this)
+            val stream = frameGraph.streams[streamConfig1]!!.id
+            val repeatingRequestParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.SCALER_CROP_REGION to Rect())
+
+            frameGraph.start()
+            frameGraph.captureWith(streamIds = setOf(stream))
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .isEqualTo(emptyMap<CaptureRequest.Key<*>, Any>())
+
+            frameGraph.useSession {
+                it.startRepeating(
+                    Request(streams = listOf(stream), parameters = repeatingRequestParameters)
+                )
+                advanceUntilIdle()
+                assertThat(frameGraph.simulateNextFrame().request.parameters)
+                    .isEqualTo(repeatingRequestParameters)
+            }
+            advanceUntilIdle()
+
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .isEqualTo(emptyMap<CaptureRequest.Key<*>, Any>())
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsBothStreamsAndParameters() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+            val initialStreams = listOf(stream1)
+            val repeatingRequestStreams = listOf(stream2)
+            val initialParameters = emptyMap<CaptureRequest.Key<*>, Any>()
+            val repeatingRequestParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.SCALER_CROP_REGION to Rect())
+
+            frameGraph.captureWith(initialStreams.toSet(), initialParameters.toMap())
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.streams).isEqualTo(initialStreams)
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .isEqualTo(initialParameters)
+            frameGraph.useSession {
+                it.startRepeating(
+                    Request(
+                        streams = repeatingRequestStreams,
+                        parameters = repeatingRequestParameters,
+                    )
+                )
+                advanceUntilIdle()
+                assertThat(frameGraph.simulateNextFrame().request.streams)
+                    .isEqualTo(repeatingRequestStreams)
+                assertThat(frameGraph.simulateNextFrame().request.parameters)
+                    .isEqualTo(repeatingRequestParameters)
+            }
+            advanceUntilIdle()
+
+            assertThat(frameGraph.simulateNextFrame().request.streams).isEqualTo(initialStreams)
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .isEqualTo(initialParameters)
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_restores3A() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val initialStreams = listOf(stream1)
+            val initialParameters = emptyMap<CaptureRequest.Key<*>, Any>()
+            val frameGraph3AParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.CONTROL_AE_LOCK to true)
+
+            frameGraph.captureWith(initialStreams.toSet(), initialParameters.toMap())
+            advanceUntilIdle()
+
+            frameGraph.lock3A(aeLockBehavior = Lock3ABehavior.IMMEDIATE)
+            advanceUntilIdle()
+            frameGraph.simulateNextFrame()
+            assertThat(frameGraph.simulateNextFrame().requestSequence.requiredParameters)
+                .isEqualTo(frameGraph3AParameters)
+
+            frameGraph.useSession {
+                it.unlock3A(ae = true)
+                advanceUntilIdle()
+                assertThat(frameGraph.simulateNextFrame().requestSequence.requiredParameters)
+                    .isEqualTo(
+                        mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.CONTROL_AE_LOCK to false)
+                    )
+            }
+            advanceUntilIdle()
+
+            assertThat(frameGraph.simulateNextFrame().requestSequence.requiredParameters)
+                .isEqualTo(frameGraph3AParameters)
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsStreamsAndParametersAnd3A() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+            val initialStreams = listOf(stream1)
+            val repeatingRequestStreams = listOf(stream2)
+            val initialParameters = emptyMap<CaptureRequest.Key<*>, Any>()
+            val repeatingRequestParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.SCALER_CROP_REGION to Rect())
+            val frameGraph3AParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(
+                    CaptureRequest.CONTROL_AF_MODE to AfMode.AUTO.value
+                )
+
+            frameGraph.captureWith(initialStreams.toSet(), initialParameters.toMap())
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().request.streams).isEqualTo(initialStreams)
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .isEqualTo(initialParameters)
+
+            frameGraph.update3A(afMode = AfMode.AUTO)
+            advanceUntilIdle()
+            assertThat(frameGraph.simulateNextFrame().requestSequence.requiredParameters)
+                .isEqualTo(frameGraph3AParameters)
+
+            frameGraph.useSession {
+                it.startRepeating(
+                    Request(
+                        streams = repeatingRequestStreams,
+                        parameters = repeatingRequestParameters,
+                    )
+                )
+                advanceUntilIdle()
+                assertThat(frameGraph.simulateNextFrame().request.streams)
+                    .isEqualTo(repeatingRequestStreams)
+                assertThat(frameGraph.simulateNextFrame().request.parameters)
+                    .isEqualTo(repeatingRequestParameters)
+
+                it.update3A(afMode = AfMode.MACRO)
+                advanceUntilIdle()
+                assertThat(frameGraph.simulateNextFrame().requestSequence.requiredParameters)
+                    .isEqualTo(
+                        mapOf<CaptureRequest.Key<*>, Any>(
+                            CaptureRequest.CONTROL_AF_MODE to AfMode.MACRO.value
+                        )
+                    )
+            }
+            advanceUntilIdle()
+
+            // Simulate a few requests to invalidate the FrameBuffer(s) when session closes.
+            frameGraph.simulateNextFrame()
+
+            assertThat(frameGraph.simulateNextFrame().request.streams).isEqualTo(initialStreams)
+            assertThat(frameGraph.simulateNextFrame().request.parameters)
+                .isEqualTo(initialParameters)
+            assertThat(frameGraph.simulateNextFrame().requestSequence.requiredParameters)
+                .isEqualTo(frameGraph3AParameters)
+        }
+
+    @Test
+    fun capture_returnsPendingFrameCaptureImmediately() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val frameCapture = frameGraph.capture(Request(streams = listOf(streamId)))
+
+            assertThat(frameCapture).isNotNull()
+            assertThat(frameCapture.status).isEqualTo(OutputStatus.PENDING)
+        }
+
+    @Test
+    fun capture_waitsForActiveSessionLock() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val session = frameGraph.acquireSession()
+
+            val frameCapture = frameGraph.capture(Request(streams = listOf(streamId)))
+            advanceUntilIdle()
+
+            assertThat(frameCapture.status).isEqualTo(OutputStatus.PENDING)
+
+            session.close()
+            advanceUntilIdle()
+
+            val frame = frameGraph.simulateNextFrame()
+            assertThat(frame.request.streams).isEqualTo(listOf(streamId))
+            assertThat(frameCapture.status).isEqualTo(OutputStatus.AVAILABLE)
+        }
+
+    @Test
+    fun captureBurst_linksAllCaptures() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+            val requests =
+                listOf(Request(streams = listOf(streamId)), Request(streams = listOf(streamId)))
+
+            val session = frameGraph.acquireSession()
+            val frameCaptures = frameGraph.capture(requests)
+
+            assertThat(frameCaptures).hasSize(2)
+            frameCaptures.forEach { assertThat(it.status).isEqualTo(OutputStatus.PENDING) }
+
+            session.close()
+            advanceUntilIdle()
+
+            frameGraph.simulateNextFrame()
+            frameGraph.simulateNextFrame()
+
+            frameCaptures.forEach { assertThat(it.status).isEqualTo(OutputStatus.AVAILABLE) }
+        }
+
+    @Test
+    fun capture_whenClosed_isAborted() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            frameGraph.close()
+            advanceUntilIdle()
+
+            val frameCapture = frameGraph.capture(Request(streams = listOf(streamId)))
+            advanceUntilIdle()
+
+            assertThat(frameCapture.status).isEqualTo(OutputStatus.ERROR_OUTPUT_ABORTED)
+        }
+
+    @Test
+    fun capture_handlesCancellationDuringLockContention() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val session = frameGraph.acquireSession()
+            val frameCapture = frameGraph.capture(Request(streams = listOf(streamId)))
+
+            frameGraph.close()
+            advanceUntilIdle()
+
+            assertThat(frameCapture.status).isEqualTo(OutputStatus.ERROR_OUTPUT_ABORTED)
+
+            session.close()
+            advanceUntilIdle()
+        }
+
+    @Test
+    fun capture_statusReportsCorrectTerminalState() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val session = frameGraph.acquireSession()
+            val captureToAbort = frameGraph.capture(Request(streams = listOf(streamId)))
+
+            frameGraph.close()
+            advanceUntilIdle()
+
+            assertThat(captureToAbort.status).isEqualTo(OutputStatus.ERROR_OUTPUT_ABORTED)
+            session.close()
+        }
+
+    @Test
+    fun capture_awaitFrameReturnsNullIfAborted() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val session = frameGraph.acquireSession()
+            val frameCapture = frameGraph.capture(Request(streams = listOf(streamId)))
+
+            frameGraph.close()
+            advanceUntilIdle()
+
+            val result = frameCapture.awaitFrame()
+            assertThat(result).isNull()
+
+            session.close()
+        }
+
+    @Test
+    fun capture_orderingIsPreservedUnderLockContention() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val requestA = Request(streams = listOf(streamId))
+            val requestB = Request(streams = listOf(streamId))
+
+            val session = frameGraph.acquireSession()
+
+            val frameGraphCapture = frameGraph.capture(requestA)
+            advanceUntilIdle()
+
+            val sessionCapture = session.capture(requestB)
+            advanceUntilIdle()
+
+            assertThat(frameGraphCapture.status).isEqualTo(OutputStatus.PENDING)
+
+            session.close()
+            advanceUntilIdle()
+
+            val firstSimulatedFrame = frameGraph.simulateNextFrame()
+            val secondSimulatedFrame = frameGraph.simulateNextFrame()
+
+            val frameB = sessionCapture.getFrame()
+            assertThat(frameB).isNotNull()
+            assertThat(sessionCapture.status).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frameB!!.frameNumber).isEqualTo(firstSimulatedFrame.frameNumber)
+
+            val frameA = frameGraphCapture.getFrame()
+            assertThat(frameA).isNotNull()
+            assertThat(frameGraphCapture.status).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frameA!!.frameNumber).isEqualTo(secondSimulatedFrame.frameNumber)
+
+            assertThat(frameB.frameNumber.value).isLessThan(frameA.frameNumber.value)
+        }
+
+    @Test
+    fun capture_identicalRequestOrderingUnderLockContention() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val sharedRequest = Request(streams = listOf(streamId))
+
+            val session = frameGraph.acquireSession()
+
+            val frameGraphCapture = frameGraph.capture(sharedRequest)
+            advanceUntilIdle()
+
+            val sessionCapture = session.capture(sharedRequest)
+            advanceUntilIdle()
+
+            assertThat(frameGraphCapture.status).isEqualTo(OutputStatus.PENDING)
+
+            session.close()
+            advanceUntilIdle()
+
+            val firstSimulatedFrame = frameGraph.simulateNextFrame()
+            val secondSimulatedFrame = frameGraph.simulateNextFrame()
+
+            val frameFromSession = sessionCapture.getFrame()
+            assertThat(frameFromSession).isNotNull()
+            assertThat(sessionCapture.status).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frameFromSession!!.frameNumber).isEqualTo(firstSimulatedFrame.frameNumber)
+
+            val frameFromFG = frameGraphCapture.getFrame()
+            assertThat(frameFromFG).isNotNull()
+            assertThat(frameGraphCapture.status).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(frameFromFG!!.frameNumber).isEqualTo(secondSimulatedFrame.frameNumber)
+
+            assertThat(frameFromSession.frameNumber.value).isLessThan(frameFromFG.frameNumber.value)
+        }
+
+    @Test
+    fun capture_multipleIndividualCalls_areBatchedUnderContention() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig1]!!.id
+
+            val session = frameGraph.acquireSession()
+
+            val capture1 = frameGraph.capture(Request(streams = listOf(streamId)))
+            val capture2 = frameGraph.capture(Request(streams = listOf(streamId)))
+            val capture3 = frameGraph.capture(Request(streams = listOf(streamId)))
+
+            advanceUntilIdle()
+
+            assertThat(capture1.status).isEqualTo(OutputStatus.PENDING)
+            assertThat(capture2.status).isEqualTo(OutputStatus.PENDING)
+            assertThat(capture3.status).isEqualTo(OutputStatus.PENDING)
+
+            session.close()
+            advanceUntilIdle()
+
+            frameGraph.simulateNextFrame()
+            frameGraph.simulateNextFrame()
+            frameGraph.simulateNextFrame()
+
+            assertThat(capture1.status).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(capture2.status).isEqualTo(OutputStatus.AVAILABLE)
+            assertThat(capture3.status).isEqualTo(OutputStatus.AVAILABLE)
+        }
+
+    @Test
+    fun drain_clearsBuffers() =
+        testScope.runTest {
+            initialize(this)
+            val stream1 = frameGraph.streams[streamConfig1]!!.id
+            val stream2 = frameGraph.streams[streamConfig2]!!.id
+            val buffer1 = frameGraph.captureWith(setOf(stream1), capacity = 10)
+            val buffer2 = frameGraph.captureWith(setOf(stream2), capacity = 10)
+            advanceUntilIdle()
+            repeat(5) { frameGraph.simulateNextFrame() }
+            advanceUntilIdle()
+            assertThat(buffer1.size.value).isEqualTo(5)
+            assertThat(buffer2.size.value).isEqualTo(5)
+
+            frameGraph.drain(stream1)
+            advanceUntilIdle()
+
+            assertThat(buffer1.size.value).isEqualTo(0)
+            assertThat(buffer2.size.value).isEqualTo(5)
+
+            frameGraph.drain(stream2)
+            advanceUntilIdle()
+
+            assertThat(buffer1.size.value).isEqualTo(0)
+            assertThat(buffer2.size.value).isEqualTo(0)
+        }
+
+    @Test
+    fun drain_flushesImageSource() =
+        testScope.runTest {
+            initialize(this)
+            val stream = frameGraph.streams[streamConfig1]!!.id
+            val imageSource = cameraPipeSimulator.fakeImageSources[stream]
+            assertThat(imageSource).isNotNull()
+            assertThat(imageSource!!.isFlushed).isFalse()
+
+            frameGraph.drain(stream)
+            advanceUntilIdle()
+
+            assertThat(imageSource.isFlushed).isTrue()
+
+            frameGraph.simulateImage(stream, 100)
+            assertThat(imageSource.isFlushed).isFalse()
+
+            frameGraph.drain(stream)
+            advanceUntilIdle()
+
+            assertThat(imageSource.isFlushed).isTrue()
+        }
+
+    @Test
+    fun capture_withStreamSmallCapacity_doesNotDropImages() =
+        testScope.runTest {
+            initialize(this)
+            val streamId = frameGraph.streams[streamConfig3]!!.id
+
+            // Request a buffer to hold our 2 images
+            val buffer = frameGraph.captureWith(setOf(streamId), capacity = 2)
+            advanceUntilIdle()
+
+            // Simulate the first frame and its image
+            val frame1 = frameGraph.simulateNextFrame()
+            frame1.simulateImage(streamId)
+
+            // Simulate the second frame and its image
+            val frame2 = frameGraph.simulateNextFrame()
+            frame2.simulateImage(streamId)
+            advanceUntilIdle()
+
+            val firstFrame = buffer.peekFirstReference()?.acquire()
+            val firstImage = firstFrame?.getImage(streamId)
+            assertThat(firstImage).isNotNull()
+
+            val lastFrame = buffer.peekLastReference()?.acquire()
+            val lastImage = lastFrame?.getImage(streamId)
+            assertThat(lastImage).isNotNull()
+
+            firstImage?.close()
+            lastImage?.close()
+            buffer.close()
+        }
+
+    @Test
+    fun multiple_captureWith_doesNotExhaustUnrelatedStream() =
+        testScope.runTest {
+            initialize(this)
+
+            val streamId1 = frameGraph.streams[streamConfig1]!!.id
+            val streamId3 = frameGraph.streams[streamConfig3]!!.id
+
+            val buffer1 = frameGraph.captureWith(setOf(streamId1), capacity = 10)
+            val buffer3 = frameGraph.captureWith(setOf(streamId3), capacity = 2)
+            advanceUntilIdle()
+
+            // Buffer1 has size=10, and it contains stream1 which has size 10. Buffer3 has size=2,
+            // and it contains stream3, which has size=2.
+            //
+            // We simulate 8 frames.
+            // If each frame in buffer1 accidentally holds reference to images from stream3, then
+            // the first two images from stream3 will not be released until the first two Frames
+            // from buffer1 are evicted. It will lead to new images being dropped from stream3.
+            //
+            // If that's not the case then this loop should run without any error.
+            repeat(8) {
+                val simulatedFrame = frameGraph.simulateNextFrame()
+                advanceUntilIdle()
+                simulatedFrame.simulateImages()
+                advanceUntilIdle()
+
+                val frame = buffer3.tryPeekFirst()!!
+                advanceUntilIdle()
+                val image = frame.getImage(streamId3)!!
+
+                image.close()
+                frame.close()
+                advanceUntilIdle()
+            }
+
+            buffer1.close()
+            buffer3.close()
+        }
+
+    companion object {
+        private val CAPTURE_REQUEST_KEY = CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION
+        private val TEST_NULLABLE_KEY = CaptureRequest.BLACK_LEVEL_LOCK
+    }
+}

@@ -21,21 +21,19 @@ import android.media.ImageWriter
 import android.os.Build
 import android.os.Handler
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.InputStreamId
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.compat.Api29Compat
 import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.media.AndroidImageReader.Companion.IMAGEREADER_MAX_CAPACITY
-import kotlin.reflect.KClass
+import androidx.camera.common.unwrapAs
+import java.lang.Class
 import kotlinx.atomicfu.atomic
 
 /** Implements an [ImageWriterWrapper] using an [ImageWriter]. */
-@RequiresApi(23)
 public class AndroidImageWriter
 private constructor(
     private val imageWriter: ImageWriter,
-    private val inputStreamId: InputStreamId
+    private val inputStreamId: InputStreamId,
 ) : ImageWriterWrapper, ImageWriter.OnImageReleasedListener {
     private val onImageReleasedListener = atomic<ImageWriterWrapper.OnImageReleasedListener?>(null)
     override val maxImages: Int = imageWriter.maxImages
@@ -44,7 +42,7 @@ private constructor(
 
     override fun queueInputImage(image: ImageWrapper): Boolean {
         return try {
-            val unwrappedImage = image.unwrapAs(Image::class)
+            val unwrappedImage = image.unwrapAs<Image>()
             if (unwrappedImage == null) {
                 Log.warn { "Failed to unwrap image wrapper $image" }
                 return false
@@ -79,9 +77,9 @@ private constructor(
     override fun close(): Unit = imageWriter.close()
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            ImageWriter::class -> imageWriter as T?
+            ImageWriter::class.java -> imageWriter as T?
             else -> null
         }
 
@@ -100,14 +98,9 @@ private constructor(
             inputStreamId: InputStreamId,
             maxImages: Int,
             format: StreamFormat?,
-            handler: Handler
+            handler: Handler,
         ): ImageWriterWrapper {
             require(maxImages > 0) { "Max images ($maxImages) must be > 0" }
-            require(maxImages <= IMAGEREADER_MAX_CAPACITY) {
-                "Max images for ImageWriters is restricted to " +
-                    "$IMAGEREADER_MAX_CAPACITY to prevent overloading downstream " +
-                    "consumer components."
-            }
             // Create and configure a new ImageWriter
             val imageWriter =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && format != null) {

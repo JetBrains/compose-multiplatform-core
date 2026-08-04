@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -22,12 +21,11 @@ android {
             version = 1
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.browser"
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(36) }
 }
 
 dependencies {
@@ -46,10 +44,7 @@ dependencies {
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.junit)
 
@@ -70,4 +65,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2015"
     description = "Provides support for embedding Custom Tabs in an app."
+    enableRobolectric()
 }

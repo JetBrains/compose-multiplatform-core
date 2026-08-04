@@ -27,6 +27,7 @@ import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageWrapper
+import androidx.camera.common.UnsafeWrapper
 
 /**
  * A [RequestNumber] is an artificial identifier that is created for each request that is submitted
@@ -56,11 +57,11 @@ public value class RequestNumber(public val value: Long)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Request(
     public val streams: List<StreamId>,
-    public val parameters: Map<CaptureRequest.Key<*>, Any> = emptyMap(),
-    public val extras: Map<Metadata.Key<*>, Any> = emptyMap(),
+    public val parameters: Map<CaptureRequest.Key<*>, Any?> = emptyMap(),
+    public val extras: Map<Metadata.Key<*>, Any?> = emptyMap(),
     public val listeners: List<Listener> = emptyList(),
     public val template: RequestTemplate? = null,
-    public val inputRequest: InputRequest? = null
+    public val inputRequest: InputRequest? = null,
 ) {
     public operator fun <T> get(key: CaptureRequest.Key<T>): T? = getUnchecked(key)
 
@@ -89,7 +90,7 @@ public class Request(
         public fun onStarted(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            timestamp: CameraTimestamp
+            timestamp: CameraTimestamp,
         ) {}
 
         /**
@@ -105,7 +106,7 @@ public class Request(
         public fun onPartialCaptureResult(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            captureResult: FrameMetadata
+            captureResult: FrameMetadata,
         ) {}
 
         /**
@@ -141,15 +142,12 @@ public class Request(
         public fun onTotalCaptureResult(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            totalCaptureResult: FrameInfo
+            totalCaptureResult: FrameInfo,
         ) {}
 
         /**
-         * This is an artificial event that will be invoked after onTotalCaptureResult. This may be
-         * invoked several frames after onTotalCaptureResult due to incorrect HAL implementations
-         * that return metadata that get shifted several frames in the future. See b/154568653 for
-         * real examples of this. The actual amount of shifting and required transformations may
-         * vary per device.
+         * This is an artificial event that will be invoked after [onTotalCaptureResult]. Note that
+         * this may be fired before images have been produced for the frame.
          *
          * @param requestMetadata the data about the camera2 request that was sent to the camera.
          * @param frameNumber the android frame number for this exposure
@@ -158,7 +156,7 @@ public class Request(
         public fun onComplete(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            result: FrameInfo
+            result: FrameInfo,
         ) {}
 
         /**
@@ -175,7 +173,7 @@ public class Request(
         public fun onFailed(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            requestFailure: RequestFailure
+            requestFailure: RequestFailure,
         ) {}
 
         /**
@@ -191,7 +189,7 @@ public class Request(
         public fun onReadoutStarted(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            timestamp: SensorTimestamp
+            timestamp: SensorTimestamp,
         ) {}
 
         /**
@@ -203,11 +201,33 @@ public class Request(
          * @param frameNumber the android frame number for this exposure
          * @param stream the internal stream that will not receive a buffer for this frame.
          * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
+         *
+         * TODO(b/474658963): Remove this method once deprecated usages are removed.
+         */
+        @Deprecated("Use the onBufferLost with OutputId.")
+        public fun onBufferLost(
+            requestMetadata: RequestMetadata,
+            frameNumber: FrameNumber,
+            stream: StreamId,
+        ) {}
+
+        /**
+         * onBufferLost occurs when a CaptureRequest failed to create an image for a given output
+         * stream. This method may be invoked multiple times per frame if multiple buffers were
+         * lost. This method may not be invoked when an image is lost in some situations.
+         *
+         * @param requestMetadata the data about the camera2 request that was sent to the camera.
+         * @param frameNumber the android frame number for this exposure
+         * @param streamId the internal stream that will not receive a buffer for this frame.
+         * @param outputId the specific internal output stream of the [streamId] that will not
+         *   receive a buffer for this frame.
+         * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
          */
         public fun onBufferLost(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            stream: StreamId
+            streamId: StreamId,
+            outputId: OutputId,
         ) {}
 
         /**
@@ -260,7 +280,7 @@ public class Request(
          */
         public fun onRequestSequenceCompleted(
             requestMetadata: RequestMetadata,
-            frameNumber: FrameNumber
+            frameNumber: FrameNumber,
         ) {}
     }
 
@@ -414,6 +434,14 @@ public fun <T> Request.getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun Request.formatForLogs(): String = "Request($streams)@${Integer.toHexString(hashCode())}"
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Map<Any, Any?>.filterToCaptureRequestParameters(): Map<CaptureRequest.Key<*>, Any?> =
+    this.filterKeys { it is CaptureRequest.Key<*> }.mapKeys { it.key as CaptureRequest.Key<*> }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Map<Any, Any?>.filterToMetadataParameters(): Map<Metadata.Key<*>, Any?> =
+    this.filterKeys { it is Metadata.Key<*> }.mapKeys { it.key as Metadata.Key<*> }
 
 /** Utility function to help deal with the unsafe nature of the typed Key/Value pairs. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

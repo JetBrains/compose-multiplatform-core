@@ -24,6 +24,7 @@ import androidx.annotation.RequiresApi
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -99,8 +100,9 @@ interface CredentialManager {
      * credentials, consent to using one of them, etc.
      *
      * @sample androidx.credentials.samples.callGetCredential
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for getting the credential
      * @throws GetCredentialException If the request fails
      */
@@ -135,7 +137,7 @@ interface CredentialManager {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -151,8 +153,9 @@ interface CredentialManager {
      * The execution can potentially launch UI flows to collect user consent to using a credential,
      * display a picker when multiple credentials exist, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param pendingGetCredentialHandle the handle representing the pending operation to resume
      * @throws GetCredentialException If the request fails
      */
@@ -188,7 +191,7 @@ interface CredentialManager {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -205,39 +208,41 @@ interface CredentialManager {
      * @throws GetCredentialException If the request fails
      */
     @RequiresApi(34)
-    suspend fun prepareGetCredential(
-        request: GetCredentialRequest,
-    ): PrepareGetCredentialResponse = suspendCancellableCoroutine { continuation ->
-        // Any Android API that supports cancellation should be configured to propagate
-        // coroutine cancellation as follows:
-        val canceller = CancellationSignal()
-        continuation.invokeOnCancellation { canceller.cancel() }
+    suspend fun prepareGetCredential(request: GetCredentialRequest): PrepareGetCredentialResponse =
+        suspendCancellableCoroutine { continuation ->
+            // Any Android API that supports cancellation should be configured to propagate
+            // coroutine cancellation as follows:
+            val canceller = CancellationSignal()
+            continuation.invokeOnCancellation { canceller.cancel() }
 
-        val callback =
-            object :
-                CredentialManagerCallback<PrepareGetCredentialResponse, GetCredentialException> {
-                override fun onResult(result: PrepareGetCredentialResponse) {
-                    if (continuation.isActive) {
-                        continuation.resume(result)
+            val callback =
+                object :
+                    CredentialManagerCallback<
+                        PrepareGetCredentialResponse,
+                        GetCredentialException,
+                    > {
+                    override fun onResult(result: PrepareGetCredentialResponse) {
+                        if (continuation.isActive) {
+                            continuation.resume(result)
+                        }
+                    }
+
+                    override fun onError(e: GetCredentialException) {
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(e)
+                        }
                     }
                 }
 
-                override fun onError(e: GetCredentialException) {
-                    if (continuation.isActive) {
-                        continuation.resumeWithException(e)
-                    }
-                }
-            }
-
-        prepareGetCredentialAsync(
-            request,
-            canceller,
-            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
-            // handle getting to the right thread or pool via the ContinuationInterceptor.
-            Runnable::run,
-            callback
-        )
-    }
+            prepareGetCredentialAsync(
+                request,
+                canceller,
+                // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+                // handle getting to the right thread or pool via the ContinuationInterceptor.
+                Runnable::run,
+                callback,
+            )
+        }
 
     /**
      * Registers a user credential that can be used to authenticate the user to the app in the
@@ -246,8 +251,9 @@ interface CredentialManager {
      * The execution potentially launches framework UI flows for a user to view their registration
      * options, grant consent, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for creating the credential
      * @throws CreateCredentialException If the request fails
      */
@@ -283,7 +289,7 @@ interface CredentialManager {
             // Use a direct executor to avoid extra dispatch. Resuming the continuation will
             // handle getting to the right thread or pool via the ContinuationInterceptor.
             Runnable::run,
-            callback
+            callback,
         )
     }
 
@@ -333,9 +339,54 @@ interface CredentialManager {
                 // Use a direct executor to avoid extra dispatch. Resuming the continuation will
                 // handle getting to the right thread or pool via the ContinuationInterceptor.
                 Runnable::run,
-                callback
+                callback,
             )
         }
+
+    /**
+     * Signals a user's public key credential/credentials state to all credential providers.
+     *
+     * The execution does not invoke any UI but simply informs credential providers about the state
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
+     * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
+     *
+     * A successful response does not indicate that any provider honored the signal request; it
+     * however indicates that the request was well-formed, passes all necessary checks, and has been
+     * passed along to all enabled providers, if any.
+     *
+     * @param request the request for signaling the credential state
+     * @throws SignalCredentialStateException If the request parsing fails
+     */
+    suspend fun signalCredentialState(
+        request: SignalCredentialStateRequest
+    ): SignalCredentialStateResponse = suspendCancellableCoroutine { continuation ->
+        val callback =
+            object :
+                CredentialManagerCallback<
+                    SignalCredentialStateResponse,
+                    SignalCredentialStateException,
+                > {
+                override fun onResult(result: SignalCredentialStateResponse) {
+                    if (continuation.isActive) {
+                        continuation.resume(result)
+                    }
+                }
+
+                override fun onError(e: SignalCredentialStateException) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(e)
+                    }
+                }
+            }
+
+        signalCredentialStateAsync(
+            request,
+            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+            // handle getting to the right thread or pool via the ContinuationInterceptor.
+            Runnable::run,
+            callback,
+        )
+    }
 
     /**
      * Requests a credential from the user.
@@ -345,8 +396,9 @@ interface CredentialManager {
      * The execution potentially launches framework UI flows for a user to view available
      * credentials, consent to using one of them, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for getting the credential
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -374,8 +426,9 @@ interface CredentialManager {
      * The execution can potentially launch UI flows to collect user consent to using a credential,
      * display a picker when multiple credentials exist, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param pendingGetCredentialHandle the handle representing the pending operation to resume
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -423,8 +476,9 @@ interface CredentialManager {
      * The execution potentially launches framework UI flows for a user to view their registration
      * options, grant consent, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for creating the credential
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -463,6 +517,30 @@ interface CredentialManager {
         executor: Executor,
         callback: CredentialManagerCallback<Void?, ClearCredentialException>,
     )
+
+    /**
+     * Signals a user's public key credential/credentials state to all credential providers.
+     *
+     * This API uses callbacks instead of Kotlin coroutines.
+     *
+     * The execution does not invoke any UI but simply informs credential providers about the state
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
+     * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
+     *
+     * A successful response does not indicate that any provider honored the signal request; it
+     * however indicates that the request was well-formed, passes all necessary checks, and has been
+     * passed along to all enabled providers, if any.
+     *
+     * @param request the request for signaling the credential state
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    open fun signalCredentialStateAsync(
+        request: SignalCredentialStateRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
+    ) {}
 
     /**
      * Returns a pending intent that shows a screen that lets a user enable a Credential Manager

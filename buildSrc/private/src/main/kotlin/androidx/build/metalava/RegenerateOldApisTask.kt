@@ -39,6 +39,7 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 /** Generate API signature text files using previously built .jar/.aar artifacts. */
 @CacheableTask
@@ -53,7 +54,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
     @get:Input
     @set:Option(
         option = "compat-version",
-        description = "Regenerate just the signature file needed for compatibility checks"
+        description = "Regenerate just the signature file needed for compatibility checks",
     )
     var compatVersion: Boolean = false
 
@@ -115,7 +116,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
         val compatVersion = location.version()!!
 
         if (!tryRegenerate(projectPrebuiltsDir, groupId, artifactId, compatVersion, location)) {
-            val stable = compatVersion.copy(extra = null)
+            val stable = compatVersion.copy(preRelease = null)
             logger.warn("No prebuilts for version $compatVersion, trying with $stable")
             if (!tryRegenerate(projectPrebuiltsDir, groupId, artifactId, stable, location)) {
                 logger.error("Could not regenerate $compatVersion")
@@ -174,19 +175,21 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
                 sourceSets,
                 project.getAndroidJar().files,
                 compiledSources,
-                projectXml
+                projectXml,
             )
             generateApi(
                 project.getMetalavaClasspath(),
                 projectXml,
                 sourceSets.flatMap { it.sourcePaths.files },
+                compiledSources = null,
                 outputApiLocation,
                 ApiLintMode.Skip,
                 generateRestrictToLibraryGroupAPIs,
                 emptyList(),
-                false,
                 kotlinSourceLevel.get(),
-                workerExecutor
+                workerExecutor,
+                multiplatform = false,
+                hasJvmOrAndroidTarget = true,
             )
         } else {
             logger.warn("No API file for $mavenId")
@@ -199,7 +202,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
      */
     private fun getFiles(
         runnerProject: Project,
-        mavenId: String
+        mavenId: String,
     ): Pair<File, List<SourceSetInputs>> {
         val jars = getJars(runnerProject, mavenId)
         val sourcesMavenId = "$mavenId:sources"
@@ -217,6 +220,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
                     dependsOnSourceSets = emptyList(),
                     sourcePaths = sources,
                     dependencyClasspath = jars,
+                    kotlinPlatforms = setOf(KotlinPlatformType.androidJvm),
                 )
             )
     }
@@ -266,7 +270,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
     private fun getSources(
         runnerProject: Project,
         mavenId: String,
-        compiledSources: File
+        compiledSources: File,
     ): FileCollection {
         val sanitizedMavenId = mavenId.replace(":", "-")
         @Suppress("DEPRECATION")

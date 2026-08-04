@@ -21,7 +21,6 @@ import android.animation.AnimatorInflater
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.res.Resources
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -52,7 +51,6 @@ import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.withActivity
 import androidx.testutils.withUse
 import com.google.common.truth.Truth.assertThat
@@ -506,7 +504,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch3.countDown()
@@ -810,7 +808,6 @@ class FragmentNavigatorTest {
     @LargeTest
     @UiThreadTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryResumedWithAnimation() {
         val entry1 = createBackStackEntry()
 
@@ -846,7 +843,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryResumedWithAnimator() {
         val entry1 = createBackStackEntry()
 
@@ -877,7 +873,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch.countDown()
@@ -910,7 +906,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch2.countDown()
@@ -972,7 +968,7 @@ class FragmentNavigatorTest {
         fragmentNavigator.navigate(
             listOf(restoredEntry),
             NavOptions.Builder().setRestoreState(true).build(),
-            null
+            null,
         )
         assertThat(navigatorState.backStack.value).containsExactly(entry, restoredEntry).inOrder()
         fragmentManager.executePendingTransactions()
@@ -983,7 +979,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryStatesWithAnimationAfterReconfiguration() {
         withUse(ActivityScenario.launch(NavigationActivity::class.java)) {
             val navController1 = withActivity { findNavController(R.id.nav_host) }
@@ -1070,7 +1065,7 @@ class FragmentNavigatorTest {
                         object : LifecycleEventObserver {
                             override fun onStateChanged(
                                 source: LifecycleOwner,
-                                event: Lifecycle.Event
+                                event: Lifecycle.Event,
                             ) {
                                 if (event == Lifecycle.Event.ON_DESTROY) {
                                     countDownLatch.countDown()
@@ -1082,7 +1077,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_DESTROY) {
                                 entry2RestoredDestroyed = true
@@ -1111,7 +1106,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testEntryStatesWithAnimatorAfterReconfiguration() {
         withUse(ActivityScenario.launch(NavigationActivity::class.java)) {
             val navController1 = withActivity { findNavController(R.id.nav_host) }
@@ -1204,7 +1198,7 @@ class FragmentNavigatorTest {
                         object : LifecycleEventObserver {
                             override fun onStateChanged(
                                 source: LifecycleOwner,
-                                event: Lifecycle.Event
+                                event: Lifecycle.Event,
                             ) {
                                 if (event == Lifecycle.Event.ON_DESTROY) {
                                     countDownLatch.countDown()
@@ -1216,7 +1210,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_DESTROY) {
                                 entry2RestoredDestroyed = true
@@ -1342,7 +1336,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testNavigateNavigateInterrupt() {
         val entry1 = createBackStackEntry()
         var entry2Started = false
@@ -1412,7 +1405,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch.countDown()
@@ -1431,7 +1424,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testNavigatePopInterrupt() {
         val entry1 = createBackStackEntry(clazz = AnimatorFragment::class)
         var entry1Stopped = false
@@ -1495,7 +1487,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 viewCountDownLatch.countDown()
@@ -1526,7 +1518,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testNavigatePopInterruptSameFrame() {
         val entry1 = createBackStackEntry(clazz = AnimatorFragment::class)
         var entry1Stopped = false
@@ -1586,7 +1577,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 viewCountDownLatch.countDown()
@@ -1618,7 +1609,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     fun testPopPopInterrupt() {
         val entry1 = createBackStackEntry(clazz = AnimatorFragment::class)
         val entry2 = createBackStackEntry(SECOND_FRAGMENT, AnimatorFragment::class)
@@ -1666,7 +1656,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch1.countDown()
@@ -1761,9 +1751,96 @@ class FragmentNavigatorTest {
         assertThat(fragmentNavigator.pendingOps.entries()).isEmpty()
     }
 
+    @UiThreadTest
+    @Test
+    fun testNavigatePopNavigateRapidly() {
+        val entry = createBackStackEntry()
+
+        // Push initial fragment
+        fragmentNavigator.navigate(listOf(entry), null, null)
+        fragmentManager.executePendingTransactions()
+
+        val factory = TrackingFragmentFactory()
+        fragmentManager.fragmentFactory = factory
+
+        val secondEntry = createBackStackEntry(SECOND_FRAGMENT, TrackingFragment::class)
+        val thirdEntry = createBackStackEntry(THIRD_FRAGMENT)
+
+        // Monitor committed fragments
+        val committedFragments = mutableListOf<Pair<Fragment, Boolean>>()
+        val listener =
+            object : OnBackStackChangedListener {
+                override fun onBackStackChanged() {}
+
+                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                    committedFragments.add(fragment to pop)
+                }
+            }
+        fragmentManager.addOnBackStackChangedListener(listener)
+
+        // Navigate to second
+        fragmentNavigator.navigate(listOf(secondEntry), null, null)
+        // Pop second
+        fragmentNavigator.popBackStack(secondEntry, false)
+        // Navigate to third
+        fragmentNavigator.navigate(listOf(thirdEntry), null, null)
+
+        // Execute all pending. This should trigger optimization in FragmentManager
+        // if reordering is allowed.
+        fragmentManager.executePendingTransactions()
+
+        val fragment = fragmentManager.findFragmentById(R.id.container)
+        assertThat(fragment).isInstanceOf(EmptyFragment::class.java)
+        // The current fragment should be third
+        assertThat(navigatorState.backStack.value).containsExactly(entry, thirdEntry).inOrder()
+
+        val secondFragment = factory.createdFragment
+        assertWithMessage("secondFragment should have been instantiated")
+            .that(secondFragment)
+            .isNotNull()
+        assertWithMessage("secondFragment should NOT have had onCreateView called (optimized away)")
+            .that(secondFragment?.onCreateViewCalled)
+            .isFalse()
+        assertWithMessage("secondFragment should NOT have had onCreate called (optimized away)")
+            .that(secondFragment?.onCreateCalled)
+            .isFalse()
+
+        assertThat(navigatorState.transitionsInProgress.value).isEmpty()
+
+        fragmentManager.removeOnBackStackChangedListener(listener)
+        // Reset factory
+        fragmentManager.fragmentFactory = FragmentFactory()
+    }
+
+    @UiThreadTest
+    @Test
+    fun testNavigatePopNavigatePopRapidly() {
+        val entry = createBackStackEntry()
+
+        // Push initial fragment
+        fragmentNavigator.navigate(listOf(entry), null, null)
+        fragmentManager.executePendingTransactions()
+
+        val secondEntry = createBackStackEntry(SECOND_FRAGMENT)
+        val thirdEntry = createBackStackEntry(THIRD_FRAGMENT)
+
+        // Navigate to second
+        fragmentNavigator.navigate(listOf(secondEntry), null, null)
+        // Pop second
+        fragmentNavigator.popBackStack(secondEntry, false)
+        // Navigate to third
+        fragmentNavigator.navigate(listOf(thirdEntry), null, null)
+        // Pop third
+        fragmentNavigator.popBackStack(thirdEntry, false)
+
+        fragmentManager.executePendingTransactions()
+
+        assertThat(navigatorState.backStack.value).containsExactly(entry)
+        assertThat(navigatorState.transitionsInProgress.value).isEmpty()
+    }
+
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Suppress("DEPRECATION")
     fun testSystemBackPress() {
         val entry1 = createBackStackEntry()
@@ -1807,7 +1884,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch2.countDown()
@@ -1851,7 +1928,6 @@ class FragmentNavigatorTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Suppress("DEPRECATION")
     fun testSystemBackPress_multiEntries() {
         val entry1 = createBackStackEntry()
@@ -1894,7 +1970,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch2.countDown()
@@ -1930,7 +2006,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch3.countDown()
@@ -1959,7 +2035,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch2.countDown()
@@ -1981,7 +2057,6 @@ class FragmentNavigatorTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Suppress("DEPRECATION")
     fun testSystemBackPressWithPostpone() {
         val entry1 = createBackStackEntry()
@@ -2019,7 +2094,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_START) {
                                 // second back press here imitates two back to back back presses
@@ -2046,7 +2121,7 @@ class FragmentNavigatorTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event == Lifecycle.Event.ON_RESUME) {
                                 countDownLatch.countDown()
@@ -2117,7 +2192,7 @@ class FragmentNavigatorTest {
         fragmentNavigator.navigate(
             listOf(restoredEntry),
             NavOptions.Builder().setRestoreState(true).build(),
-            null
+            null,
         )
         assertThat(navigatorState.backStack.value).containsExactly(entry, restoredEntry).inOrder()
         fragmentManager.executePendingTransactions()
@@ -2187,7 +2262,7 @@ class FragmentNavigatorTest {
         fragmentNavigator.navigate(
             listOf(restoredEntry),
             NavOptions.Builder().setRestoreState(true).build(),
-            null
+            null,
         )
         assertThat(navigatorState.backStack.value).containsExactly(entry, restoredEntry).inOrder()
         fragmentManager.executePendingTransactions()
@@ -2233,7 +2308,7 @@ class FragmentNavigatorTest {
 
     private fun createBackStackEntry(
         destId: Int = INITIAL_FRAGMENT,
-        clazz: KClass<out Fragment> = EmptyFragment::class
+        clazz: KClass<out Fragment> = EmptyFragment::class,
     ): NavBackStackEntry {
         val destination =
             fragmentNavigator.createDestination().apply {
@@ -2284,7 +2359,7 @@ class SavedStateFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         return FrameLayout(requireContext())
     }
@@ -2336,4 +2411,35 @@ class NonEmptyFragmentFactory : FragmentFactory() {
         } else {
             super.instantiate(classLoader, className)
         }
+}
+
+class TrackingFragment : Fragment() {
+    var onCreateCalled = false
+    var onCreateViewCalled = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        onCreateCalled = true
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        onCreateViewCalled = true
+        return View(context)
+    }
+}
+
+class TrackingFragmentFactory : FragmentFactory() {
+    var createdFragment: TrackingFragment? = null
+
+    override fun instantiate(classLoader: ClassLoader, className: String): Fragment {
+        val fragment = super.instantiate(classLoader, className)
+        if (fragment is TrackingFragment) {
+            createdFragment = fragment
+        }
+        return fragment
+    }
 }

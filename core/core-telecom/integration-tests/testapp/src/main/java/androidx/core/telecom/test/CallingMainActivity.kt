@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.core.telecom.util.ExperimentalAppActions::class)
+
 package androidx.core.telecom.test
 
 import android.annotation.SuppressLint
@@ -41,7 +43,6 @@ import androidx.core.telecom.test.Constants.Companion.OUTGOING_NAME
 import androidx.core.telecom.test.Constants.Companion.OUTGOING_URI
 import androidx.core.telecom.test.NotificationsUtilities.Companion.IS_ANSWER_ACTION
 import androidx.core.telecom.test.NotificationsUtilities.Companion.NOTIFICATION_CHANNEL_ID
-import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -56,7 +57,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-@ExperimentalAppActions
 @RequiresApi(34)
 class CallingMainActivity : Activity() {
     // Activity
@@ -128,11 +128,11 @@ class CallingMainActivity : Activity() {
                     DIRECTION_OUTGOING,
                     CALL_TYPE_VIDEO_CALL,
                     ALL_CALL_CAPABILITIES,
-                    mPreCallEndpointAdapter.mSelectedCallEndpoint
+                    mPreCallEndpointAdapter.mSelectedCallEndpoint,
                 ),
                 participantCheckBox.isChecked,
                 raiseHandCheckBox.isChecked,
-                kickParticipantCheckBox.isChecked
+                kickParticipantCheckBox.isChecked,
             )
         }
 
@@ -145,11 +145,11 @@ class CallingMainActivity : Activity() {
                     DIRECTION_INCOMING,
                     CALL_TYPE_VIDEO_CALL,
                     ALL_CALL_CAPABILITIES,
-                    mPreCallEndpointAdapter.mSelectedCallEndpoint
+                    mPreCallEndpointAdapter.mSelectedCallEndpoint,
                 ),
                 participantCheckBox.isChecked,
                 raiseHandCheckBox.isChecked,
-                kickParticipantCheckBox.isChecked
+                kickParticipantCheckBox.isChecked,
             )
         }
 
@@ -221,7 +221,7 @@ class CallingMainActivity : Activity() {
         attributes: CallAttributesCompat,
         isParticipantsEnabled: Boolean,
         isRaiseHandEnabled: Boolean,
-        isKickParticipantEnabled: Boolean
+        isKickParticipantEnabled: Boolean,
     ) {
         Log.i(TAG, "addCallWithAttributes: attributes=$attributes")
         val callObject = VoipCall(this, attributes, mNextNotificationId++)
@@ -239,7 +239,7 @@ class CallingMainActivity : Activity() {
                                 attributes,
                                 callObject,
                                 isRaiseHandEnabled,
-                                isKickParticipantEnabled
+                                isKickParticipantEnabled,
                             )
                         } else {
                             addCall(attributes, callObject)
@@ -247,7 +247,7 @@ class CallingMainActivity : Activity() {
                     } finally {
                         NotificationsUtilities.clearNotification(
                             mContext,
-                            callObject.notificationId
+                            callObject.notificationId,
                         )
                         Log.i(TAG, "addCallWithAttributes: finally block")
                     }
@@ -305,26 +305,25 @@ class CallingMainActivity : Activity() {
     private fun handleUpdateToNotification(
         it: NotificationActionInfo,
         attributes: CallAttributesCompat,
-        callObject: VoipCall
+        callObject: VoipCall,
     ) {
         if (it.isAnswer) {
             NotificationsUtilities.updateNotificationToOngoing(
                 mContext,
                 callObject.notificationId,
                 NOTIFICATION_CHANNEL_ID,
-                attributes.displayName.toString()
+                attributes.displayName.toString(),
             )
         } else {
             NotificationsUtilities.clearNotification(mContext, callObject.notificationId)
         }
     }
 
-    @OptIn(ExperimentalAppActions::class)
     private suspend fun addCallWithExtensions(
         attributes: CallAttributesCompat,
         callObject: VoipCall,
         isRaiseHandEnabled: Boolean = false,
-        isKickParticipantEnabled: Boolean = false
+        isKickParticipantEnabled: Boolean = false,
     ) {
         mCallsManager.addCallWithExtensions(
             attributes,
@@ -376,7 +375,7 @@ class CallingMainActivity : Activity() {
                 callObject.setParticipantControl(
                     ParticipantControl(
                         onParticipantAdded = participants::addParticipant,
-                        onParticipantRemoved = participants::removeParticipant
+                        onParticipantRemoved = participants::removeParticipant,
                     )
                 )
 
@@ -458,7 +457,7 @@ class CallingMainActivity : Activity() {
                 voipCall.notificationId,
                 NOTIFICATION_CHANNEL_ID,
                 attributes.displayName.toString(),
-                attributes.direction == DIRECTION_OUTGOING
+                attributes.direction == DIRECTION_OUTGOING,
             )
         mNotificationManager.notify(voipCall.notificationId, notification)
     }

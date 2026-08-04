@@ -16,4 +16,66 @@
 
 package androidx.compose.foundation.text.contextmenu.data
 
-internal actual typealias PlatformIcon = Int
+import android.content.res.Resources
+import android.graphics.drawable.Drawable
+import android.view.textclassifier.TextClassification
+import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
+
+/**
+ * A [TextContextMenuComponent] that represents a clickable item with a label in a context menu.
+ *
+ * @param key A unique key that identifies this component, mainly for use in filtering a component
+ *   in [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]. It is advisable
+ *   to use a `data object` as a key here.
+ * @param label The label text to be shown in the context menu.
+ * @param leadingIcon Icon that precedes the label in the context menu. This is a drawable resource
+ *   reference.
+ * @param onClick The action to be performed when this item is clicked. Call
+ *   [TextContextMenuSession.close] on the [TextContextMenuSession] receiver to close the context
+ *   menu item as a result of the click.
+ */
+public class TextContextMenuItem(
+    key: Any,
+    public val label: String,
+    public val leadingIcon: Int = Resources.ID_NULL,
+    public val onClick: TextContextMenuSession.() -> Unit,
+) : TextContextMenuComponent(key) {
+    override fun toString(): String =
+        "TextContextMenuItem(key=$key, label=\"$label\", leadingIcon=$leadingIcon)"
+}
+
+internal class TextContextMenuTextClassificationItem(
+    key: Any,
+    val textClassification: TextClassification,
+    val index: Int,
+    val icon: Drawable? = null,
+) : TextContextMenuComponent(key) {
+    override fun toString(): String =
+        "TextContextMenuTextClassificationItem(key=$key, textClassification=$textClassification, index=$index, icon=$icon)"
+}
+
+/**
+ * Key for context menu items added for the Android PROCESS_TEXT intent actions. You can use this
+ * key to filter the PROCESS_TEXT components by calling
+ * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents].
+ *
+ * @sample androidx.compose.foundation.samples.FilterProcessTextItemsInTextContextMenu
+ */
+public class ProcessTextKey
+internal constructor(
+    /**
+     * There can be multiple PROCESS_TEXT items in the context menu and each of them has a different
+     * id.
+     */
+    public val id: Int
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other !is ProcessTextKey) return false
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id
+    }
+}

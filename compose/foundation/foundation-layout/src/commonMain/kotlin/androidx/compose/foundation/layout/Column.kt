@@ -79,17 +79,17 @@ import androidx.compose.ui.unit.LayoutDirection
  * @see [androidx.compose.foundation.lazy.LazyColumn]
  */
 @Composable
-inline fun Column(
+public inline fun Column(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val measurePolicy = columnMeasurePolicy(verticalArrangement, horizontalAlignment)
     Layout(
         content = { ColumnScopeInstance.content() },
         measurePolicy = measurePolicy,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -104,7 +104,7 @@ internal val DefaultColumnMeasurePolicy: MeasurePolicy =
 @Composable
 internal fun columnMeasurePolicy(
     verticalArrangement: Arrangement.Vertical,
-    horizontalAlignment: Alignment.Horizontal
+    horizontalAlignment: Alignment.Horizontal,
 ): MeasurePolicy =
     if (verticalArrangement == Arrangement.Top && horizontalAlignment == Alignment.Start) {
         DefaultColumnMeasurePolicy
@@ -119,7 +119,7 @@ internal fun columnMeasurePolicy(
 
 internal data class ColumnMeasurePolicy(
     private val verticalArrangement: Arrangement.Vertical,
-    private val horizontalAlignment: Alignment.Horizontal
+    private val horizontalAlignment: Alignment.Horizontal,
 ) : MeasurePolicy, RowColumnMeasurePolicy {
 
     override fun Placeable.mainAxisSize(): Int = height
@@ -130,7 +130,7 @@ internal data class ColumnMeasurePolicy(
         mainAxisLayoutSize: Int,
         childrenMainAxisSize: IntArray,
         mainAxisPositions: IntArray,
-        measureScope: MeasureScope
+        measureScope: MeasureScope,
     ) {
         with(verticalArrangement) {
             measureScope.arrange(mainAxisLayoutSize, childrenMainAxisSize, mainAxisPositions)
@@ -147,7 +147,7 @@ internal data class ColumnMeasurePolicy(
         crossAxisOffset: IntArray?,
         currentLineIndex: Int,
         startIndex: Int,
-        endIndex: Int
+        endIndex: Int,
     ): MeasureResult {
         return with(measureScope) {
             layout(crossAxisLayoutSize, mainAxisLayoutSize) {
@@ -158,12 +158,9 @@ internal data class ColumnMeasurePolicy(
                             placeable.rowColumnParentData,
                             crossAxisLayoutSize,
                             beforeCrossAxisAlignmentLine,
-                            measureScope.layoutDirection
+                            measureScope.layoutDirection,
                         )
-                    placeable.place(
-                        crossAxisPosition,
-                        mainAxisPositions[i],
-                    )
+                    placeable.place(crossAxisPosition, mainAxisPositions[i])
                 }
             }
         }
@@ -174,15 +171,21 @@ internal data class ColumnMeasurePolicy(
         parentData: RowColumnParentData?,
         crossAxisLayoutSize: Int,
         beforeCrossAxisAlignmentLine: Int,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Int {
         val childCrossAlignment = parentData?.crossAxisAlignment
         return childCrossAlignment?.align(
-            size = crossAxisLayoutSize - placeable.width,
+            size = crossAxisLayoutSize,
+            itemCrossAxisSize = placeable.crossAxisSize(),
             layoutDirection = layoutDirection,
             placeable = placeable,
-            beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine
-        ) ?: horizontalAlignment.align(0, crossAxisLayoutSize - placeable.width, layoutDirection)
+            beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine,
+        )
+            ?: horizontalAlignment.align(
+                placeable.crossAxisSize(),
+                crossAxisLayoutSize,
+                layoutDirection,
+            )
     }
 
     override fun createConstraints(
@@ -190,20 +193,20 @@ internal data class ColumnMeasurePolicy(
         crossAxisMin: Int,
         mainAxisMax: Int,
         crossAxisMax: Int,
-        isPrioritizing: Boolean
+        isPrioritizing: Boolean,
     ): Constraints {
         return createColumnConstraints(
             isPrioritizing,
             mainAxisMin,
             crossAxisMin,
             mainAxisMax,
-            crossAxisMax
+            crossAxisMax,
         )
     }
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return measure(
             constraints.minHeight,
@@ -215,13 +218,13 @@ internal data class ColumnMeasurePolicy(
             measurables,
             arrayOfNulls(measurables.size),
             0,
-            measurables.size
+            measurables.size,
         )
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ) =
         IntrinsicMeasureBlocks.VerticalMinWidth(
             measurables,
@@ -231,7 +234,7 @@ internal data class ColumnMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ) =
         IntrinsicMeasureBlocks.VerticalMinHeight(
             measurables,
@@ -241,7 +244,7 @@ internal data class ColumnMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ) =
         IntrinsicMeasureBlocks.VerticalMaxWidth(
             measurables,
@@ -251,7 +254,7 @@ internal data class ColumnMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ) =
         IntrinsicMeasureBlocks.VerticalMaxHeight(
             measurables,
@@ -272,14 +275,14 @@ internal fun createColumnConstraints(
             minHeight = mainAxisMin,
             minWidth = crossAxisMin,
             maxHeight = mainAxisMax,
-            maxWidth = crossAxisMax
+            maxWidth = crossAxisMax,
         )
     } else {
         Constraints.fitPrioritizingHeight(
             minHeight = mainAxisMin,
             minWidth = crossAxisMin,
             maxHeight = mainAxisMax,
-            maxWidth = crossAxisMax
+            maxWidth = crossAxisMax,
         )
     }
 }
@@ -288,7 +291,7 @@ internal fun createColumnConstraints(
 @LayoutScopeMarker
 @Immutable
 @JvmDefaultWithCompatibility
-interface ColumnScope {
+public interface ColumnScope {
     /**
      * Size the element's height proportional to its [weight] relative to other weighted sibling
      * elements in the [Column]. The parent will divide the vertical space remaining after measuring
@@ -306,9 +309,9 @@ interface ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.SimpleColumn
      */
     @Stable
-    fun Modifier.weight(
+    public fun Modifier.weight(
         @FloatRange(from = 0.0, fromInclusive = false) weight: Float,
-        fill: Boolean = true
+        fill: Boolean = true,
     ): Modifier
 
     /**
@@ -319,7 +322,7 @@ interface ColumnScope {
      *
      * @sample androidx.compose.foundation.layout.samples.SimpleAlignInColumn
      */
-    @Stable fun Modifier.align(alignment: Alignment.Horizontal): Modifier
+    @Stable public fun Modifier.align(alignment: Alignment.Horizontal): Modifier
 
     /**
      * Position the element horizontally such that its [alignmentLine] aligns with sibling elements
@@ -336,7 +339,7 @@ interface ColumnScope {
      *
      * @sample androidx.compose.foundation.layout.samples.SimpleRelativeToSiblingsInColumn
      */
-    @Stable fun Modifier.alignBy(alignmentLine: VerticalAlignmentLine): Modifier
+    @Stable public fun Modifier.alignBy(alignmentLine: VerticalAlignmentLine): Modifier
 
     /**
      * Position the element horizontally such that the alignment line for the content as determined
@@ -354,9 +357,10 @@ interface ColumnScope {
      *
      * @sample androidx.compose.foundation.layout.samples.SimpleRelativeToSiblings
      */
-    @Stable fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int): Modifier
+    @Stable public fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int): Modifier
 }
 
+@PublishedApi
 internal object ColumnScopeInstance : ColumnScope {
     @Stable
     override fun Modifier.weight(weight: Float, fill: Boolean): Modifier {
@@ -365,7 +369,7 @@ internal object ColumnScopeInstance : ColumnScope {
             LayoutWeightElement(
                 // Coerce Float.POSITIVE_INFINITY to Float.MAX_VALUE to avoid errors
                 weight = weight.coerceAtMost(Float.MAX_VALUE),
-                fill = fill
+                fill = fill,
             )
         )
     }
@@ -380,5 +384,9 @@ internal object ColumnScopeInstance : ColumnScope {
 
     @Stable
     override fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int) =
-        this.then(WithAlignmentLineBlockElement(block = alignmentLineBlock))
+        this.then(
+            WithAlignmentLineBlockElement(
+                block = AlignmentLineProviderBlock { alignmentLineBlock(it) }
+            )
+        )
 }

@@ -39,6 +39,10 @@ import androidx.annotation.RestrictTo.Scope
  * @RestrictTo(Scope.SUBCLASSES)
  * public void onDrawForeground(Canvas canvas) { ...
  * ```
+ *
+ * Note, this enforcement is done via Android Lint RestrictedApi check. This check is automatically
+ * run for Android projects and can be optionally enabled on JVM projects using the com.android.lint
+ * Gradle plugin.
  */
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
@@ -50,7 +54,7 @@ import androidx.annotation.RestrictTo.Scope
     AnnotationTarget.PROPERTY_SETTER,
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.FIELD,
-    AnnotationTarget.FILE
+    AnnotationTarget.FILE,
 )
 public expect annotation class RestrictTo(
     /** The scope(s) to which usage should be restricted. */
@@ -93,8 +97,8 @@ public expect annotation class RestrictTo(
             replaceWith =
                 kotlin.ReplaceWith(
                     "LIBRARY_GROUP_PREFIX",
-                    "androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX"
-                )
+                    "androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX",
+                ),
         )
         GROUP_ID,
 

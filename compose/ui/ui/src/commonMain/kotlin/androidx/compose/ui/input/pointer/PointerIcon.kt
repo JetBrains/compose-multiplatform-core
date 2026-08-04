@@ -39,25 +39,25 @@ import androidx.compose.ui.util.fastAny
  * Represents a pointer icon to use in [Modifier.pointerHoverIcon] or [Modifier.stylusHoverIcon].
  */
 @Stable
-interface PointerIcon {
+public interface PointerIcon {
 
     /**
      * A collection of common pointer icons used for the mouse cursor. These icons will be used to
      * assign default pointer icons for various widgets.
      */
-    companion object {
+    public companion object {
 
         /** The default arrow icon that is commonly used for cursor icons. */
-        val Default = pointerIconDefault
+        public val Default: PointerIcon = pointerIconDefault
 
         /** Commonly used when selecting precise portions of the screen. */
-        val Crosshair = pointerIconCrosshair
+        public val Crosshair: PointerIcon = pointerIconCrosshair
 
         /** Also called an I-beam cursor, this is commonly used on selectable or editable text. */
-        val Text = pointerIconText
+        public val Text: PointerIcon = pointerIconText
 
         /** Commonly used to indicate to a user that an element is clickable. */
-        val Hand = pointerIconHand
+        public val Hand: PointerIcon = pointerIconHand
     }
 }
 
@@ -88,13 +88,16 @@ internal interface PointerIconService {
  *   to the this (the parent's) icon).
  */
 @Stable
-fun Modifier.pointerHoverIcon(icon: PointerIcon, overrideDescendants: Boolean = false) =
+public fun Modifier.pointerHoverIcon(
+    icon: PointerIcon,
+    overrideDescendants: Boolean = false,
+): Modifier =
     this then
         PointerHoverIconModifierElement(icon = icon, overrideDescendants = overrideDescendants)
 
 internal data class PointerHoverIconModifierElement(
     val icon: PointerIcon,
-    val overrideDescendants: Boolean = false
+    val overrideDescendants: Boolean = false,
 ) : ModifierNodeElement<PointerHoverIconModifierNode>() {
     override fun create() = PointerHoverIconModifierNode(icon, overrideDescendants)
 
@@ -121,7 +124,7 @@ internal data class PointerHoverIconModifierElement(
  */
 internal class PointerHoverIconModifierNode(
     icon: PointerIcon,
-    overrideDescendants: Boolean = false
+    overrideDescendants: Boolean = false,
 ) : HoverIconModifierNode(icon, overrideDescendants) {
     /* Traversal key used with the [TraversableNode] interface to enable all the traversing
      * functions (ancestor, child, subtree, and subtreeIf).
@@ -148,22 +151,22 @@ internal class PointerHoverIconModifierNode(
  * @param touchBoundsExpansion amount by which the element's bounds is expanded
  * @sample androidx.compose.ui.samples.StylusHoverIconSample
  */
-fun Modifier.stylusHoverIcon(
+public fun Modifier.stylusHoverIcon(
     icon: PointerIcon,
     overrideDescendants: Boolean = false,
-    touchBoundsExpansion: DpTouchBoundsExpansion? = null
-) =
+    touchBoundsExpansion: DpTouchBoundsExpansion? = null,
+): Modifier =
     this then
         StylusHoverIconModifierElement(
             icon = icon,
             overrideDescendants = overrideDescendants,
-            touchBoundsExpansion = touchBoundsExpansion
+            touchBoundsExpansion = touchBoundsExpansion,
         )
 
 internal data class StylusHoverIconModifierElement(
     val icon: PointerIcon,
     val overrideDescendants: Boolean = false,
-    val touchBoundsExpansion: DpTouchBoundsExpansion? = null
+    val touchBoundsExpansion: DpTouchBoundsExpansion? = null,
 ) : ModifierNodeElement<StylusHoverIconModifierNode>() {
     override fun create() =
         StylusHoverIconModifierNode(icon, overrideDescendants, touchBoundsExpansion)
@@ -185,7 +188,7 @@ internal data class StylusHoverIconModifierElement(
 internal class StylusHoverIconModifierNode(
     icon: PointerIcon,
     overrideDescendants: Boolean = false,
-    touchBoundsExpansion: DpTouchBoundsExpansion? = null
+    touchBoundsExpansion: DpTouchBoundsExpansion? = null,
 ) : HoverIconModifierNode(icon, overrideDescendants, touchBoundsExpansion) {
     /* Traversal key used with the [TraversableNode] interface to enable all the traversing
      * functions (ancestor, child, subtree, and subtreeIf).
@@ -203,7 +206,7 @@ internal class StylusHoverIconModifierNode(
 internal abstract class HoverIconModifierNode(
     icon: PointerIcon,
     overrideDescendants: Boolean = false,
-    var dpTouchBoundsExpansion: DpTouchBoundsExpansion? = null
+    var dpTouchBoundsExpansion: DpTouchBoundsExpansion? = null,
 ) :
     Modifier.Node(),
     TraversableNode,
@@ -248,7 +251,7 @@ internal abstract class HoverIconModifierNode(
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (pass == Main && pointerEvent.changes.fastAny { isRelevantPointerType(it.type) }) {
             // Cursor within the surface area of this node's bounds

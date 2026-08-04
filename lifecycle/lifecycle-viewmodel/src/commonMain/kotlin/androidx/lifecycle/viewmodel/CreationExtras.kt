@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.lifecycle.viewmodel
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.Factory
+import androidx.lifecycle.viewmodel.CreationExtras.Companion.Key
+import androidx.lifecycle.viewmodel.CreationExtras.Empty
 import androidx.lifecycle.viewmodel.CreationExtras.Key
 import kotlin.jvm.JvmOverloads
 import kotlin.jvm.JvmStatic
@@ -64,8 +69,16 @@ public abstract class CreationExtras internal constructor() {
     }
 
     public companion object {
-        /** Returns an unique [Key] to be associated with an extra. */
-        @JvmStatic public inline fun <reified T> Key(): Key<T> = object : Key<T> {}
+        /** Returns a unique [Key] to be associated with an extra. */
+        @JvmStatic
+        public inline fun <reified T> Key(): Key<T> =
+            object : Key<T> {
+                override fun toString(): String {
+                    // Discourage relying on the string output.
+                    val identity = hashCode().toString(radix = 16)
+                    return "CreationExtras.Key@$identity<${T::class.simpleName.toString()}>"
+                }
+            }
     }
 }
 
@@ -106,6 +119,20 @@ internal constructor(initialExtras: Map<Key<*>, Any?>) : CreationExtras() {
      */
     @Suppress("UNCHECKED_CAST") public override fun <T> get(key: Key<T>): T? = extras[key] as T?
 }
+
+/**
+ * Builds a new read-only [CreationExtras] starting with the given [initialExtras].
+ *
+ * You can customize the extras further by applying a [builderAction] on a [MutableCreationExtras].
+ *
+ * The [MutableCreationExtras] passed as a receiver to the [builderAction] is valid only inside that
+ * function. Using it outside of the function produces an unspecified behavior.
+ */
+@JvmOverloads
+public fun CreationExtras(
+    initialExtras: CreationExtras = Empty,
+    builderAction: MutableCreationExtras.() -> Unit = {},
+): CreationExtras = MutableCreationExtras(initialExtras).apply(builderAction)
 
 /**
  * Checks if the [CreationExtras] contains the given [key].

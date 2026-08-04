@@ -1,21 +1,13 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.compose.ui.text.TextRange#getCollapsed():
-    Removed method androidx.compose.ui.text.TextRange.getCollapsed()
-RemovedMethod: androidx.compose.ui.text.TextRange#getEnd():
-    Removed method androidx.compose.ui.text.TextRange.getEnd()
-RemovedMethod: androidx.compose.ui.text.TextRange#getLength():
-    Removed method androidx.compose.ui.text.TextRange.getLength()
-RemovedMethod: androidx.compose.ui.text.TextRange#getMax():
-    Removed method androidx.compose.ui.text.TextRange.getMax()
-RemovedMethod: androidx.compose.ui.text.TextRange#getMin():
-    Removed method androidx.compose.ui.text.TextRange.getMin()
-RemovedMethod: androidx.compose.ui.text.TextRange#getReversed():
-    Removed method androidx.compose.ui.text.TextRange.getReversed()
-RemovedMethod: androidx.compose.ui.text.TextRange#getStart():
-    Removed method androidx.compose.ui.text.TextRange.getStart()
-RemovedMethod: androidx.compose.ui.text.style.LineBreak#getStrategy():
-    Removed method androidx.compose.ui.text.style.LineBreak.getStrategy()
-RemovedMethod: androidx.compose.ui.text.style.LineBreak#getStrictness():
-    Removed method androidx.compose.ui.text.style.LineBreak.getStrictness()
-RemovedMethod: androidx.compose.ui.text.style.LineBreak#getWordBreak():
-    Removed method androidx.compose.ui.text.style.LineBreak.getWordBreak()
+RemovedFromBytecode: androidx.compose.ui.text.TextRange#contains(int):
+    Binary breaking change: method androidx.compose.ui.text.TextRange.contains(int) has been removed from bytecode
+
+
+RemovedMethod: androidx.compose.ui.text.AnnotatedString.Builder#withBulletList(androidx.compose.ui.unit.TextUnit, androidx.compose.ui.text.Bullet, kotlin.jvm.functions.Function1<androidx.compose.ui.text.AnnotatedString.Builder.AnnotatedString.BulletScope,R>):
+    Source breaking change: Removed method androidx.compose.ui.text.AnnotatedString.Builder.withBulletList(androidx.compose.ui.unit.TextUnit,androidx.compose.ui.text.Bullet,kotlin.jvm.functions.Function1<androidx.compose.ui.text.AnnotatedString.Builder.AnnotatedString.BulletScope,R>)
+RemovedMethod: androidx.compose.ui.text.ParagraphStyle#ParagraphStyle():
+    Binary breaking change: Removed constructor androidx.compose.ui.text.ParagraphStyle()
+RemovedMethod: androidx.compose.ui.text.input.ImeOptions#ImeOptions():
+    Binary breaking change: Removed constructor androidx.compose.ui.text.input.ImeOptions()
+RemovedMethod: androidx.compose.ui.text.style.TextIndent#TextIndent():
+    Binary breaking change: Removed constructor androidx.compose.ui.text.style.TextIndent()

@@ -21,8 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,13 +72,10 @@ class BottomAppBarBenchmark {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 internal class BottomAppBarTestCase : LayeredComposeTestCase() {
     @Composable
     override fun MeasuredContent() {
-        BottomAppBar(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        BottomAppBar(modifier = Modifier.fillMaxWidth()) {
             IconButton(onClick = { /* doSomething() */ }) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,

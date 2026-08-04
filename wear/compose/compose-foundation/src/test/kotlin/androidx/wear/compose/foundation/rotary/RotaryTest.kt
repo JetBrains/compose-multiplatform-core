@@ -37,7 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.RotaryInjectionScope
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.Dp
@@ -114,6 +114,7 @@ class ThresholdHandlerTest {
 
 @OptIn(ExperimentalFoundationApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RotaryFlingHandlerTest {
 
     val context = ApplicationProvider.getApplicationContext<Context>()
@@ -133,7 +134,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 100,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
         rotaryFlingHandler.observeEvent(0, 0f)
 
@@ -157,7 +158,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 100,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
         rotaryFlingHandler.observeEvent(0, 0f)
 
@@ -200,7 +201,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 10,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
 
         // Sending events to simulate rotary scroll
@@ -213,7 +214,7 @@ class RotaryFlingHandlerTest {
             this,
             { beforeFlingCalled = true },
             RotaryScrollLogic(null, null, false),
-            {}
+            {},
         )
 
         delay(1000L)
@@ -257,7 +258,7 @@ class RotaryFlingHandlerTest {
                 flingTimeframe = 10,
                 viewConfiguration = mockViewConfiguration,
                 inputDeviceId = 0,
-                initialTimestamp = 0
+                initialTimestamp = 0,
             )
 
         // Sending events to simulate rotary scroll
@@ -270,7 +271,7 @@ class RotaryFlingHandlerTest {
             this,
             { beforeFlingCalled = true },
             RotaryScrollLogic(null, null, false),
-            {}
+            {},
         )
 
         delay(1000L)
@@ -282,6 +283,7 @@ class RotaryFlingHandlerTest {
 
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RotaryFlingTest {
     @get:Rule val rule = createComposeRule()
     private val focusRequester = FocusRequester()
@@ -324,7 +326,7 @@ class RotaryFlingTest {
                 advanceEventTime(10)
                 rotateToScrollVertically(itemSizePx * 6)
             },
-            lowRes = lowRes
+            lowRes = lowRes,
         )
 
         rule.runOnIdle {
@@ -337,7 +339,7 @@ class RotaryFlingTest {
     private fun testScroll(
         beforeScroll: () -> Unit,
         rotaryAction: RotaryInjectionScope.() -> Unit,
-        lowRes: Boolean
+        lowRes: Boolean,
     ) {
         rule.setContent {
             state = rememberLazyListState()
@@ -349,7 +351,7 @@ class RotaryFlingTest {
                             .testTag(TEST_TAG)
                             .rotaryScrollable(
                                 RotaryScrollableDefaults.behavior(state),
-                                focusRequester
+                                focusRequester,
                             ),
                     state = state,
                 ) {
@@ -376,11 +378,7 @@ class RotaryFlingTest {
 
         Mockito.doReturn(mockPackageManager).`when`(mockContext).packageManager
 
-        CompositionLocalProvider(
-            LocalContext provides mockContext,
-        ) {
-            content()
-        }
+        CompositionLocalProvider(LocalContext provides mockContext) { content() }
     }
 
     val TEST_TAG = "test-tag"

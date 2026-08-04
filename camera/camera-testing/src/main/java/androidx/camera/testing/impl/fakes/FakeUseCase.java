@@ -16,12 +16,17 @@
 
 package androidx.camera.testing.impl.fakes;
 
+import static androidx.camera.core.impl.ImageOutputConfig.INVALID_ROTATION;
+
+import androidx.annotation.MainThread;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.RotationProvider;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.Config;
+import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
@@ -51,6 +56,10 @@ public class FakeUseCase extends UseCase {
     private int mPipelineCreationCount = 0;
     private Supplier<SessionConfig> mSessionConfigSupplier;
     private Set<Integer> mEffectTargets = Collections.emptySet();
+    private RuntimeException mMergedConfigException = null;
+    private boolean mIsAutoRotationSupported = false;
+    private RotationProvider mRotationProvider;
+    private int mLastRotation = INVALID_ROTATION;
 
     /**
      * Creates a new instance of a {@link FakeUseCase} with a given configuration and capture type.
@@ -108,6 +117,9 @@ public class FakeUseCase extends UseCase {
     protected @NonNull UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
             UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
         mMergedConfigRetrieved = true;
+        if (mMergedConfigException != null) {
+            throw mMergedConfigException;
+        }
         return builder.getUseCaseConfig();
     }
 
@@ -118,14 +130,16 @@ public class FakeUseCase extends UseCase {
     }
 
     @Override
-    public void onStateAttached() {
-        super.onStateAttached();
+    @MainThread
+    public void onSessionStart() {
+        super.onSessionStart();
         mStateAttachedCount.incrementAndGet();
     }
 
     @Override
-    public void onStateDetached() {
-        super.onStateDetached();
+    @MainThread
+    public void onSessionStop() {
+        super.onSessionStop();
         mStateAttachedCount.decrementAndGet();
     }
 
@@ -173,7 +187,7 @@ public class FakeUseCase extends UseCase {
     }
 
     /**
-     * Returns true if {@link #onStateAttached()} has been called previously.
+     * Returns true if {@link #onSessionStart()} has been called previously.
      */
     public int getStateAttachedCount() {
         return mStateAttachedCount.get();
@@ -233,5 +247,62 @@ public class FakeUseCase extends UseCase {
      */
     public void notifyResetForTesting() {
         notifyReset();
+    }
+
+    public void setMergedConfigException(@Nullable RuntimeException exception) {
+        mMergedConfigException = exception;
+    }
+
+    public void setAutoRotationSupported(boolean supported) {
+        mIsAutoRotationSupported = supported;
+    }
+
+    @Override
+    public boolean isAutoRotationSupported() {
+        return mIsAutoRotationSupported;
+    }
+
+    @Override
+    public void setRotationProvider(@Nullable RotationProvider rotationProvider) {
+        mRotationProvider = rotationProvider;
+        super.setRotationProvider(rotationProvider);
+    }
+
+    public @Nullable RotationProvider getRotationProvider() {
+        return mRotationProvider;
+    }
+
+    @Override
+    protected void onProviderRotationChanged(@ImageOutputConfig.RotationValue int rotation) {
+        mLastRotation = rotation;
+        super.onProviderRotationChanged(rotation);
+    }
+
+    /**
+     * Returns the last rotation value set by {@link #onProviderRotationChanged(int)}.
+     */
+    public int getLastRotation() {
+        return mLastRotation;
+    }
+
+    /**
+     * Clears the last rotation value set by {@link #onProviderRotationChanged(int)}.
+     */
+    public void clearLastRotation() {
+        mLastRotation = INVALID_ROTATION;
+    }
+
+    /**
+     * Sets the mirror mode.
+     */
+    public boolean setMirrorMode(int mirrorMode) {
+        return setMirrorModeInternal(mirrorMode);
+    }
+
+    /**
+     * Gets the mirror mode.
+     */
+    public int getMirrorMode() {
+        return getMirrorModeInternal();
     }
 }

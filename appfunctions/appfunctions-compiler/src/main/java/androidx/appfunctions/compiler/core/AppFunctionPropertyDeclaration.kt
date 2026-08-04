@@ -16,24 +16,67 @@
 
 package androidx.appfunctions.compiler.core
 
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.KSValueParameter
 
 // TODO(b/403525399): Add support for checking optional property.
 /** A wrapper class to store the property declaration in a class. */
-data class AppFunctionPropertyDeclaration(val name: String, val type: KSTypeReference) {
-    /** Creates an [AppFunctionPropertyDeclaration] from [KSPropertyDeclaration]. */
-    constructor(
-        property: KSPropertyDeclaration
-    ) : this(checkNotNull(property.simpleName).asString(), property.type)
-
-    /** Creates an [AppFunctionPropertyDeclaration] from [KSValueParameter]. */
-    constructor(
-        valueParameter: KSValueParameter
-    ) : this(checkNotNull(valueParameter.name).asString(), valueParameter.type)
-
+data class AppFunctionPropertyDeclaration(
+    val name: String,
+    val type: KSTypeReference,
+    val description: String,
+    val isRequired: Boolean,
+    val propertyAnnotations: Sequence<KSAnnotation> = emptySequence(),
+    val qualifiedName: String,
+) {
     /** Indicates whether the [type] is a generic type or not. */
     val isGenericType: Boolean by lazy { type.resolve().declaration is KSTypeParameter }
+
+    companion object {
+        /** Creates an [AppFunctionPropertyDeclaration] from [KSPropertyDeclaration]. */
+        fun create(
+            property: KSPropertyDeclaration,
+            isDescribedByKDoc: Boolean,
+            isRequired: Boolean,
+            sharedDataTypeDescriptionMap: Map<String, String>,
+            properTagDescriptions: Map<String, String> = emptyMap(),
+            paramTagDescriptions: Map<String, String> = emptyMap(),
+        ): AppFunctionPropertyDeclaration {
+            val instruction =
+                property.annotations
+                    .findAnnotation(IntrospectionHelper.AppFunctionInstructionAnnotation.CLASS_NAME)
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionInstructionAnnotation.PROPERTY_INSTRUCTION,
+                        String::class,
+                    )
+
+            val docString = property.docString
+            val propertyName = checkNotNull(property.simpleName).asString()
+            val description =
+                instruction
+                    ?: if (isDescribedByKDoc) {
+                        if (!docString.isNullOrEmpty()) {
+                            sanitizeKDoc(docString)
+                        } else {
+                            properTagDescriptions[propertyName]
+                                ?: paramTagDescriptions[propertyName]
+                                ?: sharedDataTypeDescriptionMap[property.getQualifiedName()]
+                                ?: ""
+                        }
+                    } else {
+                        ""
+                    }
+
+            return AppFunctionPropertyDeclaration(
+                checkNotNull(property.simpleName).asString(),
+                property.type,
+                description,
+                isRequired,
+                property.annotations,
+                property.getQualifiedName(),
+            )
+        }
+    }
 }

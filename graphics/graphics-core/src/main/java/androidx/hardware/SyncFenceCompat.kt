@@ -106,9 +106,12 @@ class SyncFenceCompat : AutoCloseable {
     }
 
     /**
-     * Returns the time that the fence signaled in the [CLOCK_MONOTONIC] time domain. This returns
-     * an instant, [SyncFenceCompat.SIGNAL_TIME_INVALID] if the SyncFence is invalid, and if the
-     * fence hasn't yet signaled, then [SyncFenceCompat.SIGNAL_TIME_PENDING] is returned.
+     * Returns the time that the fence signaled in the `CLOCK_MONOTONIC` time domain. This
+     * corresponds to [System.nanoTime] but may also be compared to
+     * [android.os.SystemClock.uptimeMillis] after adjusting for milliseconds vs. nanoseconds.
+     *
+     * This returns an instant, [SyncFenceCompat.SIGNAL_TIME_INVALID] if the SyncFence is invalid,
+     * and if the fence hasn't yet signaled, then [SyncFenceCompat.SIGNAL_TIME_PENDING] is returned.
      */
     @RequiresApi(Build.VERSION_CODES.O)
     fun getSignalTimeNanos(): Long {
@@ -145,7 +148,7 @@ internal class SyncFenceCompatVerificationHelper private constructor() {
                     display,
                     android.opengl.EGLExt.EGL_SYNC_NATIVE_FENCE_ANDROID,
                     mEmptyAttributes,
-                    0
+                    0,
                 )
             GLES20.glFlush()
             val syncFenceCompat =

@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.FilledTextButtonTokens
 import androidx.wear.compose.material3.tokens.FilledTonalTextButtonTokens
 import androidx.wear.compose.material3.tokens.OutlinedTextButtonTokens
@@ -62,9 +64,15 @@ import androidx.wear.compose.material3.tokens.TextButtonTokens
  *
  * @sample androidx.wear.compose.material3.samples.TextButtonSample
  *
+ * ![TextButtonSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TextButtonSample_CompositeImage.png)
+ *
  * Example of a large, filled tonal [TextButton]:
  *
  * @sample androidx.wear.compose.material3.samples.LargeFilledTonalTextButtonSample
+ *
+ *   ![LargeFilledTonalTextButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_LargeFilledTonalTextButtonSample_CompositeImage.png)
  *
  * Example of [TextButton] with onLongClick:
  *
@@ -73,6 +81,11 @@ import androidx.wear.compose.material3.tokens.TextButtonTokens
  * Example of an [TextButton] with shape animation of rounded corners on press:
  *
  * @sample androidx.wear.compose.material3.samples.TextButtonWithCornerAnimationSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_TextButtonWithCornerAnimationSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
  * @param onLongClick Called when this button is long clicked (long-pressed). When this callback is
@@ -113,27 +126,29 @@ public fun TextButton(
             pressedShape = shapes.pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
 
-    RoundButton(
-        onClick = onClick,
-        modifier.minimumInteractiveComponentSize().size(TextButtonDefaults.DefaultButtonSize),
-        onLongClick = onLongClick,
-        onLongClickLabel = onLongClickLabel,
-        enabled = enabled,
-        backgroundColor = { colors.containerColor(enabled = it) },
-        interactionSource = finalInteractionSource,
-        shape = finalShape,
-        border = { border },
-        ripple = ripple(),
-        content =
-            provideScopeContent(
-                colors.contentColor(enabled = enabled),
-                TextButtonTokens.ContentFont.value,
-                content
-            )
-    )
+    val contentColor = colors.contentColor(enabled = enabled)
+    val textStyle = TextButtonTokens.ContentFont.value
+    CompositionLocalProvider(
+        LocalContentColor provides contentColor,
+        LocalTextStyle provides textStyle,
+    ) {
+        RoundButton(
+            onClick = onClick,
+            modifier.minimumInteractiveComponentSize().size(TextButtonDefaults.DefaultButtonSize),
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+            enabled = enabled,
+            backgroundColor = { colors.containerColor(enabled = it) },
+            interactionSource = finalInteractionSource,
+            shape = finalShape,
+            border = { border },
+            ripple = ripple(),
+            content = content,
+        )
+    }
 }
 
 /** Contains the default values used by [TextButton]. */
@@ -146,6 +161,18 @@ public object TextButtonDefaults {
     public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
+    /**
+     * The minimum vertical content padding for the list when a [TextButton] is placed at the top or
+     * bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
     /** Returns the default [TextButtonShapes] for a static [TextButton]. */
     @Composable public fun shapes(): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes
 
@@ -155,9 +182,8 @@ public object TextButtonDefaults {
      * @param shape The normal shape of the TextButton.
      */
     @Composable
-    public fun shapes(
-        shape: Shape,
-    ): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes.copy(shape = shape)
+    public fun shapes(shape: Shape): TextButtonShapes =
+        MaterialTheme.shapes.defaultTextButtonShapes.copy(shape = shape)
 
     /**
      * Returns the default [TextButtonShapes] for a [TextButton ] with an animation between two
@@ -166,6 +192,10 @@ public object TextButtonDefaults {
      * Example of a simple text button using the default colors, animated when pressed:
      *
      * @sample androidx.wear.compose.material3.samples.TextButtonWithCornerAnimationSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_TextButtonWithCornerAnimationSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
      */
     @Composable
     public fun animatedShapes(): TextButtonShapes =
@@ -177,6 +207,11 @@ public object TextButtonDefaults {
      * Example of a simple text button using the default colors, animated when pressed:
      *
      * @sample androidx.wear.compose.material3.samples.TextButtonWithCornerAnimationSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_TextButtonWithCornerAnimationSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param shape The normal shape of the TextButton - if null, the default
      *   [TextButtonDefaults.shape] is used.
      * @param pressedShape The pressed shape of the TextButton - if null, the default
@@ -189,7 +224,7 @@ public object TextButtonDefaults {
     ): TextButtonShapes =
         MaterialTheme.shapes.defaultTextButtonAnimatedShapes.copy(
             shape = shape,
-            pressedShape = pressedShape
+            pressedShape = pressedShape,
         )
 
     /**
@@ -209,6 +244,10 @@ public object TextButtonDefaults {
      * Example of [TextButton] with [filledTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledTextButtonSample
+     *
+     *   ![FilledTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTextButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this text button when enabled
      * @param contentColor The content color of this text button when enabled
      * @param disabledContainerColor the background color of this text button when not enabled
@@ -225,7 +264,7 @@ public object TextButtonDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor
+            disabledContentColor = disabledContentColor,
         )
 
     /**
@@ -237,6 +276,9 @@ public object TextButtonDefaults {
      * Example of creating a [TextButton] with [filledVariantTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantTextButtonSample
+     *
+     *   ![FilledVariantTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantTextButtonSample_CompositeImage.png)
      */
     @Composable
     public fun filledVariantTextButtonColors(): TextButtonColors =
@@ -251,6 +293,10 @@ public object TextButtonDefaults {
      * Example of creating a [TextButton] with [filledVariantTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledVariantTextButtonSample
+     *
+     *   ![FilledVariantTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledVariantTextButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this text button when enabled
      * @param contentColor The content color of this text button when enabled
      * @param disabledContainerColor the background color of this text button when not enabled
@@ -267,7 +313,7 @@ public object TextButtonDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor
+            disabledContentColor = disabledContentColor,
         )
 
     /**
@@ -287,6 +333,10 @@ public object TextButtonDefaults {
      * Example of [TextButton] with [filledTonalTextButtonColors]:
      *
      * @sample androidx.wear.compose.material3.samples.FilledTonalTextButtonSample
+     *
+     *   ![FilledTonalTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FilledTonalTextButtonSample_CompositeImage.png)
+     *
      * @param containerColor The background color of this text button when enabled
      * @param contentColor The content color of this text button when enabled
      * @param disabledContainerColor the background color of this text button when not enabled
@@ -303,7 +353,7 @@ public object TextButtonDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor
+            disabledContentColor = disabledContentColor,
         )
 
     /**
@@ -324,6 +374,10 @@ public object TextButtonDefaults {
      * [ButtonDefaults.outlinedButtonBorder]:
      *
      * @sample androidx.wear.compose.material3.samples.OutlinedTextButtonSample
+     *
+     *   ![OutlinedTextButtonSample Composite
+     *   Image](https://developer.android.com/wear/images/design/WearComposeM3_OutlinedTextButtonSample_CompositeImage.png)
+     *
      * @param contentColor The content color of this text button when enabled
      * @param disabledContentColor The content color of this text button when not enabled
      */
@@ -336,7 +390,7 @@ public object TextButtonDefaults {
             containerColor = Color.Transparent,
             contentColor = contentColor,
             disabledContainerColor = Color.Transparent,
-            disabledContentColor = disabledContentColor
+            disabledContentColor = disabledContentColor,
         )
 
     /**
@@ -417,7 +471,7 @@ public object TextButtonDefaults {
             return defaultTextButtonAnimatedShapesCached
                 ?: TextButtonShapes(
                         shape = TextButtonDefaults.shape,
-                        pressedShape = TextButtonDefaults.pressedShape
+                        pressedShape = TextButtonDefaults.pressedShape,
                     )
                     .also { defaultTextButtonAnimatedShapesCached = it }
         }
@@ -437,7 +491,7 @@ public object TextButtonDefaults {
                             fromToken(FilledTextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledTextButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultFilledTextButtonColorsCached = it }
         }
@@ -457,7 +511,7 @@ public object TextButtonDefaults {
                             fromToken(FilledTextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledTextButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultFilledVariantTextButtonColorsCached = it }
         }
@@ -479,7 +533,7 @@ public object TextButtonDefaults {
                                 .toDisabledColor(
                                     disabledAlpha =
                                         FilledTonalTextButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultFilledTonalTextButtonColorsCached = it }
         }
@@ -495,7 +549,7 @@ public object TextButtonDefaults {
                             fromToken(OutlinedTextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = OutlinedTextButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultOutlinedTextButtonColorsCached = it }
         }
@@ -511,7 +565,7 @@ public object TextButtonDefaults {
                             fromToken(TextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = TextButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultTextButtonColorsCached = it }
         }
@@ -550,14 +604,14 @@ public class TextButtonColors(
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
         disabledContainerColor: Color = this.disabledContainerColor,
-        disabledContentColor: Color = this.disabledContentColor
+        disabledContentColor: Color = this.disabledContentColor,
     ): TextButtonColors =
         TextButtonColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
             contentColor = contentColor.takeOrElse { this.contentColor },
             disabledContainerColor =
                 disabledContainerColor.takeOrElse { this.disabledContainerColor },
-            disabledContentColor = disabledContentColor.takeOrElse { this.disabledContentColor }
+            disabledContentColor = disabledContentColor.takeOrElse { this.disabledContentColor },
         )
 
     /**
@@ -610,17 +664,14 @@ public class TextButtonColors(
  * @param shape the shape of the text button when enabled
  * @param pressedShape the shape of the text button when pressed
  */
-public class TextButtonShapes(
-    public val shape: Shape,
-    public val pressedShape: Shape = shape,
-) {
+public class TextButtonShapes(public val shape: Shape, public val pressedShape: Shape = shape) {
     public fun copy(
         shape: Shape? = this.shape,
         pressedShape: Shape? = this.pressedShape,
     ): TextButtonShapes =
         TextButtonShapes(
             shape = shape ?: this.shape,
-            pressedShape = pressedShape ?: this.pressedShape
+            pressedShape = pressedShape ?: this.pressedShape,
         )
 
     override fun equals(other: Any?): Boolean {

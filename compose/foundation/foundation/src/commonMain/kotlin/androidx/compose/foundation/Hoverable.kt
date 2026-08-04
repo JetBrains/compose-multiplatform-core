@@ -25,6 +25,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
+import androidx.compose.ui.node.UnplacedAwareModifierNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.launch
@@ -38,8 +39,10 @@ import kotlinx.coroutines.launch
  * @param enabled Controls the enabled state. When `false`, hover events will be ignored.
  */
 @Stable
-fun Modifier.hoverable(interactionSource: MutableInteractionSource, enabled: Boolean = true) =
-    this then if (enabled) HoverableElement(interactionSource) else Modifier
+public fun Modifier.hoverable(
+    interactionSource: MutableInteractionSource,
+    enabled: Boolean = true,
+): Modifier = this then if (enabled) HoverableElement(interactionSource) else Modifier
 
 private class HoverableElement(private val interactionSource: MutableInteractionSource) :
     ModifierNodeElement<HoverableNode>() {
@@ -68,7 +71,7 @@ private class HoverableElement(private val interactionSource: MutableInteraction
 }
 
 private class HoverableNode(private var interactionSource: MutableInteractionSource) :
-    PointerInputModifierNode, Modifier.Node() {
+    PointerInputModifierNode, Modifier.Node(), UnplacedAwareModifierNode {
     private var hoverInteraction: HoverInteraction.Enter? = null
 
     fun updateInteractionSource(interactionSource: MutableInteractionSource) {
@@ -82,7 +85,7 @@ private class HoverableNode(private var interactionSource: MutableInteractionSou
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (pass == PointerEventPass.Main) {
             when (pointerEvent.type) {
@@ -97,6 +100,10 @@ private class HoverableNode(private var interactionSource: MutableInteractionSou
     }
 
     override fun onDetach() {
+        tryEmitExit()
+    }
+
+    override fun onUnplaced() {
         tryEmitExit()
     }
 

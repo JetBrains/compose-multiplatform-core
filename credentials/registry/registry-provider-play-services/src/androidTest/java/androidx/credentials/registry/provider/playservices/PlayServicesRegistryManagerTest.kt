@@ -16,22 +16,41 @@
 
 package androidx.credentials.registry.provider.playservices
 
-import androidx.credentials.registry.provider.RegisterCredentialsRequest
+import androidx.credentials.CredentialManagerCallback
+import androidx.credentials.DigitalCredential
+import androidx.credentials.ExperimentalDigitalCredentialApi
+import androidx.credentials.registry.provider.RegisterCredentialsException
+import androidx.credentials.registry.provider.RegisterCredentialsResponse
 import androidx.credentials.registry.provider.RegistryManager
+import androidx.credentials.registry.provider.digitalcredentials.DigitalCredentialRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SmallTest
+import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalDigitalCredentialApi::class)
 @RunWith(AndroidJUnit4::class)
-@SmallTest
+@MediumTest
 class PlayServicesRegistryManagerTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
+    private val executor =
+        object : Executor {
+            private val innerExecutor = Executors.newSingleThreadExecutor()
+            @Volatile var executedHere = false
+
+            override fun execute(command: Runnable) {
+                executedHere = true
+                innerExecutor.execute(command)
+            }
+        }
 
     private lateinit var registryManager: RegistryManager
     private lateinit var playServicesImpl: RegistryManagerProviderPlayServicesImpl
@@ -50,10 +69,53 @@ class PlayServicesRegistryManagerTest {
                 val result =
                     registryManager.registerCredentials(
                         object :
-                            RegisterCredentialsRequest("type", "id", ByteArray(4), ByteArray(8)) {}
+                            DigitalCredentialRegistry(
+                                "id",
+                                ByteArray(4),
+                                ByteArray(8),
+                                intentAction = "com.example.ACTION_GET_CRED",
+                            ) {}
                     )
 
-                assertThat(result.type).isEqualTo("type")
+                assertThat(result.type).isEqualTo(DigitalCredential.TYPE_DIGITAL_CREDENTIAL)
             }
         }
+
+    @Ignore // Wait to enable when the flags fully propagate
+    @Test
+    fun registerCredentialsAsync_success() = runBlocking {
+        if (playServicesImpl.isAvailable()) {
+            var resultType = ""
+            registryManager.registerCredentialsAsync(
+                object :
+                    DigitalCredentialRegistry(
+                        "id",
+                        ByteArray(4),
+                        ByteArray(8),
+                        intentAction = "com.example.ACTION_GET_CRED",
+                    ) {},
+                null,
+                executor,
+                object :
+                    CredentialManagerCallback<
+                        RegisterCredentialsResponse,
+                        RegisterCredentialsException,
+                    > {
+                    override fun onResult(result: RegisterCredentialsResponse) {
+                        resultType = result.type
+                    }
+
+                    override fun onError(e: RegisterCredentialsException) {
+                        throw e
+                    }
+                },
+            )
+            for (i in 0 until 20) {
+                if (executor.executedHere) break
+                delay(100)
+            }
+            assertThat(resultType).isEqualTo(DigitalCredential.TYPE_DIGITAL_CREDENTIAL)
+            assertThat(executor.executedHere).isTrue()
+        }
+    }
 }

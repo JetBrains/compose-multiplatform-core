@@ -73,23 +73,18 @@ class BoxWithConstraintsDetector : Detector(), SourceCodeScanner {
                                     val propertySymbol =
                                         variableAccessCall.symbol as? KaPropertySymbol
                                     // Check if the property is inside BoxWithConstraintsScope
-                                    val containingClassFqn =
-                                        propertySymbol?.callableId?.classId?.asFqNameString()
+                                    val containingClassId = propertySymbol?.callableId?.classId
                                     // Check if the property is an extension on
                                     // BoxWithConstraintsScope
-                                    val receiverFqn =
-                                        propertySymbol
-                                            ?.receiverType
-                                            ?.expandedSymbol
-                                            ?.classId
-                                            ?.asFqNameString()
+                                    val receiverClassId =
+                                        propertySymbol?.receiverType?.expandedSymbol?.classId
                                     if (
-                                        containingClassFqn ==
+                                        containingClassId ==
                                             FoundationNames.Layout.BoxWithConstraintsScope
-                                                .javaFqn ||
-                                            receiverFqn ==
+                                                .classId ||
+                                            receiverClassId ==
                                                 FoundationNames.Layout.BoxWithConstraintsScope
-                                                    .javaFqn
+                                                    .classId
                                     ) {
                                         foundValidReference = true
                                     }
@@ -147,7 +142,7 @@ class BoxWithConstraintsDetector : Detector(), SourceCodeScanner {
                     UnusedConstraintsParameter,
                     node,
                     context.getLocation(contentArgument),
-                    "BoxWithConstraints scope is not used"
+                    "BoxWithConstraints scope is not used",
                 )
             }
         }
@@ -168,8 +163,8 @@ class BoxWithConstraintsDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     BoxWithConstraintsDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

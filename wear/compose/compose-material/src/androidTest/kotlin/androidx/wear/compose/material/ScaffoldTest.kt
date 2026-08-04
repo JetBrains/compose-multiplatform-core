@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
@@ -57,7 +57,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             Scaffold(
                 modifier = Modifier.testTag(TEST_TAG),
-                timeText = { Text(TIME_TEXT_MESSAGE) }
+                timeText = { Text(TIME_TEXT_MESSAGE) },
             ) {
                 Text("Some text")
             }
@@ -76,7 +76,7 @@ class ScaffoldTest {
                 vignette = {
                     Vignette(
                         vignettePosition = showVignette.value,
-                        modifier = Modifier.testTag("VIGNETTE")
+                        modifier = Modifier.testTag("VIGNETTE"),
                     )
                 },
             ) {
@@ -109,9 +109,9 @@ class ScaffoldTest {
                 positionIndicator = {
                     PositionIndicator(
                         scalingLazyListState = scrollState,
-                        modifier = Modifier.testTag("POSITION_INDICATOR")
+                        modifier = Modifier.testTag("POSITION_INDICATOR"),
                     )
-                }
+                },
             ) {
                 ScalingLazyColumn(modifier = Modifier.testTag("ScalingLazyColumn")) {
                     items(20) { Text("" + it, modifier = Modifier.testTag("" + it)) }

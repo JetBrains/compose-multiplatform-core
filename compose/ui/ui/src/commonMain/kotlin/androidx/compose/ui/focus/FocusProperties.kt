@@ -18,6 +18,8 @@ package androidx.compose.ui.focus
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusProperties.Companion.UnsetFocusRect
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 
@@ -27,20 +29,20 @@ import androidx.compose.ui.platform.InspectorInfo
  *
  * @see [focusProperties]
  */
-interface FocusProperties {
+public interface FocusProperties {
     /**
      * When set to false, indicates that the [focusTarget] that this is applied to can no longer
      * take focus. If the [focusTarget] is currently focused, setting this property to false will
      * end up clearing focus.
      */
-    var canFocus: Boolean
+    public var canFocus: Boolean
 
     /**
      * A custom item to be used when the user requests the focus to move to the "next" item.
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var next: FocusRequester
+    public var next: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -49,7 +51,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var previous: FocusRequester
+    public var previous: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -58,7 +60,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var up: FocusRequester
+    public var up: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -67,7 +69,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var down: FocusRequester
+    public var down: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -76,7 +78,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var left: FocusRequester
+    public var left: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -85,7 +87,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var right: FocusRequester
+    public var right: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -95,7 +97,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var start: FocusRequester
+    public var start: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -105,7 +107,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
-    var end: FocusRequester
+    public var end: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
@@ -123,12 +125,9 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusEnterSample
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalComposeUiApi
-    @get:ExperimentalComposeUiApi
-    @set:ExperimentalComposeUiApi
     @set:Deprecated("Use onEnter instead", ReplaceWith("onEnter"))
-    var enter: (FocusDirection) -> FocusRequester
+    public var enter: (FocusDirection) -> FocusRequester
         get() = { FocusRequester.Default }
         set(value) {
             onEnter = value.toUsingEnterExitScope()
@@ -147,7 +146,7 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusEnterSample
      */
-    var onEnter: FocusEnterExitScope.() -> Unit
+    public var onEnter: FocusEnterExitScope.() -> Unit
         get() = {}
         set(_) {}
 
@@ -165,12 +164,9 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusExitSample
      */
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalComposeUiApi
-    @get:ExperimentalComposeUiApi
-    @set:ExperimentalComposeUiApi
     @set:Deprecated("Use onExit instead", ReplaceWith("onExit"))
-    var exit: (FocusDirection) -> FocusRequester
+    public var exit: (FocusDirection) -> FocusRequester
         get() = { FocusRequester.Default }
         set(value) {
             onExit = value.toUsingEnterExitScope()
@@ -189,9 +185,29 @@ interface FocusProperties {
      *
      * @sample androidx.compose.ui.samples.CustomFocusExitSample
      */
-    var onExit: FocusEnterExitScope.() -> Unit
+    public var onExit: FocusEnterExitScope.() -> Unit
         get() = {}
         set(_) {}
+
+    /**
+     * Sets the focus area for the associated focus target to which these [FocusProperties] are
+     * applied on.
+     *
+     * If you simply ignore and do not set this value, [UnsetFocusRect] will be used. Or
+     * alternatively you can set this value to [UnsetFocusRect] to prevent other [FocusProperties]
+     * nodes in the chain from customizing the focus area.
+     */
+    public var focusRect: Rect
+        get() = UnsetFocusRect
+        set(_) {}
+
+    public companion object {
+
+        /**
+         * Denotes that the bounds of the associated focus target should be used as the focus area.
+         */
+        public val UnsetFocusRect: Rect = Rect(Float.NaN, Float.NaN, Float.NaN, Float.NaN)
+    }
 }
 
 /**
@@ -213,23 +229,23 @@ private fun ((FocusDirection) -> FocusRequester).toUsingEnterExitScope():
  * focus with [FocusRequester.requestFocus] to change the focus or [cancelFocusChange] to stop the
  * focus from changing.
  */
-sealed interface FocusEnterExitScope {
+public sealed interface FocusEnterExitScope {
     /**
      * The direction used to get into (with [FocusProperties.onEnter]) or leave (with
      * [FocusProperties.onExit]) focus.
      */
-    val requestedFocusDirection: FocusDirection
+    public val requestedFocusDirection: FocusDirection
 
     /** Stop focus from changing. */
-    fun cancelFocusChange()
+    public fun cancelFocusChange()
 
     @ExperimentalComposeUiApi
     @Deprecated("Use cancelFocusChange instead", replaceWith = ReplaceWith("cancelFocusChange"))
-    fun cancelFocus() = cancelFocusChange()
+    public fun cancelFocus(): Unit = cancelFocusChange()
 }
 
 internal class CancelIndicatingFocusBoundaryScope(
-    override val requestedFocusDirection: FocusDirection,
+    override val requestedFocusDirection: FocusDirection
 ) : FocusEnterExitScope {
     var isCanceled = false
         private set
@@ -251,6 +267,7 @@ internal class FocusPropertiesImpl : FocusProperties {
     override var end: FocusRequester = FocusRequester.Default
     override var onEnter: FocusEnterExitScope.() -> Unit = {}
     override var onExit: FocusEnterExitScope.() -> Unit = {}
+    override var focusRect: Rect = UnsetFocusRect
 }
 
 /**
@@ -259,7 +276,7 @@ internal class FocusPropertiesImpl : FocusProperties {
  *
  * @sample androidx.compose.ui.samples.FocusPropertiesSample
  */
-fun Modifier.focusProperties(scope: FocusProperties.() -> Unit): Modifier =
+public fun Modifier.focusProperties(scope: FocusProperties.() -> Unit): Modifier =
     this then FocusPropertiesElement(scope)
 
 private data class FocusPropertiesElement(val scope: FocusPropertiesScope) :
@@ -276,9 +293,8 @@ private data class FocusPropertiesElement(val scope: FocusPropertiesScope) :
     }
 }
 
-private class FocusPropertiesNode(
-    var focusPropertiesScope: FocusPropertiesScope,
-) : FocusPropertiesModifierNode, Modifier.Node() {
+private class FocusPropertiesNode(var focusPropertiesScope: FocusPropertiesScope) :
+    FocusPropertiesModifierNode, Modifier.Node() {
 
     override fun applyFocusProperties(focusProperties: FocusProperties) {
         focusPropertiesScope.apply(focusProperties)

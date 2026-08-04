@@ -60,26 +60,26 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun LoadingIndicatorSample() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) { LoadingIndicator() }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun ContainedLoadingIndicatorSample() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) { ContainedLoadingIndicator() }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun DeterminateLoadingIndicatorSample() {
     var progress by remember { mutableFloatStateOf(0f) }
     val animatedProgress by
@@ -89,8 +89,8 @@ fun DeterminateLoadingIndicatorSample() {
                 spring(
                     dampingRatio = Spring.DampingRatioNoBouncy,
                     stiffness = Spring.StiffnessVeryLow,
-                    visibilityThreshold = 1 / 1000f
-                )
+                    visibilityThreshold = 1 / 1000f,
+                ),
         )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -106,10 +106,10 @@ fun DeterminateLoadingIndicatorSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun DeterminateContainedLoadingIndicatorSample() {
     var progress by remember { mutableFloatStateOf(0f) }
     val animatedProgress by
@@ -119,8 +119,8 @@ fun DeterminateContainedLoadingIndicatorSample() {
                 spring(
                     dampingRatio = Spring.DampingRatioNoBouncy,
                     stiffness = Spring.StiffnessVeryLow,
-                    visibilityThreshold = 1 / 1000f
-                )
+                    visibilityThreshold = 1 / 1000f,
+                ),
         )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -165,7 +165,7 @@ fun LoadingIndicatorPullToRefreshSample() {
             Modifier.pullToRefresh(
                 state = state,
                 isRefreshing = isRefreshing,
-                onRefresh = onRefresh
+                onRefresh = onRefresh,
             ),
         topBar = {
             TopAppBar(
@@ -175,14 +175,14 @@ fun LoadingIndicatorPullToRefreshSample() {
                     IconButton(onClick = onRefresh) {
                         Icon(Icons.Filled.Refresh, "Trigger Refresh")
                     }
-                }
+                },
             )
-        }
+        },
     ) {
         Box(Modifier.padding(it)) {
             LazyColumn(Modifier.fillMaxSize()) {
                 if (!isRefreshing) {
-                    items(itemCount) { ListItem({ Text(text = "Item ${itemCount - it}") }) }
+                    items(itemCount) { ListItem { Text(text = "Item ${itemCount - it}") } }
                 }
             }
             Box(

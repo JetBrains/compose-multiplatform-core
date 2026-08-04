@@ -56,23 +56,23 @@ import androidx.compose.ui.semantics.semantics
  * @param contentDescription text used by accessibility services to describe what this icon
  *   represents. This should always be provided unless this icon is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier the [Modifier] to be applied to this icon
  * @param tint tint to be applied to [imageVector]. If [Color.Unspecified] is provided, then no tint
  *   is applied.
  */
 @Composable
-fun Icon(
+public fun Icon(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     Icon(
         painter = rememberVectorPainter(imageVector),
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -92,24 +92,24 @@ fun Icon(
  * @param contentDescription text used by accessibility services to describe what this icon
  *   represents. This should always be provided unless this icon is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier the [Modifier] to be applied to this icon
  * @param tint tint to be applied to [bitmap]. If [Color.Unspecified] is provided, then no tint is
  *   applied.
  */
 @Composable
-fun Icon(
+public fun Icon(
     bitmap: ImageBitmap,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     val painter = remember(bitmap) { BitmapPainter(bitmap) }
     Icon(
         painter = painter,
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -129,17 +129,17 @@ fun Icon(
  * @param contentDescription text used by accessibility services to describe what this icon
  *   represents. This should always be provided unless this icon is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier the [Modifier] to be applied to this icon
  * @param tint tint to be applied to [painter]. If [Color.Unspecified] is provided, then no tint is
  *   applied.
  */
 @Composable
-fun Icon(
+public fun Icon(
     painter: Painter,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     val colorFilter =
         remember(tint) { if (tint == Color.Unspecified) null else ColorFilter.tint(tint) }
@@ -178,16 +178,15 @@ fun Icon(
  * @param contentDescription text used by accessibility services to describe what this icon
  *   represents. This should always be provided unless this icon is used for decorative purposes,
  *   and does not represent a meaningful action that a user can take. This text should be localized,
- *   such as by using [androidx.compose.ui.res.stringResource] or similar
+ *   such as by using `androidx.compose.ui.res.stringResource` or similar
  * @param modifier the [Modifier] to be applied to this icon
  */
 @Composable
-@ExperimentalMaterial3Api
-fun Icon(
+public fun Icon(
     painter: Painter,
     tint: ColorProducer?,
     contentDescription: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Icon(
         painter = painter,
@@ -201,7 +200,7 @@ fun Icon(
                     tint?.let { this@apply.colorFilter = ColorFilter.tint(it()) }
                 }
                 onDrawWithContent { drawLayer(graphicsLayer = layer) }
-            }
+            },
     )
 }
 

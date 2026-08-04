@@ -282,9 +282,9 @@ APIs.
 
 *   API surface
     *   Entire API surface has been reviewed by API Council
-    *   All APIs from alpha undergoing deprecate/remove cycle must be removed
-        *   The final removal of a `@Deprecated` API should occur in alpha, not
-            in beta
+    *   All APIs from alpha undergoing deprecate/remove cycle should be removed
+        *   The final removal of a `@Deprecated` API that has not yet shipped in
+            a stable release **may** occur in beta to aid client migration
     *   Must not use
         [experimental APIs](/docs/api_guidelines#experimental-api)
         across same-version group boundaries
@@ -333,6 +333,8 @@ like `androidx-main`.
 *   Release branch, e.g. `androidx-<group_id>-release`, is created
 *   API surface
     *   Any API changes from `beta` cycle are reviewed by API Council
+    *   All `@Deprecated` APIs that never shipped in a prior stable release
+        **must** be removed
 *   No **known** `P0` or `P1` (ship-blocking) issues
 *   All dependencies are `rc` or stable
 
@@ -365,6 +367,8 @@ A few notes about version updates:
 -   The version of your library listed in `androidx-main` should *always* be
     higher than the version publicly available on Google Maven. This allows us
     to do proper version tracking and API tracking.
+-   Major and minor versions must be incremented by one -- versions may not be
+    skipped.
 -   Version increments must be done before the CL cutoff date (aka the build cut
     date).
 -   **Increments to the next stability suffix** (like `alpha` to `beta`) should
@@ -434,4 +438,4 @@ until API review is complete and addressed.
 ### How often can a beta release?
 
 As often as needed; however, releases outside of the bi-weekly (every 2 weeks)
-release will need to get approval from the TPM (natnaelbelay@).
+release will need to get approval from the TPMs (toolkit-tpgms@).

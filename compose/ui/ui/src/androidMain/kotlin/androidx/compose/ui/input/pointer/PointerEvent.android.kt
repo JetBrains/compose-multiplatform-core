@@ -27,11 +27,9 @@ import android.view.MotionEvent.CLASSIFICATION_PINCH
 import android.view.MotionEvent.CLASSIFICATION_TWO_FINGER_SWIPE
 import androidx.annotation.IntDef
 import androidx.collection.LongSparseArray
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.util.fastForEach
-
-internal actual typealias NativePointerButtons = Int
-
-internal actual typealias NativePointerKeyboardModifiers = Int
 
 /**
  * Restricts Ints to `MotionEvent`'s classification types. See the
@@ -44,17 +42,17 @@ internal actual typealias NativePointerKeyboardModifiers = Int
     CLASSIFICATION_AMBIGUOUS_GESTURE,
     CLASSIFICATION_DEEP_PRESS,
     CLASSIFICATION_TWO_FINGER_SWIPE,
-    CLASSIFICATION_PINCH
+    CLASSIFICATION_PINCH,
 )
 @Retention(AnnotationRetention.SOURCE) // Only for compile-time checks
 internal annotation class MotionEventClassification
 
 /** Describes a pointer input change event that has occurred at a particular point in time. */
-actual class PointerEvent
+public actual class PointerEvent
 internal actual constructor(
     /** The changes. */
-    actual val changes: List<PointerInputChange>,
-    internal val internalPointerEvent: InternalPointerEvent?
+    public actual val changes: List<PointerInputChange>,
+    internal val internalPointerEvent: InternalPointerEvent?,
 ) {
     /**
      * The underlying Android [MotionEvent] that triggered this [PointerEvent].
@@ -76,11 +74,11 @@ internal actual constructor(
      *     * The [PointerEvent] was fabricated within Compose (i.e., not directly from a system
      *       input event).
      *     * The [PointerEvent] has already been dispatched within the Compose input system. (See
-     *       [androidx.compose.ui.samples.PointerEventMotionEventSample] for details).
+     *       the sample code for details).
      *
      * @sample androidx.compose.ui.samples.PointerEventMotionEventSample
      */
-    val motionEvent: MotionEvent?
+    public val motionEvent: MotionEvent?
         get() = internalPointerEvent?.motionEvent
 
     /**
@@ -88,7 +86,7 @@ internal actual constructor(
      * [`MotionEvent`'s classification](https://developer.android.com/reference/android/view/MotionEvent#getClassification()).
      */
     @get:MotionEventClassification
-    val classification: Int =
+    public val classification: Int =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             motionEvent?.classification ?: CLASSIFICATION_NONE
         } else {
@@ -96,25 +94,85 @@ internal actual constructor(
         }
 
     /** @param changes The changes. */
-    actual constructor(changes: List<PointerInputChange>) : this(changes, null)
+    public actual constructor(changes: List<PointerInputChange>) : this(changes, null)
 
-    actual val buttons = PointerButtons(motionEvent?.buttonState ?: 0)
+    public actual val buttons: PointerButtons = PointerButtons(motionEvent?.buttonState ?: 0)
 
-    actual val keyboardModifiers = PointerKeyboardModifiers(motionEvent?.metaState ?: 0)
+    public actual val keyboardModifiers: PointerKeyboardModifiers =
+        PointerKeyboardModifiers(motionEvent?.metaState ?: 0)
 
-    actual var type: PointerEventType = calculatePointerEventType()
+    public actual var type: PointerEventType = calculatePointerEventType()
         internal set
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun calculatePointerEventType(): PointerEventType {
         val motionEvent = motionEvent
         if (motionEvent != null) {
+            /**
+             * Special cases: for classifications, we interpret the motion event differently instead
+             * of the fake finger press + move + release
+             */
+            val isTwoFingerSwipe =
+                if (ComposeUiFlags.isTrackpadPanHoverFixEnabled) {
+                    internalPointerEvent?.activeGesture == PointerClassification.Pan
+                } else {
+                    Build.VERSION.SDK_INT >= 34 &&
+                        motionEvent.classification == CLASSIFICATION_TWO_FINGER_SWIPE
+                }
+            val isPinch = internalPointerEvent?.activeGesture == PointerClassification.Pinch
+            val isPinchReinterpretation =
+                isPinch && ComposeUiFlags.isTrackpadPinchReinterpretationEnabled
             return when (motionEvent.actionMasked) {
-                MotionEvent.ACTION_DOWN,
-                MotionEvent.ACTION_POINTER_DOWN -> PointerEventType.Press
-                MotionEvent.ACTION_UP,
-                MotionEvent.ACTION_POINTER_UP -> PointerEventType.Release
+                MotionEvent.ACTION_DOWN -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanStart
+                    } else if (isPinch && !isPinchReinterpretation) {
+                        PointerEventType.ScaleStart
+                    } else {
+                        PointerEventType.Press
+                    }
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanStart
+                    } else if (isPinchReinterpretation) {
+                        PointerEventType.ScaleStart
+                    } else if (isPinch) {
+                        PointerEventType.ScaleChange
+                    } else {
+                        PointerEventType.Press
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanEnd
+                    } else if (isPinch && !isPinchReinterpretation) {
+                        PointerEventType.ScaleEnd
+                    } else {
+                        PointerEventType.Release
+                    }
+                }
+                MotionEvent.ACTION_POINTER_UP -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanEnd
+                    } else if (isPinchReinterpretation) {
+                        PointerEventType.ScaleEnd
+                    } else if (isPinch) {
+                        PointerEventType.ScaleChange
+                    } else {
+                        PointerEventType.Release
+                    }
+                }
                 MotionEvent.ACTION_HOVER_MOVE,
-                MotionEvent.ACTION_MOVE -> PointerEventType.Move
+                MotionEvent.ACTION_MOVE -> {
+                    if (isTwoFingerSwipe) {
+                        PointerEventType.PanMove
+                    } else if (isPinch) {
+                        PointerEventType.ScaleChange
+                    } else {
+                        PointerEventType.Move
+                    }
+                }
                 MotionEvent.ACTION_HOVER_ENTER -> PointerEventType.Enter
                 MotionEvent.ACTION_HOVER_EXIT -> PointerEventType.Exit
                 ACTION_SCROLL -> PointerEventType.Scroll
@@ -134,10 +192,11 @@ internal actual constructor(
     }
 
     // only because PointerEvent was a data class
-    fun component1(): List<PointerInputChange> = changes
+    @Suppress("KmpModifierMismatch") // commonStubsMain is operator
+    public fun component1(): List<PointerInputChange> = changes
 
     // only because PointerEvent was a data class
-    fun copy(changes: List<PointerInputChange>, motionEvent: MotionEvent?): PointerEvent =
+    public fun copy(changes: List<PointerInputChange>, motionEvent: MotionEvent?): PointerEvent =
         when (motionEvent) {
             null -> PointerEvent(changes, null)
             this.motionEvent -> PointerEvent(changes, internalPointerEvent)
@@ -148,14 +207,17 @@ internal actual constructor(
                     changesArray.put(change.id.value, change)
                     pointerEventData +=
                         PointerInputEventData(
-                            change.id,
-                            change.uptimeMillis,
-                            change.position,
-                            change.position,
-                            change.pressed,
-                            change.pressure,
-                            change.type,
-                            this.internalPointerEvent?.activeHoverEvent(change.id) == true
+                            id = change.id,
+                            uptime = change.uptimeMillis,
+                            positionOnScreen = change.position,
+                            position = change.position,
+                            down = change.pressed,
+                            pressure = change.pressure,
+                            type = change.type,
+                            activeHover =
+                                this.internalPointerEvent?.activeHoverEvent(change.id) == true,
+                            scaleGestureFactor = change.scaleFactor,
+                            panGestureOffset = change.panOffset,
                         )
                 }
 
@@ -167,25 +229,23 @@ internal actual constructor(
         }
 }
 
-internal actual fun EmptyPointerKeyboardModifiers() = PointerKeyboardModifiers(0)
-
-actual val PointerButtons.isPrimaryPressed: Boolean
+public actual val PointerButtons.isPrimaryPressed: Boolean
     get() = packedValue and (MotionEvent.BUTTON_PRIMARY or MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
 
-actual val PointerButtons.isSecondaryPressed: Boolean
+public actual val PointerButtons.isSecondaryPressed: Boolean
     get() =
         packedValue and (MotionEvent.BUTTON_SECONDARY or MotionEvent.BUTTON_STYLUS_SECONDARY) != 0
 
-actual val PointerButtons.isTertiaryPressed: Boolean
+public actual val PointerButtons.isTertiaryPressed: Boolean
     get() = packedValue and MotionEvent.BUTTON_TERTIARY != 0
 
-actual val PointerButtons.isBackPressed: Boolean
+public actual val PointerButtons.isBackPressed: Boolean
     get() = packedValue and MotionEvent.BUTTON_BACK != 0
 
-actual val PointerButtons.isForwardPressed: Boolean
+public actual val PointerButtons.isForwardPressed: Boolean
     get() = packedValue and MotionEvent.BUTTON_FORWARD != 0
 
-actual fun PointerButtons.isPressed(buttonIndex: Int): Boolean =
+public actual fun PointerButtons.isPressed(buttonIndex: Int): Boolean =
     when (buttonIndex) {
         0 -> isPrimaryPressed
         1 -> isSecondaryPressed
@@ -195,10 +255,10 @@ actual fun PointerButtons.isPressed(buttonIndex: Int): Boolean =
         else -> packedValue and (1 shl (buttonIndex + 2)) != 0
     }
 
-actual val PointerButtons.areAnyPressed: Boolean
+public actual val PointerButtons.areAnyPressed: Boolean
     get() = packedValue != 0
 
-actual fun PointerButtons.indexOfFirstPressed(): Int {
+public actual fun PointerButtons.indexOfFirstPressed(): Int {
     if (packedValue == 0) {
         return -1
     }
@@ -212,7 +272,7 @@ actual fun PointerButtons.indexOfFirstPressed(): Int {
     return index
 }
 
-actual fun PointerButtons.indexOfLastPressed(): Int {
+public actual fun PointerButtons.indexOfLastPressed(): Int {
     // shift stylus primary and secondary to primary and secondary
     var shifted = ((packedValue and 0x60) ushr 5) or (packedValue and 0x60.inv())
     var index = -1
@@ -223,32 +283,32 @@ actual fun PointerButtons.indexOfLastPressed(): Int {
     return index
 }
 
-actual val PointerKeyboardModifiers.isCtrlPressed: Boolean
+public actual val PointerKeyboardModifiers.isCtrlPressed: Boolean
     get() = (packedValue and KeyEvent.META_CTRL_ON) != 0
 
-actual val PointerKeyboardModifiers.isMetaPressed: Boolean
+public actual val PointerKeyboardModifiers.isMetaPressed: Boolean
     get() = (packedValue and KeyEvent.META_META_ON) != 0
 
-actual val PointerKeyboardModifiers.isAltPressed: Boolean
+public actual val PointerKeyboardModifiers.isAltPressed: Boolean
     get() = (packedValue and KeyEvent.META_ALT_ON) != 0
 
-actual val PointerKeyboardModifiers.isAltGraphPressed: Boolean
+public actual val PointerKeyboardModifiers.isAltGraphPressed: Boolean
     get() = false
 
-actual val PointerKeyboardModifiers.isSymPressed: Boolean
+public actual val PointerKeyboardModifiers.isSymPressed: Boolean
     get() = (packedValue and KeyEvent.META_SYM_ON) != 0
 
-actual val PointerKeyboardModifiers.isShiftPressed: Boolean
+public actual val PointerKeyboardModifiers.isShiftPressed: Boolean
     get() = (packedValue and KeyEvent.META_SHIFT_ON) != 0
 
-actual val PointerKeyboardModifiers.isFunctionPressed: Boolean
+public actual val PointerKeyboardModifiers.isFunctionPressed: Boolean
     get() = (packedValue and KeyEvent.META_FUNCTION_ON) != 0
 
-actual val PointerKeyboardModifiers.isCapsLockOn: Boolean
+public actual val PointerKeyboardModifiers.isCapsLockOn: Boolean
     get() = (packedValue and KeyEvent.META_CAPS_LOCK_ON) != 0
 
-actual val PointerKeyboardModifiers.isScrollLockOn: Boolean
+public actual val PointerKeyboardModifiers.isScrollLockOn: Boolean
     get() = (packedValue and KeyEvent.META_SCROLL_LOCK_ON) != 0
 
-actual val PointerKeyboardModifiers.isNumLockOn: Boolean
+public actual val PointerKeyboardModifiers.isNumLockOn: Boolean
     get() = (packedValue and KeyEvent.META_NUM_LOCK_ON) != 0

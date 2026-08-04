@@ -68,7 +68,7 @@ fun ButtonWithIconAndLabelAndPlaceholders() {
                 text = labelText,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().placeholder(buttonPlaceholderState)
+                modifier = Modifier.fillMaxWidth().placeholder(buttonPlaceholderState),
             )
         },
         icon = {
@@ -121,7 +121,7 @@ fun ButtonWithIconAndLabelCachedData() {
                 text = labelText,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         },
         icon = {
@@ -169,7 +169,7 @@ fun TextPlaceholder() {
         overflow = TextOverflow.Ellipsis,
         textAlign = TextAlign.Center,
         modifier =
-            Modifier.width(90.dp).placeholderShimmer(placeholderState).placeholder(placeholderState)
+            Modifier.width(90.dp).placeholderShimmer(placeholderState).placeholder(placeholderState),
     )
 
     // Simulate content loading

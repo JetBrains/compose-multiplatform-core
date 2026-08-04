@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import androidx.compose.foundation.gestures.FlingBehavior
@@ -43,7 +40,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
@@ -102,7 +99,7 @@ class LazyListsIndexedTest {
                 itemsIndexed(items) { index, item ->
                     BasicText(
                         "${index}x$item",
-                        Modifier.fillParentMaxWidth().requiredHeight(100.dp)
+                        Modifier.fillParentMaxWidth().requiredHeight(100.dp),
                     )
                 }
             }
@@ -162,7 +159,7 @@ class LazyListsIndexedTest {
                 itemsIndexed(items) { index, item ->
                     BasicText(
                         "${index}x$item",
-                        Modifier.fillParentMaxHeight().requiredWidth(100.dp)
+                        Modifier.fillParentMaxHeight().requiredWidth(100.dp),
                     )
                 }
             }
@@ -186,7 +183,7 @@ private fun LazyColumn(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     beyondBoundsItemCount: Int,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -200,7 +197,7 @@ private fun LazyColumn(
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
-        content = content
+        content = content,
     )
 }
 
@@ -216,7 +213,7 @@ private fun LazyRow(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     beyondBoundsItemCount: Int,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -230,6 +227,6 @@ private fun LazyRow(
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
-        content = content
+        content = content,
     )
 }

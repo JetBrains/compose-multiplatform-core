@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -110,7 +109,7 @@ class FloatingToolbarBenchmark(private val type: FloatingToolbarType) {
     fun floatingToolbarWithFab_toggleState_layout() {
         benchmarkRule.toggleStateBenchmarkLayout(
             caseFactory = floatingToolbarWithFabTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
         )
     }
 
@@ -119,7 +118,7 @@ class FloatingToolbarBenchmark(private val type: FloatingToolbarType) {
     fun floatingToolbarWithFab_toggleState_recompose() {
         benchmarkRule.toggleStateBenchmarkRecompose(
             caseFactory = floatingToolbarWithFabTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
         )
     }
 
@@ -128,7 +127,7 @@ class FloatingToolbarBenchmark(private val type: FloatingToolbarType) {
     fun floatingToolbarWithFab_toggleState_measure() {
         benchmarkRule.toggleStateBenchmarkMeasure(
             caseFactory = floatingToolbarWithFabTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
         )
     }
 
@@ -137,12 +136,11 @@ class FloatingToolbarBenchmark(private val type: FloatingToolbarType) {
     fun floatingToolbarWithFab_toggleState_draw() {
         benchmarkRule.toggleStateBenchmarkDraw(
             caseFactory = floatingToolbarWithFabTestCaseFactory,
-            assertOneRecomposition = false
+            assertOneRecomposition = false,
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class FloatingToolbarTestCase(private val type: FloatingToolbarType) :
     LayeredComposeTestCase() {
     @Composable
@@ -173,7 +171,6 @@ internal class FloatingToolbarTestCase(private val type: FloatingToolbarType) :
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class FloatingToolbarWithFabTestCase(private val type: FloatingToolbarType) :
     LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var expanded: MutableState<Boolean>
@@ -187,7 +184,7 @@ internal class FloatingToolbarWithFabTestCase(private val type: FloatingToolbarT
                     expanded = expanded.value,
                     floatingActionButton = { ToolbarFab() },
                     // Snap the expand and collapse animations.
-                    animationSpec = snap()
+                    animationSpec = snap(),
                 ) {
                     ToolbarContent()
                 }
@@ -196,7 +193,7 @@ internal class FloatingToolbarWithFabTestCase(private val type: FloatingToolbarT
                     expanded = expanded.value,
                     floatingActionButton = { ToolbarFab() },
                     // Snap the expand and collapse animations.
-                    animationSpec = snap()
+                    animationSpec = snap(),
                 ) {
                     ToolbarContent()
                 }
@@ -239,12 +236,9 @@ private fun MainContent() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ToolbarFab() {
-    FloatingToolbarDefaults.StandardFloatingActionButton(
-        onClick = { /* doSomething() */ },
-    ) {
+    FloatingToolbarDefaults.StandardFloatingActionButton(onClick = { /* doSomething() */ }) {
         Icon(Icons.Filled.Check, "Localized description")
     }
 }
@@ -260,9 +254,7 @@ private fun ToolbarContent() {
     IconButton(onClick = { /* doSomething() */ }) {
         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
     }
-    IconButton(
-        onClick = { /* doSomething() */ },
-    ) {
+    IconButton(onClick = { /* doSomething() */ }) {
         Icon(Icons.Filled.MoreVert, contentDescription = "Localized description")
     }
 }

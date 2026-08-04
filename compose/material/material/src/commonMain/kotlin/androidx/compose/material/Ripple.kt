@@ -71,10 +71,10 @@ import androidx.compose.ui.unit.Dp
  *   used will be [RippleDefaults.rippleColor] instead.
  */
 @Stable
-fun ripple(
+public fun ripple(
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
-    color: Color = Color.Unspecified
+    color: Color = Color.Unspecified,
 ): IndicationNodeFactory {
     return if (radius == Dp.Unspecified && color == Color.Unspecified) {
         if (bounded) return DefaultBoundedRipple else DefaultUnboundedRipple
@@ -117,16 +117,16 @@ fun ripple(
  *   calculated based on the target layout size.
  */
 @Stable
-fun ripple(
+public fun ripple(
     color: ColorProducer,
     bounded: Boolean = true,
-    radius: Dp = Dp.Unspecified
+    radius: Dp = Dp.Unspecified,
 ): IndicationNodeFactory {
     return RippleNodeFactory(bounded, radius, color)
 }
 
 /** Default values used by [ripple]. */
-object RippleDefaults {
+public object RippleDefaults {
     /**
      * Represents the default color that will be used for a ripple if a color has not been
      * explicitly set on the ripple instance.
@@ -135,7 +135,7 @@ object RippleDefaults {
      *   the ripple.
      * @param lightTheme whether the theme is light or not
      */
-    fun rippleColor(contentColor: Color, lightTheme: Boolean): Color {
+    public fun rippleColor(contentColor: Color, lightTheme: Boolean): Color {
         val contentLuminance = contentColor.luminance()
         // If we are on a colored surface (typically indicated by low luminance content), the
         // ripple color should be white.
@@ -155,7 +155,7 @@ object RippleDefaults {
      *   the ripple.
      * @param lightTheme whether the theme is light or not
      */
-    fun rippleAlpha(contentColor: Color, lightTheme: Boolean): RippleAlpha {
+    public fun rippleAlpha(contentColor: Color, lightTheme: Boolean): RippleAlpha {
         return when {
             lightTheme -> {
                 if (contentColor.luminance() > 0.5) {
@@ -183,7 +183,7 @@ object RippleDefaults {
  *   own custom ripple that queries your design system theme values directly using
  *   [createRippleModifierNode].
  */
-val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
+public val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
     compositionLocalOf {
         RippleConfiguration()
     }
@@ -201,9 +201,9 @@ val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
  *   will be used instead.
  */
 @Immutable
-class RippleConfiguration(
-    val color: Color = Color.Unspecified,
-    val rippleAlpha: RippleAlpha? = null
+public class RippleConfiguration(
+    public val color: Color = Color.Unspecified,
+    public val rippleAlpha: RippleAlpha? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -232,12 +232,12 @@ private constructor(
     private val bounded: Boolean,
     private val radius: Dp,
     private val colorProducer: ColorProducer?,
-    private val color: Color
+    private val color: Color,
 ) : IndicationNodeFactory {
     constructor(
         bounded: Boolean,
         radius: Dp,
-        colorProducer: ColorProducer
+        colorProducer: ColorProducer,
     ) : this(bounded, radius, colorProducer, Color.Unspecified)
 
     constructor(bounded: Boolean, radius: Dp, color: Color) : this(bounded, radius, null, color)
@@ -312,7 +312,7 @@ private class DelegatingThemeAwareRippleNode(
                 } else {
                     RippleDefaults.rippleColor(
                         contentColor = currentValueOf(LocalContentColor),
-                        lightTheme = currentValueOf(LocalColors).isLight
+                        lightTheme = currentValueOf(LocalColors).isLight,
                     )
                 }
             }
@@ -324,7 +324,7 @@ private class DelegatingThemeAwareRippleNode(
             rippleConfiguration?.rippleAlpha
                 ?: RippleDefaults.rippleAlpha(
                     contentColor = currentValueOf(LocalContentColor),
-                    lightTheme = currentValueOf(LocalColors).isLight
+                    lightTheme = currentValueOf(LocalColors).isLight,
                 )
         }
 
@@ -335,7 +335,7 @@ private class DelegatingThemeAwareRippleNode(
                     bounded,
                     radius,
                     calculateColor,
-                    calculateRippleAlpha
+                    calculateRippleAlpha,
                 )
             )
     }
@@ -366,7 +366,7 @@ private val LightThemeHighContrastRippleAlpha =
         pressedAlpha = 0.24f,
         focusedAlpha = 0.24f,
         draggedAlpha = 0.16f,
-        hoveredAlpha = 0.08f
+        hoveredAlpha = 0.08f,
     )
 
 /**
@@ -383,7 +383,7 @@ private val LightThemeLowContrastRippleAlpha =
         pressedAlpha = 0.12f,
         focusedAlpha = 0.12f,
         draggedAlpha = 0.08f,
-        hoveredAlpha = 0.04f
+        hoveredAlpha = 0.04f,
     )
 
 /** Alpha levels for all content in a dark theme. */
@@ -392,5 +392,5 @@ private val DarkThemeRippleAlpha =
         pressedAlpha = 0.10f,
         focusedAlpha = 0.12f,
         draggedAlpha = 0.08f,
-        hoveredAlpha = 0.04f
+        hoveredAlpha = 0.04f,
     )

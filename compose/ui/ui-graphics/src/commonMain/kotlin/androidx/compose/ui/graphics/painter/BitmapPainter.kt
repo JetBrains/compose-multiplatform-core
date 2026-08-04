@@ -43,11 +43,11 @@ import androidx.compose.ui.util.fastRoundToInt
  *   the destination. The default is [FilterQuality.Low] which scales using a bilinear sampling
  *   algorithm
  */
-fun BitmapPainter(
+public fun BitmapPainter(
     image: ImageBitmap,
     srcOffset: IntOffset = IntOffset.Zero,
     srcSize: IntSize = IntSize(image.width, image.height),
-    filterQuality: FilterQuality = FilterQuality.Low
+    filterQuality: FilterQuality = FilterQuality.Low,
 ): BitmapPainter =
     BitmapPainter(image, srcOffset, srcSize).apply { this.filterQuality = filterQuality }
 
@@ -64,10 +64,10 @@ fun BitmapPainter(
  * 2) Source size must be greater than zero
  * 3) Source size must be less than or equal to the dimensions of [image]
  */
-class BitmapPainter(
+public class BitmapPainter(
     private val image: ImageBitmap,
     private val srcOffset: IntOffset = IntOffset.Zero,
-    private val srcSize: IntSize = IntSize(image.width, image.height)
+    private val srcSize: IntSize = IntSize(image.width, image.height),
 ) : Painter() {
 
     // Not ideal, however, in order to maintain binary compatibility, leave this as an
@@ -93,11 +93,11 @@ class BitmapPainter(
             dstSize =
                 IntSize(
                     this@onDraw.size.width.fastRoundToInt(),
-                    this@onDraw.size.height.fastRoundToInt()
+                    this@onDraw.size.height.fastRoundToInt(),
                 ),
             alpha = alpha,
             colorFilter = colorFilter,
-            filterQuality = filterQuality
+            filterQuality = filterQuality,
         )
     }
 

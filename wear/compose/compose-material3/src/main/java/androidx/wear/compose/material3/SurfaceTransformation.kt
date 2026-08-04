@@ -48,9 +48,15 @@ import androidx.wear.compose.material3.lazy.TransformedContainerPainterScope
  *
  * @sample androidx.wear.compose.material3.samples.SurfaceTransformationButtonSample
  *
+ *   ![SurfaceTransformationButtonSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SurfaceTransformationButtonSample_CompositeImage.png)
+ *
  * Example usage with the [Card]:
  *
  * @sample androidx.wear.compose.material3.samples.SurfaceTransformationCardSample
+ *
+ * ![SurfaceTransformationCardSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SurfaceTransformationCardSample_CompositeImage.png)
  *
  * Example of adding support in a custom component:
  *
@@ -71,7 +77,7 @@ public interface SurfaceTransformation {
     public fun createContainerPainter(
         painter: Painter,
         shape: Shape,
-        border: BorderStroke? = null
+        border: BorderStroke? = null,
     ): Painter
 
     /**
@@ -150,7 +156,7 @@ public fun TransformingLazyColumnItemScope.SurfaceTransformation(
 
 private class SurfaceTransformationImpl(
     private val spec: TransformationSpec,
-    private val scope: TransformingLazyColumnItemScope
+    private val scope: TransformingLazyColumnItemScope,
 ) : SurfaceTransformation, TransformedContainerPainterScope {
     override val DrawScope.scrollProgress: TransformingLazyColumnItemScrollProgress
         get() = with(scope) { scrollProgress }
@@ -161,7 +167,7 @@ private class SurfaceTransformationImpl(
     override fun createContainerPainter(
         painter: Painter,
         shape: Shape,
-        border: BorderStroke?
+        border: BorderStroke?,
     ): Painter = with(spec) { createTransformedContainerPainter(painter, shape, border) }
 
     override fun GraphicsLayerScope.applyContainerTransformation() {

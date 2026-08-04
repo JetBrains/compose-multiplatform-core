@@ -95,7 +95,8 @@ fun MinTouchTargetTextSelection() {
                     """
                     |. We expect that touch selection gestures in the touch target space,
                     | but not directly on the
-                    | """
+                    | 
+                    """
                         .trimMargin()
                         .replace("\n", "")
                 )
@@ -108,13 +109,13 @@ fun MinTouchTargetTextSelection() {
                         .trimMargin()
                         .replace("\n", "")
                 )
-            },
+            }
         )
         var minTouchSideLength by remember { mutableFloatStateOf(48f) }
         Slider(
             value = minTouchSideLength,
             onValueChange = { minTouchSideLength = it },
-            valueRange = 0f..100f
+            valueRange = 0f..100f,
         )
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             val length = minTouchSideLength.dp
@@ -151,7 +152,7 @@ private fun MinTouchTargetInTextSelection() {
                             .border(1.dp, color)
                             // Padding between text and border so they aren't touching
                             .padding(1.dp)
-                            .drawMinTouchTargetBorderBehind(fadedColor, minimumTouchTarget)
+                            .drawMinTouchTargetBorderBehind(fadedColor, minimumTouchTarget),
                 )
             }
         }
@@ -161,17 +162,17 @@ private fun MinTouchTargetInTextSelection() {
 /** Draw a 1 dp unfilled rect around the minimum touch target. */
 private fun Modifier.drawMinTouchTargetBorderBehind(
     color: Color,
-    minimumTouchTarget: DpSize
+    minimumTouchTarget: DpSize,
 ): Modifier = drawBehind {
     val minTouchTargetCoercedSize =
         Size(
             width = size.width.coerceAtLeast(minimumTouchTarget.width.toPx()),
-            height = size.height.coerceAtLeast(minimumTouchTarget.height.toPx())
+            height = size.height.coerceAtLeast(minimumTouchTarget.height.toPx()),
         )
     val topLeft =
         Offset(
             x = (size.width - minTouchTargetCoercedSize.width) / 2,
-            y = (size.height - minTouchTargetCoercedSize.height) / 2
+            y = (size.height - minTouchTargetCoercedSize.height) / 2,
         )
     drawRect(color, topLeft, minTouchTargetCoercedSize, style = Stroke(1.dp.toPx()))
 }

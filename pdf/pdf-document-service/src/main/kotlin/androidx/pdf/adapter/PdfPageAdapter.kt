@@ -16,20 +16,30 @@
 
 package androidx.pdf.adapter
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.PointF
+import android.graphics.Rect
 import android.graphics.pdf.PdfRenderer
-import android.graphics.pdf.RenderParams
+import android.graphics.pdf.component.PdfAnnotation
+import android.graphics.pdf.component.PdfPageObject
 import android.graphics.pdf.content.PdfPageGotoLinkContent
 import android.graphics.pdf.content.PdfPageImageContent
 import android.graphics.pdf.content.PdfPageLinkContent
 import android.graphics.pdf.content.PdfPageTextContent
+import android.graphics.pdf.models.FormEditRecord
+import android.graphics.pdf.models.FormWidgetInfo
 import android.graphics.pdf.models.PageMatchBounds
 import android.graphics.pdf.models.selection.PageSelection
 import android.graphics.pdf.models.selection.SelectionBoundary
 import android.os.Build
+import android.util.Pair
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
+import androidx.pdf.RenderParams
 import androidx.pdf.utils.getTransformationMatrix
+import androidx.pdf.utils.toAndroidClass
 
 /**
  * A [PdfPage] implementation that uses the [PdfRenderer.Page] class for rendering.
@@ -45,9 +55,14 @@ import androidx.pdf.utils.getTransformationMatrix
 internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
     override val height = page.height
     override val width = page.width
+    override var isClosed = false
 
-    override fun renderPage(bitmap: Bitmap) {
-        page.render(bitmap, null, null, getRenderParams())
+    override fun renderPage(bitmap: Bitmap, renderParams: RenderParams) {
+        val renderParams = renderParams.toAndroidClass()
+        if (isClosed) {
+            throw IllegalStateException("Page is closed")
+        }
+        page.render(bitmap, null, null, renderParams)
     }
 
     override fun renderTile(
@@ -55,7 +70,8 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
         left: Int,
         top: Int,
         scaledPageWidth: Int,
-        scaledPageHeight: Int
+        scaledPageHeight: Int,
+        renderParams: RenderParams,
     ) {
         val transformationMatrix =
             getTransformationMatrix(
@@ -64,9 +80,13 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
                 scaledPageWidth.toFloat(),
                 scaledPageHeight.toFloat(),
                 width,
-                height
+                height,
             )
-        page.render(bitmap, null, transformationMatrix, getRenderParams())
+        val renderParams = renderParams.toAndroidClass()
+        if (isClosed) {
+            throw IllegalStateException("Page is closed")
+        }
+        page.render(bitmap, null, transformationMatrix, renderParams)
     }
 
     override fun getPageTextContents(): List<PdfPageTextContent> {
@@ -75,6 +95,14 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
 
     override fun getPageImageContents(): List<PdfPageImageContent> {
         return page.imageContents
+    }
+
+    override fun getFormWidgetInfos(): List<FormWidgetInfo> {
+        return page.formWidgetInfos
+    }
+
+    override fun getFormWidgetInfos(types: IntArray): List<FormWidgetInfo> {
+        return page.getFormWidgetInfos(types)
     }
 
     override fun selectPageText(start: SelectionBoundary, stop: SelectionBoundary): PageSelection? {
@@ -94,15 +122,68 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
     }
 
     override fun close() {
+        isClosed = true
         page.close()
     }
 
-    override fun getRenderParams(): RenderParams {
-        return RenderParams.Builder(RenderParams.RENDER_MODE_FOR_DISPLAY)
-            .setRenderFlags(
-                RenderParams.FLAG_RENDER_HIGHLIGHT_ANNOTATIONS or
-                    RenderParams.FLAG_RENDER_TEXT_ANNOTATIONS
-            )
-            .build()
+    override fun applyEdit(editRecord: FormEditRecord): List<Rect> {
+        return page.applyEdit(editRecord)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun getPageObjects(): List<Pair<Int, PdfPageObject>> {
+        return page.pageObjects
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun addPageObject(pageObject: PdfPageObject): Int {
+        return page.addPageObject(pageObject)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun updatePageObject(objectId: Int, pageObject: PdfPageObject): Boolean {
+        return page.updatePageObject(objectId, pageObject)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun removePageObject(objectId: Int) {
+        page.removePageObject(objectId)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun getPageAnnotations(): List<Pair<Int, PdfAnnotation>> {
+        return page.pageAnnotations
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun addPageAnnotation(annotation: PdfAnnotation): Int {
+        return page.addPageAnnotation(annotation)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun updatePageAnnotation(annotationId: Int, annotation: PdfAnnotation): Boolean {
+        return page.updatePageAnnotation(annotationId, annotation)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
+    override fun removePageAnnotation(annotationId: Int) {
+        page.removePageAnnotation(annotationId)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 19)
+    override fun getTopPageObjectAtPosition(
+        point: PointF,
+        types: IntArray,
+    ): Pair<Int, PdfPageObject>? {
+        return page.getTopPageObjectAtPosition(point, types)
     }
 }

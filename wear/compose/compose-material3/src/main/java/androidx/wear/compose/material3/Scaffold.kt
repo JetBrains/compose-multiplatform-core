@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,7 +48,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-internal class ScaffoldState(appTimeText: (@Composable (() -> Unit))? = null) {
+internal class ScaffoldState(appTimeText: State<@Composable () -> Unit> = mutableStateOf({})) {
     val screenContent = ScreenContent(appTimeText)
 
     /**
@@ -65,7 +66,7 @@ internal class ScaffoldState(appTimeText: (@Composable (() -> Unit))? = null) {
  * and removing screen content, displaying a time text element, and managing the screen's stage
  * based on scrolling activity.
  */
-internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?) {
+internal class ScreenContent(private val appTimeText: State<@Composable () -> Unit>) {
 
     val timeText: @Composable (() -> Unit)
         get() = {
@@ -87,20 +88,22 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
     fun addScreen(
         key: Any,
         timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
+        scrollInfoProvider: ScrollInfoProvider? = null,
     ) {
-        contentItems.add(ScreenContent(key, mutableStateOf(scrollInfoProvider), timeText))
+        contentItems.add(
+            ScreenContentData(key, mutableStateOf(scrollInfoProvider), mutableStateOf(timeText))
+        )
     }
 
     fun updateIfNeeded(
         key: Any,
         timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
+        scrollInfoProvider: ScrollInfoProvider? = null,
     ) {
         contentItems
             .find { it.key == key }
             ?.let {
-                it.timeText = timeText
+                it.timeText.value = timeText
                 it.scrollInfoProvider.value = scrollInfoProvider
             }
     }
@@ -123,40 +126,41 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
         }
     }
 
-    private fun currentContent(): Pair<ScreenContent?, @Composable (() -> Unit)> {
+    private fun currentContent(): Pair<ScreenContentData?, @Composable (() -> Unit)> {
         var resultTimeText: @Composable (() -> Unit)? = null
-        var resultContent: ScreenContent? = null
+        var resultContent: ScreenContentData? = null
         contentItems.fastForEach {
-            if (it.timeText != null) {
-                resultTimeText = it.timeText
+            if (it.timeText.value != null) {
+                resultTimeText = it.timeText.value
             }
             if (it.scrollInfoProvider.value != null) {
                 resultContent = it
             }
         }
-        return resultContent to (resultTimeText ?: appTimeText ?: {})
+        return resultContent to (resultTimeText ?: appTimeText.value)
     }
 
-    private val contentItems = mutableStateListOf<ScreenContent>()
+    private val contentItems = mutableStateListOf<ScreenContentData>()
 
-    private data class ScreenContent(
+    private data class ScreenContentData(
         val key: Any,
-        var scrollInfoProvider: MutableState<ScrollInfoProvider?> = mutableStateOf(null),
-        var timeText: (@Composable () -> Unit)? = null,
+        val scrollInfoProvider: MutableState<ScrollInfoProvider?> = mutableStateOf(null),
+        val timeText: MutableState<(@Composable () -> Unit)?> = mutableStateOf(null),
     )
 }
 
 @Composable
 internal fun AnimatedIndicator(
     isVisible: () -> Boolean,
-    animationSpec: AnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
-    content: @Composable (BoxScope.() -> Unit)? = null
+    modifier: Modifier = Modifier,
+    animationSpec: AnimationSpec<Float>? = INDICATOR_FADE_OUT_ANIMATION,
+    content: @Composable (BoxScope.() -> Unit)? = null,
 ) {
     // Skip if no indicator provided
     content?.let { pageIndicator ->
         if (animationSpec == null) {
             // if no animationSpec is provided then indicator will always be visible
-            Box(modifier = Modifier.fillMaxSize(), content = pageIndicator)
+            Box(modifier = modifier, content = pageIndicator)
         } else {
             // if animationSpec is provided this will be used to fade out indicator
             val alphaValue = remember { mutableFloatStateOf(0f) }
@@ -168,7 +172,7 @@ internal fun AnimatedIndicator(
                             animate(
                                 alphaValue.floatValue,
                                 targetValue,
-                                animationSpec = animationSpec
+                                animationSpec = animationSpec,
                             ) { value, _ ->
                                 alphaValue.floatValue = value
                             }
@@ -176,8 +180,8 @@ internal fun AnimatedIndicator(
                 }
             }
             Box(
-                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = alphaValue.floatValue },
-                content = pageIndicator
+                modifier = modifier.graphicsLayer { alpha = alphaValue.floatValue },
+                content = pageIndicator,
             )
         }
     }
@@ -207,7 +211,10 @@ internal object AnimationCoordinator {
     fun Looper() {
         LaunchedEffect(running) {
             if (running) {
-                while (isActive && running) {
+                // DO NOT check running in the while, since this may see changes that the
+                // LaunchedEffect misses. When running becomes false, this function will recompose
+                // and the LaunchedEffect will cancel the running coroutine anyway.
+                while (isActive) {
                     withInfiniteAnimationFrameMillis { frameMillis.longValue = it }
                 }
             } else {
@@ -220,3 +227,6 @@ internal object AnimationCoordinator {
     private val registeredCount = AtomicInteger(0)
     private var running by mutableStateOf(false)
 }
+
+internal val INDICATOR_FADE_OUT_ANIMATION: AnimationSpec<Float> =
+    spring(stiffness = Spring.StiffnessMediumLow)

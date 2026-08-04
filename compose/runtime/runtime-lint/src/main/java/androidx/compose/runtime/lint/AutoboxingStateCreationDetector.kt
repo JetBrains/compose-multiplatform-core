@@ -82,14 +82,14 @@ class AutoboxingStateCreationDetector : Detector(), SourceCodeScanner {
             scope = node,
             location = context.getNameLocation(node),
             message = "Prefer `${replacement.shortName}` instead of `${method.name}`",
-            quickfixData = createLintFix(context, node, replacement)
+            quickfixData = createLintFix(context, node, replacement),
         )
     }
 
     private fun createLintFix(
         context: JavaContext,
         node: UCallExpression,
-        replacementFunction: Name
+        replacementFunction: Name,
     ): LintFix {
         val fixes =
             listOfNotNull(
@@ -119,7 +119,7 @@ class AutoboxingStateCreationDetector : Detector(), SourceCodeScanner {
                                 .with("($valueArg)")
                                 .build()
                         }
-                    }
+                    },
             )
 
         return LintFix.create()
@@ -201,8 +201,8 @@ class AutoboxingStateCreationDetector : Detector(), SourceCodeScanner {
                 implementation =
                     Implementation(
                         AutoboxingStateCreationDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE)
-                    )
+                        EnumSet.of(Scope.JAVA_FILE),
+                    ),
             )
     }
 }

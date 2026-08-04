@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +51,7 @@ fun SoftwareKeyboardControllerSample() {
             setText,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
-            modifier = Modifier.focusRequester(focusRequester).fillMaxWidth()
+            modifier = Modifier.focusRequester(focusRequester).fillMaxWidth(),
         )
         Spacer(Modifier.height(16.dp))
         Button(
@@ -59,7 +59,7 @@ fun SoftwareKeyboardControllerSample() {
                 focusRequester.requestFocus()
                 keyboardController?.show()
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Show software keyboard.")
         }

@@ -29,12 +29,12 @@ import androidx.compose.ui.platform.debugInspectorInfo
  */
 @Stable
 @JvmDefaultWithCompatibility
-interface ModifierLocalConsumer : Modifier.Element {
+public interface ModifierLocalConsumer : Modifier.Element {
     /**
      * This function is called whenever one of the consumed values has changed. This could be called
      * in response to the modifier being added, removed or re-ordered.
      */
-    fun onModifierLocalsUpdated(scope: ModifierLocalReadScope)
+    public fun onModifierLocalsUpdated(scope: ModifierLocalReadScope)
 }
 
 /**
@@ -42,14 +42,14 @@ interface ModifierLocalConsumer : Modifier.Element {
  * the left of this modifier, or above this modifier in the layout tree.
  */
 @Stable
-fun Modifier.modifierLocalConsumer(consumer: ModifierLocalReadScope.() -> Unit): Modifier {
+public fun Modifier.modifierLocalConsumer(consumer: ModifierLocalReadScope.() -> Unit): Modifier {
     return this.then(
         ModifierLocalConsumerImpl(
             consumer,
             debugInspectorInfo {
                 name = "modifierLocalConsumer"
                 properties["consumer"] = consumer
-            }
+            },
         )
     )
 }
@@ -57,7 +57,7 @@ fun Modifier.modifierLocalConsumer(consumer: ModifierLocalReadScope.() -> Unit):
 @Stable
 private class ModifierLocalConsumerImpl(
     val consumer: ModifierLocalReadScope.() -> Unit,
-    debugInspectorInfo: InspectorInfo.() -> Unit
+    debugInspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierLocalConsumer, InspectorValueInfo(debugInspectorInfo) {
 
     override fun onModifierLocalsUpdated(scope: ModifierLocalReadScope) {

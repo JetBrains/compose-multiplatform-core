@@ -56,7 +56,7 @@ public class HighSpeedFpsModifier {
      */
     public fun modifyFpsForPreviewOnlyRepeating(
         outputConfigs: Collection<OutputConfig>,
-        repeatingConfigBuilder: CaptureConfig.Builder
+        repeatingConfigBuilder: CaptureConfig.Builder,
     ) {
         if (
             outputConfigs.size == 2 &&

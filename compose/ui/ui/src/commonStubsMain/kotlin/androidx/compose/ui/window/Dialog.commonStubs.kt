@@ -21,16 +21,16 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.implementedInJetBrainsFork
 
 @Immutable
-actual class DialogProperties
-actual constructor(
-    actual val dismissOnBackPress: Boolean,
-    actual val dismissOnClickOutside: Boolean,
-    actual val usePlatformDefaultWidth: Boolean
+public actual class DialogProperties
+public actual constructor(
+    public actual val dismissOnBackPress: Boolean,
+    public actual val dismissOnClickOutside: Boolean,
+    public actual val usePlatformDefaultWidth: Boolean,
 )
 
 @Composable
-actual fun Dialog(
+public actual fun Dialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()

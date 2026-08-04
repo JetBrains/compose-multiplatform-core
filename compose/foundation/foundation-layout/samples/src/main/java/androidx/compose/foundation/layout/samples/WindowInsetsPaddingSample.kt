@@ -55,8 +55,8 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.waterfallPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -407,14 +407,14 @@ fun recalculateWindowInsetsSample() {
         ) {
             Button(
                 onClick = { hasFirstItem = !hasFirstItem },
-                Modifier.align(Alignment.TopCenter)
+                Modifier.align(Alignment.TopCenter),
             ) {
                 val action = if (hasFirstItem) "Remove" else "Add"
                 Text("$action First Item")
             }
             Button(
                 onClick = { hasLastItem = !hasLastItem },
-                Modifier.align(Alignment.BottomCenter)
+                Modifier.align(Alignment.BottomCenter),
             ) {
                 val action = if (hasLastItem) "Remove" else "Add"
                 Text("$action Last Item")

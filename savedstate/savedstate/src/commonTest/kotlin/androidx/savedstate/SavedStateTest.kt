@@ -19,7 +19,10 @@ package androidx.savedstate
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import kotlin.test.Test
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
+@IgnoreWebTarget
 internal class SavedStateTest : RobolectricTest() {
 
     @Test
@@ -1436,6 +1439,66 @@ internal class SavedStateTest : RobolectricTest() {
 
     // endregion
 
+    // region Kotlin Serialization
+    @Test
+    fun getKotlinSerializable_whenSet_returnsValue() {
+        val expected = TestUser(id = 42, name = "Alice")
+
+        val underTest = savedState {
+            // Testing the reified inline function
+            putKotlinSerializable(KEY_1, expected)
+        }
+
+        val actual =
+            underTest.read {
+                // Testing the reified inline function
+                getKotlinSerializable<TestUser>(KEY_1)
+            }
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun getKotlinSerializable_withExplicitSerializer_whenSet_returnsValue() {
+        val expected = TestUser(id = 99, name = "Bob")
+        val serializer = serializer<TestUser>()
+
+        val underTest = savedState { putKotlinSerializable(serializer, KEY_1, expected) }
+
+        val actual = underTest.read { getKotlinSerializable(serializer, KEY_1) }
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun getKotlinSerializable_whenNotSet_throws() {
+        assertThrows<IllegalArgumentException> {
+            savedState().read { getKotlinSerializable<TestUser>(KEY_1) }
+        }
+    }
+
+    @Test
+    fun getKotlinSerializable_whenSet_differentType_throws() {
+        val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
+
+        assertThrows<IllegalArgumentException> {
+            underTest.read { getKotlinSerializable<TestUser>(KEY_1) }
+        }
+    }
+
+    @Test
+    fun getKotlinSerializable_whenSetNull_throws() {
+        val underTest = savedState { putNull(KEY_1) }
+
+        assertThrows<IllegalArgumentException> {
+            underTest.read { getKotlinSerializable<TestUser>(KEY_1) }
+        }
+    }
+
+    // endregion
+
+    @Serializable private data class TestUser(val id: Int, val name: String)
+
     private companion object TestUtils {
         const val KEY_1 = "KEY_1"
         const val KEY_2 = "KEY_2"
@@ -1454,17 +1517,17 @@ internal class SavedStateTest : RobolectricTest() {
                 putChar(key = "KEY_${++key}", value = Char.MAX_VALUE)
                 putCharArray(
                     key = "KEY_${++key}",
-                    value = charArrayOf(Char.MIN_VALUE, Char.MAX_VALUE)
+                    value = charArrayOf(Char.MIN_VALUE, Char.MAX_VALUE),
                 )
                 putDouble(key = "KEY_${++key}", value = Double.MAX_VALUE)
                 putDoubleArray(
                     key = "KEY_${++key}",
-                    value = doubleArrayOf(Double.MIN_VALUE, Double.MAX_VALUE)
+                    value = doubleArrayOf(Double.MIN_VALUE, Double.MAX_VALUE),
                 )
                 putFloat(key = "KEY_${++key}", value = Float.MAX_VALUE)
                 putFloatArray(
                     key = "KEY_${++key}",
-                    value = floatArrayOf(Float.MIN_VALUE, Float.MAX_VALUE)
+                    value = floatArrayOf(Float.MIN_VALUE, Float.MAX_VALUE),
                 )
                 putInt(key = "KEY_${++key}", value = Int.MAX_VALUE)
                 putIntArray(key = "KEY_${++key}", value = intArrayOf(1, 2, 3))
@@ -1472,7 +1535,7 @@ internal class SavedStateTest : RobolectricTest() {
                 putLong(key = "KEY_${++key}", value = Long.MAX_VALUE)
                 putLongArray(
                     key = "KEY_${++key}",
-                    value = longArrayOf(Long.MIN_VALUE, Long.MAX_VALUE)
+                    value = longArrayOf(Long.MIN_VALUE, Long.MAX_VALUE),
                 )
                 putNull(key = "KEY_${++key}")
                 putString(key = "KEY_${++key}", value = "Text")

@@ -26,12 +26,10 @@ import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.view.View
 import android.view.animation.AnimationUtils
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import java.lang.reflect.Method
 import kotlin.math.roundToInt
 
 /**
@@ -130,7 +128,7 @@ internal class RippleHostView(context: Context) : View(context) {
         radius: Int,
         color: Color,
         alpha: Float,
-        onInvalidateRipple: () -> Unit
+        onInvalidateRipple: () -> Unit,
     ) {
         // Create a new ripple if there is no existing ripple, or bounded has changed.
         // (Since this.bounded is initialized to `null`, technically the first check isn't
@@ -173,7 +171,9 @@ internal class RippleHostView(context: Context) : View(context) {
         // Note: for cases where size and radius are updated during an existing ripple, the radius
         // must be set first - changing the bounds is what causes the ripple to be updated,
         // changing the radius on its own will not update the ripple.
-        ripple.trySetRadius(radius)
+        if (ripple.radius != radius) {
+            ripple.radius = radius
+        }
         ripple.setColor(color, alpha)
         val newBounds = Rect(0, 0, size.width.roundToInt(), size.height.roundToInt())
         // Drawing the background causes the view to update the bounds of the drawable
@@ -276,19 +276,13 @@ private class UnprojectedRipple(private val bounded: Boolean) :
         // The color of the mask here doesn't matter - we just need a mask to draw the bounded
         // ripple
         // against
-        /* mask */ if (bounded) ColorDrawable(android.graphics.Color.WHITE) else null
+        /* mask */ if (bounded) ColorDrawable(android.graphics.Color.WHITE) else null,
     ) {
     /**
      * Store the ripple color so we can compare it later, as there is no way to get the currently
      * set color on the RippleDrawable itself.
      */
     private var rippleColor: Color? = null
-
-    /**
-     * Store the ripple radius so we can compare it later - [getRadius] is only available on M+, and
-     * we don't want to use reflection to read this below that.
-     */
-    private var rippleRadius: Int? = null
 
     /** Set a new [color] with [alpha] for this [RippleDrawable]. */
     fun setColor(color: Color, alpha: Float) {
@@ -326,32 +320,6 @@ private class UnprojectedRipple(private val bounded: Boolean) :
     }
 
     /**
-     * Compat wrapper for [setRadius] which is only available on [Build.VERSION_CODES.M] and above.
-     * This will try to call setMaxRadius below that if possible.
-     */
-    fun trySetRadius(radius: Int) {
-        if (rippleRadius != radius) {
-            rippleRadius = radius
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                try {
-                    if (!setMaxRadiusFetched) {
-                        setMaxRadiusFetched = true
-                        setMaxRadiusMethod =
-                            RippleDrawable::class
-                                .java
-                                .getDeclaredMethod("setMaxRadius", Int::class.javaPrimitiveType)
-                    }
-                    setMaxRadiusMethod?.invoke(this, radius)
-                } catch (e: Exception) {
-                    // Fail silently
-                }
-            } else {
-                MRadiusHelper.setRadius(this, radius)
-            }
-        }
-    }
-
-    /**
      * Calculates the resulting [Color] from [color] with [alpha] applied, accounting for
      * differences in [RippleDrawable]'s behavior on different API levels.
      */
@@ -372,20 +340,5 @@ private class UnprojectedRipple(private val bounded: Boolean) :
                 }
                 .coerceAtMost(1f)
         return color.copy(alpha = transformedAlpha)
-    }
-
-    /** Separate class to avoid verification errors for methods introduced in M. */
-    @RequiresApi(Build.VERSION_CODES.M)
-    private object MRadiusHelper {
-        /** Sets the [radius] for the given [ripple]. */
-        fun setRadius(ripple: RippleDrawable, radius: Int) {
-            ripple.radius = radius
-        }
-    }
-
-    companion object {
-        /** Cache RippleDrawable#setMaxRadius to avoid retrieving it more times than necessary */
-        private var setMaxRadiusMethod: Method? = null
-        private var setMaxRadiusFetched = false
     }
 }

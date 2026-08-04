@@ -30,11 +30,11 @@ import org.robolectric.util.ReflectionHelpers
 /** Unit test for [CaptureFailedRetryEnabler] */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureFailedRetryEnablerTest(
     private val brand: String,
     private val model: String,
-    private val expectedResult: Int
+    private val expectedResult: Int,
 ) {
 
     companion object {

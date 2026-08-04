@@ -18,7 +18,6 @@ package androidx.compose.ui.text.font
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.text.ExperimentalTextApi
 
 /**
  * The interface of the font resource.
@@ -26,18 +25,18 @@ import androidx.compose.ui.text.ExperimentalTextApi
  * @see ResourceFont
  */
 @Immutable
-interface Font {
+public interface Font {
     /**
      * The weight of the font. The system uses this to match a font to a font request that is given
      * in a [androidx.compose.ui.text.SpanStyle].
      */
-    val weight: FontWeight
+    public val weight: FontWeight
 
     /**
      * The style of the font, normal or italic. The system uses this to match a font to a font
      * request that is given in a [androidx.compose.ui.text.SpanStyle].
      */
-    val style: FontStyle
+    public val style: FontStyle
 
     /** Interface used to load a font resource. */
     @Deprecated(
@@ -45,7 +44,7 @@ interface Font {
             "all usages should be replaced. Custom subclasses can be converted into a " +
             "FontFamily.Resolver by calling createFontFamilyResolver(myFontFamilyResolver, context)"
     )
-    interface ResourceLoader {
+    public interface ResourceLoader {
         /**
          * Loads resource represented by the [Font] object.
          *
@@ -58,14 +57,18 @@ interface Font {
             "Replaced by FontFamily.Resolver, this method should not be called",
             ReplaceWith("FontFamily.Resolver.resolve(font, )"),
         )
-        fun load(font: Font): Any
+        public fun load(font: Font): Any
     }
 
     /** Loading strategy for this font. */
-    val loadingStrategy: FontLoadingStrategy
+    public val loadingStrategy: FontLoadingStrategy
         get() = FontLoadingStrategy.Blocking
 
-    companion object {
+    /** Variation settings to apply to this font. */
+    public val variationSettings: FontVariation.Settings
+        get() = FontVariation.Empty
+
+    public companion object {
         /**
          * This is the global timeout for fetching an [FontLoadingStrategy.Async] font.
          *
@@ -89,7 +92,7 @@ interface Font {
          *
          * This timeout is not configurable, and timers are maintained globally.
          */
-        const val MaximumAsyncTimeoutMillis = 15_000L
+        public const val MaximumAsyncTimeoutMillis: Long = 15_000L
     }
 }
 
@@ -150,48 +153,41 @@ internal interface PlatformFontLoader {
  * @param loadingStrategy Load strategy for this font
  * @see FontFamily
  */
-@OptIn(ExperimentalTextApi::class)
-class ResourceFont
+public class ResourceFont
 internal constructor(
-    val resId: Int,
-    override val weight: FontWeight = FontWeight.Normal,
-    override val style: FontStyle = FontStyle.Normal,
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalTextApi
-    @get:ExperimentalTextApi
-    val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
-    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Async
+    public val resId: Int,
+    public override val weight: FontWeight = FontWeight.Normal,
+    public override val style: FontStyle = FontStyle.Normal,
+    public override val variationSettings: FontVariation.Settings =
+        FontVariation.Settings(weight, style),
+    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Async,
 ) : Font {
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET", "CanBePrimaryConstructorProperty")
-    @get:ExperimentalTextApi
-    @ExperimentalTextApi
-    override val loadingStrategy: FontLoadingStrategy = loadingStrategy
+    public override val loadingStrategy: FontLoadingStrategy = loadingStrategy
 
-    fun copy(
+    public fun copy(
         resId: Int = this.resId,
         weight: FontWeight = this.weight,
-        style: FontStyle = this.style
+        style: FontStyle = this.style,
     ): ResourceFont = copy(resId, weight, style, loadingStrategy = loadingStrategy)
 
-    @ExperimentalTextApi
-    fun copy(
+    public fun copy(
         resId: Int = this.resId,
         weight: FontWeight = this.weight,
         style: FontStyle = this.style,
         loadingStrategy: FontLoadingStrategy = this.loadingStrategy,
-        variationSettings: FontVariation.Settings = this.variationSettings
+        variationSettings: FontVariation.Settings = this.variationSettings,
     ): ResourceFont {
         return ResourceFont(
             resId = resId,
             weight = weight,
             style = style,
             variationSettings = variationSettings,
-            loadingStrategy = loadingStrategy
+            loadingStrategy = loadingStrategy,
         )
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ResourceFont) return false
         if (resId != other.resId) return false
@@ -202,7 +198,7 @@ internal constructor(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = resId
         result = 31 * result + weight.hashCode()
         result = 31 * result + style.hashCode()
@@ -211,14 +207,14 @@ internal constructor(
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "ResourceFont(resId=$resId, weight=$weight, style=$style, " +
             "loadingStrategy=$loadingStrategy)"
     }
 }
 
 /**
- * Creates a Font with using resource ID.
+ * Creates a Font using a resource ID.
  *
  * By default, this will load fonts using [FontLoadingStrategy.Blocking], which blocks the first
  * frame they are used until the font is loaded. This is the correct behavior for small fonts
@@ -239,17 +235,17 @@ internal constructor(
 @Deprecated(
     "Maintained for binary compatibility until Compose 1.3.",
     replaceWith = ReplaceWith("Font(resId, weight, style)"),
-    DeprecationLevel.HIDDEN
+    DeprecationLevel.HIDDEN,
 )
 @Stable
-fun Font(
+public fun Font(
     resId: Int,
     weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal
+    style: FontStyle = FontStyle.Normal,
 ): Font = ResourceFont(resId, weight, style, loadingStrategy = FontLoadingStrategy.Blocking)
 
 /**
- * Creates a Font with using resource ID.
+ * Creates a Font using a resource ID.
  *
  * Allows control over [FontLoadingStrategy] strategy. You may supply
  * [FontLoadingStrategy.Blocking], or [FontLoadingStrategy.OptionalLocal] for fonts that are
@@ -268,21 +264,40 @@ fun Font(
  * @see FontFamily
  */
 @Stable
-fun Font(
-    resId: Int,
-    weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal,
-    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking
-): Font = ResourceFont(resId, weight, style, FontVariation.Settings(), loadingStrategy)
-
-@ExperimentalTextApi
-fun Font(
+public fun Font(
     resId: Int,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
     loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking,
-    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = ResourceFont(resId, weight, style, FontVariation.Settings(), loadingStrategy)
+
+/**
+ * Creates a Font using a resource ID and variation settings.
+ *
+ * Allows control over [FontLoadingStrategy] strategy. You may supply
+ * [FontLoadingStrategy.Blocking], or [FontLoadingStrategy.OptionalLocal] for fonts that are
+ * expected on the first frame.
+ *
+ * [FontLoadingStrategy.Async], will load the font in the background and cause text reflow when
+ * loading completes. Fonts loaded from a remote source via resources should use
+ * [FontLoadingStrategy.Async].
+ *
+ * @param resId The resource ID of the font file in font resources. i.e. "R.font.myfont".
+ * @param weight The weight of the font. The system uses this to match a font to a font request that
+ *   is given in a [androidx.compose.ui.text.SpanStyle].
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ *   font request that is given in a [androidx.compose.ui.text.SpanStyle].
+ * @param loadingStrategy Load strategy for this font, may be async for async resource fonts
+ * @param variationSettings Variation settings to apply to the font
+ * @see FontFamily
+ */
+public fun Font(
+    resId: Int,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ): Font = ResourceFont(resId, weight, style, variationSettings, loadingStrategy)
 
 /** Create a [FontFamily] from this single [Font]. */
-@Stable fun Font.toFontFamily() = FontFamily(this)
+@Stable public fun Font.toFontFamily(): FontFamily = FontFamily(this)

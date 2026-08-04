@@ -39,6 +39,7 @@ import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineScope
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -108,7 +109,7 @@ class ControlledWorkerWrapperTest {
 
     private fun workerWrapper(
         id: String,
-        workerInterceptor: (TestWrapperWorker) -> Unit
+        workerInterceptor: (TestWrapperWorker) -> Unit,
     ): WorkerWrapper {
         val config =
             Configuration.Builder()
@@ -118,13 +119,9 @@ class ControlledWorkerWrapperTest {
                         override fun createWorker(
                             appContext: Context,
                             workerClassName: String,
-                            workerParameters: WorkerParameters
+                            workerParameters: WorkerParameters,
                         ): ListenableWorker {
-                            val worker =
-                                TestWrapperWorker(
-                                    appContext,
-                                    workerParameters,
-                                )
+                            val worker = TestWrapperWorker(appContext, workerParameters)
                             workerInterceptor(worker)
                             return worker
                         }
@@ -138,16 +135,14 @@ class ControlledWorkerWrapperTest {
                 NoOpForegroundProcessor,
                 workDatabase,
                 workDatabase.workSpecDao().getWorkSpec(id)!!,
-                emptyList()
+                emptyList(),
             )
             .build()
     }
 }
 
-internal class TestWrapperWorker(
-    appContext: Context,
-    workerParams: WorkerParameters,
-) : ListenableWorker(appContext, workerParams) {
+internal class TestWrapperWorker(appContext: Context, workerParams: WorkerParameters) :
+    ListenableWorker(appContext, workerParams) {
     var getForegroundInfoAsyncWasCalled = false
     var startWorkWasCalled = false
     lateinit var foregroundInfoCompleter: Completer<ForegroundInfo>
@@ -191,8 +186,11 @@ class ManualTaskExecutor : TaskExecutor {
     val mainExecutor = ManualExecutor()
     val serialTaskExecutor = ManualExecutor()
     private val serialBackgroundExecutor = SerialExecutorImpl(serialTaskExecutor)
+    private val workCoroutineScope = CoroutineScope(taskCoroutineDispatcher)
 
     override fun getMainThreadExecutor() = mainExecutor
 
     override fun getSerialTaskExecutor(): SerialExecutorImpl = serialBackgroundExecutor
+
+    override fun getCoroutineScope(): CoroutineScope = workCoroutineScope
 }

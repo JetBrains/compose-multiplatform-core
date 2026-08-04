@@ -65,7 +65,14 @@ import androidx.wear.compose.foundation.sizeIn
  * For samples using curved text in a [CurvedLayout] see:
  *
  * @sample androidx.wear.compose.material3.samples.CurvedTextTop
+ *
+ * ![CurvedTextTop Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CurvedTextTop_CompositeImage.png)
+ *
  * @sample androidx.wear.compose.material3.samples.CurvedTextBottom
+ *
+ * ![CurvedTextBottom Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_CurvedTextBottom_CompositeImage.png)
  *
  * For more information, see the
  * [Curved Text](https://developer.android.com/training/wearables/compose/curved-text) guide.
@@ -93,7 +100,9 @@ import androidx.wear.compose.foundation.sizeIn
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
- * @param overflow How visual overflow should be handled.
+ * @param overflow How visual overflow should be handled. Note that this takes into account only
+ *   explicit size curved modifiers in this element, to size this element matching the parent's, add
+ *   a CurvedModifier.weight here.
  */
 public fun CurvedScope.curvedText(
     text: String,
@@ -116,7 +125,7 @@ public fun CurvedScope.curvedText(
         text = text,
         modifier = modifier.sizeIn(maxSweepDegrees = maxSweepAngle),
         angularDirection = angularDirection,
-        overflow = overflow
+        overflow = overflow,
     ) {
         val baseStyle = style ?: MaterialTheme.typography.arcMedium
         val textColor =
@@ -131,7 +140,7 @@ public fun CurvedScope.curvedText(
                 fontSynthesis = fontSynthesis,
                 background = background,
                 letterSpacing = letterSpacing,
-                letterSpacingCounterClockwise = letterSpacingCounterClockwise
+                letterSpacingCounterClockwise = letterSpacingCounterClockwise,
             )
         )
     }

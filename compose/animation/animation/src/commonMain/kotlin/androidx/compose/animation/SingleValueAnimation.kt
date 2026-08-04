@@ -58,7 +58,7 @@ public fun animateColorAsState(
     targetValue: Color,
     animationSpec: AnimationSpec<Color> = colorDefaultSpring,
     label: String = "ColorAnimation",
-    finishedListener: ((Color) -> Unit)? = null
+    finishedListener: ((Color) -> Unit)? = null,
 ): State<Color> {
     val converter =
         remember(targetValue.colorSpace) { (Color.VectorConverter)(targetValue.colorSpace) }
@@ -67,19 +67,19 @@ public fun animateColorAsState(
         converter,
         animationSpec,
         label = label,
-        finishedListener = finishedListener
+        finishedListener = finishedListener,
     )
 }
 
 @Deprecated(
     "animate*AsState APIs now have a new label parameter added.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun animateColorAsState(
     targetValue: Color,
     animationSpec: AnimationSpec<Color> = colorDefaultSpring,
-    finishedListener: ((Color) -> Unit)? = null
+    finishedListener: ((Color) -> Unit)? = null,
 ): State<Color> {
     return animateColorAsState(targetValue, animationSpec, finishedListener = finishedListener)
 }

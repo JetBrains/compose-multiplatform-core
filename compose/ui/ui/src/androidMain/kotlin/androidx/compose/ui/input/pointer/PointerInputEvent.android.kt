@@ -21,5 +21,6 @@ import android.view.MotionEvent
 internal actual class PointerInputEvent(
     actual val uptime: Long,
     actual val pointers: List<PointerInputEventData>,
-    var motionEvent: MotionEvent?
+    var motionEvent: MotionEvent?,
+    val activeGesture: PointerClassification = PointerClassification.None,
 )

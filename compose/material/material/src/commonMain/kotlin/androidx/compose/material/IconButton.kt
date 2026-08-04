@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.dp
  * documentation for samples of this.
  *
  * [content] should typically be an [Icon], using an icon from
- * [androidx.compose.material.icons.Icons]. If using a custom icon, note that the typical size for
- * the internal icon is 24 x 24 dp.
+ * [androidx.compose.material.internal.Icons]. If using a custom icon, note that the typical size
+ * for the internal icon is 24 x 24 dp.
  *
  * @sample androidx.compose.material.samples.IconButtonSample
  * @param onClick the lambda to be invoked when this icon is pressed
@@ -52,12 +52,12 @@ import androidx.compose.ui.unit.dp
  * @param content the content (icon) to be drawn inside the IconButton. This is typically an [Icon].
  */
 @Composable
-fun IconButton(
+public fun IconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier =
@@ -68,9 +68,9 @@ fun IconButton(
                     enabled = enabled,
                     role = Role.Button,
                     interactionSource = interactionSource,
-                    indication = ripple(bounded = false, radius = RippleRadius)
+                    indication = ripple(bounded = false, radius = RippleRadius),
                 ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         val contentAlpha = if (enabled) LocalContentAlpha.current else ContentAlpha.disabled
         CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = content)
@@ -95,13 +95,13 @@ fun IconButton(
  *   [Icon].
  */
 @Composable
-fun IconToggleButton(
+public fun IconToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier =
@@ -113,9 +113,9 @@ fun IconToggleButton(
                     enabled = enabled,
                     role = Role.Checkbox,
                     interactionSource = interactionSource,
-                    indication = ripple(bounded = false, radius = RippleRadius)
+                    indication = ripple(bounded = false, radius = RippleRadius),
                 ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         val contentAlpha = if (enabled) LocalContentAlpha.current else ContentAlpha.disabled
         CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = content)
@@ -123,4 +123,5 @@ fun IconToggleButton(
 }
 
 // Default radius of an unbounded ripple in an IconButton
-private val RippleRadius = 24.dp
+private val RippleRadius
+    get() = 24.dp

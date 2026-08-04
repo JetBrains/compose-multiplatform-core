@@ -32,8 +32,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.ViewCompat
+import kotlin.OptIn
 import kotlin.math.roundToInt
 
 @Sampled
@@ -64,7 +66,7 @@ fun ComposeInCooperatingViewNestedScrollInteropSample() {
             Box(
                 modifier =
                     Modifier.padding(16.dp).height(56.dp).fillMaxWidth().background(Color.Gray),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(item.toString())
             }
@@ -83,7 +85,7 @@ fun ViewInComposeNestedScrollInteropSample() {
                     // components that participate in nested scrolling
                     it
                 },
-                Orientation.Vertical
+                Orientation.Vertical,
             )
     ) {
         AndroidView({ context ->
@@ -98,6 +100,7 @@ fun ViewInComposeNestedScrollInteropSample() {
 
 private val ToolbarHeight = 48.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollapsingToolbarComposeViewComposeNestedScrollInteropSample() {
     val toolbarHeightPx = with(LocalDensity.current) { ToolbarHeight.roundToPx().toFloat() }
@@ -121,19 +124,19 @@ fun CollapsingToolbarComposeViewComposeNestedScrollInteropSample() {
                 Modifier.height(ToolbarHeight).offset {
                     IntOffset(x = 0, y = toolbarOffsetHeightPx.value.roundToInt())
                 },
-            title = { Text("toolbar offset is ${toolbarOffsetHeightPx.value}") }
+            title = { Text("toolbar offset is ${toolbarOffsetHeightPx.value}") },
         )
         // Android View
         AndroidView(
             factory = { context -> AndroidViewWithCompose(context) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
 private fun AndroidViewWithCompose(context: Context): View {
     return LayoutInflater.from(context)
-        .inflate(R.layout.three_fold_nested_scroll_interop, null)
+        .inflate(R.layout.ui_sample_three_fold_nested_scroll_interop, null)
         .apply {
             with(findViewById<ComposeView>(R.id.compose_view)) {
                 // Compose
@@ -147,14 +150,14 @@ private fun AndroidViewWithCompose(context: Context): View {
 private fun LazyColumnWithNestedScrollInteropEnabled() {
     LazyColumn(
         modifier = Modifier.nestedScroll(rememberNestedScrollInteropConnection()),
-        contentPadding = PaddingValues(top = ToolbarHeight)
+        contentPadding = PaddingValues(top = ToolbarHeight),
     ) {
         item { Text("This is a Lazy Column") }
         items(40) { item ->
             Box(
                 modifier =
                     Modifier.padding(16.dp).height(56.dp).fillMaxWidth().background(Color.Gray),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(item.toString())
             }

@@ -25,12 +25,12 @@ import androidx.wear.protolayout.testing.TestContext.Companion.EMPTY_CONTEXT
  *
  * @param description a string explaining to the developer what conditions were being tested.
  * @param matcher a lambda performing the actual logic of matching on the layout element, with a
- *   [TextContext] accessible for retrieving context data such as the dynamic data map for
+ *   [TestContext] accessible for retrieving context data such as the dynamic data map for
  *   evaluating the dynamic values.
  */
 public class LayoutElementMatcher(
     internal val description: String,
-    private val matcher: (LayoutElement, TestContext) -> Boolean
+    private val matcher: (LayoutElement, TestContext) -> Boolean,
 ) {
     /**
      * Constructor for the Wrapper of element matcher lambdas that allows to build string explaining
@@ -41,13 +41,13 @@ public class LayoutElementMatcher(
      */
     public constructor(
         description: String,
-        matcher: (LayoutElement) -> Boolean
+        matcher: (LayoutElement) -> Boolean,
     ) : this(description, { element, _ -> matcher(element) })
 
     /** Returns whether the given element is matched by this matcher under the given context. */
     internal fun matches(
         element: LayoutElement,
-        assertionContext: TestContext = EMPTY_CONTEXT
+        assertionContext: TestContext = EMPTY_CONTEXT,
     ): Boolean = matcher(element, assertionContext)
 
     /**

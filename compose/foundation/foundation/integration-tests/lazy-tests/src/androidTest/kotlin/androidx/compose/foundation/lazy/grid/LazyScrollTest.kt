@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -47,6 +47,7 @@ import org.junit.Test
 @MediumTest
 // @RunWith(Parameterized::class)
 class LazyScrollTest { // (private val orientation: Orientation)
+
     @get:Rule val rule = createComposeRule()
 
     private val vertical: Boolean
@@ -74,7 +75,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
         containerSizePx: Int = itemSizePx * 3,
         beforeContentPaddingPx: Int = 0,
         afterContentPaddingPx: Int = 0,
-        assertBlock: suspend () -> Unit
+        assertBlock: suspend () -> Unit,
     ) {
         rule.setContent {
             state = rememberLazyGridState()
@@ -84,7 +85,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
                     spacingPx.toDp(),
                     containerSizePx.toDp(),
                     beforeContentPaddingPx.toDp(),
-                    afterContentPaddingPx.toDp()
+                    afterContentPaddingPx.toDp(),
                 )
             }
         }
@@ -339,10 +340,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
 
     @Test
     fun canScrollForwardAndBackward_afterSmallScrollFromEnd_withContentPadding() =
-        testScroll(
-            containerSizePx = (itemSizePx * 1.5f).roundToInt(),
-            afterContentPaddingPx = 2,
-        ) {
+        testScroll(containerSizePx = (itemSizePx * 1.5f).roundToInt(), afterContentPaddingPx = 2) {
             val delta = -(itemSizePx / 3f).roundToInt()
             withContext(Dispatchers.Main + AutoTestFrameClock()) {
                 // scroll to the end of the list.
@@ -408,7 +406,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
         toOffset: Int = 0,
         fromIndex: Int = 0,
         fromOffset: Int = 0,
-        spacingPx: Int = 0
+        spacingPx: Int = 0,
     ) {
         if (fromIndex != 0 || fromOffset != 0) {
             rule.runOnIdle { runBlocking { state.scrollToItem(fromIndex, fromOffset) } }
@@ -421,6 +419,8 @@ class LazyScrollTest { // (private val orientation: Orientation)
         rule.mainClock.autoAdvance = false
 
         scope.launch { state.animateScrollToItem(toIndex, toOffset) }
+
+        rule.mainClock.scheduler.runCurrent()
 
         while (!state.isScrollInProgress) {
             Thread.sleep(5)
@@ -461,7 +461,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
         spacingDp: Dp,
         containerSizeDp: Dp,
         beforeContentPaddingDp: Dp,
-        afterContentPaddingDp: Dp
+        afterContentPaddingDp: Dp,
     ) {
         if (vertical) {
             LazyVerticalGrid(
@@ -470,7 +470,7 @@ class LazyScrollTest { // (private val orientation: Orientation)
                 state,
                 contentPadding =
                     PaddingValues(top = beforeContentPaddingDp, bottom = afterContentPaddingDp),
-                verticalArrangement = Arrangement.spacedBy(spacingDp)
+                verticalArrangement = Arrangement.spacedBy(spacingDp),
             ) {
                 items(itemsCount) { ItemContent() }
             }

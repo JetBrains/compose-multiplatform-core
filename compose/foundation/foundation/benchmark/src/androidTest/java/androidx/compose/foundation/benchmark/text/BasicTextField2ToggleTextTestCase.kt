@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
@@ -46,19 +47,24 @@ class BasicTextField2ToggleTextTestCase(
     private val textLength: Int,
     private val textNumber: Int,
     private val width: Dp,
-    private val fontSize: TextUnit
+    private val fontSize: TextUnit,
+    singleLine: Boolean,
 ) : LayeredComposeTestCase(), ToggleableTestCase {
 
     private val states =
         List(textNumber) { TextFieldState(textGenerator.nextParagraph(length = textLength)) }
 
+    val lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default
+
     @Composable
     override fun MeasuredContent() {
+
         for (state in states) {
             BasicTextField(
                 state = state,
                 textStyle = TextStyle(color = Color.Black, fontSize = fontSize),
-                modifier = Modifier.background(color = Color.Cyan).requiredWidth(width)
+                lineLimits = lineLimits,
+                modifier = Modifier.background(color = Color.Cyan).requiredWidth(width),
             )
         }
     }
@@ -68,7 +74,7 @@ class BasicTextField2ToggleTextTestCase(
         Column(modifier = Modifier.width(width).verticalScroll(rememberScrollState())) {
             InterceptPlatformTextInput(
                 interceptor = { _, _ -> awaitCancellation() },
-                content = content
+                content = content,
             )
         }
     }

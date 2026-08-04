@@ -50,7 +50,7 @@ private val defaultPlatformDataValues =
         .put(PlatformHealthSources.Keys.HEART_RATE_BPM, DynamicDataValue.fromFloat(80f))
         .put(
             PlatformHealthSources.Keys.HEART_RATE_ACCURACY,
-            DynamicHeartRateAccuracy.dynamicDataValueOf(HEART_RATE_ACCURACY_MEDIUM)
+            DynamicHeartRateAccuracy.dynamicDataValueOf(HEART_RATE_ACCURACY_MEDIUM),
         )
         .put(PlatformHealthSources.Keys.DAILY_STEPS, DynamicDataValue.fromInt(4710))
         .put(PlatformHealthSources.Keys.DAILY_FLOORS, DynamicDataValue.fromFloat(12.5f))
@@ -64,7 +64,7 @@ private val defaultPlatformDataValues =
  */
 internal fun Class<out Any>.findMethod(
     name: String,
-    vararg parameterTypes: Class<out Any>
+    vararg parameterTypes: Class<out Any>,
 ): Method {
     var currentClass: Class<out Any>? = this
     while (currentClass != null) {
@@ -84,7 +84,8 @@ internal fun Class<out Any>.findMethod(
  * invoking the method whose FQN is set in the `tools:tilePreviewMethodFqn` attribute.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
+public class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
+    FrameLayout(context, attrs) {
 
     private val executor = ContextCompat.getMainExecutor(context)
 
@@ -111,7 +112,7 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                 }
                 .addPlatformDataProvider(
                     StaticPlatformDataProvider(platformDataValues),
-                    *platformDataValues.all.keys.toTypedArray()
+                    *platformDataValues.all.keys.toTypedArray(),
                 )
                 .build()
 
@@ -120,7 +121,7 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
 
     private fun TileRenderer.previewTile(
         tilePreview: TilePreviewData,
-        currentState: StateBuilders.State? = null
+        currentState: StateBuilders.State? = null,
     ) {
         val deviceParams = context.buildDeviceParameters()
         val tileRequest =
@@ -134,13 +135,19 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                 tile.state?.let { setState(it.keyToValueMapping) }
             }
         val layout = tile.tileTimeline?.getCurrentLayout() ?: return
+        val scope = tileRequest.scope
 
-        val resourcesRequest =
-            ResourcesRequest.Builder()
-                .setDeviceConfiguration(deviceParams)
-                .setVersion(tile.resourcesVersion)
-                .build()
-        val resources = tilePreview.onTileResourceRequest(resourcesRequest)
+        val resources =
+            if (scope.hasResources()) {
+                scope.collectResources()
+            } else {
+                val resourcesRequest =
+                    ResourcesRequest.Builder()
+                        .setDeviceConfiguration(deviceParams)
+                        .setVersion(tile.resourcesVersion)
+                        .build()
+                tilePreview.onTileResourceRequest(resourcesRequest)
+            }
 
         val inflateFuture = inflateAsync(layout, resources, this@TileServiceViewAdapter)
         inflateFuture.addListener(
@@ -149,11 +156,11 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                     (it.layoutParams as LayoutParams).gravity = Gravity.CENTER
                 }
             },
-            executor
+            executor,
         )
     }
 
-    fun getAnimations(): List<DynamicTypeAnimator> {
+    public fun getAnimations(): List<DynamicTypeAnimator> {
         return tileRenderer.animations
     }
 

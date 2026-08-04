@@ -19,18 +19,20 @@ package androidx.camera.camera2.pipe.graph
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.os.Build
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.Result3A
+import androidx.camera.camera2.pipe.testing.EmulatorDeviceTemplate
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.requiredParameters
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -44,20 +46,14 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class Controller3AUnlock3ATest {
     private val graphTestContext = GraphTestContext()
     private val graphState3A = GraphState3A()
     private val graphProcessor = graphTestContext.graphProcessor
     private val captureSequenceProcessor = graphTestContext.captureSequenceProcessor
     private val listener3A = Listener3A()
-    private val fakeMetadata =
-        FakeCameraMetadata(
-            mapOf(
-                CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
-                    intArrayOf(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-            ),
-        )
+    private val fakeMetadata = FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
     private val controller3A = Controller3A(graphProcessor, fakeMetadata, graphState3A, listener3A)
 
     @After
@@ -93,10 +89,10 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AE_STATE to
                                     CaptureResult.CONTROL_AE_STATE_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
 
@@ -124,8 +120,8 @@ internal class Controller3AUnlock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AE_STATE to
                                 CaptureResult.CONTROL_AE_STATE_SEARCHING
-                        )
-                )
+                        ),
+                ),
             )
         }
 
@@ -153,10 +149,10 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
 
@@ -169,7 +165,7 @@ internal class Controller3AUnlock3ATest {
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
             )
 
         repeatingJob.cancel()
@@ -188,8 +184,8 @@ internal class Controller3AUnlock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_INACTIVE
-                        )
-                )
+                        ),
+                ),
             )
         }
 
@@ -217,10 +213,10 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AWB_STATE to
                                     CaptureResult.CONTROL_AWB_STATE_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
 
@@ -248,8 +244,8 @@ internal class Controller3AUnlock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AWB_STATE to
                                 CaptureResult.CONTROL_AWB_STATE_SEARCHING
-                        )
-                )
+                        ),
+                ),
             )
         }
 
@@ -278,11 +274,11 @@ internal class Controller3AUnlock3ATest {
                                 CaptureResult.CONTROL_AE_STATE to
                                     CaptureResult.CONTROL_AE_STATE_LOCKED,
                                 CaptureResult.CONTROL_AF_STATE to
-                                    CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            ),
+                    ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
 
@@ -295,7 +291,7 @@ internal class Controller3AUnlock3ATest {
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
             )
         // Then request to unlock AE.
         val event2 = captureSequenceProcessor.nextEvent()
@@ -318,9 +314,9 @@ internal class Controller3AUnlock3ATest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_INACTIVE,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_SEARCHING
-                        )
-                )
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING,
+                        ),
+                ),
             )
         }
 
@@ -332,11 +328,13 @@ internal class Controller3AUnlock3ATest {
     @Test
     fun testUnlockAfWhenAfNotSupported() = runTest {
         val fakeMetadata =
-            FakeCameraMetadata(
-                mapOf(
-                    CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
-                        intArrayOf(CaptureRequest.CONTROL_AF_MODE_OFF)
-                ),
+            FakeCameraMetadata.fromTemplate(
+                template = EmulatorDeviceTemplate,
+                characteristicsOverrides =
+                    mapOf(
+                        CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
+                            intArrayOf(CaptureRequest.CONTROL_AF_MODE_OFF)
+                    ),
             )
         val controller3A = Controller3A(graphProcessor, fakeMetadata, graphState3A, listener3A)
         val result = controller3A.unlock3A(af = true).await()
@@ -363,16 +361,16 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AE_STATE to
                                     CaptureResult.CONTROL_AE_STATE_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
 
         // Act. Unlock AE
         val result3ADeferred = controller3A.unlock3A(ae = true, frameLimit = frameLimit)
-        advanceTimeBy(FRAME_RATE_MS * frameLimit)
+        advanceTimeBy(FRAME_RATE * frameLimit)
         result3ADeferred.await()
 
         // Assert. Result of unlock3A call should be completed with timeout result.
@@ -405,10 +403,10 @@ internal class Controller3AUnlock3ATest {
                                     CaptureResult.CONTROL_AF_STATE_INACTIVE,
                                 CaptureResult.CONTROL_AWB_STATE to
                                     CaptureResult.CONTROL_AWB_STATE_INACTIVE,
-                            )
-                    )
+                            ),
+                    ),
                 )
-                delay(FRAME_RATE_MS)
+                delay(FRAME_RATE)
             }
         }
 
@@ -419,7 +417,7 @@ internal class Controller3AUnlock3ATest {
                             CaptureResult.CONTROL_AE_STATE_INACTIVE,
                             CaptureResult.CONTROL_AE_STATE_SEARCHING,
                             CaptureResult.CONTROL_AE_STATE_CONVERGED,
-                            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED
+                            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
                         )
                         .contains(it)
                 } ?: true
@@ -431,7 +429,7 @@ internal class Controller3AUnlock3ATest {
                             CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN,
                             CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                             CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
-                            CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED
+                            CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED,
                         )
                         .contains(it)
                 } ?: true
@@ -441,7 +439,7 @@ internal class Controller3AUnlock3ATest {
                     listOf(
                             CaptureResult.CONTROL_AWB_STATE_INACTIVE,
                             CaptureResult.CONTROL_AWB_STATE_SEARCHING,
-                            CaptureResult.CONTROL_AWB_STATE_CONVERGED
+                            CaptureResult.CONTROL_AWB_STATE_CONVERGED,
                         )
                         .contains(it)
                 } ?: true
@@ -466,6 +464,6 @@ internal class Controller3AUnlock3ATest {
 
     companion object {
         // The time duration in milliseconds between two frame results.
-        private const val FRAME_RATE_MS = 33L
+        private val FRAME_RATE = 33.milliseconds
     }
 }

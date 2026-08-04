@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.platform
 
-interface Clipboard {
+public interface Clipboard {
 
     /**
      * Returns the clipboard entry that's provided by the platform's ClipboardManager.
@@ -26,10 +26,12 @@ interface Clipboard {
      *
      * It returns null when the clipboard is empty.
      *
-     * It's safe to call this function without triggering Clipboard access warnings on mobile
-     * platforms.
+     * Calling this function on Android will access the Clipboard's contents, and the first time it
+     * happens this will trigger a warning that says "App pasted from Clipboard". Use
+     * [nativeClipboard] and `primaryClipDescription` on Android to circumvent this issue if you are
+     * only interested in querying what is available in the clipboard.
      */
-    suspend fun getClipEntry(): ClipEntry?
+    public suspend fun getClipEntry(): ClipEntry?
 
     /**
      * Puts the given [clipEntry] in platform's ClipboardManager.
@@ -37,8 +39,11 @@ interface Clipboard {
      * @param clipEntry Platform specific clip object that either holds data or links to it. Pass
      *   null to clear the clipboard.
      */
-    suspend fun setClipEntry(clipEntry: ClipEntry?)
+    public suspend fun setClipEntry(clipEntry: ClipEntry?)
 
     /** Returns the native clipboard that exposes the full functionality of platform clipboard. */
-    val nativeClipboard: NativeClipboard
+    @Suppress("DEPRECATION")
+    @Deprecated("Use platform-specific extension to get platform reference")
+    public val nativeClipboard: NativeClipboard
+        get() = throw NotImplementedError()
 }

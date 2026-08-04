@@ -21,6 +21,7 @@ import androidx.kruth.assertThrows
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleRegistry
+import androidx.savedstate.IgnoreWebTarget
 import androidx.savedstate.RobolectricTest
 import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateRegistry
@@ -41,6 +42,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
+@IgnoreWebTarget
 internal class SavedStateRegistryOwnerDelegateTest : RobolectricTest() {
 
     @Test
@@ -61,6 +63,64 @@ internal class SavedStateRegistryOwnerDelegateTest : RobolectricTest() {
         val expectedState =
             createRestoredState(DEFAULT_KEY_PROPERTY, Int.serializer(), Int.MAX_VALUE)
         assertThat(actualState.read { contentDeepEquals(expectedState) }).isTrue()
+    }
+
+    @Test
+    fun saved_nullable_restoreNull() {
+        val owner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = null)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+
+        var property: String? by owner.saved { "initialValue" }
+        assertThat(property).isEqualTo("initialValue")
+        property = null
+        assertThat(property).isNull()
+
+        val actualState = savedState()
+        owner.savedStateRegistryController.performSave(actualState)
+
+        // Simulate configuration change
+        val newOwner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = actualState)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+        val newProperty: String? by
+            newOwner.saved(DEFAULT_KEY_PROPERTY) { error("Unexpected initializer call") }
+        assertThat(newProperty).isNull()
+    }
+
+    @Test
+    fun saved_nullable_restoreNullable() {
+        val owner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = null)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+
+        var property: String? by owner.saved { null }
+        assertThat(property).isNull()
+        property = "initialValue"
+        assertThat(property).isEqualTo("initialValue")
+
+        val actualState = savedState()
+        owner.savedStateRegistryController.performSave(actualState)
+
+        // Simulate configuration change
+        val newOwner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = actualState)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+        var newProperty: String? by
+            newOwner.saved(DEFAULT_KEY_PROPERTY) { error("Unexpected initializer call") }
+        assertThat(newProperty).isEqualTo("initialValue")
     }
 
     @Test
@@ -374,13 +434,15 @@ internal class SavedStateRegistryOwnerDelegateTest : RobolectricTest() {
         private const val DEFAULT_KEY_PROPERTY = "property"
         private const val DEFAULT_KEY_PROPERTY_1 = "property1"
 
-        private fun <T : Any> createRestoredState(
+        private fun <T> createRestoredState(
             key: String,
             serializer: KSerializer<T>,
-            value: T
+            value: T,
         ): SavedState {
             val components = savedState {
-                putSavedState(key, encodeToSavedState(serializer, value))
+                if (value != null) {
+                    putSavedState(key, encodeToSavedState(serializer, value))
+                }
             }
             return savedState { putSavedState(SAVED_COMPONENTS_KEY, components) }
         }

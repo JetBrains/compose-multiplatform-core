@@ -31,8 +31,6 @@ import android.util.SparseArray;
 import android.view.SoundEffectConstants;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -44,6 +42,9 @@ import androidx.mediarouter.R;
 import androidx.mediarouter.media.MediaRouteSelector;
 import androidx.mediarouter.media.MediaRouter;
 import androidx.mediarouter.media.MediaRouterParams;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The media route button allows the user to select routes and to control the currently selected
@@ -201,8 +202,7 @@ public class MediaRouteButton extends View {
      *
      * @return The selector, never null.
      */
-    @NonNull
-    public MediaRouteSelector getRouteSelector() {
+    public @NonNull MediaRouteSelector getRouteSelector() {
         return mSelector;
     }
 
@@ -237,8 +237,7 @@ public class MediaRouteButton extends View {
      *
      * @return The dialog factory, never null.
      */
-    @NonNull
-    public MediaRouteDialogFactory getDialogFactory() {
+    public @NonNull MediaRouteDialogFactory getDialogFactory() {
         return mDialogFactory;
     }
 
@@ -408,8 +407,7 @@ public class MediaRouteButton extends View {
     }
 
     @Override
-    @NonNull
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull [] onCreateDrawableState(int extraSpace) {
         final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
 
         // Technically we should be handling this more completely, but these
@@ -555,8 +553,8 @@ public class MediaRouteButton extends View {
             case MeasureSpec.AT_MOST:
                 measuredWidth = Math.min(widthSize, width);
                 break;
-            default:
             case MeasureSpec.UNSPECIFIED:
+            default:
                 measuredWidth = width;
                 break;
         }
@@ -569,8 +567,8 @@ public class MediaRouteButton extends View {
             case MeasureSpec.AT_MOST:
                 measuredHeight = Math.min(heightSize, height);
                 break;
-            default:
             case MeasureSpec.UNSPECIFIED:
+            default:
                 measuredHeight = height;
                 break;
         }
@@ -677,49 +675,50 @@ public class MediaRouteButton extends View {
         }
 
         @Override
-        public void onRouteAdded(@NonNull MediaRouter router, @NonNull MediaRouter.RouteInfo info) {
+        public void onRouteAdded(@NonNull MediaRouter router, MediaRouter.@NonNull RouteInfo info) {
             refreshRoute();
         }
 
         @Override
         public void onRouteRemoved(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo info) {
             refreshRoute();
         }
 
         @Override
         public void onRouteChanged(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo info) {
             refreshRoute();
         }
 
         @Override
         public void onRouteSelected(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo selectedRoute, int reason,
+                MediaRouter.@NonNull RouteInfo requestedRoute) {
             refreshRoute();
         }
 
         @Override
         public void onRouteUnselected(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo info) {
+                MediaRouter.@NonNull RouteInfo route, int reason) {
             refreshRoute();
         }
 
         @Override
         public void onProviderAdded(@NonNull MediaRouter router,
-                @NonNull MediaRouter.ProviderInfo provider) {
+                MediaRouter.@NonNull ProviderInfo provider) {
             refreshRoute();
         }
 
         @Override
         public void onProviderRemoved(@NonNull MediaRouter router,
-                @NonNull MediaRouter.ProviderInfo provider) {
+                MediaRouter.@NonNull ProviderInfo provider) {
             refreshRoute();
         }
 
         @Override
         public void onProviderChanged(@NonNull MediaRouter router,
-                @NonNull MediaRouter.ProviderInfo provider) {
+                MediaRouter.@NonNull ProviderInfo provider) {
             refreshRoute();
         }
 

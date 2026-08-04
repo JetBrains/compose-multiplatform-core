@@ -17,7 +17,7 @@
 package androidx.compose.ui.text.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,7 +35,7 @@ fun SpanStyleSample() {
             buildAnnotatedString {
                 withStyle(style = SpanStyle(color = Color.Red)) { append("Hello") }
                 withStyle(SpanStyle(color = Color.Blue)) { append(" World") }
-            }
+            },
     )
 }
 
@@ -51,6 +51,6 @@ fun SpanStyleBrushSample() {
                 withStyle(SpanStyle(brush = Brush.radialGradient(brushColors.asReversed()))) {
                     append(" World")
                 }
-            }
+            },
     )
 }

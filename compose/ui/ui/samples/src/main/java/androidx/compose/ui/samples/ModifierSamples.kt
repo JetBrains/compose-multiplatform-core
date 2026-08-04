@@ -24,8 +24,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +66,7 @@ fun ModifierUsageSample() {
         "Hello, World!",
         Modifier.padding(16.dp) // Outer padding; outside background
             .background(color = Color.Green) // Solid element background color
-            .padding(16.dp) // Inner padding; inside background, around text
+            .padding(16.dp), // Inner padding; inside background, around text
     )
 }
 
@@ -101,7 +101,7 @@ fun SubcomponentModifierSample() {
         onOk: () -> Unit,
         onCancel: () -> Unit,
         modifier: Modifier = Modifier,
-        buttonModifier: Modifier = Modifier
+        buttonModifier: Modifier = Modifier,
     ) {
         Row(modifier) {
             Button(onCancel, buttonModifier) { Text("Cancel") }
@@ -117,7 +117,7 @@ fun DelegatedNodeSampleExplicit() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // ...
         }
@@ -139,7 +139,7 @@ fun DelegatedNodeSampleExplicit() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             gesture.onPointerEvent(pointerEvent, pass, bounds)
         }
@@ -164,7 +164,7 @@ fun DelegatedNodeSampleImplicit() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // ...
         }
@@ -210,7 +210,7 @@ fun LazyDelegationExample() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // wait until first pointer event to start listening to global
             // position
@@ -229,7 +229,7 @@ fun LazyDelegationExample() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // ...
         }
@@ -363,7 +363,7 @@ fun PointerInputModifierNodeSample() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             if (pass == PointerEventPass.Initial) {
                 callback(pointerEvent)

@@ -51,7 +51,7 @@ internal object AppCardDefaults {
         time: LayoutElement?,
         label: LayoutElement?,
         avatar: LayoutElement?,
-        style: AppCardStyle
+        style: AppCardStyle,
     ): LayoutElement {
         val verticalElementBuilder: Column.Builder =
             Column.Builder().setWidth(expand()).setHorizontalAlignment(HORIZONTAL_ALIGN_START)
@@ -70,13 +70,13 @@ internal object AppCardDefaults {
                                 .build()
                         }
                         .getOrNull(),
-                    verticalSpacer(style.labelToAvatarSpaceDp)
+                    verticalSpacer(style.labelToAvatarSpaceDp),
                 )
                 .addElement(time, verticalSpacer(style.labelToTimeSpaceDp))
 
         ContainerWithSpacersBuilder<LayoutElement>(
                 { element: LayoutElement? -> verticalElementBuilder.addContent(element!!) },
-                if (headerBuilder.isEmpty) null else headerSlot.build()
+                if (headerBuilder.isEmpty) null else headerSlot.build(),
             )
             .addElement(title, horizontalSpacer(style.headerToTitleSpaceDp))
             .addElement(content)
@@ -96,7 +96,7 @@ internal constructor(
     @TypographyToken internal val contentTypography: Int,
     @TypographyToken internal val labelTypography: Int,
     @TypographyToken internal val timeTypography: Int,
-    @Dimension(unit = DP) internal val avatarSize: Int
+    @Dimension(unit = DP) internal val avatarSize: Int,
 ) {
     public companion object {
         /** The default spacer width or height that should be between different elements. */

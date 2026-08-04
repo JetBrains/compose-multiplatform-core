@@ -17,43 +17,62 @@ package androidx.lifecycle
 
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateRegistry.SavedStateProvider
+import androidx.savedstate.SavedStateRegistryOwner
 import kotlin.jvm.JvmStatic
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A handle to saved state passed down to [androidx.lifecycle.ViewModel]. You should use
- * [SavedStateViewModelFactory] if you want to receive this object in `ViewModel`'s constructor.
+ * A handle to saved state passed to [ViewModel]. Typically, [SavedStateViewModelFactory] provides
+ * this object to the [ViewModel] constructor.
  *
- * This is a key-value map that will let you write and retrieve objects to and from the saved state.
- * These values will persist after the process is killed by the system and remain available via the
- * same object.
+ * A key-value map allowing retrieval and storage of values to and from the saved state. These
+ * values persist through system-initiated process death and remain available to the recreated
+ * instance.
  *
- * You can read a value from it via [get] or observe it via [androidx.lifecycle.LiveData] returned
- * by [getLiveData].
- *
- * You can write a value to it via [set] or setting a value to [androidx.lifecycle.MutableLiveData]
- * returned by [getLiveData].
+ * Values can be read via [get] or observed as a flow via [getStateFlow]. Values can be written via
+ * [set] or by updating the returned flow via [getMutableStateFlow].
  */
 public expect class SavedStateHandle {
 
     /**
      * Creates a handle with the given initial arguments.
      *
+     * **Important:** This constructor should only be used directly in tests. The created
+     * [SavedStateHandle] is not bound to the current [SavedStateRegistryOwner], meaning its
+     * internal state will not be restored in the event of a process death.
+     *
+     * In production, use [viewModelFactory] or implement [ViewModelProvider.Factory] directly,
+     * using [CreationExtras.createSavedStateHandle] to create a [SavedStateHandle] that is bound to
+     * the current [SavedStateRegistryOwner].
+     *
      * @param initialState initial arguments for the SavedStateHandle
      */
-    public constructor(initialState: Map<String, Any?>)
+    @VisibleForTesting public constructor(initialState: Map<String, Any?>)
 
-    /** Creates a handle with the empty state. */
-    public constructor()
+    /**
+     * Creates a handle with the empty state.
+     *
+     * **Important:** This constructor should only be used directly in tests. The created
+     * [SavedStateHandle] is not bound to the current [SavedStateRegistryOwner], meaning its
+     * internal state will not be restored in the event of a process death.
+     *
+     * In production, use [viewModelFactory] or implement [ViewModelProvider.Factory] directly,
+     * using [CreationExtras.createSavedStateHandle] to create a [SavedStateHandle] that is bound
+     * with the current [SavedStateRegistryOwner].
+     */
+    @VisibleForTesting public constructor()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun savedStateProvider(): SavedStateProvider
 
     /**
-     * @param key The identifier for the value
-     * @return true if there is value associated with the given key.
+     * @param key identifier of the value
+     * @return `true` if a value is associated with [key]
      */
     @MainThread public operator fun contains(key: String): Boolean
 
@@ -61,9 +80,7 @@ public expect class SavedStateHandle {
      * Returns a [StateFlow] that will emit the currently active value associated with the given
      * key.
      *
-     * ```
      * val flow = savedStateHandle.getStateFlow(KEY, "defaultValue")
-     * ```
      *
      * Since this is a [StateFlow] there will always be a value available which, is why an initial
      * value must be provided. The value of this flow is changed by making a call to [set], passing
@@ -71,11 +88,11 @@ public expect class SavedStateHandle {
      *
      * If there is already a value associated with the given key, the initial value will be ignored.
      *
-     * Note: If [T] is an [Array] of [Parcelable] classes, note that you should always use
-     * `Array<Parcelable>` and create a typed array from the result as going through process death
-     * and recreation (or using the `Don't keep activities` developer option) will result in the
-     * type information being lost, thus resulting in a `ClassCastException` if you directly try to
-     * collect the result as an `Array<CustomParcelable>`.
+     * Note: If [T] is an [Array] of `android.os.Parcelable` classes, note that you should always
+     * use `Array<Parcelable>` and create a typed array from the result as going through process
+     * death and recreation (or using the `Don't keep activities` developer option) will result in
+     * the type information being lost, thus resulting in a `ClassCastException` if you directly try
+     * to collect the result as an `Array<CustomParcelable>`.
      *
      * ```
      * val typedArrayFlow = savedStateHandle.getStateFlow<Array<Parcelable>>(
@@ -86,9 +103,8 @@ public expect class SavedStateHandle {
      * }
      * ```
      *
-     * @param key The identifier for the flow
-     * @param initialValue If no value exists with the given `key`, a new one is created with the
-     *   given `initialValue`.
+     * @param key identifier of the flow
+     * @param initialValue value to use if no value is associated with [key]
      */
     @MainThread public fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T>
 
@@ -96,9 +112,7 @@ public expect class SavedStateHandle {
      * Returns a [MutableStateFlow] that will emit the currently active value associated with the
      * given key.
      *
-     * ```
      * val flow = savedStateHandle.getMutableStateFlow(KEY, "defaultValue")
-     * ```
      *
      * Since this is a [MutableStateFlow] there will always be a value available which, is why an
      * initial value must be provided. The value of this flow is changed by making a call to [set],
@@ -113,22 +127,16 @@ public expect class SavedStateHandle {
      * type information being lost, thus resulting in a `ClassCastException` if you directly try to
      * collect the result as an `Array<CustomParcelable>`.
      *
-     * ```
-     * val typedArrayFlow = savedStateHandle.getMutableStateFlow<Array<Parcelable>>(
-     *   "KEY"
-     * ).map { array ->
-     *   // Convert the Array<Parcelable> to an Array<CustomParcelable>
-     *   array.map { it as CustomParcelable }.toTypedArray()
-     * }
-     * ```
+     * val typedArrayFlow = savedStateHandle.getMutableStateFlow<Array<Parcelable>>( "KEY" ).map {
+     * array -> // Convert the Array<Parcelable> to an Array<CustomParcelable> array.map { it as
+     * CustomParcelable }.toTypedArray() }
      *
      * **Note 2:** On Android, this method is mutually exclusive with `getLiveData` for the same
      * key. You should use either `getMutableStateFlow` or `getLiveData` to access the stored value,
      * but not both. Using both methods with the same key will result in an `IllegalStateException`.
      *
-     * @param key The identifier for the flow
-     * @param initialValue If no value exists with the given `key`, a new one is created with the
-     *   given `initialValue`.
+     * @param key identifier of the flow
+     * @param initialValue value to use if no value is associated with [key]
      */
     @MainThread
     public fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T>
@@ -144,19 +152,16 @@ public expect class SavedStateHandle {
     /**
      * Returns a value associated with the given key.
      *
-     * Note: If [T] is an [Array] of [Parcelable] classes, note that you should always use
-     * `Array<Parcelable>` and create a typed array from the result as going through process death
-     * and recreation (or using the `Don't keep activities` developer option) will result in the
-     * type information being lost, thus resulting in a `ClassCastException` if you directly try to
-     * assign the result to an `Array<CustomParcelable>` value.
+     * Note: If [T] is an [Array] of `android.os.Parcelable` classes, note that you should always
+     * use `Array<Parcelable>` and create a typed array from the result as going through process
+     * death and recreation (or using the `Don't keep activities` developer option) will result in
+     * the type information being lost, thus resulting in a `ClassCastException` if you directly try
+     * to assign the result to an `Array<CustomParcelable>` value.
      *
-     * ```
-     * val typedArray = savedStateHandle.get<Array<Parcelable>>("KEY").map {
-     *   it as CustomParcelable
+     * val typedArray = savedStateHandle.get<Array<Parcelable>>("KEY").map { it as CustomParcelable
      * }.toTypedArray()
-     * ```
      *
-     * @param key a key used to retrieve a value.
+     * @param key identifier of the value
      */
     @MainThread public operator fun <T> get(key: String): T?
 
@@ -164,52 +169,45 @@ public expect class SavedStateHandle {
      * Associate the given value with the key. The value must have a type that could be stored in
      * [SavedState]
      *
-     * This also sets values for any active [LiveData]s or [StateFlow]s.
+     * This also sets values for any active `androidx.lifecycle.LiveData` or [StateFlow].
      *
-     * @param key a key used to associate with the given value.
-     * @param value object of any type that can be accepted by Bundle.
+     * @param key identifier of the value
+     * @param value value to associate with [key]
      * @throws IllegalArgumentException value cannot be saved in saved state
      */
     @MainThread public operator fun <T> set(key: String, value: T?)
 
     /**
-     * Removes a value associated with the given key. If there is a [LiveData] and/or [StateFlow]
-     * associated with the given key, they will be removed as well.
+     * Removes a value associated with the given key. If there is a `androidx.lifecycle.LiveData`
+     * and/or [StateFlow] associated with the given key, they will be removed as well.
      *
-     * All changes to [androidx.lifecycle.LiveData]s or [StateFlow]s previously returned by
-     * [SavedStateHandle.getLiveData] or [getStateFlow] won't be reflected in the saved state. Also
-     * that `LiveData` or `StateFlow` won't receive any updates about new values associated by the
+     * All changes to `LiveData` or [StateFlow] previously returned by
+     * `SavedStateHandle.getLiveData` or [getStateFlow] won't be reflected in the saved state. Also,
+     * that `LiveData` or [StateFlow] won't receive any updates about new values associated by the
      * given key.
      *
-     * @param key a key
-     * @return a value that was previously associated with the given key.
+     * @param key identifier of the value
+     * @return value previously associated with [key], or `null` if none was present
      */
     @MainThread public fun <T> remove(key: String): T?
 
     /**
-     * Set a [SavedStateProvider] that will have its state saved into this SavedStateHandle. This
-     * provides a mechanism to lazily provide the [SavedState] of saved state for the given key.
+     * Sets a [SavedStateProvider] that will have its state saved into this [SavedStateHandle]. This
+     * provides a mechanism to lazily supply the [SavedState] for the given key.
      *
-     * Calls to [get] with this same key will return the previously saved state as a [SavedState] if
+     * Calls to [get] with the same key will return the previously saved state as a [SavedState] if
      * it exists.
      *
-     * ```
-     * Bundle previousState = savedStateHandle.get("custom_object");
-     * if (previousState != null) {
-     *     // Convert the previousState into your custom object
-     * }
-     * savedStateHandle.setSavedStateProvider("custom_object", () -> {
-     *     Bundle savedState = new Bundle();
-     *     // Put your custom object into the Bundle, doing any conversion required
-     *     return savedState;
-     * });
-     * ```
+     * val previousState: SavedState? = savedStateHandle.get("custom_object") if (previousState !=
+     * null) { // Convert the previousState into your custom object }
+     * savedStateHandle.setSavedStateProvider("custom_object") { savedState { // Put your custom
+     * object properties into the SavedState } }
      *
-     * Note: calling this method within [SavedStateProvider.saveState] is supported, but will only
+     * Note: Calling this method within [SavedStateProvider.saveState] is supported, but will only
      * affect future state saving operations.
      *
-     * @param key a key which will populated with a [SavedState] produced by the provider
-     * @param provider a SavedStateProvider which will receive a callback to
+     * @param key identifier of the state
+     * @param provider [SavedStateProvider] which will receive a callback to
      *   [SavedStateProvider.saveState] when the state should be saved
      */
     @MainThread public fun setSavedStateProvider(key: String, provider: SavedStateProvider)
@@ -220,7 +218,7 @@ public expect class SavedStateHandle {
      * Note: calling this method within [SavedStateProvider.saveState] is supported, but will only
      * affect future state saving operations.
      *
-     * @param key a key previously used with [setSavedStateProvider]
+     * @param key identifier previously used with [setSavedStateProvider]
      */
     @MainThread public fun clearSavedStateProvider(key: String)
 
@@ -231,7 +229,7 @@ public expect class SavedStateHandle {
         @Suppress("DEPRECATION")
         public fun createHandle(
             restoredState: SavedState?,
-            defaultState: SavedState?
+            defaultState: SavedState?,
         ): SavedStateHandle
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun validateValue(value: Any?): Boolean

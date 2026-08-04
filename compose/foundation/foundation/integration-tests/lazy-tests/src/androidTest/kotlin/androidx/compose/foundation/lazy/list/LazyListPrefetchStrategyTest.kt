@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
+@file:Suppress("DEPRECATION") // b/420551535
 
 package androidx.compose.foundation.lazy.list
 
@@ -22,7 +22,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.lazy.DefaultLazyListPrefetchStrategy
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.LazyListPrefetchScope
 import androidx.compose.foundation.lazy.LazyListPrefetchStrategy
@@ -38,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
@@ -56,14 +56,9 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun initParameters(): Array<Any> =
-            arrayOf(
-                Config(Orientation.Vertical),
-                Config(Orientation.Horizontal),
-            )
+            arrayOf(Config(Orientation.Vertical), Config(Orientation.Horizontal))
 
-        class Config(
-            val orientation: Orientation,
-        ) {
+        class Config(val orientation: Orientation) {
             override fun toString() = "orientation=$orientation"
         }
 
@@ -84,18 +79,14 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         composeList(prefetchStrategy = strategy)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1)))
             .inOrder()
         strategy.reset()
 
         rule.runOnIdle { runBlocking { state.scrollBy(5f) } }
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnScroll(delta = -5f, visibleIndices = listOf(0, 1)),
-            )
+            .containsExactly(Callback.OnScroll(delta = -5f, visibleIndices = listOf(0, 1)))
             .inOrder()
     }
 
@@ -106,18 +97,14 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         composeList(firstItem = 10, itemOffset = 10, prefetchStrategy = strategy)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(10, 11)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(10, 11)))
             .inOrder()
         strategy.reset()
 
         rule.runOnIdle { runBlocking { state.scrollBy(-5f) } }
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnScroll(delta = 5f, visibleIndices = listOf(10, 11)),
-            )
+            .containsExactly(Callback.OnScroll(delta = 5f, visibleIndices = listOf(10, 11)))
             .inOrder()
     }
 
@@ -128,9 +115,7 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         composeList(prefetchStrategy = strategy)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1)))
             .inOrder()
         strategy.reset()
 
@@ -152,9 +137,7 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         composeList(prefetchStrategy = strategy, numItems = numItems)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1)))
             .inOrder()
         strategy.reset()
 
@@ -163,9 +146,7 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         rule.waitForIdle()
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0)))
             .inOrder()
     }
 
@@ -199,6 +180,27 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         assertThat(prefetchCount).isEqualTo(1)
     }
 
+    @Test
+    fun datasetChanged_shouldScheduleNewPrefetching() {
+        val numItems = mutableStateOf(100)
+        val strategy = LazyListPrefetchStrategy()
+
+        composeList(firstItem = 97, numItems = numItems, prefetchStrategy = strategy)
+
+        rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx.toFloat()) } }
+
+        waitForPrefetch()
+
+        rule.onNodeWithTag("100").assertDoesNotExist()
+
+        rule.runOnIdle { numItems.value = 200 }
+        rule.waitForIdle()
+        waitForPrefetch()
+
+        rule.onNodeWithTag("100").assertExists()
+        rule.onNodeWithTag("100").assertIsNotDisplayed()
+    }
+
     private fun waitForPrefetch() {
         rule.runOnIdle { scheduler.executeActiveRequests() }
     }
@@ -208,19 +210,16 @@ class LazyListPrefetchStrategyTest(val config: Config) :
         firstItem: Int = 0,
         itemOffset: Int = 0,
         numItems: MutableState<Int> = mutableStateOf(100),
-        prefetchStrategy: LazyListPrefetchStrategy = DefaultLazyListPrefetchStrategy()
+        prefetchStrategy: LazyListPrefetchStrategy = LazyListPrefetchStrategy(),
     ) {
         rule.setContent {
             state =
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = firstItem,
                     initialFirstVisibleItemScrollOffset = itemOffset,
-                    prefetchStrategy = prefetchStrategy
+                    prefetchStrategy = prefetchStrategy,
                 )
-            LazyColumnOrRow(
-                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                state,
-            ) {
+            LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                 items(numItems.value) {
                     Spacer(
                         Modifier.mainAxisSize(itemsSizeDp)
@@ -238,6 +237,9 @@ class LazyListPrefetchStrategyTest(val config: Config) :
 
     /** LazyListPrefetchStrategy that just records callbacks without scheduling prefetches. */
     private class RecordingLazyListPrefetchStrategy(
+        @Deprecated(
+            "Customization of PrefetchScheduler is no longer supported. LazyLayout will attach an appropriate scheduler internally."
+        )
         override val prefetchScheduler: PrefetchScheduler?
     ) : LazyListPrefetchStrategy {
 
@@ -270,8 +272,12 @@ class LazyListPrefetchStrategyTest(val config: Config) :
      * the scroll direction.
      */
     private class PrefetchNextLargestIndexStrategy(
+        @Deprecated(
+            "Customization of PrefetchScheduler is no longer supported. " +
+                "LazyLayout will attach an appropriate scheduler internally."
+        )
         override val prefetchScheduler: PrefetchScheduler?,
-        val onItemPrefetched: (Int, Int) -> Unit = { _, _ -> }
+        val onItemPrefetched: (Int, Int) -> Unit = { _, _ -> },
     ) : LazyListPrefetchStrategy {
 
         var handle: LazyLayoutPrefetchState.PrefetchHandle? = null

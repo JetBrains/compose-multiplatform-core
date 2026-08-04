@@ -35,7 +35,7 @@ internal fun <T> FiniteAnimationSpec<T>.reversed(durationMillis: Int): FiniteAni
 
 private class ReversedSpec<T>(
     private val spec: FiniteAnimationSpec<T>,
-    private val durationMillis: Int
+    private val durationMillis: Int,
 ) : FiniteAnimationSpec<T> {
     override fun <V : AnimationVector> vectorize(
         converter: TwoWayConverter<T, V>
@@ -46,20 +46,20 @@ private class ReversedSpec<T>(
 
 private class VectorizedReversedSpec<V : AnimationVector>(
     private val animation: VectorizedFiniteAnimationSpec<V>,
-    private val durationNanos: Long
+    private val durationNanos: Long,
 ) : VectorizedFiniteAnimationSpec<V> {
 
     override fun getValueFromNanos(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return animation.getValueFromNanos(
             durationNanos - playTimeNanos,
             targetValue,
             initialValue,
-            initialVelocity
+            initialVelocity,
         )
     }
 
@@ -67,14 +67,14 @@ private class VectorizedReversedSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         return animation
             .getVelocityFromNanos(
                 durationNanos - playTimeNanos,
                 targetValue,
                 initialValue,
-                initialVelocity
+                initialVelocity,
             )
             .reversed()
     }
@@ -119,7 +119,7 @@ private class VectorizedCombinedSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         val (timeNanos, animation) = chooseAnimation(playTimeNanos)
         val internalPlayTimeNanos = playTimeNanos - timeNanos
@@ -127,7 +127,7 @@ private class VectorizedCombinedSpec<V : AnimationVector>(
             internalPlayTimeNanos,
             initialValue,
             targetValue,
-            initialVelocity
+            initialVelocity,
         )
     }
 
@@ -135,14 +135,14 @@ private class VectorizedCombinedSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V {
         val (timeNanos, animation) = chooseAnimation(playTimeNanos)
         return animation.getVelocityFromNanos(
             playTimeNanos - timeNanos,
             initialValue,
             targetValue,
-            initialVelocity
+            initialVelocity,
         )
     }
 
@@ -159,6 +159,5 @@ private fun <V : AnimationVector> V.reversed(): V {
         is AnimationVector2D -> AnimationVector2D(v1 * -1, v2 * -1) as V
         is AnimationVector3D -> AnimationVector3D(v1 * -1, v2 * -1, v3 * -1) as V
         is AnimationVector4D -> AnimationVector4D(v1 * -1, v2 * -1, v3 * -1, v4 * -1) as V
-        else -> throw RuntimeException("Unknown AnimationVector: $this")
     }
 }

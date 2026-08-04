@@ -46,6 +46,7 @@ import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.TRI
 import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.calculateRecommendedGapSize
 import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.filledProgressIndicatorColors
 import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.recommendedAnimationSpec
+import androidx.wear.protolayout.material3.Versions.hasArcDirectionFixed
 import androidx.wear.protolayout.material3.Versions.hasDashedArcLineSupport
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.contentDescription
@@ -70,6 +71,12 @@ import kotlin.math.min
  * defined in, which defaults to [dynamicColorScheme], meaning that the colors follow system theme
  * if available on device. If not, or switched off by user, uses fallback [ColorScheme] defined in
  * its [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param staticProgress The static progress of this progress indicator where 0 represent no
  *   progress and 1 represents completion. Progress above 1 is also allowed. If [dynamicProgress] is
@@ -136,7 +143,7 @@ public fun MaterialScope.circularProgressIndicator(
                 dynamicProgress = dynamicProgress,
                 strokeWidth = strokeWidth,
                 gapSize = gapSize,
-                colors = colors
+                colors = colors,
             )
         } else {
             circularProgressIndicatorFallbackImpl(
@@ -148,7 +155,7 @@ public fun MaterialScope.circularProgressIndicator(
                 dynamicProgress = dynamicProgress,
                 strokeWidth = strokeWidth,
                 gapSize = gapSize,
-                colors = colors
+                colors = colors,
             )
         }
 
@@ -176,6 +183,12 @@ public fun MaterialScope.circularProgressIndicator(
  * defined in, which defaults to [dynamicColorScheme], meaning that the colors follow system theme
  * if available on device. If not, or switched off by user, uses fallback [ColorScheme] defined in
  * its [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param segmentCount Number of equal segments that the progress indicator should be divided into.
  *   Has to be a number greater than or equal to 1.
@@ -246,7 +259,7 @@ public fun MaterialScope.segmentedCircularProgressIndicator(
                 dynamicProgress = dynamicProgress,
                 strokeWidth = strokeWidth,
                 gapSize = gapSize,
-                colors = colors
+                colors = colors,
             )
         } else {
             circularProgressIndicatorFallbackImpl(
@@ -258,7 +271,7 @@ public fun MaterialScope.segmentedCircularProgressIndicator(
                 dynamicProgress = dynamicProgress,
                 strokeWidth = strokeWidth,
                 gapSize = gapSize,
-                colors = colors
+                colors = colors,
             )
         }
 
@@ -281,14 +294,28 @@ private fun MaterialScope.singleSegmentImpl(
     dynamicProgress: DynamicFloat?,
     @Dimension(DP) strokeWidth: Float,
     @Dimension(DP) gapSize: Float,
-    colors: ProgressIndicatorColors
+    colors: ProgressIndicatorColors,
 ): Box.Builder {
     val sweepAngle = endAngleDegrees - startAngleDegrees
     val progressInDegrees =
         progressInDegrees(
             sweepAngle = sweepAngle,
             staticProgress = staticProgress,
-            dynamicProgress = dynamicProgress
+            dynamicProgress =
+                if (
+                    deviceConfiguration.rendererSchemaVersion.hasArcDirectionFixed() ||
+                        dynamicProgress != null
+                ) {
+                    dynamicProgress
+                } else {
+                    // We got issue with the arcDirection handling before renderer version 1.520,
+                    // which is fixed in newer version of renderer.  When the progress is static,
+                    // the counterclockwise is not rendered with correct direction, see b/432663972.
+                    // This issue does not happen when the progress is dynamic, so the hack here
+                    // is to set a constant dynamic value, which delays the set of arc length after
+                    // the view is attached.
+                    DynamicFloat.constant(staticProgress)
+                },
         )
     val trackInDegrees = trackInDegrees(sweepAngle, progressInDegrees)
 
@@ -317,7 +344,7 @@ private fun MaterialScope.singleSegmentImpl(
                     arcColor = trackColor(staticProgress, dynamicProgress, colors),
                     strokeWidth = strokeWidth,
                     linePattern = linePattern,
-                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_CLOCKWISE
+                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_CLOCKWISE,
                 )
                 .addContent(spacer)
                 .build()
@@ -330,7 +357,7 @@ private fun MaterialScope.singleSegmentImpl(
                     arcColor = colors.indicatorColor.prop,
                     strokeWidth = strokeWidth,
                     linePattern = linePattern,
-                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_COUNTER_CLOCKWISE
+                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_COUNTER_CLOCKWISE,
                 )
                 .addContent(spacer)
                 .build()
@@ -350,14 +377,14 @@ private fun MaterialScope.multipleSegmentsImpl(
     dynamicProgress: DynamicFloat?,
     @Dimension(DP) strokeWidth: Float,
     @Dimension(DP) gapSize: Float,
-    colors: ProgressIndicatorColors
+    colors: ProgressIndicatorColors,
 ): Box.Builder {
     val sweepAngle = endAngleDegrees - startAngleDegrees
     val progressInDegrees =
         progressInDegrees(
             sweepAngle = sweepAngle,
             staticProgress = staticProgress,
-            dynamicProgress = dynamicProgress
+            dynamicProgress = dynamicProgress,
         )
     val gapInterval = sweepAngle / segmentCount
 
@@ -381,7 +408,7 @@ private fun MaterialScope.multipleSegmentsImpl(
                             .setGapSize(gapSize + trackGapIncrement)
                             .setGapInterval(gapInterval)
                             .build(),
-                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_CLOCKWISE
+                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_CLOCKWISE,
                 )
                 .setModifiers(
                     Modifiers.Builder()
@@ -405,7 +432,7 @@ private fun MaterialScope.multipleSegmentsImpl(
                             .setGapSize(gapSize)
                             .setGapInterval(gapInterval)
                             .build(),
-                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_CLOCKWISE
+                    arcDirection = LayoutElementBuilders.ARC_DIRECTION_CLOCKWISE,
                 )
                 .build()
         )
@@ -462,7 +489,7 @@ private fun trackInDegrees(sweepAngle: Float, progressInDegrees: DegreesProp): D
 internal fun trackColor(
     staticProgress: Float,
     dynamicProgress: DynamicFloat?,
-    colors: ProgressIndicatorColors
+    colors: ProgressIndicatorColors,
 ): ColorProp =
     ColorProp.Builder(
             if (staticProgress > 1) {
@@ -489,7 +516,7 @@ private fun createArc(
     arcColor: ColorProp,
     @Dimension(DP) strokeWidth: Float,
     linePattern: DashedLinePattern,
-    arcDirection: Int
+    arcDirection: Int,
 ): Arc.Builder =
     Arc.Builder()
         .setAnchorAngle(anchorAngle)

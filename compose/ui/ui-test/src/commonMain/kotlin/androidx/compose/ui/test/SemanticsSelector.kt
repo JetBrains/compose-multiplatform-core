@@ -26,11 +26,11 @@ import androidx.compose.ui.semantics.SemanticsNode
  * @param chainedInputSelector Optional selector to apply before this selector gets applied.
  * @param selector The lambda that implements the projection.
  */
-class SemanticsSelector(
-    val description: String,
+public class SemanticsSelector(
+    public val description: String,
     private val requiresExactlyOneNode: Boolean,
     private val chainedInputSelector: SemanticsSelector? = null,
-    private val selector: (Iterable<SemanticsNode>) -> SelectionResult
+    private val selector: (Iterable<SemanticsNode>) -> SelectionResult,
 ) {
 
     /**
@@ -38,7 +38,7 @@ class SemanticsSelector(
      *
      * @throws AssertionError if required prerequisites to perform the selection were not satisfied.
      */
-    fun map(nodes: Iterable<SemanticsNode>, errorOnFail: String): SelectionResult {
+    public fun map(nodes: Iterable<SemanticsNode>, errorOnFail: String): SelectionResult {
         val chainedResult = chainedInputSelector?.map(nodes, errorOnFail)
         val inputNodes = chainedResult?.selectedNodes ?: nodes
         if (requiresExactlyOneNode && inputNodes.count() != 1) {
@@ -48,7 +48,7 @@ class SemanticsSelector(
                         errorMessage = errorOnFail,
                         foundNodes = inputNodes.toList(),
                         expectedCount = 1,
-                        selector = chainedInputSelector ?: this
+                        selector = chainedInputSelector ?: this,
                     )
             )
         }
@@ -61,7 +61,7 @@ internal fun SemanticsSelector(matcher: SemanticsMatcher): SemanticsSelector {
     return SemanticsSelector(
         matcher.description,
         requiresExactlyOneNode = false,
-        chainedInputSelector = null
+        chainedInputSelector = null,
     ) { nodes ->
         SelectionResult(nodes.filter { matcher.matches(it) })
     }
@@ -75,9 +75,9 @@ internal fun SemanticsSelector(matcher: SemanticsMatcher): SemanticsSelector {
  *   selector expected only 1 node but got multiple) it will provide a custom error exactly
  *   explaining what selection was performed and what nodes it received.
  */
-class SelectionResult(
-    val selectedNodes: List<SemanticsNode>,
-    val customErrorOnNoMatch: String? = null
+public class SelectionResult(
+    public val selectedNodes: List<SemanticsNode>,
+    public val customErrorOnNoMatch: String? = null,
 )
 
 /**
@@ -87,12 +87,12 @@ class SelectionResult(
  */
 internal fun SemanticsSelector.addSelectionFromSingleNode(
     description: String,
-    selector: (SemanticsNode) -> List<SemanticsNode>
+    selector: (SemanticsNode) -> List<SemanticsNode>,
 ): SemanticsSelector {
     return SemanticsSelector(
         "(${this.description}).$description",
         requiresExactlyOneNode = true,
-        chainedInputSelector = this
+        chainedInputSelector = this,
     ) { nodes ->
         SelectionResult(selector(nodes.first()))
     }
@@ -103,7 +103,7 @@ internal fun SemanticsSelector.addIndexSelector(index: Int): SemanticsSelector {
     return SemanticsSelector(
         "(${this.description})[$index]",
         requiresExactlyOneNode = false,
-        chainedInputSelector = this
+        chainedInputSelector = this,
     ) { nodes ->
         val nodesList = nodes.toList()
         if (index >= 0 && index < nodesList.size) {
@@ -120,7 +120,7 @@ internal fun SemanticsSelector.addLastNodeSelector(): SemanticsSelector {
     return SemanticsSelector(
         "(${this.description}).last",
         requiresExactlyOneNode = false,
-        chainedInputSelector = this
+        chainedInputSelector = this,
     ) { nodes ->
         SelectionResult(nodes.toList().takeLast(1))
     }
@@ -132,12 +132,12 @@ internal fun SemanticsSelector.addLastNodeSelector(): SemanticsSelector {
  */
 internal fun SemanticsSelector.addSelectorViaMatcher(
     selectorName: String,
-    matcher: SemanticsMatcher
+    matcher: SemanticsMatcher,
 ): SemanticsSelector {
     return SemanticsSelector(
         "(${this.description}).$selectorName(${matcher.description})",
         requiresExactlyOneNode = false,
-        chainedInputSelector = this
+        chainedInputSelector = this,
     ) { nodes ->
         SelectionResult(nodes.filter { matcher.matches(it) })
     }

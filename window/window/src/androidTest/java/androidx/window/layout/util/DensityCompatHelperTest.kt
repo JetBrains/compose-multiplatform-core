@@ -75,10 +75,7 @@ class DensityCompatHelperTest {
 
             @Suppress("DEPRECATION")
             val fakeWindowMetrics =
-                AndroidWindowMetrics(
-                    Rect(0, 0, 0, 0),
-                    WindowInsets.Builder().build(),
-                )
+                AndroidWindowMetrics(Rect(0, 0, 0, 0), WindowInsets.Builder().build())
 
             val density = helper.density(activity.resources.configuration, fakeWindowMetrics)
             val expectedDensity =

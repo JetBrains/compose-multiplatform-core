@@ -17,9 +17,11 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.internal.getValue
+import androidx.compose.material3.adaptive.layout.internal.rememberRef
+import androidx.compose.material3.adaptive.layout.internal.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
 
 /**
@@ -28,7 +30,7 @@ import androidx.compose.ui.unit.IntSize
  */
 @ExperimentalMaterial3AdaptiveApi
 @Immutable
-class ThreePaneMotion
+public class ThreePaneMotion
 internal constructor(
     private val primaryPaneMotion: PaneMotion,
     private val secondaryPaneMotion: PaneMotion,
@@ -40,14 +42,14 @@ internal constructor(
      * @param role the specified role of the pane, see [ListDetailPaneScaffoldRole] and
      *   [SupportingPaneScaffoldRole].
      */
-    operator fun get(role: ThreePaneScaffoldRole): PaneMotion =
+    public operator fun get(role: ThreePaneScaffoldRole): PaneMotion =
         when (role) {
             ThreePaneScaffoldRole.Primary -> primaryPaneMotion
             ThreePaneScaffoldRole.Secondary -> secondaryPaneMotion
             ThreePaneScaffoldRole.Tertiary -> tertiaryPaneMotion
         }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ThreePaneMotion) return false
         if (primaryPaneMotion != other.primaryPaneMotion) return false
@@ -56,23 +58,23 @@ internal constructor(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = primaryPaneMotion.hashCode()
         result = 31 * result + secondaryPaneMotion.hashCode()
         result = 31 * result + tertiaryPaneMotion.hashCode()
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "ThreePaneMotion(" +
             "primaryPaneMotion=$primaryPaneMotion, " +
             "secondaryPaneMotion=$secondaryPaneMotion, " +
             "tertiaryPaneMotion=$tertiaryPaneMotion)"
     }
 
-    companion object {
+    public companion object {
         /** A default [ThreePaneMotion] instance that specifies no motions. */
-        val NoMotion =
+        public val NoMotion: ThreePaneMotion =
             ThreePaneMotion(PaneMotion.NoMotion, PaneMotion.NoMotion, PaneMotion.NoMotion)
     }
 }
@@ -82,21 +84,19 @@ internal constructor(
 internal fun ThreePaneScaffoldState.calculateThreePaneMotion(
     ltrPaneOrder: ThreePaneScaffoldHorizontalOrder
 ): ThreePaneMotion {
-    class ThreePaneMotionHolder(var value: ThreePaneMotion)
-
-    val resultHolder = remember { ThreePaneMotionHolder(ThreePaneMotion.NoMotion) }
+    var result by rememberRef(ThreePaneMotion.NoMotion)
     if (currentState != targetState) {
         // Only update motions when the state changes to prevent unnecessary recomposition at the
         // end of state transitions.
         val paneMotions = calculatePaneMotion(currentState, targetState, ltrPaneOrder)
-        resultHolder.value =
+        result =
             ThreePaneMotion(
                 paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Primary)],
                 paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Secondary)],
-                paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Tertiary)]
+                paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Tertiary)],
             )
     }
-    return resultHolder.value
+    return result
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -108,6 +108,14 @@ internal class ThreePaneScaffoldMotionDataProvider :
     private val primary = PaneMotionData()
     private val secondary = PaneMotionData()
     private val tertiary = PaneMotionData()
+
+    internal var scaffoldState: ThreePaneScaffoldState? = null
+
+    internal val predictiveBackScaleState =
+        PredictiveBackScaleState(
+            scaffoldSize = { scaffoldSize },
+            isPredictiveBackInProgress = { scaffoldState?.isPredictiveBackInProgress ?: false },
+        )
 
     override var scaffoldSize: IntSize = IntSize.Zero
 
@@ -126,7 +134,7 @@ internal class ThreePaneScaffoldMotionDataProvider :
 
     internal fun update(
         threePaneMotion: ThreePaneMotion,
-        ltrOrder: ThreePaneScaffoldHorizontalOrder
+        ltrOrder: ThreePaneScaffoldHorizontalOrder,
     ) {
         this.ltrOrder = ltrOrder
         forEach { role, it ->

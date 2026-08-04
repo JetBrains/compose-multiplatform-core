@@ -15,6 +15,8 @@
  */
 package androidx.compose.ui.text.font
 
+import androidx.compose.ui.text.internal.requirePrecondition
+
 private const val AllFlags = 0xffff
 private const val WeightFlag = 0x1
 private const val StyleFlag = 0x2
@@ -35,12 +37,13 @@ private const val StyleFlag = 0x2
  * `FontSynthesis` works the same way as the
  * [CSS font-synthesis](https://www.w3.org/TR/css-fonts-4/#font-synthesis) property.
  *
+ * @property value The integer representation of the FontSynthesis.
  * @sample androidx.compose.ui.text.samples.FontFamilySynthesisSample
  */
 @kotlin.jvm.JvmInline
-value class FontSynthesis internal constructor(internal val value: Int) {
+public value class FontSynthesis internal constructor(public val value: Int) {
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return when (this) {
             None -> "None"
             Weight -> "Weight"
@@ -51,30 +54,51 @@ value class FontSynthesis internal constructor(internal val value: Int) {
     }
 
     // NOTE: The values below are selected to be used as flags. See isWeightOn for instance.
-    companion object {
+    public companion object {
         /**
          * Turns off font synthesis. Neither bold nor slanted faces are synthesized if they don't
          * exist in the [FontFamily]
          */
-        val None = FontSynthesis(0)
+        public val None: FontSynthesis
+            get() = FontSynthesis(0)
 
         /**
          * Only a bold font is synthesized, if it is not available in the [FontFamily]. Slanted
          * fonts will not be synthesized.
          */
-        val Weight = FontSynthesis(WeightFlag)
+        public val Weight: FontSynthesis
+            get() = FontSynthesis(WeightFlag)
 
         /**
          * Only an slanted font is synthesized, if it is not available in the [FontFamily]. Bold
          * fonts will not be synthesized.
          */
-        val Style = FontSynthesis(StyleFlag)
+        public val Style: FontSynthesis
+            get() = FontSynthesis(StyleFlag)
 
         /**
          * The system synthesizes both bold and slanted fonts if either of them are not available in
          * the [FontFamily]
          */
-        val All = FontSynthesis(AllFlags)
+        public val All: FontSynthesis
+            get() = FontSynthesis(AllFlags)
+
+        /**
+         * Creates a FontSynthesis from the given integer value. This can be useful if you need to
+         * serialize/deserialize FontSynthesis values.
+         *
+         * @param value The integer representation of the FontSynthesis.
+         * @throws IllegalArgumentException if the given [value] is not recognized.
+         * @see androidx.compose.ui.text.font.FontSynthesis.value
+         */
+        public fun valueOf(value: Int): FontSynthesis {
+            requirePrecondition(
+                value == 0 || value == WeightFlag || value == StyleFlag || value == AllFlags
+            ) {
+                "The given value=$value is not recognized by FontSynthesis."
+            }
+            return FontSynthesis(value)
+        }
     }
 
     internal val isWeightOn: Boolean
@@ -102,5 +126,5 @@ internal expect fun FontSynthesis.synthesizeTypeface(
     typeface: Any,
     font: Font,
     requestedWeight: FontWeight,
-    requestedStyle: FontStyle
+    requestedStyle: FontStyle,
 ): Any

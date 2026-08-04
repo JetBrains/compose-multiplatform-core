@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Length
 import androidx.health.connect.client.units.Power
@@ -29,6 +30,7 @@ import java.time.ZoneId
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class PlannedExerciseSessionRecordTest {
@@ -60,11 +62,11 @@ class PlannedExerciseSessionRecordTest {
                                                 listOf(
                                                     ExercisePerformanceTarget.PowerTarget(
                                                         minPower = Power.watts(180.0),
-                                                        maxPower = Power.watts(220.0)
+                                                        maxPower = Power.watts(220.0),
                                                     )
-                                                )
+                                                ),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning",
@@ -97,11 +99,11 @@ class PlannedExerciseSessionRecordTest {
                                                 listOf(
                                                     ExercisePerformanceTarget.PowerTarget(
                                                         minPower = Power.watts(180.0),
-                                                        maxPower = Power.watts(220.0)
+                                                        maxPower = Power.watts(220.0),
                                                     )
-                                                )
+                                                ),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning",
@@ -138,11 +140,11 @@ class PlannedExerciseSessionRecordTest {
                                                 listOf(
                                                     ExercisePerformanceTarget.PowerTarget(
                                                         minPower = Power.watts(200.0),
-                                                        maxPower = Power.watts(240.0)
+                                                        maxPower = Power.watts(240.0),
                                                     )
-                                                )
+                                                ),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning",
@@ -171,9 +173,9 @@ class PlannedExerciseSessionRecordTest {
                                                 ExerciseCompletionGoal.DistanceGoal(
                                                     Length.meters(200.0)
                                                 ),
-                                            performanceTargets = listOf()
+                                            performanceTargets = listOf(),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning",
@@ -181,6 +183,22 @@ class PlannedExerciseSessionRecordTest {
                     exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
                 )
             )
+    }
+
+    @Config(maxSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun invalidTimes_startTimeEqualsEndTime_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            PlannedExerciseSessionRecord(
+                startTime = Instant.ofEpochMilli(100L),
+                startZoneOffset = null,
+                endTime = Instant.ofEpochMilli(100L),
+                endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
+                blocks = listOf(),
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
+            )
+        }
     }
 
     @Test
@@ -210,11 +228,11 @@ class PlannedExerciseSessionRecordTest {
                                             listOf(
                                                 ExercisePerformanceTarget.PowerTarget(
                                                     minPower = Power.watts(180.0),
-                                                    maxPower = Power.watts(220.0)
+                                                    maxPower = Power.watts(220.0),
                                                 )
-                                            )
+                                            ),
                                     )
-                                )
+                                ),
                         )
                     ),
                 title = "Total Body Conditioning Workout",
@@ -252,11 +270,11 @@ class PlannedExerciseSessionRecordTest {
                                                 listOf(
                                                     ExercisePerformanceTarget.PowerTarget(
                                                         minPower = Power.watts(180.0),
-                                                        maxPower = Power.watts(220.0)
+                                                        maxPower = Power.watts(220.0),
                                                     )
-                                                )
+                                                ),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning",
@@ -287,11 +305,11 @@ class PlannedExerciseSessionRecordTest {
                                                 listOf(
                                                     ExercisePerformanceTarget.PowerTarget(
                                                         minPower = Power.watts(180.0),
-                                                        maxPower = Power.watts(220.0)
+                                                        maxPower = Power.watts(220.0),
                                                     )
-                                                )
+                                                ),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning",
@@ -329,11 +347,11 @@ class PlannedExerciseSessionRecordTest {
                                                 listOf(
                                                     ExercisePerformanceTarget.PowerTarget(
                                                         minPower = Power.watts(200.0),
-                                                        maxPower = Power.watts(240.0)
+                                                        maxPower = Power.watts(240.0),
                                                     )
-                                                )
+                                                ),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "",
@@ -360,9 +378,9 @@ class PlannedExerciseSessionRecordTest {
                                                 ExerciseCompletionGoal.DistanceGoal(
                                                     Length.meters(200.0)
                                                 ),
-                                            performanceTargets = listOf()
+                                            performanceTargets = listOf(),
                                         )
-                                    )
+                                    ),
                             )
                         ),
                     title = "Total Body Conditioning Workout",
@@ -387,7 +405,7 @@ class PlannedExerciseSessionRecordTest {
                 notes = "Notes",
                 exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
                 completedExerciseSessionId = "some-uuid",
-                metadata = Metadata.manualEntryWithId(id = "record_id")
+                metadata = Metadata.manualEntryWithId(id = "record_id"),
             )
         assertThat(record.completedExerciseSessionId).isEqualTo("some-uuid")
     }
@@ -404,7 +422,7 @@ class PlannedExerciseSessionRecordTest {
                 blocks = listOf(),
                 title = "My Planned Session",
                 notes = "Notes",
-                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
             )
         assertThat(record.completedExerciseSessionId).isNull()
     }

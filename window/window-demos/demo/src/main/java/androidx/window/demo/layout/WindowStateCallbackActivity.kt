@@ -102,7 +102,7 @@ class WindowStateCallbackActivity : ComponentActivity() {
             override fun onConfigurationChanged(configuration: Configuration) {
                 onWindowStateCallbackInvoked(
                     R.string.application_configuration_title,
-                    configuration
+                    configuration,
                 )
             }
 
@@ -146,6 +146,14 @@ class WindowStateCallbackActivity : ComponentActivity() {
                 }
             }
         }
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                tracker.windowEngagementInfo(this@WindowStateCallbackActivity).collect { info ->
+                    onWindowStateCallbackInvoked(R.string.window_engagement_info_flow_title, info)
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -179,10 +187,7 @@ class WindowStateCallbackActivity : ComponentActivity() {
 
     private fun provideLatestWindowState() {
         viewModel.updateLatestWindowState(
-            queryWindowState(
-                R.string.latest_configuration_title,
-                "poll configuration every 500ms",
-            )
+            queryWindowState(R.string.latest_configuration_title, "poll configuration every 500ms")
         )
     }
 

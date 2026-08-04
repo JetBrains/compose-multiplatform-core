@@ -29,7 +29,7 @@ internal actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
 @Composable
 internal actual fun PredictiveBackHandler(
     enabled: Boolean,
-    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
+    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
 ) {
     androidx.activity.compose.PredictiveBackHandler(enabled, onBack)
 }

@@ -44,12 +44,12 @@ import androidx.compose.ui.text.platform.AndroidTypefaceWrapper
         " resolve in this context. To preload fonts, use FontFamily.Resolver.",
     replaceWith =
         ReplaceWith("FontFamily.Resolver.preload(fontFamily, Font.AndroidResourceLoader(context))"),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
-fun Typeface(
+public fun Typeface(
     context: Context,
     fontFamily: FontFamily,
-    styles: List<Pair<FontWeight, FontStyle>>? = null
+    styles: List<Pair<FontWeight, FontStyle>>? = null,
 ): androidx.compose.ui.text.font.Typeface {
     return when (fontFamily) {
         is FontListFontFamily -> AndroidFontListTypeface(fontFamily, context, styles)
@@ -64,7 +64,7 @@ fun Typeface(
  *
  * @param typeface Android Typeface instance
  */
-fun Typeface(typeface: Typeface): androidx.compose.ui.text.font.Typeface {
+public fun Typeface(typeface: Typeface): androidx.compose.ui.text.font.Typeface {
     return AndroidTypefaceWrapper(typeface)
 }
 
@@ -73,6 +73,6 @@ fun Typeface(typeface: Typeface): androidx.compose.ui.text.font.Typeface {
  *
  * @param typeface Android Typeface instance
  */
-fun FontFamily(typeface: Typeface): FontFamily {
+public fun FontFamily(typeface: Typeface): FontFamily {
     return FontFamily(Typeface(typeface))
 }

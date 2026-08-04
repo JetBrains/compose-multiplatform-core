@@ -16,8 +16,7 @@
 
 package androidx.compose.ui.platform
 
-import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
-import android.content.Context
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.res.Resources
 import android.graphics.Rect as AndroidRect
 import android.graphics.RectF
@@ -26,15 +25,19 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Parcelable
 import android.os.SystemClock
 import android.text.SpannableString
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityManager.AccessibilityStateChangeListener
 import android.view.accessibility.AccessibilityManager.TouchExplorationStateChangeListener
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_RENDERING_INFO_KEY
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
@@ -50,31 +53,39 @@ import androidx.collection.MutableObjectIntMap
 import androidx.collection.SparseArrayCompat
 import androidx.collection.intListOf
 import androidx.collection.intObjectMapOf
+import androidx.collection.mutableIntIntMapOf
 import androidx.collection.mutableIntListOf
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectIntMapOf
-import androidx.compose.ui.ComposeUiFlags.isFocusActionExitsTouchModeEnabled
+import androidx.collection.mutableScatterSetOf
+import androidx.compose.ui.AndroidComposeUiFlags
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.contentcapture.ContentCaptureManager
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.accessibility.hasCollectionInfo
 import androidx.compose.ui.platform.accessibility.setCollectionInfo
 import androidx.compose.ui.platform.accessibility.setCollectionItemInfo
 import androidx.compose.ui.semantics.AccessibilityAction
+import androidx.compose.ui.semantics.AdjustedSemanticsNode
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -90,11 +101,16 @@ import androidx.compose.ui.semantics.SemanticsActions.PageUp
 import androidx.compose.ui.semantics.SemanticsActions.RequestFocus
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
-import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.IsSensitiveData
 import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.UnmergedConfigComparator
+import androidx.compose.ui.semantics.findClosestParentNode
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isAccessibilityIgnoredLink
 import androidx.compose.ui.semantics.isHidden
 import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.semantics.subtreeSortedByGeometryGrouping
@@ -117,12 +133,14 @@ import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_ASSERTIVE
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE
 import androidx.core.view.accessibility.AccessibilityEventCompat
+import androidx.core.view.accessibility.AccessibilityManagerCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_ACCESSIBILITY
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_INPUT
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.lifecycle.Lifecycle
+import java.io.Serializable
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -146,10 +164,12 @@ private fun LayoutNode.findClosestParentNode(selector: (LayoutNode) -> Boolean):
     return null
 }
 
-@Suppress("NullAnnotationGroup")
-@OptIn(InternalTextApi::class)
+@OptIn(InternalTextApi::class, ExperimentalComposeUiApi::class)
 internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidComposeView) :
-    AccessibilityDelegateCompat() {
+    AccessibilityDelegateCompat(),
+    OnAttachStateChangeListener,
+    AccessibilityStateChangeListener,
+    TouchExplorationStateChangeListener {
     @Suppress("ConstPropertyName")
     companion object {
         /** Virtual node identifier value for invalid nodes. */
@@ -179,6 +199,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         // 20 is taken from AbsSeekbar.java.
         const val AccessibilitySliderStepsCount = 20
+
+        const val CONTENT_CHANGE_TYPE_CHECKED = AccessibilityEvent.CONTENT_CHANGE_TYPE_CHECKED
 
         /**
          * Timeout to determine whether a text selection changed event and the pending text
@@ -218,7 +240,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 R.id.accessibility_custom_action_28,
                 R.id.accessibility_custom_action_29,
                 R.id.accessibility_custom_action_30,
-                R.id.accessibility_custom_action_31
+                R.id.accessibility_custom_action_31,
             )
     }
 
@@ -235,8 +257,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         view.parent.requestSendAccessibilityEvent(view, it)
     }
 
-    private val accessibilityManager: AccessibilityManager =
-        view.context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+    private val accessibilityManager: AccessibilityManager
+        get() = view.composeViewContext.accessibilityManager.accessibilityManager
 
     internal var accessibilityForceEnabledForTesting = false
         set(value) {
@@ -251,21 +273,27 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      */
     internal var SendRecurringAccessibilityEventsIntervalMillis = 100L
 
-    private val enabledStateListener = AccessibilityStateChangeListener { enabled ->
-        enabledServices =
-            if (enabled) {
-                accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
+    private var _enabledServices: List<AccessibilityServiceInfo>? = null
+
+    private fun resetEnabledAccessibilityServiceList() {
+        _enabledServices = null
+    }
+
+    private val enabledServices: List<AccessibilityServiceInfo>
+        get() =
+            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+                view.composeViewContext.enabledServices
             } else {
-                emptyList()
+                _enabledServices
+                    ?: accessibilityManager
+                        .getEnabledAccessibilityServiceList(
+                            AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+                        )
+                        .also { _enabledServices = it }
             }
-    }
 
-    private val touchExplorationStateListener = TouchExplorationStateChangeListener {
-        enabledServices = accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
-    }
-
-    private var enabledServices =
-        accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
+    private val isAccessibilityEnabled: Boolean
+        get() = view.composeViewContext.isAccessibilityEnabled
 
     /**
      * True if any accessibility service enabled in the system, except the UIAutomator (as it
@@ -275,8 +303,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         get() =
             accessibilityForceEnabledForTesting ||
                 // checking the list allows us to filter out the UIAutomator which doesn't appear in
-                // it
-                (accessibilityManager.isEnabled && enabledServices.isNotEmpty())
+                // it.
+                (isAccessibilityEnabled && enabledServices.isNotEmpty())
 
     /**
      * True if accessibility service with the touch exploration (e.g. Talkback) is enabled in the
@@ -285,9 +313,28 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     private val isTouchExplorationEnabled
         get() =
             accessibilityForceEnabledForTesting ||
-                (accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled)
+                (isAccessibilityEnabled && view.composeViewContext.isTouchExplorationEnabled)
 
-    private val handler = Handler(Looper.getMainLooper())
+    internal var requestFromAccessibilityToolForTesting: Boolean? = null
+
+    // TODO remove with b/486998514
+    private val legacyMainHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * Handler returns non-null ONLY when [view] is attached.
+     *
+     * Callers should not cache this value. Null means that we are not attached and don't need to
+     * process.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    private val handler: Handler?
+        get() =
+            if (AndroidComposeUiFlags.isViewBasedSemanticsHandlerEnabled) {
+                view.handler
+            } else {
+                legacyMainHandler
+            }
+
     private var nodeProvider = ComposeAccessibilityNodeProvider()
 
     private var accessibilityFocusedVirtualViewId = InvalidId
@@ -318,7 +365,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val granularity: Int,
         val fromIndex: Int,
         val toIndex: Int,
-        val traverseTime: Long
+        val traverseTime: Long,
     )
 
     private var pendingTextTraversedEvent: PendingTextTraversedEvent? = null
@@ -328,14 +375,15 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      * tree. They key is the virtual view id(the root node has a key of
      * AccessibilityNodeProviderCompat.HOST_VIEW_ID and other node has a key of its id).
      */
-    private var currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds> =
-        intObjectMapOf()
+    private var currentSemanticsNodes: IntObjectMap<AdjustedSemanticsNode> = intObjectMapOf()
+        @OptIn(ExperimentalComposeUiApi::class)
         get() {
             if (currentSemanticsNodesInvalidated) { // first instance of retrieving all nodes
                 currentSemanticsNodesInvalidated = false
                 field =
                     view.semanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
-                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID,
+                        shouldIgnoreNode = { it.isAccessibilityIgnoredLink },
                     )
                 if (isEnabled) {
                     setTraversalValues(field, idToBeforeMap, idToAfterMap, view.context.resources)
@@ -367,26 +415,44 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         SemanticsNodeCopy(view.semanticsOwner.unmergedRootSemanticsNode, intObjectMapOf())
     private var checkingForSemanticsChanges = false
 
-    init {
-        // Remove callbacks that rely on view being attached to a window when we become detached.
-        view.addOnAttachStateChangeListener(
-            object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(view: View) {
-                    with(accessibilityManager) {
-                        addAccessibilityStateChangeListener(enabledStateListener)
-                        addTouchExplorationStateChangeListener(touchExplorationStateListener)
-                    }
-                }
+    // A mapping from semantics node IDs to the local drawing order (among the children of a single
+    // parent) of the corresponding layout nodes.
+    private val drawingOrder = mutableIntIntMapOf()
 
-                override fun onViewDetachedFromWindow(view: View) {
-                    handler.removeCallbacks(semanticsChangeChecker)
-                    with(accessibilityManager) {
-                        removeAccessibilityStateChangeListener(enabledStateListener)
-                        removeTouchExplorationStateChangeListener(touchExplorationStateListener)
-                    }
-                }
-            }
-        )
+    init {
+        // Remove callbacks that rely on view being attached to a window when we become
+        // detached.
+        view.addOnAttachStateChangeListener(this)
+    }
+
+    override fun onViewAttachedToWindow(view: View) {
+        if (!AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+            // Whenever the window is reattached, update the `enabledServices` value in
+            // case
+            // there have been changes while the window was detached that the listeners
+            // might not catch.
+            if (accessibilityManager.isEnabled) resetEnabledAccessibilityServiceList()
+            accessibilityManager.addAccessibilityStateChangeListener(this)
+            accessibilityManager.addTouchExplorationStateChangeListener(this)
+        }
+    }
+
+    override fun onViewDetachedFromWindow(view: View) {
+        // TODO: b/498432814 - Handler shouldn't be null on detach; investigate re-entrant
+        //  detachment to see if handler? can be removed.
+        handler?.removeCallbacks(semanticsChangeChecker)
+        if (!AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+            accessibilityManager.removeAccessibilityStateChangeListener(this)
+            accessibilityManager.removeTouchExplorationStateChangeListener(this)
+        }
+    }
+
+    override fun onAccessibilityStateChanged(enabled: Boolean) {
+        resetEnabledAccessibilityServiceList()
+    }
+
+    override fun onTouchExplorationStateChanged(enabled: Boolean) {
+        resetEnabledAccessibilityServiceList()
     }
 
     /**
@@ -408,10 +474,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 
     private fun canScroll(
-        currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
+        currentSemanticsNodes: IntObjectMap<AdjustedSemanticsNode>,
         vertical: Boolean,
         direction: Int,
-        position: Offset
+        position: Offset,
     ): Boolean {
         // No down event has occurred yet which gives us a location to hit test.
         if (position == Offset.Unspecified || !position.isValid()) return false
@@ -462,9 +528,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         return foundNode
     }
 
+    private fun isRequestFromAccessibilityTool(): Boolean {
+        when (requestFromAccessibilityToolForTesting) {
+            true -> return true
+            false -> return false
+            else ->
+                return AccessibilityManagerCompat.isRequestFromAccessibilityTool(
+                    accessibilityManager
+                )
+        }
+    }
+
     private fun createNodeInfo(virtualViewId: Int): AccessibilityNodeInfoCompat? {
         if (
-            view.viewTreeOwners?.lifecycleOwner?.lifecycle?.currentState ==
+            view.composeViewContext.lifecycleOwner.lifecycle.currentState ==
                 Lifecycle.State.DESTROYED
         ) {
             return emptyNodeInfoOrNull()
@@ -472,7 +549,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val semanticsNodeWithAdjustedBounds =
             currentSemanticsNodes[virtualViewId] ?: return emptyNodeInfoOrNull()
         val semanticsNode: SemanticsNode = semanticsNodeWithAdjustedBounds.semanticsNode
+        val isSensitiveData = semanticsNode.config.getOrNull(IsSensitiveData) == true
+        if (isSensitiveData && !isRequestFromAccessibilityTool()) {
+            return null
+        }
         val info: AccessibilityNodeInfoCompat = AccessibilityNodeInfoCompat.obtain()
+        info.setAccessibilityDataSensitive(isSensitiveData)
         if (virtualViewId == AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
             info.setParent(view.getParentForAccessibility() as? View)
         } else {
@@ -507,33 +589,50 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      */
     private fun emptyNodeInfoOrNull(): AccessibilityNodeInfoCompat? {
         // Accessibility Manager is not enabled if this code is used by Assistant
-        return if (!accessibilityManager.isEnabled) {
+        return if (!isAccessibilityEnabled) {
             AccessibilityNodeInfoCompat.obtain()
         } else null
     }
 
-    private fun boundsInScreen(node: SemanticsNodeWithAdjustedBounds): android.graphics.Rect {
+    private fun boundsInScreen(node: AdjustedSemanticsNode): AndroidRect {
         val boundsInRoot = node.adjustedBounds
-        val topLeftInScreen =
-            view.localToScreen(Offset(boundsInRoot.left.toFloat(), boundsInRoot.top.toFloat()))
-        val bottomRightInScreen =
-            view.localToScreen(Offset(boundsInRoot.right.toFloat(), boundsInRoot.bottom.toFloat()))
+        return toBoundsInScreen(
+            left = boundsInRoot.left.toFloat(),
+            top = boundsInRoot.top.toFloat(),
+            right = boundsInRoot.right.toFloat(),
+            bottom = boundsInRoot.bottom.toFloat(),
+        )
+    }
+
+    private fun toBoundsInScreen(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+    ): AndroidRect {
+        val topLeftInScreen: Offset = view.localToScreen(Offset(left, top))
+        val bottomRightInScreen = view.localToScreen(Offset(right, bottom))
+
         // Due to rotation, the top left corner of the local bounds may not be the top left corner
         // of the screen bounds.
         return android.graphics.Rect(
             floor(min(topLeftInScreen.x, bottomRightInScreen.x)).toInt(),
             floor(min(topLeftInScreen.y, bottomRightInScreen.y)).toInt(),
             ceil(max(topLeftInScreen.x, bottomRightInScreen.x)).toInt(),
-            ceil(max(topLeftInScreen.y, bottomRightInScreen.y)).toInt()
+            ceil(max(topLeftInScreen.y, bottomRightInScreen.y)).toInt(),
         )
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun populateAccessibilityNodeInfoProperties(
         virtualViewId: Int,
         info: AccessibilityNodeInfoCompat,
-        semanticsNode: SemanticsNode
+        semanticsNode: SemanticsNode,
     ) {
         val resources = view.context.resources
+        val isInMergingHiddenSubtree =
+            AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled &&
+                currentSemanticsNodes[virtualViewId]?.isInMergingHiddenSubtree == true
 
         // set classname
         info.className = ClassName
@@ -581,17 +680,45 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         //   and the root of the SemanticsNode tree.
         info.isImportantForAccessibility = semanticsNode.isImportantForAccessibility()
 
-        semanticsNode.replacedChildren.fastForEach { child ->
-            if (currentSemanticsNodes.contains(child.id)) {
-                val holder = view.androidViewsHandler.layoutNodeToHolder[child.layoutNode]
-                // Do not add children if the ID is not valid.
-                if (child.id == View.NO_ID) {
-                    return@fastForEach
+        val isRequestFromAccessibilityTool = isRequestFromAccessibilityTool()
+        var childDrawingOrder = 0
+        val isTraversalGroup =
+            semanticsNode.unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false }
+        val isMerging = semanticsNode.unmergedConfig.isMergingSemanticsOfDescendants
+        val replacedChildren = semanticsNode.replacedChildren
+        val childrenSize = replacedChildren.size
+
+        if (
+            isTraversalGroup &&
+                isMerging &&
+                AndroidComposeUiFlags.isTraversalGroupSortingEnabled &&
+                childrenSize > 1
+        ) {
+            val sortedChildren = getSortedChildren(replacedChildren)
+            for (i in 0 until childrenSize) {
+                val child = sortedChildren[i]
+                val childNodeWithBounds = currentSemanticsNodes[child.id]
+                if (childNodeWithBounds != null && child.id != View.NO_ID) {
+                    addChildToNodeInfo(
+                        childNodeWithBounds,
+                        info,
+                        isRequestFromAccessibilityTool,
+                        childDrawingOrder,
+                    )
+                    childDrawingOrder++
                 }
-                if (holder != null) {
-                    info.addChild(holder)
-                } else {
-                    info.addChild(view, child.id)
+            }
+        } else {
+            replacedChildren.fastForEach { child ->
+                val childNodeWithBounds = currentSemanticsNodes[child.id]
+                if (childNodeWithBounds != null && child.id != View.NO_ID) {
+                    addChildToNodeInfo(
+                        childNodeWithBounds,
+                        info,
+                        isRequestFromAccessibilityTool,
+                        childDrawingOrder,
+                    )
+                    childDrawingOrder++
                 }
             }
         }
@@ -667,11 +794,36 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             }
         }
 
+        val hintText = semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.HintText)
+        if (hintText != null) {
+            info.hintText = hintText
+        }
+
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.Heading)?.let {
             info.isHeading = true
         }
+
+        semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.TextEntryKey)?.let {
+            info.isTextEntryKey = true
+        }
+
+        // Drawing order is not applicable for the root node.
+        if (virtualViewId != AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
+            val drawingOrderForNode = drawingOrder.getOrDefault(semanticsNode.id, -1)
+            if (drawingOrderForNode != -1) {
+                info.drawingOrder = drawingOrderForNode
+            } else {
+                Log.w(
+                    LogTag,
+                    "Drawing order is not available, was AccessibilityNodeInfo requested " +
+                        "for a child node before its parent?",
+                )
+            }
+        }
+
         info.isPassword = semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
-        info.isEditable = semanticsNode.unmergedConfig.contains(SemanticsProperties.IsEditable)
+        info.isEditable =
+            semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.IsEditable) == true
         info.maxTextLength =
             semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.MaxTextLength) ?: -1
         info.isEnabled = semanticsNode.enabled()
@@ -687,7 +839,15 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
 
         // Mark invisible nodes
-        info.isVisibleToUser = !semanticsNode.isHidden
+        info.isVisibleToUser = !(semanticsNode.isHidden || isInMergingHiddenSubtree)
+        if (ComposeUiFlags.isAccessibilityShouldIncludeOffscreenChildrenEnabled) {
+            // We started to report more nodes on the edges of scrollable containers, and we don't
+            // use clip bounds for them. Therefore, we mark them as invisible to user to signal this
+            // information to the accessibility services.
+            info.setInvisibleIfEmptyBounds(
+                if (semanticsNode.isFake) semanticsNode.parent!! else semanticsNode
+            )
+        }
 
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.LiveRegion)?.let {
             info.liveRegion =
@@ -718,7 +878,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 info.addAction(
                     AccessibilityActionCompat(
                         AccessibilityNodeInfoCompat.ACTION_LONG_CLICK,
-                        it.label
+                        it.label,
                     )
                 )
             }
@@ -757,7 +917,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             AccessibilityNodeInfoCompat.ACTION_PASTE,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -768,7 +928,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (!text.isNullOrEmpty()) {
             info.setTextSelection(
                 getAccessibilitySelectionStart(semanticsNode),
-                getAccessibilitySelectionEnd(semanticsNode)
+                getAccessibilitySelectionEnd(semanticsNode),
             )
             val setSelectionAction =
                 semanticsNode.unmergedConfig.getOrNull(SemanticsActions.SetSelection)
@@ -777,7 +937,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             info.addAction(
                 AccessibilityActionCompat(
                     AccessibilityNodeInfoCompat.ACTION_SET_SELECTION,
-                    setSelectionAction?.label
+                    setSelectionAction?.label,
                 )
             )
             info.addAction(AccessibilityNodeInfoCompat.ACTION_NEXT_AT_MOVEMENT_GRANULARITY)
@@ -811,6 +971,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             ) {
                 extraDataKeys.add(EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY)
             }
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN &&
+                    Api37Impl.hasExtraDataRenderingInfo(info, semanticsNode)
+            ) {
+                extraDataKeys.add(EXTRA_DATA_RENDERING_INFO_KEY)
+            }
             if (semanticsNode.unmergedConfig.contains(SemanticsProperties.TestTag)) {
                 extraDataKeys.add(ExtraDataTestTagKey)
             }
@@ -819,6 +985,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 extraDataKeys.add(ExtraDataShapeRectKey)
                 extraDataKeys.add(ExtraDataShapeRectCornersKey)
                 extraDataKeys.add(ExtraDataShapeRegionKey)
+            }
+
+            semanticsNode.unmergedConfig.accessibilityExtraKeys?.forEach { key ->
+                key.accessibilityExtraKey?.let { extraDataKeys.add(it) }
             }
 
             info.availableExtraData = extraDataKeys
@@ -838,7 +1008,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         AccessibilityNodeInfoCompat.RangeInfoCompat.RANGE_TYPE_FLOAT,
                         rangeInfo.range.start,
                         rangeInfo.range.endInclusive,
-                        rangeInfo.current
+                        rangeInfo.current,
                     )
             }
             if (
@@ -1013,12 +1183,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             }
         }
 
-        info.isScreenReaderFocusable = isScreenReaderFocusable(semanticsNode, resources)
+        info.isScreenReaderFocusable =
+            isScreenReaderFocusable(semanticsNode, resources, isInMergingHiddenSubtree)
 
         // `beforeId` refers to the semanticsId that should be read before this `virtualViewId`.
         val beforeId = idToBeforeMap.getOrDefault(virtualViewId, -1)
         if (beforeId != -1) {
-            val beforeView = view.androidViewsHandler.semanticsIdToView(beforeId)
+            val beforeView = view.androidViewsHandler?.semanticsIdToView(beforeId)
             if (beforeView != null) {
                 // If the node that should come before this one is a view, we want to pass in the
                 // "before" view itself, which is retrieved from our `idToViewMap`.
@@ -1031,13 +1202,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 virtualViewId,
                 info,
                 ExtraDataTestTraversalBeforeVal,
-                null
+                null,
             )
         }
 
         val afterId = idToAfterMap.getOrDefault(virtualViewId, -1)
         if (afterId != -1) {
-            val afterView = view.androidViewsHandler.semanticsIdToView(afterId)
+            val afterView = view.androidViewsHandler?.semanticsIdToView(afterId)
             // Specially use `traversalAfter` value if the node after is a View,
             // as expressing the order using traversalBefore in this case would require mutating the
             // View itself, which is not under Compose's full control.
@@ -1047,7 +1218,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     virtualViewId,
                     info,
                     ExtraDataTestTraversalAfterVal,
-                    null
+                    null,
                 )
             }
         }
@@ -1059,12 +1230,44 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             ?.let { info.className = it }
     }
 
+    private fun getSortedChildren(replacedChildren: List<SemanticsNode>): Array<SemanticsNode> {
+        val size = replacedChildren.size
+        return Array(size) { replacedChildren[it] }.apply { sortWith(UnmergedConfigComparator) }
+    }
+
+    private fun addChildToNodeInfo(
+        childNodeWithBounds: AdjustedSemanticsNode,
+        info: AccessibilityNodeInfoCompat,
+        isRequestFromAccessibilityTool: Boolean,
+        childDrawingOrder: Int,
+    ) {
+        val child = childNodeWithBounds.semanticsNode
+        val holder = view.androidViewsHandler?.layoutNodeToHolder[child.layoutNode]
+        if (holder != null) {
+            info.addChild(holder)
+        } else {
+            val childHasSensitiveData = child.config.getOrNull(IsSensitiveData) == true
+            // If the child has isSensitiveData=true then the node request must come
+            // from an accessibility tool in order for the child to be included.
+            if (isRequestFromAccessibilityTool || !childHasSensitiveData) {
+                info.addChild(view, child.id)
+            }
+        }
+        // The children are already ordered by the drawing order at this point.
+        drawingOrder.put(child.id, childDrawingOrder)
+    }
+
     /** Set the error text for this node */
     private fun setContentInvalid(node: SemanticsNode, info: AccessibilityNodeInfoCompat) {
         if (node.unmergedConfig.contains(SemanticsProperties.Error)) {
             info.isContentInvalid = true
             info.error = node.unmergedConfig.getOrNull(SemanticsProperties.Error)
         }
+    }
+
+    /** Marks the node as not visible to user if its bounds have zero width or height */
+    private fun AccessibilityNodeInfoCompat.setInvisibleIfEmptyBounds(node: SemanticsNode) {
+        if (node.touchBoundsInRoot.isEmpty) isVisibleToUser = false
     }
 
     @OptIn(InternalTextApi::class)
@@ -1075,16 +1278,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             toAccessibilitySpannableString(
                 density = view.density,
                 fontFamilyResolver = fontFamilyResolver,
-                urlSpanCache = urlSpanCache
+                urlSpanCache = urlSpanCache,
             ),
-            ParcelSafeTextLength
+            ParcelSafeTextLength,
         )
     }
 
-    private fun setText(
-        node: SemanticsNode,
-        info: AccessibilityNodeInfoCompat,
-    ) {
+    private fun setText(node: SemanticsNode, info: AccessibilityNodeInfoCompat) {
         info.text = getInfoText(node)?.toSpannableString()
     }
 
@@ -1118,7 +1318,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             if (accessibilityFocusedVirtualViewId != InvalidId) {
                 sendEventForVirtualView(
                     accessibilityFocusedVirtualViewId,
-                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
+                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED,
                 )
             }
 
@@ -1129,7 +1329,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             view.invalidate()
             sendEventForVirtualView(
                 virtualViewId,
-                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED,
             )
             return true
         }
@@ -1159,7 +1359,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         virtualViewId: Int,
         eventType: Int,
         contentChangeType: Int? = null,
-        contentDescription: List<String>? = null
+        contentDescription: List<String>? = null,
     ): Boolean {
         if (virtualViewId == InvalidId || !isEnabled) {
             return false
@@ -1226,6 +1426,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             currentSemanticsNodes[virtualViewId]?.let {
                 event.isPassword =
                     it.semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
+                AccessibilityEventCompat.setAccessibilityDataSensitive(
+                    event,
+                    it.semanticsNode.unmergedConfig.getOrNull(IsSensitiveData) == true,
+                )
             }
         }
 
@@ -1237,7 +1441,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         fromIndex: Int?,
         toIndex: Int?,
         itemCount: Int?,
-        text: CharSequence?
+        text: CharSequence?,
     ): AccessibilityEvent {
         return createEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED)
             .apply {
@@ -1261,15 +1465,31 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             view.invalidate()
             sendEventForVirtualView(
                 virtualViewId,
-                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED,
             )
             return true
         }
         return false
     }
 
+    /**
+     * Performs the specified accessibility action on the virtual view.
+     *
+     * @param virtualViewId The identifier of the virtual view on which to perform the action.
+     * @param action The action to perform.
+     * @param arguments Optional arguments for the action.
+     * @return `true` if the action was performed successfully, `false` otherwise.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun performActionHelper(virtualViewId: Int, action: Int, arguments: Bundle?): Boolean {
         val node = currentSemanticsNodes[virtualViewId]?.semanticsNode ?: return false
+
+        if (
+            node.unmergedConfig.getOrNull(IsSensitiveData) == true &&
+                !isRequestFromAccessibilityTool()
+        ) {
+            return false
+        }
 
         // Actions can be performed when disabled.
         when (action) {
@@ -1292,7 +1512,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         node,
                         granularity,
                         action == AccessibilityNodeInfoCompat.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
-                        extendSelection
+                        extendSelection,
                     )
                 }
                 return false
@@ -1301,12 +1521,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 val start =
                     arguments?.getInt(
                         AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_START_INT,
-                        -1
+                        -1,
                     ) ?: -1
                 val end =
                     arguments?.getInt(
                         AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_END_INT,
-                        -1
+                        -1,
                     ) ?: -1
                 // Note: This is a little different from current android framework implementation.
                 val success = setAccessibilitySelection(node, start, end, false)
@@ -1315,7 +1535,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (success) {
                     sendEventForVirtualView(
                         semanticsNodeIdToAccessibilityVirtualNodeId(node.id),
-                        AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+                        AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                     )
                 }
                 return success
@@ -1506,12 +1726,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 // We considered calling super.performAccessibilityAction() which would put the
                 // system in keyboard mode, but it only works when AndroidComposeView did not have
                 // focus.
-                if (
-                    @OptIn(ExperimentalComposeUiApi::class) isFocusActionExitsTouchModeEnabled &&
-                        view.isInTouchMode
-                ) {
-                    view.requestFocusFromTouch()
-                }
+                if (view.isInTouchMode) view.requestFocusFromTouch()
 
                 return node.unmergedConfig.getOrNull(RequestFocus)?.action?.invoke() ?: false
             }
@@ -1521,7 +1736,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         force = false,
                         refreshFocusEvents = true,
                         clearOwnerFocus = true,
-                        focusDirection = Exit
+                        focusDirection = Exit,
                     )
                     true
                 } else {
@@ -1563,71 +1778,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     ?: false
             }
             android.R.id.accessibilityActionShowOnScreen -> {
-                // TODO(b/190865803): Consider scrolling nested containers instead of only the first
-                // one.
-                var scrollableAncestor: SemanticsNode? = node.parent
-                var scrollAction =
-                    scrollableAncestor?.unmergedConfig?.getOrNull(SemanticsActions.ScrollBy)
-                while (scrollableAncestor != null) {
-                    if (scrollAction != null) {
-                        break
-                    }
-                    scrollableAncestor = scrollableAncestor.parent
-                    scrollAction =
-                        scrollableAncestor?.unmergedConfig?.getOrNull(SemanticsActions.ScrollBy)
-                }
-                if (scrollableAncestor == null) {
-                    // there's no scrollable ancestor in the Compose hierarchy, let
-                    // AndroidComposeView handle it
-                    val rect =
-                        node.boundsInRoot.run {
-                            android.graphics.Rect(
-                                floor(left).toInt(),
-                                floor(top).toInt(),
-                                ceil(right).roundToInt(),
-                                ceil(bottom).roundToInt()
-                            )
-                        }
-                    return view.requestRectangleOnScreen(rect)
-                }
-
-                // TalkBack expects the minimum amount of movement to fully reveal the node.
-                // First, get the viewport and the target bounds in root coordinates
-                val viewportInParent = scrollableAncestor.layoutInfo.coordinates.boundsInParent()
-                val parentInRoot =
-                    scrollableAncestor.layoutInfo.coordinates.parentLayoutCoordinates
-                        ?.positionInRoot() ?: Offset.Zero
-                val viewport = viewportInParent.translate(parentInRoot)
-                val target = Rect(node.positionInRoot, node.size.toSize())
-
-                val xScrollState =
-                    scrollableAncestor.unmergedConfig.getOrNull(
-                        SemanticsProperties.HorizontalScrollAxisRange
-                    )
-                val yScrollState =
-                    scrollableAncestor.unmergedConfig.getOrNull(
-                        SemanticsProperties.VerticalScrollAxisRange
-                    )
-
-                // Given the desired scroll value to align either side of the target with the
-                // viewport, what delta should we go with?
-                // If we need to scroll in opposite directions for both sides, don't scroll at all.
-                // Otherwise, take the delta that scrolls the least amount.
-                fun scrollDelta(a: Float, b: Float): Float =
-                    if (sign(a) == sign(b)) if (abs(a) < abs(b)) a else b else 0f
-
-                // Get the desired delta X
-                var dx = scrollDelta(target.left - viewport.left, target.right - viewport.right)
-                // And adjust for reversing properties
-                if (xScrollState?.reverseScrolling == true) dx = -dx
-                if (node.isRtl) dx = -dx
-
-                // Get the desired delta Y
-                var dy = scrollDelta(target.top - viewport.top, target.bottom - viewport.bottom)
-                // And adjust for reversing properties
-                if (yScrollState?.reverseScrolling == true) dy = -dy
-
-                return scrollAction?.action?.invoke(dx, dy) == true
+                return node.scrollOntoScreen()
             }
             // TODO: handling for other system actions
             else -> {
@@ -1643,11 +1794,122 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
     }
 
+    /**
+     * Scrolls the current [SemanticsNode] into view on the screen.
+     *
+     * @return `true` if the node was successfully scrolled into view, `false` otherwise.
+     */
+    private fun SemanticsNode.scrollOntoScreen(): Boolean {
+        var scrollableAncestor: SemanticsNode? = parent
+        var scrollAction = scrollableAncestor?.unmergedConfig?.getOrNull(SemanticsActions.ScrollBy)
+        while (scrollAction == null && scrollableAncestor != null) {
+            scrollableAncestor = scrollableAncestor.parent
+            scrollAction = scrollableAncestor?.unmergedConfig?.getOrNull(SemanticsActions.ScrollBy)
+        }
+        if (scrollableAncestor == null) {
+            // there's no scrollable ancestor in the Compose hierarchy, let
+            // AndroidComposeView handle it
+            val rect =
+                boundsInRoot.run {
+                    android.graphics.Rect(
+                        floor(left).toInt(),
+                        floor(top).toInt(),
+                        ceil(right).roundToInt(),
+                        ceil(bottom).roundToInt(),
+                    )
+                }
+            return view.requestRectangleOnScreen(rect)
+        }
+
+        var retval = false
+        var accumulatedOffset = Offset.Zero
+
+        while (scrollableAncestor != null) {
+            scrollAction = scrollableAncestor.unmergedConfig.getOrNull(SemanticsActions.ScrollBy)
+            if (scrollAction != null) {
+                val offset = scrollDxDyForNodeVisible(scrollableAncestor, accumulatedOffset)
+                val scrollOffset = adjustForReversedScrollingAndRtl(scrollableAncestor, offset)
+                retval =
+                    scrollAction.action?.invoke(scrollOffset.x, scrollOffset.y) == true || retval
+                accumulatedOffset -= offset
+            }
+            scrollableAncestor = scrollableAncestor.parent
+        }
+        return retval
+    }
+
+    /**
+     * Adjusts the given scroll [offset] based on the [scrollableAncestor]'s `reverseScrolling`
+     * property and the current layout direction (RTL/LTR).
+     *
+     * @param scrollableAncestor The scrollable ancestor [SemanticsNode] whose properties are used
+     *   for adjustment.
+     * @param offset The original scroll offset to be adjusted.
+     * @return The adjusted scroll offset.
+     */
+    private fun SemanticsNode.adjustForReversedScrollingAndRtl(
+        scrollableAncestor: SemanticsNode,
+        offset: Offset,
+    ): Offset {
+        if (offset == Offset.Zero) return offset
+
+        var finalX = offset.x
+        var finalY = offset.y
+
+        val xScrollState =
+            scrollableAncestor.unmergedConfig.getOrNull(
+                SemanticsProperties.HorizontalScrollAxisRange
+            )
+        if (xScrollState?.reverseScrolling == true) finalX = -finalX
+        if (isRtl) finalX = -finalX
+
+        val yScrollState =
+            scrollableAncestor.unmergedConfig.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        if (yScrollState?.reverseScrolling == true) finalY = -finalY
+
+        return Offset(finalX, finalY)
+    }
+
+    /**
+     * Calculates the horizontal (dx) and vertical (dy) scroll deltas required to make this
+     * [SemanticsNode] fully visible within its scrollable ancestor.
+     *
+     * @param scrollableAncestor The scrollable ancestor [SemanticsNode] that contains this node.
+     * @param offsetAdjustment An optional offset to apply to the target node's position before
+     *   calculating the scroll deltas. This is useful when the target node's position has already
+     *   been adjusted by previous scroll operations in a chain of nested scrollables.
+     */
+    private fun SemanticsNode.scrollDxDyForNodeVisible(
+        scrollableAncestor: SemanticsNode,
+        offsetAdjustment: Offset,
+    ): Offset {
+        // TalkBack expects the minimum amount of movement to fully reveal the node.
+        // First, get the viewport and the target bounds in root coordinates
+        val viewportInParent = scrollableAncestor.layoutInfo.coordinates.boundsInParent()
+        val parentInRoot =
+            scrollableAncestor.layoutInfo.coordinates.parentLayoutCoordinates?.positionInRoot()
+                ?: Offset.Zero
+        val viewport = viewportInParent.translate(parentInRoot)
+        val target = Rect(positionInRoot + offsetAdjustment, size.toSize())
+
+        // Given the desired scroll value to align either side of the target with the
+        // viewport, what delta should we go with?
+        // If we need to scroll in opposite directions for both sides, don't scroll at all.
+        // Otherwise, take the delta that scrolls the least amount.
+        fun scrollDelta(a: Float, b: Float): Float =
+            if (sign(a) == sign(b)) if (abs(a) < abs(b)) a else b else 0f
+
+        val dx = scrollDelta(target.left - viewport.left, target.right - viewport.right)
+        val dy = scrollDelta(target.top - viewport.top, target.bottom - viewport.bottom)
+
+        return Offset(dx, dy)
+    }
+
     private fun addExtraDataToAccessibilityNodeInfoHelper(
         virtualViewId: Int,
         info: AccessibilityNodeInfoCompat,
         extraDataKey: String,
-        arguments: Bundle?
+        arguments: Bundle?,
     ) {
         val node = currentSemanticsNodes[virtualViewId]?.semanticsNode ?: return
         val text = getIterableTextForAccessibility(node)
@@ -1683,19 +1945,9 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 Log.e(LogTag, "Invalid arguments for accessibility character locations")
                 return
             }
-            val textLayoutResult = getTextLayoutResult(node.unmergedConfig) ?: return
-            val boundingRects = mutableListOf<RectF?>()
-            for (i in 0 until positionInfoLength) {
-                // This is a workaround until we fix the merging issue in b/157474582.
-                if (positionInfoStartIndex + i >= textLayoutResult.layoutInput.text.length) {
-                    boundingRects.add(null)
-                    continue
-                }
-                val bounds = textLayoutResult.getBoundingBox(positionInfoStartIndex + i)
-                val boundsOnScreen = toScreenCoords(node, bounds)
-                boundingRects.add(boundsOnScreen)
-            }
-            info.extras.putParcelableArray(extraDataKey, boundingRects.toTypedArray())
+            val boundingRects =
+                getBoundingBoxes(node, positionInfoStartIndex, positionInfoLength) ?: return
+            info.extras.putParcelableArray(extraDataKey, boundingRects)
         } else if (
             node.unmergedConfig.contains(SemanticsProperties.TestTag) &&
                 arguments != null &&
@@ -1709,85 +1961,212 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             info.extras.putInt(extraDataKey, node.id)
         } else if (extraDataKey == ExtraDataShapeTypeKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                val outline = shape.createOutline(node)
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                val outline = shape.createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
                 // We set not only the shape type but also the shape data itself, as an
                 // optimization, since we already need to create an Outline to get the shape type
                 // and to avoid another request for the shape data.
                 when (outline) {
                     is Outline.Rectangle -> {
                         info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeRectangle)
-                        info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
+                        info.extras.putParcelable(
+                            ExtraDataShapeRectKey,
+                            outline.toAndroidRect(shapeBounds.left, shapeBounds.top),
+                        )
                     }
                     is Outline.Rounded -> {
                         info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeRounded)
-                        info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
+                        info.extras.putParcelable(
+                            ExtraDataShapeRectKey,
+                            outline.toAndroidRect(shapeBounds.left, shapeBounds.top),
+                        )
                         info.extras.putFloatArray(
                             ExtraDataShapeRectCornersKey,
-                            outline.toCornerArray()
+                            outline.toCornerArray(),
                         )
                     }
                     is Outline.Generic -> {
                         info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeGeneric)
-                        info.extras.putParcelable(ExtraDataShapeRegionKey, outline.toRegion())
+                        info.extras.putParcelable(
+                            ExtraDataShapeRegionKey,
+                            outline.toRegion(shapeBounds.left, shapeBounds.top),
+                        )
                     }
                 }
             }
         } else if (extraDataKey == ExtraDataShapeRectKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                shape.createOutline(node).toAndroidRect()?.let { rect ->
-                    info.extras.putParcelable(ExtraDataShapeRectKey, rect)
-                }
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                shape
+                    .createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
+                    .toAndroidRect(shapeBounds.left, shapeBounds.top)
+                    ?.let { rect -> info.extras.putParcelable(ExtraDataShapeRectKey, rect) }
             }
         } else if (extraDataKey == ExtraDataShapeRectCornersKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                shape.createOutline(node).toCornerArray()?.let { corners ->
-                    info.extras.putFloatArray(ExtraDataShapeRectCornersKey, corners)
-                }
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                shape
+                    .createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
+                    .toCornerArray()
+                    ?.let { corners ->
+                        info.extras.putFloatArray(ExtraDataShapeRectCornersKey, corners)
+                    }
             }
         } else if (extraDataKey == ExtraDataShapeRegionKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                shape.createOutline(node).toRegion()?.let { region ->
-                    info.extras.putParcelable(ExtraDataShapeRegionKey, region)
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                shape
+                    .createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
+                    .toRegion(shapeBounds.left, shapeBounds.top)
+                    ?.let { region -> info.extras.putParcelable(ExtraDataShapeRegionKey, region) }
+            }
+        } else if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN &&
+                extraDataKey == EXTRA_DATA_RENDERING_INFO_KEY
+        ) {
+            Api37Impl.setExtraRenderingInfo(node, info.unwrap())
+        } else {
+            node.unmergedConfig.accessibilityExtraKeys?.forEach { key ->
+                val extraKey = key.accessibilityExtraKey
+                if (extraKey == extraDataKey) {
+                    val value = node.unmergedConfig.getOrNull(key)
+                    when (value) {
+                        is Serializable -> info.extras.putSerializable(extraKey, value)
+                        is Parcelable -> info.extras.putParcelable(extraKey, value)
+                        else ->
+                            throw IllegalStateException(
+                                "Accessibility extra values must be " +
+                                    "either Serializable or Parcelable."
+                            )
+                    }
+                    return@forEach
                 }
             }
         }
     }
 
-    private fun toScreenCoords(textNode: SemanticsNode?, bounds: Rect): RectF? {
-        if (textNode == null) return null
-        val boundsInRoot = bounds.translate(textNode.positionInRoot)
-        val textNodeBoundsInRoot = textNode.boundsInRoot
-
-        // Only visible or partially visible locations are used.
-        val visibleBounds =
-            if (boundsInRoot.overlaps(textNodeBoundsInRoot)) {
-                boundsInRoot.intersect(textNodeBoundsInRoot)
-            } else {
-                null
-            }
-
-        return if (visibleBounds != null) {
-            val topLeftInScreen = view.localToScreen(Offset(visibleBounds.left, visibleBounds.top))
-            val bottomRightInScreen =
-                view.localToScreen(Offset(visibleBounds.right, visibleBounds.bottom))
-            // Due to rotation, the top left corner of the local bounds may not be the top left
-            // corner of the screen bounds.
-            RectF(
-                min(topLeftInScreen.x, bottomRightInScreen.x),
-                min(topLeftInScreen.y, bottomRightInScreen.y),
-                max(topLeftInScreen.x, bottomRightInScreen.x),
-                max(topLeftInScreen.y, bottomRightInScreen.y)
-            )
-        } else {
-            null
+    private val AccessibilityNodeInfoCompat.boundsInScreen: AndroidRect
+        get() {
+            val boundsInScreen = AndroidRect()
+            getBoundsInScreen(boundsInScreen)
+            return boundsInScreen
         }
+
+    private fun getShapeBounds(
+        node: SemanticsNode,
+        nodeBoundsInScreen: AndroidRect,
+        shape: Shape,
+    ): Rect {
+        val shapeNodeMatcher =
+            object : SemanticsPropertyReceiver {
+                var hasMatchedShape: Boolean = false
+
+                override fun <T> set(key: SemanticsPropertyKey<T>, value: T) {
+                    if (value === shape) hasMatchedShape = true
+                }
+            }
+        val layoutNode = node.layoutNode
+        val shapeSemanticsModifierNode =
+            layoutNode.nodes.firstFromHead(Nodes.Semantics) {
+                with(it) {
+                    shapeNodeMatcher.run {
+                        applySemantics()
+                        return@firstFromHead hasMatchedShape
+                    }
+                }
+            }
+        if (shapeSemanticsModifierNode?.node?.isAttached != true) {
+            return layoutNode.outerCoordinator.boundsInWindow(clipBounds = false)
+        }
+
+        val shapeCoordinates = shapeSemanticsModifierNode.requireLayoutCoordinates()
+        val shapeBoundsInRoot =
+            shapeCoordinates
+                .findRootCoordinates()
+                .localBoundingBoxOf(shapeCoordinates, clipBounds = false)
+        val shapeBoundsInScreen =
+            toBoundsInScreen(
+                left = shapeBoundsInRoot.left,
+                top = shapeBoundsInRoot.top,
+                right = shapeBoundsInRoot.right,
+                bottom = shapeBoundsInRoot.bottom,
+            )
+        return shapeBoundsInScreen.toBoundsRelativeToNodeBounds(nodeBoundsInScreen)
     }
 
-    private fun Shape.createOutline(node: SemanticsNode) =
-        createOutline(node.size.toSize(), node.layoutInfo.layoutDirection, view.density)
+    private fun AndroidRect.toBoundsRelativeToNodeBounds(nodeBoundsInScreen: AndroidRect): Rect {
+        val leftOffset = (this.left - nodeBoundsInScreen.left).toFloat()
+        val topOffset = (this.top - nodeBoundsInScreen.top).toFloat()
+        return Rect(
+            left = leftOffset,
+            top = topOffset,
+            right = leftOffset + this.width(),
+            bottom = topOffset + this.height(),
+        )
+    }
 
-    private fun Outline.toAndroidRect(): AndroidRect? =
-        if (this is Outline.Rectangle || this is Outline.Rounded) bounds.toAndroidRect() else null
+    /**
+     * Returns character bounding boxes in screen coordinates for the given index range, or null if
+     * the text layout or coordinates are unavailable.
+     */
+    private fun getBoundingBoxes(
+        node: SemanticsNode,
+        startIndex: Int,
+        length: Int,
+    ): Array<RectF?>? {
+        val textLayoutResult = getTextLayoutResult(node.unmergedConfig) ?: return null
+
+        // getBoundingBox() returns coordinates relative to the text layout, so we need the inner
+        // coordinator's position in order to match. node.positionInRoot can't be used here because
+        // it may resolve to some other bounds-important modifier that is positioned before
+        // something like padding in the modifier chain, causing mis-alignment.
+        val textLayoutPositionInRoot =
+            node.layoutNode.innerCoordinator.takeIf { it.isAttached }?.positionInRoot()
+                ?: return null
+
+        val textNodeBoundsInRoot = node.boundsInRoot
+        val boundingRects = arrayOfNulls<RectF>(length)
+        for (i in 0 until length) {
+            if (startIndex + i >= textLayoutResult.layoutInput.text.length) {
+                continue
+            }
+            val boundsInRoot =
+                textLayoutResult.getBoundingBox(startIndex + i).translate(textLayoutPositionInRoot)
+
+            // Only visible or partially visible locations are used.
+            val visibleBounds =
+                if (boundsInRoot.overlaps(textNodeBoundsInRoot)) {
+                    boundsInRoot.intersect(textNodeBoundsInRoot)
+                } else {
+                    null
+                }
+
+            if (visibleBounds != null) {
+                val topLeftInScreen =
+                    view.localToScreen(Offset(visibleBounds.left, visibleBounds.top))
+                val bottomRightInScreen =
+                    view.localToScreen(Offset(visibleBounds.right, visibleBounds.bottom))
+                // Due to rotation, the top left corner of the local bounds may not be
+                // the top left corner of the screen bounds.
+                boundingRects[i] =
+                    RectF(
+                        min(topLeftInScreen.x, bottomRightInScreen.x),
+                        min(topLeftInScreen.y, bottomRightInScreen.y),
+                        max(topLeftInScreen.x, bottomRightInScreen.x),
+                        max(topLeftInScreen.y, bottomRightInScreen.y),
+                    )
+            }
+        }
+        return boundingRects
+    }
+
+    private fun Shape.createOutline(size: Size, layoutDirection: LayoutDirection) =
+        createOutline(size, layoutDirection, view.density)
+
+    private fun Outline.toAndroidRect(leftOffset: Float, topOffset: Float): AndroidRect? =
+        if (this is Outline.Rectangle || this is Outline.Rounded)
+            bounds.toAndroidRect(leftOffset, topOffset)
+        else null
 
     /**
      * Returns a radii array for each corner (top-left, top-right, bottom-right, bottom-left) if the
@@ -1803,18 +2182,28 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 roundRect.bottomRightCornerRadius.x,
                 roundRect.bottomRightCornerRadius.y,
                 roundRect.bottomLeftCornerRadius.x,
-                roundRect.bottomLeftCornerRadius.y
+                roundRect.bottomLeftCornerRadius.y,
             )
         } else null
 
-    private fun Outline.toRegion(): Region? =
+    private fun Outline.toRegion(leftOffset: Float, topOffset: Float): Region? =
         if (this is Outline.Generic) {
-            val boundingRectangle = Region(bounds.toAndroidRect())
-            Region().apply { setPath(path.asAndroidPath(), boundingRectangle) }
+            val boundingRectangle = Region(bounds.translate(leftOffset, topOffset).toAndroidRect())
+            Region().apply {
+                setPath(
+                    path.asAndroidPath().apply { offset(leftOffset, topOffset) },
+                    boundingRectangle,
+                )
+            }
         } else null
 
-    private fun Rect.toAndroidRect(): AndroidRect =
-        AndroidRect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+    private fun Rect.toAndroidRect(leftOffset: Float = 0f, topOffset: Float = 0f): AndroidRect =
+        AndroidRect(
+            (left + leftOffset).toInt(),
+            (top + topOffset).toInt(),
+            (right + leftOffset).toInt(),
+            (bottom + topOffset).toInt(),
+        )
 
     /**
      * Dispatches hover {@link android.view.MotionEvent}s to the virtual view hierarchy when the
@@ -1849,7 +2238,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 // Note that this should be before calling "updateHoveredVirtualView" so that in
                 // the corner case of overlapped nodes, the final hover enter event is sent from
                 // the node/view that we want to focus.
-                val handled = view.androidViewsHandler.dispatchGenericMotionEvent(event)
+                val handled = view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
                 updateHoveredVirtualView(virtualViewId)
                 return if (virtualViewId == InvalidId) handled else true
             }
@@ -1860,7 +2249,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         true
                     }
                     else -> {
-                        view.androidViewsHandler.dispatchGenericMotionEvent(event)
+                        view.androidViewsHandler?.dispatchGenericMotionEvent(event) ?: false
                     }
                 }
             }
@@ -1875,13 +2264,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      * InvalidId if an embedded Android View was hit.
      */
     @VisibleForTesting
+    @OptIn(ExperimentalComposeUiApi::class)
     internal fun hitTestSemanticsAt(x: Float, y: Float): Int {
         view.measureAndLayout()
 
         val hitSemanticsEntities = HitTestResult()
         view.root.hitTestSemantics(
             pointerPosition = Offset(x, y),
-            hitSemanticsEntities = hitSemanticsEntities
+            hitSemanticsEntities = hitSemanticsEntities,
         )
 
         // Iterate front-to-back until we find a node with semantics that are important-for-a11y
@@ -1890,7 +2280,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
             // If this node corresponds to an AndroidView, then we should return InvalidId
             // to let the View System handle it.
-            val androidView = view.androidViewsHandler.layoutNodeToHolder[layoutNode]
+            val androidView = view.androidViewsHandler?.layoutNodeToHolder[layoutNode]
             if (androidView != null) {
                 return InvalidId
             }
@@ -1910,10 +2300,17 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 continue
             }
 
+            val isInMergingHiddenSubtree =
+                AndroidComposeUiFlags.isPropagateHideFromAccessibilityToMergingChildrenEnabled &&
+                    currentSemanticsNodes[virtualViewId]?.isInMergingHiddenSubtree == true
+            if (isInMergingHiddenSubtree) {
+                continue
+            }
+
             // Links in text nodes are semantics children. But for Android accessibility support
             // we don't publish them to the accessibility services because they are exposed
             // as UrlSpan/ClickableSpan spans instead
-            if (semanticsNode.config.contains(SemanticsProperties.LinkTestMarker)) {
+            if (semanticsNode.isAccessibilityIgnoredLink) {
                 continue
             }
 
@@ -1959,7 +2356,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      */
     private fun <T : CharSequence> trimToSize(
         text: T?,
-        @Suppress("SameParameterValue") @IntRange(from = 1) size: Int
+        @Suppress("SameParameterValue") @IntRange(from = 1) size: Int,
     ): T? {
         require(size > 0) { "size should be greater than 0" }
         var len = size
@@ -1967,15 +2364,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (Character.isHighSurrogate(text[size - 1]) && Character.isLowSurrogate(text[size])) {
             len = size - 1
         }
-        @Suppress("UNCHECKED_CAST") return text.subSequence(0, len) as T
+        @Suppress("UNCHECKED_CAST")
+        return text.subSequence(0, len) as T
     }
 
     // TODO (in a separate cl): Called when the SemanticsNode with id semanticsNodeId disappears.
     // fun clearNode(semanticsNodeId: Int) { // clear the actionIdToId and labelToActionId nodes }
 
     private val semanticsChangeChecker = Runnable {
-        trace("measureAndLayout") { view.measureAndLayout() }
-        trace("checkForSemanticsChanges") { checkForSemanticsChanges() }
+        if (!view.isAttachedToWindow) {
+            checkingForSemanticsChanges = false
+            return@Runnable
+        }
+        trace("Compose:semantics:measureAndLayout") { view.measureAndLayout() }
+        trace("Compose:semantics:checkForSemanticsChanges") { checkForSemanticsChanges() }
         checkingForSemanticsChanges = false
     }
 
@@ -1985,9 +2387,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         // later, we can refresh currentSemanticsNodes if currentSemanticsNodes is stale.
         currentSemanticsNodesInvalidated = true
 
-        if (isEnabled && !checkingForSemanticsChanges) {
+        val localHandler = handler
+        if (isEnabled && !checkingForSemanticsChanges && localHandler != null) {
             checkingForSemanticsChanges = true
-            handler.post(semanticsChangeChecker)
+            localHandler.post(semanticsChangeChecker)
         }
     }
 
@@ -2001,15 +2404,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             val subtreeChangedSemanticsNodesIds = MutableIntSet()
             for (notification in boundsUpdateChannel) {
                 if (isEnabled) {
-                    for (i in subtreeChangedLayoutNodes.indices) {
-                        val layoutNode = subtreeChangedLayoutNodes.valueAt(i)
-                        sendSubtreeChangeAccessibilityEvents(
-                            layoutNode,
-                            subtreeChangedSemanticsNodesIds
-                        )
-                        sendTypeViewScrolledAccessibilityEvent(layoutNode)
+                    trace("Compose:semantics:boundUpdates") {
+                        updateBounds(subtreeChangedSemanticsNodesIds)
+                        subtreeChangedSemanticsNodesIds.clear()
                     }
-                    subtreeChangedSemanticsNodesIds.clear()
                     // When the bounds of layout nodes change, we will not always get semantics
                     // change notifications because bounds is not part of semantics. And bounds
                     // change from a layout node without semantics will affect the global bounds
@@ -2026,9 +2424,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     // notify, if we don't do the tree diffing and update our copy here, we will
                     // combine old change and new change, which is missing finer-grained
                     // notification.
-                    if (!checkingForSemanticsChanges) {
+                    val localHandler = handler
+                    if (!checkingForSemanticsChanges && localHandler != null) {
                         checkingForSemanticsChanges = true
-                        handler.post(semanticsChangeChecker)
+                        localHandler.post(semanticsChangeChecker)
                     }
                 }
                 subtreeChangedLayoutNodes.clear()
@@ -2039,6 +2438,19 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         } finally {
             subtreeChangedLayoutNodes.clear()
         }
+    }
+
+    private fun updateBounds(subtreeChangedSemanticsNodesIds: MutableIntSet) {
+        for (i in subtreeChangedLayoutNodes.indices) {
+            val layoutNode = subtreeChangedLayoutNodes.valueAt(i)
+            sendSubtreeChangeAccessibilityEvents(layoutNode, subtreeChangedSemanticsNodesIds)
+            sendTypeViewScrolledAccessibilityEvent(layoutNode)
+        }
+    }
+
+    internal fun processSemanticChangesForTest() {
+        semanticsChangeChecker.run()
+        updateBounds(MutableIntSet())
     }
 
     internal fun onLayoutChange(layoutNode: LayoutNode) {
@@ -2069,7 +2481,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             return
         }
         // Android Views will send proper events themselves.
-        if (view.androidViewsHandler.layoutNodeToHolder.contains(layoutNode)) {
+        if (view.androidViewsHandler?.layoutNodeToHolder?.contains(layoutNode) == true) {
             return
         }
 
@@ -2094,7 +2506,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun sendSubtreeChangeAccessibilityEvents(
         layoutNode: LayoutNode,
-        subtreeChangedSemanticsNodesIds: MutableIntSet
+        subtreeChangedSemanticsNodesIds: MutableIntSet,
     ) {
         // The node may be no longer available while we were waiting so check
         // again.
@@ -2102,7 +2514,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             return
         }
         // Android Views will send proper events themselves.
-        if (view.androidViewsHandler.layoutNodeToHolder.contains(layoutNode)) {
+        if (view.androidViewsHandler?.layoutNodeToHolder?.contains(layoutNode) == true) {
             return
         }
 
@@ -2128,25 +2540,27 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         sendEventForVirtualView(
             semanticsNodeIdToAccessibilityVirtualNodeId(id),
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-            AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE
+            AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE,
         )
     }
 
     private fun checkForSemanticsChanges() {
         // Accessibility structural change
-        trace("sendAccessibilitySemanticsStructureChangeEvents") {
+        trace("Compose:semantics:sendAccessibilitySemanticsStructureChangeEvents") {
             if (isEnabled) {
                 sendAccessibilitySemanticsStructureChangeEvents(
                     view.semanticsOwner.unmergedRootSemanticsNode,
-                    previousSemanticsRoot
+                    previousSemanticsRoot,
                 )
             }
         }
         // Accessibility property change
-        trace("sendSemanticsPropertyChangeEvents") {
+        trace("Compose:semantics:sendSemanticsPropertyChangeEvents") {
             sendSemanticsPropertyChangeEvents(currentSemanticsNodes)
         }
-        trace("updateSemanticsNodesCopyAndPanes") { updateSemanticsNodesCopyAndPanes() }
+        trace("Compose:semantics:updateSemanticsNodesCopyAndPanes") {
+            updateSemanticsNodesCopyAndPanes()
+        }
     }
 
     private fun updateSemanticsNodesCopyAndPanes() {
@@ -2164,7 +2578,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     AccessibilityEventCompat.CONTENT_CHANGE_TYPE_PANE_DISAPPEARED,
                     previousSemanticsNodes[id]
                         ?.unmergedConfig
-                        ?.getOrNull(SemanticsProperties.PaneTitle)
+                        ?.getOrNull(SemanticsProperties.PaneTitle),
                 )
             }
         }
@@ -2178,7 +2592,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 sendPaneChangeEvents(
                     key,
                     AccessibilityEventCompat.CONTENT_CHANGE_TYPE_PANE_APPEARED,
-                    value.semanticsNode.unmergedConfig[SemanticsProperties.PaneTitle]
+                    value.semanticsNode.unmergedConfig[SemanticsProperties.PaneTitle],
                 )
             }
             previousSemanticsNodes[key] =
@@ -2189,7 +2603,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 
     private fun sendSemanticsPropertyChangeEvents(
-        newSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>
+        newSemanticsNodes: IntObjectMap<AdjustedSemanticsNode>
     ) {
         val oldScrollObservationScopes = ArrayList(scrollObservationScopes)
         scrollObservationScopes.clear()
@@ -2225,16 +2639,15 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendPaneChangeEvents(
                                 id,
                                 AccessibilityEventCompat.CONTENT_CHANGE_TYPE_PANE_TITLE,
-                                paneTitle
+                                paneTitle,
                             )
                         }
                     }
-                    SemanticsProperties.StateDescription,
-                    SemanticsProperties.ToggleableState -> {
+                    SemanticsProperties.StateDescription -> {
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION,
                         )
                         // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
                         // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2242,14 +2655,37 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
+                        )
+                    }
+                    SemanticsProperties.ToggleableState -> {
+                        sendEventForVirtualView(
+                            semanticsNodeIdToAccessibilityVirtualNodeId(id),
+                            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
+                            CONTENT_CHANGE_TYPE_CHECKED,
+                        )
+                        // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
+                        // force ViewRootImpl to update its accessibility-focused virtual-node.
+                        // If we have an androidx fix, we can remove this event.
+                        sendEventForVirtualView(
+                            semanticsNodeIdToAccessibilityVirtualNodeId(id),
+                            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
+                        )
+                    }
+                    SemanticsProperties.Error -> {
+                        sendEventForVirtualView(
+                            semanticsNodeIdToAccessibilityVirtualNodeId(id),
+                            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_ERROR or
+                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_CONTENT_INVALID,
                         )
                     }
                     SemanticsProperties.ProgressBarRangeInfo -> {
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION,
                         )
                         // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
                         // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2257,7 +2693,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
                     }
                     SemanticsProperties.Selected -> {
@@ -2275,7 +2711,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 val event =
                                     createEvent(
                                         semanticsNodeIdToAccessibilityVirtualNodeId(id),
-                                        AccessibilityEvent.TYPE_VIEW_SELECTED
+                                        AccessibilityEvent.TYPE_VIEW_SELECTED,
                                     )
                                 // Here we use the merged node. Because we specifically are using
                                 // the merged node, we must also use the merged version of the
@@ -2298,14 +2734,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 sendEventForVirtualView(
                                     semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                    AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                                    AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                                 )
                             }
                         } else {
                             sendEventForVirtualView(
                                 semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
+                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION,
                             )
                             // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
                             // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2313,7 +2749,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendEventForVirtualView(
                                 semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                             )
                         }
                     }
@@ -2322,7 +2758,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                             AccessibilityEvent.CONTENT_CHANGE_TYPE_CONTENT_DESCRIPTION,
-                            value as List<String>
+                            value as List<String>,
                         )
                     }
                     SemanticsProperties.EditableText -> {
@@ -2389,12 +2825,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                         fromIndex = 0,
                                         toIndex = 0,
                                         itemCount = newTextLen,
-                                        text = trimmedNewText
+                                        text = trimmedNewText,
                                     )
                                 } else {
                                     createEvent(
                                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
-                                            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
+                                            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
                                         )
                                         .apply {
                                             this.fromIndex = startCount
@@ -2405,6 +2841,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                         }
                                 }
                             event.className = TextFieldClassName
+
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                                Api37Impl.setInputTextSuggestionTextChangeTypes(newNode, event)
+                            }
                             sendEvent(event)
 
                             // (b/247891690) second event with the correct cursor position (see
@@ -2420,7 +2860,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendEventForVirtualView(
                                 semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                AccessibilityEvent.CONTENT_CHANGE_TYPE_TEXT
+                                AccessibilityEvent.CONTENT_CHANGE_TYPE_TEXT,
                             )
                         }
                     }
@@ -2435,7 +2875,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 textRange.start,
                                 textRange.end,
                                 newText.length,
-                                trimToSize(newText, ParcelSafeTextLength)
+                                trimToSize(newText, ParcelSafeTextLength),
                             )
                         sendEvent(event)
                         sendPendingTextTraversedAtGranularityEvent(newNode.id)
@@ -2460,7 +2900,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendEvent(
                                 createEvent(
                                     semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
-                                    AccessibilityEvent.TYPE_VIEW_FOCUSED
+                                    AccessibilityEvent.TYPE_VIEW_FOCUSED,
                                 )
                             )
                         }
@@ -2470,7 +2910,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+                            AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
                     }
                     CustomActions -> {
@@ -2478,25 +2918,27 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         val oldActions = oldNode.unmergedConfig.getOrNull(CustomActions)
                         if (oldActions != null) {
                             // Suppose actions with the same label should be deduped.
-                            val labels = mutableSetOf<String>()
+                            val labels = mutableScatterSetOf<String>()
                             actions.fastForEach { action -> labels.add(action.label) }
-                            val oldLabels = mutableSetOf<String>()
+                            val oldLabels = mutableScatterSetOf<String>()
                             oldActions.fastForEach { action -> oldLabels.add(action.label) }
-                            propertyChanged =
-                                !(labels.containsAll(oldLabels) && oldLabels.containsAll(labels))
-                        } else if (actions.isNotEmpty()) {
-                            propertyChanged = true
+                            propertyChanged = propertyChanged || labels != oldLabels
+                        } else {
+                            propertyChanged = propertyChanged || actions.isNotEmpty()
                         }
                     }
                     // TODO(b/151840490) send the correct events for certain properties, like view
                     //  selected.
                     else -> {
                         propertyChanged =
-                            if (value is AccessibilityAction<*>) {
-                                !value.accessibilityEquals(oldNode.unmergedConfig.getOrNull(key))
-                            } else {
-                                true
-                            }
+                            propertyChanged ||
+                                if (value is AccessibilityAction<*>) {
+                                    !value.accessibilityEquals(
+                                        oldNode.unmergedConfig.getOrNull(key)
+                                    )
+                                } else {
+                                    true
+                                }
                     }
                 }
             }
@@ -2510,7 +2952,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 sendEventForVirtualView(
                     semanticsNodeIdToAccessibilityVirtualNodeId(id),
                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                    AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+                    AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                 )
             }
         }
@@ -2531,7 +2973,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun registerScrollingId(
         id: Int,
-        oldScrollObservationScopes: List<ScrollObservationScope>
+        oldScrollObservationScopes: List<ScrollObservationScope>,
     ): Boolean {
         var newlyObservingScroll = false
         val oldScope = oldScrollObservationScopes.findById(id)
@@ -2546,7 +2988,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     oldXValue = null,
                     oldYValue = null,
                     horizontalScrollAxisRange = null,
-                    verticalScrollAxisRange = null
+                    verticalScrollAxisRange = null,
                 )
             }
         scrollObservationScopes.add(newScope)
@@ -2559,7 +3001,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
         view.snapshotObserver.observeReads(
             scrollObservationScope,
-            scheduleScrollEventIfNeededLambda
+            scheduleScrollEventIfNeededLambda,
         ) {
             val newXState = scrollObservationScope.horizontalScrollAxisRange
             val newYState = scrollObservationScope.verticalScrollAxisRange
@@ -2644,7 +3086,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val event =
             createEvent(
                 semanticsNodeIdToAccessibilityVirtualNodeId(semanticsNodeId),
-                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
             )
         event.contentChangeTypes = contentChangeType
         if (title != null) {
@@ -2655,7 +3097,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun sendAccessibilitySemanticsStructureChangeEvents(
         newNode: SemanticsNode,
-        oldNode: SemanticsNodeCopy
+        oldNode: SemanticsNodeCopy,
     ) {
         val newChildren: MutableIntSet = mutableIntSetOf()
 
@@ -2679,11 +3121,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
 
         newNode.replacedChildren.fastForEach { child ->
-            if (currentSemanticsNodes.contains(child.id)) {
-                sendAccessibilitySemanticsStructureChangeEvents(
-                    child,
-                    previousSemanticsNodes[child.id]!!
-                )
+            previousSemanticsNodes[child.id]?.let { previousNode ->
+                if (currentSemanticsNodes.contains(child.id)) {
+                    sendAccessibilitySemanticsStructureChangeEvents(child, previousNode)
+                }
             }
         }
     }
@@ -2699,7 +3140,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         node: SemanticsNode,
         granularity: Int,
         forward: Boolean,
-        extendSelection: Boolean
+        extendSelection: Boolean,
     ): Boolean {
         if (node.id != previousTraversedNode) {
             accessibilityCursorPosition = AccessibilityCursorPositionUndefined
@@ -2742,7 +3183,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 granularity,
                 segmentStart,
                 segmentEnd,
-                SystemClock.uptimeMillis()
+                SystemClock.uptimeMillis(),
             )
         setAccessibilitySelection(node, selectionStart, selectionEnd, true)
         return true
@@ -2758,7 +3199,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 val event =
                     createEvent(
                         semanticsNodeIdToAccessibilityVirtualNodeId(it.node.id),
-                        AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY
+                        AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY,
                     )
                 event.fromIndex = it.fromIndex
                 event.toIndex = it.toIndex
@@ -2775,7 +3216,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         node: SemanticsNode,
         start: Int,
         end: Int,
-        traversalMode: Boolean
+        traversalMode: Boolean,
     ): Boolean {
         // Any widget which has custom action_set_selection needs to provide cursor
         // positions, so events will be sent when cursor position change.
@@ -2805,7 +3246,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (nonEmptyText) accessibilityCursorPosition else null,
                 if (nonEmptyText) accessibilityCursorPosition else null,
                 if (nonEmptyText) text.length else null,
-                text
+                text,
             )
         sendEvent(event)
         sendPendingTextTraversedAtGranularityEvent(node.id)
@@ -2843,7 +3284,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun getIteratorForGranularity(
         node: SemanticsNode?,
-        granularity: Int
+        granularity: Int,
     ): AccessibilityIterators.TextSegmentIterator? {
         if (node == null) return null
 
@@ -2944,7 +3385,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             virtualViewId: Int,
             info: AccessibilityNodeInfoCompat,
             extraDataKey: String,
-            arguments: Bundle?
+            arguments: Bundle?,
         ) {
             addExtraDataToAccessibilityNodeInfoHelper(virtualViewId, info, extraDataKey, arguments)
         }
@@ -2971,7 +3412,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionSetProgress,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -2994,7 +3435,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionPageDown,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -3002,7 +3443,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionPageLeft,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -3010,11 +3451,81 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionPageRight,
-                            it.label
+                            it.label,
                         )
                     )
                 }
             }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    private object Api37Impl {
+
+        /**
+         * Returns true if [setExtraRenderingInfo] would add ExtraRenderingInfo, false if there are
+         * no rendering properties to be populated.
+         */
+        @JvmStatic
+        fun hasExtraDataRenderingInfo(
+            info: AccessibilityNodeInfoCompat,
+            semanticsNode: SemanticsNode,
+        ): Boolean {
+            return !info.text.isNullOrEmpty() ||
+                semanticsNode.unmergedConfig.contains(SemanticsProperties.EditableText) ||
+                semanticsNode.unmergedConfig.contains(SemanticsActions.GetTextLayoutResult)
+        }
+
+        @JvmStatic
+        fun setExtraRenderingInfo(node: SemanticsNode, info: AccessibilityNodeInfo) {
+            val view = node.layoutNode.owner as? AndroidComposeView ?: return
+
+            val builder = AccessibilityNodeInfo.ExtraRenderingInfo.Builder()
+
+            val textColor = node.getPrimaryTextColor()
+            if (textColor != null) {
+                builder.setTextColor(textColor)
+            }
+
+            val linkColor = node.getLinkTextColor()
+            if (linkColor != null) {
+                builder.setLinkTextColor(linkColor)
+            }
+
+            info.extraRenderingInfo = builder.build()
+        }
+
+        @JvmStatic
+        fun setInputTextSuggestionTextChangeTypes(node: SemanticsNode, event: AccessibilityEvent) {
+            val inputTextSuggestionState =
+                node.unmergedConfig.getOrNull(SemanticsProperties.InputTextSuggestionState)
+            val textCompositionRange =
+                node.unmergedConfig.getOrNull(SemanticsProperties.TextCompositionRange)
+            var textChangeTypes = AccessibilityEvent.TEXT_CHANGE_TYPE_UNDEFINED
+
+            if (textCompositionRange != null) {
+                textChangeTypes =
+                    textChangeTypes or AccessibilityEvent.TEXT_CHANGE_TYPE_IN_COMPOSITION
+            }
+
+            if (
+                inputTextSuggestionState != null &&
+                    inputTextSuggestionState.isTransliterationSuggestionSelected
+            ) {
+                textChangeTypes =
+                    textChangeTypes or
+                        AccessibilityEvent.TEXT_CHANGE_TYPE_CONVERSION_SUGGESTION_SELECTED_BY_IME
+            }
+
+            if (
+                inputTextSuggestionState != null &&
+                    inputTextSuggestionState.isCommittedByInputMethodEditor
+            ) {
+                textChangeTypes =
+                    textChangeTypes or AccessibilityEvent.TEXT_CHANGE_TYPE_COMMITTED_BY_IME
+            }
+
+            event.textChangeTypes = event.textChangeTypes or textChangeTypes
         }
     }
 }
@@ -3031,11 +3542,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
  *   node that should be traversed after the node specified by the id.
  * @param resources: Application resources.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 private fun setTraversalValues(
-    currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
+    currentSemanticsNodes: IntObjectMap<AdjustedSemanticsNode>,
     outputBeforeMap: MutableIntIntMap,
     outputAfterMap: MutableIntIntMap,
-    resources: Resources
+    resources: Resources,
 ) {
     outputBeforeMap.clear()
     outputAfterMap.clear()
@@ -3046,8 +3558,16 @@ private fun setTraversalValues(
     val semanticsOrderList =
         hostSemanticsNode.subtreeSortedByGeometryGrouping(
             isVisible = { currentSemanticsNodes.containsKey(it.id) },
-            isFocusableContainer = { isScreenReaderFocusable(it, resources) },
-            listToSort = listOf(hostSemanticsNode)
+            isFocusableContainer = {
+                isScreenReaderFocusable(
+                    it,
+                    resources,
+                    AndroidComposeUiFlags
+                        .isPropagateHideFromAccessibilityToMergingChildrenEnabled &&
+                        currentSemanticsNodes[it.id]?.isInMergingHiddenSubtree == true,
+                )
+            },
+            listToSort = listOf(hostSemanticsNode),
         )
 
     // Iterate through our ordered list, and creating a mapping of current node to next node ID
@@ -3060,7 +3580,22 @@ private fun setTraversalValues(
     }
 }
 
-private fun isScreenReaderFocusable(node: SemanticsNode, resources: Resources): Boolean {
+/** Determines if the node should explicitly map to the merging on accessibility side */
+private fun isScreenReaderFocusable(
+    node: SemanticsNode,
+    resources: Resources,
+    isInMergingHiddenSubtree: Boolean = false,
+): Boolean {
+    if (node.isHidden || isInMergingHiddenSubtree) return false
+
+    // If the node explicitly merges its descendants, we map it directly to the merging
+    // algorithm on the accessibility side.
+    if (node.unmergedConfig.isMergingSemanticsOfDescendants) return true
+
+    // Otherwise, we instruct the accessibility service to focus on the node iff:
+    // 1. It is not part of a higher-level merging container (which would take focus itself).
+    // 2. It is a leaf node.
+    // 3. It has explicit text, content description, or state to announce.
     val nodeContentDescriptionOrNull =
         node.unmergedConfig.getOrNull(SemanticsProperties.ContentDescription)?.firstOrNull()
     val isSpeakingNode =
@@ -3069,10 +3604,27 @@ private fun isScreenReaderFocusable(node: SemanticsNode, resources: Resources): 
             getInfoStateDescriptionOrNull(node, resources) != null ||
             getInfoIsCheckable(node)
 
-    return !node.isHidden &&
-        (node.unmergedConfig.isMergingSemanticsOfDescendants ||
-            node.isUnmergedLeafNode && isSpeakingNode)
+    return isSpeakingNode && node.isUnmergedLeafNode
 }
+
+private val SemanticsNode.isUnmergedLeafNode: Boolean
+    get() {
+        if (isFake) return false
+        // To be considered a leaf, this node must either have no children at all, or contain only
+        // accessibility-ignored children (such as inline hyperlinks). Links are a special case
+        // because we expose them to accessibility services via URLSpans rather than separate
+        // virtual nodes.
+        replacedChildren.fastForEach { child ->
+            if (!child.isAccessibilityIgnoredLink) {
+                return false
+            }
+        }
+        val hasMergingParent =
+            layoutNode.findClosestParentNode {
+                it.semanticsConfiguration?.isMergingSemanticsOfDescendants == true
+            } != null
+        return !hasMergingParent
+    }
 
 private fun getInfoText(node: SemanticsNode): AnnotatedString? {
     val editableTextToAssign = node.unmergedConfig.getOrNull(SemanticsProperties.EditableText)
@@ -3174,7 +3726,8 @@ private fun createStateDescriptionForTextField(node: SemanticsNode, resources: R
     val mergedNodeIsUnspeakable =
         mergedConfig.getOrNull(SemanticsProperties.ContentDescription).isNullOrEmpty() &&
             mergedConfig.getOrNull(SemanticsProperties.Text).isNullOrEmpty() &&
-            mergedConfig.getOrNull(SemanticsProperties.EditableText).isNullOrEmpty()
+            mergedConfig.getOrNull(SemanticsProperties.EditableText).isNullOrEmpty() &&
+            mergedConfig.getOrNull(SemanticsProperties.HintText).isNullOrEmpty()
     return if (mergedNodeIsUnspeakable) resources.getString(R.string.state_empty) else null
 }
 
@@ -3247,16 +3800,13 @@ private fun AccessibilityAction<*>.accessibilityEquals(other: Any?): Boolean {
         ReplaceWith(
             expression = "!ContentCaptureManager.isEnabled",
             imports =
-                ["androidx.compose.ui.contentcapture.ContentCaptureManager.Companion.isEnabled"]
+                ["androidx.compose.ui.contentcapture.ContentCaptureManager.Companion.isEnabled"],
         ),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
-@Suppress("GetterSetterNames", "OPT_IN_MARKER_ON_WRONG_TARGET", "NullAnnotationGroup")
-@get:Suppress("GetterSetterNames")
-@get:ExperimentalComposeUiApi
-@set:ExperimentalComposeUiApi
+@Suppress("GetterSetterNames")
 @ExperimentalComposeUiApi
-var DisableContentCapture: Boolean
+public var DisableContentCapture: Boolean
     get() = ContentCaptureManager.isEnabled
     set(value) {
         ContentCaptureManager.isEnabled = value

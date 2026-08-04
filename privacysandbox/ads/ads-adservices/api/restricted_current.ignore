@@ -1,9 +1,0 @@
-// Baseline format: 1.0
-AddedField: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#Companion:
-    Added field androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion
-
-
-AddedMethod: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#getAuctionServerRequestFlags():
-    Added method androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.getAuctionServerRequestFlags()
-AddedMethod: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#getPriority():
-    Added method androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.getPriority()

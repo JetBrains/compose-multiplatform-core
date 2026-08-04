@@ -24,22 +24,22 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 
 /**
- * MeasurePolicy applied at the root of the compose tree.
+ * SubspaceMeasurePolicy applied at the root of the compose tree.
  *
  * Based on [androidx.compose.ui.layout.RootMeasurePolicy].
  */
-internal class SubspaceRootMeasurePolicy() : MeasurePolicy {
-    override fun MeasureScope.measure(
-        measurables: List<Measurable>,
+internal class SubspaceRootMeasurePolicy() : SubspaceMeasurePolicy {
+    override fun SubspaceMeasureScope.measure(
+        measurables: List<SubspaceMeasurable>,
         constraints: VolumeConstraints,
-    ): MeasureResult {
+    ): SubspaceMeasureResult {
         return when {
             measurables.isEmpty() -> {
                 layout(constraints.minWidth, constraints.minHeight, constraints.minDepth) {}
             }
             measurables.size == 1 -> {
                 val placeable = measurables[0].measure(constraints)
-                layout(placeable.measuredWidth, placeable.measuredHeight, placeable.measuredDepth) {
+                layout(placeable.width, placeable.height, placeable.depth) {
                     placeable.place(Pose(Vector3.Zero, Quaternion.Identity))
                 }
             }
@@ -49,9 +49,9 @@ internal class SubspaceRootMeasurePolicy() : MeasurePolicy {
                 var maxHeight = 0
                 var maxDepth = 0
                 placeables.fastForEach { placeable ->
-                    maxWidth = maxOf(placeable.measuredWidth, maxWidth)
-                    maxHeight = maxOf(placeable.measuredHeight, maxHeight)
-                    maxDepth = maxOf(placeable.measuredDepth, maxDepth)
+                    maxWidth = maxOf(placeable.width, maxWidth)
+                    maxHeight = maxOf(placeable.height, maxHeight)
+                    maxDepth = maxOf(placeable.depth, maxDepth)
                 }
                 layout(maxWidth, maxHeight, maxDepth) {
                     placeables.fastForEach { placeable ->

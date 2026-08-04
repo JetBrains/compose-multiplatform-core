@@ -27,7 +27,7 @@ suspend fun createAllParametersChecks(
     inspectorTester: InspectorTester,
     rootId: Long,
     generation: Int,
-    skipSystemComposables: Boolean = false
+    skipSystemComposables: Boolean = false,
 ): AllParametersChecks {
     val composableResponse =
         inspectorTester
@@ -36,7 +36,7 @@ suspend fun createAllParametersChecks(
                     rootViewId = rootId,
                     skipSystemComposables = skipSystemComposables,
                     extractAllParameters = true,
-                    generation = generation
+                    generation = generation,
                 )
             )
             .getComposablesResponse
@@ -47,7 +47,7 @@ suspend fun createAllParametersChecks(
                 GetAllParametersCommand(
                     rootViewId = rootId,
                     skipSystemComposables = skipSystemComposables,
-                    generation = generation
+                    generation = generation,
                 )
             )
             .getAllParametersResponse
@@ -67,8 +67,7 @@ class AllParametersChecks(
     }
 
     fun assertTextNode(composable: ComposableNode, expectedText: String) {
-        // TODO(b/408492167) "$0" should be "text"
-        assertNode(composable, "Text", "$0", expectedText)
+        assertNode(composable, "Text", "text", expectedText)
     }
 
     fun assertNoNode(composableList: List<ComposableNode>, unwantedNodeName: String) {
@@ -83,7 +82,7 @@ class AllParametersChecks(
         composable: ComposableNode,
         expectedName: String,
         parameterName: String,
-        expectedParameterValue: String
+        expectedParameterValue: String,
     ) {
         assertThat(composableStrings[composable.name]).isEqualTo(expectedName)
         assertThat(parameterStringValue(composable, parameterName))
@@ -91,8 +90,7 @@ class AllParametersChecks(
     }
 
     fun parameterTextValue(composable: ComposableNode): String? {
-        // TODO(b/408492167) "$0" should be "text"
-        return parameterStringValue(composable, "$0")
+        return parameterStringValue(composable, "text")
     }
 
     fun parameterStringValue(composable: ComposableNode, parameterName: String): String? {

@@ -17,7 +17,10 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.Alignment
 
 /**
  * The adapted state of a pane. It gives clues to pane scaffolds about if a certain pane should be
@@ -25,36 +28,88 @@ import androidx.compose.runtime.Stable
  */
 @ExperimentalMaterial3AdaptiveApi
 @Stable
-sealed interface PaneAdaptedValue {
+public sealed interface PaneAdaptedValue {
     private class Simple(private val description: String) : PaneAdaptedValue {
         override fun toString() = "PaneAdaptedValue[$description]"
     }
 
     /**
-     * Indicates that the associated pane should be reflowed to its [targetPane], i.e., it will be
+     * Indicates that the associated pane should be reflowed to its [reflowUnder], i.e., it will be
      * displayed under the target pane.
      *
-     * @param targetPane the target pane of the reflowing, i.e., the pane that the reflowed pane
+     * @param reflowUnder the target pane of the reflowing, i.e., the pane that the reflowed pane
      *   will be put under.
      */
-    class Reflowed(val targetPane: Any) : PaneAdaptedValue {
-        override fun toString() = "PaneAdaptedValue[Reflowed to $targetPane]"
+    @Immutable
+    public class Reflowed(internal val reflowUnder: PaneScaffoldRole) : PaneAdaptedValue {
+        public override fun toString(): String = "PaneAdaptedValue[Reflowed to $reflowUnder]"
 
-        override fun equals(other: Any?): Boolean {
+        public override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Reflowed) return false
-            return targetPane == other.targetPane
+            return reflowUnder == other.reflowUnder
         }
 
-        override fun hashCode(): Int {
-            return targetPane.hashCode()
+        public override fun hashCode(): Int {
+            return reflowUnder.hashCode()
         }
     }
 
-    companion object {
+    /**
+     * Indicates that the associated pane should be levitated with the specified [alignment].
+     *
+     * @param alignment the alignment of the levitated pane relative to the pane scaffold; the
+     *   alignment can also be provided as anchoring to a certain alignment line or a certain
+     *   element in the window. See [Alignment] for more information.
+     * @param scrim the scrim to show when the levitated pane is shown to block user interaction
+     *   with the underlying layout and emphasize the levitated pane; by default it will be `null`
+     *   and no scrim will show; to display a scrim, we recommend to use [LevitatedPaneScrim] as a
+     *   default implementation.
+     * @param dragToResizeState the optional state to enable the levitated pane to be resizable by
+     *   dragging; it will be used to store and control current dragging; see
+     *   [rememberDragToResizeState] for more details about how to implement the drag-to-resize
+     *   behavior.
+     */
+    @Immutable
+    public class Levitated(
+        internal val alignment: Alignment,
+        internal val scrim: (@Composable () -> Unit)? = null,
+        internal val dragToResizeState: DragToResizeState? = null,
+    ) : PaneAdaptedValue {
+
+        @Deprecated(
+            message = "Keep the old constructor for binary compatibility",
+            level = DeprecationLevel.HIDDEN,
+        )
+        public constructor(
+            alignment: Alignment,
+            scrim: (@Composable () -> Unit)? = null,
+        ) : this(alignment, scrim, null)
+
+        public override fun toString(): String =
+            "PaneAdaptedValue[Levitated with $alignment and scrim=$scrim]"
+
+        public override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Levitated) return false
+            if (alignment != other.alignment) return false
+            if (scrim !== other.scrim) return false
+            if (dragToResizeState !== other.dragToResizeState) return false
+            return true
+        }
+
+        public override fun hashCode(): Int {
+            var result = alignment.hashCode()
+            result = 31 * result + scrim.hashCode()
+            result = 31 * result + dragToResizeState.hashCode()
+            return result
+        }
+    }
+
+    public companion object {
         /** Indicates that the associated pane should be displayed in its full width and height. */
-        val Expanded: PaneAdaptedValue = Simple("Expanded")
+        public val Expanded: PaneAdaptedValue = Simple("Expanded")
         /** Indicates that the associated pane should be hidden. */
-        val Hidden: PaneAdaptedValue = Simple("Hidden")
+        public val Hidden: PaneAdaptedValue = Simple("Hidden")
     }
 }

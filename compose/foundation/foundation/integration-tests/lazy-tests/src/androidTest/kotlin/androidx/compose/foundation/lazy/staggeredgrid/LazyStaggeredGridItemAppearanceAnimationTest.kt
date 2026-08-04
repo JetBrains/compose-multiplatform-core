@@ -39,7 +39,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -308,7 +308,7 @@ class LazyStaggeredGridItemAppearanceAnimationTest {
     private fun assertPixels(
         mainAxisSize: Int,
         crossAxisSize: Int = this.crossAxisSize,
-        expectedColorProvider: (x: Int, y: Int) -> Color?
+        expectedColorProvider: (x: Int, y: Int) -> Color?,
     ) {
         rule.onNodeWithTag(ContainerTag).captureToImage().assertPixels(
             IntSize(crossAxisSize, mainAxisSize)
@@ -339,7 +339,7 @@ class LazyStaggeredGridItemAppearanceAnimationTest {
         containerSize: Dp? = containerSizeDp,
         startIndex: Int = 0,
         crossAxisSize: Dp = crossAxisSizeDp,
-        content: LazyStaggeredGridScope.() -> Unit
+        content: LazyStaggeredGridScope.() -> Unit,
     ) {
         state = rememberLazyStaggeredGridState(startIndex)
 
@@ -363,7 +363,7 @@ class LazyStaggeredGridItemAppearanceAnimationTest {
                         }
                     )
                     .testTag(ContainerTag),
-            content = content
+            content = content,
         )
     }
 
@@ -372,7 +372,7 @@ class LazyStaggeredGridItemAppearanceAnimationTest {
         color: Color,
         size: Dp = itemSizeDp,
         crossAxisSize: Dp = crossAxisSizeDp,
-        animSpec: FiniteAnimationSpec<Float>? = AnimSpec
+        animSpec: FiniteAnimationSpec<Float>? = AnimSpec,
     ) {
         Box(
             Modifier.animateItem(fadeInSpec = animSpec, placementSpec = null, fadeOutSpec = null)

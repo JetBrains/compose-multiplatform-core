@@ -54,11 +54,11 @@ import androidx.compose.ui.text.internal.requirePrecondition
  * @param variationSettings font variation settings, unset by default to load default VF from system
  * @throws IllegalArgumentException if familyName is empty
  */
-fun Font(
+public fun Font(
     familyName: DeviceFontFamilyName,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings = FontVariation.Settings()
+    variationSettings: FontVariation.Settings = FontVariation.Settings(),
 ): Font {
     return DeviceFontFamilyNameFont(familyName, weight, style, variationSettings)
 }
@@ -73,7 +73,7 @@ fun Font(
  * @see Typeface
  */
 @JvmInline
-value class DeviceFontFamilyName(val name: String) {
+public value class DeviceFontFamilyName(public val name: String) {
     init {
         requirePrecondition(name.isNotEmpty()) { "name may not be empty" }
     }
@@ -84,7 +84,7 @@ constructor(
     private val familyName: DeviceFontFamilyName,
     override val weight: FontWeight,
     override val style: FontStyle,
-    variationSettings: FontVariation.Settings
+    variationSettings: FontVariation.Settings,
 ) : AndroidFont(FontLoadingStrategy.OptionalLocal, NamedFontLoader, variationSettings) {
     fun loadCached(context: Context): Typeface? {
         return PlatformTypefaces()
@@ -93,7 +93,7 @@ constructor(
                 weight,
                 style,
                 variationSettings,
-                context
+                context,
             )
     }
 

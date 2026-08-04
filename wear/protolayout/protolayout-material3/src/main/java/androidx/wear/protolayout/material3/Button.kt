@@ -28,6 +28,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_END
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_START
 import androidx.wear.protolayout.LayoutElementBuilders.HorizontalAlignment
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.Padding
@@ -69,6 +70,12 @@ import androidx.wear.protolayout.modifiers.toProtoLayoutModifiers
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
  *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
+ *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
  * @param iconContent The icon slot for content displayed in this button. It is recommended to use
@@ -96,7 +103,6 @@ import androidx.wear.protolayout.modifiers.toProtoLayoutModifiers
  *   button's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.oneSlotButtonsSample
  */
-// TODO: b/346958146 - Link Button visuals in DAC
 public fun MaterialScope.iconButton(
     onClick: Clickable,
     iconContent: (MaterialScope.() -> LayoutElement),
@@ -106,7 +112,7 @@ public fun MaterialScope.iconButton(
     shape: Corner = shapes.full,
     colors: ButtonColors = filledButtonColors(),
     style: IconButtonStyle = defaultIconButtonStyle(),
-    contentPadding: Padding = style.innerPadding
+    contentPadding: Padding = style.innerPadding,
 ): LayoutElement =
     buttonContainer(
         onClick = onClick,
@@ -116,15 +122,16 @@ public fun MaterialScope.iconButton(
         contentPadding = contentPadding,
         content = {
             withStyle(
-                    defaultIconStyle =
-                        IconStyle(
-                            width = dp(style.iconSize),
-                            height = dp(style.iconSize),
-                            tintColor = colors.iconColor
-                        )
-                )
-                .iconContent()
-        }
+                defaultIconStyle =
+                    IconStyle(
+                        width = dp(style.iconSize),
+                        height = dp(style.iconSize),
+                        tintColor = colors.iconColor,
+                    )
+            ) {
+                iconContent()
+            }
+        },
     )
 
 /**
@@ -139,6 +146,12 @@ public fun MaterialScope.iconButton(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
@@ -168,7 +181,6 @@ public fun MaterialScope.iconButton(
  *   button's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.oneSlotButtonsSample
  */
-// TODO: b/346958146 - Link Button visuals in DAC
 public fun MaterialScope.textButton(
     onClick: Clickable,
     labelContent: (MaterialScope.() -> LayoutElement),
@@ -178,25 +190,31 @@ public fun MaterialScope.textButton(
     shape: Corner = shapes.full,
     colors: ButtonColors = filledButtonColors(),
     style: TextButtonStyle = defaultTextButtonStyle(),
-    contentPadding: Padding = style.innerPadding
-): LayoutElement =
-    buttonContainer(
+    contentPadding: Padding = style.innerPadding,
+): LayoutElement {
+    val content =
+        withStyle(
+            defaultTextElementStyle =
+                TextElementStyle(typography = style.labelTypography, color = colors.labelColor)
+        ) {
+            labelContent()
+        }
+    val modifierWithContentDescription =
+        (content as? Text)?.text?.let {
+            LayoutModifier.contentDescription(
+                staticValue = it.value,
+                dynamicValue = it.dynamicValue,
+            ) then modifier
+        } ?: modifier
+    return buttonContainer(
         onClick = onClick,
-        modifier = modifier.background(colors.containerColor).clip(shape),
+        modifier = modifierWithContentDescription.background(colors.containerColor).clip(shape),
         width = width,
         height = height,
         contentPadding = contentPadding,
-        content = {
-            withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.labelTypography,
-                            color = colors.labelColor
-                        )
-                )
-                .labelContent()
-        }
+        content = { content },
     )
+}
 
 /**
  * Opinionated ProtoLayout Material3 pill shape button that offers up to three slots to take content
@@ -206,6 +224,12 @@ public fun MaterialScope.textButton(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
@@ -247,7 +271,6 @@ public fun MaterialScope.textButton(
  * @sample androidx.wear.protolayout.material3.samples.pillShapeButtonsSample
  * @sample androidx.wear.protolayout.material3.samples.customButtonSample
  */
-// TODO: b/346958146 - Link Button visuals in DAC
 public fun MaterialScope.button(
     onClick: Clickable,
     labelContent: (MaterialScope.() -> LayoutElement),
@@ -267,7 +290,7 @@ public fun MaterialScope.button(
         } else {
             HORIZONTAL_ALIGN_START
         },
-    contentPadding: Padding = style.innerPadding
+    contentPadding: Padding = style.innerPadding,
 ): LayoutElement =
     buttonContainer(
         onClick = onClick,
@@ -281,42 +304,45 @@ public fun MaterialScope.button(
             buildContentForPillShapeButton(
                 label =
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.labelTypography,
-                                    color = colors.labelColor,
-                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .labelContent(),
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.labelTypography,
+                                color = colors.labelColor,
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
+                            )
+                    ) {
+                        labelContent()
+                    },
                 secondaryLabel =
                     secondaryLabelContent?.let {
                         withStyle(
-                                defaultTextElementStyle =
-                                    TextElementStyle(
-                                        typography = style.secondaryLabelTypography,
-                                        color = colors.secondaryLabelColor,
-                                        alignment = horizontalAlignment.horizontalAlignToTextAlign()
-                                    )
-                            )
-                            .secondaryLabelContent()
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.secondaryLabelTypography,
+                                    color = colors.secondaryLabelColor,
+                                    alignment = horizontalAlignment.horizontalAlignToTextAlign(),
+                                )
+                        ) {
+                            secondaryLabelContent()
+                        }
                     },
                 icon =
                     iconContent?.let {
                         withStyle(
-                                defaultIconStyle =
-                                    IconStyle(
-                                        width = dp(style.iconSize),
-                                        height = dp(style.iconSize),
-                                        tintColor = colors.iconColor
-                                    )
-                            )
-                            .iconContent()
+                            defaultIconStyle =
+                                IconStyle(
+                                    width = dp(style.iconSize),
+                                    height = dp(style.iconSize),
+                                    tintColor = colors.iconColor,
+                                )
+                        ) {
+                            iconContent()
+                        }
                     },
                 horizontalAlignment = horizontalAlignment,
                 style = style,
             )
-        }
+        },
     )
 
 /**
@@ -331,6 +357,12 @@ public fun MaterialScope.button(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
@@ -367,7 +399,6 @@ public fun MaterialScope.button(
  *   as horizontally elements are spaced out proportionally to the buttons width.
  * @sample androidx.wear.protolayout.material3.samples.avatarButtonSample
  */
-// TODO: b/346958146 - Link Button visuals in DAC
 public fun MaterialScope.avatarButton(
     onClick: Clickable,
     labelContent: (MaterialScope.() -> LayoutElement),
@@ -379,7 +410,7 @@ public fun MaterialScope.avatarButton(
     colors: ButtonColors = filledButtonColors(),
     style: AvatarButtonStyle = defaultAvatarButtonStyle(),
     @HorizontalAlignment horizontalAlignment: Int = HORIZONTAL_ALIGN_START,
-    contentPadding: Padding = style.innerVerticalPadding
+    contentPadding: Padding = style.innerVerticalPadding,
 ): LayoutElement {
     val correctHorizontalAlignment =
         if (horizontalAlignment == HORIZONTAL_ALIGN_CENTER) {
@@ -398,47 +429,49 @@ public fun MaterialScope.avatarButton(
             buildContentForAvatarButton(
                 label =
                     withStyle(
-                            defaultTextElementStyle =
-                                TextElementStyle(
-                                    typography = style.labelTypography,
-                                    color = colors.labelColor,
-                                    alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
-                                )
-                        )
-                        .labelContent(),
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.labelTypography,
+                                color = colors.labelColor,
+                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
+                            )
+                    ) {
+                        labelContent()
+                    },
                 secondaryLabel =
                     secondaryLabelContent?.let {
                         withStyle(
-                                defaultTextElementStyle =
-                                    TextElementStyle(
-                                        typography = style.secondaryLabelTypography,
-                                        color = colors.secondaryLabelColor,
-                                        alignment =
-                                            HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
-                                    )
-                            )
-                            .secondaryLabelContent()
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.secondaryLabelTypography,
+                                    color = colors.secondaryLabelColor,
+                                    alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
+                                )
+                        ) {
+                            secondaryLabelContent()
+                        }
                     },
                 avatar =
                     withStyle(
-                            defaultAvatarImageStyle =
-                                AvatarImageStyle(
-                                    width = expand(),
-                                    // We want height to be same as the calculated width
-                                    height =
-                                        DimensionBuilders.ProportionalDimensionProp.Builder()
-                                            .setAspectRatioWidth(1)
-                                            .setAspectRatioHeight(1)
-                                            .build(),
-                                    contentScaleMode = LayoutElementBuilders.CONTENT_SCALE_MODE_FIT
-                                )
-                        )
-                        .avatarContent(),
+                        defaultAvatarImageStyle =
+                            AvatarImageStyle(
+                                width = expand(),
+                                // We want height to be same as the calculated width
+                                height =
+                                    DimensionBuilders.ProportionalDimensionProp.Builder()
+                                        .setAspectRatioWidth(1)
+                                        .setAspectRatioHeight(1)
+                                        .build(),
+                                contentScaleMode = LayoutElementBuilders.CONTENT_SCALE_MODE_FIT,
+                            )
+                    ) {
+                        avatarContent()
+                    },
                 horizontalAlignment = correctHorizontalAlignment,
                 style = style,
-                height = height
+                height = height,
             )
-        }
+        },
     )
 }
 
@@ -472,7 +505,7 @@ public fun MaterialScope.imageButton(
     backgroundContent: (MaterialScope.() -> LayoutElement),
     modifier: LayoutModifier = LayoutModifier,
     width: ContainerDimension = IMAGE_BUTTON_DEFAULT_SIZE_DP.toDp(),
-    height: ContainerDimension = IMAGE_BUTTON_DEFAULT_SIZE_DP.toDp()
+    height: ContainerDimension = IMAGE_BUTTON_DEFAULT_SIZE_DP.toDp(),
 ): LayoutElement =
     buttonContainer(
         onClick = onClick,
@@ -480,7 +513,7 @@ public fun MaterialScope.imageButton(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        useOverlayOnBackground = false
+        useOverlayOnBackground = false,
     )
 
 /**
@@ -491,6 +524,12 @@ public fun MaterialScope.imageButton(
  * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
+ *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
@@ -522,7 +561,6 @@ public fun MaterialScope.imageButton(
  *   button's edge. It's highly recommended to keep the default.
  * @sample androidx.wear.protolayout.material3.samples.compactButtonsSample
  */
-// TODO: b/346958146 - Link Button visuals in DAC
 public fun MaterialScope.compactButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
@@ -542,7 +580,7 @@ public fun MaterialScope.compactButton(
         Padding.Builder()
             .setStart(COMPACT_BUTTON_DEFAULT_CONTENT_PADDING_DP.toDp())
             .setEnd(COMPACT_BUTTON_DEFAULT_CONTENT_PADDING_DP.toDp())
-            .build()
+            .build(),
 ): LayoutElement =
     // Compact button has a fixed height of 32 dp, we need to wrap it in a box to add 8dp margin on
     // its top and bottom for accessibility.
@@ -563,15 +601,16 @@ public fun MaterialScope.compactButton(
                         label =
                             labelContent?.let {
                                 withStyle(
-                                        defaultTextElementStyle =
-                                            TextElementStyle(
-                                                typography = COMPACT_BUTTON_LABEL_TYPOGRAPHY,
-                                                color = colors.labelColor,
-                                                alignment =
-                                                    horizontalAlignment.horizontalAlignToTextAlign()
-                                            )
-                                    )
-                                    .labelContent()
+                                    defaultTextElementStyle =
+                                        TextElementStyle(
+                                            typography = COMPACT_BUTTON_LABEL_TYPOGRAPHY,
+                                            color = colors.labelColor,
+                                            alignment =
+                                                horizontalAlignment.horizontalAlignToTextAlign(),
+                                        )
+                                ) {
+                                    labelContent()
+                                }
                             },
                         icon =
                             iconContent?.let {
@@ -584,18 +623,19 @@ public fun MaterialScope.compactButton(
                                         }
                                     )
                                 withStyle(
-                                        defaultIconStyle =
-                                            IconStyle(
-                                                width = iconSize,
-                                                height = iconSize,
-                                                tintColor = colors.iconColor
-                                            )
-                                    )
-                                    .iconContent()
+                                    defaultIconStyle =
+                                        IconStyle(
+                                            width = iconSize,
+                                            height = iconSize,
+                                            tintColor = colors.iconColor,
+                                        )
+                                ) {
+                                    iconContent()
+                                }
                             },
                         horizontalAlignment = horizontalAlignment,
                     )
-                }
+                },
             )
         )
         .setModifiers(LayoutModifier.tag(METADATA_TAG_BUTTON).toProtoLayoutModifiers())
@@ -654,7 +694,7 @@ internal fun MaterialScope.buttonContainer(
     backgroundContent: (MaterialScope.() -> LayoutElement)? = null,
     useOverlayOnBackground: Boolean = true,
     contentPadding: Padding = DEFAULT_CONTENT_PADDING,
-    horizontalAlignment: Int = HORIZONTAL_ALIGN_CENTER
+    horizontalAlignment: Int = HORIZONTAL_ALIGN_CENTER,
 ): LayoutElement =
     componentContainer(
         onClick = onClick,
@@ -666,5 +706,5 @@ internal fun MaterialScope.buttonContainer(
         contentPadding = contentPadding,
         metadataTag = METADATA_TAG_BUTTON,
         content = content,
-        horizontalAlignment = horizontalAlignment
+        horizontalAlignment = horizontalAlignment,
     )

@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.workaround
 
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.impl.EncoderProfilesProxy
@@ -26,10 +25,12 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_480P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_720P
+import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_QHD
 import androidx.camera.testing.impl.fakes.FakeVideoEncoderInfo
 import androidx.camera.video.Quality
 import androidx.camera.video.Quality.FHD
 import androidx.camera.video.Quality.HD
+import androidx.camera.video.Quality.QHD
 import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Quality.SD
 import androidx.camera.video.Quality.UHD
@@ -41,6 +42,7 @@ import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_AUDIO_SAMPLE_RATE
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_VIDEO_BITRATE_FHD
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_VIDEO_BITRATE_HD
+import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_VIDEO_BITRATE_QHD
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_VIDEO_BITRATE_SD
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_VIDEO_BITRATE_UHD
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_VIDEO_BIT_DEPTH
@@ -58,10 +60,10 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class DefaultEncoderProfilesProviderTest {
 
-    private val targetQualities = listOf(UHD, FHD, HD, SD)
+    private val targetQualities = Quality.getSortedQualities()
     private val fakeCameraInfo = FakeCameraInfoInternal()
     private lateinit var defaultEncoderProfilesProvider: DefaultEncoderProfilesProvider
 
@@ -72,13 +74,13 @@ class DefaultEncoderProfilesProviderTest {
             RESOLUTION_2160P,
             RESOLUTION_1080P,
             RESOLUTION_720P,
-            RESOLUTION_480P
+            RESOLUTION_480P,
         )
         defaultEncoderProfilesProvider =
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -89,7 +91,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_2160P.width,
             RESOLUTION_2160P.height,
-            DEFAULT_VIDEO_BITRATE_UHD
+            DEFAULT_VIDEO_BITRATE_UHD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -101,13 +103,13 @@ class DefaultEncoderProfilesProviderTest {
             RESOLUTION_2160P,
             RESOLUTION_1080P,
             RESOLUTION_720P,
-            RESOLUTION_480P
+            RESOLUTION_480P,
         )
         defaultEncoderProfilesProvider =
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_FHD)
+                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_FHD),
             )
 
         // Act.
@@ -118,7 +120,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_2160P.width,
             RESOLUTION_2160P.height,
-            DEFAULT_VIDEO_BITRATE_FHD
+            DEFAULT_VIDEO_BITRATE_FHD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -131,11 +133,89 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
         val encoderProfiles = defaultEncoderProfilesProvider.getAll(UHD.value)
+
+        // Assert.
+        assertThat(encoderProfiles).isNull()
+    }
+
+    @Test
+    fun getQhdProfile_verifyResult() {
+        // Arrange.
+        fakeCameraInfo.setSupportedResolutions(
+            RESOLUTION_2160P,
+            RESOLUTION_QHD,
+            RESOLUTION_1080P,
+            RESOLUTION_720P,
+            RESOLUTION_480P,
+        )
+        defaultEncoderProfilesProvider =
+            DefaultEncoderProfilesProvider(
+                fakeCameraInfo,
+                targetQualities,
+                FakeVideoEncoderInfoFinder(),
+            )
+
+        // Act.
+        val encoderProfiles = defaultEncoderProfilesProvider.getAll(QHD.value)
+
+        // Assert.
+        verifyVideoProfile(
+            encoderProfiles,
+            RESOLUTION_QHD.width,
+            RESOLUTION_QHD.height,
+            DEFAULT_VIDEO_BITRATE_QHD,
+        )
+        verifyAudioProfile(encoderProfiles)
+    }
+
+    @Test
+    fun getQhdProfileWithUnsupportedBitrate_verifyClampedBitrate() {
+        // Arrange.
+        fakeCameraInfo.setSupportedResolutions(
+            RESOLUTION_2160P,
+            RESOLUTION_QHD,
+            RESOLUTION_1080P,
+            RESOLUTION_720P,
+            RESOLUTION_480P,
+        )
+        defaultEncoderProfilesProvider =
+            DefaultEncoderProfilesProvider(
+                fakeCameraInfo,
+                targetQualities,
+                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_FHD),
+            )
+
+        // Act.
+        val encoderProfiles = defaultEncoderProfilesProvider.getAll(QHD.value)
+
+        // Assert.
+        verifyVideoProfile(
+            encoderProfiles,
+            RESOLUTION_QHD.width,
+            RESOLUTION_QHD.height,
+            DEFAULT_VIDEO_BITRATE_FHD,
+        )
+        verifyAudioProfile(encoderProfiles)
+    }
+
+    @Test
+    fun getQhdProfileWithUnsupportedSize_returnNull() {
+        // Arrange: QHD is not supported.
+        fakeCameraInfo.setSupportedResolutions(RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P)
+        defaultEncoderProfilesProvider =
+            DefaultEncoderProfilesProvider(
+                fakeCameraInfo,
+                targetQualities,
+                FakeVideoEncoderInfoFinder(),
+            )
+
+        // Act.
+        val encoderProfiles = defaultEncoderProfilesProvider.getAll(QHD.value)
 
         // Assert.
         assertThat(encoderProfiles).isNull()
@@ -149,7 +229,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -160,7 +240,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_1080P.width,
             RESOLUTION_1080P.height,
-            DEFAULT_VIDEO_BITRATE_FHD
+            DEFAULT_VIDEO_BITRATE_FHD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -173,7 +253,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_HD)
+                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_HD),
             )
 
         // Act.
@@ -184,7 +264,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_1080P.width,
             RESOLUTION_1080P.height,
-            DEFAULT_VIDEO_BITRATE_HD
+            DEFAULT_VIDEO_BITRATE_HD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -197,7 +277,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -215,7 +295,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -226,7 +306,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_720P.width,
             RESOLUTION_720P.height,
-            DEFAULT_VIDEO_BITRATE_HD
+            DEFAULT_VIDEO_BITRATE_HD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -239,7 +319,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_SD)
+                FakeVideoEncoderInfoFinder(DEFAULT_VIDEO_BITRATE_SD),
             )
 
         // Act.
@@ -250,7 +330,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_720P.width,
             RESOLUTION_720P.height,
-            DEFAULT_VIDEO_BITRATE_SD
+            DEFAULT_VIDEO_BITRATE_SD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -263,7 +343,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -281,7 +361,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -292,7 +372,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_480P.width,
             RESOLUTION_480P.height,
-            DEFAULT_VIDEO_BITRATE_SD
+            DEFAULT_VIDEO_BITRATE_SD,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -306,7 +386,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder(maxSupportedBitrate)
+                FakeVideoEncoderInfoFinder(maxSupportedBitrate),
             )
 
         // Act.
@@ -317,7 +397,7 @@ class DefaultEncoderProfilesProviderTest {
             encoderProfiles,
             RESOLUTION_480P.width,
             RESOLUTION_480P.height,
-            maxSupportedBitrate
+            maxSupportedBitrate,
         )
         verifyAudioProfile(encoderProfiles)
     }
@@ -330,7 +410,7 @@ class DefaultEncoderProfilesProviderTest {
             DefaultEncoderProfilesProvider(
                 fakeCameraInfo,
                 targetQualities,
-                FakeVideoEncoderInfoFinder()
+                FakeVideoEncoderInfoFinder(),
             )
 
         // Act.
@@ -344,7 +424,7 @@ class DefaultEncoderProfilesProviderTest {
         encoderProfiles: EncoderProfilesProxy?,
         width: Int,
         height: Int,
-        bitrate: Int
+        bitrate: Int,
     ) {
         assertThat(encoderProfiles!!.videoProfiles).hasSize(1)
         val videoProfile = encoderProfiles.videoProfiles[0]

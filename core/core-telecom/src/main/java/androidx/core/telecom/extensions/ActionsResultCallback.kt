@@ -22,13 +22,11 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.CallException
-import androidx.core.telecom.util.ExperimentalAppActions
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 
-@ExperimentalAppActions
 @RequiresApi(Build.VERSION_CODES.O)
 @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)
 public class ActionsResultCallback : IActionsResultCallback.Stub() {
@@ -49,7 +47,7 @@ public class ActionsResultCallback : IActionsResultCallback.Stub() {
                 if (
                     waitForActionResultLatch.await(
                         ACTION_RESULT_RESPONSE_TIMEOUT,
-                        TimeUnit.MILLISECONDS
+                        TimeUnit.MILLISECONDS,
                     )
                 ) {
                     Log.i(TAG, "waitForResponse: VoIP app returned a result")

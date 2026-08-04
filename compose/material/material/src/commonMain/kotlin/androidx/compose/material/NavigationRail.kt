@@ -98,20 +98,20 @@ import kotlin.math.roundToInt
  *   [NavigationRailItem]s
  */
 @Composable
-fun NavigationRail(
+public fun NavigationRail(
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = NavigationRailDefaults.Elevation,
     header: @Composable (ColumnScope.() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
         modifier = modifier,
         color = backgroundColor,
         contentColor = contentColor,
-        elevation = elevation
+        elevation = elevation,
     ) {
         Column(
             Modifier.fillMaxHeight()
@@ -163,13 +163,13 @@ fun NavigationRail(
  *   [NavigationRailItem]s
  */
 @Composable
-fun NavigationRail(
+public fun NavigationRail(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = NavigationRailDefaults.Elevation,
     header: @Composable (ColumnScope.() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     NavigationRail(ZeroInsets, modifier, backgroundColor, contentColor, elevation, header, content)
 }
@@ -198,7 +198,7 @@ fun NavigationRail(
  * @param unselectedContentColor the color of the text label and icon when this item is not selected
  */
 @Composable
-fun NavigationRailItem(
+public fun NavigationRailItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
@@ -208,7 +208,7 @@ fun NavigationRailItem(
     alwaysShowLabel: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     selectedContentColor: Color = MaterialTheme.colors.primary,
-    unselectedContentColor: Color = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+    unselectedContentColor: Color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
 ) {
     val styledLabel: @Composable (() -> Unit)? =
         label?.let {
@@ -233,10 +233,10 @@ fun NavigationRailItem(
                 enabled = enabled,
                 role = Role.Tab,
                 interactionSource = interactionSource,
-                indication = ripple
+                indication = ripple,
             )
             .size(itemSize),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         NavigationRailTransition(selectedContentColor, unselectedContentColor, selected) { progress
             ->
@@ -245,19 +245,19 @@ fun NavigationRailItem(
             NavigationRailItemBaselineLayout(
                 icon = icon,
                 label = styledLabel,
-                iconPositionAnimationProgress = animationProgress
+                iconPositionAnimationProgress = animationProgress,
             )
         }
     }
 }
 
 /** Contains default values used for [NavigationRail]. */
-object NavigationRailDefaults {
+public object NavigationRailDefaults {
     /** Default elevation used for [NavigationRail]. */
-    val Elevation = 8.dp
+    public val Elevation: Dp = 8.dp
 
     /** Recommended window insets for navigation rail. */
-    val windowInsets: WindowInsets
+    public val windowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -282,12 +282,12 @@ private fun NavigationRailTransition(
     activeColor: Color,
     inactiveColor: Color,
     selected: Boolean,
-    content: @Composable (animationProgress: Float) -> Unit
+    content: @Composable (animationProgress: Float) -> Unit,
 ) {
     val animationProgress by
         animateFloatAsState(
             targetValue = if (selected) 1f else 0f,
-            animationSpec = NavigationRailAnimationSpec
+            animationSpec = NavigationRailAnimationSpec,
         )
 
     val color = lerp(inactiveColor, activeColor, animationProgress)
@@ -314,7 +314,7 @@ private fun NavigationRailTransition(
 private fun NavigationRailItemBaselineLayout(
     icon: @Composable () -> Unit,
     label: @Composable (() -> Unit)?,
-    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float
+    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float,
 ) {
     Layout({
         Box(Modifier.layoutId("icon")) { icon() }
@@ -344,7 +344,7 @@ private fun NavigationRailItemBaselineLayout(
                 labelPlaceable!!,
                 iconPlaceable,
                 constraints,
-                iconPositionAnimationProgress
+                iconPositionAnimationProgress,
             )
         }
     }
@@ -353,7 +353,7 @@ private fun NavigationRailItemBaselineLayout(
 /** Places the provided [iconPlaceable] in the vertical center of the provided [constraints] */
 private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val iconX = max(0, (constraints.maxWidth - iconPlaceable.width) / 2)
     val iconY = max(0, (constraints.maxHeight - iconPlaceable.height) / 2)
@@ -385,7 +385,7 @@ private fun MeasureScope.placeLabelAndIcon(
     labelPlaceable: Placeable,
     iconPlaceable: Placeable,
     constraints: Constraints,
-    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float
+    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float,
 ): MeasureResult {
     val baseline = labelPlaceable[LastBaseline]
     val labelBaselineOffset = ItemLabelBaselineBottomOffset.roundToPx()
@@ -421,26 +421,32 @@ private val NavigationRailAnimationSpec =
     TweenSpec<Float>(durationMillis = 300, easing = FastOutSlowInEasing)
 
 /** Size of a regular [NavigationRailItem]. */
-private val NavigationRailItemSize = 72.dp
+private val NavigationRailItemSize
+    get() = 72.dp
 
 /** Size of a compact [NavigationRailItem]. */
-private val NavigationRailItemCompactSize = 56.dp
+private val NavigationRailItemCompactSize
+    get() = 56.dp
 
 /** Padding at the top and the bottom of the [NavigationRail] */
-private val NavigationRailPadding = 8.dp
+private val NavigationRailPadding
+    get() = 8.dp
 
 /**
  * Padding at the bottom of the [NavigationRail]'s header [Composable]. This padding will only be
  * added when the header is not null.
  */
-private val HeaderPadding = 8.dp
+private val HeaderPadding
+    get() = 8.dp
 
 /** The space between the text label's baseline and the bottom of the container. */
-private val ItemLabelBaselineBottomOffset = 16.dp
+private val ItemLabelBaselineBottomOffset
+    get() = 16.dp
 
 /**
  * The space between the icon and the top of the container when an item contains a label and icon.
  */
-private val ItemIconTopOffset = 14.dp
+private val ItemIconTopOffset
+    get() = 14.dp
 
 private val ZeroInsets = WindowInsets(0.dp)

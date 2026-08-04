@@ -27,10 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
@@ -51,7 +50,6 @@ import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -59,7 +57,7 @@ fun NavigationSuiteScaffoldSample() {
     var selectedItem by remember { mutableIntStateOf(0) }
     val navItems = listOf("Songs", "Artists", "Playlists")
     val navSuiteType =
-        NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfo())
+        NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfoV2())
     val state = rememberNavigationSuiteScaffoldState()
     val scope = rememberCoroutineScope()
 
@@ -72,27 +70,27 @@ fun NavigationSuiteScaffoldSample() {
                         Icon(
                             if (selectedItem == index) Icons.Filled.Favorite
                             else Icons.Outlined.FavoriteBorder,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(navItem) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
-        }
+        },
     ) {
         // Screen content.
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
                     "Current NavigationSuiteType: $navSuiteType\n" +
                         "Visibility: ${state.currentValue}",
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Button(onClick = { scope.launch { state.toggle() } }) {
                 Text("Hide/show navigation component")
@@ -101,7 +99,6 @@ fun NavigationSuiteScaffoldSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -113,7 +110,7 @@ fun NavigationSuiteScaffoldCustomConfigSample() {
     // expanded wide navigation rail in expanded width screens, and a short navigation bar in small
     // height screens.
     val navSuiteType =
-        with(currentWindowAdaptiveInfo()) {
+        with(currentWindowAdaptiveInfoV2()) {
             if (
                 windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT ||
                     windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.MEDIUM
@@ -124,7 +121,7 @@ fun NavigationSuiteScaffoldCustomConfigSample() {
             } else if (windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.EXPANDED) {
                 NavigationSuiteType.WideNavigationRailExpanded
             } else {
-                NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfo())
+                NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfoV2())
             }
         }
     val state = rememberNavigationSuiteScaffoldState()
@@ -142,27 +139,27 @@ fun NavigationSuiteScaffoldCustomConfigSample() {
                         Icon(
                             if (selectedItem == index) Icons.Filled.Favorite
                             else Icons.Outlined.FavoriteBorder,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(navItem) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
-        }
+        },
     ) {
         // Screen content.
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
                     "Current NavigationSuiteType: $navSuiteType\n" +
                         "Visibility: ${state.currentValue}",
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Button(onClick = { scope.launch { state.toggle() } }) {
                 Text("Hide/show navigation component")

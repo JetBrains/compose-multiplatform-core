@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 /** Receiver scope which is used by [LazyColumn] and [LazyRow]. */
 @LazyScopeMarker
 @JvmDefaultWithCompatibility
-interface LazyListScope {
+public interface LazyListScope {
     /**
      * Adds a single item.
      *
@@ -47,16 +47,16 @@ interface LazyListScope {
      *   type will be considered compatible.
      * @param content the content of the item
      */
-    fun item(
+    public fun item(
         key: Any? = null,
         contentType: Any? = null,
-        content: @Composable LazyItemScope.() -> Unit
+        content: @Composable LazyItemScope.() -> Unit,
     ) {
         error("The method is not implemented")
     }
 
     @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-    fun item(key: Any? = null, content: @Composable LazyItemScope.() -> Unit) {
+    public fun item(key: Any? = null, content: @Composable LazyItemScope.() -> Unit) {
         item(key, null, content)
     }
 
@@ -76,20 +76,20 @@ interface LazyListScope {
      *   such type will be considered compatible.
      * @param itemContent the content displayed by a single item
      */
-    fun items(
+    public fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
         contentType: (index: Int) -> Any? = { null },
-        itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
     ) {
         error("The method is not implemented")
     }
 
     @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-    fun items(
+    public fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
-        itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
     ) {
         items(count, key, { null }, itemContent)
     }
@@ -114,13 +114,13 @@ interface LazyListScope {
     @Deprecated(
         "Please use the overload with indexing capabilities.",
         level = DeprecationLevel.HIDDEN,
-        replaceWith = ReplaceWith("stickyHeader(key, contentType, { _ -> content() })")
+        replaceWith = ReplaceWith("stickyHeader(key, contentType, { _ -> content() })"),
     )
-    fun stickyHeader(
+    public fun stickyHeader(
         key: Any? = null,
         contentType: Any? = null,
-        content: @Composable LazyItemScope.() -> Unit
-    ) = stickyHeader(key, contentType) { _ -> content() }
+        content: @Composable LazyItemScope.() -> Unit,
+    ): Unit = stickyHeader(key, contentType) { _ -> content() }
 
     /**
      * Adds a sticky header item, which will remain pinned even when scrolling after it. The header
@@ -141,10 +141,10 @@ interface LazyListScope {
      * @param content the content of the header, the header index is provided, this is the item
      *   position within the total set of items in this lazy list (the global index).
      */
-    fun stickyHeader(
+    public fun stickyHeader(
         key: Any? = null,
         contentType: Any? = null,
-        content: @Composable LazyItemScope.(Int) -> Unit
+        content: @Composable LazyItemScope.(Int) -> Unit,
     ) {
         item(key, contentType) { content.invoke(this, 0) }
     }
@@ -165,26 +165,26 @@ interface LazyListScope {
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.items(
+public inline fun <T> LazyListScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) =
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
-        contentType = { index: Int -> contentType(items[index]) }
+        contentType = { index: Int -> contentType(items[index]) },
     ) {
         itemContent(items[it])
     }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-inline fun <T> LazyListScope.items(
+public inline fun <T> LazyListScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) = items(items, key, itemContent = itemContent)
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = items(items, key, itemContent = itemContent)
 
 /**
  * Adds a list of items where the content of an item is aware of its index.
@@ -201,26 +201,26 @@ inline fun <T> LazyListScope.items(
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.itemsIndexed(
+public inline fun <T> LazyListScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) =
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
-        contentType = { index -> contentType(index, items[index]) }
+        contentType = { index -> contentType(index, items[index]) },
     ) {
         itemContent(it, items[it])
     }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-inline fun <T> LazyListScope.itemsIndexed(
+public inline fun <T> LazyListScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) = itemsIndexed(items, key, itemContent = itemContent)
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit = itemsIndexed(items, key, itemContent = itemContent)
 
 /**
  * Adds an array of items.
@@ -237,26 +237,26 @@ inline fun <T> LazyListScope.itemsIndexed(
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.items(
+public inline fun <T> LazyListScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) =
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
-        contentType = { index: Int -> contentType(items[index]) }
+        contentType = { index: Int -> contentType(items[index]) },
     ) {
         itemContent(items[it])
     }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-inline fun <T> LazyListScope.items(
+public inline fun <T> LazyListScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
-) = items(items, key, itemContent = itemContent)
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = items(items, key, itemContent = itemContent)
 
 /**
  * Adds an array of items where the content of an item is aware of its index.
@@ -273,26 +273,26 @@ inline fun <T> LazyListScope.items(
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyListScope.itemsIndexed(
+public inline fun <T> LazyListScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) =
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
-        contentType = { index -> contentType(index, items[index]) }
+        contentType = { index -> contentType(index, items[index]) },
     ) {
         itemContent(it, items[it])
     }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
-inline fun <T> LazyListScope.itemsIndexed(
+public inline fun <T> LazyListScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
-) = itemsIndexed(items, key, itemContent = itemContent)
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
+): Unit = itemsIndexed(items, key, itemContent = itemContent)
 
 /**
  * The horizontally scrolling list that only composes and lays out the currently visible items. The
@@ -325,7 +325,7 @@ inline fun <T> LazyListScope.itemsIndexed(
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items.
  */
 @Composable
-fun LazyRow(
+public fun LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -336,7 +336,7 @@ fun LazyRow(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -349,7 +349,7 @@ fun LazyRow(
         reverseLayout = reverseLayout,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 }
 
@@ -360,6 +360,7 @@ fun LazyRow(
  * items.
  *
  * @sample androidx.compose.foundation.samples.LazyColumnSample
+ * @sample androidx.compose.foundation.samples.LazyColumnWithLazyRowsSample
  * @param modifier the modifier to apply to this layout.
  * @param state the state object to be used to control or observe the list's state.
  * @param contentPadding a padding around the whole content. This will add padding for the. content
@@ -385,7 +386,7 @@ fun LazyRow(
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items.
  */
 @Composable
-fun LazyColumn(
+public fun LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -396,7 +397,7 @@ fun LazyColumn(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -409,13 +410,13 @@ fun LazyColumn(
         reverseLayout = reverseLayout,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
-        content = content
+        content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyColumn(
+public fun LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -425,7 +426,7 @@ fun LazyColumn(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
@@ -437,13 +438,13 @@ fun LazyColumn(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
-        content = content
+        content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyColumn(
+public fun LazyColumn(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -452,7 +453,7 @@ fun LazyColumn(
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
@@ -463,13 +464,13 @@ fun LazyColumn(
         horizontalAlignment = horizontalAlignment,
         flingBehavior = flingBehavior,
         userScrollEnabled = true,
-        content = content
+        content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyRow(
+public fun LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -479,7 +480,7 @@ fun LazyRow(
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
@@ -491,13 +492,13 @@ fun LazyRow(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
-        content = content
+        content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyRow(
+public fun LazyRow(
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -506,7 +507,7 @@ fun LazyRow(
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
@@ -517,6 +518,6 @@ fun LazyRow(
         verticalAlignment = verticalAlignment,
         flingBehavior = flingBehavior,
         userScrollEnabled = true,
-        content = content
+        content = content,
     )
 }

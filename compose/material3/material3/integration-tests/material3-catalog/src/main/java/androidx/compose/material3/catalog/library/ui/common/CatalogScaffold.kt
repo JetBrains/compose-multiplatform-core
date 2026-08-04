@@ -16,10 +16,13 @@
 
 package androidx.compose.material3.catalog.library.ui.common
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.catalog.library.model.Theme
 import androidx.compose.material3.catalog.library.ui.theme.ThemePicker
@@ -31,15 +34,15 @@ import androidx.compose.material3.catalog.library.util.ReleasesUrl
 import androidx.compose.material3.catalog.library.util.SourceUrl
 import androidx.compose.material3.catalog.library.util.TermsUrl
 import androidx.compose.material3.catalog.library.util.openUrl
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,11 +61,11 @@ fun CatalogScaffold(
     onBackClick: () -> Unit = {},
     favorite: Boolean,
     onFavoriteClick: () -> Unit,
-    content: @Composable (PaddingValues) -> Unit
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     var openThemePicker by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -81,23 +84,19 @@ fun CatalogScaffold(
                 onIssueClick = { context.openUrl(issueUrl) },
                 onTermsClick = { context.openUrl(termsUrl) },
                 onPrivacyClick = { context.openUrl(privacyUrl) },
-                onLicensesClick = { context.openUrl(licensesUrl) }
+                onLicensesClick = { context.openUrl(licensesUrl) },
             )
         },
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        content = content
+        content = { paddingValues ->
+            Box(Modifier.padding(paddingValues)) { content(PaddingValues(0.dp)) }
+        },
     )
 
     if (openThemePicker) {
         ModalBottomSheet(
             onDismissRequest = { openThemePicker = false },
             sheetState = sheetState,
-            content = {
-                ThemePicker(
-                    theme = theme,
-                    onThemeChange = onThemeChange,
-                )
-            },
+            content = { ThemePicker(theme = theme, onThemeChange = onThemeChange) },
         )
     }
 }

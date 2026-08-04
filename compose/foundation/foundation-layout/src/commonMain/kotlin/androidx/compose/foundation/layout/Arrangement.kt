@@ -38,15 +38,15 @@ import kotlin.math.min
  * arrangements](https://developer.android.com/images/reference/androidx/compose/foundation/layout/column_arrangement_visualization.gif)
  */
 @Immutable
-object Arrangement {
+public object Arrangement {
     /**
      * Used to specify the horizontal arrangement of the layout's children in layouts like [Row].
      */
     @Stable
     @JvmDefaultWithCompatibility
-    interface Horizontal {
+    public interface Horizontal {
         /** Spacing that should be added between any two adjacent layout children. */
-        val spacing
+        public val spacing: Dp
             get() = 0.dp
 
         /**
@@ -59,11 +59,11 @@ object Arrangement {
          * @param outPositions An array of the size of [sizes] that returns the calculated positions
          *   relative to the left, in pixels.
          */
-        fun Density.arrange(
+        public fun Density.arrange(
             totalSize: Int,
             sizes: IntArray,
             layoutDirection: LayoutDirection,
-            outPositions: IntArray
+            outPositions: IntArray,
         )
     }
 
@@ -72,9 +72,9 @@ object Arrangement {
      */
     @Stable
     @JvmDefaultWithCompatibility
-    interface Vertical {
+    public interface Vertical {
         /** Spacing that should be added between any two adjacent layout children. */
-        val spacing
+        public val spacing: Dp
             get() = 0.dp
 
         /**
@@ -85,7 +85,7 @@ object Arrangement {
          * @param outPositions An array of the size of [sizes] that returns the calculated positions
          *   relative to the top, in pixels.
          */
-        fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray)
+        public fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray)
     }
 
     /**
@@ -95,7 +95,7 @@ object Arrangement {
      */
     @Stable
     @JvmDefaultWithCompatibility
-    interface HorizontalOrVertical : Horizontal, Vertical {
+    public interface HorizontalOrVertical : Horizontal, Vertical {
         /** Spacing that should be added between any two adjacent layout children. */
         override val spacing: Dp
             get() = 0.dp
@@ -107,13 +107,13 @@ object Arrangement {
      * LTR and ####321.
      */
     @Stable
-    val Start =
+    public val Start: Horizontal =
         object : Horizontal {
             override fun Density.arrange(
                 totalSize: Int,
                 sizes: IntArray,
                 layoutDirection: LayoutDirection,
-                outPositions: IntArray
+                outPositions: IntArray,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     placeLeftOrTop(sizes, outPositions, reverseInput = false)
@@ -129,13 +129,13 @@ object Arrangement {
      * axis. Visually: ####123 for LTR and 321#### for RTL.
      */
     @Stable
-    val End =
+    public val End: Horizontal =
         object : Horizontal {
             override fun Density.arrange(
                 totalSize: Int,
                 sizes: IntArray,
                 layoutDirection: LayoutDirection,
-                outPositions: IntArray
+                outPositions: IntArray,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     placeRightOrBottom(totalSize, sizes, outPositions, reverseInput = false)
@@ -151,7 +151,7 @@ object Arrangement {
      * axis. Visually: (top) 123#### (bottom)
      */
     @Stable
-    val Top =
+    public val Top: Vertical =
         object : Vertical {
             override fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray) =
                 placeLeftOrTop(sizes, outPositions, reverseInput = false)
@@ -164,7 +164,7 @@ object Arrangement {
      * axis. Visually: (top) ####123 (bottom)
      */
     @Stable
-    val Bottom =
+    public val Bottom: Vertical =
         object : Vertical {
             override fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray) =
                 placeRightOrBottom(totalSize, sizes, outPositions, reverseInput = false)
@@ -177,7 +177,7 @@ object Arrangement {
      * Visually: ##123## for LTR and ##321## for RTL.
      */
     @Stable
-    val Center =
+    public val Center: HorizontalOrVertical =
         object : HorizontalOrVertical {
             override val spacing = 0.dp
 
@@ -185,7 +185,7 @@ object Arrangement {
                 totalSize: Int,
                 sizes: IntArray,
                 layoutDirection: LayoutDirection,
-                outPositions: IntArray
+                outPositions: IntArray,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     placeCenter(totalSize, sizes, outPositions, reverseInput = false)
@@ -205,7 +205,7 @@ object Arrangement {
      * RTL.
      */
     @Stable
-    val SpaceEvenly =
+    public val SpaceEvenly: HorizontalOrVertical =
         object : HorizontalOrVertical {
             override val spacing = 0.dp
 
@@ -213,7 +213,7 @@ object Arrangement {
                 totalSize: Int,
                 sizes: IntArray,
                 layoutDirection: LayoutDirection,
-                outPositions: IntArray
+                outPositions: IntArray,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     placeSpaceEvenly(totalSize, sizes, outPositions, reverseInput = false)
@@ -232,7 +232,7 @@ object Arrangement {
      * before the first child or after the last child. Visually: 1##2##3 for LTR or 3##2##1 for RTL.
      */
     @Stable
-    val SpaceBetween =
+    public val SpaceBetween: HorizontalOrVertical =
         object : HorizontalOrVertical {
             override val spacing = 0.dp
 
@@ -240,7 +240,7 @@ object Arrangement {
                 totalSize: Int,
                 sizes: IntArray,
                 layoutDirection: LayoutDirection,
-                outPositions: IntArray
+                outPositions: IntArray,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     placeSpaceBetween(totalSize, sizes, outPositions, reverseInput = false)
@@ -260,7 +260,7 @@ object Arrangement {
      * otherwise between two consecutive children. Visually: #1##2##3# for LTR and #3##2##1# for RTL
      */
     @Stable
-    val SpaceAround =
+    public val SpaceAround: HorizontalOrVertical =
         object : HorizontalOrVertical {
             override val spacing = 0.dp
 
@@ -268,7 +268,7 @@ object Arrangement {
                 totalSize: Int,
                 sizes: IntArray,
                 layoutDirection: LayoutDirection,
-                outPositions: IntArray
+                outPositions: IntArray,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     placeSpaceAround(totalSize, sizes, outPositions, reverseInput = false)
@@ -293,7 +293,7 @@ object Arrangement {
      * @param space The space between adjacent children.
      */
     @Stable
-    fun spacedBy(space: Dp): HorizontalOrVertical =
+    public fun spacedBy(space: Dp): HorizontalOrVertical =
         SpacedAligned(space, true) { size, layoutDirection ->
             Alignment.Start.align(0, size, layoutDirection)
         }
@@ -309,7 +309,7 @@ object Arrangement {
      * @param alignment The alignment of the spaced children inside the parent.
      */
     @Stable
-    fun spacedBy(space: Dp, alignment: Alignment.Horizontal): Horizontal =
+    public fun spacedBy(space: Dp, alignment: Alignment.Horizontal): Horizontal =
         SpacedAligned(space, true) { size, layoutDirection ->
             alignment.align(0, size, layoutDirection)
         }
@@ -325,7 +325,7 @@ object Arrangement {
      * @param alignment The alignment of the spaced children inside the parent.
      */
     @Stable
-    fun spacedBy(space: Dp, alignment: Alignment.Vertical): Vertical =
+    public fun spacedBy(space: Dp, alignment: Alignment.Vertical): Vertical =
         SpacedAligned(space, false) { size, _ -> alignment.align(0, size) }
 
     /**
@@ -335,7 +335,7 @@ object Arrangement {
      * @param alignment The alignment of the children inside the parent.
      */
     @Stable
-    fun aligned(alignment: Alignment.Horizontal): Horizontal =
+    public fun aligned(alignment: Alignment.Horizontal): Horizontal =
         SpacedAligned(0.dp, true) { size, layoutDirection ->
             alignment.align(0, size, layoutDirection)
         }
@@ -347,11 +347,11 @@ object Arrangement {
      * @param alignment The alignment of the children inside the parent.
      */
     @Stable
-    fun aligned(alignment: Alignment.Vertical): Vertical =
+    public fun aligned(alignment: Alignment.Vertical): Vertical =
         SpacedAligned(0.dp, false) { size, _ -> alignment.align(0, size) }
 
     @Immutable
-    object Absolute {
+    public object Absolute {
         /**
          * Place children horizontally such that they are as close as possible to the left edge of
          * the [Row].
@@ -363,13 +363,13 @@ object Arrangement {
          * Visually: 123####
          */
         @Stable
-        val Left =
+        public val Left: Horizontal =
             object : Horizontal {
                 override fun Density.arrange(
                     totalSize: Int,
                     sizes: IntArray,
                     layoutDirection: LayoutDirection,
-                    outPositions: IntArray
+                    outPositions: IntArray,
                 ) = placeLeftOrTop(sizes, outPositions, reverseInput = false)
 
                 override fun toString() = "AbsoluteArrangement#Left"
@@ -385,13 +385,13 @@ object Arrangement {
          * Visually: ##123##
          */
         @Stable
-        val Center =
+        public val Center: Horizontal =
             object : Horizontal {
                 override fun Density.arrange(
                     totalSize: Int,
                     sizes: IntArray,
                     layoutDirection: LayoutDirection,
-                    outPositions: IntArray
+                    outPositions: IntArray,
                 ) = placeCenter(totalSize, sizes, outPositions, reverseInput = false)
 
                 override fun toString() = "AbsoluteArrangement#Center"
@@ -408,13 +408,13 @@ object Arrangement {
          * Visually: ####123
          */
         @Stable
-        val Right =
+        public val Right: Horizontal =
             object : Horizontal {
                 override fun Density.arrange(
                     totalSize: Int,
                     sizes: IntArray,
                     layoutDirection: LayoutDirection,
-                    outPositions: IntArray
+                    outPositions: IntArray,
                 ) = placeRightOrBottom(totalSize, sizes, outPositions, reverseInput = false)
 
                 override fun toString() = "AbsoluteArrangement#Right"
@@ -431,13 +431,13 @@ object Arrangement {
          * Visually: 1##2##3
          */
         @Stable
-        val SpaceBetween =
+        public val SpaceBetween: Horizontal =
             object : Horizontal {
                 override fun Density.arrange(
                     totalSize: Int,
                     sizes: IntArray,
                     layoutDirection: LayoutDirection,
-                    outPositions: IntArray
+                    outPositions: IntArray,
                 ) = placeSpaceBetween(totalSize, sizes, outPositions, reverseInput = false)
 
                 override fun toString() = "AbsoluteArrangement#SpaceBetween"
@@ -454,13 +454,13 @@ object Arrangement {
          * Visually: #1#2#3#
          */
         @Stable
-        val SpaceEvenly =
+        public val SpaceEvenly: Horizontal =
             object : Horizontal {
                 override fun Density.arrange(
                     totalSize: Int,
                     sizes: IntArray,
                     layoutDirection: LayoutDirection,
-                    outPositions: IntArray
+                    outPositions: IntArray,
                 ) = placeSpaceEvenly(totalSize, sizes, outPositions, reverseInput = false)
 
                 override fun toString() = "AbsoluteArrangement#SpaceEvenly"
@@ -478,13 +478,13 @@ object Arrangement {
          * Visually: #1##2##3##4#
          */
         @Stable
-        val SpaceAround =
+        public val SpaceAround: Horizontal =
             object : Horizontal {
                 override fun Density.arrange(
                     totalSize: Int,
                     sizes: IntArray,
                     layoutDirection: LayoutDirection,
-                    outPositions: IntArray
+                    outPositions: IntArray,
                 ) = placeSpaceAround(totalSize, sizes, outPositions, reverseInput = false)
 
                 override fun toString() = "AbsoluteArrangement#SpaceAround"
@@ -501,7 +501,8 @@ object Arrangement {
          *
          * @param space The space between adjacent children.
          */
-        @Stable fun spacedBy(space: Dp): HorizontalOrVertical = SpacedAligned(space, false, null)
+        @Stable
+        public fun spacedBy(space: Dp): HorizontalOrVertical = SpacedAligned(space, false, null)
 
         /**
          * Place children horizontally such that each two adjacent ones are spaced by a fixed
@@ -517,7 +518,7 @@ object Arrangement {
          * @param alignment The alignment of the spaced children inside the parent.
          */
         @Stable
-        fun spacedBy(space: Dp, alignment: Alignment.Horizontal): Horizontal =
+        public fun spacedBy(space: Dp, alignment: Alignment.Horizontal): Horizontal =
             SpacedAligned(space, false) { size, layoutDirection ->
                 alignment.align(0, size, layoutDirection)
             }
@@ -536,7 +537,7 @@ object Arrangement {
          * @param alignment The alignment of the spaced children inside the parent.
          */
         @Stable
-        fun spacedBy(space: Dp, alignment: Alignment.Vertical): Vertical =
+        public fun spacedBy(space: Dp, alignment: Alignment.Vertical): Vertical =
             SpacedAligned(space, false) { size, _ -> alignment.align(0, size) }
 
         /**
@@ -550,10 +551,15 @@ object Arrangement {
          * @param alignment The alignment of the children inside the parent.
          */
         @Stable
-        fun aligned(alignment: Alignment.Horizontal): Horizontal =
+        public fun aligned(alignment: Alignment.Horizontal): Horizontal =
             SpacedAligned(0.dp, false) { size, layoutDirection ->
                 alignment.align(0, size, layoutDirection)
             }
+    }
+
+    /** Calculator for SpacedAligned alignment to avoid primitive boxing. */
+    internal fun interface SpacingAlignmentCalculator {
+        fun align(size: Int, layoutDirection: LayoutDirection): Int
     }
 
     /**
@@ -564,7 +570,7 @@ object Arrangement {
     internal data class SpacedAligned(
         val space: Dp,
         val rtlMirror: Boolean,
-        val alignment: ((Int, LayoutDirection) -> Int)?
+        val alignment: SpacingAlignmentCalculator?,
     ) : HorizontalOrVertical {
 
         override val spacing = space
@@ -573,25 +579,42 @@ object Arrangement {
             totalSize: Int,
             sizes: IntArray,
             layoutDirection: LayoutDirection,
-            outPositions: IntArray
+            outPositions: IntArray,
         ) {
             if (sizes.isEmpty()) return
             val spacePx = space.roundToPx()
-
-            var occupied = 0
+            val isRtl = rtlMirror && layoutDirection == LayoutDirection.Rtl
             var lastSpace = 0
-            val reversed = rtlMirror && layoutDirection == LayoutDirection.Rtl
-            sizes.forEachIndexed(reversed) { index, it ->
-                outPositions[index] = min(occupied, totalSize - it)
-                lastSpace = min(spacePx, totalSize - outPositions[index] - it)
-                occupied = outPositions[index] + it + lastSpace
+            var freeSpace = totalSize
+            if (isRtl) {
+                sizes.forEachIndexed { index, it ->
+                    outPositions[index] = maxOf(0, freeSpace - it)
+                    lastSpace = min(spacePx, outPositions[index])
+                    freeSpace = outPositions[index] - lastSpace
+                }
+                freeSpace += lastSpace
+            } else {
+                var occupied = 0
+                sizes.forEachIndexed { index, it ->
+                    outPositions[index] = min(occupied, totalSize - it)
+                    lastSpace = min(spacePx, totalSize - outPositions[index] - it)
+                    occupied = outPositions[index] + it + lastSpace
+                }
+                occupied -= lastSpace
+                freeSpace = totalSize - occupied
             }
-            occupied -= lastSpace
 
-            if (alignment != null && occupied < totalSize) {
-                val groupPosition = alignment.invoke(totalSize - occupied, layoutDirection)
-                for (index in outPositions.indices) {
-                    outPositions[index] += groupPosition
+            if (alignment != null && freeSpace > 0) {
+                val groupPosition = alignment.align(freeSpace, layoutDirection)
+
+                // LTR items are packed at the start (0), so shifting by groupPosition is correct.
+                // RTL items are packed at the end (remainingSpace), so shift relative to that.
+                val offset = if (isRtl) groupPosition - freeSpace else groupPosition
+
+                if (offset != 0) {
+                    for (index in outPositions.indices) {
+                        outPositions[index] += offset
+                    }
                 }
             }
         }
@@ -607,7 +630,7 @@ object Arrangement {
         totalSize: Int,
         size: IntArray,
         outPosition: IntArray,
-        reverseInput: Boolean
+        reverseInput: Boolean,
     ) {
         val consumedSize = size.fold(0) { a, b -> a + b }
         var current = totalSize - consumedSize
@@ -629,7 +652,7 @@ object Arrangement {
         totalSize: Int,
         size: IntArray,
         outPosition: IntArray,
-        reverseInput: Boolean
+        reverseInput: Boolean,
     ) {
         val consumedSize = size.fold(0) { a, b -> a + b }
         var current = (totalSize - consumedSize).toFloat() / 2
@@ -643,7 +666,7 @@ object Arrangement {
         totalSize: Int,
         size: IntArray,
         outPosition: IntArray,
-        reverseInput: Boolean
+        reverseInput: Boolean,
     ) {
         val consumedSize = size.fold(0) { a, b -> a + b }
         val gapSize = (totalSize - consumedSize).toFloat() / (size.size + 1)
@@ -658,7 +681,7 @@ object Arrangement {
         totalSize: Int,
         size: IntArray,
         outPosition: IntArray,
-        reverseInput: Boolean
+        reverseInput: Boolean,
     ) {
         if (size.isEmpty()) return
 
@@ -682,7 +705,7 @@ object Arrangement {
         totalSize: Int,
         size: IntArray,
         outPosition: IntArray,
-        reverseInput: Boolean
+        reverseInput: Boolean,
     ) {
         val consumedSize = size.fold(0) { a, b -> a + b }
         val gapSize =

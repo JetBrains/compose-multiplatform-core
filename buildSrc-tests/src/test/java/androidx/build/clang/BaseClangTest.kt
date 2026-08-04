@@ -18,6 +18,7 @@ package androidx.build.clang
 
 import androidx.build.KonanPrebuiltsSetup
 import androidx.testutils.gradle.ProjectSetupRule
+import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.testfixtures.ProjectBuilder
@@ -28,7 +29,7 @@ import org.junit.rules.TemporaryFolder
 
 /**
  * Base class for Clang tests that sets up necessary project properties to initialize
- * [KonanBuildService] in tests.
+ * [ClangBuildService] in tests.
  */
 abstract class BaseClangTest {
     @get:Rule val projectSetup = ProjectSetupRule()
@@ -42,10 +43,14 @@ abstract class BaseClangTest {
     fun init() {
         project = ProjectBuilder.builder().withProjectDir(projectSetup.rootDir).build()
         val extension = project.rootProject.property("ext") as ExtraPropertiesExtension
+        // set ndkVersion
+        extension.set("androidx.ndkVersion", projectSetup.props.ndkVersion)
         // build service needs prebuilts location to "download" clang and targets.
         projectSetup.props.prebuiltsPath?.let { extension.set("prebuiltsRoot", it) }
         // ensure that kotlin doesn't try to download prebuilts
         extension.set("kotlin.native.distribution.downloadFromMaven", "false")
+        extension.set("supportRootFolder", File(projectSetup.props.rootProjectPath))
+
         project.pluginManager.apply(KotlinMultiplatformPluginWrapper::class.java)
         clangExtension = AndroidXClang(project)
         KonanPrebuiltsSetup.configureKonanDirectory(project)

@@ -16,7 +16,9 @@
 
 package androidx.appsearch.localstorage.usagereporting;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.localstorage.stats.ClickStats;
 import androidx.appsearch.localstorage.stats.SearchIntentStats;
@@ -34,10 +36,10 @@ import java.util.Objects;
 /**
  * Extractor class for analyzing a list of taken action {@link GenericDocument} and creating a list
  * of {@link SearchSessionStats}.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
 public final class SearchSessionStatsExtractor {
     // TODO(b/319285816): make thresholds configurable.
     /**
@@ -83,7 +85,8 @@ public final class SearchSessionStatsExtractor {
      * @param currSearchAction the current search action {@link SearchActionGenericDocument}.
      * @param prevSearchAction the previous search action {@link SearchActionGenericDocument}.
      */
-    public static @SearchIntentStats.QueryCorrectionType int getQueryCorrectionType(
+    @SearchIntentStats.QueryCorrectionType
+    public static int getQueryCorrectionType(
             @NonNull SearchActionGenericDocument currSearchAction,
             @Nullable SearchActionGenericDocument prevSearchAction) {
         Objects.requireNonNull(currSearchAction);
@@ -106,6 +109,9 @@ public final class SearchSessionStatsExtractor {
         // strings.
         String prevQuery = prevSearchAction.getQuery();
         String currQuery = currSearchAction.getQuery();
+        if (prevQuery == null || currQuery == null) {
+            return SearchIntentStats.QUERY_CORRECTION_TYPE_UNKNOWN;
+        }
         int commonPrefixLength = getCommonPrefixLength(prevQuery, currQuery);
         // If the user hits backspace >= QUERY_ABANDONMENT_BACKSPACE_COUNT times, then it is query
         // abandonment. Otherwise, it is query refinement.
@@ -228,7 +234,7 @@ public final class SearchSessionStatsExtractor {
             if (searchSessionStatsBuilder == null) {
                 searchSessionStatsBuilder =
                         new SearchSessionStats.Builder(packageName).setDatabase(database)
-                                .setLaunchVMEnabled(isVMEnabled);
+                                .setLaunchVmEnabled(isVMEnabled);
             }
             searchSessionStatsBuilder.addSearchIntentsStats(
                     createSearchIntentStats(
@@ -263,7 +269,7 @@ public final class SearchSessionStatsExtractor {
                 .setCurrQuery(currSearchAction.getQuery())
                 .setNumResultsFetched(currSearchAction.getFetchedResultCount())
                 .setQueryCorrectionType(getQueryCorrectionType(currSearchAction, prevSearchAction))
-                .setLaunchVMEnabled(isVMEnabled);
+                .setLaunchVmEnabled(isVMEnabled);
         if (prevSearchAction != null) {
             builder.setPrevQuery(prevSearchAction.getQuery());
         }
@@ -291,7 +297,7 @@ public final class SearchSessionStatsExtractor {
                 .setResultRankGlobal(clickAction.getResultRankGlobal())
                 .setTimeStayOnResultMillis(clickAction.getTimeStayOnResultMillis())
                 .setIsGoodClick(isGoodClick)
-                .setLaunchVMEnabled(isVMEnabled)
+                .setLaunchVmEnabled(isVMEnabled)
                 .build();
     }
 

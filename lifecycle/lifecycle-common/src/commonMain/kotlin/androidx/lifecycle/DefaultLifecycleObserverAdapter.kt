@@ -15,9 +15,15 @@
  */
 package androidx.lifecycle
 
+/**
+ * An adapter that wraps a [DefaultLifecycleObserver] and delegates state changes to it.
+ *
+ * If a secondary [LifecycleEventObserver] is provided, events are delegated to it after the
+ * [DefaultLifecycleObserver] methods are invoked.
+ */
 internal class DefaultLifecycleObserverAdapter(
     private val defaultLifecycleObserver: DefaultLifecycleObserver,
-    private val lifecycleEventObserver: LifecycleEventObserver?
+    private val lifecycleEventObserver: LifecycleEventObserver?,
 ) : LifecycleEventObserver {
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
@@ -28,7 +34,7 @@ internal class DefaultLifecycleObserverAdapter(
             Lifecycle.Event.ON_STOP -> defaultLifecycleObserver.onStop(source)
             Lifecycle.Event.ON_DESTROY -> defaultLifecycleObserver.onDestroy(source)
             Lifecycle.Event.ON_ANY ->
-                throw IllegalArgumentException("ON_ANY must not been send by anybody")
+                throw IllegalArgumentException("ON_ANY must not be sent by anybody")
         }
         lifecycleEventObserver?.onStateChanged(source, event)
     }

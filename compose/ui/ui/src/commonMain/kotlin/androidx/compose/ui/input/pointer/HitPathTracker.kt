@@ -27,7 +27,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.util.PointerIdArray
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.dispatchForKind
 import androidx.compose.ui.node.layoutCoordinates
@@ -41,9 +40,7 @@ import androidx.compose.ui.util.fastForEach
  * @property rootCoordinates the root [LayoutCoordinates] that [PointerInputChange]s will be
  *   relative to.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
-
     private var dispatchingEvent = false
     private var dispatchCancelAfterDispatchedEvent = false
     private var clearNodeCacheAfterDispatchedEvent = false
@@ -54,13 +51,8 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     /*@VisibleForTesting*/
     internal val root: NodeParent = NodeParent()
 
-    private val hitPointerIdsAndNodes = MutableLongObjectMap<MutableObjectList<Node>>(10)
-
-    init {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG HitPathTracker.init()")
-        }
-    }
+    private val hitPointerIdsAndNodesForPruningNonMatches =
+        MutableLongObjectMap<MutableObjectList<Node>>(10)
 
     /**
      * Associates a [pointerId] to a list of hit [pointerInputNodes] and keeps track of them.
@@ -79,14 +71,9 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     fun addHitPath(
         pointerId: PointerId,
         pointerInputNodes: List<Modifier.Node>,
-        prunePointerIdsAndChangesNotInNodesList: Boolean = false
+        prunePointerIdsAndChangesNotInNodesList: Boolean = false,
     ) {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG HitPathTracker.addHitPath()")
-        }
-
         var parent: NodeParent = root
-        hitPointerIdsAndNodes.clear()
         var merging = true
 
         eachPin@ for (i in pointerInputNodes.indices) {
@@ -105,12 +92,16 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                         node.markIsIn()
                         node.pointerIds.add(pointerId)
 
-                        val mutableObjectList =
-                            hitPointerIdsAndNodes.getOrPut(pointerId.value) {
-                                mutableObjectListOf()
-                            }
+                        if (prunePointerIdsAndChangesNotInNodesList) {
+                            val mutableObjectList =
+                                hitPointerIdsAndNodesForPruningNonMatches.getOrPut(
+                                    pointerId.value
+                                ) {
+                                    mutableObjectListOf()
+                                }
 
-                        mutableObjectList.add(node)
+                            mutableObjectList.add(node)
+                        }
                         parent = node
                         continue@eachPin
                     } else {
@@ -120,10 +111,14 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 // TODO(lmr): i wonder if Node here and PointerInputNode ought to be the same thing?
                 val node = Node(pointerInputNode).apply { pointerIds.add(pointerId) }
 
-                val mutableObjectList =
-                    hitPointerIdsAndNodes.getOrPut(pointerId.value) { mutableObjectListOf() }
+                if (prunePointerIdsAndChangesNotInNodesList) {
+                    val mutableObjectList =
+                        hitPointerIdsAndNodesForPruningNonMatches.getOrPut(pointerId.value) {
+                            mutableObjectListOf()
+                        }
 
-                mutableObjectList.add(node)
+                    mutableObjectList.add(node)
+                }
 
                 parent.children.add(node)
                 parent = node
@@ -131,19 +126,15 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
         }
 
         if (prunePointerIdsAndChangesNotInNodesList) {
-            hitPointerIdsAndNodes.forEach { key, value ->
+            hitPointerIdsAndNodesForPruningNonMatches.forEach { key, value ->
                 removeInvalidPointerIdsAndChanges(key, value)
             }
         }
+
+        hitPointerIdsAndNodesForPruningNonMatches.clear()
     }
 
     private fun removePointerInputModifierNode(pointerInputNode: Modifier.Node) {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG removePointerInputModifierNode()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\tpointerInputNode: $pointerInputNode")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\t$dispatchingEvent: $dispatchingEvent")
-        }
-
         if (dispatchingEvent) {
             removeSpecificNodesAfterDispatchedEvent = true
             nodesToRemove.add(pointerInputNode)
@@ -155,11 +146,8 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     // Removes pointers/changes that are not in the latest hit test
     private fun removeInvalidPointerIdsAndChanges(
         pointerId: Long,
-        hitNodes: MutableObjectList<Node>
+        hitNodes: MutableObjectList<Node>,
     ) {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG removeInvalidPointerIdsAndChanges()")
-        }
         root.removeInvalidPointerIdsAndChanges(pointerId, hitNodes)
     }
 
@@ -169,20 +157,17 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      * @param internalPointerEvent The change to dispatch.
      * @return whether this event was dispatched to a [PointerInputFilter]
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     fun dispatchChanges(
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean = true
+        isInBounds: Boolean = true,
     ): Boolean {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges()")
-        }
-
         val changed =
             root.buildCache(
                 internalPointerEvent.changes,
                 rootCoordinates,
                 internalPointerEvent,
-                isInBounds
+                isInBounds,
             )
         if (!changed) {
             return false
@@ -198,14 +183,10 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 internalPointerEvent.changes,
                 rootCoordinates,
                 internalPointerEvent,
-                isInBounds
+                isInBounds,
             )
         dispatchHit = root.dispatchFinalEventPass(internalPointerEvent) || dispatchHit
         dispatchingEvent = false
-
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() done, starting after calls...")
-        }
 
         if (removeSpecificNodesAfterDispatchedEvent) {
             removeSpecificNodesAfterDispatchedEvent = false
@@ -214,50 +195,22 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 removePointerInputModifierNode(nodesToRemove[i])
             }
             nodesToRemove.clear()
-
-            if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-                println(
-                    "POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() finished, " +
-                        "removeSpecificNodesAfterDispatchedEvent, " +
-                        "removePointerInputModifierNode() finished"
-                )
-            }
         }
 
         if (dispatchCancelAfterDispatchedEvent) {
             dispatchCancelAfterDispatchedEvent = false
             processCancel()
-
-            if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-                println(
-                    "POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() finished, " +
-                        "dispatchCancelAfterDispatchedEvent, processCancel() finished"
-                )
-            }
         }
 
         if (clearNodeCacheAfterDispatchedEvent) {
             clearNodeCacheAfterDispatchedEvent = false
             clearPreviouslyHitModifierNodeCache()
-
-            if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-                println(
-                    "POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() finished, " +
-                        "clearNodeCacheAfterDispatchedEvent, " +
-                        "clearPreviouslyHitModifierNodeCache() finished"
-                )
-            }
         }
 
         return dispatchHit
     }
 
     fun clearPreviouslyHitModifierNodeCache() {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG clearPreviouslyHitModifierNodeCache()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\t$dispatchingEvent: $dispatchingEvent")
-        }
-
         if (clearNodeCacheAfterDispatchedEvent) {
             clearNodeCacheAfterDispatchedEvent = true
             return
@@ -272,10 +225,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      * data.
      */
     fun processCancel() {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG processCancel()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\t$dispatchingEvent: $dispatchingEvent")
-        }
         if (dispatchingEvent) {
             dispatchCancelAfterDispatchedEvent = true
             return
@@ -291,7 +240,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
  * pointer or [PointerInputFilter] information.
  */
 /*@VisibleForTesting*/
-@OptIn(InternalCoreApi::class)
 internal open class NodeParent {
     val children: MutableVector<Node> = mutableVectorOf()
 
@@ -302,7 +250,7 @@ internal open class NodeParent {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         var changed = false
         children.forEach {
@@ -329,7 +277,7 @@ internal open class NodeParent {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         var dispatched = false
         children.forEach {
@@ -338,7 +286,7 @@ internal open class NodeParent {
                     changes,
                     parentCoordinates,
                     internalPointerEvent,
-                    isInBounds
+                    isInBounds,
                 ) || dispatched
         }
         return dispatched
@@ -400,7 +348,7 @@ internal open class NodeParent {
 
     open fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
-        hitNodes: MutableObjectList<Node>
+        hitNodes: MutableObjectList<Node>,
     ) {
         children.forEach { it.removeInvalidPointerIdsAndChanges(pointerIdValue, hitNodes) }
     }
@@ -420,7 +368,6 @@ internal open class NodeParent {
  * hit it (tracked as [PointerId]s).
  */
 /*@VisibleForTesting*/
-@OptIn(InternalCoreApi::class)
 internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
     // Note: pointerIds are stored in a structure specific to their value type (PointerId).
@@ -445,7 +392,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
     override fun removeInvalidPointerIdsAndChanges(
         pointerIdValue: Long,
-        hitNodes: MutableObjectList<Node>
+        hitNodes: MutableObjectList<Node>,
     ) {
         if (this.pointerIds.contains(pointerIdValue)) {
             if (!hitNodes.contains(this)) {
@@ -461,7 +408,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         // TODO(b/158243568): The below dispatching operations may cause the pointerInputFilter to
         //  become detached. Currently, they just no-op if it becomes detached and the detached
@@ -487,7 +434,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                         relevantChanges,
                         coordinates!!,
                         internalPointerEvent,
-                        isInBounds
+                        isInBounds,
                     )
                 }
             }
@@ -534,11 +481,12 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
      *
      * @see clearCache
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun buildCache(
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
         internalPointerEvent: InternalPointerEvent,
-        isInBounds: Boolean
+        isInBounds: Boolean,
     ): Boolean {
         val childChanged =
             super.buildCache(changes, parentCoordinates, internalPointerEvent, isInBounds)
@@ -576,12 +524,15 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                         if (historicalPosition.isValid()) {
                             historical.add(
                                 HistoricalChange(
-                                    it.uptimeMillis,
-                                    coordinates!!.localPositionOf(
-                                        parentCoordinates,
-                                        historicalPosition
-                                    ),
-                                    it.originalEventPosition
+                                    uptimeMillis = it.uptimeMillis,
+                                    position =
+                                        coordinates!!.localPositionOf(
+                                            parentCoordinates,
+                                            historicalPosition,
+                                        ),
+                                    scaleFactor = it.scaleFactor,
+                                    panOffset = it.panOffset,
+                                    originalEventPosition = it.originalEventPosition,
                                 )
                             )
                         }
@@ -594,8 +545,8 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                                 coordinates!!.localPositionOf(parentCoordinates, prevPosition),
                             currentPosition =
                                 coordinates!!.localPositionOf(parentCoordinates, currentPosition),
-                            historical = historical
-                        )
+                            historical = historical,
+                        ),
                     )
                 }
             }
@@ -627,17 +578,32 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         if (activeHoverChange != null) {
             if (!isInBounds) {
                 isIn = false
-            } else if (!isIn && (activeHoverChange.pressed || activeHoverChange.previousPressed)) {
+
+                // During a trackpad pan, we suppress new hit tests to prevent entering new items
+                // while scrolling. However, we still need to recalculate `isIn` for existing hit
+                // paths so we can detect and dispatch Exit events when the scrolled items move
+                // out of bounds from under the stationary cursor.
+            } else if (
+                !isIn &&
+                    (activeHoverChange.pressed ||
+                        activeHoverChange.previousPressed ||
+                        internalPointerEvent.activeGesture == PointerClassification.Pan)
+            ) {
                 // We have to recalculate isIn because we didn't redo hit testing
                 val size = coordinates!!.size
                 @Suppress("DEPRECATION")
                 isIn = !activeHoverChange.isOutOfBounds(size)
             }
+            val isPan =
+                event.type == PointerEventType.PanStart ||
+                    event.type == PointerEventType.PanMove ||
+                    event.type == PointerEventType.PanEnd
             if (
                 isIn != wasIn &&
                     (event.type == PointerEventType.Move ||
                         event.type == PointerEventType.Enter ||
-                        event.type == PointerEventType.Exit)
+                        event.type == PointerEventType.Exit ||
+                        (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan))
             ) {
                 event.type =
                     if (isIn) {
@@ -653,9 +619,12 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         }
 
         val changed =
-            childChanged ||
-                event.type != PointerEventType.Move ||
-                hasPositionChanged(pointerEvent, event)
+            // Fixes Draggable Velocity Tracker
+            ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled ||
+                // Older way optimizes not triggering move events when location hasn't changed
+                (childChanged ||
+                    event.type != PointerEventType.Move ||
+                    hasPositionChanged(pointerEvent, event))
         pointerEvent = event
         return changed
     }
@@ -693,8 +662,15 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private inline fun dispatchIfNeeded(block: () -> Unit): Boolean {
         // If there are no relevant changes, there is nothing to process so return false.
         if (relevantChanges.isEmpty()) return false
-        // If the input filter is not attached, avoid dispatching
+        // If the input filter is not attached, avoid dispatching.
         if (!modifierNode.isAttached) return false
+
+        // If the ui node with input is not placed, avoid dispatching.
+        // There is no direct callback for placement status changes (unlike the onAttach listener).
+        // Consequently, the hit path tree is not pruned when a node becomes "unplaced"
+        // programmatically. Instead, we verify that the node isPlaced during event dispatch.
+        val isPlaced = modifierNode.coordinator?.layoutNode?.isPlaced ?: false
+        if (!isPlaced) return false
 
         block()
 
@@ -734,7 +710,16 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
             val removePointerId = (released && nonHoverEventStream) || (released && outsideArea)
 
-            if (removePointerId) {
+            // During a trackpad Pan (scroll) gesture, items scroll off-screen and should be pruned
+            // immediately to trigger hover Exit events and clear their hover state.
+            // Other gestures (like Pinch) should not prune intermediate nodes until the gesture
+            // ends.
+            val isPan = internalPointerEvent.activeGesture == PointerClassification.Pan
+            val isGestureOngoing =
+                internalPointerEvent.activeGesture != PointerClassification.None &&
+                    !internalPointerEvent.isGestureEnd
+
+            if (removePointerId && (isPan || !isGestureOngoing)) {
                 pointerIds.remove(change.id)
             }
         }

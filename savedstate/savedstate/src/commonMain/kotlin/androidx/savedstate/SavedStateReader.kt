@@ -32,9 +32,7 @@ import kotlin.jvm.JvmName
 @JvmInline
 public expect value class SavedStateReader
 @PublishedApi
-internal constructor(
-    private val source: SavedState,
-) {
+internal constructor(private val source: SavedState) {
 
     /**
      * Retrieves a [Boolean] value associated with the specified [key], or throws an
@@ -267,7 +265,7 @@ internal constructor(
     public fun getStringOrNull(key: String): String?
 
     /**
-     * Retrieves a [List] of [String] values associated with the specified [key], or throws an
+     * Retrieves a [List] of [Int] values associated with the specified [key], or throws an
      * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
      * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
@@ -511,7 +509,7 @@ internal constructor(
     public fun getFloatArrayOrNull(key: String): FloatArray?
 
     /**
-     * Retrieves a [IntArray] value associated with the specified [key], or throws an
+     * Retrieves an [IntArray] value associated with the specified [key], or throws an
      * [IllegalArgumentException] if this [SavedState] does not contain a valid value for the key.
      *
      * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the
@@ -526,7 +524,7 @@ internal constructor(
     public fun getIntArray(key: String): IntArray
 
     /**
-     * Retrieves a [IntArray] value associated with the specified [key], or `null` if this
+     * Retrieves an [IntArray] value associated with the specified [key], or `null` if this
      * [SavedState] does not contain a valid value for the key.
      *
      * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the

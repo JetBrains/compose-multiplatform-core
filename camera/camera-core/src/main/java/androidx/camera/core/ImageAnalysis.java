@@ -37,6 +37,7 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_CAPTURE_CON
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SURFACE_OCCUPANCY_PRIORITY;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_CLASS;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_NAME;
@@ -47,8 +48,11 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.hardware.HardwareBuffer;
+import android.hardware.camera2.CameraCharacteristics;
 import android.media.CamcorderProfile;
 import android.media.ImageReader;
+import android.os.Build;
 import android.util.Pair;
 import android.util.Size;
 import android.view.Display;
@@ -76,6 +80,7 @@ import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.Threads;
@@ -214,6 +219,39 @@ public final class ImageAnalysis extends UseCase {
     public static final int OUTPUT_IMAGE_FORMAT_NV21 = 3;
 
     /**
+     * Images sent to the analyzer will have PRIVATE format.
+     *
+     * <p>All {@link ImageProxy} sent to {@link Analyzer#analyze(ImageProxy)} will have
+     * format {@link ImageFormat#PRIVATE}.
+     *
+     * <p>When the output image format is set to {@code OUTPUT_IMAGE_FORMAT_PRIVATE}, the images
+     * will be produced with {@link ImageFormat#PRIVATE} format and
+     * {@link HardwareBuffer#USAGE_GPU_SAMPLED_IMAGE} usage flag.
+     *
+     * <p>Note: Applications should use
+     * {@link ImageAnalysis#getImageAnalysisCapabilities(CameraInfo)}
+     * and {@link ImageAnalysisCapabilities#isOutputFormatSupported(int)} to check whether the
+     * {@code OUTPUT_IMAGE_FORMAT_PRIVATE} format is supported on the device before setting this
+     * format.
+     *
+     * <p>There are several restrictions when using {@code OUTPUT_IMAGE_FORMAT_PRIVATE}:
+     * <ul>
+     *     <li>It is not CPU accessible. Calling {@link ImageProxy#getPlanes()} will return an
+     *     empty array. The application should use {@link ImageProxy#getHardwareBuffer()} to
+     *     access the image data.</li>
+     *     <li>Output image rotation is not supported. Calling
+     *     {@link Builder#setOutputImageRotationEnabled(boolean)} with {@code true} will cause
+     *     an {@link IllegalArgumentException} to be thrown when building the
+     *     {@link ImageAnalysis} instance.</li>
+     *     <li>Conversion to {@link android.graphics.Bitmap} is not supported. Calling
+     *     {@link ImageProxy#toBitmap()} will throw an {@link IllegalArgumentException}.</li>
+     * </ul>
+     *
+     * @see Builder#setOutputImageFormat(int)
+     */
+    public static final int OUTPUT_IMAGE_FORMAT_PRIVATE = 4;
+
+    /**
      * Provides a static configuration with implementation-agnostic options.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -230,6 +268,81 @@ public final class ImageAnalysis extends UseCase {
     private static final Boolean DEFAULT_ONE_PIXEL_SHIFT_ENABLED = null;
     // Default to disabled for rotation.
     private static final boolean DEFAULT_OUTPUT_IMAGE_ROTATION_ENABLED = false;
+
+    /**
+     * Returns {@link ImageAnalysisCapabilities} to query ImageAnalysis capability of the given
+     * {@link CameraInfo}.
+     *
+     * @param cameraInfo the {@link CameraInfo} to query.
+     * @return {@link ImageAnalysisCapabilities}
+     */
+    public static @NonNull ImageAnalysisCapabilities getImageAnalysisCapabilities(
+            @NonNull CameraInfo cameraInfo) {
+        return new ImageAnalysisCapabilitiesImpl(cameraInfo);
+    }
+
+    private static boolean isHardwareBufferSupported(@NonNull Size resolution) {
+        if (Build.VERSION.SDK_INT >= 29) {
+            return Api29Impl.isSupported(resolution.getWidth(), resolution.getHeight(),
+                    ImageFormat.PRIVATE, 1, HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+        }
+        return false;
+    }
+
+    private static class ImageAnalysisCapabilitiesImpl implements ImageAnalysisCapabilities {
+        private final CameraInfo mCameraInfo;
+
+        ImageAnalysisCapabilitiesImpl(@NonNull CameraInfo cameraInfo) {
+            mCameraInfo = cameraInfo;
+        }
+
+        @Override
+        public boolean isOutputFormatSupported(@OutputImageFormat int format) {
+            if (format == OUTPUT_IMAGE_FORMAT_PRIVATE) {
+                if (Build.VERSION.SDK_INT >= 29) {
+                    // Check if PRIVATE format is supported by the camera device and
+                    // the Graphics System (HardwareBuffer). For HardwareBuffer check,
+                    // we use the maximum supported resolution as a representative size
+                    // because HardwareBuffer support can depend on the resolution.
+                    Size maxResolution = SizeUtil.RESOLUTION_VGA;
+                    if (mCameraInfo instanceof CameraInfoInternal) {
+                        List<Size> supportedResolutions = ((CameraInfoInternal) mCameraInfo)
+                                .getSupportedResolutions(ImageFormat.PRIVATE);
+                        Size maxSize = SizeUtil.getMaxSize(supportedResolutions);
+                        if (maxSize != null) {
+                            maxResolution = maxSize;
+                        }
+                    }
+
+                    return isHardwareBufferSupported(maxResolution)
+                            && mCameraInfo instanceof CameraInfoInternal
+                            && ((CameraInfoInternal) mCameraInfo).getSupportedOutputFormats()
+                            .contains(ImageFormat.PRIVATE);
+                }
+                return false;
+            }
+            return format == OUTPUT_IMAGE_FORMAT_YUV_420_888
+                    || format == OUTPUT_IMAGE_FORMAT_RGBA_8888
+                    || format == OUTPUT_IMAGE_FORMAT_NV21;
+        }
+    }
+
+    @RequiresApi(29)
+    private static class Api29Impl {
+        private Api29Impl() {
+        }
+
+        static boolean isSupported(int width, int height, int format, int layers,
+                long usage) {
+            try {
+                return HardwareBuffer.isSupported(width, height, format, layers, usage);
+            } catch (IllegalArgumentException e) {
+                // Return false if the format is not supported by HardwareBuffer
+                return false;
+            }
+        }
+    }
+
     private final Object mAnalysisLock = new Object();
 
     @GuardedBy("mAnalysisLock")
@@ -363,19 +476,32 @@ public final class ImageAnalysis extends UseCase {
         int imageQueueDepth =
                 getBackpressureStrategy() == STRATEGY_BLOCK_PRODUCER ? getImageQueueDepth()
                         : NON_BLOCKING_IMAGE_DEPTH;
+
+        long usage = 0;
+        if (getImageFormat() == ImageFormat.PRIVATE) {
+            // Check if PRIVATE format is supported by the Graphics System (HardwareBuffer) for
+            // the actual resolution.
+            if (!isHardwareBufferSupported(resolution)) {
+                throw new IllegalArgumentException("PRIVATE format with resolution "
+                        + resolution + " is not supported for ImageAnalysis on the device.");
+            }
+            usage = HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE;
+        }
+
         SafeCloseImageReaderProxy imageReaderProxy;
         if (config.getImageReaderProxyProvider() != null) {
             imageReaderProxy = new SafeCloseImageReaderProxy(
                     config.getImageReaderProxyProvider().newInstance(
                             resolution.getWidth(), resolution.getHeight(), getImageFormat(),
-                            imageQueueDepth, 0));
+                            imageQueueDepth, usage));
         } else {
             imageReaderProxy =
                     new SafeCloseImageReaderProxy(ImageReaderProxys.createIsolatedReader(
                             resolution.getWidth(),
                             resolution.getHeight(),
                             getImageFormat(),
-                            imageQueueDepth));
+                            imageQueueDepth,
+                            usage));
         }
 
         ImageAnalysisAbstractAnalyzer imageAnalysisAbstractAnalyzer;
@@ -395,7 +521,7 @@ public final class ImageAnalysis extends UseCase {
         boolean isYuv2Nv21 = getImageFormat() == ImageFormat.YUV_420_888
                 && getOutputImageFormat() == OUTPUT_IMAGE_FORMAT_NV21;
         boolean isYuvRotationOrPixelShift = getImageFormat() == ImageFormat.YUV_420_888
-                && ((getCamera() != null && getRelativeRotation(getCamera()) != 0)
+                && (isOutputImageRotationEnabled()
                 || Boolean.TRUE.equals(getOnePixelShiftEnabled()));
 
         // TODO(b/195021586): to support RGB format input for image analysis for devices already
@@ -630,6 +756,12 @@ public final class ImageAnalysis extends UseCase {
         }
     }
 
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    protected void onProviderRotationChanged(int rotation) {
+        setTargetRotation(rotation);
+    }
+
     /**
      * Sets an analyzer to receive and analyze images.
      *
@@ -752,8 +884,9 @@ public final class ImageAnalysis extends UseCase {
      *
      * <p>The returned image format will be
      * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_YUV_420_888},
-     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_RGBA_8888} or
-     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_NV21}.
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_RGBA_8888},
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_NV21} or
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_PRIVATE}.
      *
      * @return output image format.
      * @see ImageAnalysis.Builder#setOutputImageFormat(int)
@@ -868,6 +1001,8 @@ public final class ImageAnalysis extends UseCase {
     protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
+        Logger.d(TAG, "onSuggestedStreamSpecUpdated: primaryStreamSpec = " + primaryStreamSpec
+                + ", secondaryStreamSpec " + secondaryStreamSpec);
         final ImageAnalysisConfig config = (ImageAnalysisConfig) getCurrentConfig();
 
         mSessionConfigBuilder = createPipeline(getCameraId(), config,
@@ -903,6 +1038,17 @@ public final class ImageAnalysis extends UseCase {
     }
 
     /**
+     * Returns whether the use case supports auto-rotation.
+     *
+     * @return true if the use case supports auto-rotation, false otherwise.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    public boolean isAutoRotationSupported() {
+        return true;
+    }
+
+    /**
      * How to apply backpressure to the source producing images for analysis.
      *
      * <p>Sometimes, images may be produced faster than they can be analyzed. Since images
@@ -926,15 +1072,16 @@ public final class ImageAnalysis extends UseCase {
      *
      * <p>The supported output image format
      * is {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_YUV_420_888},
-     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_RGBA_8888} and
-     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_NV21}.
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_RGBA_8888},
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_NV21} and
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_PRIVATE}.
      *
      * <p>By default, {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_YUV_420_888} will be used.
      *
      * @see Builder#setOutputImageFormat(int)
      */
     @IntDef({OUTPUT_IMAGE_FORMAT_YUV_420_888, OUTPUT_IMAGE_FORMAT_RGBA_8888,
-            OUTPUT_IMAGE_FORMAT_NV21})
+            OUTPUT_IMAGE_FORMAT_NV21, OUTPUT_IMAGE_FORMAT_PRIVATE})
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @interface OutputImageFormat {
@@ -963,7 +1110,14 @@ public final class ImageAnalysis extends UseCase {
          * <p>Images produced here will no longer be valid after the {@link ImageAnalysis}
          * instance that produced it has been unbound from the camera.
          *
-         * <p>The image provided has format {@link android.graphics.ImageFormat#YUV_420_888}.
+         * <p>The image provided has format {@link ImageFormat#YUV_420_888} by default. It can be
+         * configured to other formats such as {@link PixelFormat#RGBA_8888} or
+         * {@link ImageFormat#PRIVATE} via {@link Builder#setOutputImageFormat(int)}.
+         *
+         * <p>When the output image format is set to {@link #OUTPUT_IMAGE_FORMAT_PRIVATE}, the
+         * returned {@link ImageProxy} is not CPU accessible. Calling {@link ImageProxy#toBitmap()}
+         * will throw an {@link IllegalArgumentException} and {@link ImageProxy#getPlanes()} will
+         * return an empty array.
          *
          * <p>The provided image is typically in the orientation of the sensor, meaning CameraX
          * does not perform an internal rotation of the data.  The rotationDegrees parameter allows
@@ -1154,6 +1308,7 @@ public final class ImageAnalysis extends UseCase {
             implements ImageOutputConfig.Builder<Builder>,
             ThreadConfig.Builder<Builder>,
             UseCaseConfig.Builder<ImageAnalysis, ImageAnalysisConfig, Builder>,
+            UseCase.InteropConfigurable<Builder>,
             ImageInputConfig.Builder<Builder> {
 
         private final MutableOptionsBundle mMutableConfig;
@@ -1255,8 +1410,9 @@ public final class ImageAnalysis extends UseCase {
          *
          * <p>The supported output image format
          * is {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_YUV_420_888},
-         * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_RGBA_8888} and
-         * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_NV21}.
+         * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_RGBA_8888},
+         * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_NV21} and
+         * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_PRIVATE}.
          *
          * <p>If not set, {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_YUV_420_888} will be used.
          *
@@ -1264,8 +1420,40 @@ public final class ImageAnalysis extends UseCase {
          * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_NV21} will have extra overhead because
          * format conversion takes time.
          *
+         * <p>When the output image format is set to {@code OUTPUT_IMAGE_FORMAT_PRIVATE}, the
+         * {@link ImageProxy} passed to the {@link Analyzer} will have
+         * {@link ImageFormat#PRIVATE} format. This format is not CPU accessible and should be
+         * used with GPU-based processing. Note that when this format is used,
+         * {@link #setOutputImageRotationEnabled(boolean)} is not allowed to be set to true.
+         *
+         * <p>The following code snippet demonstrates how to use the PRIVATE format for
+         * GPU-based processing:
+         *
+         * <pre>{@code
+         * ImageAnalysisCapabilities capabilities =
+         *     ImageAnalysis.getImageAnalysisCapabilities(camera.getCameraInfo());
+         * if (capabilities.isOutputFormatSupported(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)) {
+         *     ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+         *         .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+         *         .build();
+         *
+         *     imageAnalysis.setAnalyzer(executor, image -> {
+         *         // Access the HardwareBuffer for GPU processing
+         *         if (Build.VERSION.SDK_INT >= 28) {
+         *             HardwareBuffer hardwareBuffer = image.getHardwareBuffer();
+         *             if (hardwareBuffer != null) {
+         *                 // Do GPU processing with hardwareBuffer
+         *             }
+         *         }
+         *         image.close();
+         *     });
+         * }
+         * }</pre>
+         *
          * @param outputImageFormat The output image format.
          * @return The current Builder.
+         *
+         * @see ImageAnalysisCapabilities#isOutputFormatSupported(int)
          */
         public @NonNull Builder setOutputImageFormat(@OutputImageFormat int outputImageFormat) {
             getMutableConfig().insertOption(OPTION_OUTPUT_IMAGE_FORMAT, outputImageFormat);
@@ -1289,7 +1477,10 @@ public final class ImageAnalysis extends UseCase {
          * frame. The average processing time is about 10-15ms for 640x480 image on a mid-range
          * device.
          *
-         * By default, the rotation is disabled.
+         * <p>By default, the rotation is disabled.
+         *
+         * <p>Note that when the output image format is set to
+         * {@link #OUTPUT_IMAGE_FORMAT_PRIVATE}, this API is not allowed to be set to true.
          *
          * @param outputImageRotationEnabled flag to enable or disable.
          * @return The current Builder.
@@ -1319,6 +1510,13 @@ public final class ImageAnalysis extends UseCase {
             return mMutableConfig;
         }
 
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Override
+        public @NonNull MutableConfig getInteropMutableConfig() {
+            return mMutableConfig;
+        }
+
+
         /**
          * {@inheritDoc}
          */
@@ -1339,6 +1537,15 @@ public final class ImageAnalysis extends UseCase {
         public @NonNull ImageAnalysis build() {
             ImageAnalysisConfig imageAnalysisConfig = getUseCaseConfig();
             ImageOutputConfig.validateConfig(imageAnalysisConfig);
+            if (imageAnalysisConfig.getOutputImageFormat(DEFAULT_OUTPUT_IMAGE_FORMAT)
+                    == OUTPUT_IMAGE_FORMAT_PRIVATE) {
+                if (imageAnalysisConfig.isOutputImageRotationEnabled(
+                        DEFAULT_OUTPUT_IMAGE_ROTATION_ENABLED)) {
+                    throw new IllegalArgumentException(
+                            "setOutputImageRotationEnabled(true) is not supported when PRIVATE "
+                                    + "format is used.");
+                }
+            }
             return new ImageAnalysis(imageAnalysisConfig);
         }
 
@@ -1675,6 +1882,13 @@ public final class ImageAnalysis extends UseCase {
         public @NonNull Builder setCaptureType(
                 UseCaseConfigFactory.@NonNull CaptureType captureType) {
             getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
+            return this;
+        }
+
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Override
+        public @NonNull Builder setStreamUseCase(@NonNull StreamUseCase streamUseCase) {
+            getMutableConfig().insertOption(OPTION_STREAM_USE_CASE, streamUseCase);
             return this;
         }
 

@@ -50,7 +50,7 @@ internal class ParticipantStateCallbackRepository {
 @ExperimentalAppActions
 private data class ActionExchangeResult(
     val onInitialization: (Boolean) -> Unit,
-    val onRemoteConnected: (ParticipantActionsRemote?) -> Unit
+    val onRemoteConnected: (ParticipantActionsRemote?) -> Unit,
 )
 
 /**
@@ -64,11 +64,11 @@ private data class ActionExchangeResult(
  *   change
  */
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalAppActions::class)
+@OptIn(androidx.core.telecom.util.ExperimentalAppActions::class)
 internal class ParticipantExtensionRemoteImpl(
     private val callScope: CoroutineScope,
     private val onActiveParticipantChanged: suspend (Participant?) -> Unit,
-    private val onParticipantsUpdated: suspend (Set<Participant>) -> Unit
+    private val onParticipantsUpdated: suspend (Set<Participant>) -> Unit,
 ) : ParticipantExtensionRemote {
     companion object {
         internal const val TAG = CallExtensionScopeImpl.TAG + "(PCE)"
@@ -91,25 +91,27 @@ internal class ParticipantExtensionRemoteImpl(
     private val participants = MutableStateFlow<Set<Participant>>(emptySet())
     private val activeParticipantId = MutableStateFlow<String?>(null)
 
+    @OptIn(ExperimentalAppActions::class)
     override fun addRaiseHandAction(
         onRaisedHandsChanged: suspend (List<Participant>) -> Unit
     ): RaiseHandAction {
         val action = RaiseHandActionImpl(participants, onRaisedHandsChanged)
         registerAction(
             ParticipantExtensionImpl.RAISE_HAND_ACTION,
-            onRemoteConnected = action::connect
+            onRemoteConnected = action::connect,
         ) { isSupported ->
             action.initialize(callScope, isSupported, callbacks)
         }
         return action
     }
 
+    @OptIn(ExperimentalAppActions::class)
     override fun addKickParticipantAction(): KickParticipantAction {
         val action = KickParticipantActionImpl(participants)
         registerAction(
             ParticipantExtensionImpl.KICK_PARTICIPANT_ACTION,
             onRemoteConnected = action::connect,
-            onInitialization = action::initialize
+            onInitialization = action::initialize,
         )
         return action
     }
@@ -129,7 +131,7 @@ internal class ParticipantExtensionRemoteImpl(
     private fun registerAction(
         action: Int,
         onRemoteConnected: (ParticipantActionsRemote?) -> Unit,
-        onInitialization: (Boolean) -> Unit
+        onInitialization: (Boolean) -> Unit,
     ) {
         actionInitializers[action] = ActionExchangeResult(onInitialization, onRemoteConnected)
     }
@@ -145,7 +147,7 @@ internal class ParticipantExtensionRemoteImpl(
      */
     internal suspend fun onExchangeComplete(
         negotiatedCapability: Capability?,
-        remote: CapabilityExchangeListenerRemote?
+        remote: CapabilityExchangeListenerRemote?,
     ) {
         if (negotiatedCapability == null || remote == null) {
             Log.i(TAG, "onNegotiated: remote is not capable")
@@ -178,7 +180,7 @@ internal class ParticipantExtensionRemoteImpl(
      */
     private suspend fun connectActionsToRemote(
         negotiatedCapability: Capability,
-        remote: CapabilityExchangeListenerRemote
+        remote: CapabilityExchangeListenerRemote,
     ): ParticipantActionsRemote? = suspendCancellableCoroutine { continuation ->
         val participantStateListener =
             ParticipantStateListener(
@@ -203,14 +205,16 @@ internal class ParticipantExtensionRemoteImpl(
                 finishSync = { remoteBinder ->
                     callScope.launch {
                         Log.v(TAG, "finishSync complete, isNull=${remoteBinder == null}")
-                        continuation.resume(remoteBinder)
+                        if (continuation.isActive) {
+                            continuation.resume(remoteBinder)
+                        }
                     }
-                }
+                },
             )
         remote.onCreateParticipantExtension(
             negotiatedCapability.featureVersion,
             negotiatedCapability.supportedActions,
-            participantStateListener
+            participantStateListener,
         )
     }
 

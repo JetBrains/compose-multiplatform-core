@@ -17,19 +17,17 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
-import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionResponseMetadata
-import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 /** Represents the annotated @AppFunctionSchemaDefinition. */
-class AnnotatedAppFunctionSchemaDefinition(
-    private val classDeclaration: KSClassDeclaration,
-) {
+class AnnotatedAppFunctionSchemaDefinition(private val classDeclaration: KSClassDeclaration) {
     private val schemaFunctionDeclaration: KSFunctionDeclaration by lazy {
         classDeclaration.declarations.filterIsInstance<KSFunctionDeclaration>().singleOrNull()
             ?: throw ProcessingException(
@@ -59,7 +57,7 @@ class AnnotatedAppFunctionSchemaDefinition(
     /** Creates [CompileTimeAppFunctionMetadata] from @AppFunctionSchemaDefinition. */
     fun createAppFunctionMetadata(
         resolvedAnnotatedSerializableProxies:
-            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies,
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
     ): CompileTimeAppFunctionMetadata {
         val metadataCreatorHelper = AppFunctionMetadataCreatorHelper()
         val annotation =
@@ -68,7 +66,7 @@ class AnnotatedAppFunctionSchemaDefinition(
             )
                 ?: throw ProcessingException(
                     "Class not annotated with @AppFunctionSchemaDefinition",
-                    classDeclaration
+                    classDeclaration,
                 )
         val annotationProperties =
             metadataCreatorHelper.computeAppFunctionAnnotationProperties(
@@ -95,6 +93,7 @@ class AnnotatedAppFunctionSchemaDefinition(
                 sharedDataTypeMap = sharedDataTypeMap,
                 seenDataTypeQualifiers = seenDataTypeQualifiers,
                 allowSerializableInterfaceTypes = true,
+                functionAnnotations = schemaFunctionDeclaration.annotations,
             )
 
         return CompileTimeAppFunctionMetadata(
@@ -103,8 +102,9 @@ class AnnotatedAppFunctionSchemaDefinition(
             isEnabledByDefault = true,
             schema = annotationProperties.getAppFunctionSchemaMetadata(),
             parameters = parameterTypeMetadataList,
-            response = AppFunctionResponseMetadata(responseTypeMetadata),
-            components = AppFunctionComponentsMetadata(sharedDataTypeMap)
+            response = AppFunctionResponseMetadata(responseTypeMetadata, description = ""),
+            components = AppFunctionComponentsMetadata(sharedDataTypeMap),
+            deprecation = null, // Schema Inventory should not care about this
         )
     }
 }

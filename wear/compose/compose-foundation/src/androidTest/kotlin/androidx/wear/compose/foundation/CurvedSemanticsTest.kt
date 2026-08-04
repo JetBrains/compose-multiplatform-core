@@ -23,7 +23,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
@@ -42,7 +42,7 @@ class CurvedSemanticsTest {
                     CurvedModifier.semantics {
                         contentDescription = "desc"
                         traversalIndex = 3.14f
-                    }
+                    },
                 )
             }
         }
@@ -91,7 +91,7 @@ class CurvedSemanticsTest {
                 basicCurvedText(
                     "text",
                     CurvedModifier.semantics { contentDescription = "first" }
-                        .clearAndSetSemantics { contentDescription = "second" }
+                        .clearAndSetSemantics { contentDescription = "second" },
                 )
             }
         }
@@ -105,7 +105,7 @@ class CurvedSemanticsTest {
             BasicText(
                 "text",
                 Modifier.semantics { contentDescription = "first" }
-                    .clearAndSetSemantics { contentDescription = "second" }
+                    .clearAndSetSemantics { contentDescription = "second" },
             )
         }
 
@@ -119,7 +119,7 @@ class CurvedSemanticsTest {
                 basicCurvedText(
                     "text",
                     CurvedModifier.clearAndSetSemantics { contentDescription = "first" }
-                        .semantics { contentDescription = "second" }
+                        .semantics { contentDescription = "second" },
                 )
             }
         }
@@ -133,7 +133,7 @@ class CurvedSemanticsTest {
             BasicText(
                 "text",
                 Modifier.clearAndSetSemantics { contentDescription = "first" }
-                    .semantics { contentDescription = "second" }
+                    .semantics { contentDescription = "second" },
             )
         }
 

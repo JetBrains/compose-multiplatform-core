@@ -20,8 +20,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -29,6 +27,7 @@ import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Distance;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.Destination;
@@ -44,6 +43,9 @@ import androidx.car.app.sample.navigation.common.model.Instruction;
 import androidx.car.app.suggestion.SuggestionManager;
 import androidx.car.app.suggestion.model.Suggestion;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,9 +171,9 @@ public final class NavigationScreen extends Screen {
                 new Action.Builder()
                         .setTitle("Voice")
                         .setIcon(new CarIcon.Builder(
-                            IconCompat.createWithResource(getCarContext(),
-                                    R.drawable.ic_mic)).build()).setOnClickListener(
-                            mMicrophoneRecorder::record)
+                                IconCompat.createWithResource(getCarContext(),
+                                        R.drawable.ic_mic)).build()).setOnClickListener(
+                                mMicrophoneRecorder::record)
                         .build());
         if (mIsNavigating) {
             actionStripBuilder.addAction(
@@ -211,7 +213,7 @@ public final class NavigationScreen extends Screen {
                         getCarContext(),
                         R.drawable.ic_pan_24));
         if (mIsInPanMode) {
-            panIconBuilder.setTint(CarColor.BLUE);
+            panIconBuilder.setStyle(new CarIconStyle.Builder().setTint(CarColor.BLUE).build());
         }
 
         builder.setMapActionStrip(new ActionStrip.Builder()
@@ -383,8 +385,8 @@ public final class NavigationScreen extends Screen {
                 .setAction(
                         CarPendingIntent.getCarApp(getCarContext(), 0,
                                 new Intent().setComponent(
-                                        new ComponentName(getCarContext(),
-                                                NavigationCarAppService.class))
+                                                new ComponentName(getCarContext(),
+                                                        NavigationCarAppService.class))
                                         .setAction(NavigationSession.EXECUTE_SCRIPT),
                                 0))
                 .build();

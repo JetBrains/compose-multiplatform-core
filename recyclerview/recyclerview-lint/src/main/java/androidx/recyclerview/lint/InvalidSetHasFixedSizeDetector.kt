@@ -95,7 +95,7 @@ class InvalidSetHasFixedSizeDetector : Detector(), XmlScanner, SourceCodeScanner
                                         context.report(
                                             issue = ISSUE,
                                             location = location,
-                                            message = DESCRIPTION
+                                            message = DESCRIPTION,
                                         )
                                     }
                                 }
@@ -122,7 +122,7 @@ class InvalidSetHasFixedSizeDetector : Detector(), XmlScanner, SourceCodeScanner
             """
             When using `setHasFixedSize() in an `RecyclerView`, `wrap_content` cannot be used as \
             a value for `size` in the scrolling direction.
-        """
+            """
                 .trimIndent()
 
         val ISSUE =
@@ -140,8 +140,8 @@ class InvalidSetHasFixedSizeDetector : Detector(), XmlScanner, SourceCodeScanner
                 implementation =
                     Implementation(
                         InvalidSetHasFixedSizeDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES)
-                    )
+                        EnumSet.of(Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES),
+                    ),
             )
     }
 }

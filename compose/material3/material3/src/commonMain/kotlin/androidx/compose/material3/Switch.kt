@@ -54,6 +54,7 @@ import androidx.compose.ui.node.invalidateMeasurement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -88,7 +89,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 @Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
-fun Switch(
+public fun Switch(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
@@ -110,7 +111,7 @@ fun Switch(
                     enabled = enabled,
                     role = Role.Switch,
                     interactionSource = interactionSource,
-                    indication = null
+                    indication = null,
                 )
         } else {
             Modifier
@@ -146,10 +147,30 @@ private fun SwitchImpl(
     val resolvedThumbColor = colors.thumbColor(enabled, checked)
     val trackShape = SwitchTokens.TrackShape.value
 
+    val focusRingModifier =
+        if (
+            LocalRippleThemeConfiguration.current.focus is RippleThemeConfiguration.Focus.InsetRing
+        ) {
+            Modifier.indication(
+                interactionSource = interactionSource,
+                indication =
+                    ripple(
+                        focusRingShape = trackShape,
+                        enablePressIndication = false,
+                        enableFocusIndication = true,
+                        enableDragIndication = false,
+                        enableHoverIndication = false,
+                    ),
+            )
+        } else {
+            Modifier
+        }
+
     Box(
         modifier
             .border(TrackOutlineWidth, colors.borderColor(enabled, checked), trackShape)
             .background(trackColor, trackShape)
+            .then(focusRingModifier)
     ) {
         Box(
             modifier =
@@ -159,22 +180,28 @@ private fun SwitchImpl(
                             interactionSource = interactionSource,
                             checked = checked,
                             // TODO Load the motionScheme tokens from the component tokens file
-                            animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
+                            animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
                         )
                     )
                     .indication(
                         interactionSource = interactionSource,
                         indication =
-                            ripple(bounded = false, radius = SwitchTokens.StateLayerSize / 2)
+                            ripple(
+                                bounded = false,
+                                radius = SwitchTokens.StateLayerSize / 2,
+                                enableFocusIndication =
+                                    LocalRippleThemeConfiguration.current.focus
+                                        !is RippleThemeConfiguration.Focus.InsetRing,
+                            ),
                     )
                     .background(resolvedThumbColor, thumbShape),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             if (thumbContent != null) {
                 val iconColor = colors.iconColor(enabled, checked)
                 CompositionLocalProvider(
                     LocalContentColor provides iconColor,
-                    content = thumbContent
+                    content = thumbContent,
                 )
             }
         }
@@ -239,9 +266,17 @@ private class ThumbNode(
         }
     }
 
+    override fun onReset() {
+        super.onReset()
+        offsetAnim = null
+        sizeAnim = null
+        initialSize = Float.NaN
+        initialOffset = Float.NaN
+    }
+
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val hasContent =
             measurable.maxIntrinsicHeight(constraints.maxWidth) != 0 &&
@@ -299,12 +334,12 @@ private class ThumbNode(
 }
 
 /** Contains the default values used by [Switch] */
-object SwitchDefaults {
+public object SwitchDefaults {
     /**
      * Creates a [SwitchColors] that represents the different colors used in a [Switch] in different
      * states.
      */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultSwitchColors
+    @Composable public fun colors(): SwitchColors = MaterialTheme.colorScheme.defaultSwitchColors
 
     /**
      * Creates a [SwitchColors] that represents the different colors used in a [Switch] in different
@@ -328,7 +363,7 @@ object SwitchDefaults {
      * @param disabledUncheckedIconColor the color used for the icon when disabled and unchecked
      */
     @Composable
-    fun colors(
+    public fun colors(
         checkedThumbColor: Color = SwitchTokens.SelectedHandleColor.value,
         checkedTrackColor: Color = SwitchTokens.SelectedTrackColor.value,
         checkedBorderColor: Color = Color.Transparent,
@@ -383,7 +418,7 @@ object SwitchDefaults {
             disabledUncheckedThumbColor = disabledUncheckedThumbColor,
             disabledUncheckedTrackColor = disabledUncheckedTrackColor,
             disabledUncheckedBorderColor = disabledUncheckedBorderColor,
-            disabledUncheckedIconColor = disabledUncheckedIconColor
+            disabledUncheckedIconColor = disabledUncheckedIconColor,
         )
 
     internal val ColorScheme.defaultSwitchColors: SwitchColors
@@ -433,7 +468,7 @@ object SwitchDefaults {
         }
 
     /** Icon size to use for `thumbContent` */
-    val IconSize = 16.dp
+    public val IconSize: Dp = 16.dp
 }
 
 /**
@@ -459,30 +494,30 @@ object SwitchDefaults {
  *   default implementation that follows Material specifications.
  */
 @Immutable
-class SwitchColors
-constructor(
-    val checkedThumbColor: Color,
-    val checkedTrackColor: Color,
-    val checkedBorderColor: Color,
-    val checkedIconColor: Color,
-    val uncheckedThumbColor: Color,
-    val uncheckedTrackColor: Color,
-    val uncheckedBorderColor: Color,
-    val uncheckedIconColor: Color,
-    val disabledCheckedThumbColor: Color,
-    val disabledCheckedTrackColor: Color,
-    val disabledCheckedBorderColor: Color,
-    val disabledCheckedIconColor: Color,
-    val disabledUncheckedThumbColor: Color,
-    val disabledUncheckedTrackColor: Color,
-    val disabledUncheckedBorderColor: Color,
-    val disabledUncheckedIconColor: Color
+public class SwitchColors
+public constructor(
+    public val checkedThumbColor: Color,
+    public val checkedTrackColor: Color,
+    public val checkedBorderColor: Color,
+    public val checkedIconColor: Color,
+    public val uncheckedThumbColor: Color,
+    public val uncheckedTrackColor: Color,
+    public val uncheckedBorderColor: Color,
+    public val uncheckedIconColor: Color,
+    public val disabledCheckedThumbColor: Color,
+    public val disabledCheckedTrackColor: Color,
+    public val disabledCheckedBorderColor: Color,
+    public val disabledCheckedIconColor: Color,
+    public val disabledUncheckedThumbColor: Color,
+    public val disabledUncheckedTrackColor: Color,
+    public val disabledUncheckedBorderColor: Color,
+    public val disabledUncheckedIconColor: Color,
 ) {
     /**
      * Returns a copy of this SwitchColors, optionally overriding some of the values. This uses the
      * Color.Unspecified to mean “use the value from the source”
      */
-    fun copy(
+    public fun copy(
         checkedThumbColor: Color = this.checkedThumbColor,
         checkedTrackColor: Color = this.checkedTrackColor,
         checkedBorderColor: Color = this.checkedBorderColor,
@@ -499,7 +534,7 @@ constructor(
         disabledUncheckedTrackColor: Color = this.disabledUncheckedTrackColor,
         disabledUncheckedBorderColor: Color = this.disabledUncheckedBorderColor,
         disabledUncheckedIconColor: Color = this.disabledUncheckedIconColor,
-    ) =
+    ): SwitchColors =
         SwitchColors(
             checkedThumbColor.takeOrElse { this.checkedThumbColor },
             checkedTrackColor.takeOrElse { this.checkedTrackColor },
@@ -621,10 +656,14 @@ constructor(
 }
 
 /* @VisibleForTesting */
-internal val ThumbDiameter = SwitchTokens.SelectedHandleWidth
-internal val UncheckedThumbDiameter = SwitchTokens.UnselectedHandleWidth
+internal val ThumbDiameter
+    get() = SwitchTokens.SelectedHandleWidth
+internal val UncheckedThumbDiameter
+    get() = SwitchTokens.UnselectedHandleWidth
 
-private val SwitchWidth = SwitchTokens.TrackWidth
-private val SwitchHeight = SwitchTokens.TrackHeight
+private val SwitchWidth
+    get() = SwitchTokens.TrackWidth
+private val SwitchHeight
+    get() = SwitchTokens.TrackHeight
 private val ThumbPadding = (SwitchHeight - ThumbDiameter) / 2
 private val SnapSpec = SnapSpec<Float>()

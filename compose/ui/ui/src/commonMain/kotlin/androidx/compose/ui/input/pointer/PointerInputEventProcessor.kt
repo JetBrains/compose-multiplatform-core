@@ -22,7 +22,6 @@ import androidx.collection.LongSparseArray
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.node.HitTestResult
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.util.fastForEach
 
@@ -63,22 +62,22 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
      * @see PointerInputEvent
      */
     fun process(
-        @OptIn(InternalCoreApi::class) pointerEvent: PointerInputEvent,
+        pointerEvent: PointerInputEvent,
         positionCalculator: PositionCalculator,
-        isInBounds: Boolean = true
+        isInBounds: Boolean = true,
     ): ProcessResult {
         if (isProcessing) {
             // Processing currently does not support reentrancy.
             return ProcessResult(
                 dispatchedToAPointerInputModifier = false,
-                anyMovementConsumed = false
+                anyMovementConsumed = false,
+                anyChangeConsumed = false,
             )
         }
         try {
             isProcessing = true
 
             // Gets a new PointerInputChangeEvent with the PointerInputEvent.
-            @OptIn(InternalCoreApi::class)
             val internalPointerEvent =
                 pointerInputChangeEventProducer.produce(pointerEvent, positionCalculator)
 
@@ -89,6 +88,10 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
                     isHover = false
                     break
                 }
+            }
+
+            if (internalPointerEvent.activeGesture == PointerClassification.Pan) {
+                isHover = true
             }
 
             // Add new hit paths to the tracker due to down events.
@@ -105,7 +108,7 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
                             // Note: We do not do this for hover because hover relies on those
                             // non hit PointerIds to trigger hover exit events.
                             prunePointerIdsAndChangesNotInNodesList =
-                                pointerInputChange.changedToDownIgnoreConsumed()
+                                pointerInputChange.changedToDownIgnoreConsumed(),
                         )
                         hitResult.clear()
                     }
@@ -131,7 +134,20 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
                     result
                 }
 
-            return ProcessResult(dispatchedToSomething, anyMovementConsumed)
+            var anyChangeConsumed = false
+            for (i in 0 until internalPointerEvent.changes.size()) {
+                val change = internalPointerEvent.changes.valueAt(i)
+                if (change.isConsumed) {
+                    anyChangeConsumed = true
+                    break
+                }
+            }
+
+            return ProcessResult(
+                dispatchedToAPointerInputModifier = dispatchedToSomething,
+                anyMovementConsumed = anyMovementConsumed,
+                anyChangeConsumed = anyChangeConsumed,
+            )
         } finally {
             isProcessing = false
         }
@@ -163,14 +179,13 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
 }
 
 /** Produces [InternalPointerEvent]s by tracking changes between [PointerInputEvent]s */
-@OptIn(InternalCoreApi::class)
 private class PointerInputChangeEventProducer {
     private val previousPointerInputData: LongSparseArray<PointerInputData> = LongSparseArray()
 
     /** Produces [InternalPointerEvent]s by tracking changes between [PointerInputEvent]s */
     fun produce(
         pointerInputEvent: PointerInputEvent,
-        positionCalculator: PositionCalculator
+        positionCalculator: PositionCalculator,
     ): InternalPointerEvent {
         // Set initial capacity to avoid resizing - we know the size the map will be.
         val changes: LongSparseArray<PointerInputChange> =
@@ -194,25 +209,27 @@ private class PointerInputChangeEventProducer {
             changes.put(
                 it.id.value,
                 PointerInputChange(
-                    it.id,
-                    it.uptime,
-                    it.position,
-                    it.down,
-                    it.pressure,
-                    previousTime,
-                    previousPosition,
-                    previousDown,
-                    false,
-                    it.type,
-                    it.historical,
-                    it.scrollDelta,
-                    it.originalEventPosition
-                )
+                    id = it.id,
+                    uptimeMillis = it.uptime,
+                    position = it.position,
+                    pressed = it.down,
+                    pressure = it.pressure,
+                    previousUptimeMillis = previousTime,
+                    previousPosition = previousPosition,
+                    previousPressed = previousDown,
+                    isInitiallyConsumed = false,
+                    type = it.type,
+                    historical = it.historical,
+                    scrollDelta = it.scrollDelta,
+                    scaleFactor = it.scaleGestureFactor,
+                    panOffset = it.panGestureOffset,
+                    originalEventPosition = it.originalEventPosition,
+                ),
             )
             if (it.down) {
                 previousPointerInputData.put(
                     it.id.value,
-                    PointerInputData(it.uptime, it.positionOnScreen, it.down)
+                    PointerInputData(it.uptime, it.positionOnScreen, it.down),
                 )
             } else {
                 previousPointerInputData.remove(it.id.value)
@@ -230,18 +247,24 @@ private class PointerInputChangeEventProducer {
     private class PointerInputData(
         val uptime: Long,
         val positionOnScreen: Offset,
-        val down: Boolean
+        val down: Boolean,
     )
 }
 
 /** The result of a call to [PointerInputEventProcessor.process]. */
 @kotlin.jvm.JvmInline
 internal value class ProcessResult(val value: Int) {
+    /** It's true when any [PointerInputFilter] has processed a [PointerInputChange] */
     val dispatchedToAPointerInputModifier
         inline get() = (value and 0x1) != 0
 
+    /** It's true when [PointerInputChange] was consumed and Pointer's position was changed */
     val anyMovementConsumed
         inline get() = (value and 0x2) != 0
+
+    /** It's true when any [PointerInputChange] was consumed. */
+    val anyChangeConsumed
+        inline get() = (value and 0x4) != 0
 }
 
 /**
@@ -253,10 +276,14 @@ internal value class ProcessResult(val value: Int) {
  */
 internal fun ProcessResult(
     dispatchedToAPointerInputModifier: Boolean,
-    anyMovementConsumed: Boolean
+    anyMovementConsumed: Boolean,
+    anyChangeConsumed: Boolean,
 ): ProcessResult {
     return ProcessResult(
-        dispatchedToAPointerInputModifier.toInt() or (anyMovementConsumed.toInt() shl 1)
+        value =
+            dispatchedToAPointerInputModifier.toInt() or
+                (anyMovementConsumed.toInt() shl 1) or
+                (anyChangeConsumed.toInt() shl 2)
     )
 }
 

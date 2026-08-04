@@ -16,9 +16,14 @@
 
 package androidx.compose.foundation.text.contextmenu.internal
 
+import android.content.Context
+import android.content.res.Resources
+import android.graphics.drawable.Drawable
 import androidx.annotation.DrawableRes
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.contextmenu.ContextMenuColumnBuilder
 import androidx.compose.foundation.contextmenu.ContextMenuPopupPositionProvider
+import androidx.compose.foundation.contextmenu.ContextMenuScope
 import androidx.compose.foundation.contextmenu.ContextMenuSpec
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -26,6 +31,10 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSeparator
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuTextClassificationItem
+import androidx.compose.foundation.text.contextmenu.internal.TextClassificationHelperApi28.sendLegacyIntent
+import androidx.compose.foundation.text.contextmenu.internal.TextClassificationHelperApi28.sendPendingIntent
+import androidx.compose.foundation.text.contextmenu.internal.TextContextMenuHelperApi28.textClassificationItem
 import androidx.compose.foundation.text.contextmenu.provider.BasicTextContextMenuProvider
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuDropdownProvider
 import androidx.compose.foundation.text.contextmenu.provider.ProvideBasicTextContextMenu
@@ -36,10 +45,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.isUnspecified
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalContext
@@ -62,14 +74,14 @@ internal fun ProvideDefaultTextContextMenuDropdown(content: @Composable () -> Un
         contextMenu = { session, dataProvider, anchorLayoutCoordinates ->
             OpenContextMenu(session, dataProvider, anchorLayoutCoordinates)
         },
-        content = content
+        content = content,
     )
 }
 
 @Composable
 internal fun ProvideDefaultTextContextMenuDropdown(
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ProvideBasicTextContextMenu(
         modifier = modifier,
@@ -77,7 +89,7 @@ internal fun ProvideDefaultTextContextMenuDropdown(
         contextMenu = { session, dataProvider, anchorLayoutCoordinates ->
             OpenContextMenu(session, dataProvider, anchorLayoutCoordinates)
         },
-        content = content
+        content = content,
     )
 }
 
@@ -117,8 +129,14 @@ private fun OpenContextMenu(
 @Composable
 private fun DefaultTextContextMenuDropdown(
     session: TextContextMenuSession,
-    data: TextContextMenuData
+    data: TextContextMenuData,
 ) {
+    val context =
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            LocalContext.current
+        } else {
+            null
+        }
     ContextMenuColumnBuilder {
         data.components.fastForEach { component ->
             when (component) {
@@ -126,15 +144,18 @@ private fun DefaultTextContextMenuDropdown(
                     item(
                         label = { component.label },
                         leadingIcon =
-                            component.leadingIcon?.let { resId ->
-                                { color -> IconBox(resId, color) }
+                            if (component.leadingIcon == Resources.ID_NULL) {
+                                null
+                            } else {
+                                { color -> IconBox(component.leadingIcon, color) }
                             },
-                        onClick = { with(component) { session.onClick() } },
+                        onClick = { component.onClick(session) },
                     )
+                is TextContextMenuTextClassificationItem ->
+                    if (android.os.Build.VERSION.SDK_INT >= 28) {
+                        textClassificationItem(context, component)
+                    }
                 is TextContextMenuSeparator -> separator()
-                else -> {
-                    // Ignore unknown items
-                }
             }
         }
     }
@@ -182,7 +203,7 @@ private class MaintainWindowPositionPopupPositionProvider(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         val position = previousPosition
         if (
@@ -199,7 +220,7 @@ private class MaintainWindowPositionPopupPositionProvider(
                 anchorBounds,
                 windowSize,
                 layoutDirection,
-                popupContentSize
+                popupContentSize,
             )
 
         previousWindowSize = windowSize
@@ -207,5 +228,47 @@ private class MaintainWindowPositionPopupPositionProvider(
         previousPopupContentSize = popupContentSize
         previousPosition = newPosition
         return newPosition
+    }
+}
+
+@RequiresApi(28)
+private object TextContextMenuHelperApi28 {
+    @Suppress("DEPRECATION")
+    fun ContextMenuScope.textClassificationItem(
+        context: Context?,
+        component: TextContextMenuTextClassificationItem,
+    ) {
+        if (context == null) return
+        val index = component.index
+        val textClassification = component.textClassification
+        val preloadedIcon = component.icon
+        if (index < 0) {
+            // index < 0 denotes that this is a legacy textClassificationItem.
+            // Use sendLegacyIntent to send the PendingIntent.
+            item(
+                label = { textClassification.label.toString() },
+                leadingIcon = preloadedIcon?.let { icon -> { IconBox(icon) } },
+                onClick = { sendLegacyIntent(context, textClassification) },
+            )
+        } else {
+            val action = textClassification.actions[index]
+            item(
+                label = { action.title.toString() },
+                leadingIcon = preloadedIcon?.let { icon -> { IconBox(icon) } },
+                onClick = { sendPendingIntent(action.actionIntent) },
+            )
+        }
+    }
+
+    @Composable
+    private fun IconBox(drawable: Drawable) {
+        Box(
+            Modifier.size(ContextMenuSpec.IconSize).drawBehind {
+                drawIntoCanvas { canvas ->
+                    drawable.setBounds(0, 0, size.width.toInt(), size.height.toInt())
+                    drawable.draw(canvas.nativeCanvas)
+                }
+            }
+        )
     }
 }

@@ -1,5 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="            assertThat(mHostRule.device.findObject(UiSelector().text(text)).exists())"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/glance/appwidget/GlanceAppWidgetManagerTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="        assertThat(file.exists())"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/glance/appwidget/GlanceAppWidgetReceiverTest.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `TestAppWidgetHostView`"
+        errorLine1="        TestAppWidgetHostView(createMockedContext()).apply {"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/kotlin/androidx/glance/appwidget/TestUtils.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 24): `updateAppWidget`"
+        errorLine1="            updateAppWidget(remoteViews)"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/kotlin/androidx/glance/appwidget/TestUtils.kt"/>
+    </issue>
 
     <issue
         id="BanThreadSleep"
@@ -31,10 +67,51 @@
     <issue
         id="UnspecifiedRegisterReceiverFlag"
         message="`broadcastReceiver` is missing `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag for unprotected broadcasts registered for androidx.glance.appwidget.utils.TEST_ACTION"
-        errorLine1="            context.registerReceiver("
-        errorLine2="            ^">
+        errorLine1="            context.registerReceiver(broadcastReceiver, IntentFilter(BROADCAST_ACTION))"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/glance/appwidget/CoroutineBroadcastReceiverTest.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="        if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.M) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/appwidget/GlanceAppWidgetReceiver.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="    if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.M) {"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/appwidget/translators/ImageTranslator.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 23"
+        errorLine1="@RequiresApi(Build.VERSION_CODES.M)"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/appwidget/translators/ImageTranslator.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v24`) is unnecessary; `minSdkVersion` is 24. Merge all the resources in this folder into `drawable`.">
+        <location
+            file="src/main/res/drawable-v24"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v23`) is unnecessary; `minSdkVersion` is 24. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v23"/>
     </issue>
 
     <issue
@@ -526,8 +603,8 @@
     <issue
         id="PrimitiveInCollection"
         message="constructor Responsive has parameter sizes with type Set&lt;DpSize>: replace with LongSet"
-        errorLine1="    class Responsive(val sizes: Set&lt;DpSize>) : SizeMode, PreviewSizeMode {"
-        errorLine2="                                ~~~~~~~~~~~">
+        errorLine1="    public class Responsive(public val sizes: Set&lt;DpSize>) : SizeMode, PreviewSizeMode {"
+        errorLine2="                                              ~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/glance/appwidget/SizeMode.kt"/>
     </issue>
@@ -535,8 +612,8 @@
     <issue
         id="PrimitiveInCollection"
         message="field sizes with type Set&lt;DpSize>: replace with LongSet"
-        errorLine1="    class Responsive(val sizes: Set&lt;DpSize>) : SizeMode, PreviewSizeMode {"
-        errorLine2="                                ~~~~~~~~~~~">
+        errorLine1="    public class Responsive(public val sizes: Set&lt;DpSize>) : SizeMode, PreviewSizeMode {"
+        errorLine2="                                              ~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/glance/appwidget/SizeMode.kt"/>
     </issue>
@@ -544,8 +621,8 @@
     <issue
         id="PrimitiveInCollection"
         message="return type Set&lt;DpSize> of getSizes: replace with LongSet"
-        errorLine1="    class Responsive(val sizes: Set&lt;DpSize>) : SizeMode, PreviewSizeMode {"
-        errorLine2="                                ~~~~~~~~~~~">
+        errorLine1="    public class Responsive(public val sizes: Set&lt;DpSize>) : SizeMode, PreviewSizeMode {"
+        errorLine2="                                              ~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/glance/appwidget/SizeMode.kt"/>
     </issue>

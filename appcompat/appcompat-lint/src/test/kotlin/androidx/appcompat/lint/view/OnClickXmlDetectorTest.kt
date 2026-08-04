@@ -45,7 +45,7 @@ class OnClickXmlDetectorTest {
         android:onClick="myButtonClick"
         android:text="Click!" />
 </LinearLayout>
-        """
+        """,
                 )
                 .indented()
                 .within("res")
@@ -66,7 +66,7 @@ class OnClickXmlDetectorTest {
         android:onClick="@{handler::handleClick}"
         android:text="Click!" />
 </LinearLayout>
-        """
+        """,
                 )
                 .indented()
                 .within("res")
@@ -92,7 +92,7 @@ class OnClickXmlDetectorTest {
                     Toast.makeText(this, "Clicked!", Toast.LENGTH_SHORT).show()
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -118,7 +118,7 @@ class OnClickXmlDetectorTest {
                         <activity android:name=".CustomActivity"/>
                     </application>
                 </manifest>
-            """
+                """
                     .trimIndent()
             )
 
@@ -130,17 +130,17 @@ class OnClickXmlDetectorTest {
                 Stubs.COLOR_STATE_LIST,
                 manifest,
                 layoutWithCoreClick,
-                activityWithClick
+                activityWithClick,
             )
             .issues(OnClickXmlDetector.USING_ON_CLICK_IN_XML)
             .addTestModes(TestMode.DEFAULT, TestMode.PARTIAL)
             .run()
             .expect(
                 """
-res/layout/view_with_click.xml:10: Warning: Use databinding or explicit wiring of click listener in code [UsingOnClickInXml]
-        android:onClick="myButtonClick"
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                res/layout/view_with_click.xml:10: Warning: Use databinding or explicit wiring of click listener in code [UsingOnClickInXml]
+                        android:onClick="myButtonClick"
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )
@@ -166,7 +166,7 @@ res/layout/view_with_click.xml:10: Warning: Use databinding or explicit wiring o
                         <activity android:name=".CustomActivity"/>
                     </application>
                 </manifest>
-            """
+                """
                     .trimIndent()
             )
 
@@ -177,7 +177,7 @@ res/layout/view_with_click.xml:10: Warning: Use databinding or explicit wiring o
                 Stubs.COLOR_STATE_LIST,
                 manifest,
                 layoutWithCoreClick,
-                activityWithClick
+                activityWithClick,
             )
             .issues(OnClickXmlDetector.USING_ON_CLICK_IN_XML)
             .addTestModes(TestMode.DEFAULT, TestMode.PARTIAL)
@@ -205,7 +205,7 @@ res/layout/view_with_click.xml:10: Warning: Use databinding or explicit wiring o
                         <activity android:name=".CustomActivity"/>
                     </application>
                 </manifest>
-            """
+                """
                     .trimIndent()
             )
 
@@ -217,7 +217,7 @@ res/layout/view_with_click.xml:10: Warning: Use databinding or explicit wiring o
                 Stubs.COLOR_STATE_LIST,
                 manifest,
                 layoutWithDataBindingClick,
-                activityWithClick
+                activityWithClick,
             )
             .issues(OnClickXmlDetector.USING_ON_CLICK_IN_XML)
             .addTestModes(TestMode.DEFAULT, TestMode.PARTIAL)

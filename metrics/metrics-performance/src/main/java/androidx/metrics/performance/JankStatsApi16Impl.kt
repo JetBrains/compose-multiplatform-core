@@ -67,7 +67,7 @@ internal open class JankStatsApi16Impl(jankStats: JankStats, view: View) :
                     getFrameData(
                         startTime,
                         uiDuration,
-                        (expectedDuration * jankStats.jankHeuristicMultiplier).toLong()
+                        (expectedDuration * jankStats.jankHeuristicMultiplier).toLong(),
                     )
                 )
             }
@@ -80,12 +80,12 @@ internal open class JankStatsApi16Impl(jankStats: JankStats, view: View) :
                 DelegatingOnPreDrawListener.addDelegateToDecorView(
                     decorView,
                     choreographer,
-                    onFrameListenerDelegate
+                    onFrameListenerDelegate,
                 )
             } else {
                 DelegatingOnPreDrawListener.removeDelegateFromDecorView(
                     decorView,
-                    onFrameListenerDelegate
+                    onFrameListenerDelegate,
                 )
             }
         }
@@ -94,7 +94,7 @@ internal open class JankStatsApi16Impl(jankStats: JankStats, view: View) :
     internal open fun getFrameData(
         startTime: Long,
         uiDuration: Long,
-        expectedDuration: Long
+        expectedDuration: Long,
     ): FrameData {
         metricsStateHolder.state?.getIntervalStates(startTime, startTime + uiDuration, stateInfo)
         val isJank = uiDuration > expectedDuration
@@ -128,7 +128,7 @@ internal abstract class OnFrameListenerDelegate {
 internal open class DelegatingOnPreDrawListener(
     decorView: View,
     val choreographer: Choreographer,
-    val delegates: MutableList<OnFrameListenerDelegate>
+    val delegates: MutableList<OnFrameListenerDelegate>,
 ) : ViewTreeObserver.OnPreDrawListener {
     val decorViewRef = WeakReference<View>(decorView)
     val metricsStateHolder = PerformanceMetricsState.getHolderForHierarchy(decorView)
@@ -200,7 +200,7 @@ internal open class DelegatingOnPreDrawListener(
         fun addDelegateToDecorView(
             decorView: View,
             choreographer: Choreographer,
-            delegate: OnFrameListenerDelegate
+            delegate: OnFrameListenerDelegate,
         ) {
             var delegator = decorView.getTag(R.id.metricsDelegator) as DelegatingOnPreDrawListener?
             if (delegator == null) {

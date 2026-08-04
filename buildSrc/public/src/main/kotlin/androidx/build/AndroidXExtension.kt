@@ -16,18 +16,23 @@
 
 package androidx.build
 
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.HasAndroidTest
 import groovy.lang.Closure
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 import org.gradle.api.configuration.BuildFeatures
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.property
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 /** Extension for [AndroidXImplPlugin] that's responsible for holding configuration options. */
@@ -137,7 +142,7 @@ abstract class AndroidXExtension(
     // gets the library group from the project path, including special cases
     private fun getLibraryGroupFromProjectPath(
         projectPath: String,
-        explanationBuilder: MutableList<String>? = null
+        explanationBuilder: MutableList<String>? = null,
     ): LibraryGroup? {
         val overridden = overrideLibraryGroupsByProjectPath[projectPath]
         explanationBuilder?.add(
@@ -160,7 +165,7 @@ abstract class AndroidXExtension(
     // simple function to get the library group from the project path, without special cases
     private fun getStandardLibraryGroupFromProjectPath(
         projectPath: String,
-        explanationBuilder: MutableList<String>?
+        explanationBuilder: MutableList<String>?,
     ): LibraryGroup? {
         // Get the text of the library group, something like "androidx.core"
         val parentPath = substringBeforeLastColon(projectPath)
@@ -217,13 +222,13 @@ abstract class AndroidXExtension(
                         ")"
                 )
             } else {
-                verifyVersionExtraFormat(mavenVersion)
+                verifyVersionFormat(mavenVersion)
                 version = mavenVersion
             }
         } else {
             projectDirectlySpecifiesMavenVersion = false
             if (groupVersion != null) {
-                verifyVersionExtraFormat(groupVersion)
+                verifyVersionFormat(groupVersion)
                 version = groupVersion
             } else {
                 return
@@ -232,36 +237,41 @@ abstract class AndroidXExtension(
         if (group != null) {
             project.group = group
         }
-        project.version = if (isSnapshotBuild()) version.copy(extra = "-SNAPSHOT") else version
+        project.version = if (isSnapshotBuild()) version.copy(preRelease = "SNAPSHOT") else version
         versionIsSet = true
     }
 
-    private fun verifyVersionExtraFormat(version: Version) {
-        val ALLOWED_EXTRA_PREFIXES = listOf("-alpha", "-beta", "-rc", "-dev", "-SNAPSHOT")
-        val extra = version.extra
-        if (extra != null) {
-            if (!version.isSnapshot()) {
-                if (ALLOWED_EXTRA_PREFIXES.any { extra.startsWith(it) }) {
-                    for (potentialPrefix in ALLOWED_EXTRA_PREFIXES) {
-                        if (extra.startsWith(potentialPrefix)) {
-                            val secondExtraPart = extra.removePrefix(potentialPrefix)
-                            if (secondExtraPart.toIntOrNull() == null) {
-                                throw IllegalArgumentException(
-                                    "Version $version is not" +
-                                        " a properly formatted version, please ensure that " +
-                                        "$potentialPrefix is followed by a number only"
-                                )
-                            }
-                        }
+    private fun verifyVersionFormat(version: Version) {
+        val ALLOWED_PRERELEASE_PREFIXES = listOf("alpha", "beta", "rc", "dev")
+        if (version.buildMetadata != null) {
+            throw IllegalArgumentException(
+                "Version $version is not a proper version, " +
+                    "explicitly specifying metadata is not allowed"
+            )
+        }
+        val preRelease = version.preRelease
+        if (preRelease == null || version.isSnapshot()) {
+            return
+        }
+        if (ALLOWED_PRERELEASE_PREFIXES.any { preRelease.startsWith(it) }) {
+            for (potentialPrefix in ALLOWED_PRERELEASE_PREFIXES) {
+                if (preRelease.startsWith(potentialPrefix)) {
+                    val secondExtraPart = preRelease.removePrefix(potentialPrefix)
+                    if (secondExtraPart.toIntOrNull() == null) {
+                        throw IllegalArgumentException(
+                            "Version $version is not" +
+                                " a properly formatted version, please ensure that " +
+                                "$potentialPrefix is followed by a number only"
+                        )
                     }
-                } else {
-                    throw IllegalArgumentException(
-                        "Version $version is not a proper " +
-                            "version, version suffixes following major.minor.patch should " +
-                            "be one of ${ALLOWED_EXTRA_PREFIXES.joinToString(", ")}"
-                    )
                 }
             }
+        } else {
+            throw IllegalArgumentException(
+                "Version $version is not a proper " +
+                    "version, version suffixes following major.minor.patch should " +
+                    "be one of ${ALLOWED_PRERELEASE_PREFIXES.joinToString(", ")}"
+            )
         }
     }
 
@@ -281,9 +291,9 @@ abstract class AndroidXExtension(
         private set
 
     /** Description for this artifact to use in .pom files */
-    var description: String? = null
+    abstract val description: Property<String>
     /** The year when the development of this library started to use in .pom files */
-    var inceptionYear: String? = null
+    abstract val inceptionYear: Property<String>
 
     /** The main license to add when publishing. Default is Apache 2. */
     var license: License =
@@ -294,29 +304,35 @@ abstract class AndroidXExtension(
 
     private var extraLicenses: MutableCollection<License> = ArrayList()
 
-    fun shouldPublish(): Boolean = type.publish.shouldPublish()
+    val shouldPublish: Provider<Boolean>
+        get() = type.map { it.publish.shouldPublish() }
 
-    fun shouldRelease(): Boolean = type.publish.shouldRelease()
+    val shouldRelease: Provider<Boolean>
+        get() = type.map { it.publish.shouldRelease() }
 
     fun ifReleasing(action: () -> Unit) {
         project.afterEvaluate {
-            if (shouldRelease()) {
+            if (shouldRelease.get()) {
                 action()
             }
         }
     }
 
-    fun shouldPublishSbom(): Boolean {
-        if (isIsolatedProjectsEnabled()) return false
-        // IDE plugins are used by and ship inside Studio
-        return shouldPublish() || type == SoftwareType.IDE_PLUGIN
+    fun shouldPublishSbom(): Provider<Boolean> {
+        return type.zip(project.provider { isIsolatedProjectsEnabled() }) { type, isolated ->
+            if (isolated) return@zip false
+            // IDE plugins are used by and ship inside Studio
+            type.publish.shouldPublish() || type == SoftwareType.IDE_PLUGIN
+        }
     }
 
     var doNotDocumentReason: String? = null
 
-    var type: SoftwareType = SoftwareType.UNSET
+    val type: Property<SoftwareType> =
+        project.objects.property(SoftwareType::class.java).convention(SoftwareType.UNSET)
 
-    val failOnDeprecationWarnings = project.objects.property(Boolean::class.java).convention(true)
+    val failOnDeprecationWarnings: Property<Boolean> =
+        project.objects.property(Boolean::class.java).convention(true)
 
     /** Whether this project should fail on javac compilation warnings */
     fun failOnDeprecationWarnings(enabled: Boolean) = failOnDeprecationWarnings.set(enabled)
@@ -325,15 +341,10 @@ abstract class AndroidXExtension(
      * Whether Kotlin Strict API mode is enabled, see
      * [kotlin 1.4 release notes](https://kotlinlang.org/docs/whatsnew14.html#explicit-api-mode-for-library-authors)
      */
-    var legacyDisableKotlinStrictApiMode = false
+    val legacyDisableKotlinStrictApiMode =
+        project.objects.property(Boolean::class.java).convention(false)
 
     var bypassCoordinateValidation = false
-
-    /** Whether Metalava should use K2 Kotlin front-end for source analysis */
-    var metalavaK2UastEnabled = true
-
-    /** Whether the project has not yet been migrated to use JSpecify annotations. */
-    var optOutJSpecify = false
 
     val additionalDeviceTestApkKeys = mutableListOf<String>()
 
@@ -343,19 +354,23 @@ abstract class AndroidXExtension(
                 project.path.startsWith(":compose:") -> mutableListOf("compose")
                 project.path.startsWith(":privacysandbox:ads:") ->
                     mutableListOf("privacysandbox", "privacysandbox_ads")
-                project.path.startsWith(":privacysandbox:") -> mutableListOf("privacysandbox")
-                project.path.startsWith(":wear:") -> mutableListOf("wear")
+                project.path.startsWith(":wear:watchface") -> mutableListOf("wear_optin")
+                project.path.startsWith(":xr:") -> mutableListOf("xr_optin")
                 else -> mutableListOf()
             }
         if (deviceTests.enableAlsoRunningOnPhysicalDevices) {
             tags.add("all_run_on_physical_device")
         }
+        if (deviceTests.enableAlsoRunOn16KbPageSizeDevices) {
+            tags.add("all_run_on_16kb_page_size_device")
+        }
         return@lazy tags
     }
 
-    fun shouldEnforceKotlinStrictApiMode(): Boolean {
-        return !legacyDisableKotlinStrictApiMode && type.checkApi is RunApiTasks.Yes
-    }
+    fun shouldEnforceKotlinStrictApiMode(): Provider<Boolean> =
+        type.zip(legacyDisableKotlinStrictApiMode) { type, legacyDisableKotlinStrictApiMode ->
+            !legacyDisableKotlinStrictApiMode && type.checkApi is RunApiTasks.Yes
+        }
 
     fun extraLicense(closure: Closure<Any>): License {
         val license = project.configure(License(), closure) as License
@@ -413,15 +428,38 @@ abstract class AndroidXExtension(
 
     /** Adds golden image assets to Android test APKs to use for screenshot tests. */
     fun addGoldenImageAssets() {
-        project.extensions.findByType(LibraryAndroidComponentsExtension::class.java)?.onVariants {
-            variant ->
+        project.extensions.findByType(AndroidComponentsExtension::class.java)?.onVariants { variant
+            ->
             val subdirectory = project.path.replace(":", "/")
-            variant.androidTest
+            (variant as? HasAndroidTest)
+                ?.androidTest
                 ?.sources
                 ?.assets
                 ?.addStaticSourceDirectory(
                     File(project.rootDir, "../../golden$subdirectory").absolutePath
                 )
+        }
+    }
+
+    /** Enable Robolectric tests for Android Host Tests. */
+    fun enableRobolectric() {
+        configureRobolectric(project)
+    }
+
+    val usePlatformSpecificCacheForJvmTests: Property<Boolean> =
+        project.objects.property<Boolean>().convention(false)
+
+    /** Sets the minimum supported version of Gradle for this Gradle plugin */
+    fun setMinimumGradleVersion(version: String) {
+        listOf("runtimeElements", "apiElements").forEach { configurationName ->
+            project.configurations.named(configurationName).configure { configuration ->
+                configuration.attributes { attributes ->
+                    attributes.attribute(
+                        GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE,
+                        project.objects.named(version),
+                    )
+                }
+            }
         }
     }
 
@@ -455,7 +493,7 @@ class License {
     var url: String? = null
 }
 
-abstract class DeviceTests {
+abstract class DeviceTests @Inject constructor(objects: ObjectFactory) {
     companion object {
         private const val EXTENSION_NAME = "deviceTests"
 
@@ -476,4 +514,19 @@ abstract class DeviceTests {
      * when run in CI.
      */
     var enableAlsoRunningOnPhysicalDevices = false
+
+    /**
+     * Whether this project's Android on device tests should also run on an Android device that uses
+     * 16KB page size when run in CI.
+     */
+    var enableAlsoRunOn16KbPageSizeDevices = false
+
+    /**
+     * Whether this project's Android on device tests should use test orchestrator to isolate tests
+     * to improve stability. Note, this comes at a very high performance cost, so please consult
+     * androidx core team before using this.
+     */
+    val useOrchestrator: Property<Boolean> = objects.property<Boolean>().convention(false)
+
+    var minSdkForFtlOverride: Int? = null
 }

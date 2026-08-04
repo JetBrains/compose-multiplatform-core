@@ -20,6 +20,7 @@ import java.io.File
 import org.gradle.api.Incubating
 import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
 
 /** Extension that allows access to the StableAidl plugin's public APIs. */
@@ -44,6 +45,9 @@ interface StableAidlExtension {
     fun addStaticImportDirs(vararg dirs: File)
 
     val shadowFrameworkDir: DirectoryProperty
+
+    /** The version to use when recording the current ABI for compatibility tracking. */
+    val version: Property<Int>
 }
 
 interface Action {

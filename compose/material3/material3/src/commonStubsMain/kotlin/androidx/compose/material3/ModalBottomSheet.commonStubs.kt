@@ -16,25 +16,24 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 @Immutable
 @ExperimentalMaterial3Api
-actual class ModalBottomSheetProperties
-actual constructor(
-    actual val shouldDismissOnBackPress: Boolean,
+public actual class ModalBottomSheetProperties
+public actual constructor(
+    public actual val shouldDismissOnBackPress: Boolean,
+    public actual val shouldDismissOnClickOutside: Boolean,
 ) {
     @Deprecated(
         level = DeprecationLevel.HIDDEN,
         message = "Android-specific parameters have been removed",
-        replaceWith = ReplaceWith("ModalBottomSheetProperties(shouldDismissOnBackPress)")
+        replaceWith = ReplaceWith("ModalBottomSheetProperties(shouldDismissOnBackPress)"),
     )
     @Suppress("UNUSED_PARAMETER")
-    constructor(
+    public constructor(
         shouldDismissOnBackPress: Boolean,
         isAppearanceLightStatusBars: Boolean,
         isAppearanceLightNavigationBars: Boolean,
@@ -43,8 +42,8 @@ actual constructor(
 
 @Immutable
 @ExperimentalMaterial3Api
-actual object ModalBottomSheetDefaults {
-    actual val properties: ModalBottomSheetProperties = implementedInJetBrainsFork()
+public actual object ModalBottomSheetDefaults {
+    public actual val properties: ModalBottomSheetProperties = implementedInJetBrainsFork()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +52,5 @@ internal actual fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
     contentColor: Color,
     properties: ModalBottomSheetProperties,
-    predictiveBackProgress: Animatable<Float, AnimationVector1D>,
     content: @Composable () -> Unit,
 ): Unit = implementedInJetBrainsFork()

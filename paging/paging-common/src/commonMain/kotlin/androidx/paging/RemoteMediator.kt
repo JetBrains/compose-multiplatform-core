@@ -87,7 +87,7 @@ public abstract class RemoteMediator<Key : Any, Value : Any> {
      */
     public abstract suspend fun load(
         loadType: LoadType,
-        state: PagingState<Key, Value>
+        state: PagingState<Key, Value>,
     ): MediatorResult
 
     /**
@@ -101,8 +101,8 @@ public abstract class RemoteMediator<Key : Any, Value : Any> {
      *       [REFRESH], to update paginated content when the stream is initialized. Note: This also
      *       prevents [RemoteMediator] from triggering [PREPEND] or [APPEND] until [REFRESH]
      *       succeeds.
-     *     * [SKIP_INITIAL_REFRESH] to wait for a refresh request from the UI before dispatching
-     *       [load] asynchronously with load type [REFRESH].
+     *     * [InitializeAction.SKIP_INITIAL_REFRESH] to wait for a refresh request from the UI
+     *       before dispatching [load] asynchronously with load type [REFRESH].
      */
     public open suspend fun initialize(): InitializeAction = LAUNCH_INITIAL_REFRESH
 
@@ -141,6 +141,6 @@ public abstract class RemoteMediator<Key : Any, Value : Any> {
         /**
          * Wait for a refresh request from the UI before dispatching [load] with load type [REFRESH]
          */
-        SKIP_INITIAL_REFRESH
+        SKIP_INITIAL_REFRESH,
     }
 }

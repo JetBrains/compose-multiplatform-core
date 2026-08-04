@@ -28,16 +28,16 @@ class UsingOnClickInXmlDetectorTest {
         val input =
             arrayOf(
                 javaSample("com.example.android.appcompat.ActivityWithClick"),
-                xmlSample("layout.view_with_click")
+                xmlSample("layout.view_with_click"),
             )
 
         val expected =
             """
-res/layout/view_with_click.xml:26: Warning: Use databinding or explicit wiring of click listener in code [UsingOnClickInXml]
-        android:onClick="myButtonClick"
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
-        """
+            res/layout/view_with_click.xml:26: Warning: Use databinding or explicit wiring of click listener in code [UsingOnClickInXml]
+                    android:onClick="myButtonClick"
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            0 errors, 1 warnings
+            """
                 .trimIndent()
 
         check(*input).expect(expected)

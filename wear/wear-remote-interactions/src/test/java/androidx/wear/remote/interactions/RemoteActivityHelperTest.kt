@@ -25,7 +25,9 @@ import android.content.res.Resources.NotFoundException
 import android.net.Uri
 import android.os.Build.VERSION_CODES
 import android.os.Looper
+import android.os.OutcomeReceiver
 import android.os.ResultReceiver
+import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.wear.remote.interactions.RemoteActivityHelper.Companion.ACTION_REMOTE_INTENT
 import androidx.wear.remote.interactions.RemoteActivityHelper.Companion.DEFAULT_PACKAGE
@@ -42,6 +44,7 @@ import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -52,10 +55,14 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -64,7 +71,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implements
 
 @RunWith(WearRemoteInteractionsTestRunner::class)
-@Config(shadows = [RemoteActivityHelperTest.ActualResultReceiver::class])
+@org.robolectric.annotation.Config(
+    shadows = [RemoteActivityHelperTest.ActualResultReceiver::class],
+    sdk = [org.robolectric.annotation.Config.TARGET_SDK],
+)
 class RemoteActivityHelperTest {
     @Implements(ResultReceiver::class)
     class ActualResultReceiver {
@@ -117,13 +127,15 @@ class RemoteActivityHelperTest {
         mRemoteActivityHelper = RemoteActivityHelper(context, SyncExecutor())
         mRemoteActivityHelper.nodeClient = mockNodeClient
         mRemoteActivityHelper.remoteInteractionsManager = remoteInteractionsManager
+        shadowOf(context as Application)
+            .grantPermissions(RemoteActivityHelper.PERMISSION_SEND_CONTINUE_ACTIVITY_ON_PHONE)
     }
 
     private fun setSystemFeatureWatch(isWatch: Boolean) {
         val shadowPackageManager = shadowOf(context.packageManager)
         shadowPackageManager!!.setSystemFeature(
             RemoteInteractionsUtil.SYSTEM_FEATURE_WATCH,
-            isWatch
+            isWatch,
         )
     }
 
@@ -161,7 +173,7 @@ class RemoteActivityHelperTest {
             mRemoteActivityHelper
                 .startRemoteActivityLegacy(
                     Intent(Intent.ACTION_VIEW).setData(Uri.EMPTY),
-                    testNodeId
+                    testNodeId,
                 )
                 .get()
         }
@@ -277,7 +289,7 @@ class RemoteActivityHelperTest {
             val future =
                 mRemoteActivityHelper.startRemoteActivityLegacy(
                     testExtraIntent,
-                    targetNodeId = null
+                    targetNodeId = null,
                 )
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(future.isDone)
@@ -310,7 +322,7 @@ class RemoteActivityHelperTest {
             val future =
                 mRemoteActivityHelper.startRemoteActivityLegacy(
                     testExtraIntent,
-                    targetNodeId = null
+                    targetNodeId = null,
                 )
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(future.isDone)
@@ -339,7 +351,7 @@ class RemoteActivityHelperTest {
             val future =
                 mRemoteActivityHelper.startRemoteActivityLegacy(
                     testExtraIntent,
-                    targetNodeId = null
+                    targetNodeId = null,
                 )
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(future.isDone)
@@ -359,7 +371,7 @@ class RemoteActivityHelperTest {
         expectedExtraIntent: Intent,
         expectedNodeId: String,
         expectedPackageName: String,
-        actualIntent: Intent
+        actualIntent: Intent,
     ) {
         assertEquals(expectedExtraIntent, getTargetIntent(actualIntent))
         assertEquals(expectedNodeId, getTargetNodeId(actualIntent))
@@ -466,13 +478,14 @@ class RemoteActivityHelperTest {
         mRemoteActivityHelper.startRemoteActivity(testExtraIntent)
         shadowOf(Looper.getMainLooper()).idle()
 
-        verify(remoteInteractionsManager).isStartRemoteActivityApiSupported
+        verify(remoteInteractionsManager).isWearSdkApiStartRemoteActivitySupported
         verifyNoMoreInteractions(remoteInteractionsManager)
     }
 
     @Test
     fun testStartRemoteActivity_isWatchAndUseWearSdkImplTrue_startRemoteActivityExecuted() {
-        whenever(remoteInteractionsManager.isStartRemoteActivityApiSupported).thenReturn(true)
+        whenever(remoteInteractionsManager.isWearSdkApiStartRemoteActivitySupported)
+            .thenReturn(true)
 
         mRemoteActivityHelper.startRemoteActivity(testExtraIntent)
         shadowOf(Looper.getMainLooper()).idle()
@@ -482,13 +495,28 @@ class RemoteActivityHelperTest {
 
     @Test
     fun testStartRemoteActivity_isWatchAndUseWearSdkImplFalse_startRemoteActivityNotExecuted() {
-        whenever(remoteInteractionsManager.isStartRemoteActivityApiSupported).thenReturn(false)
+        whenever(remoteInteractionsManager.isWearSdkApiStartRemoteActivitySupported)
+            .thenReturn(false)
 
         mRemoteActivityHelper.startRemoteActivity(testExtraIntent)
         shadowOf(Looper.getMainLooper()).idle()
 
-        verify(remoteInteractionsManager).isStartRemoteActivityApiSupported
+        verify(remoteInteractionsManager).isWearSdkApiStartRemoteActivitySupported
         verifyNoMoreInteractions(remoteInteractionsManager)
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.TIRAMISU)
+    fun testStartRemoteActivity_await_startRemoteActivityExecuted() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiStartRemoteActivitySupported)
+            .thenReturn(true)
+
+        val result = mRemoteActivityHelper.startRemoteActivity(testExtraIntent)
+
+        val captor = argumentCaptor<OutcomeReceiver<Void?, Throwable>>()
+        verify(remoteInteractionsManager).startRemoteActivity(any(), any(), any(), captor.capture())
+        captor.firstValue.onResult(null)
+        assertEquals(result.await(), null)
     }
 
     @Test
@@ -526,7 +554,7 @@ class RemoteActivityHelperTest {
             listOf(
                 RemoteActivityHelper.STATUS_AVAILABLE,
                 RemoteActivityHelper.STATUS_UNAVAILABLE,
-                RemoteActivityHelper.STATUS_TEMPORARILY_UNAVAILABLE
+                RemoteActivityHelper.STATUS_TEMPORARILY_UNAVAILABLE,
             )) {
             whenever(remoteInteractionsManager.isAvailabilityStatusApiSupported).thenReturn(true)
             doAnswer {
@@ -547,6 +575,350 @@ class RemoteActivityHelperTest {
             verify(remoteInteractionsManager).unregisterRemoteActivityHelperStatusListener(any())
             reset(remoteInteractionsManager)
         }
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_delegatesToManager() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val result =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                testPackageName,
+                "target.action",
+                testUri,
+                listOf("category1"),
+            )
+
+        val captor = argumentCaptor<OutcomeReceiver<Void?, Throwable>>()
+        verify(remoteInteractionsManager)
+            .continueActivityOnPhoneWithUnlock(
+                eq(testPackageName),
+                eq("target.action"),
+                eq(testUri),
+                eq(listOf("category1")),
+                eq(testPackageName),
+                any(),
+                captor.capture(),
+            )
+        verify(remoteInteractionsManager, never()).startRemoteActivity(any(), any(), any(), any())
+        captor.firstValue.onResult(null)
+        assertEquals(result.await(), null)
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.TIRAMISU)
+    fun testStartRemoteActivityAttemptUnlock_delegatesToManager() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val result = mRemoteActivityHelper.startRemoteActivityAttemptUnlock(testUri)
+
+        val captor = argumentCaptor<OutcomeReceiver<Void?, Throwable>>()
+        verify(remoteInteractionsManager)
+            .continueActivityOnPhoneWithUnlock(
+                eq(""),
+                eq(Intent.ACTION_VIEW),
+                eq(testUri),
+                eq(listOf(Intent.CATEGORY_BROWSABLE)),
+                eq(context.packageName),
+                any(),
+                captor.capture(),
+            )
+        captor.firstValue.onResult(null)
+        assertEquals(result.await(), null)
+    }
+
+    @Test
+    @Config(sdk = [VERSION_CODES.R])
+    fun testStartRemoteActivityAttemptUnlock_api30_unsupported_fallback_success() = runTest {
+        setSystemFeatureWatch(true)
+        val receiver = TestBroadcastReceiver(RESULT_OK)
+        context.registerReceiver(receiver, IntentFilter(ACTION_REMOTE_INTENT))
+
+        try {
+            val result = mRemoteActivityHelper.startRemoteActivityAttemptUnlock(testUri)
+
+            shadowOf(Looper.getMainLooper()).idle()
+            assertTrue(result.isDone)
+            result.get()
+        } catch (e: Exception) {
+            fail("startRemoteActivityAttemptUnlock.get() shouldn't throw exception.")
+        } finally {
+            context.unregisterReceiver(receiver)
+        }
+
+        val broadcastIntents =
+            shadowOf(ApplicationProvider.getApplicationContext() as Application).broadcastIntents
+        assertEquals(1, broadcastIntents.size)
+        val intent = broadcastIntents[0]
+        assertEquals(Intent.ACTION_VIEW, getTargetIntent(intent)?.action)
+        assertEquals(testUri, getTargetIntent(intent)?.data)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_emptyPackage_otherAction_fails() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                "",
+                Intent.ACTION_SEND,
+                testUri,
+                listOf(Intent.CATEGORY_BROWSABLE),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalStateException)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_emptyAction_fails() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                testPackageName,
+                "",
+                testUri,
+                emptyList(),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalStateException)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_emptyUri_fails() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                testPackageName,
+                "target.action",
+                Uri.EMPTY,
+                listOf("category1"),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalStateException)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_emptyCaller_fails() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                "",
+                testPackageName,
+                "target.action",
+                testUri,
+                emptyList(),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalStateException)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_emptyCategories_fails() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                testPackageName,
+                "target.action",
+                testUri,
+                emptyList(),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalStateException)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_unsupported_throwsUnsupportedOperationException() =
+        runTest {
+            whenever(
+                    remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported
+                )
+                .thenReturn(false)
+
+            val future =
+                mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                    testPackageName,
+                    testPackageName,
+                    "target.action",
+                    testUri,
+                    listOf("category1"),
+                )
+
+            val exception = assertThrows(ExecutionException::class.java) { future.get() }
+            assertTrue(exception.cause is UnsupportedOperationException)
+        }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_managerThrows_futureFails() = runTest {
+        whenever(remoteInteractionsManager.isWearSdkApiContinueActivityOnPhoneWithUnlockSupported)
+            .thenReturn(true)
+        whenever(
+                remoteInteractionsManager.continueActivityOnPhoneWithUnlock(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                )
+            )
+            .thenThrow(UnsupportedOperationException("Not supported"))
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                testPackageName,
+                "target.action",
+                testUri,
+                listOf("category1"),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is UnsupportedOperationException)
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.TIRAMISU)
+    fun testStartRemoteActivityAttemptUnlock_noPermission_fallback_success() = runTest {
+        val localManager = spy(RemoteInteractionsManagerCompat(context))
+        mRemoteActivityHelper.remoteInteractionsManager = localManager
+        shadowOf(context as Application)
+            .denyPermissions(RemoteActivityHelper.PERMISSION_SEND_CONTINUE_ACTIVITY_ON_PHONE)
+        doReturn(true).whenever(localManager).isWearSdkApiStartRemoteActivitySupported
+        doReturn(true).whenever(localManager).isWearSdkApiContinueActivityOnPhoneWithUnlockSupported
+        doAnswer {
+                val receiver = it.getArgument<OutcomeReceiver<Void?, Throwable>>(3)
+                receiver.onResult(null)
+            }
+            .whenever(localManager)
+            .startRemoteActivity(any(), any(), any(), any())
+
+        val result = mRemoteActivityHelper.startRemoteActivityAttemptUnlock(testUri)
+
+        verify(localManager).startRemoteActivity(eq(testUri), any(), any(), any())
+        assertEquals(result.await(), null)
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.TIRAMISU)
+    fun testStartRemoteActivityAttemptUnlock_unsupported_fallback_success() = runTest {
+        val localManager = spy(RemoteInteractionsManagerCompat(context))
+        mRemoteActivityHelper.remoteInteractionsManager = localManager
+        doReturn(false)
+            .whenever(localManager)
+            .isWearSdkApiContinueActivityOnPhoneWithUnlockSupported
+        doReturn(true).whenever(localManager).isWearSdkApiStartRemoteActivitySupported
+        doAnswer {
+                val receiver = it.getArgument<OutcomeReceiver<Void?, Throwable>>(3)
+                receiver.onResult(null)
+            }
+            .whenever(localManager)
+            .startRemoteActivity(any(), any(), any(), any())
+
+        val result = mRemoteActivityHelper.startRemoteActivityAttemptUnlock(testUri)
+
+        verify(localManager).startRemoteActivity(eq(testUri), any(), any(), any())
+        assertEquals(result.await(), null)
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.TIRAMISU)
+    fun testStartRemoteActivityAttemptUnlock_managerFails_fallback_success() = runTest {
+        val localManager = spy(RemoteInteractionsManagerCompat(context))
+        mRemoteActivityHelper.remoteInteractionsManager = localManager
+        doReturn(true).whenever(localManager).isWearSdkApiStartRemoteActivitySupported
+        doReturn(true).whenever(localManager).isWearSdkApiContinueActivityOnPhoneWithUnlockSupported
+        doAnswer {
+                val receiver = it.getArgument<OutcomeReceiver<Void?, Throwable>>(6)
+                receiver.onError(IllegalStateException("Failed"))
+            }
+            .whenever(localManager)
+            .continueActivityOnPhoneWithUnlock(any(), any(), any(), any(), any(), any(), any())
+        doAnswer {
+                val receiver = it.getArgument<OutcomeReceiver<Void?, Throwable>>(3)
+                receiver.onResult(null)
+            }
+            .whenever(localManager)
+            .startRemoteActivity(any(), any(), any(), any())
+
+        val result = mRemoteActivityHelper.startRemoteActivityAttemptUnlock(testUri)
+
+        verify(localManager)
+            .continueActivityOnPhoneWithUnlock(any(), any(), any(), any(), any(), any(), any())
+        verify(localManager).startRemoteActivity(eq(testUri), any(), any(), any())
+        assertEquals(result.await(), null)
+    }
+
+    @Test
+    fun testStartRemoteActivityAttemptUnlock_missingBrowsable_fails() = runTest {
+        val future =
+            mRemoteActivityHelper.startRemoteActivityAttemptUnlock(
+                testUri,
+                targetCategories = emptyList(),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalArgumentException)
+    }
+
+    @Test
+    fun testStartRemoteActivityAttemptUnlock_emptyUri_fails() = runTest {
+        val future =
+            mRemoteActivityHelper.startRemoteActivityAttemptUnlock(
+                Uri.EMPTY,
+                targetCategories = listOf(Intent.CATEGORY_BROWSABLE),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalArgumentException)
+    }
+
+    @Test
+    @Config(minSdk = 37)
+    fun testStartPhoneActivityWithUnlock_noPermission_fails() = runTest {
+        shadowOf(context as Application)
+            .denyPermissions(RemoteActivityHelper.PERMISSION_SEND_CONTINUE_ACTIVITY_ON_PHONE)
+
+        val future =
+            mRemoteActivityHelper.startPhoneActivityWithUnlock(
+                testPackageName,
+                testPackageName,
+                "target.action",
+                testUri,
+                listOf("category1"),
+            )
+
+        val exception = assertThrows(ExecutionException::class.java) { future.get() }
+        assertTrue(exception.cause is IllegalStateException)
     }
 }
 

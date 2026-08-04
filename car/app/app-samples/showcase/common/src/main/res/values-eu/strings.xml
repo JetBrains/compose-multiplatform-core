@@ -165,7 +165,7 @@
     <string name="gas_station" msgid="1203313937444666161">"Gasolindegia"</string>
     <string name="short_route" msgid="4831864276538141265">"Ibilbide laburra"</string>
     <string name="less_busy" msgid="310625272281710983">"Trafiko gutxiago"</string>
-    <string name="hov_friendly" msgid="6956152104754594971">"OHIetarako egokia"</string>
+    <string name="hov_friendly" msgid="6956152104754594971">"Okupazio handiko ibilgailuetarako egokia"</string>
     <string name="long_route" msgid="4737969235741057506">"Ibilbide luzea"</string>
     <string name="continue_start_nav" msgid="6231797535084469163">"Egin aurrera nabigatzen hasteko"</string>
     <string name="continue_route" msgid="5172258139245088080">"Egin aurrera ibilbidean"</string>
@@ -232,9 +232,21 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Hemen idatzi behar da mezua.\nBigarren lerroan testu gehiago duzu."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Mezu laburren txantiloiaren demo-bertsioa"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Banatutako elementuen txantiloiaren demo-bertsioa"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Elementu kondentsatuaren demo-bertsioa"</string>
+    <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Elementu ataldunen AlphaJump demo-bertsioa gaituta"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Aukera-botoien atala"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Etengailuen atala"</string>
     <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Errenkada askoren atala"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Saretako elementuen atala"</string>
+    <string name="sectioned_item_list_demo_title" msgid="1236735461225007729">"Zerrenden demo-bertsioa duen elementu atalduna"</string>
+    <string name="sectioned_item_list_one_title" msgid="6594204350307263338">"Zerrenda 1"</string>
+    <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Zerrenda 2"</string>
+    <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Zerrenda bakoitzaren beheko azpitestua"</string>
+    <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Amaiera-irudiaren eta ekintzen demo-bertsioa"</string>
+    <string name="chip_demo_title" msgid="814337127879515513">"Pilularen demo-bertsioa"</string>
+    <string name="progress_bar_demo_title" msgid="1759206063037269237">"Garapen-barraren demo-bertsioa"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Atalaren goiburuaren demo-bertsioa"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Aipagarriak atalaren demo-bertsioa"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Panelen txantiloien demo-bertsioa"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Tokien zerrenden txantiloien demo-bertsioa"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Arakatu tokiak"</string>
@@ -265,6 +277,7 @@
     <string name="tab_template_demo_title" msgid="7587839101813629975">"Fitxen txantiloi baten demo-bertsioa"</string>
     <string name="tab_title_message" msgid="5266710951630087246">"Mezuaren fitxa"</string>
     <string name="tab_title_pane" msgid="2520606145526537263">"Panelaren fitxa"</string>
+    <string name="tab_title_sectioned_item" msgid="7299509321019990398">"Banatutako elementuaren fitxa"</string>
     <string name="tab_title_list" msgid="5104962518489668123">"Zerrendaren fitxa"</string>
     <string name="tab_title_grid" msgid="5268168907976325154">"Saretaren fitxa izenburu luzearekin"</string>
     <string name="tab_title_search" msgid="1892925693146631173">"Bilaketen fitxa"</string>
@@ -329,10 +342,7 @@
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Errenkada ere hauta daiteke"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Bigarren mailako ekintza hautatuta dago"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Errenkadari dagokion ekintza nagusia hautatuta dago"</string>
-    <string name="sectioned_item_list_demo_title" msgid="1236735461225007729">"Zerrenden demo-bertsioa duen elementu atalduna"</string>
-    <string name="sectioned_item_list_one_title" msgid="6594204350307263338">"Zerrenda 1"</string>
-    <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Zerrenda 2"</string>
-    <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Zerrenda bakoitzaren beheko azpitestua"</string>
+    <string name="row_end_image_and_actions_demo_title" msgid="4581677315854620705">"Errenkadaren amaierako irudiaren eta ekintzen demo-bertsioa"</string>
     <string name="empty_list_demo_title" msgid="5989013634820902455">"Zerrenda huts baten adibidea"</string>
     <string name="empty_list_message" msgid="5331395517560728138">"Zerrenda hutsik dago"</string>
     <string name="misc_templates_demos_title" msgid="6077169010255928114">"Bestelako txantiloien demo-bertsioak"</string>
@@ -363,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Azken eginbideak"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Kargatze-prozesua gaituta dago"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Kargatze-prozesua desgaituta dago"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Erabili aplikazioaren gaia"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Aplikazioaren gaia gaituta dago"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Aplikazioaren gaia desgaituta dago"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Pantaila kargatzen"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Kolorea gehitzeko/kentzeko etengailua"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Etengailuak dituen mapa-txantiloia"</string>
@@ -374,4 +387,8 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Edukiaren demo-bertsioak dituen mapa"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Mezuen txantiloien demo-bertsioa duen mapa"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Sareten txantiloien demo-bertsioa duen mapa"</string>
+    <!-- no translation found for map_with_sectioned_items_demo_title (8566567348699628797) -->
+    <skip />
+    <string name="banner_demo_title" msgid="6740573531391394513">"Banda-mezuaren demo-bertsioa"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Goiburu hobetuaren demo-bertsioa"</string>
 </resources>

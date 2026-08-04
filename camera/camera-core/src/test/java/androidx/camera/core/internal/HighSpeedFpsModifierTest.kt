@@ -34,7 +34,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class HighSpeedFpsModifierTest {
 
     private companion object {
@@ -57,7 +57,7 @@ class HighSpeedFpsModifierTest {
         val outputConfigs =
             listOf(
                 OutputConfig.builder(previewSurface).build(),
-                OutputConfig.builder(videoSurface).build()
+                OutputConfig.builder(videoSurface).build(),
             )
         val repeatingConfigBuilder =
             CaptureConfig.Builder().apply {
@@ -78,7 +78,7 @@ class HighSpeedFpsModifierTest {
         val outputConfigs =
             listOf(
                 OutputConfig.builder(previewSurface).build(),
-                OutputConfig.builder(videoSurface).build()
+                OutputConfig.builder(videoSurface).build(),
             )
         val repeatingConfigBuilder =
             CaptureConfig.Builder().apply {

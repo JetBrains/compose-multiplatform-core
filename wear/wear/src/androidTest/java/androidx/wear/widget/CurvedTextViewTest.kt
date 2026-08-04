@@ -16,6 +16,8 @@
 
 package androidx.wear.widget
 
+import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -27,16 +29,20 @@ import android.widget.FrameLayout
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CurvedTextViewTest {
 
     private val bitmap = Bitmap.createBitmap(SCREEN_WIDTH, SCREEN_HEIGHT, Bitmap.Config.ARGB_8888)
@@ -84,7 +90,7 @@ class CurvedTextViewTest {
                 setBackgroundColor(Color.rgb(100, 0, 100))
                 anchorType = ArcLayout.ANCHOR_END
                 anchorAngleDegrees = 120f
-            }
+            },
         )
 
     private fun createThree(): List<CurvedTextView> = createThree("Center", "Left", "Right")
@@ -113,7 +119,7 @@ class CurvedTextViewTest {
                     it.setSweepRangeDegrees(0f, 55f)
                     it.ellipsize = TextUtils.TruncateAt.END
                 }
-            }
+            },
         )
     }
 
@@ -127,7 +133,7 @@ class CurvedTextViewTest {
                     it.setSweepRangeDegrees(55f, 360f)
                     it.ellipsize = TextUtils.TruncateAt.END
                 }
-            }
+            },
         )
     }
 
@@ -144,10 +150,10 @@ class CurvedTextViewTest {
                         listOf(
                             View.TEXT_ALIGNMENT_CENTER,
                             View.TEXT_ALIGNMENT_TEXT_START,
-                            View.TEXT_ALIGNMENT_TEXT_END
+                            View.TEXT_ALIGNMENT_TEXT_END,
                         )[ix]
                 }
-            }
+            },
         )
     }
 
@@ -156,7 +162,7 @@ class CurvedTextViewTest {
     fun testCounterClockwise() {
         doOneTest(
             "counter_clockwise_screenshot",
-            createThree().apply { forEach { it.isClockwise = false } }
+            createThree().apply { forEach { it.isClockwise = false } },
         )
     }
 
@@ -165,7 +171,7 @@ class CurvedTextViewTest {
     fun testTextSize() {
         doOneTest(
             "text_size_screenshot",
-            createThree().apply { forEachIndexed { ix, it -> it.textSize = 20f + ix * 4f } }
+            createThree().apply { forEachIndexed { ix, it -> it.textSize = 20f + ix * 4f } },
         )
     }
 
@@ -178,14 +184,14 @@ class CurvedTextViewTest {
                     listOf(
                         TextUtils.TruncateAt.START,
                         TextUtils.TruncateAt.MIDDLE,
-                        TextUtils.TruncateAt.END
+                        TextUtils.TruncateAt.END,
                     ))
                 .map { (v, e) ->
                     v.ellipsize = e
                     v.setSweepRangeDegrees(0f, 50f)
                     v.text += " but Longer"
                     v
-                }
+                },
         )
     }
 
@@ -200,10 +206,10 @@ class CurvedTextViewTest {
                         ix * 10,
                         ((ix + 1) % 4) * 10,
                         ((ix + 2) % 4) * 10,
-                        ((ix + 3) % 4) * 10
+                        ((ix + 3) % 4) * 10,
                     )
                 }
-            }
+            },
         )
     }
 
@@ -226,8 +232,8 @@ class CurvedTextViewTest {
                     anchorAngleDegrees = 70.0f
                     anchorType = ArcLayout.ANCHOR_START
                     setBackgroundColor(Color.rgb(0, 100, 100))
-                }
-            )
+                },
+            ),
         )
     }
 
@@ -250,8 +256,8 @@ class CurvedTextViewTest {
                     anchorAngleDegrees = 230.0f
                     anchorType = ArcLayout.ANCHOR_START
                     setBackgroundColor(Color.rgb(0, 100, 100))
-                }
-            )
+                },
+            ),
         )
     }
 
@@ -278,8 +284,56 @@ class CurvedTextViewTest {
                     anchorType = ArcLayout.ANCHOR_START
                     setTypeface(null, Typeface.BOLD_ITALIC)
                 },
-            )
+            ),
         )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testFontWeightAdjustment() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val overrideConfig =
+            Configuration(context.resources.configuration).apply { fontWeightAdjustment = 300 }
+        val adjustedContext = context.createConfigurationContext(overrideConfig)
+        val textView = CurvedTextView(adjustedContext)
+
+        textView.setTypeface(Typeface.DEFAULT)
+
+        val adjustedTypeface = textView.typeface
+        assertNotNull(adjustedTypeface)
+        assertEquals(Typeface.DEFAULT.weight + 300, adjustedTypeface!!.weight)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testFontWeightAdjustmentWithStyle() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val overrideConfig =
+            Configuration(context.resources.configuration).apply { fontWeightAdjustment = 300 }
+        val adjustedContext = context.createConfigurationContext(overrideConfig)
+        val textView = CurvedTextView(adjustedContext)
+
+        textView.setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+
+        val adjustedTypeface = textView.typeface
+        assertNotNull(adjustedTypeface)
+        assertEquals(1000, adjustedTypeface!!.weight)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testFontWeightNoAdjustment() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val overrideConfig =
+            Configuration(context.resources.configuration).apply { fontWeightAdjustment = 0 }
+        val adjustedContext = context.createConfigurationContext(overrideConfig)
+        val textView = CurvedTextView(adjustedContext)
+
+        textView.setTypeface(Typeface.DEFAULT)
+
+        val adjustedTypeface = textView.typeface
+        assertNotNull(adjustedTypeface)
+        assertEquals(Typeface.DEFAULT.weight, adjustedTypeface!!.weight)
     }
 
     companion object {

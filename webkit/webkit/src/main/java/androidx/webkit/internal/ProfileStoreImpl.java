@@ -16,12 +16,11 @@
 
 package androidx.webkit.internal;
 
+import androidx.annotation.UiThread;
 import androidx.webkit.Profile;
 import androidx.webkit.ProfileStore;
 
-import org.chromium.support_lib_boundary.ProfileBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
-import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -34,14 +33,10 @@ import java.util.List;
 public class ProfileStoreImpl implements ProfileStore {
 
     private final ProfileStoreBoundaryInterface mProfileStoreImpl;
-    private static ProfileStore sInstance;
+    private static ProfileStoreImpl sInstance;
 
     private ProfileStoreImpl(ProfileStoreBoundaryInterface profileStoreImpl) {
         mProfileStoreImpl = profileStoreImpl;
-    }
-
-    private ProfileStoreImpl() {
-        mProfileStoreImpl = null;
     }
 
     /**
@@ -49,7 +44,8 @@ public class ProfileStoreImpl implements ProfileStore {
      *
      * @return ProfileStore instance to use for managing profiles.
      */
-    public static @NonNull ProfileStore getInstance() {
+    @UiThread
+    public static @NonNull ProfileStoreImpl getInstance() {
         if (sInstance == null) {
             sInstance = new ProfileStoreImpl(
                     WebViewGlueCommunicator.getFactory().getProfileStore());
@@ -60,28 +56,26 @@ public class ProfileStoreImpl implements ProfileStore {
     @Override
     public @NonNull Profile getOrCreateProfile(@NonNull String name) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
-        if (feature.isSupportedByWebView()) {
-            return new ProfileImpl(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
-                    ProfileBoundaryInterface.class, mProfileStoreImpl.getOrCreateProfile(name)));
-        } else {
+        if (!feature.isSupportedByWebView()) {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
+
+        return ProfileImpl.forInvocationHandler(
+                mProfileStoreImpl.getOrCreateProfile(name));
     }
 
     @Override
     public @Nullable Profile getProfile(@NonNull String name) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
-        if (feature.isSupportedByWebView()) {
-            InvocationHandler profileBoundaryInterface = mProfileStoreImpl.getProfile(name);
-            if (profileBoundaryInterface != null) {
-                return new ProfileImpl(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
-                        ProfileBoundaryInterface.class, profileBoundaryInterface));
-            } else {
-                return null;
-            }
-        } else {
+        if (!feature.isSupportedByWebView()) {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
+
+        InvocationHandler invocationHandler = mProfileStoreImpl.getProfile(name);
+        if (invocationHandler == null) {
+            return null;
+        }
+        return ProfileImpl.forInvocationHandler(invocationHandler);
     }
 
     @Override
@@ -103,5 +97,4 @@ public class ProfileStoreImpl implements ProfileStore {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
     }
-
 }

@@ -29,9 +29,8 @@ import androidx.benchmark.Outputs
 import androidx.benchmark.Profiler
 import androidx.benchmark.Shell
 import androidx.benchmark.macro.MacrobenchmarkScope.Companion.Api24ContextHelper.createDeviceProtectedStorageContextCompat
-import androidx.benchmark.macro.perfetto.forceTrace
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiAutomatorTestScope
 import androidx.tracing.trace
 import java.io.File
 
@@ -48,10 +47,17 @@ public class MacrobenchmarkScope(
      * Default to true, so Activity launches go through full creation lifecycle stages, instead of
      * just resume.
      */
-    private val launchWithClearTask: Boolean
-) {
+    private val launchWithClearTask: Boolean,
+) : UiAutomatorTestScope() {
 
-    internal val instrumentation = InstrumentationRegistry.getInstrumentation()
+    /**
+     * When launching activities through UiAutomator APIs, perform a full startActivityAndWait,
+     * which includes Macrobenchmark's custom wait-for-frames logic which would be hard to
+     * reproduce/implement in UiAutomator.
+     */
+    override fun startIntentAndWait(intent: Intent) {
+        startActivityAndWait(intent)
+    }
 
     internal val context = instrumentation.context
 
@@ -103,7 +109,7 @@ public class MacrobenchmarkScope(
     internal inline fun <T> withKillMode(
         current: KillMode,
         override: KillMode,
-        block: MacrobenchmarkScope.() -> T
+        block: MacrobenchmarkScope.() -> T,
     ): T {
         check(killMode == current) { "Expected KFM = $current, was $killMode" }
         killMode = override
@@ -157,14 +163,6 @@ public class MacrobenchmarkScope(
     private val methodTraces: MutableList<Pair<String, String>> = mutableListOf()
 
     /**
-     * Get the [UiDevice] instance, to use in reading target app UI state, or interacting with the
-     * UI via touches, scrolls, or other inputs.
-     *
-     * Convenience for `UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())`
-     */
-    val device: UiDevice = UiDevice.getInstance(instrumentation)
-
-    /**
      * Start an activity, by default the launcher activity of the package, and wait until its launch
      * completes.
      *
@@ -177,15 +175,18 @@ public class MacrobenchmarkScope(
      * @throws IllegalStateException if unable to acquire intent for package.
      */
     @JvmOverloads
-    public fun startActivityAndWait(block: (Intent) -> Unit = {}) {
-        val intent =
-            context.packageManager.getLaunchIntentForPackage(packageName)
-                ?: context.packageManager.getLeanbackLaunchIntentForPackage(packageName)
-                ?: throw IllegalStateException("Unable to acquire intent for package $packageName")
+    public fun startActivityAndWait(block: (Intent) -> Unit = {}) =
+        trace("startActivityAndWait") {
+            val intent =
+                context.packageManager.getLaunchIntentForPackage(packageName)
+                    ?: context.packageManager.getLeanbackLaunchIntentForPackage(packageName)
+                    ?: throw IllegalStateException(
+                        "Unable to acquire intent for package $packageName"
+                    )
 
-        block(intent)
-        startActivityAndWait(intent)
-    }
+            block(intent)
+            startActivityAndWait(intent)
+        }
 
     /**
      * Start an activity with the provided intent, and wait until its launch completes.
@@ -197,18 +198,17 @@ public class MacrobenchmarkScope(
      *
      * @param intent Specifies which app/Activity should be launched.
      */
-    public fun startActivityAndWait(intent: Intent): Unit =
-        forceTrace("startActivityAndWait") {
-            // Must launch with new task, as we're not launching from an existing task
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (launchWithClearTask) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-
-            // Note: intent.toUri(0) produces a String that can't be parsed by `am start-activity`.
-            // intent.toUri(Intent.URI_ANDROID_APP_SCHEME) also works though.
-            startActivityImpl(intent.toUri(Intent.URI_INTENT_SCHEME))
+    public fun startActivityAndWait(intent: Intent) {
+        // Must launch with new task, as we're not launching from an existing task
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (launchWithClearTask) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
+
+        // Note: intent.toUri(0) produces a String that can't be parsed by `am start-activity`.
+        // intent.toUri(Intent.URI_ANDROID_APP_SCHEME) also works though.
+        startActivityImpl(intent.toUri(Intent.URI_INTENT_SCHEME))
+    }
 
     private fun startActivityImpl(uri: String) {
         if (
@@ -348,7 +348,7 @@ public class MacrobenchmarkScope(
      */
     @Deprecated(
         "Use the parameter-less killProcess() API instead",
-        replaceWith = ReplaceWith("killProcess()")
+        replaceWith = ReplaceWith("killProcess()"),
     )
     @Suppress("UNUSED_PARAMETER")
     fun killProcess(useKillAll: Boolean = false) {
@@ -360,12 +360,12 @@ public class MacrobenchmarkScope(
         // Method traces are only flushed is a method tracing session is active.
         flushMethodTraces()
 
-        if (killMode.flushArtProfiles && Build.VERSION.SDK_INT >= 24) {
+        if (killMode.flushArtProfiles) {
             // Flushing ART profiles will also kill the process at the end.
             killProcessAndFlushArtProfiles()
         } else {
             killProcessImpl()
-            if (killMode.clearArtRuntimeImage && Build.VERSION.SDK_INT >= 24) {
+            if (killMode.clearArtRuntimeImage) {
                 if (DeviceInfo.verifyClearsRuntimeImage) {
                     // clear the runtime image
                     CompilationMode.cmdPackageCompile(packageName, "verify")
@@ -460,7 +460,6 @@ public class MacrobenchmarkScope(
         )
     }
 
-    @RequiresApi(24)
     internal fun killProcessAndFlushArtProfiles(allowFlushWithBroadcast: Boolean = true) {
         Log.d(TAG, "Flushing ART profiles for $packageName")
         // For speed profile compilation, ART team recommended to wait for 5 secs when app
@@ -476,7 +475,7 @@ public class MacrobenchmarkScope(
                 val processCount = Shell.getRunningPidsAndProcessesForPackage(packageName).size
                 ProfileInstallBroadcast.SaveProfileResult(
                     processCount = processCount,
-                    error = if (processCount == 0) null else "skipped"
+                    error = if (processCount == 0) null else "skipped",
                 )
             }
         if (saveResult.processCount > 0) {
@@ -484,7 +483,7 @@ public class MacrobenchmarkScope(
                 if (Shell.isSessionRooted()) {
                     Log.d(
                         TAG,
-                        "Unable to saveProfile with profileinstaller ($saveResult), trying kill"
+                        "Unable to saveProfile with profileinstaller ($saveResult), trying kill",
                     )
                     val response =
                         Shell.executeScriptCaptureStdoutStderr("killall -s SIGUSR1 $packageName")
@@ -638,7 +637,7 @@ public class MacrobenchmarkScope(
                 maxInitialFlushWaitIterations = 50, // up to 2.5 sec of waiting on flush to start
                 maxStableFlushWaitIterations = 50, // up to 2.5 sec of waiting on flush to complete
                 stableIterations = 8, // 400ms of stability after flush starts
-                pollDurationMs = 50L
+                pollDurationMs = 50L,
             ) {
                 Shell.executeScriptSilent("am profile stop $packageName")
             }
@@ -675,13 +674,9 @@ public class MacrobenchmarkScope(
                 if (Build.VERSION.SDK_INT >= 34) {
                     // U switched to cache dir, so it's not deleted on each app update
                     context.createDeviceProtectedStorageContextCompat().cacheDir
-                } else if (Build.VERSION.SDK_INT >= 24) {
+                } else {
                     // shaders started using device protected storage context once it was added in N
                     context.createDeviceProtectedStorageContextCompat().codeCacheDir
-                } else {
-                    // getCodeCacheDir was added in L, but not used by platform for shaders until M
-                    // as M is minApi of this library, that's all we support here
-                    context.codeCacheDir
                 }
             return shaderDirectory.absolutePath.replace(context.packageName, packageName)
         }
@@ -691,7 +686,6 @@ public class MacrobenchmarkScope(
             return "/data/local/tmp/$packageName-method.trace"
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         internal object Api24ContextHelper {
             fun Context.createDeviceProtectedStorageContextCompat(): Context =
                 createDeviceProtectedStorageContext()

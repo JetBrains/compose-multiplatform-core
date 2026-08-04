@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert
@@ -118,7 +119,7 @@ class RxWorkerTest {
     private fun createWorkerParams(
         executor: Executor = SynchronousExecutor(),
         progressUpdater: ProgressUpdater = mock(ProgressUpdater::class.java),
-        foregroundUpdater: ForegroundUpdater = mock(ForegroundUpdater::class.java)
+        foregroundUpdater: ForegroundUpdater = mock(ForegroundUpdater::class.java),
     ) =
         WorkerParameters(
             UUID.randomUUID(),
@@ -132,7 +133,7 @@ class RxWorkerTest {
             InstantWorkTaskExecutor(),
             DefaultWorkerFactory,
             progressUpdater,
-            foregroundUpdater
+            foregroundUpdater,
         )
 
     private fun Single<ListenableWorker.Result>.toWorker(
@@ -147,6 +148,7 @@ class RxWorkerTest {
 
         private val mSynchronousExecutor = SynchronousExecutor()
         private val mSerialExecutor = SerialExecutorImpl(mSynchronousExecutor)
+        private val workCoroutineScope = CoroutineScope(taskCoroutineDispatcher)
 
         override fun getMainThreadExecutor(): Executor {
             return mSynchronousExecutor
@@ -155,5 +157,7 @@ class RxWorkerTest {
         override fun getSerialTaskExecutor(): SerialExecutorImpl {
             return mSerialExecutor
         }
+
+        override fun getCoroutineScope(): CoroutineScope = workCoroutineScope
     }
 }

@@ -18,14 +18,14 @@ package androidx.compose.ui.graphics
 
 import androidx.compose.ui.geometry.Offset
 
-actual class Shader
+public actual class Shader
 
 internal actual fun ActualLinearGradientShader(
     from: Offset,
     to: Offset,
     colors: List<Color>,
     colorStops: List<Float>?,
-    tileMode: TileMode
+    tileMode: TileMode,
 ): Shader = implementedInJetBrainsFork()
 
 internal actual fun ActualRadialGradientShader(
@@ -33,17 +33,26 @@ internal actual fun ActualRadialGradientShader(
     radius: Float,
     colors: List<Color>,
     colorStops: List<Float>?,
-    tileMode: TileMode
+    tileMode: TileMode,
 ): Shader = implementedInJetBrainsFork()
 
 internal actual fun ActualSweepGradientShader(
     center: Offset,
     colors: List<Color>,
-    colorStops: List<Float>?
+    colorStops: List<Float>?,
 ): Shader = implementedInJetBrainsFork()
 
 internal actual fun ActualImageShader(
     image: ImageBitmap,
     tileModeX: TileMode,
-    tileModeY: TileMode
+    tileModeY: TileMode,
 ): Shader = implementedInJetBrainsFork()
+
+internal actual fun ActualCompositeShader(dst: Shader, src: Shader, blendMode: BlendMode): Shader =
+    implementedInJetBrainsFork()
+
+internal actual class TransformShader {
+    actual var shader: Shader? = implementedInJetBrainsFork()
+
+    actual fun transform(matrix: Matrix?): Unit = implementedInJetBrainsFork()
+}

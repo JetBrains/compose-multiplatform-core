@@ -48,8 +48,8 @@ class MetadataConvertersTest {
                     Device(
                         manufacturer = "Awesome-watches",
                         model = "AwesomeOne",
-                        type = Device.TYPE_WATCH
-                    )
+                        type = Device.TYPE_WATCH,
+                    ),
             )
 
         with(metadata.toPlatformMetadata()) {
@@ -82,7 +82,7 @@ class MetadataConvertersTest {
                 dataOrigin = DataOrigin("origin package name"),
                 lastModifiedTime = Instant.ofEpochMilli(6666L),
                 clientRecordId = "clientId",
-                clientRecordVersion = 2L
+                clientRecordVersion = 2L,
             )
 
         with(metadata.toPlatformMetadata()) {
@@ -132,7 +132,7 @@ class MetadataConvertersTest {
                     Device(
                         manufacturer = "AwesomeTech",
                         model = "AwesomeTwo",
-                        type = Device.TYPE_WATCH
+                        type = Device.TYPE_WATCH,
                     )
                 )
         }

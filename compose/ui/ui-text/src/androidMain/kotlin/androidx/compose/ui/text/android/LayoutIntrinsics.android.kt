@@ -29,20 +29,11 @@ import java.text.BreakIterator
 import java.util.PriorityQueue
 import kotlin.math.ceil
 
-/**
- * Flag for applying the fix for [b/346918500](https://issuetracker.google.com/346918500).
- *
- * If true, this will allocate a new [SpannableString] if there are spans that must be removed
- * before measuring any intrinsic width.
- */
-@Suppress("MayBeConstant") // Don't inline so folks can R8 assumevalues it
-private val stripNonMetricAffectingCharSpans: Boolean = true
-
 /** Computes and caches the text layout intrinsic values such as min/max width. */
 internal class LayoutIntrinsics(
     private val charSequence: CharSequence,
     private val textPaint: TextPaint,
-    @LayoutCompat.TextDirection private val textDirectionHeuristic: Int
+    @LayoutCompat.TextDirection private val textDirectionHeuristic: Int,
 ) {
 
     private var _maxIntrinsicWidth: Float = Float.NaN
@@ -54,12 +45,8 @@ internal class LayoutIntrinsics(
     private val charSequenceForIntrinsicWidth: CharSequence
         get() =
             if (_charSequenceForIntrinsicWidth == null) {
-                if (stripNonMetricAffectingCharSpans) {
-                    stripNonMetricAffectingCharacterStyleSpans(charSequence).also {
-                        _charSequenceForIntrinsicWidth = it
-                    }
-                } else {
-                    charSequence
+                stripNonMetricAffectingCharacterStyleSpans(charSequence).also {
+                    _charSequenceForIntrinsicWidth = it
                 }
             } else {
                 _charSequenceForIntrinsicWidth!!
@@ -107,24 +94,18 @@ internal class LayoutIntrinsics(
         // 10 is just a random number that limits the size of the candidate list
         val heapSize = 10
         // min heap that will hold [heapSize] many words with max length
-        val longestWordCandidates =
-            PriorityQueue(
-                heapSize,
-                Comparator<Pair<Int, Int>> { left, right ->
-                    (left.second - left.first) - (right.second - right.first)
-                }
-            )
+        val longestWordCandidates = PriorityQueue(heapSize, IntRangeComparator)
 
         var start = 0
         var end = iterator.next()
         while (end != BreakIterator.DONE) {
             if (longestWordCandidates.size < heapSize) {
-                longestWordCandidates.add(Pair(start, end))
+                longestWordCandidates.add(IntRange(start, end))
             } else {
                 longestWordCandidates.peek()?.let { minPair ->
-                    if ((minPair.second - minPair.first) < (end - start)) {
+                    if ((minPair.last - minPair.first) < (end - start)) {
                         longestWordCandidates.poll()
-                        longestWordCandidates.add(Pair(start, end))
+                        longestWordCandidates.add(IntRange(start, end))
                     }
                 }
             }
@@ -133,8 +114,11 @@ internal class LayoutIntrinsics(
             end = iterator.next()
         }
 
-        return if (longestWordCandidates.isEmpty()) 0f
-        else longestWordCandidates.maxOf { (start, end) -> getDesiredWidth(start, end) }
+        return if (longestWordCandidates.isEmpty()) {
+            0f
+        } else {
+            longestWordCandidates.maxOf { range -> getDesiredWidth(range.first, range.last) }
+        }
     }
 
     /**
@@ -171,7 +155,7 @@ internal class LayoutIntrinsics(
 
     private fun getDesiredWidth(
         start: Int = 0,
-        end: Int = charSequenceForIntrinsicWidth.length
+        end: Int = charSequenceForIntrinsicWidth.length,
     ): Float = Layout.getDesiredWidth(charSequenceForIntrinsicWidth, start, end, textPaint)
 }
 
@@ -216,7 +200,7 @@ private fun stripNonMetricAffectingCharacterStyleSpans(charSequence: CharSequenc
 private fun shouldIncreaseMaxIntrinsic(
     desiredWidth: Float,
     charSequence: CharSequence,
-    textPaint: TextPaint
+    textPaint: TextPaint,
 ): Boolean {
     return desiredWidth != 0f &&
         (charSequence is Spanned &&
@@ -224,3 +208,6 @@ private fun shouldIncreaseMaxIntrinsic(
                 charSequence.hasSpan(LetterSpacingSpanEm::class.java)) ||
             textPaint.letterSpacing != 0f)
 }
+
+private val IntRangeComparator =
+    Comparator<IntRange> { left, right -> (left.last - left.first) - (right.last - right.first) }

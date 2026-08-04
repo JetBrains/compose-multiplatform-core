@@ -152,7 +152,7 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
         end: Int,
         text: CharSequence,
         textStart: Int = 0,
-        textEnd: Int = text.length
+        textEnd: Int = text.length,
     ) {
         val textLength = textEnd - textStart
         makeSureAvailableSpace(textLength - (end - start))
@@ -174,7 +174,7 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
     }
 
     /**
-     * The lengh of this gap buffer.
+     * The length of this gap buffer.
      *
      * This doesn't include internal hidden gap length.
      */
@@ -226,7 +226,7 @@ internal class PartialGapBuffer(text: CharSequence) : CharSequence {
         end: Int,
         text: CharSequence,
         textStart: Int = 0,
-        textEnd: Int = text.length
+        textEnd: Int = text.length,
     ) {
         requirePrecondition(start <= end) { "start=$start > end=$end" }
         requirePrecondition(textStart <= textEnd) { "textStart=$textStart > textEnd=$textEnd" }
@@ -250,7 +250,7 @@ internal class PartialGapBuffer(text: CharSequence) : CharSequence {
                 charArray,
                 charArray.size - rightCopyCount,
                 end,
-                end + rightCopyCount
+                end + rightCopyCount,
             )
 
             // Copy given text into buffer
@@ -260,7 +260,7 @@ internal class PartialGapBuffer(text: CharSequence) : CharSequence {
                 GapBuffer(
                     charArray,
                     initGapStart = leftCopyCount + textLength,
-                    initGapEnd = charArray.size - rightCopyCount
+                    initGapEnd = charArray.size - rightCopyCount,
                 )
             bufStart = start - leftCopyCount
             bufEnd = end + rightCopyCount
@@ -301,7 +301,9 @@ internal class PartialGapBuffer(text: CharSequence) : CharSequence {
 
     override fun toString(): String {
         val b = buffer ?: return text.toString()
-        val sb = StringBuilder()
+        val length = bufStart + b.length() + text.length - bufEnd
+
+        val sb = StringBuilder(length)
         sb.append(text, 0, bufStart)
         b.append(sb)
         sb.append(text, bufEnd, text.length)

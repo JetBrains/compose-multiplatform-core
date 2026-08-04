@@ -1,0 +1,214 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.pdf.selection
+
+import android.annotation.SuppressLint
+import android.os.Parcel
+import android.os.Parcelable
+import android.util.SparseArray
+import androidx.core.util.isEmpty
+import androidx.pdf.PdfPoint
+import androidx.pdf.content.PageSelection
+import androidx.pdf.leftCenter
+import androidx.pdf.rightCenter
+import androidx.pdf.selection.model.ImageSelection
+import androidx.pdf.util.pdfPointFromParcel
+import androidx.pdf.util.toViewSelection
+import androidx.pdf.util.writeToParcel
+
+/** Value class containing all data necessary to display UI related to content selection */
+@SuppressLint("BanParcelableUsage")
+internal class SelectionModel(
+    val documentSelection: DocumentSelection,
+    val startBoundary: UiSelectionBoundary,
+    val endBoundary: UiSelectionBoundary,
+    val isOcr: Boolean = false,
+    val isPlaceholder: Boolean = false,
+) : Parcelable {
+    constructor(
+        parcel: Parcel
+    ) : this(
+        documentSelection = DocumentSelection.selectionValueFromParcel(parcel = parcel),
+        startBoundary = UiSelectionBoundary(parcel),
+        endBoundary = UiSelectionBoundary(parcel),
+        isOcr = parcel.readInt() == 1,
+        isPlaceholder = parcel.readInt() == 1,
+    )
+
+    override fun describeContents(): Int = 0
+
+    override fun writeToParcel(dest: Parcel, flags: Int) {
+        documentSelection.writeToParcel(dest, flags)
+        startBoundary.writeToParcel(dest, flags)
+        endBoundary.writeToParcel(dest, flags)
+        dest.writeInt(if (isOcr) 1 else 0)
+        dest.writeInt(if (isPlaceholder) 1 else 0)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || other !is SelectionModel) return false
+
+        if (other.documentSelection != documentSelection) return false
+        if (other.startBoundary != startBoundary) return false
+        if (other.endBoundary != endBoundary) return false
+        if (other.isOcr != isOcr) return false
+        if (other.isPlaceholder != isPlaceholder) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = documentSelection.hashCode()
+        result = 31 * result + startBoundary.hashCode()
+        result = 31 * result + endBoundary.hashCode()
+        result = 31 * result + isOcr.hashCode()
+        result = 31 * result + isPlaceholder.hashCode()
+        return result
+    }
+
+    fun toPlaceholder(): SelectionModel {
+        if (isPlaceholder) return this
+        val selection = documentSelection.selection
+        if (selection is ImageSelection) {
+            // ImageSelection already strips the bitmap and converts to a 20-byte placeholder
+            // in writeToParcel / imageSelectionFromParcel during IPC.
+            return this
+        }
+        return SelectionModel(
+            documentSelection = DocumentSelection(SparseArray()),
+            startBoundary = startBoundary,
+            endBoundary = endBoundary,
+            isOcr = isOcr,
+            isPlaceholder = true,
+        )
+    }
+
+    companion object {
+        /**
+         * Creates a [SelectionModel] from multiple selections from different pages.
+         *
+         * @param pageSelections New [androidx.pdf.content.PageSelection] objects on different
+         *   pages.
+         * @param isOcr Whether the selection was made using OCR.
+         * @return A [SelectionModel] that encompasses all selections, or `null` if none were found.
+         */
+        fun create(pageSelections: List<PageSelection?>, isOcr: Boolean = false): SelectionModel? {
+            val selectedContents = SparseArray<List<Selection>>()
+            pageSelections.forEach { newPageSelection ->
+                if (newPageSelection != null) {
+                    selectedContents[newPageSelection.page] = newPageSelection.toViewSelection()
+                }
+            }
+
+            if (selectedContents.isEmpty()) return null
+
+            val selection = DocumentSelection(selectedContents)
+            val selectionBounds = selection.getSelectionEndpoints()
+
+            val isRtl = pageSelections.firstOrNull()?.start?.isRtl ?: false
+            return SelectionModel(
+                selection,
+                UiSelectionBoundary(selectionBounds.first, isRtl),
+                UiSelectionBoundary(selectionBounds.second, isRtl),
+                isOcr = isOcr,
+            )
+        }
+
+        /**
+         * Creates a [SelectionModel] from the provided [selection] on a specific page.
+         *
+         * @param pageNum The page number where the selection exists.
+         * @param selection The selected content.
+         * @param isRtl Whether the selection direction is Right-to-Left.
+         * @param isOcr Whether the selection was made using OCR.
+         * @return A [SelectionModel] representing the content selection, or `null` if the selection
+         *   bounds are empty.
+         */
+        fun create(
+            pageNum: Int,
+            selection: Selection,
+            isRtl: Boolean,
+            isOcr: Boolean = false,
+        ): SelectionModel? {
+            if (selection.bounds.isEmpty()) return null
+
+            val selectedContents =
+                SparseArray<List<Selection>>(1).apply { put(pageNum, listOf(selection)) }
+
+            return SelectionModel(
+                DocumentSelection(selectedContents),
+                UiSelectionBoundary(selection.bounds.first().leftCenter, isRtl),
+                UiSelectionBoundary(selection.bounds.last().rightCenter, isRtl),
+                isOcr = isOcr,
+            )
+        }
+
+        @JvmField
+        val CREATOR =
+            object : Parcelable.Creator<SelectionModel> {
+                override fun createFromParcel(parcel: Parcel): SelectionModel {
+                    return SelectionModel(parcel)
+                }
+
+                override fun newArray(size: Int): Array<SelectionModel?> {
+                    return arrayOfNulls(size)
+                }
+            }
+    }
+}
+
+/**
+ * Represents a selection boundary that includes the page on which it exists and the point at which
+ * it exists (as [PdfPoint]), as well as the direction of the selection ([isRtl] is true if the
+ * selection was made in a right-to-left direction).
+ */
+@SuppressLint("BanParcelableUsage")
+internal class UiSelectionBoundary(val location: PdfPoint, val isRtl: Boolean) : Parcelable {
+    constructor(parcel: Parcel) : this(pdfPointFromParcel(parcel), parcel.readInt() == 1)
+
+    override fun describeContents(): Int = 0
+
+    override fun writeToParcel(dest: Parcel, flags: Int) {
+        location.writeToParcel(dest)
+        dest.writeInt(if (isRtl) 1 else 0)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || other !is UiSelectionBoundary) return false
+
+        if (other.location != this.location) return false
+        if (other.isRtl != this.isRtl) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = location.hashCode()
+        result = 31 * result + isRtl.hashCode()
+        return result
+    }
+
+    companion object CREATOR : Parcelable.Creator<UiSelectionBoundary> {
+        override fun createFromParcel(parcel: Parcel): UiSelectionBoundary {
+            return UiSelectionBoundary(parcel)
+        }
+
+        override fun newArray(size: Int): Array<UiSelectionBoundary?> {
+            return arrayOfNulls(size)
+        }
+    }
+}

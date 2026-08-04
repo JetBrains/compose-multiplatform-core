@@ -81,7 +81,7 @@ import kotlin.math.sqrt
  * @param elevation the elevation of this TopAppBar.
  */
 @Composable
-fun TopAppBar(
+public fun TopAppBar(
     title: @Composable () -> Unit,
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
@@ -98,7 +98,7 @@ fun TopAppBar(
         AppBarDefaults.ContentPadding,
         RectangleShape,
         windowInsets,
-        modifier
+        modifier,
     ) {
         if (navigationIcon == null) {
             Spacer(TitleInsetWithoutIcon)
@@ -106,7 +106,7 @@ fun TopAppBar(
             Row(TitleIconModifier, verticalAlignment = Alignment.CenterVertically) {
                 CompositionLocalProvider(
                     LocalContentAlpha provides ContentAlpha.high,
-                    content = navigationIcon
+                    content = navigationIcon,
                 )
             }
         }
@@ -115,7 +115,7 @@ fun TopAppBar(
             ProvideTextStyle(value = MaterialTheme.typography.h6) {
                 CompositionLocalProvider(
                     LocalContentAlpha provides ContentAlpha.high,
-                    content = title
+                    content = title,
                 )
             }
         }
@@ -125,7 +125,7 @@ fun TopAppBar(
                 Modifier.fillMaxHeight(),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
-                content = actions
+                content = actions,
             )
         }
     }
@@ -158,14 +158,14 @@ fun TopAppBar(
  * @param elevation the elevation of this TopAppBar.
  */
 @Composable
-fun TopAppBar(
+public fun TopAppBar(
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
-    elevation: Dp = AppBarDefaults.TopAppBarElevation
+    elevation: Dp = AppBarDefaults.TopAppBarElevation,
 ) {
     TopAppBar(
         title,
@@ -175,7 +175,7 @@ fun TopAppBar(
         actions,
         backgroundColor,
         contentColor,
-        elevation
+        elevation,
     )
 }
 
@@ -211,14 +211,14 @@ fun TopAppBar(
  *   inside will be placed horizontally.
  */
 @Composable
-fun TopAppBar(
+public fun TopAppBar(
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = AppBarDefaults.TopAppBarElevation,
     contentPadding: PaddingValues = AppBarDefaults.ContentPadding,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     AppBar(
         backgroundColor,
@@ -228,7 +228,7 @@ fun TopAppBar(
         RectangleShape,
         windowInsets,
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -260,13 +260,13 @@ fun TopAppBar(
  *   inside will be placed horizontally.
  */
 @Composable
-fun TopAppBar(
+public fun TopAppBar(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = AppBarDefaults.TopAppBarElevation,
     contentPadding: PaddingValues = AppBarDefaults.ContentPadding,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     AppBar(
         backgroundColor,
@@ -276,7 +276,7 @@ fun TopAppBar(
         RectangleShape,
         ZeroInsets,
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -325,7 +325,7 @@ fun TopAppBar(
  *   inside will be placed horizontally.
  */
 @Composable
-fun BottomAppBar(
+public fun BottomAppBar(
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
@@ -333,7 +333,7 @@ fun BottomAppBar(
     cutoutShape: Shape? = null,
     elevation: Dp = AppBarDefaults.BottomAppBarElevation,
     contentPadding: PaddingValues = AppBarDefaults.ContentPadding,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val fabPlacement = LocalFabPlacement.current
     val shape =
@@ -350,7 +350,7 @@ fun BottomAppBar(
         shape,
         windowInsets,
         modifier,
-        content
+        content,
     )
 }
 
@@ -395,14 +395,14 @@ fun BottomAppBar(
  *   inside will be placed horizontally.
  */
 @Composable
-fun BottomAppBar(
+public fun BottomAppBar(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.primarySurface,
     contentColor: Color = contentColorFor(backgroundColor),
     cutoutShape: Shape? = null,
     elevation: Dp = AppBarDefaults.BottomAppBarElevation,
     contentPadding: PaddingValues = AppBarDefaults.ContentPadding,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val fabPlacement = LocalFabPlacement.current
     val shape =
@@ -419,26 +419,26 @@ fun BottomAppBar(
         shape,
         ZeroInsets,
         modifier,
-        content
+        content,
     )
 }
 
 /** Contains default values used for [TopAppBar] and [BottomAppBar]. */
-object AppBarDefaults {
+public object AppBarDefaults {
     // TODO: clarify elevation in surface mapping - spec says 0.dp but it appears to have an
     //  elevation overlay applied in dark theme examples.
     /** Default elevation used for [TopAppBar]. */
-    val TopAppBarElevation = 4.dp
+    public val TopAppBarElevation: Dp = 4.dp
 
     /** Default elevation used for [BottomAppBar]. */
-    val BottomAppBarElevation = 8.dp
+    public val BottomAppBarElevation: Dp = 8.dp
 
     /** Default padding used for [TopAppBar] and [BottomAppBar]. */
-    val ContentPadding =
+    public val ContentPadding: PaddingValues =
         PaddingValues(start = AppBarHorizontalPadding, end = AppBarHorizontalPadding)
 
     /** Recommended insets to be used and consumed by the top app bars */
-    val topAppBarWindowInsets: WindowInsets
+    public val topAppBarWindowInsets: WindowInsets
         @Composable
         get() =
             WindowInsets.systemBarsForVisualComponents.only(
@@ -446,7 +446,7 @@ object AppBarDefaults {
             )
 
     /** Recommended insets to be used and consumed by the bottom app bars */
-    val bottomAppBarWindowInsets: WindowInsets
+    public val bottomAppBarWindowInsets: WindowInsets
         @Composable
         get() {
             return WindowInsets.systemBarsForVisualComponents.only(
@@ -467,7 +467,7 @@ private data class BottomAppBarCutoutShape(val cutoutShape: Shape, val fabPlacem
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         val boundingRectangle = Path().apply { addRect(Rect(0f, 0f, size.width, size.height)) }
         val path =
@@ -490,7 +490,7 @@ private data class BottomAppBarCutoutShape(val cutoutShape: Shape, val fabPlacem
         val cutoutSize =
             Size(
                 width = fabPlacement.width + (cutoutOffset * 2),
-                height = fabPlacement.height + (cutoutOffset * 2)
+                height = fabPlacement.height + (cutoutOffset * 2),
             )
 
         val cutoutStartX = fabPlacement.left - cutoutOffset
@@ -533,7 +533,7 @@ private data class BottomAppBarCutoutShape(val cutoutShape: Shape, val fabPlacem
         cutoutEndPosition: Float,
         cutoutRadius: Float,
         roundedEdgeRadius: Float,
-        verticalOffset: Float
+        verticalOffset: Float,
     ) {
         // Where the cutout intersects with the app bar, as if the cutout is not vertically aligned
         // with the app bar, the intersect will not be equal to the radius of the circle.
@@ -572,7 +572,7 @@ private data class BottomAppBarCutoutShape(val cutoutShape: Shape, val fabPlacem
             appBarInterceptStartX - controlPointOffset,
             0f,
             curveInterceptStartX,
-            curveInterceptY
+            curveInterceptY,
         )
         lineTo(curveInterceptEndX, curveInterceptY)
         quadraticTo(appBarInterceptEndX + controlPointOffset, 0f, roundedEdgeEndX, 0f)
@@ -604,7 +604,7 @@ private data class BottomAppBarCutoutShape(val cutoutShape: Shape, val fabPlacem
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun calculateCutoutCircleYIntercept(
     cutoutRadius: Float,
-    verticalOffset: Float
+    verticalOffset: Float,
 ): Float {
     return -sqrt(square(cutoutRadius) - square(verticalOffset))
 }
@@ -632,7 +632,7 @@ internal inline fun calculateCutoutCircleYIntercept(
 internal fun calculateRoundedEdgeIntercept(
     controlPointX: Float,
     verticalOffset: Float,
-    radius: Float
+    radius: Float,
 ): Pair<Float, Float> {
     val a = controlPointX
     val b = verticalOffset
@@ -696,14 +696,14 @@ private fun AppBar(
     shape: Shape,
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Surface(
         color = backgroundColor,
         contentColor = contentColor,
         elevation = elevation,
         shape = shape,
-        modifier = modifier
+        modifier = modifier,
     ) {
         CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
             Row(
@@ -713,23 +713,27 @@ private fun AppBar(
                     .height(AppBarHeight),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
-                content = content
+                content = content,
             )
         }
     }
 }
 
-private val AppBarHeight = 56.dp
+private val AppBarHeight
+    get() = 56.dp
 // TODO: this should probably be part of the touch target of the start and end icons, clarify this
-private val AppBarHorizontalPadding = 4.dp
+private val AppBarHorizontalPadding
+    get() = 4.dp
 // Start inset for the title when there is no navigation icon provided
 private val TitleInsetWithoutIcon = Modifier.width(16.dp - AppBarHorizontalPadding)
 // Start inset for the title when there is a navigation icon provided
 private val TitleIconModifier = Modifier.fillMaxHeight().width(72.dp - AppBarHorizontalPadding)
 
 // The gap on all sides between the FAB and the cutout
-private val BottomAppBarCutoutOffset = 8.dp
+private val BottomAppBarCutoutOffset
+    get() = 8.dp
 // How far from the notch the rounded edges start
-private val BottomAppBarRoundedEdgeRadius = 4.dp
+private val BottomAppBarRoundedEdgeRadius
+    get() = 4.dp
 
 private val ZeroInsets = WindowInsets(0.dp)

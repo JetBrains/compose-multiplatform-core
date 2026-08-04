@@ -16,10 +16,11 @@
 
 package androidx.xr.compose.material3
 
-import androidx.compose.material3.BasicAlertDialogOverride
-import androidx.compose.material3.BasicAlertDialogOverrideScope
-import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialDialogProperties
 
@@ -45,30 +46,9 @@ import androidx.xr.compose.spatial.SpatialDialogProperties
 public fun BasicAlertDialog(
     onDismissRequest: () -> Unit,
     properties: SpatialDialogProperties = SpatialDialogProperties(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    SpatialDialog(onDismissRequest = onDismissRequest, properties = properties, content = content)
-}
-
-/**
- * [BasicAlertDialogOverride] that uses the XR-specific [BasicAlertDialog].
- *
- * Note that when using this override, any modifiers passed in to the 2D composable are ignored.
- */
-@ExperimentalMaterial3XrApi
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
-internal object XrBasicAlertDialogOverride : BasicAlertDialogOverride {
-    @Composable
-    override fun BasicAlertDialogOverrideScope.BasicAlertDialog() {
-        BasicAlertDialog(
-            onDismissRequest = onDismissRequest,
-            properties =
-                SpatialDialogProperties(
-                    dismissOnBackPress = properties.dismissOnBackPress,
-                    dismissOnClickOutside = properties.dismissOnClickOutside,
-                    usePlatformDefaultWidth = properties.usePlatformDefaultWidth
-                ),
-            content = content
-        )
+    SpatialDialog(onDismissRequest = onDismissRequest, properties = properties) {
+        Box(modifier = Modifier.height(IntrinsicSize.Min)) { content() }
     }
 }

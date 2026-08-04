@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
@@ -50,9 +50,7 @@ class ArcProgressIndicatorTest {
         var expectedColor = Color.Unspecified
 
         setContentWithTheme {
-            ArcProgressIndicator(
-                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
-            )
+            ArcProgressIndicator(modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG))
             expectedColor = MaterialTheme.colorScheme.primary
         }
 
@@ -70,7 +68,7 @@ class ArcProgressIndicatorTest {
         setContentWithTheme {
             ArcProgressIndicator(
                 modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
-                colors = ProgressIndicatorDefaults.colors(indicatorColor = customColor)
+                colors = ProgressIndicatorDefaults.colors(indicatorColor = customColor),
             )
         }
 
@@ -86,9 +84,7 @@ class ArcProgressIndicatorTest {
         var expectedColor = Color.Unspecified
 
         setContentWithTheme {
-            ArcProgressIndicator(
-                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
-            )
+            ArcProgressIndicator(modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG))
             expectedColor = MaterialTheme.colorScheme.surfaceContainer
         }
 
@@ -106,7 +102,7 @@ class ArcProgressIndicatorTest {
         setContentWithTheme {
             ArcProgressIndicator(
                 modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
-                colors = ProgressIndicatorDefaults.colors(trackColor = customColor)
+                colors = ProgressIndicatorDefaults.colors(trackColor = customColor),
             )
         }
 

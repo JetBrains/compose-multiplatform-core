@@ -45,7 +45,7 @@ class KotlinPluginTest : BasePluginTest() {
                     id('kotlin-android')
                     id('androidx.navigation.safeargs.kotlin')
                 }
-            """
+                """
                     .trimIndent(),
             suffix =
                 """
@@ -73,7 +73,7 @@ class KotlinPluginTest : BasePluginTest() {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
         runGradle("assembleDebug").assertSuccessfulTask("assembleDebug")
 

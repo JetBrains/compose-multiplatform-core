@@ -30,7 +30,9 @@ import androidx.compose.ui.unit.Density
  *
  * @sample androidx.compose.ui.samples.LayoutTagChildrenUsage
  */
-@Stable fun Modifier.layoutId(layoutId: Any) = this then LayoutIdElement(layoutId = layoutId)
+@Stable
+public fun Modifier.layoutId(layoutId: Any): Modifier =
+    this then LayoutIdElement(layoutId = layoutId)
 
 private data class LayoutIdElement(private val layoutId: Any) :
     ModifierNodeElement<LayoutIdModifier>() {
@@ -51,9 +53,8 @@ private data class LayoutIdElement(private val layoutId: Any) :
  * will act as parent data, and can be used for example by parent layouts to associate composable
  * children to [Measurable]s when doing layout, as shown below.
  */
-internal class LayoutIdModifier(
-    layoutId: Any,
-) : ParentDataModifierNode, LayoutIdParentData, Modifier.Node() {
+internal class LayoutIdModifier(layoutId: Any) :
+    ParentDataModifierNode, LayoutIdParentData, Modifier.Node() {
 
     override var layoutId: Any = layoutId
         internal set
@@ -68,8 +69,8 @@ internal class LayoutIdModifier(
  * value implements this interface, it can then be returned when querying [Measurable.layoutId] for
  * the corresponding child.
  */
-interface LayoutIdParentData {
-    val layoutId: Any
+public interface LayoutIdParentData {
+    public val layoutId: Any
 }
 
 /**
@@ -81,5 +82,5 @@ interface LayoutIdParentData {
  *
  * @sample androidx.compose.ui.samples.LayoutTagChildrenUsage
  */
-val Measurable.layoutId: Any?
+public val Measurable.layoutId: Any?
     get() = (parentData as? LayoutIdParentData)?.layoutId

@@ -217,9 +217,10 @@ public final class TileBuilders {
         private Version() {}
 
         /** The current version of the Tiles schema in use. */
-        public static final VersionInfo CURRENT = VersionInfo.newBuilder()
-                .setMajor(VersionBuilders.VersionInfo.CURRENT.getMajor())
-                .setMinor(VersionBuilders.VersionInfo.CURRENT.getMinor())
-                .build();
+        public static final VersionInfo CURRENT =
+                VersionInfo.newBuilder()
+                        .setMajor(VersionBuilders.VersionInfo.CURRENT.getMajor())
+                        .setMinor(VersionBuilders.VersionInfo.CURRENT.getMinor())
+                        .build();
     }
 }

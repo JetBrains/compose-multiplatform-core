@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(androidx.core.telecom.util.ExperimentalAppActions::class)
+
 package androidx.core.telecom.test
 
 import android.net.Uri
@@ -32,7 +34,6 @@ import androidx.core.telecom.test.utils.VoipConnectionService
 import androidx.core.telecom.test.utils.VoipConnectionService.Companion.DEFAULT_ADDRESS
 import androidx.core.telecom.test.utils.VoipConnectionService.Companion.SINGLETON_PHONE_ACCOUNT_HANDLE
 import androidx.core.telecom.test.utils.VoipConnectionService.VoipPendingConnectionRequest
-import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -65,7 +66,7 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
                 DEFAULT_ADDRESS,
                 CallAttributesCompat.DIRECTION_OUTGOING,
                 CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-                ALL_CALL_CAPABILITIES
+                ALL_CALL_CAPABILITIES,
             )
     }
 
@@ -97,7 +98,6 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
      * This test verifies that the meeting summary extension can successfully update the participant
      * count and active speaker information in the InCallService.
      */
-    @OptIn(ExperimentalAppActions::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @LargeTest
     @Test
@@ -143,7 +143,6 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
      * This test verifies that the call icon extension can successfully update the call image URI in
      * the InCallService.
      */
-    @OptIn(ExperimentalAppActions::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @LargeTest
     @Test
@@ -184,7 +183,6 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
      * call silence state in the InCallService and that the InCallService can request updates to the
      * local call silence state.
      */
-    @OptIn(ExperimentalAppActions::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @LargeTest
     @Test
@@ -242,13 +240,13 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
      */
     private suspend fun addVoipCall(
         callAttributes: CallAttributesCompat,
-        deferredConnection: CompletableDeferred<AutoVoipConnection>
+        deferredConnection: CompletableDeferred<AutoVoipConnection>,
     ): AutoVoipConnection {
         val request = VoipPendingConnectionRequest(callAttributes, deferredConnection)
         mAutoConnectionService.createConnectionRequest(
             mTelecomManager,
             SINGLETON_PHONE_ACCOUNT_HANDLE,
-            request
+            request,
         )
         deferredConnection.await()
         val connection = deferredConnection.getCompleted()
@@ -258,7 +256,6 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
         return connection
     }
 
-    @OptIn(ExperimentalAppActions::class)
     internal class CachedCallIcon(scope: CallExtensionScope) {
         private val callIconUri: MutableStateFlow<Uri> = MutableStateFlow(Uri.EMPTY)
         val extension = scope.addCallIconSupport(callIconUri::emit)
@@ -269,14 +266,13 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
         }
     }
 
-    @OptIn(ExperimentalAppActions::class)
     internal class CachedMeetingSummary(scope: CallExtensionScope) {
         private val participantState = MutableStateFlow<Int>(0)
         private val activeParticipantState = MutableStateFlow<CharSequence?>("")
         val extension =
             scope.addMeetingSummaryExtension(
                 onCurrentSpeakerChanged = activeParticipantState::emit,
-                onParticipantCountChanged = participantState::emit
+                onParticipantCountChanged = participantState::emit,
             )
 
         suspend fun waitForParticipantCount(expected: Int) {
@@ -290,12 +286,15 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
         }
     }
 
-    @OptIn(ExperimentalAppActions::class)
     internal class CachedLocalSilence(scope: CallExtensionScope) {
         private val isLocallySilenced = MutableStateFlow(false)
+        private val isAuthoritativelyMuted = MutableStateFlow(false)
 
         val extension =
-            scope.addLocalCallSilenceExtension(onIsLocallySilencedUpdated = isLocallySilenced::emit)
+            scope.addLocalCallSilenceExtension(
+                onIsLocallySilencedUpdated = isLocallySilenced::emit,
+                onCanUserUpdateSilence = isAuthoritativelyMuted::emit,
+            )
 
         suspend fun waitForLocalCallSilenceState(expected: Boolean) {
             val result = withTimeoutOrNull(5000) { isLocallySilenced.first { it == expected } }

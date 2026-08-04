@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -26,12 +25,10 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":glance:glance-appwidget"))
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.work:work-multiprocess:2.9.1")
@@ -40,7 +37,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTest)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testCore)
     testImplementation(libs.testRules)
     testImplementation(libs.testRunner)
@@ -63,7 +59,7 @@ dependencies {
 
 android {
     namespace = "androidx.glance.appwidget.multiprocess"
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -74,4 +70,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Use Glance with multiprocess setups"
+    enableRobolectric()
 }

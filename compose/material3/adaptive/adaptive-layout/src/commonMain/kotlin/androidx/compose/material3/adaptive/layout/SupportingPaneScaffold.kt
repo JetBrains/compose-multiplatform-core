@@ -29,6 +29,22 @@ import androidx.compose.ui.Modifier
  * This overload takes a [ThreePaneScaffoldValue] describing the adapted value of each pane within
  * the scaffold.
  *
+ * Here's a basic usage sample, which demonstrates how a layout can change from single pane to dual
+ * pane under different window configurations:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSample
+ *
+ * By default there isn't a drag handle rendered so users aren't able to drag to change the pane
+ * split. Providing a drag handle like the above sample shows will enable the functionality. We
+ * suggest developers to use the vertical drag handle implementation provided by the Material3
+ * component library here to have default theming/styling support. You can integrate the component
+ * as the following sample shows:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+ *
+ * Note that if there's no drag handle, you can still modify [paneExpansionState] directly to apply
+ * pane expansion.
+ *
  * @param directive The top-level directives about how the scaffold should arrange its panes.
  * @param value The current adapted value of the scaffold, which indicates how each pane of the
  *   scaffold is adapted.
@@ -53,7 +69,7 @@ import androidx.compose.ui.Modifier
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun SupportingPaneScaffold(
+public fun SupportingPaneScaffold(
     directive: PaneScaffoldDirective,
     value: ThreePaneScaffoldValue,
     mainPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
@@ -68,7 +84,7 @@ fun SupportingPaneScaffold(
         paneExpansionState
             ?: rememberDefaultPaneExpansionState(
                 keyProvider = { value },
-                mutable = paneExpansionDragHandle != null
+                mutable = paneExpansionDragHandle != null,
             )
     ThreePaneScaffold(
         modifier = modifier.fillMaxSize(),
@@ -79,7 +95,7 @@ fun SupportingPaneScaffold(
         tertiaryPane = extraPane,
         paneExpansionDragHandle = paneExpansionDragHandle,
         paneExpansionState = expansionState,
-        primaryPane = mainPane
+        primaryPane = mainPane,
     )
 }
 
@@ -90,6 +106,22 @@ fun SupportingPaneScaffold(
  *
  * This overload takes a [ThreePaneScaffoldState] describing the current [ThreePaneScaffoldValue]
  * and any pane transitions or animations in progress.
+ *
+ * Here's a basic usage sample, which demonstrates how a layout can change from single pane to dual
+ * pane under different window configurations:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSample
+ *
+ * By default there isn't a drag handle rendered so users aren't able to drag to change the pane
+ * split. Providing a drag handle like the above sample shows will enable the functionality. We
+ * suggest developers to use the vertical drag handle implementation provided by the Material3
+ * component library here to have default theming/styling support. You can integrate the component
+ * as the following sample shows:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+ *
+ * Note that if there's no drag handle, you can still modify [paneExpansionState] directly to apply
+ * pane expansion.
  *
  * @param directive The top-level directives about how the scaffold should arrange its panes.
  * @param scaffoldState The current state of the scaffold, containing information about the adapted
@@ -115,7 +147,7 @@ fun SupportingPaneScaffold(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun SupportingPaneScaffold(
+public fun SupportingPaneScaffold(
     directive: PaneScaffoldDirective,
     scaffoldState: ThreePaneScaffoldState,
     mainPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
@@ -130,7 +162,7 @@ fun SupportingPaneScaffold(
         paneExpansionState
             ?: rememberDefaultPaneExpansionState(
                 keyProvider = { scaffoldState.targetState },
-                mutable = paneExpansionDragHandle != null
+                mutable = paneExpansionDragHandle != null,
             )
     ThreePaneScaffold(
         modifier = modifier.fillMaxSize(),
@@ -141,13 +173,13 @@ fun SupportingPaneScaffold(
         tertiaryPane = extraPane,
         paneExpansionDragHandle = paneExpansionDragHandle,
         paneExpansionState = expansionState,
-        primaryPane = mainPane
+        primaryPane = mainPane,
     )
 }
 
 /** Provides default values of [SupportingPaneScaffold]. */
 @ExperimentalMaterial3AdaptiveApi
-object SupportingPaneScaffoldDefaults {
+public object SupportingPaneScaffoldDefaults {
     /**
      * Creates a default [ThreePaneScaffoldAdaptStrategies] for [SupportingPaneScaffold].
      *
@@ -155,7 +187,7 @@ object SupportingPaneScaffoldDefaults {
      * @param supportingPaneAdaptStrategy the adapt strategy of the supporting pane
      * @param extraPaneAdaptStrategy the adapt strategy of the extra pane
      */
-    fun adaptStrategies(
+    public fun adaptStrategies(
         mainPaneAdaptStrategy: AdaptStrategy = AdaptStrategy.Hide,
         supportingPaneAdaptStrategy: AdaptStrategy =
             AdaptStrategy.Reflow(SupportingPaneScaffoldRole.Main),
@@ -164,7 +196,7 @@ object SupportingPaneScaffoldDefaults {
         ThreePaneScaffoldAdaptStrategies(
             mainPaneAdaptStrategy,
             supportingPaneAdaptStrategy,
-            extraPaneAdaptStrategy
+            extraPaneAdaptStrategy,
         )
 
     /**
@@ -176,7 +208,7 @@ object SupportingPaneScaffoldDefaults {
         ThreePaneScaffoldHorizontalOrder(
             ThreePaneScaffoldRole.Primary,
             ThreePaneScaffoldRole.Secondary,
-            ThreePaneScaffoldRole.Tertiary
+            ThreePaneScaffoldRole.Tertiary,
         )
 }
 
@@ -187,25 +219,25 @@ object SupportingPaneScaffoldDefaults {
  * [ThreePaneScaffoldRole] under the context of [SupportingPaneScaffold] for better code clarity.
  */
 @ExperimentalMaterial3AdaptiveApi
-object SupportingPaneScaffoldRole {
+public object SupportingPaneScaffoldRole {
     /**
      * The main pane of [SupportingPaneScaffold], which is supposed to hold the major content of an
      * app, for example, the editing screen of a doc app. It maps to
      * [ThreePaneScaffoldRole.Primary].
      */
-    val Main = ThreePaneScaffoldRole.Primary
+    public val Main: ThreePaneScaffoldRole = ThreePaneScaffoldRole.Primary
 
     /**
      * The supporting pane of [SupportingPaneScaffold], which is supposed to hold the support
      * content of an app, for example, the comment list of a doc app. It maps to
      * [ThreePaneScaffoldRole.Secondary].
      */
-    val Supporting = ThreePaneScaffoldRole.Secondary
+    public val Supporting: ThreePaneScaffoldRole = ThreePaneScaffoldRole.Secondary
 
     /**
      * The extra pane of [SupportingPaneScaffold], which is supposed to hold any additional content
      * besides the main and the supporting panes, for example, a styling panel in a doc app. It maps
      * to [ThreePaneScaffoldRole.Tertiary].
      */
-    val Extra = ThreePaneScaffoldRole.Tertiary
+    public val Extra: ThreePaneScaffoldRole = ThreePaneScaffoldRole.Tertiary
 }

@@ -22,6 +22,7 @@ import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.VerticalAlignment
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
@@ -78,6 +79,12 @@ import androidx.wear.protolayout.types.dp
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
  *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
+ *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
  * @param modifier Modifiers to set to this element. It's highly recommended to set a content
@@ -91,12 +98,11 @@ import androidx.wear.protolayout.types.dp
  *   default styling that is automatically provided by only calling [icon] with the resource ID.
  * @sample androidx.wear.protolayout.material3.samples.edgeButtonSampleIcon
  */
-// TODO: b/346958146 - link EdgeButton visuals in DAC
 public fun MaterialScope.iconEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    iconContent: (MaterialScope.() -> LayoutElement)
+    iconContent: (MaterialScope.() -> LayoutElement),
 ): LayoutElement {
     val style =
         if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
@@ -107,14 +113,15 @@ public fun MaterialScope.iconEdgeButton(
 
     return edgeButton(onClick = onClick, modifier = modifier, colors = colors, style = style) {
         withStyle(
-                defaultIconStyle =
-                    IconStyle(
-                        width = style.iconSizeDp.dp,
-                        height = style.iconSizeDp.dp,
-                        tintColor = colors.iconColor
-                    )
-            )
-            .iconContent()
+            defaultIconStyle =
+                IconStyle(
+                    width = style.iconSizeDp.dp,
+                    height = style.iconSizeDp.dp,
+                    tintColor = colors.iconColor,
+                )
+        ) {
+            iconContent()
+        }
     }
 }
 
@@ -134,6 +141,12 @@ public fun MaterialScope.iconEdgeButton(
  * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
  * [MaterialScope].
  *
+ * See
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
+ *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
  * @param modifier Modifiers to set to this element. It's highly recommended to set a content
@@ -147,34 +160,46 @@ public fun MaterialScope.iconEdgeButton(
  *   default styling that is automatically provided by only calling [text] with the content.
  * @sample androidx.wear.protolayout.material3.samples.edgeButtonSampleText
  */
-// TODO(b/346958146): link EdgeButton visuals in DAC
 public fun MaterialScope.textEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    labelContent: (MaterialScope.() -> LayoutElement)
-): LayoutElement =
-    edgeButton(
+    labelContent: (MaterialScope.() -> LayoutElement),
+): LayoutElement {
+    val content =
+        withStyle(
+            defaultTextElementStyle =
+                TextElementStyle(
+                    typography = Typography.LABEL_MEDIUM,
+                    color = colors.labelColor,
+                    scalable = false,
+                )
+        ) {
+            labelContent()
+        }
+
+    val modifierWithContentDescription =
+        (content as? Text)?.text?.let {
+            LayoutModifier.contentDescription(
+                staticValue = it.value,
+                dynamicValue = it.dynamicValue,
+            ) then modifier
+        } ?: modifier
+
+    return edgeButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifierWithContentDescription,
         colors = colors,
         style =
             if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
                 TEXT
             } else {
                 TEXT_FALLBACK
-            }
+            },
     ) {
-        withStyle(
-                defaultTextElementStyle =
-                    TextElementStyle(
-                        typography = Typography.LABEL_MEDIUM,
-                        color = colors.labelColor,
-                        scalable = false
-                    )
-            )
-            .labelContent()
+        content
     }
+}
 
 /**
  * ProtoLayout Material3 component edge button that offers a single slot to take any content.
@@ -202,13 +227,12 @@ public fun MaterialScope.textEdgeButton(
  * @param content The inner content to be put inside of this edge button.
  * @sample androidx.wear.protolayout.material3.samples.edgeButtonSampleIcon
  */
-// TODO(b/346958146): link EdgeButton visuals in DAC
 private fun MaterialScope.edgeButton(
     onClick: Clickable,
     colors: ButtonColors,
     modifier: LayoutModifier = LayoutModifier,
     style: EdgeButtonStyle = ICON,
-    content: MaterialScope.() -> LayoutElement
+    content: MaterialScope.() -> LayoutElement,
 ): LayoutElement {
     val containerWidth = deviceConfiguration.screenWidthDp.toDp()
     val horizontalMarginPercent: Float =
@@ -286,7 +310,7 @@ internal constructor(
     @Dimension(DP) internal val buttonHeightDp: Float = EDGE_BUTTON_HEIGHT_DP,
     @Dimension(DP) internal val bottomMarginDp: Float = BOTTOM_MARGIN_DP,
     @Dimension(DP) internal val iconSizeDp: Float = ICON_SIZE_DP,
-    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS
+    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS,
 ) {
     internal companion object {
         /**
@@ -302,8 +326,8 @@ internal constructor(
                     padding(
                         start = TEXT_SIDE_PADDING_DP,
                         top = TEXT_TOP_PADDING_DP,
-                        end = TEXT_SIDE_PADDING_DP
-                    )
+                        end = TEXT_SIDE_PADDING_DP,
+                    ),
             )
 
         /**
@@ -317,10 +341,11 @@ internal constructor(
          * Style variation for fallback implementation with text content, when there is no
          * asymmetrical corners support.
          *
-         * Without the edge hugging shape, the [topCornerRadius] value is a full cornered value and
-         * is applied to all four corners. To avoid being clipped by the screen edge, the visible
-         * button box is pushed upwards with a bigger bottom margin of [BOTTOM_MARGIN_FALLBACK_DP].
-         * Also the box height shrinks to [EDGE_BUTTON_HEIGHT_FALLBACK_DP].
+         * Without the edge hugging shape, the [topCornerRadiusDp] value is a full cornered value
+         * and is applied to all four corners. To avoid being clipped by the screen edge, the
+         * visible button box is pushed upwards with a bigger bottom margin of
+         * [BOTTOM_MARGIN_FALLBACK_DP]. Also the box height shrinks to
+         * [EDGE_BUTTON_HEIGHT_FALLBACK_DP].
          *
          * Its text content is center placed with a increased horizontal padding of
          * [TEXT_SIDE_PADDING_FALLBACK_DP].
@@ -335,17 +360,17 @@ internal constructor(
                     ),
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
-                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP
+                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
             )
 
         /**
          * Style variation for fallback implementation with icon content, when there is no
          * asymmetrical corners support.
          *
-         * Without the edge hugging shape, the [topCornerRadius] value is a full cornered value and
-         * is applied to all four corners. To avoid being clipped by the screen, the visible button
-         * box is pushed upwards with a bigger bottom margin of [BOTTOM_MARGIN_FALLBACK_DP]. Also
-         * the box height shrinks to [EDGE_BUTTON_HEIGHT_FALLBACK_DP]
+         * Without the edge hugging shape, the [topCornerRadiusDp] value is a full cornered value
+         * and is applied to all four corners. To avoid being clipped by the screen, the visible
+         * button box is pushed upwards with a bigger bottom margin of [BOTTOM_MARGIN_FALLBACK_DP].
+         * Also the box height shrinks to [EDGE_BUTTON_HEIGHT_FALLBACK_DP]
          *
          * Its icon content center placed with increased horizontal padding
          * [ICON_SIDE_PADDING_FALLBACK_DP]. Also, the icon size is also increased to
@@ -362,7 +387,7 @@ internal constructor(
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
                 bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
-                iconSizeDp = ICON_SIZE_FALLBACK_DP
+                iconSizeDp = ICON_SIZE_FALLBACK_DP,
             )
     }
 }

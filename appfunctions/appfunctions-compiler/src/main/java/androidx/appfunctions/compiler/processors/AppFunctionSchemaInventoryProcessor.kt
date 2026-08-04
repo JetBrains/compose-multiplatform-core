@@ -23,7 +23,6 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AppFunctionInventoryCodeBuilder
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
 import androidx.appfunctions.compiler.core.IntrospectionHelper
-import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -67,7 +66,7 @@ class AppFunctionSchemaInventoryProcessor(
             )
         generateSchemaAppFunctionInventoryClass(
             schemaDefinitions,
-            resolvedAnnotatedSerializableProxies
+            resolvedAnnotatedSerializableProxies,
         )
 
         hasProcessed = true
@@ -79,6 +78,7 @@ class AppFunctionSchemaInventoryProcessor(
         resolvedAnnotatedSerializableProxies:
             AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies,
     ) {
+        val packageName = IntrospectionHelper.SCHEMA_APP_FUNCTION_INVENTORY_CLASS.packageName
         val inventoryClassName = SCHEMA_INVENTORY_CLASS_NAME
         val inventoryClassBuilder = TypeSpec.classBuilder(inventoryClassName)
         inventoryClassBuilder.superclass(IntrospectionHelper.SCHEMA_APP_FUNCTION_INVENTORY_CLASS)
@@ -91,11 +91,7 @@ class AppFunctionSchemaInventoryProcessor(
             )
 
         val fileSpec =
-            FileSpec.builder(
-                    IntrospectionHelper.APP_FUNCTIONS_AGGREGATED_DEPS_PACKAGE_NAME,
-                    inventoryClassName
-                )
-                .addGeneratedTimeStamp()
+            FileSpec.builder(packageName, inventoryClassName)
                 .addType(inventoryClassBuilder.build())
                 .build()
         codeGenerator
@@ -104,10 +100,10 @@ class AppFunctionSchemaInventoryProcessor(
                     aggregating = true,
                     *schemaDefinitions
                         .flatMap(AnnotatedAppFunctionSchemaDefinition::getSourceFiles)
-                        .toTypedArray()
+                        .toTypedArray(),
                 ),
-                IntrospectionHelper.APP_FUNCTIONS_AGGREGATED_DEPS_PACKAGE_NAME,
-                inventoryClassName
+                packageName,
+                inventoryClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }

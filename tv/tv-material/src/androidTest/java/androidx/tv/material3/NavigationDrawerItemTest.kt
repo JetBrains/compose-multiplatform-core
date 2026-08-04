@@ -33,7 +33,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -43,7 +42,7 @@ import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
@@ -58,7 +57,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavigationDrawerItemTest {
@@ -218,7 +217,7 @@ class NavigationDrawerItemTest {
                 ) {
                     Text(
                         text = "Test Text",
-                        modifier = Modifier.testTag(NavigationDrawerItemTextTag).fillMaxWidth()
+                        modifier = Modifier.testTag(NavigationDrawerItemTextTag).fillMaxWidth(),
                     )
                 }
             }
@@ -239,17 +238,17 @@ class NavigationDrawerItemTest {
         (itemBounds.bottom - trailingContentBounds.bottom).assertIsEqualTo(
             12.dp,
             "padding between the bottom of the trailing content and the bottom of the nav " +
-                "drawer item"
+                "drawer item",
         )
 
         (itemBounds.right - trailingContentBounds.right).assertIsEqualTo(
             16.dp,
-            "padding between the end of the trailing content and the end of the nav drawer item"
+            "padding between the end of the trailing content and the end of the nav drawer item",
         )
 
         (trailingContentBounds.left - textBounds.right).assertIsEqualTo(
             8.dp,
-            "padding between the start of the trailing content and the end of the text."
+            "padding between the start of the trailing content and the end of the text.",
         )
     }
 
@@ -419,7 +418,7 @@ class NavigationDrawerItemTest {
 @Composable
 private fun DrawerScope(
     isActivated: Boolean = true,
-    content: @Composable NavigationDrawerScope.() -> Unit
+    content: @Composable NavigationDrawerScope.() -> Unit,
 ) {
     Box { NavigationDrawerScopeImpl(isActivated).apply { content() } }
 }

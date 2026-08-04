@@ -15,9 +15,9 @@
  */
 package androidx.activity
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PictureInPictureUiState
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -35,7 +35,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnDrawListener
 import android.view.Window
-import android.window.OnBackInvokedDispatcher
 import androidx.activity.contextaware.ContextAware
 import androidx.activity.contextaware.ContextAwareHelper
 import androidx.activity.contextaware.OnContextAvailableListener
@@ -63,10 +62,10 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.MultiWindowModeChangedInfo
 import androidx.core.app.OnMultiWindowModeChangedProvider
 import androidx.core.app.OnNewIntentProvider
-import androidx.core.app.OnPictureInPictureModeChangedProvider
-import androidx.core.app.OnUserLeaveHintProvider
 import androidx.core.app.PictureInPictureModeChangedInfo
-import androidx.core.content.ContextCompat
+import androidx.core.app.PictureInPictureParamsCompat
+import androidx.core.app.PictureInPictureProvider
+import androidx.core.app.PictureInPictureUiStateCompat
 import androidx.core.content.OnConfigurationChangedProvider
 import androidx.core.content.OnTrimMemoryProvider
 import androidx.core.util.Consumer
@@ -92,6 +91,10 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
@@ -108,7 +111,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * level building blocks are included. Higher level components can then be used as needed without
  * enforcing a deep Activity class hierarchy or strong coupling between components.
  */
-open class ComponentActivity() :
+public open class ComponentActivity() :
     androidx.core.app.ComponentActivity(),
     ContextAware,
     LifecycleOwner,
@@ -116,14 +119,14 @@ open class ComponentActivity() :
     HasDefaultViewModelProviderFactory,
     SavedStateRegistryOwner,
     OnBackPressedDispatcherOwner,
+    NavigationEventDispatcherOwner,
     ActivityResultRegistryOwner,
     ActivityResultCaller,
     OnConfigurationChangedProvider,
     OnTrimMemoryProvider,
     OnNewIntentProvider,
     OnMultiWindowModeChangedProvider,
-    OnPictureInPictureModeChangedProvider,
-    OnUserLeaveHintProvider,
+    PictureInPictureProvider,
     MenuHost,
     FullyDrawnReporterOwner {
     internal class NonConfigurationInstances {
@@ -140,7 +143,7 @@ open class ComponentActivity() :
     // Lazily recreated from NonConfigurationInstances by val viewModelStore
     private var _viewModelStore: ViewModelStore? = null
     private val reportFullyDrawnExecutor = createFullyDrawnExecutor()
-    override val fullyDrawnReporter by lazy {
+    override val fullyDrawnReporter: FullyDrawnReporter by lazy {
         FullyDrawnReporter(reportFullyDrawnExecutor) { reportFullyDrawn() }
     }
 
@@ -159,7 +162,7 @@ open class ComponentActivity() :
                 requestCode: Int,
                 contract: ActivityResultContract<I, O>,
                 input: I,
-                options: ActivityOptionsCompat?
+                options: ActivityOptionsCompat?,
             ) {
                 val activity = this@ComponentActivity
 
@@ -205,7 +208,7 @@ open class ComponentActivity() :
                             request.flagsMask,
                             request.flagsValues,
                             0,
-                            optionsBundle
+                            optionsBundle,
                         )
                     } catch (e: SendIntentException) {
                         Handler(Looper.getMainLooper()).post {
@@ -214,7 +217,7 @@ open class ComponentActivity() :
                                 RESULT_CANCELED,
                                 Intent()
                                     .setAction(ACTION_INTENT_SENDER_REQUEST)
-                                    .putExtra(EXTRA_SEND_INTENT_EXCEPTION, e)
+                                    .putExtra(EXTRA_SEND_INTENT_EXCEPTION, e),
                             )
                         }
                     }
@@ -224,7 +227,7 @@ open class ComponentActivity() :
                         activity,
                         intent,
                         requestCode,
-                        optionsBundle
+                        optionsBundle,
                     )
                 }
             }
@@ -236,9 +239,21 @@ open class ComponentActivity() :
         CopyOnWriteArrayList<Consumer<MultiWindowModeChangedInfo>>()
     private val onPictureInPictureModeChangedListeners =
         CopyOnWriteArrayList<Consumer<PictureInPictureModeChangedInfo>>()
+    private val onPictureInPictureUiStateChangedListeners =
+        CopyOnWriteArrayList<Consumer<PictureInPictureUiStateCompat>>()
     private val onUserLeaveHintListeners = CopyOnWriteArrayList<Runnable>()
     private var dispatchingOnMultiWindowModeChanged = false
     private var dispatchingOnPictureInPictureModeChanged = false
+
+    // Inputs from `ComponentActivity.onBackPressed()`, which can get called when API < 33 or
+    // when `android:enableOnBackInvokedCallback` is `false`.
+    private val onBackPressedInput: DirectNavigationEventInput by lazy {
+        val input = DirectNavigationEventInput()
+        navigationEventDispatcher.addInput(input)
+        input
+    }
+
+    private var hasPictureInPictureSystemFeature: Boolean = false
 
     /**
      * Default constructor for ComponentActivity. All Activities must have a default constructor for
@@ -285,7 +300,7 @@ open class ComponentActivity() :
         )
         savedStateRegistryController.performAttach()
         enableSavedStateHandles()
-        if (Build.VERSION.SDK_INT <= 23) {
+        if (Build.VERSION.SDK_INT == 23) {
             @Suppress("LeakingThis") lifecycle.addObserver(ImmLeaksCleaner(this))
         }
         savedStateRegistry.registerSavedStateProvider(ACTIVITY_RESULT_TAG) {
@@ -310,7 +325,7 @@ open class ComponentActivity() :
      * required for API 27 and lower or when using the default [android.app.AppComponentFactory].
      */
     @ContentView
-    constructor(@LayoutRes contentLayoutId: Int) : this() {
+    public constructor(@LayoutRes contentLayoutId: Int) : this() {
         this.contentLayoutId = contentLayoutId
     }
 
@@ -330,6 +345,8 @@ open class ComponentActivity() :
         if (contentLayoutId != 0) {
             setContentView(contentLayoutId)
         }
+        hasPictureInPictureSystemFeature =
+            packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
     }
 
     @CallSuper
@@ -372,12 +389,12 @@ open class ComponentActivity() :
      * [lastCustomNonConfigurationInstance].
      */
     @Deprecated("Use a {@link androidx.lifecycle.ViewModel} to store non config state.")
-    open fun onRetainCustomNonConfigurationInstance(): Any? {
+    public open fun onRetainCustomNonConfigurationInstance(): Any? {
         return null
     }
 
     @get:Deprecated("Use a {@link androidx.lifecycle.ViewModel} to store non config state.")
-    open val lastCustomNonConfigurationInstance: Any?
+    public open val lastCustomNonConfigurationInstance: Any?
         /** Return the value previously returned from [onRetainCustomNonConfigurationInstance]. */
         get() {
             val nc = lastNonConfigurationInstance as NonConfigurationInstances?
@@ -413,12 +430,13 @@ open class ComponentActivity() :
      * attach listeners will see them already present.
      */
     @CallSuper
-    open fun initializeViewTreeOwners() {
+    public open fun initializeViewTreeOwners() {
         window.decorView.setViewTreeLifecycleOwner(this)
         window.decorView.setViewTreeViewModelStoreOwner(this)
         window.decorView.setViewTreeSavedStateRegistryOwner(this)
         window.decorView.setViewTreeOnBackPressedDispatcherOwner(this)
         window.decorView.setViewTreeFullyDrawnReporterOwner(this)
+        window.decorView.setViewTreeNavigationEventDispatcherOwner(this)
     }
 
     override fun peekAvailableContext(): Context? {
@@ -430,8 +448,8 @@ open class ComponentActivity() :
      *
      * Any listener added here will receive a callback as part of `super.onCreate()`, but
      * importantly **before** any other logic is done (including calling through to the framework
-     * [Activity.onCreate] with the exception of restoring the state of the [savedStateRegistry] for
-     * use in your listener.
+     * [Activity.onCreate]) with the exception of restoring the state of the [savedStateRegistry]
+     * for use in your listener.
      */
     final override fun addOnContextAvailableListener(listener: OnContextAvailableListener) {
         contextAwareHelper.addOnContextAvailableListener(listener)
@@ -452,7 +470,7 @@ open class ComponentActivity() :
     override fun onCreatePanelMenu(featureId: Int, menu: Menu): Boolean {
         if (featureId == Window.FEATURE_OPTIONS_PANEL) {
             super.onCreatePanelMenu(featureId, menu)
-            menuHostHelper.onCreateMenu(menu, getMenuInflater())
+            menuHostHelper.onCreateMenu(menu, menuInflater)
         }
         return true
     }
@@ -483,7 +501,7 @@ open class ComponentActivity() :
     override fun addMenuProvider(
         provider: MenuProvider,
         owner: LifecycleOwner,
-        state: Lifecycle.State
+        state: Lifecycle.State,
     ) {
         menuHostHelper.addMenuProvider(provider, owner, state)
     }
@@ -572,7 +590,7 @@ open class ComponentActivity() :
     /**
      * Called when the activity has detected the user's press of the back key. The
      * [onBackPressedDispatcher] will be given a chance to handle the back button before the default
-     * behavior of [android.app.Activity.onBackPressed] is invoked.
+     * behavior of [Activity.onBackPressed] is invoked.
      *
      * @see onBackPressedDispatcher
      */
@@ -585,7 +603,7 @@ open class ComponentActivity() :
       to one or more {@link OnBackPressedCallback} objects."""
     )
     override fun onBackPressed() {
-        onBackPressedDispatcher.onBackPressed()
+        onBackPressedInput.backCompleted()
     }
 
     /**
@@ -593,29 +611,30 @@ open class ComponentActivity() :
      *
      * @return The [OnBackPressedDispatcher] associated with this ComponentActivity.
      */
-    @Suppress("DEPRECATION")
     final override val onBackPressedDispatcher: OnBackPressedDispatcher by lazy {
-        OnBackPressedDispatcher {
-                // Calling onBackPressed() on an Activity with its state saved can cause an
-                // error on devices on API levels before 26. We catch that specific error
-                // and throw all others.
-                try {
-                    super@ComponentActivity.onBackPressed()
-                } catch (e: IllegalStateException) {
-                    if (e.message != "Can not perform this action after onSaveInstanceState") {
-                        throw e
-                    }
-                } catch (e: NullPointerException) {
-                    if (
-                        e.message !=
-                            "Attempt to invoke virtual method 'android.os.Handler " +
-                                "android.app.FragmentHostCallback.getHandler()' on a " +
-                                "null object reference"
-                    ) {
-                        throw e
+        OnBackPressedDispatcher(
+                fallbackOnBackPressed = {
+                    // Calling onBackPressed() on an Activity with its state saved can cause an
+                    // error on devices on API levels before 26. We catch that specific error
+                    // and throw all others.
+                    try {
+                        @Suppress("DEPRECATION") super@ComponentActivity.onBackPressed()
+                    } catch (e: IllegalStateException) {
+                        if (e.message != "Can not perform this action after onSaveInstanceState") {
+                            throw e
+                        }
+                    } catch (e: NullPointerException) {
+                        if (
+                            e.message !=
+                                "Attempt to invoke virtual method 'android.os.Handler " +
+                                    "android.app.FragmentHostCallback.getHandler()' on a " +
+                                    "null object reference"
+                        ) {
+                            throw e
+                        }
                     }
                 }
-            }
+            )
             .also { dispatcher ->
                 if (Build.VERSION.SDK_INT >= 33) {
                     if (Looper.myLooper() != Looper.getMainLooper()) {
@@ -629,14 +648,27 @@ open class ComponentActivity() :
             }
     }
 
+    /**
+     * Lazily provides a [NavigationEventDispatcher] for back navigation handling, including support
+     * for predictive back gestures introduced in Android 13 (API 33+).
+     *
+     * This dispatcher acts as the central point for back navigation events. When a navigation event
+     * occurs (e.g., a back gesture), it safely invokes [ComponentActivity.onBackPressed].
+     *
+     * ### Not stable for override
+     *
+     * **This property is not intended for override.** It is technically `open` for binary
+     * compatibility with previous versions, but overriding this property is unsupported.
+     */
+    override val navigationEventDispatcher: NavigationEventDispatcher
+        get() = onBackPressedDispatcher.asNavigationEventDispatcher()
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun addObserverForBackInvoker(dispatcher: OnBackPressedDispatcher) {
         lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_CREATE) {
-                    dispatcher.setOnBackInvokedDispatcher(
-                        Api33Impl.getOnBackInvokedDispatcher(this@ComponentActivity)
-                    )
+                    dispatcher.setOnBackInvokedDispatcher(onBackInvokedDispatcher)
                 }
             }
         )
@@ -694,7 +726,7 @@ open class ComponentActivity() :
         fillInIntent: Intent?,
         flagsMask: Int,
         flagsValues: Int,
-        extraFlags: Int
+        extraFlags: Int,
     ) {
         super.startIntentSenderForResult(
             intent,
@@ -702,7 +734,7 @@ open class ComponentActivity() :
             fillInIntent,
             flagsMask,
             flagsValues,
-            extraFlags
+            extraFlags,
         )
     }
 
@@ -726,7 +758,7 @@ open class ComponentActivity() :
         flagsMask: Int,
         flagsValues: Int,
         extraFlags: Int,
-        options: Bundle?
+        options: Bundle?,
     ) {
         super.startIntentSenderForResult(
             intent,
@@ -735,7 +767,7 @@ open class ComponentActivity() :
             flagsMask,
             flagsValues,
             extraFlags,
-            options
+            options,
         )
     }
 
@@ -774,7 +806,7 @@ open class ComponentActivity() :
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         if (
             !activityResultRegistry.dispatchResult(
@@ -782,31 +814,29 @@ open class ComponentActivity() :
                 RESULT_OK,
                 Intent()
                     .putExtra(EXTRA_PERMISSIONS, permissions)
-                    .putExtra(EXTRA_PERMISSION_GRANT_RESULTS, grantResults)
+                    .putExtra(EXTRA_PERMISSION_GRANT_RESULTS, grantResults),
             )
         ) {
-            if (Build.VERSION.SDK_INT >= 23) {
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            }
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
 
     final override fun <I, O> registerForActivityResult(
         contract: ActivityResultContract<I, O>,
         registry: ActivityResultRegistry,
-        callback: ActivityResultCallback<O>
+        callback: ActivityResultCallback<O>,
     ): ActivityResultLauncher<I> {
         return registry.register(
             "activity_rq#" + nextLocalRequestCode.getAndIncrement(),
             this,
             contract,
-            callback
+            callback,
         )
     }
 
     final override fun <I, O> registerForActivityResult(
         contract: ActivityResultContract<I, O>,
-        callback: ActivityResultCallback<O>
+        callback: ActivityResultCallback<O>,
     ): ActivityResultLauncher<I> {
         return registerForActivityResult(contract, activityResultRegistry, callback)
     }
@@ -955,7 +985,7 @@ open class ComponentActivity() :
     @CallSuper
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
-        newConfig: Configuration
+        newConfig: Configuration,
     ) {
         dispatchingOnPictureInPictureModeChanged = true
         try {
@@ -971,6 +1001,17 @@ open class ComponentActivity() :
         }
     }
 
+    /** {@inheritDoc} */
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    @CallSuper
+    override fun onPictureInPictureUiStateChanged(pipState: PictureInPictureUiState) {
+        super.onPictureInPictureUiStateChanged(pipState)
+        val pipStateCompat = PictureInPictureUiStateCompat.fromPictureInPictureUiState(pipState)
+        for (listener in onPictureInPictureUiStateChangedListeners) {
+            listener.accept(pipStateCompat)
+        }
+    }
+
     final override fun addOnPictureInPictureModeChangedListener(
         listener: Consumer<PictureInPictureModeChangedInfo>
     ) {
@@ -981,6 +1022,34 @@ open class ComponentActivity() :
         listener: Consumer<PictureInPictureModeChangedInfo>
     ) {
         onPictureInPictureModeChangedListeners.remove(listener)
+    }
+
+    final override fun addOnPictureInPictureUiStateChangedListener(
+        listener: Consumer<PictureInPictureUiStateCompat>
+    ) {
+        onPictureInPictureUiStateChangedListeners.add(listener)
+    }
+
+    final override fun removeOnPictureInPictureUiStateChangedListener(
+        listener: Consumer<PictureInPictureUiStateCompat>
+    ) {
+        onPictureInPictureUiStateChangedListeners.remove(listener)
+    }
+
+    final override fun enterPictureInPictureMode(params: PictureInPictureParamsCompat) {
+        if (hasPictureInPictureSystemFeature && params.isEnabled) {
+            if (Build.VERSION.SDK_INT >= 26) {
+                enterPictureInPictureMode(params.toPictureInPictureParams())
+            } else if (Build.VERSION.SDK_INT >= 24) {
+                @Suppress("deprecation") enterPictureInPictureMode()
+            }
+        }
+    }
+
+    final override fun setPictureInPictureParams(params: PictureInPictureParamsCompat) {
+        if (hasPictureInPictureSystemFeature && Build.VERSION.SDK_INT >= 26) {
+            setPictureInPictureParams(params.toPictureInPictureParams())
+        }
     }
 
     /**
@@ -1009,20 +1078,7 @@ open class ComponentActivity() :
             if (Trace.isEnabled()) {
                 Trace.beginSection("reportFullyDrawn() for ComponentActivity")
             }
-            if (Build.VERSION.SDK_INT > 19) {
-                super.reportFullyDrawn()
-            } else if (
-                Build.VERSION.SDK_INT == 19 &&
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.UPDATE_DEVICE_STATS
-                    ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                // On API 19, the Activity.reportFullyDrawn() method requires the
-                // UPDATE_DEVICE_STATS permission, otherwise it throws an exception. Instead of
-                // throwing, we fall back to a no-op call.
-                super.reportFullyDrawn()
-            }
+            super.reportFullyDrawn()
             // Activity.reportFullyDrawn() was added in API 19, so we can't call super
             // prior to that, but we still need to update our FullyLoadedReporter's state
             fullyDrawnReporter.fullyDrawnReported()
@@ -1033,13 +1089,6 @@ open class ComponentActivity() :
 
     private fun createFullyDrawnExecutor(): ReportFullyDrawnExecutor =
         ReportFullyDrawnExecutorImpl()
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private object Api33Impl {
-        fun getOnBackInvokedDispatcher(activity: Activity): OnBackInvokedDispatcher {
-            return activity.getOnBackInvokedDispatcher()
-        }
-    }
 
     private interface ReportFullyDrawnExecutor : Executor {
         fun viewCreated(view: View)
@@ -1056,13 +1105,13 @@ open class ComponentActivity() :
         override fun viewCreated(view: View) {
             if (!onDrawScheduled) {
                 onDrawScheduled = true
-                view.getViewTreeObserver().addOnDrawListener(this)
+                view.viewTreeObserver.addOnDrawListener(this)
             }
         }
 
         override fun activityDestroyed() {
             window.decorView.removeCallbacks(this)
-            window.decorView.getViewTreeObserver().removeOnDrawListener(this)
+            window.decorView.viewTreeObserver.removeOnDrawListener(this)
         }
 
         /**
@@ -1081,7 +1130,7 @@ open class ComponentActivity() :
                     decorView.postInvalidate()
                 }
             } else {
-                // We've already gotten past the 10 second timeout and dropped the
+                // We've already gotten past the 10-second timeout and dropped the
                 // OnPreDrawListener, so we just run on the next frame.
                 decorView.postOnAnimation {
                     if (currentRunnable != null) {
@@ -1114,7 +1163,7 @@ open class ComponentActivity() :
          * within the onDraw() method.
          */
         override fun run() {
-            window.decorView.getViewTreeObserver().removeOnDrawListener(this)
+            window.decorView.viewTreeObserver.removeOnDrawListener(this)
         }
     }
 

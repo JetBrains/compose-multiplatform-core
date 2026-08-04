@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+// Facade class name cannot be updated, the Kt name has been released
+@file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE", "FacadeClassJvmName")
 @file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
@@ -59,12 +60,7 @@ public fun <K> objectLongMapOf(key1: K, value1: Long): ObjectLongMap<K> =
  * Returns a new [ObjectLongMap] with only [key1] and [key2] associated with [value1] and [value2],
  * respectively.
  */
-public fun <K> objectLongMapOf(
-    key1: K,
-    value1: Long,
-    key2: K,
-    value2: Long,
-): ObjectLongMap<K> =
+public fun <K> objectLongMapOf(key1: K, value1: Long, key2: K, value2: Long): ObjectLongMap<K> =
     MutableObjectLongMap<K>().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -137,10 +133,8 @@ public fun <K> objectLongMapOf(
 public fun <K> mutableObjectLongMapOf(): MutableObjectLongMap<K> = MutableObjectLongMap()
 
 /** Returns a new [MutableObjectLongMap] with only [key1] associated with [value1]. */
-public fun <K> mutableObjectLongMapOf(
-    key1: K,
-    value1: Long,
-): MutableObjectLongMap<K> = MutableObjectLongMap<K>().also { map -> map[key1] = value1 }
+public fun <K> mutableObjectLongMapOf(key1: K, value1: Long): MutableObjectLongMap<K> =
+    MutableObjectLongMap<K>().also { map -> map[key1] = value1 }
 
 /**
  * Returns a new [MutableObjectLongMap] with only [key1] and [key2] associated with [value1] and
@@ -230,7 +224,7 @@ public fun <K> mutableObjectLongMapOf(
  * @param builderAction Lambda in which the [MutableObjectLongMap] can be populated.
  */
 public inline fun <K> buildObjectLongMap(
-    builderAction: MutableObjectLongMap<K>.() -> Unit,
+    builderAction: MutableObjectLongMap<K>.() -> Unit
 ): ObjectLongMap<K> {
     contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
     return MutableObjectLongMap<K>().apply(builderAction)
@@ -463,19 +457,21 @@ public sealed class ObjectLongMap<K> {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ObjectLongMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ObjectLongMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -495,20 +491,22 @@ public sealed class ObjectLongMap<K> {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: K, value: Long) -> CharSequence
+        crossinline transform: (key: K, value: Long) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@ObjectLongMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@ObjectLongMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -685,12 +683,14 @@ public class MutableObjectLongMap<K>(initialCapacity: Int = DefaultScatterCapaci
      * Otherwise, calls `defaultValue()` and puts the result in the map associated with [key].
      */
     public inline fun getOrPut(key: K, defaultValue: () -> Long): Long {
-        val index = findKeyIndex(key)
+        val index = findInsertIndex(key)
         if (index >= 0) {
             return values[index]
         }
         val value = defaultValue()
-        set(key, value)
+        val insertIndex = index.inv()
+        keys[insertIndex] = key
+        values[insertIndex] = value
         return value
     }
 
@@ -701,8 +701,7 @@ public class MutableObjectLongMap<K>(initialCapacity: Int = DefaultScatterCapaci
      * the underlying storage and cause allocations.
      */
     public operator fun set(key: K, value: Long) {
-        var index = findIndex(key)
-        if (index < 0) index = index.inv()
+        val index = findInsertIndex(key).let { index -> if (index < 0) index.inv() else index }
         keys[index] = key
         values[index] = value
     }
@@ -726,7 +725,7 @@ public class MutableObjectLongMap<K>(initialCapacity: Int = DefaultScatterCapaci
      * @return value previously associated with [key] or [default] if key was not present.
      */
     public fun put(key: K, value: Long, default: Long): Long {
-        var index = findIndex(key)
+        var index = findInsertIndex(key)
         var previous = default
         if (index < 0) {
             index = index.inv()
@@ -834,11 +833,12 @@ public class MutableObjectLongMap<K>(initialCapacity: Int = DefaultScatterCapaci
 
     /**
      * Scans the hash table to find the index at which we can store a value for the give [key]. If
-     * the key already exists in the table, its index will be returned, otherwise the index of an
-     * empty slot will be returned. Calling this function may cause the internal storage to be
+     * the key already exists in the table, its index will be returned, otherwise the `index.inv()`
+     * of an empty slot will be returned. Calling this function may cause the internal storage to be
      * reallocated if the table is full.
      */
-    private fun findIndex(key: K): Int {
+    @PublishedApi
+    internal fun findInsertIndex(key: K): Int {
         val hash = hash(key)
         val hash1 = h1(hash)
         val hash2 = h2(hash)

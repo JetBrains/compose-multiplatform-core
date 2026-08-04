@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
@@ -42,6 +44,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SecondaryScrollableTabRow
@@ -50,11 +53,16 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabIndicatorScope
 import androidx.compose.material3.TabPosition
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +71,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
@@ -75,7 +87,7 @@ import kotlinx.coroutines.launch
 @Sampled
 @OptIn(ExperimentalMaterial3Api::class)
 fun PrimaryTextTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Tab 1", "Tab 2", "Tab 3 with lots of text")
     Column {
         PrimaryTabRow(selectedTabIndex = state) {
@@ -83,14 +95,14 @@ fun PrimaryTextTabs() {
                 Tab(
                     selected = state == index,
                     onClick = { state = index },
-                    text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Primary tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -99,18 +111,46 @@ fun PrimaryTextTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun PrimaryIconTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val icons = listOf(Icons.Filled.Favorite, Icons.Filled.Favorite, Icons.Filled.Favorite)
     Column {
         PrimaryTabRow(selectedTabIndex = state) {
             icons.forEachIndexed { index, icon ->
-                Tab(
-                    selected = state == index,
-                    onClick = { state = index },
-                    icon = { Icon(icon, contentDescription = "Favorite") }
-                )
+                // Icon-only tab should have a tooltip associated with it.
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            modifier =
+                                Modifier.semantics {
+                                    // TODO(b/496338253): Remove this modifier once bug where
+                                    //  tooltip text is not announced by a11y screen readers is
+                                    // resolved.
+                                    liveRegion = LiveRegionMode.Assertive
+                                    paneTitle = "Favorite"
+                                }
+                        ) {
+                            Text("Favorite")
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    Tab(
+                        selected = state == index,
+                        onClick = { state = index },
+                        icon = { Icon(icon, contentDescription = "Favorite") },
+                    )
+                }
             }
         }
+        Text(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            text = "Icon tab ${state + 1} selected",
+            style = MaterialTheme.typography.bodyLarge,
+        )
     }
 }
 
@@ -119,7 +159,7 @@ fun PrimaryIconTabs() {
 @Sampled
 @OptIn(ExperimentalMaterial3Api::class)
 fun SecondaryTextTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Tab 1", "Tab 2", "Tab 3 with lots of text")
     Column {
         SecondaryTabRow(selectedTabIndex = state) {
@@ -127,14 +167,14 @@ fun SecondaryTextTabs() {
                 Tab(
                     selected = state == index,
                     onClick = { state = index },
-                    text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Secondary tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -144,7 +184,7 @@ fun SecondaryTextTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun TextTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Tab 1", "Tab 2", "Tab 3 with lots of text")
     Column {
         PrimaryTabRow(selectedTabIndex = state) {
@@ -152,14 +192,14 @@ fun TextTabs() {
                 Tab(
                     selected = state == index,
                     onClick = { state = index },
-                    text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 )
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Text tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -168,22 +208,45 @@ fun TextTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun SecondaryIconTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val icons = listOf(Icons.Filled.Favorite, Icons.Filled.Favorite, Icons.Filled.Favorite)
     Column {
         SecondaryTabRow(selectedTabIndex = state) {
             icons.forEachIndexed { index, icon ->
-                Tab(
-                    selected = state == index,
-                    onClick = { state = index },
-                    icon = { Icon(icon, contentDescription = "Favorite") }
-                )
+                // Icon-only tab should have a tooltip associated with it.
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = {
+                        PlainTooltip(
+                            modifier =
+                                Modifier.semantics {
+                                    // TODO(b/496338253): Remove this modifier once bug where
+                                    //  tooltip text is not announced by a11y screen readers is
+                                    // resolved.
+                                    liveRegion = LiveRegionMode.Assertive
+                                    paneTitle = "Favorite"
+                                }
+                        ) {
+                            Text("Favorite")
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    Tab(
+                        selected = state == index,
+                        onClick = { state = index },
+                        icon = { Icon(icon, contentDescription = "Favorite") },
+                    )
+                }
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Icon tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -192,12 +255,12 @@ fun SecondaryIconTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun TextAndIconTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titlesAndIcons =
         listOf(
             "Tab 1" to Icons.Filled.Favorite,
             "Tab 2" to Icons.Filled.Favorite,
-            "Tab 3 with lots of text" to Icons.Filled.Favorite
+            "Tab 3 with lots of text" to Icons.Filled.Favorite,
         )
     Column {
         PrimaryTabRow(selectedTabIndex = state) {
@@ -206,14 +269,14 @@ fun TextAndIconTabs() {
                     selected = state == index,
                     onClick = { state = index },
                     text = { Text(text = title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                    icon = { Icon(icon, contentDescription = null) }
+                    icon = { Icon(icon, contentDescription = null) },
                 )
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Text and icon tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -222,12 +285,12 @@ fun TextAndIconTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun LeadingIconTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titlesAndIcons =
         listOf(
             "Tab" to Icons.Filled.Favorite,
             "Tab & icon" to Icons.Filled.Favorite,
-            "Tab 3 with lots of text" to Icons.Filled.Favorite
+            "Tab 3 with lots of text" to Icons.Filled.Favorite,
         )
     Column {
         PrimaryTabRow(selectedTabIndex = state) {
@@ -240,14 +303,14 @@ fun LeadingIconTabs() {
                             Text(title)
                         }
                     },
-                    icon = { Icon(icon, contentDescription = null) }
+                    icon = { Icon(icon, contentDescription = null) },
                 )
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Leading icon tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -256,7 +319,7 @@ fun LeadingIconTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ScrollingPrimaryTextTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles =
         listOf(
             "Tab 1",
@@ -268,7 +331,7 @@ fun ScrollingPrimaryTextTabs() {
             "Tab 7",
             "Tab 8",
             "Tab 9 with lots of text",
-            "Tab 10"
+            "Tab 10",
         )
     Column {
         PrimaryScrollableTabRow(selectedTabIndex = state) {
@@ -279,7 +342,7 @@ fun ScrollingPrimaryTextTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Scrolling primary tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -288,7 +351,7 @@ fun ScrollingPrimaryTextTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ScrollingSecondaryTextTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles =
         listOf(
             "Tab 1",
@@ -300,7 +363,7 @@ fun ScrollingSecondaryTextTabs() {
             "Tab 7",
             "Tab 8",
             "Tab 9 with lots of text",
-            "Tab 10"
+            "Tab 10",
         )
     Column {
         SecondaryScrollableTabRow(selectedTabIndex = state) {
@@ -311,7 +374,7 @@ fun ScrollingSecondaryTextTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Scrolling secondary tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -320,7 +383,7 @@ fun ScrollingSecondaryTextTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ScrollingTextTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles =
         listOf(
             "Tab 1",
@@ -332,7 +395,7 @@ fun ScrollingTextTabs() {
             "Tab 7",
             "Tab 8",
             "Tab 9 with lots of text",
-            "Tab 10"
+            "Tab 10",
         )
     Column {
         PrimaryScrollableTabRow(selectedTabIndex = state) {
@@ -343,7 +406,7 @@ fun ScrollingTextTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Scrolling text tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -353,7 +416,7 @@ fun ScrollingTextTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun FancyTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Tab 1", "Tab 2", "Tab 3")
     Column {
         SecondaryTabRow(selectedTabIndex = state) {
@@ -364,7 +427,7 @@ fun FancyTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Fancy tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -374,7 +437,7 @@ fun FancyTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun FancyIndicatorTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Tab 1", "Tab 2", "Tab 3")
 
     Column {
@@ -383,9 +446,9 @@ fun FancyIndicatorTabs() {
             indicator = {
                 FancyIndicator(
                     MaterialTheme.colorScheme.primary,
-                    Modifier.tabIndicatorOffset(state)
+                    Modifier.tabIndicatorOffset(state),
                 )
-            }
+            },
         ) {
             titles.forEachIndexed { index, title ->
                 Tab(selected = state == index, onClick = { state = index }, text = { Text(title) })
@@ -394,7 +457,7 @@ fun FancyIndicatorTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Fancy indicator tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -404,13 +467,13 @@ fun FancyIndicatorTabs() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun FancyIndicatorContainerTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Tab 1", "Tab 2", "Tab 3")
 
     Column {
         SecondaryTabRow(
             selectedTabIndex = state,
-            indicator = { FancyAnimatedIndicatorWithModifier(state) }
+            indicator = { FancyAnimatedIndicatorWithModifier(state) },
         ) {
             titles.forEachIndexed { index, title ->
                 Tab(selected = state == index, onClick = { state = index }, text = { Text(title) })
@@ -419,7 +482,7 @@ fun FancyIndicatorContainerTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Fancy transition tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -440,7 +503,10 @@ fun FancyIndicator(color: Color, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Sampled
 @Composable
-fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(index: Int) {
+fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(
+    index: Int,
+    isScrollable: Boolean = false,
+) {
     val colors =
         listOf(
             MaterialTheme.colorScheme.primary,
@@ -476,7 +542,7 @@ fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(index: Int) {
                                     spring(dampingRatio = 1f, stiffness = 1000f)
                                 } else {
                                     spring(dampingRatio = 1f, stiffness = 50f)
-                                }
+                                },
                         )
                     }
                 }
@@ -493,7 +559,7 @@ fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(index: Int) {
                                     spring(dampingRatio = 1f, stiffness = 50f)
                                 } else {
                                     spring(dampingRatio = 1f, stiffness = 1000f)
-                                }
+                                },
                         )
                     }
                 }
@@ -510,7 +576,10 @@ fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(index: Int) {
                         )
                     )
                 layout(constraints.maxWidth, constraints.maxHeight) {
-                    placeable.place(indicatorStart, 0)
+                    val contentWidth = tabPositions[index].contentWidth.roundToPx()
+                    val tabWidth = tabPositions[index].width.roundToPx()
+                    val relativeOffset = if (isScrollable) (tabWidth - contentWidth) / 2 else 0
+                    placeable.place(indicatorStart - relativeOffset, 0)
                 }
             }
             .padding(5.dp)
@@ -519,7 +588,7 @@ fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(index: Int) {
                 drawRoundRect(
                     color = indicatorColor,
                     cornerRadius = CornerRadius(5.dp.toPx()),
-                    style = Stroke(width = 2.dp.toPx())
+                    style = Stroke(width = 2.dp.toPx()),
                 )
             }
     )
@@ -529,7 +598,7 @@ fun TabIndicatorScope.FancyAnimatedIndicatorWithModifier(index: Int) {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ScrollingFancyIndicatorContainerTabs() {
-    var state by remember { mutableStateOf(0) }
+    var state by rememberSaveable { mutableStateOf(0) }
     val titles =
         listOf(
             "Tab 1",
@@ -541,13 +610,13 @@ fun ScrollingFancyIndicatorContainerTabs() {
             "Tab 7",
             "Tab 8",
             "Tab 9 with lots of text",
-            "Tab 10"
+            "Tab 10",
         )
 
     Column {
         SecondaryScrollableTabRow(
             selectedTabIndex = state,
-            indicator = { FancyAnimatedIndicatorWithModifier(state) }
+            indicator = { FancyAnimatedIndicatorWithModifier(state, isScrollable = true) },
         ) {
             titles.forEachIndexed { index, title ->
                 Tab(selected = state == index, onClick = { state = index }, text = { Text(title) })
@@ -556,7 +625,7 @@ fun ScrollingFancyIndicatorContainerTabs() {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Scrolling fancy transition tab ${state + 1} selected",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -567,7 +636,7 @@ fun FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
     Tab(selected, onClick) {
         Column(
             Modifier.padding(10.dp).height(50.dp).fillMaxWidth(),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Box(
                 Modifier.size(10.dp)
@@ -581,7 +650,7 @@ fun FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }

@@ -102,7 +102,7 @@ public class ParcelableWorkInfoTest {
                 10_000L,
                 WorkInfo.PeriodicityInfo(1_000L, 5_000L),
                 50_000L,
-                WorkInfo.STOP_REASON_CANCELLED_BY_APP
+                WorkInfo.STOP_REASON_CANCELLED_BY_APP,
             )
         assertOn(workInfo)
     }
@@ -141,7 +141,7 @@ public class ParcelableWorkInfoTest {
                 10_000L,
                 WorkInfo.PeriodicityInfo(1_000L, 5_000L),
                 50_000L,
-                WorkInfo.STOP_REASON_CANCELLED_BY_APP
+                WorkInfo.STOP_REASON_CANCELLED_BY_APP,
             )
 
         assertOn(listOf(workInfoOne, workInfoTwo))
@@ -152,7 +152,7 @@ public class ParcelableWorkInfoTest {
         val parcelled: ParcelableWorkInfos =
             ParcelConverters.unmarshall(
                 ParcelConverters.marshall(parcelable),
-                ParcelableWorkInfos.CREATOR
+                ParcelableWorkInfos.CREATOR,
             )
         equal(workInfos, parcelled.workInfos)
     }
@@ -162,7 +162,7 @@ public class ParcelableWorkInfoTest {
         val parcelled: ParcelableWorkInfo =
             ParcelConverters.unmarshall(
                 ParcelConverters.marshall(parcelable),
-                ParcelableWorkInfo.CREATOR
+                ParcelableWorkInfo.CREATOR,
             )
         equal(workInfo, parcelled.workInfo)
     }

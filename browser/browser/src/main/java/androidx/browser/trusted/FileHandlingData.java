@@ -56,6 +56,7 @@ public final class FileHandlingData {
     }
 
     /** Unpacks the object from a {@link Bundle}. */
+    @SuppressWarnings("NullAway")
     public static @NonNull FileHandlingData fromBundle(@NonNull Bundle bundle) {
         return new FileHandlingData(
                 BundleCompat.getParcelableArrayList(bundle, KEY_URIS, Uri.class));

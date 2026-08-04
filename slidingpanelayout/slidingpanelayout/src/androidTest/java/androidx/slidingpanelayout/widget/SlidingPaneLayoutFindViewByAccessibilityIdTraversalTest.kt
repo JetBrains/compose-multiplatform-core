@@ -64,7 +64,7 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
                 activity.layoutInflater.inflate(
                     R.layout.user_resizeable_slidingpanelayout,
                     null,
-                    false
+                    false,
                 )
             container.addView(layout, ViewGroup.LayoutParams(300, 500))
 
@@ -97,14 +97,14 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
                 activity.layoutInflater.inflate(
                     R.layout.user_resizeable_slidingpanelayout,
                     null,
-                    false
+                    false,
                 )
             container.addView(
                 layout,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
 
             activity.setContentView(container)
@@ -117,7 +117,7 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
             val viewStructure = TestViewStructure()
             slidingPaneLayout.dispatchProvideAutofillStructure(
                 viewStructure,
-                AUTOFILL_FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+                AUTOFILL_FLAG_INCLUDE_NOT_IMPORTANT_VIEWS,
             )
             // Ensure that the children is visible to Autofill service.
             assertThat(viewStructure.getChildCount()).isEqualTo(2)
@@ -126,7 +126,6 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
 
     // SdkSuppress because dispatchProvideStructure is introduced in API 23.
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun testDispatchProvideStructure_createViewStructureForChildrenView() {
         TestActivity.onActivityCreated = { activity ->
             val container = FrameLayout(activity)
@@ -134,15 +133,15 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
                 activity.layoutInflater.inflate(
                     R.layout.user_resizeable_slidingpanelayout,
                     null,
-                    false
+                    false,
                 ) as SlidingPaneLayout
 
             container.addView(
                 layout,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
 
             activity.setContentView(container)
@@ -170,7 +169,7 @@ class SlidingPaneLayoutFindViewByAccessibilityIdTraversalTest {
             scrollX: Int,
             scrollY: Int,
             width: Int,
-            height: Int
+            height: Int,
         ) {}
 
         override fun setTransformation(matrix: Matrix?) {}

@@ -31,12 +31,14 @@ import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.health.connect.client.ExperimentalMatchmakingApi
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
 import androidx.health.connect.client.impl.platform.aggregate.DOUBLE_AGGREGATION_METRIC_TYPE_MAP
 import androidx.health.connect.client.impl.platform.aggregate.DURATION_AGGREGATION_METRIC_TYPE_MAP
+import androidx.health.connect.client.impl.platform.aggregate.DURATION_TO_LONG_AGGREGATION_METRIC_TYPE_MAP
 import androidx.health.connect.client.impl.platform.aggregate.ENERGY_AGGREGATION_METRIC_TYPE_MAP
 import androidx.health.connect.client.impl.platform.aggregate.GRAMS_AGGREGATION_METRIC_TYPE_MAP
 import androidx.health.connect.client.impl.platform.aggregate.KILOGRAMS_AGGREGATION_METRIC_TYPE_MAP
@@ -55,20 +57,24 @@ import androidx.health.connect.client.impl.platform.records.PlatformPressure
 import androidx.health.connect.client.impl.platform.records.PlatformTemperatureDelta
 import androidx.health.connect.client.impl.platform.records.PlatformVelocity
 import androidx.health.connect.client.impl.platform.records.toSdkDataOrigin
+import androidx.health.connect.client.impl.platform.request.PlatformMatchmakingResponse
 import androidx.health.connect.client.impl.platform.request.toAggregationType
+import androidx.health.connect.client.matchmaking.MatchmakingResponse
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.Mass
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 private const val BUCKET_DATA_ORIGINS_EXTENSION_VERSION = 10
 
+@SuppressLint("NewApi") // already checked with a feature availability check
+@OptIn(ExperimentalMatchmakingApi::class)
+fun PlatformMatchmakingResponse.toKtResponse(): MatchmakingResponse =
+    MatchmakingResponse(isMatchmakingPossible = isMatchmakingPossible)
+
 fun AggregateRecordsResponse<Any>.toSdkResponse(metrics: Set<AggregateMetric<Any>>) =
-    buildAggregationResult(
-        metrics,
-        ::get,
-        ::getDataOrigins,
-    )
+    buildAggregationResult(metrics, ::get, ::getDataOrigins)
 
 fun AggregateRecordsGroupedByDurationResponse<Any>.toSdkResponse(
     metrics: Set<AggregateMetric<Any>>
@@ -87,7 +93,8 @@ fun AggregateRecordsGroupedByDurationResponse<Any>.toSdkResponse(
         startTime,
         endTime,
         metrics.firstNotNullOfOrNull { getZoneOffset(it.toAggregationType()) }
-            ?: ZoneOffset.systemDefault().rules.getOffset(startTime)
+            ?: ZoneOffset.systemDefault().rules.getOffset(startTime),
+        shouldSkipValidation = true,
     )
 }
 
@@ -97,7 +104,7 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(metrics: Set<Aggr
 fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
     metrics: Set<AggregateMetric<Any>>,
     bucketStartTime: LocalDateTime,
-    bucketEndTime: LocalDateTime
+    bucketEndTime: LocalDateTime,
 ): AggregationResultGroupedByPeriod {
     val platformDataOriginsGetter: (AggregationType<Any>) -> Set<PlatformDataOrigin> =
         if (
@@ -111,7 +118,8 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
     return AggregationResultGroupedByPeriod(
         buildAggregationResult(metrics, ::get, platformDataOriginsGetter),
         bucketStartTime,
-        bucketEndTime
+        bucketEndTime,
+        shouldSkipValidation = true,
     )
 }
 
@@ -119,7 +127,7 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
 internal fun buildAggregationResult(
     metrics: Set<AggregateMetric<Any>>,
     aggregationValueGetter: (AggregationType<Any>) -> Any?,
-    platformDataOriginsGetter: (AggregationType<Any>) -> Set<PlatformDataOrigin>
+    platformDataOriginsGetter: (AggregationType<Any>) -> Set<PlatformDataOrigin>,
 ): AggregationResult {
     val metricValueMap = buildMap {
         metrics.forEach { metric ->
@@ -131,7 +139,7 @@ internal fun buildAggregationResult(
         getDoubleMetricValues(metricValueMap),
         metrics.flatMapTo(hashSetOf()) { metric ->
             platformDataOriginsGetter(metric.toAggregationType()).map { it.toSdkDataOrigin() }
-        }
+        },
     )
 }
 
@@ -141,11 +149,16 @@ internal fun getLongMetricValues(
 ): Map<String, Long> {
     return buildMap {
         metricValueMap.forEach { (key, value) ->
-            if (
-                key in DURATION_AGGREGATION_METRIC_TYPE_MAP ||
-                    key in LONG_AGGREGATION_METRIC_TYPE_MAP
-            ) {
-                this[key.metricKey] = value as Long
+            when (key) {
+                in LONG_AGGREGATION_METRIC_TYPE_MAP -> {
+                    this[key.metricKey] = value as Long
+                }
+                in DURATION_TO_LONG_AGGREGATION_METRIC_TYPE_MAP -> {
+                    this[key.metricKey] = value as Long
+                }
+                in DURATION_AGGREGATION_METRIC_TYPE_MAP -> {
+                    this[key.metricKey] = (value as Duration).toMillis()
+                }
             }
         }
     }

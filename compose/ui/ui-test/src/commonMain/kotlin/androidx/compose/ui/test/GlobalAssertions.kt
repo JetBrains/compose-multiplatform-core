@@ -41,7 +41,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.ERROR,
 )
 @Suppress("UNUSED_PARAMETER")
-fun addGlobalAssertion(name: String, assertion: (SemanticsNodeInteraction) -> Unit) {}
+public fun addGlobalAssertion(name: String, assertion: (SemanticsNodeInteraction) -> Unit): Unit {}
 
 /**
  * Removes a named assertion from the collection of assertions to be executed before test actions.
@@ -55,7 +55,7 @@ fun addGlobalAssertion(name: String, assertion: (SemanticsNodeInteraction) -> Un
     level = DeprecationLevel.ERROR,
 )
 @Suppress("UNUSED_PARAMETER")
-fun removeGlobalAssertion(name: String) {}
+public fun removeGlobalAssertion(name: String): Unit {}
 
 /**
  * Executes all of the assertions registered by [addGlobalAssertion]. This may be useful in a custom
@@ -71,10 +71,10 @@ fun removeGlobalAssertion(name: String) {}
     replaceWith =
         ReplaceWith(
             "tryPerformAccessibilityChecks()",
-            "androidx.compose.ui.test.tryPerformAccessibilityChecks"
-        )
+            "androidx.compose.ui.test.tryPerformAccessibilityChecks",
+        ),
 )
-fun SemanticsNodeInteraction.invokeGlobalAssertions(): SemanticsNodeInteraction {
+public fun SemanticsNodeInteraction.invokeGlobalAssertions(): SemanticsNodeInteraction {
     tryPerformAccessibilityChecks()
     return this
 }
@@ -93,10 +93,10 @@ fun SemanticsNodeInteraction.invokeGlobalAssertions(): SemanticsNodeInteraction 
     replaceWith =
         ReplaceWith(
             "onFirst().tryPerformAccessibilityChecks()",
-            "androidx.compose.ui.test.tryPerformAccessibilityChecks, androidx.compose.ui.test.onFirst"
-        )
+            "androidx.compose.ui.test.tryPerformAccessibilityChecks, androidx.compose.ui.test.onFirst",
+        ),
 )
-fun SemanticsNodeInteractionCollection.invokeGlobalAssertions():
+public fun SemanticsNodeInteractionCollection.invokeGlobalAssertions():
     SemanticsNodeInteractionCollection {
     onFirst().tryPerformAccessibilityChecks()
     return this

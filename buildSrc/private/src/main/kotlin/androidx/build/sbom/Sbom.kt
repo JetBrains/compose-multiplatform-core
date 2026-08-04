@@ -33,7 +33,9 @@ import java.util.UUID
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ModuleVersionIdentifier
-import org.gradle.api.tasks.Copy
+import org.gradle.api.attributes.Category
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.jvm.tasks.Jar
@@ -84,7 +86,7 @@ private val excludeTaskNames =
         "bundleAndroidMainAar",
         "bundleAndroidMainLocalLintAar",
         "repackageAndroidMainAar",
-        "repackageAarWithResourceApiAndroidMain"
+        "repackageAarWithResourceApiAndroidMain",
     )
 
 /**
@@ -146,6 +148,7 @@ private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTa
         // We separately validate that this list is correct in
         val shadowTask = task as? ShadowJar
         if (shadowTask != null) {
+            @Suppress("EagerGradleConfiguration")
             val configurations =
                 configurations.filter { conf -> shadowTask.configurations.contains(conf) }
             return configurations.map { conf -> conf.name }
@@ -198,27 +201,32 @@ fun Project.configureSbomPublishing() {
     }
     apply(plugin = "org.spdx.sbom")
     val repos = getRepoPublicUrls()
-    val headShaProvider = getHeadShaProvider(this)
+    val headShaProvider = getHeadShaProvider()
     val supportRootDir = getSupportRootFolder()
 
-    val allowPublicRepos = System.getenv("ALLOW_PUBLIC_REPOS") != null
-    val sbomPublishDir = getSbomPublishDir()
-
-    val sbomBuiltFile = layout.buildDirectory.file("spdx/release.spdx.json").get().asFile
+    val sbomBuiltFile = layout.buildDirectory.file("spdx/release.spdx.json")
 
     val publishTask =
-        tasks.register("exportSboms", Copy::class.java) { publishTask ->
-            publishTask.destinationDir = sbomPublishDir
-            val sbomBuildDir = sbomBuiltFile.parentFile
-            publishTask.from(sbomBuildDir)
-            publishTask.rename(sbomBuiltFile.name, "$projectName-$projectVersion.spdx.json")
-
-            publishTask.doFirst {
-                if (!sbomBuiltFile.exists()) {
-                    throw GradleException("sbom file does not exist: $sbomBuiltFile")
-                }
-            }
+        tasks.register("exportSboms", ExportSbomsTask::class.java) { publishTask ->
+            publishTask.destinationDir.set(getSbomPublishDir())
+            publishTask.sbomFile.set(sbomBuiltFile)
+            publishTask.outputFileName.set("$projectName-$projectVersion.spdx.json")
         }
+
+    configurations.register("sbomArtifacts") {
+        it.isCanBeResolved = false
+        it.isCanBeConsumed = true
+        it.attributes { attributes ->
+            attributes.attribute(
+                Category.CATEGORY_ATTRIBUTE,
+                objects.named(Category::class.java, "androidx-sbom-artifacts"),
+            )
+        }
+    }
+    artifacts.add(
+        "sbomArtifacts",
+        publishTask.map { task -> task.destinationDir.file(task.outputFileName.get()) },
+    )
 
     tasks.withType(SpdxSbomTask::class.java).configureEach { task ->
         val sbomProjectDir = projectDir
@@ -233,7 +241,7 @@ fun Project.configureSbomPublishing() {
                         if (uriString.startsWith(ourRepoUrl)) {
                             return URI.create(publicRepoUrl)
                         }
-                        if (allowPublicRepos) {
+                        if (System.getenv("ALLOW_PUBLIC_REPOS") != null) {
                             if (uriString.startsWith(publicRepoUrl)) {
                                 return URI.create(publicRepoUrl)
                             }
@@ -246,7 +254,7 @@ fun Project.configureSbomPublishing() {
 
                 override fun mapScmForProject(
                     original: ScmInfo,
-                    projectInfo: ProjectInfo
+                    projectInfo: ProjectInfo,
                 ): ScmInfo {
                     val url = getGitRemoteUrl(projectInfo.projectDirectory, supportRootDir)
                     return ScmInfo.from("git", url, headShaProvider.get())
@@ -320,25 +328,27 @@ private fun getGitRemoteUrl(dir: File, supportRootDir: File): String {
     throw GradleException("Could not identify git remote url for project at $dir")
 }
 
-private fun Project.getSbomPublishDir(): File {
+private fun Project.getSbomPublishDir(): Provider<Directory> {
     val groupPath = group.toString().replace(".", "/")
-    return File(getDistributionDirectory(), "sboms/$groupPath/$name/$version")
+    val fullPath = "sboms/$groupPath/$name/$version"
+    return getDistributionDirectory().dir(fullPath)
 }
 
 private const val MAVEN_CENTRAL_REPO_URL = "https://repo.maven.apache.org/maven2"
-private const val GMAVEN_REPO_URL = "https://dl.google.com/android/maven2"
+private const val GMAVEN_REPO_URL = "https://dl.google.com/dl/android/maven2"
 
 /** Returns a mapping from local repo url to public repo url */
 private fun Project.getRepoPublicUrls(): Map<String, String> {
     return if (ProjectLayoutType.isPlayground(this)) {
         mapOf(
             MAVEN_CENTRAL_REPO_URL to MAVEN_CENTRAL_REPO_URL,
-            AndroidXPlaygroundRootImplPlugin.INTERNAL_PREBUILTS_REPO_URL to GMAVEN_REPO_URL
+            GMAVEN_REPO_URL to GMAVEN_REPO_URL,
+            AndroidXPlaygroundRootImplPlugin.INTERNAL_PREBUILTS_REPO_URL to GMAVEN_REPO_URL,
         )
     } else {
         mapOf(
             "file:${getPrebuiltsRoot()}/androidx/external" to MAVEN_CENTRAL_REPO_URL,
-            "file:${getPrebuiltsRoot()}/androidx/internal" to GMAVEN_REPO_URL
+            "file:${getPrebuiltsRoot()}/androidx/internal" to GMAVEN_REPO_URL,
         )
     }
 }

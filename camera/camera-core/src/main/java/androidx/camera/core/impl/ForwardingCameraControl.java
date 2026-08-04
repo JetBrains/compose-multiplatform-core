@@ -16,13 +16,13 @@
 
 package androidx.camera.core.impl;
 
-import android.graphics.Rect;
-
 import androidx.annotation.IntRange;
 import androidx.annotation.VisibleForTesting;
+import androidx.camera.core.CameraControl;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.InteropConfigurator;
 import androidx.camera.core.imagecapture.CameraCapturePipeline;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -148,11 +148,6 @@ public class ForwardingCameraControl implements CameraControlInternal {
     }
 
     @Override
-    public @NonNull Rect getSensorRect() {
-        return mCameraControlInternal.getSensorRect();
-    }
-
-    @Override
     public void addInteropConfig(@NonNull Config config) {
         mCameraControlInternal.addInteropConfig(config);
     }
@@ -165,6 +160,17 @@ public class ForwardingCameraControl implements CameraControlInternal {
     @Override
     public @NonNull Config getInteropConfig() {
         return mCameraControlInternal.getInteropConfig();
+    }
+
+    @Override
+    public @NonNull MutableConfig getInteropMutableConfig() {
+        return mCameraControlInternal.getInteropMutableConfig();
+    }
+
+    @Override
+    public @NonNull ListenableFuture<Void> applyInteropAsync(
+            @NonNull InteropConfigurator<? super CameraControl> configurator) {
+        return mCameraControlInternal.applyInteropAsync(configurator);
     }
 
     @Override

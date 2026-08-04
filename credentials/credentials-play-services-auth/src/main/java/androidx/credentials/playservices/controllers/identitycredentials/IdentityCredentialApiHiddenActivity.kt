@@ -23,8 +23,10 @@ import android.os.Bundle
 import android.os.ResultReceiver
 import androidx.annotation.RestrictTo
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.reportDummyResult
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.reportError
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.reportResult
+import androidx.credentials.provider.PendingIntentHandler.Companion.EXTRA_PASS_IT_BY_RESULT_RECEIVER
 
 /** An activity used to ensure all required API versions work as intended. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -46,6 +48,13 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
             finish()
         }
 
+        val errorName =
+            intent.getStringExtra(CredentialProviderBaseController.Companion.EXTRA_ERROR_NAME)
+        if (errorName == null) {
+            finish()
+            return
+        }
+
         restoreState(savedInstanceState)
         if (mWaitingForActivityResult) {
             return
@@ -53,10 +62,11 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
         }
         val pendingIntent: PendingIntent? =
             intent.getParcelableExtra(
-                CredentialProviderBaseController.Companion.EXTRA_GET_CREDENTIAL_INTENT
+                CredentialProviderBaseController.Companion.EXTRA_FLOW_PENDING_INTENT
             )
 
         if (pendingIntent != null) {
+            mWaitingForActivityResult = true
             startIntentSenderForResult(
                 pendingIntent.intentSender,
                 /* requestCode= */ CredentialProviderBaseController.Companion
@@ -65,13 +75,10 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
                 /* flagsMask= */ 0,
                 /* flagsValues= */ 0,
                 /* extraFlags= */ 0,
-                /* options = */ null
+                /* options = */ null,
             )
         } else {
-            resultReceiver?.reportError(
-                errName = CredentialProviderBaseController.Companion.GET_UNKNOWN,
-                errMsg = "Internal error"
-            )
+            resultReceiver?.reportError(errName = errorName, errMsg = "Internal error")
             finish()
         }
     }
@@ -89,10 +96,17 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        // Bypass if result already handled via ttleResultReceiver to avoid ResultReceiver
+        // resolution exception(`No provider data returned`).
+        if (data?.hasExtra(EXTRA_PASS_IT_BY_RESULT_RECEIVER) == true) {
+            resultReceiver?.reportDummyResult()
+            finish()
+            return
+        }
         resultReceiver?.reportResult(
             requestCode = requestCode,
             resultCode = resultCode,
-            data = data
+            data = data,
         )
         mWaitingForActivityResult = false
         finish()

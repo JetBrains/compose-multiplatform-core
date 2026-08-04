@@ -18,11 +18,13 @@ package androidx.camera.camera2.pipe.compat
 
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.params.OutputConfiguration
+import android.media.MediaCodec
+import android.media.MediaRecorder
 import android.os.Build
 import android.util.Size
 import android.view.Surface
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.CameraColorSpace
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
 import androidx.camera.camera2.pipe.OutputStream.MirrorMode
@@ -30,14 +32,14 @@ import androidx.camera.camera2.pipe.OutputStream.OutputType
 import androidx.camera.camera2.pipe.OutputStream.SensorPixelMode
 import androidx.camera.camera2.pipe.OutputStream.StreamUseCase
 import androidx.camera.camera2.pipe.OutputStream.TimestampBase
-import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.compat.OutputConfigurationWrapper.Companion.SURFACE_GROUP_ID_NONE
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.checkNOrHigher
 import androidx.camera.camera2.pipe.core.checkOOrHigher
 import androidx.camera.camera2.pipe.core.checkPOrHigher
+import androidx.camera.common.UnsafeWrapper
+import java.lang.Class
 import java.util.concurrent.Executor
-import kotlin.reflect.KClass
 
 /**
  * A data class that mirrors the fields in [android.hardware.camera2.params.SessionConfiguration] so
@@ -52,6 +54,7 @@ internal data class SessionConfigData(
     val stateCallback: CameraCaptureSessionWrapper.StateCallback,
     val sessionTemplateId: Int,
     val sessionParameters: Map<*, Any?>,
+    val sessionColorSpace: CameraColorSpace?,
 )
 
 /**
@@ -69,7 +72,7 @@ internal data class ExtensionSessionConfigData(
     val sessionParameters: Map<*, Any?>,
     val extensionMode: Int? = null,
     val extensionStateCallback: CameraExtensionSessionWrapper.StateCallback? = null,
-    val postviewOutputConfiguration: OutputConfigurationWrapper? = null
+    val postviewOutputConfiguration: OutputConfigurationWrapper? = null,
 )
 
 internal object Camera2SessionTypes {
@@ -135,15 +138,13 @@ internal interface OutputConfigurationWrapper : UnsafeWrapper {
     }
 }
 
-@RequiresApi(24)
 internal class AndroidOutputConfiguration(
     private val output: OutputConfiguration,
     override val surfaceSharing: Boolean,
     override val maxSharedSurfaceCount: Int,
-    override val physicalCameraId: CameraId?
+    override val physicalCameraId: CameraId?,
 ) : OutputConfigurationWrapper {
 
-    @RequiresApi(24)
     companion object {
         /**
          * Create and validate an OutputConfiguration for Camera2. null is returned when a
@@ -151,6 +152,7 @@ internal class AndroidOutputConfiguration(
          */
         fun create(
             surface: Surface?,
+            format: Int? = null,
             outputType: OutputType = OutputType.SURFACE,
             mirrorMode: MirrorMode? = null,
             timestampBase: TimestampBase? = null,
@@ -162,19 +164,24 @@ internal class AndroidOutputConfiguration(
             surfaceGroupId: Int = SURFACE_GROUP_ID_NONE,
             physicalCameraId: CameraId? = null,
         ): OutputConfigurationWrapper? {
-            check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-
             // Create the OutputConfiguration using the groupId via the constructor (if set)
             val configuration: OutputConfiguration
-            if (outputType == OutputType.SURFACE) {
+            if (
+                outputType == OutputType.SURFACE_DEFERRED_FOR_QUERY_ONLY &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+            ) {
+                checkNotNull(format)
+                checkNotNull(size)
+                configuration = Api35Compat.newImageReaderOutputConfiguration(format, size)
+            } else if (outputType == OutputType.SURFACE) {
                 check(surface != null) {
                     "OutputConfigurations defined with ${OutputType.SURFACE} must provide a"
                     "non-null surface!"
                 }
-                // OutputConfiguration will, on some OS versions, attempt to read the surface size
-                // from the Surface object. If the Surface has been destroyed, this check will fail.
-                // Because there's no way to cleanly synchronize and check the value, we catch the
-                // exception for these cases.
+                // OutputConfiguration will, on some OS versions, attempt to read the surface
+                // size from the Surface object. If the Surface has been destroyed, this check
+                // will fail. Because there's no way to cleanly synchronize and check the
+                // value, we catch the exception for these cases.
                 try {
                     configuration =
                         if (surfaceGroupId != SURFACE_GROUP_ID_NONE) {
@@ -197,12 +204,7 @@ internal class AndroidOutputConfiguration(
                 check(size != null) {
                     "Size must defined when creating a deferred OutputConfiguration."
                 }
-                val outputKlass =
-                    when (outputType) {
-                        OutputType.SURFACE_TEXTURE -> SurfaceTexture::class.java
-                        OutputType.SURFACE_VIEW -> SurfaceHolder::class.java
-                        else -> throw IllegalStateException("Unsupported OutputType: $outputType")
-                    }
+                val outputKlass = outputType.toKlass()
                 configuration = Api26Compat.newOutputConfiguration(size, outputKlass)
             }
 
@@ -287,8 +289,28 @@ internal class AndroidOutputConfiguration(
                 } else {
                     1
                 },
-                physicalCameraId
+                physicalCameraId,
             )
+        }
+
+        private fun OutputType.toKlass(): Class<out Any> {
+            return when (this) {
+                OutputType.SURFACE_TEXTURE -> SurfaceTexture::class.java
+                OutputType.SURFACE_VIEW -> SurfaceHolder::class.java
+                OutputType.MEDIA_CODEC -> {
+                    check(Build.VERSION.SDK_INT >= 35) {
+                        "OutputType.MEDIA_CODEC requires API 35 or higher."
+                    }
+                    MediaCodec::class.java
+                }
+                OutputType.MEDIA_RECORDER -> {
+                    check(Build.VERSION.SDK_INT >= 35) {
+                        "OutputType.MEDIA_RECORDER requires API 35 or higher."
+                    }
+                    MediaRecorder::class.java
+                }
+                else -> throw IllegalStateException("Unsupported OutputType: $this")
+            }
         }
 
         private fun OutputConfiguration.enableSurfaceSharingCompat() {
@@ -337,9 +359,9 @@ internal class AndroidOutputConfiguration(
         get() = output.surfaceGroupId
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            OutputConfiguration::class -> output as T
+            OutputConfiguration::class.java -> output as T
             else -> null
         }
 

@@ -32,7 +32,7 @@ import androidx.health.services.client.proto.DataProto.DataType.TimeType.TIME_TY
 class DeltaDataType<T : Any, D : DataPoint<T>>(
     name: String,
     timeType: TimeType,
-    valueClass: Class<T>
+    valueClass: Class<T>,
 ) : DataType<T, D>(name, timeType, valueClass, isAggregate = false)
 
 /**
@@ -143,9 +143,7 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
             .setFormat(classToValueFormat())
             .build()
 
-    internal fun toProtoFromValue(
-        value: T,
-    ): DataProto.Value {
+    internal fun toProtoFromValue(value: T): DataProto.Value {
         val builder = DataProto.Value.newBuilder()
         when (valueClass.kotlin) {
             Long::class -> builder.longVal = value as Long
@@ -567,8 +565,8 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
          *
          * **_Note_: this [DataType] is only intended to be used in conjunction with exercise goals.
          * [DataPoint]s will not be delivered for this [DataType]. If you want to query the active
-         * duration, you should use [ExerciseUpdate.activeDuration] which is available in every
-         * [ExerciseUpdate].**
+         * duration, you should use [ExerciseUpdate.activeDurationCheckpoint] which is available in
+         * every [ExerciseUpdate].**
          */
         @JvmField
         val ACTIVE_EXERCISE_DURATION_TOTAL: AggregateDataType<Long, CumulativeDataPoint<Long>> =
@@ -813,7 +811,7 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
                 ?: AggregateDataType(
                     proto.name,
                     TimeType.fromProto(proto.timeType),
-                    protoDataTypeToClass(proto) as Class<Number>
+                    protoDataTypeToClass(proto) as Class<Number>,
                 )
 
         internal fun deltaFromProto(
@@ -823,7 +821,7 @@ abstract class DataType<T : Any, D : DataPoint<T>>(
                 ?: DeltaDataType(
                     proto.name,
                     TimeType.fromProto(proto.timeType),
-                    protoDataTypeToClass(proto)
+                    protoDataTypeToClass(proto),
                 )
 
         internal fun deltaAndAggregateFromProto(

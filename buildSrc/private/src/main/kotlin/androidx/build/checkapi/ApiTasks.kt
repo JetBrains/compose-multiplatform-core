@@ -21,6 +21,7 @@ import androidx.build.Release
 import androidx.build.RunApiTasks
 import androidx.build.binarycompatibilityvalidator.BinaryCompatibilityValidation
 import androidx.build.getSupportRootFolder
+import androidx.build.hasAndroidMultiplatformPlugin
 import androidx.build.isWriteVersionedApiFilesEnabled
 import androidx.build.metalava.MetalavaTasks
 import androidx.build.multiplatformExtension
@@ -29,19 +30,19 @@ import androidx.build.stableaidl.setupWithStableAidlPlugin
 import androidx.build.version
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
+import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.LibraryVariant
 import java.io.File
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 sealed class ApiTaskConfig
 
@@ -49,33 +50,21 @@ data class LibraryApiTaskConfig(val variant: LibraryVariant) : ApiTaskConfig()
 
 object JavaApiTaskConfig : ApiTaskConfig()
 
-object KmpApiTaskConfig : ApiTaskConfig()
+/**
+ * A KMP project with a jvm target (if there is an android target,
+ * [AndroidMultiplatformApiTaskConfig]) should be used instead.
+ */
+object KmpJvmApiTaskConfig : ApiTaskConfig()
 
-object AndroidMultiplatformApiTaskConfig : ApiTaskConfig()
+/** A KMP project without an android or jvm target. */
+object KmpNoJvmApiTaskConfig : ApiTaskConfig()
 
-fun AndroidXExtension.shouldConfigureApiTasks(): Boolean {
-    if (!project.state.executed) {
-        throw GradleException(
-            "Project ${project.name} has not been evaluated. Extension" +
-                "properties may only be accessed after the project has been evaluated."
-        )
-    }
+/** A KMP project with an android target. */
+data class AndroidMultiplatformApiTaskConfig(val variant: KotlinMultiplatformAndroidVariant) :
+    ApiTaskConfig()
 
-    return when (type.checkApi) {
-        is RunApiTasks.No -> {
-            project.logger.info("Projects of type ${type.name} do not track API.")
-            false
-        }
-        is RunApiTasks.Yes -> {
-            (type.checkApi as RunApiTasks.Yes).reason?.let { reason ->
-                project.logger.info(
-                    "Project ${project.name} has explicitly enabled API tasks " +
-                        "with reason: $reason"
-                )
-            }
-            true
-        }
-    }
+fun AndroidXExtension.shouldConfigureApiTasks(): Provider<Boolean> {
+    return type.map { it.checkApi is RunApiTasks.Yes }
 }
 
 /**
@@ -93,9 +82,12 @@ internal fun Project.shouldWriteVersionedApiFile(): Boolean {
     }
 
     // Policy: Don't write versioned files for non-final API surfaces, ex. dev or alpha, or for
-    // versions that should only exist in dead-end release branches, ex. rc or stable.
+    // versions that should only exist in dead-end release branches, ex. rc02+ or stable.
     if (
-        !project.version().isFinalApi() || project.version().isRC() || project.version().isStable()
+        !project.version().isFinalApi() ||
+            (project.version().isRC() &&
+                project.version().preReleaseIteration?.let { it > 1 } == true) ||
+            project.version().isStable()
     ) {
         return false
     }
@@ -103,10 +95,21 @@ internal fun Project.shouldWriteVersionedApiFile(): Boolean {
     return true
 }
 
-fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: AndroidXExtension) {
+fun Project.configureProjectForApiTasks(
+    config: ApiTaskConfig,
+    extension: AndroidXExtension,
+    /**
+     * If [shouldConfigure] is provided and is false, API tasks will not be configured for this
+     * project.
+     */
+    shouldConfigure: Provider<Boolean>? = null,
+) {
     // afterEvaluate required to read extension properties
     afterEvaluate {
-        if (!extension.shouldConfigureApiTasks()) {
+        if (!extension.shouldConfigureApiTasks().get()) {
+            return@afterEvaluate
+        }
+        if (shouldConfigure != null && !shouldConfigure.get()) {
             return@afterEvaluate
         }
 
@@ -123,17 +126,26 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
         val (compilationInputs, androidManifest) =
             configureCompilationInputsAndManifest(config) ?: return@afterEvaluate
         val baselinesApiLocation = ApiBaselinesLocation.fromApiLocation(currentApiLocation)
-        val generateApiDependencies = createReleaseApiConfiguration()
+        // If this is a KMP project with no jvm/android target, don't attempt to resolve the release
+        // jar since it will not exist.
+        val hasJvmOrAndroidTarget = config !is KmpNoJvmApiTaskConfig
+        val generateApiDependencies =
+            if (hasJvmOrAndroidTarget) {
+                createReleaseApiConfiguration()
+            } else {
+                null
+            }
 
         MetalavaTasks.setupProject(
             project,
             compilationInputs,
-            generateApiDependencies,
+            project.files(generateApiDependencies),
             extension,
             androidManifest,
             baselinesApiLocation,
             builtApiLocation,
-            outputApiLocations
+            outputApiLocations,
+            hasJvmOrAndroidTarget,
         )
 
         project.setupWithStableAidlPlugin()
@@ -143,16 +155,18 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
                 project,
                 config.variant.artifacts.get(SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST),
                 builtApiLocation,
-                outputApiLocations
+                outputApiLocations,
             )
         } else if (config is AndroidMultiplatformApiTaskConfig) {
-            // Android Multiplatform does not currently support resources, so we generate a blank
-            // "api" file to make sure the check task breaks if there were tracked resources before
+            // If AGP KMP project does not enable resources, generate a blank "api" file to make
+            // sure the check task breaks if there were tracked resources before
             ResourceTasks.setupProject(
                 project,
-                project.provider { BlankApiRegularFile(project) },
+                config.variant.artifacts.get(SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST).orElse {
+                    File(project.getSupportRootFolder(), "buildSrc/blank-res-api/public.txt")
+                },
                 builtApiLocation,
-                outputApiLocations
+                outputApiLocations,
             )
         }
         multiplatformExtension?.let { multiplatformExtension ->
@@ -174,15 +188,19 @@ internal fun Project.configureCompilationInputsAndManifest(
                 config.variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         }
         is AndroidMultiplatformApiTaskConfig -> {
-            CompilationInputs.fromKmpAndroidTarget(project) to null
+            CompilationInputs.fromKmpAndroidTarget(project) to
+                config.variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         }
-        is KmpApiTaskConfig -> {
+        is KmpJvmApiTaskConfig -> {
             CompilationInputs.fromKmpJvmTarget(project) to null
         }
         is JavaApiTaskConfig -> {
             val javaExtension = extensions.getByType<JavaPluginExtension>()
             val mainSourceSet = javaExtension.sourceSets.getByName("main")
             CompilationInputs.fromSourceSet(mainSourceSet, this) to null
+        }
+        is KmpNoJvmApiTaskConfig -> {
+            CompilationInputs.fromKmpWithoutJvmTarget(project) to null
         }
     }
 }
@@ -195,37 +213,30 @@ internal fun Project.createReleaseApiConfiguration(): Configuration {
                 it.isTransitive = false
                 it.attributes.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named(BuildTypeAttr::class.java, "release")
+                    project.objects.named(BuildTypeAttr::class.java, "release"),
                 )
                 it.attributes.attribute(
                     Usage.USAGE_ATTRIBUTE,
-                    objects.named(Usage::class.java, Usage.JAVA_API)
+                    objects.named(Usage::class.java, Usage.JAVA_API),
                 )
                 it.attributes.attribute(
                     ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
-                    ArtifactTypeDefinition.JAR_TYPE
+                    ArtifactTypeDefinition.JAR_TYPE,
                 )
                 // If this is a KMP project targeting android, make sure to select the android
                 // compilation and not a different jvm target compilation
-                multiplatformExtension?.let { extension ->
-                    if (
-                        extension.targets.any { it.platformType == KotlinPlatformType.androidJvm }
-                    ) {
-                        it.attributes.attribute(
-                            Attribute.of(
-                                "org.jetbrains.kotlin.platform.type",
-                                KotlinPlatformType::class.java
-                            ),
-                            KotlinPlatformType.androidJvm
-                        )
-                    }
+                if (project.hasAndroidMultiplatformPlugin()) {
+                    it.attributes.attribute(
+                        Attribute.of(
+                            "org.gradle.jvm.environment",
+                            TargetJvmEnvironment::class.java,
+                        ),
+                        objects.named(
+                            TargetJvmEnvironment::class.java,
+                            TargetJvmEnvironment.ANDROID,
+                        ),
+                    )
                 }
             }
             .apply { project.dependencies.add(name, project.project(path)) }
-}
-
-internal class BlankApiRegularFile(project: Project) : RegularFile {
-    val file = File(project.getSupportRootFolder(), "buildSrc/blank-res-api/public.txt")
-
-    override fun getAsFile(): File = file
 }

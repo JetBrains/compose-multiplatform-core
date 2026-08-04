@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.test
 
+import androidx.annotation.CheckResult
 import androidx.compose.ui.test.internal.JvmDefaultWithCompatibility
 
 /**
@@ -24,7 +25,7 @@ import androidx.compose.ui.test.internal.JvmDefaultWithCompatibility
  * Typically implemented by a test rule.
  */
 @JvmDefaultWithCompatibility
-interface SemanticsNodeInteractionsProvider {
+public interface SemanticsNodeInteractionsProvider {
     /**
      * Finds a semantics node that matches the given condition.
      *
@@ -40,9 +41,10 @@ interface SemanticsNodeInteractionsProvider {
      *   of a larger semantic unit, for example a text and an image forming a Button together.
      * @see onAllNodes to work with multiple elements
      */
-    fun onNode(
+    @CheckResult
+    public fun onNode(
         matcher: SemanticsMatcher,
-        useUnmergedTree: Boolean = false
+        useUnmergedTree: Boolean = false,
     ): SemanticsNodeInteraction
 
     /**
@@ -59,8 +61,9 @@ interface SemanticsNodeInteractionsProvider {
      *   of a larger semantic unit, for example a text and an image forming a Button together.
      * @see onNode
      */
-    fun onAllNodes(
+    @CheckResult
+    public fun onAllNodes(
         matcher: SemanticsMatcher,
-        useUnmergedTree: Boolean = false
+        useUnmergedTree: Boolean = false,
     ): SemanticsNodeInteractionCollection
 }

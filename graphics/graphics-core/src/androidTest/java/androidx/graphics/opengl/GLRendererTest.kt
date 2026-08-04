@@ -95,7 +95,7 @@ class GLRendererTest {
                         override fun onDrawFrame(eglManager: EGLManager) {
                             // NO-OP
                         }
-                    }
+                    },
                 )
             }
             fail("Start should be called first")
@@ -151,8 +151,8 @@ class GLRendererTest {
                             10,
                             HardwareBuffer.RGBA_8888,
                             1,
-                            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE
-                        )
+                            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                        ),
                     )
                 buffer.makeCurrent()
                 buffer.close()
@@ -283,6 +283,30 @@ class GLRendererTest {
         val width = 5
         val height = 8
         val reader = createImageReader(width, height)
+
+        val handlerThread = HandlerThread("ImageReaderListener").apply { start() }
+        val handler = Handler(handlerThread.looper)
+
+        val latestImageRef = AtomicReference<Image?>()
+        val imageAvailableLatch = CountDownLatch(1)
+
+        val acquiredCount = AtomicInteger(0)
+        reader.setOnImageAvailableListener(
+            { r ->
+                val image = r.acquireNextImage()
+                if (image != null) {
+                    val count = acquiredCount.incrementAndGet()
+                    if (count < numRenders) {
+                        image.close()
+                    } else {
+                        latestImageRef.set(image)
+                        imageAvailableLatch.countDown()
+                    }
+                }
+            },
+            handler,
+        )
+
         val glRenderer = GLRenderer()
         glRenderer.start()
 
@@ -301,9 +325,16 @@ class GLRendererTest {
         assertTrue(latch.await(3000, TimeUnit.MILLISECONDS))
         assertEquals(numRenders, renderCount.get())
 
-        val targetColor = Color.argb(255, 0, 0, 255)
-        verifyImageContent(width, height, reader.acquireLatestImage(), targetColor)
+        assertTrue(imageAvailableLatch.await(3000, TimeUnit.MILLISECONDS))
+        val latestImage = latestImageRef.get()
+        assertNotNull(latestImage)
 
+        val targetColor = Color.argb(255, 0, 0, 255)
+        verifyImageContent(width, height, latestImage!!, targetColor)
+
+        latestImage?.close()
+        reader.close()
+        handlerThread.quitSafely()
         glRenderer.stop(true)
     }
 
@@ -374,13 +405,13 @@ class GLRendererTest {
             width1,
             height1,
             reader1.acquireLatestImage(),
-            Color.argb(255, 255, 0, 0)
+            Color.argb(255, 255, 0, 0),
         )
         verifyImageContent(
             width2,
             height2,
             reader2.acquireLatestImage(),
-            Color.argb(255, 0, 0, 255)
+            Color.argb(255, 0, 0, 255),
         )
 
         target1.detach(true)
@@ -399,7 +430,7 @@ class GLRendererTest {
                 height,
                 PixelFormat.RGBA_8888,
                 1,
-                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT
+                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT,
             )
         } else {
             ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
@@ -410,14 +441,15 @@ class GLRendererTest {
      * This must be broken out into a separate class instead of being defined within the test class
      * as the test runner will inspect all methods + parameter types in advance. If a parameter type
      * does not exist on a particular API level, it will crash even if there are
-     * corresponding @SdkSuppress and @RequiresApi See https://b.corp.google.com/issues/221485597
+     * corresponding @SdkSuppress and @RequiresApi See
+     * https://issuetracker.google.com/issues/221485597
      */
     private fun verifyImageContent(width: Int, height: Int, image: Image, targetColor: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val bitmap =
                 Bitmap.wrapHardwareBuffer(image.hardwareBuffer!!, null)!!.copy(
                     Bitmap.Config.ARGB_8888,
-                    false
+                    false,
                 )
             for (y in 0 until height) {
                 for (x in 0 until width) {
@@ -564,7 +596,7 @@ class GLRendererTest {
                 Bitmap.createBitmap(
                     GLTestActivity.TARGET_WIDTH,
                     GLTestActivity.TARGET_HEIGHT,
-                    Bitmap.Config.ARGB_8888
+                    Bitmap.Config.ARGB_8888,
                 )
 
             blockingPixelCopy(bitmap) { surfaceView.holder.surface }
@@ -600,7 +632,7 @@ class GLRendererTest {
                     target =
                         glRenderer!!.attach(
                             it.surfaceView,
-                            ColorRenderCallback(targetColor) { renderLatch.get().countDown() }
+                            ColorRenderCallback(targetColor) { renderLatch.get().countDown() },
                         )
                 }
 
@@ -664,7 +696,7 @@ class GLRendererTest {
                     target =
                         glRenderer!!.attach(
                             textureView!!,
-                            ColorRenderCallback(Color.BLUE) { renderLatch.get().countDown() }
+                            ColorRenderCallback(Color.BLUE) { renderLatch.get().countDown() },
                         )
 
                     val listener = textureView!!.surfaceTextureListener
@@ -673,7 +705,7 @@ class GLRendererTest {
                             override fun onSurfaceTextureAvailable(
                                 surface: SurfaceTexture,
                                 width: Int,
-                                height: Int
+                                height: Int,
                             ) {
                                 listener?.onSurfaceTextureAvailable(surface, width, height)
                                 textureAvailableLatch.countDown()
@@ -682,7 +714,7 @@ class GLRendererTest {
                             override fun onSurfaceTextureSizeChanged(
                                 surface: SurfaceTexture,
                                 width: Int,
-                                height: Int
+                                height: Int,
                             ) {
                                 listener?.onSurfaceTextureSizeChanged(surface, width, height)
                             }
@@ -743,7 +775,7 @@ class GLRendererTest {
                             override fun onSurfaceTextureAvailable(
                                 surface: SurfaceTexture,
                                 width: Int,
-                                height: Int
+                                height: Int,
                             ) {
                                 listener?.onSurfaceTextureAvailable(surface, width, height)
                             }
@@ -751,7 +783,7 @@ class GLRendererTest {
                             override fun onSurfaceTextureSizeChanged(
                                 surface: SurfaceTexture,
                                 width: Int,
-                                height: Int
+                                height: Int,
                             ) {
                                 listener?.onSurfaceTextureSizeChanged(surface, width, height)
                             }
@@ -779,7 +811,7 @@ class GLRendererTest {
             Color.BLUE ==
                 bitmap.getPixel(
                     coords[0] + textureView!!.width / 2,
-                    coords[1] + textureView!!.height / 2
+                    coords[1] + textureView!!.height / 2,
                 )
         }
 
@@ -809,7 +841,7 @@ class GLRendererTest {
                             assertTrue(size.height > 0)
                             resizeLatch.countDown()
                         }
-                    }
+                    },
                 )
             target.requestRender()
 
@@ -840,7 +872,7 @@ class GLRendererTest {
                             assertTrue(size.height > 0)
                             resizeLatch.countDown()
                         }
-                    }
+                    },
                 )
             target.requestRender()
 
@@ -880,7 +912,7 @@ class GLRendererTest {
                 Bitmap.createBitmap(
                     GLTestActivity.TARGET_WIDTH,
                     GLTestActivity.TARGET_HEIGHT,
-                    Bitmap.Config.ARGB_8888
+                    Bitmap.Config.ARGB_8888,
                 )
 
             blockingPixelCopy(bitmap) { Surface(textureView.surfaceTexture) }
@@ -1042,8 +1074,8 @@ class GLRendererTest {
                                                 height,
                                                 HardwareBuffer.RGBA_8888,
                                                 1,
-                                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE
-                                            )
+                                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                                            ),
                                         )
                                         .also { frameBuffer = it }
                                 buffer.makeCurrent()
@@ -1058,7 +1090,7 @@ class GLRendererTest {
                         }
                         renderLatch.countDown()
                     }
-                }
+                },
             )
             .requestRender()
 
@@ -1114,8 +1146,8 @@ class GLRendererTest {
                                 height,
                                 HardwareBuffer.RGBA_8888,
                                 1,
-                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE
-                            )
+                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                            ),
                         )
                         .also { frameBuffer = it }
 
@@ -1129,7 +1161,7 @@ class GLRendererTest {
                         0f,
                         height.toFloat(),
                         -1f,
-                        1f
+                        1f,
                     )
                     Rectangle()
                         .draw(mOrthoMatrix, Color.RED, 0f, 0f, width.toFloat(), height.toFloat())
@@ -1138,7 +1170,7 @@ class GLRendererTest {
 
                 override fun onDrawComplete(
                     frameBuffer: FrameBuffer,
-                    syncFenceCompat: SyncFenceCompat?
+                    syncFenceCompat: SyncFenceCompat?,
                 ) {
                     status = syncFenceCompat?.await(3000) ?: true
                     renderLatch.countDown()
@@ -1202,8 +1234,8 @@ class GLRendererTest {
                                 height,
                                 HardwareBuffer.RGBA_8888,
                                 1,
-                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE
-                            )
+                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                            ),
                         )
                         .also { frameBuffer = it }
 
@@ -1215,7 +1247,7 @@ class GLRendererTest {
                             setDefaultBufferSize(width, height)
                             setOnFrameAvailableListener(
                                 { frameAvailableLatch.countDown() },
-                                frameHandler
+                                frameHandler,
                             )
                         }
 
@@ -1229,7 +1261,7 @@ class GLRendererTest {
                         0f,
                         width / 2f,
                         height / 2f,
-                        paint.apply { color = Color.RED }
+                        paint.apply { color = Color.RED },
                     )
                     // top right
                     canvas.drawRect(
@@ -1237,7 +1269,7 @@ class GLRendererTest {
                         0f,
                         width.toFloat(),
                         height / 2f,
-                        paint.apply { color = Color.BLUE }
+                        paint.apply { color = Color.BLUE },
                     )
                     // bottom left
                     canvas.drawRect(
@@ -1245,7 +1277,7 @@ class GLRendererTest {
                         height / 2f,
                         width / 2f,
                         height.toFloat(),
-                        paint.apply { color = Color.YELLOW }
+                        paint.apply { color = Color.YELLOW },
                     )
                     // bottom right
                     canvas.drawRect(
@@ -1253,7 +1285,7 @@ class GLRendererTest {
                         height / 2f,
                         width.toFloat(),
                         height.toFloat(),
-                        paint.apply { color = Color.GREEN }
+                        paint.apply { color = Color.GREEN },
                     )
                     canvas.restore()
                     surface.unlockCanvasAndPost(canvas)
@@ -1269,7 +1301,7 @@ class GLRendererTest {
                         0f,
                         height.toFloat(),
                         -1f,
-                        1f
+                        1f,
                     )
                     val quadRenderer =
                         QuadTextureRenderer().apply { setSurfaceTexture(surfaceTexture) }
@@ -1285,7 +1317,7 @@ class GLRendererTest {
 
                 override fun onDrawComplete(
                     frameBuffer: FrameBuffer,
-                    syncFenceCompat: SyncFenceCompat?
+                    syncFenceCompat: SyncFenceCompat?,
                 ) {
                     status = syncFenceCompat?.await(3000) ?: true
                     renderLatch.countDown()
@@ -1350,7 +1382,7 @@ class GLRendererTest {
                     0f,
                     width.toFloat(),
                     height / 2f,
-                    paint.apply { color = Color.BLUE }
+                    paint.apply { color = Color.BLUE },
                 )
                 // bottom left
                 canvas.drawRect(
@@ -1358,7 +1390,7 @@ class GLRendererTest {
                     height / 2f,
                     width / 2f,
                     height.toFloat(),
-                    paint.apply { color = Color.YELLOW }
+                    paint.apply { color = Color.YELLOW },
                 )
                 // bottom right
                 canvas.drawRect(
@@ -1366,7 +1398,7 @@ class GLRendererTest {
                     height / 2f,
                     width.toFloat(),
                     height.toFloat(),
-                    paint.apply { color = Color.GREEN }
+                    paint.apply { color = Color.GREEN },
                 )
                 endRecording()
             }
@@ -1392,8 +1424,8 @@ class GLRendererTest {
                                 height,
                                 HardwareBuffer.RGBA_8888,
                                 1,
-                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE
-                            )
+                                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                            ),
                         )
                         .also { frameBuffer = it }
 
@@ -1412,7 +1444,7 @@ class GLRendererTest {
                         0f,
                         height.toFloat(),
                         -1f,
-                        1f
+                        1f,
                     )
                     val quadRenderer =
                         QuadTextureRenderer().apply { setSurfaceTexture(surfaceTexture!!) }
@@ -1426,7 +1458,7 @@ class GLRendererTest {
 
                 override fun onDrawComplete(
                     frameBuffer: FrameBuffer,
-                    syncFenceCompat: SyncFenceCompat?
+                    syncFenceCompat: SyncFenceCompat?,
                 ) {
                     status = syncFenceCompat?.await(3000) ?: true
                     renderLatch.countDown()
@@ -1509,8 +1541,8 @@ class GLRendererTest {
                                     height,
                                     HardwareBuffer.RGBA_8888,
                                     1,
-                                    HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE
-                                )
+                                    HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE,
+                                ),
                             )
                             .also { mFrameBuffer = it }
                     }
@@ -1535,7 +1567,7 @@ class GLRendererTest {
                 @WorkerThread
                 override fun onDrawComplete(
                     frameBuffer: FrameBuffer,
-                    syncFenceCompat: SyncFenceCompat?
+                    syncFenceCompat: SyncFenceCompat?,
                 ) {
                     if (supportsFence) {
                         assertNotNull(syncFenceCompat)
@@ -1617,7 +1649,7 @@ class GLRendererTest {
                 copyLatch.countDown()
                 copyThread.quit()
             },
-            copyHandler
+            copyHandler,
         )
         assertTrue(copyLatch.await(3000, TimeUnit.MILLISECONDS))
     }

@@ -15,18 +15,14 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -51,29 +47,23 @@ androidXMultiplatform {
             languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
         }
 
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.9.1")
-            }
+        commonMain.dependencies {
+            api("androidx.annotation:annotation:1.9.1")
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTestAnnotationsCommon)
-                // TODO(b/375358921) Set to libs.kotlinTest when collection targets Kotlin 2
-                // For KotlinWasm, versions of toolchain and stdlib need to be the same for tests:
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                // So we force kotlin-test to be on Kotlin 2.
-                // Published artifacts are unaffected by this, they continue to target Kotlin 1.9
-                implementation(libs.kotlinTestForWasmTests)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
 
+        jvmMain.dependencies {
+            api(libs.jspecify)
+        }
+
+        nonJsTest {}.dependsOn(commonTest)
         jvmTest {
-            dependsOn(commonTest)
+            dependsOn(nonJsTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
@@ -81,92 +71,22 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmMain {
-            dependsOn(commonMain)
-        }
+        create("unixMain").dependsOn(nativeMain)
+        appleMain.dependsOn(unixMain)
+        linuxMain.dependsOn(unixMain)
 
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
+        nativeTest.dependsOn(nonJsTest)
+        wasmJsTest.dependsOn(nonJsTest)
+    }
+}
 
-        nativeTest {
-            dependsOn(commonTest)
-        }
-
-        unixMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinMain {
-            dependsOn(unixMain)
-        }
-
-        linuxMain {
-            dependsOn(unixMain)
-        }
-
-        mingwMain {
-            dependsOn(nativeMain)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(commonTest)
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
-                        dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
-                        dependsOn(linuxMain)
-                    } else if (konanTargetFamily == Family.MINGW) {
-                        dependsOn(mingwMain)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-
-                target.compilations["test"].defaultSourceSet {
-                    dependsOn(nativeTest)
-                }
-            }
-        }
-
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
-        // Make sure commonization runs before any compilation task.
-        tasks.withType(KotlinNativeCompile).configureEach {
-            it.dependsOn(tasks.named("commonize"))
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with Compose Multiplatform 1.8.0, "collection-internal" published as empty
+        // artifact with dependency to this androidx module.
+        commonMainImplementation("org.jetbrains.compose.collection-internal:collection:1.8.0") {
+            because "prevents symbols duplication"
         }
     }
 }
@@ -176,7 +96,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Standalone efficient collections."
-    metalavaK2UastEnabled = false
-    // TODO: b/326456246
-    optOutJSpecify = true
 }

@@ -36,6 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ListHeaderTokens
@@ -50,6 +53,10 @@ import androidx.wear.compose.material3.tokens.ListSubHeaderTokens
  * Example of a [ListHeader]:
  *
  * @sample androidx.wear.compose.material3.samples.ListHeaderSample
+ *
+ * ![ListHeaderSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ListHeaderSample_CompositeImage.png)
+ *
  * @param modifier The modifier for the [ListHeader].
  * @param backgroundColor The background color to apply - typically Color.Transparent
  * @param contentColor The color to apply to content.
@@ -66,7 +73,7 @@ public fun ListHeader(
     contentColor: Color = ListHeaderDefaults.contentColor,
     contentPadding: PaddingValues = ListHeaderDefaults.ContentPadding,
     transformation: SurfaceTransformation? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         horizontalArrangement = Arrangement.Center,
@@ -74,16 +81,19 @@ public fun ListHeader(
             modifier
                 .defaultMinSize(minHeight = ListHeaderTokens.Height)
                 .wrapContentSize()
-                .surface(
-                    transformation = transformation,
-                    painter = ColorPainter(backgroundColor),
-                )
+                .surface(transformation = transformation, painter = ColorPainter(backgroundColor))
                 .padding(contentPadding)
-                .semantics(mergeDescendants = true) { heading() }
+                .semantics(mergeDescendants = true) { heading() },
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
             LocalTextStyle provides ListHeaderTokens.ContentTypography.value,
+            LocalTextConfiguration provides
+                TextConfiguration(
+                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 3,
+                ),
         ) {
             content()
         }
@@ -100,6 +110,10 @@ public fun ListHeader(
  * Example with use of [ListSubHeader]:
  *
  * @sample androidx.wear.compose.material3.samples.ListHeaderSample
+ *
+ * ![ListHeaderSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ListHeaderSample_CompositeImage.png)
+ *
  * @param modifier The modifier for the [ListSubHeader].
  * @param backgroundColor The background color to apply - typically Color.Transparent
  * @param contentColor The color to apply to content.
@@ -130,16 +144,22 @@ public fun ListSubHeader(
                 .wrapContentSize(align = Alignment.CenterStart)
                 .surface(painter = ColorPainter(backgroundColor), transformation = transformation)
                 .padding(contentPadding)
-                .semantics(mergeDescendants = true) { heading() }
+                .semantics(mergeDescendants = true) { heading() },
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
-            LocalTextStyle provides ListSubHeaderTokens.ContentTypography.value
+            LocalTextStyle provides ListSubHeaderTokens.ContentTypography.value,
+            LocalTextConfiguration provides
+                TextConfiguration(
+                    textAlign = TextAlign.Start,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 3,
+                ),
         ) {
             if (icon != null) {
                 Box(
                     modifier = Modifier.wrapContentSize(align = Alignment.CenterStart),
-                    content = icon
+                    content = icon,
                 )
                 Spacer(modifier = Modifier.width(6.dp))
             }
@@ -161,6 +181,32 @@ public object ListHeaderDefaults {
     /** The default content padding for ListSubHeader */
     public val SubHeaderContentPadding: PaddingValues =
         PaddingValues(HorizontalPadding, TopPadding, HorizontalPadding, SubHeaderBottomPadding)
+
+    /**
+     * The minimum top content padding for the list when a [ListHeader] is placed at the top.
+     * Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     *
+     * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
+     */
+    public val minimumTopListContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
+    /**
+     * The minimum bottom content padding for the list when a [ListHeader] is placed at the bottom.
+     * Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumBottomListContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** The default color for ListHeader */
     public val contentColor: Color

@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.SdkSuppress
@@ -57,7 +57,7 @@ class TimeTextTest {
                 timeSource =
                     object : TimeSource {
                         @Composable override fun currentTime(): String = timeText
-                    },
+                    }
             ) { time ->
                 // Use 'curvedText' instead of 'timeTextCurvedText' so that we get a content
                 // description that can be verified.
@@ -124,12 +124,7 @@ class TimeTextTest {
             TimeText { time ->
                 curvedText(time)
                 timeTextSeparator()
-                curvedComposable {
-                    Text(
-                        modifier = Modifier.testTag(TEST_TAG),
-                        text = "Compose",
-                    )
-                }
+                curvedComposable { Text(modifier = Modifier.testTag(TEST_TAG), text = "Compose") }
             }
         }
 

@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.ui.test.internal.JvmDefaultWithCompatibility
+import kotlinx.coroutines.test.TestCoroutineScheduler
 
 /**
  * The clock that drives [frames][MonotonicFrameClock.withFrameNanos], [recompositions][Recomposer]
@@ -77,9 +78,25 @@ import androidx.compose.ui.test.internal.JvmDefaultWithCompatibility
  *   [advanceTimeBy(2000)][advanceTimeBy].
  */
 @JvmDefaultWithCompatibility
-interface MainTestClock {
+public interface MainTestClock {
     /** The current time of this clock in milliseconds. */
-    val currentTime: Long
+    public val currentTime: Long
+
+    /**
+     * The [TestCoroutineScheduler] on which this clock is built. It drives the execution of
+     * coroutines within the composition and is used to dispatch coroutines inside the [Recomposer]
+     * and for [LaunchedEffect]s.
+     *
+     * If the test was started with a custom `effectContext` containing a
+     * [kotlinx.coroutines.test.TestDispatcher], this returns the scheduler from that dispatcher.
+     * Otherwise, an internally managed [TestCoroutineScheduler] is created.
+     */
+    public val scheduler: TestCoroutineScheduler
+        get() =
+            throw NotImplementedError(
+                "Implement by returning the TestCoroutineScheduler on which the Recomposer is " +
+                    "scheduled"
+            )
 
     /**
      * Whether the clock should be advanced by the testing framework while awaiting idleness in
@@ -95,10 +112,10 @@ interface MainTestClock {
      *
      * By default this is true.
      */
-    var autoAdvance: Boolean
+    public var autoAdvance: Boolean
 
     /** [Advances][advanceTimeBy] the main clock by the duration of one frame. */
-    fun advanceTimeByFrame()
+    public fun advanceTimeByFrame()
 
     /**
      * Advances the clock by the given [duration][milliseconds]. The duration is rounded up to the
@@ -125,7 +142,7 @@ interface MainTestClock {
      * @param ignoreFrameDuration Whether to avoid rounding up the [milliseconds] to the nearest
      *   multiple of the frame duration. `false` by default.
      */
-    fun advanceTimeBy(milliseconds: Long, ignoreFrameDuration: Boolean = false)
+    public fun advanceTimeBy(milliseconds: Long, ignoreFrameDuration: Boolean = false)
 
     /**
      * Advances the clock in increments of a [single frame][advanceTimeByFrame] until the given
@@ -147,8 +164,8 @@ interface MainTestClock {
      *   not.
      * @throws ComposeTimeoutException the condition is not satisfied after [timeoutMillis].
      */
-    fun advanceTimeUntil(timeoutMillis: Long = 1_000, condition: () -> Boolean)
+    public fun advanceTimeUntil(timeoutMillis: Long = 1_000, condition: () -> Boolean)
 }
 
 /** Thrown in cases where Compose test can't satisfy a condition in a defined time limit. */
-class ComposeTimeoutException(message: String?) : Throwable(message)
+public class ComposeTimeoutException(message: String?) : Throwable(message)

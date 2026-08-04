@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
@@ -60,13 +61,14 @@ fun RememberSaveableWithMutableStateAndCustomSaver() {
 @Sampled
 @Composable
 fun RememberSaveableWithSerializer() {
-    val holder = rememberSaveable(serializer = HolderSerializer) { Holder(0) }
+    val holder = rememberSerializable(serializer = HolderSerializer) { Holder(0) }
 }
 
 @Sampled
 @Composable
 fun RememberSaveableWithSerializerAndMutableState() {
-    val holder = rememberSaveable(stateSerializer = HolderSerializer) { mutableStateOf(Holder(0)) }
+    val holder =
+        rememberSerializable(stateSerializer = HolderSerializer) { mutableStateOf(Holder(0)) }
 }
 
 private data class Holder(var value: Int)

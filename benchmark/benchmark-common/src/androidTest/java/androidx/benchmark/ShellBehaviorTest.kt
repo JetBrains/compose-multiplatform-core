@@ -20,7 +20,8 @@ import android.os.Build
 import android.os.Process
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
+import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -34,9 +35,10 @@ import org.junit.runner.RunWith
  * implementations, please add to [ShellTest].
  */
 @MediumTest
-@SdkSuppress(minSdkVersion = 21)
 @RunWith(AndroidJUnit4::class)
 class ShellBehaviorTest {
+
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     /**
      * Test validates consistent behavior of pgrep, for usage in discovering processes without
@@ -62,7 +64,7 @@ class ShellBehaviorTest {
             assertTrue(
                 // For some reason, `stdout.contains(regex)` doesn't work :shrug:
                 pgrepOutput.stdout.lines().any { it.matches(regex) },
-                "expected $regex to be contained in output:\n${pgrepOutput.stdout}"
+                "expected $regex to be contained in output:\n${pgrepOutput.stdout}",
             )
         } else {
             // command doesn't exist
@@ -82,7 +84,7 @@ class ShellBehaviorTest {
                 // command doesn't exist
                 assertTrue(
                     output.stdout.isBlank() && output.stderr.isNotBlank(),
-                    "saw output $output"
+                    "saw output $output",
                 )
             }
             Build.VERSION.SDK_INT == 23 -> {
@@ -134,6 +136,20 @@ class ShellBehaviorTest {
         assertEquals(2, lines.size)
         assertTrue(lines.first().matches(psLabelRowRegex))
         assertTrue(lines.last().endsWith(Packages.TEST))
+    }
+
+    @Test
+    fun listFiles() {
+        val directory = Outputs.dirUsableByAppAndShell
+        val path = directory.absolutePath
+        val output = Shell.executeScriptCaptureStdout("ls -1tp $path")
+        val lines = output.lines().filter { it.isNotBlank() }.toSet()
+        // Shell and the package can see different files.
+        directory.listFiles()?.forEach {
+            val name = it.name
+            val suffix = if (it.isFile) "" else "/"
+            assertContains(lines, "$name$suffix")
+        }
     }
 
     companion object {

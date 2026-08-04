@@ -35,9 +35,10 @@ constructor(
             listOf(
                 TimeCapture(),
                 CpuEventCounterCapture(
-                    MicrobenchmarkPhase.cpuEventCounter,
-                    Arguments.cpuEventCounterMask
-                )
+                    cpuEventCounter = MicrobenchmarkPhase.cpuEventCounter,
+                    mask = Arguments.cpuEventCounterMask,
+                    validateMeasurements = true,
+                ),
             )
         } else {
             listOf(TimeCapture())
@@ -75,5 +76,5 @@ constructor(
     /** Number of measurements to perform, leave `null` for default behavior. */
     @Suppress("AutoBoxing") // null is distinct, and boxing cost is trivial (off critical path)
     @get:Suppress("AutoBoxing") // null is distinct, and boxing cost is trivial (off critical path)
-    val measurementCount: Int? = null
+    val measurementCount: Int? = null,
 )

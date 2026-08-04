@@ -24,7 +24,6 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21
 import androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888
 import androidx.camera.core.Logger
-import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule
@@ -59,7 +58,6 @@ class ImageProcessingLatencyTest(private val targetResolution: Size) {
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private lateinit var camera: CameraUseCaseAdapter
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
 
@@ -120,7 +118,7 @@ class ImageProcessingLatencyTest(private val targetResolution: Size) {
         Logger.d(
             TAG,
             "Image processing performance profiling, resolution: $targetResolution, " +
-                "lensFacing: $lensFacing"
+                "lensFacing: $lensFacing",
         )
         // Profile the YubToRgbConverter performance with the first 200 frames.
         val countDownLatch = CountDownLatch(200)
@@ -140,7 +138,7 @@ class ImageProcessingLatencyTest(private val targetResolution: Size) {
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 CameraSelector.Builder().requireLensFacing(lensFacing).build(),
-                imageAnalyzer
+                imageAnalyzer,
             )
         }
 

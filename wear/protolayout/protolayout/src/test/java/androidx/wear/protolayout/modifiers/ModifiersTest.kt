@@ -16,10 +16,17 @@
 
 package androidx.wear.protolayout.modifiers
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.graphics.Color
+import androidx.core.os.BundleCompat
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ActionBuilders.LaunchAction
 import androidx.wear.protolayout.ActionBuilders.LoadAction
 import androidx.wear.protolayout.ColorBuilders.LinearGradient
+import androidx.wear.protolayout.DimensionBuilders.BoundingBoxRatio
+import androidx.wear.protolayout.DimensionBuilders.DpProp
 import androidx.wear.protolayout.ModifiersBuilders.DefaultContentTransitions.fadeInSlideIn
 import androidx.wear.protolayout.ModifiersBuilders.DefaultContentTransitions.fadeOutSlideOut
 import androidx.wear.protolayout.ModifiersBuilders.FadeInTransition
@@ -27,8 +34,12 @@ import androidx.wear.protolayout.ModifiersBuilders.FadeOutTransition
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_BUTTON
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_NONE
 import androidx.wear.protolayout.ModifiersBuilders.SLIDE_DIRECTION_BOTTOM_TO_TOP
+import androidx.wear.protolayout.ProtoLayoutScope
+import androidx.wear.protolayout.ProtoLayoutScope.RendererCapability.PENDING_INTENT_ACTION
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
+import androidx.wear.protolayout.expression.VersionBuilders
 import androidx.wear.protolayout.expression.dynamicDataMapOf
 import androidx.wear.protolayout.expression.intAppDataKey
 import androidx.wear.protolayout.expression.mapTo
@@ -46,7 +57,7 @@ class ModifiersTest {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .toProtoLayoutModifiers()
 
@@ -70,7 +81,7 @@ class ModifiersTest {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .semanticsRole(SEMANTICS_ROLE_BUTTON)
                 .toProtoLayoutModifiers()
@@ -83,13 +94,21 @@ class ModifiersTest {
     }
 
     @Test
+    fun semanticsHeading_toModifier() {
+        val modifiers = LayoutModifier.semanticsHeading(true).toProtoLayoutModifiers()
+
+        assertThat(modifiers.semantics?.isHeading).isTrue()
+    }
+
+    @Test
     fun clearSemantics_fromModifier() {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .semanticsRole(SEMANTICS_ROLE_BUTTON)
+                .semanticsHeading(true)
                 .clearSemantics()
                 .toProtoLayoutModifiers()
 
@@ -195,7 +214,7 @@ class ModifiersTest {
                         loadAction(dynamicDataMapOf(statePair1, statePair2)),
                         id = id,
                         minClickableWidth = minTouchWidth,
-                        minClickableHeight = minTouchHeight
+                        minClickableHeight = minTouchHeight,
                     )
                 )
                 .toProtoLayoutModifiers()
@@ -207,6 +226,70 @@ class ModifiersTest {
         val action = modifiers.clickable?.onClick as LoadAction
         assertThat(action.requestState?.keyToValueMapping)
             .containsExactlyEntriesIn(mapOf(statePair1.asPair(), statePair2.asPair()))
+    }
+
+    @Test
+    fun pendingIntent_clickable_toModifier() {
+        val scope =
+            ProtoLayoutScope(
+                rendererVersionInfo =
+                    VersionBuilders.VersionInfo.Builder().setMajor(2).setMinor(0).build()
+            )
+        val id = "ID"
+        val minTouchWidth = 51f
+        val minTouchHeight = 52f
+        val pendingIntent = TEST_PENDING_INTENT
+
+        val modifiers =
+            LayoutModifier.clickable(scope.clickable(pendingIntent = pendingIntent, id = id))
+                .minimumTouchTargetSize(minTouchWidth, minTouchHeight)
+                .toProtoLayoutModifiers()
+        val collectedPendingIntents = scope.collectPendingIntents()
+
+        assertThat(modifiers.clickable?.id).isEqualTo(id)
+        assertThat(modifiers.clickable?.minimumClickableWidth?.value).isEqualTo(minTouchWidth)
+        assertThat(modifiers.clickable?.minimumClickableHeight?.value).isEqualTo(minTouchHeight)
+        // PendingIntentAction has package private access, so it is not accessible for the test here
+        assertThat(modifiers.clickable?.onClick).isNotNull()
+        assertThat(modifiers.clickable?.onClick).isNotInstanceOf(LoadAction::class.java)
+        assertThat(modifiers.clickable?.onClick).isNotInstanceOf(LaunchAction::class.java)
+
+        assertThat(collectedPendingIntents.containsKey(id)).isTrue()
+        assertThat(
+                BundleCompat.getParcelable<PendingIntent?>(
+                    collectedPendingIntents,
+                    id,
+                    PendingIntent::class.java,
+                )
+            )
+            .isEqualTo(pendingIntent)
+    }
+
+    @Test
+    fun pendingIntent_clickable_useFallbackAction_toModifier() {
+        val scope =
+            ProtoLayoutScope(
+                rendererVersionInfo =
+                    VersionBuilders.VersionInfo.Builder().setMajor(1).setMinor(500).build()
+            )
+        val id = "ID"
+        val modifiers =
+            LayoutModifier.clickable(
+                    scope.clickable(
+                        pendingIntent = TEST_PENDING_INTENT,
+                        id = id,
+                        fallbackAction = loadAction(),
+                    )
+                )
+                .toProtoLayoutModifiers()
+        val collectedPendingIntents = scope.collectPendingIntents()
+
+        assertThat(modifiers.clickable?.id).isEqualTo(id)
+        assertThat(modifiers.clickable?.onClick).isNotNull()
+
+        assertThat(scope.hasCapability(PENDING_INTENT_ACTION)).isFalse()
+        assertThat(modifiers.clickable?.onClick).isInstanceOf(LoadAction::class.java)
+        assertThat(collectedPendingIntents.isEmpty()).isTrue()
     }
 
     @Test
@@ -231,7 +314,7 @@ class ModifiersTest {
                     top = TOP_PADDING,
                     end = END_PADDING,
                     bottom = BOTTOM_PADDING,
-                    rtlAware = true
+                    rtlAware = true,
                 )
                 .padding(PADDING_ALL)
                 .toProtoLayoutModifiers()
@@ -296,6 +379,174 @@ class ModifiersTest {
             .isEqualTo(SLIDE_DIRECTION_BOTTOM_TO_TOP)
     }
 
+    @Test
+    fun translation_toModifier() {
+        val staticX = 10f
+        val dynamicX = DynamicFloat.constant(20f)
+        val staticY = 30f
+
+        val modifiers =
+            LayoutModifier.translateX(staticX, dynamicX)
+                .translateY(staticY)
+                .toProtoLayoutModifiers()
+
+        assertThat(modifiers.transformation).isNotNull()
+
+        // Check Translation X
+        assertThat(modifiers.transformation?.translationX?.value).isEqualTo(staticX)
+        assertThat(modifiers.transformation?.translationX?.dynamicValue).isEqualTo(dynamicX)
+
+        // Check Translation Y (static only)
+        assertThat(modifiers.transformation?.translationY?.value).isEqualTo(staticY)
+        assertThat(modifiers.transformation?.translationY?.dynamicValue).isNull()
+    }
+
+    @Test
+    fun scale_toModifier() {
+        val staticScale = 1.5f
+        val dynamicScale = DynamicFloat.constant(2.0f)
+
+        val modifiers =
+            LayoutModifier.scaleX(staticScale)
+                .scaleY(staticScale, dynamicScale)
+                .toProtoLayoutModifiers()
+
+        assertThat(modifiers.transformation).isNotNull()
+
+        // Check Scale X
+        assertThat(modifiers.transformation?.scaleX?.value).isEqualTo(staticScale)
+        assertThat(modifiers.transformation?.scaleX?.dynamicValue).isNull()
+
+        // Check Scale Y
+        assertThat(modifiers.transformation?.scaleY?.value).isEqualTo(staticScale)
+        assertThat(modifiers.transformation?.scaleY?.dynamicValue).isEqualTo(dynamicScale)
+    }
+
+    @Test
+    fun rotation_toModifier() {
+        val staticDegrees = 45f
+        val dynamicDegrees = DynamicFloat.constant(90f)
+
+        val modifiers =
+            LayoutModifier.rotate(staticDegrees, dynamicDegrees).toProtoLayoutModifiers()
+
+        assertThat(modifiers.transformation).isNotNull()
+        assertThat(modifiers.transformation?.rotation?.value).isEqualTo(staticDegrees)
+        assertThat(modifiers.transformation?.rotation?.dynamicValue).isEqualTo(dynamicDegrees)
+    }
+
+    @Test
+    fun pivot_absolute_toModifier() {
+        val staticPivotX = 20f
+        val dynamicPivotX = DynamicFloat.constant(30f)
+        val staticPivotY = 40f
+
+        // Test pivotX with absolute DP value
+        val modifiers =
+            LayoutModifier.pivotX(staticPivotX, dynamicPivotX)
+                .pivotY(staticPivotY)
+                .toProtoLayoutModifiers()
+
+        assertThat(modifiers.transformation).isNotNull()
+
+        val pivotX = modifiers.transformation?.pivotX
+        assertThat(pivotX).isInstanceOf(DpProp::class.java)
+        (pivotX as DpProp).apply {
+            assertThat(value).isEqualTo(staticPivotX)
+            assertThat(dynamicValue).isEqualTo(dynamicPivotX)
+        }
+
+        val pivotY = modifiers.transformation?.pivotY
+        assertThat(pivotY).isInstanceOf(DpProp::class.java)
+        (pivotY as DpProp).apply {
+            assertThat(value).isEqualTo(staticPivotY)
+            assertThat(dynamicValue).isNull()
+        }
+    }
+
+    @Test
+    fun pivot_relative_toModifier() {
+        val staticRatioX = 0.3f
+        val staticRatioY = 0.5f
+        val dynamicRatioY = DynamicFloat.constant(0.8f)
+
+        // Test ratioPivotY with ratio value
+        val modifiers =
+            LayoutModifier.ratioPivotX(staticRatioX)
+                .ratioPivotY(staticRatioY, dynamicRatioY)
+                .toProtoLayoutModifiers()
+
+        assertThat(modifiers.transformation).isNotNull()
+
+        val pivotX = modifiers.transformation?.pivotX
+        assertThat(pivotX).isInstanceOf(BoundingBoxRatio::class.java)
+        (pivotX as BoundingBoxRatio).apply {
+            assertThat(ratio.value).isEqualTo(staticRatioX)
+            assertThat(ratio.dynamicValue).isNull()
+        }
+
+        val pivotY = modifiers.transformation?.pivotY
+        assertThat(pivotY).isInstanceOf(BoundingBoxRatio::class.java)
+        (pivotY as BoundingBoxRatio).apply {
+            assertThat(ratio.value).isEqualTo(staticRatioY)
+            assertThat(ratio.dynamicValue).isEqualTo(dynamicRatioY)
+        }
+    }
+
+    @Test
+    fun combinedTransformation_toModifier() {
+        val staticX = 10f
+        val staticY = 30f
+        val staticScale = 1.5f
+        val dynamicScale = DynamicFloat.constant(2.0f)
+        val staticDegrees = 45f
+        val dynamicDegrees = DynamicFloat.constant(90f)
+        val staticPivotX = 20f
+        val staticPivotRatioY = 0.3f
+
+        val modifiers =
+            LayoutModifier.translateX(staticX)
+                .translateY(staticY)
+                .scaleX(staticScale)
+                .scaleY(staticScale, dynamicScale)
+                .rotate(staticDegrees, dynamicDegrees)
+                .pivotX(staticPivotX)
+                .ratioPivotY(staticPivotRatioY)
+                .toProtoLayoutModifiers()
+
+        assertThat(modifiers.transformation).isNotNull()
+
+        // Check Translation
+        assertThat(modifiers.transformation?.translationX?.value).isEqualTo(staticX)
+        assertThat(modifiers.transformation?.translationY?.value).isEqualTo(staticY)
+        assertThat(modifiers.transformation?.translationY?.dynamicValue).isNull()
+
+        // Check Scale
+        assertThat(modifiers.transformation?.scaleX?.value).isEqualTo(staticScale)
+        assertThat(modifiers.transformation?.scaleX?.dynamicValue).isNull()
+        assertThat(modifiers.transformation?.scaleY?.value).isEqualTo(staticScale)
+        assertThat(modifiers.transformation?.scaleY?.dynamicValue).isEqualTo(dynamicScale)
+
+        // Check rotation
+        assertThat(modifiers.transformation?.rotation?.value).isEqualTo(staticDegrees)
+        assertThat(modifiers.transformation?.rotation?.dynamicValue).isEqualTo(dynamicDegrees)
+
+        // Check pivot
+        val pivotX = modifiers.transformation?.pivotX
+        assertThat(pivotX).isInstanceOf(DpProp::class.java)
+        (pivotX as DpProp).apply {
+            assertThat(value).isEqualTo(staticPivotX)
+            assertThat(dynamicValue).isNull()
+        }
+
+        val pivotY = modifiers.transformation?.pivotY
+        assertThat(pivotY).isInstanceOf(BoundingBoxRatio::class.java)
+        (pivotY as BoundingBoxRatio).apply {
+            assertThat(ratio.value).isEqualTo(staticPivotRatioY)
+            assertThat(ratio.dynamicValue).isNull()
+        }
+    }
+
     companion object {
         const val STATIC_CONTENT_DESCRIPTION = "content desc"
         val DYNAMIC_CONTENT_DESCRIPTION = DynamicString.constant("dynamic content")
@@ -314,5 +565,12 @@ class ModifiersTest {
         const val WIDTH_DP = 5f
         val DYNAMIC_BOOL = DynamicBool.constant(true)
         const val ALPHA = 0.7f
+        val TEST_PENDING_INTENT: PendingIntent =
+            PendingIntent.getActivity(
+                /* context = */ ApplicationProvider.getApplicationContext(),
+                /*requestCode = */ 0,
+                /* intent = */ Intent(),
+                /* flags = */ 1,
+            )
     }
 }

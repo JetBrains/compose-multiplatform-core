@@ -21,7 +21,6 @@ import android.content.Intent
 import android.health.connect.HealthConnectManager
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.impl.platform.records.PlatformExerciseRoute
 import androidx.health.connect.client.impl.platform.records.toSdkExerciseRoute
@@ -35,7 +34,6 @@ import androidx.health.platform.client.impl.logger.Logger
  * @see androidx.activity.ComponentActivity.registerForActivityResult
  */
 @RequiresApi(34)
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class ExerciseRouteRequestModuleContract :
     ActivityResultContract<String, ExerciseRoute?>() {
     override fun createIntent(context: Context, input: String): Intent {
@@ -48,7 +46,7 @@ internal class ExerciseRouteRequestModuleContract :
         val route =
             intent?.getParcelableExtra(
                 HealthConnectManager.EXTRA_EXERCISE_ROUTE,
-                PlatformExerciseRoute::class.java
+                PlatformExerciseRoute::class.java,
             )
         if (route == null) {
             Logger.debug(HealthConnectClient.HEALTH_CONNECT_CLIENT_TAG, "No route returned.")

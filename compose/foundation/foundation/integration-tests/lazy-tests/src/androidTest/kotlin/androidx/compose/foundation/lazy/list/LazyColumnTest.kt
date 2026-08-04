@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import android.os.Build
@@ -38,11 +35,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Alignment
@@ -63,7 +62,7 @@ import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
@@ -75,8 +74,12 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.collections.removeLast as removeLastKt
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -272,7 +275,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
         rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 Modifier.testTag(LazyListTag).requiredWidth(100.dp),
-                horizontalAlignment = horizontalGravity
+                horizontalAlignment = horizontalGravity,
             ) {
                 items(listOf(1, 2)) {
                     if (it == 1) {
@@ -410,7 +413,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
                     .testTag(LazyListTag)
                     .graphicsLayer()
                     .background(Color.Blue),
-                state = state
+                state = state,
             ) {
                 items(2) {
                     val size = if (it == 0) 5.dp else 100.dp
@@ -596,7 +599,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
                         }
                     }
                 },
-                state
+                state,
             ) {
                 items(100) { Box(Modifier.size(itemSizeDp)) }
             }
@@ -622,6 +625,53 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
         }
     }
 
+    @Test
+    fun awaitFirstLayoutMultipleInvocations() {
+        val itemSize = 10f
+        val itemSizeDp = with(rule.density) { itemSize.toDp() }
+        val state = LazyListState()
+
+        rule.setContent {
+            LazyColumn(Modifier.size(itemSizeDp), state) {
+                items(0) { Box(Modifier.size(itemSizeDp)) }
+            }
+            LaunchedEffect(Unit) { state.animateScrollToItem(0) }
+            LaunchedEffect(Unit) { state.animateScrollToItem(0) }
+        }
+
+        rule.runOnIdle { assertEquals(0, state.firstVisibleItemIndex) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun awaitFirstLayoutWithSnapshot() {
+        val itemSize = 10f
+        val itemSizeDp = with(rule.density) { itemSize.toDp() }
+
+        var snapshotCollected = false
+
+        @Composable
+        fun customLazyListState(): LazyListState {
+            val state = rememberLazyListState()
+            LaunchedEffect(state) {
+                snapshotFlow { state.isScrollInProgress }
+                    .distinctUntilChanged()
+                    .filter { it }
+                    .collect { snapshotCollected = true }
+            }
+            return state
+        }
+        rule.setContent {
+            val state = customLazyListState()
+            LazyColumn(Modifier.size(itemSizeDp), state) {
+                items(100) { Box(Modifier.size(itemSizeDp)) }
+            }
+            LaunchedEffect(Unit) { state.animateScrollToItem(1) }
+        }
+
+        rule.runOnIdle { assertTrue(snapshotCollected) }
+    }
+
     @Composable
     private fun LazyRowWrapped(content: @Composable () -> Unit) {
         LazyRow { items(count = 1) { content() } }
@@ -645,6 +695,6 @@ internal fun Modifier.drawOutsideOfBounds() = drawBehind {
     drawRect(
         Color.Red,
         Offset(-inflate, -inflate),
-        Size(size.width + inflate * 2, size.height + inflate * 2)
+        Size(size.width + inflate * 2, size.height + inflate * 2),
     )
 }

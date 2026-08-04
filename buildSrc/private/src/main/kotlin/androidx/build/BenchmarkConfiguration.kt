@@ -26,35 +26,26 @@ import org.gradle.api.Project
  * See [androidx.build.testConfiguration.INST_ARG_BLOCKLIST], which can be used to suppress some of
  * these args in CI.
  */
-internal fun HasDeviceTests.enableMicrobenchmarkInternalDefaults(project: Project) {
+internal fun HasDeviceTests.enableBenchmarkInternalDefaults(project: Project) {
     if (project.hasBenchmarkPlugin()) {
         deviceTests.forEach { (_, deviceTest) ->
             // Enables CPU perf event counters both locally, and in CI
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.cpuEventCounter.enable",
-                "true"
+                "true",
             )
 
             // Set default events to aid in CI investigations of run to run noise
             // Avoid using more than three, or capture may fail reporting all zeros, see b/291826415
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.cpuEventCounter.events",
-                "Instructions,L1DMisses,BranchMisses"
+                "Instructions,L1DMisses,BranchMisses",
             )
 
             // Force AndroidX devs to disable JIT on rooted devices
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.requireJitDisabledIfRooted",
-                "true"
-            )
-
-            // Check that speed compilation always used when benchmark invoked
-            deviceTest.instrumentationRunnerArguments.put("androidx.benchmark.requireAot", "true")
-
-            // Throw if measureRepeated() called on main thread to avoid ANRs
-            deviceTest.instrumentationRunnerArguments.put(
-                "androidx.benchmark.throwOnMainThreadMeasureRepeated",
-                "true"
+                "true",
             )
 
             // Enables long-running method tracing on the UI thread, even if that risks ANR for
@@ -62,7 +53,23 @@ internal fun HasDeviceTests.enableMicrobenchmarkInternalDefaults(project: Projec
             // NOTE, this *must* be suppressed in CI!!
             deviceTest.instrumentationRunnerArguments.put(
                 "androidx.benchmark.profiling.skipWhenDurationRisksAnr",
-                "false"
+                "false",
+            )
+
+            // Temporarily disable this check while we are trialing fixed performance mode for
+            // benchmark runners (b/468041607). Fixed performance does not lock the clocks.
+            deviceTest.instrumentationRunnerArguments.put(
+                "androidx.benchmark.requireLockedClocks",
+                "false",
+            )
+        }
+    } else if (project.isMacrobenchmark()) {
+        deviceTests.forEach { (_, deviceTest) ->
+            // Temporarily disable this check while we are trialing fixed performance mode for
+            // benchmark runners (b/468041607). Fixed performance does not lock the clocks.
+            deviceTest.instrumentationRunnerArguments.put(
+                "androidx.benchmark.requireLockedClocks",
+                "false",
             )
         }
     }

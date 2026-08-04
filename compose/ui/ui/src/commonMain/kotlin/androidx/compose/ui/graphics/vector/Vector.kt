@@ -45,55 +45,60 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
 import kotlin.math.ceil
 
-const val DefaultGroupName = ""
-const val DefaultRotation = 0.0f
-const val DefaultPivotX = 0.0f
-const val DefaultPivotY = 0.0f
-const val DefaultScaleX = 1.0f
-const val DefaultScaleY = 1.0f
-const val DefaultTranslationX = 0.0f
-const val DefaultTranslationY = 0.0f
+public const val DefaultGroupName: String = ""
+public const val DefaultRotation: Float = 0.0f
+public const val DefaultPivotX: Float = 0.0f
+public const val DefaultPivotY: Float = 0.0f
+public const val DefaultScaleX: Float = 1.0f
+public const val DefaultScaleY: Float = 1.0f
+public const val DefaultTranslationX: Float = 0.0f
+public const val DefaultTranslationY: Float = 0.0f
 
-val EmptyPath = emptyList<PathNode>()
+public val EmptyPath: List<PathNode> = emptyList<PathNode>()
 
-const val DefaultPathName = ""
-const val DefaultStrokeLineWidth = 0.0f
-const val DefaultStrokeLineMiter = 4.0f
-const val DefaultTrimPathStart = 0.0f
-const val DefaultTrimPathEnd = 1.0f
-const val DefaultTrimPathOffset = 0.0f
+public const val DefaultPathName: String = ""
+public const val DefaultStrokeLineWidth: Float = 0.0f
+public const val DefaultStrokeLineMiter: Float = 4.0f
+public const val DefaultTrimPathStart: Float = 0.0f
+public const val DefaultTrimPathEnd: Float = 1.0f
+public const val DefaultTrimPathOffset: Float = 0.0f
 
-val DefaultStrokeLineCap = StrokeCap.Butt
-val DefaultStrokeLineJoin = StrokeJoin.Miter
-val DefaultTintBlendMode = BlendMode.SrcIn
-val DefaultTintColor = Color.Transparent
-val DefaultFillType = PathFillType.NonZero
+public val DefaultStrokeLineCap: StrokeCap
+    get() = StrokeCap.Butt
+public val DefaultStrokeLineJoin: StrokeJoin
+    get() = StrokeJoin.Miter
+public val DefaultTintBlendMode: BlendMode
+    get() = BlendMode.SrcIn
+public val DefaultTintColor: Color
+    get() = Color.Transparent
+public val DefaultFillType: PathFillType
+    get() = PathFillType.NonZero
 
-inline fun PathData(block: PathBuilder.() -> Unit) =
+public inline fun PathData(block: PathBuilder.() -> Unit): List<PathNode> =
     with(PathBuilder()) {
         block()
         nodes
     }
 
-fun addPathNodes(pathStr: String?) =
+public fun addPathNodes(pathStr: String?): List<PathNode> =
     if (pathStr == null) {
         EmptyPath
     } else {
         PathParser().parsePathString(pathStr).toNodes()
     }
 
-sealed class VNode {
+public sealed class VNode {
     /**
      * Callback invoked whenever the node in the vector tree is modified in a way that would change
      * the output of the Vector
      */
     internal open var invalidateListener: ((VNode) -> Unit)? = null
 
-    fun invalidate() {
+    public fun invalidate() {
         invalidateListener?.invoke(this)
     }
 
-    abstract fun DrawScope.draw()
+    public abstract fun DrawScope.draw()
 }
 
 internal class VectorComponent(val root: GroupComponent) : VNode() {
@@ -154,7 +159,7 @@ internal class VectorComponent(val root: GroupComponent) : VNode() {
         if (isDirty || previousDrawSize != size || targetImageConfig != cacheBitmapConfig) {
             tintFilter =
                 if (targetImageConfig == ImageBitmapConfig.Alpha8) {
-                    ColorFilter.tint(root.tintColor)
+                    ColorFilter.tint(root.tintColor.toOpaque())
                 } else {
                     null
                 }
@@ -165,7 +170,7 @@ internal class VectorComponent(val root: GroupComponent) : VNode() {
                 IntSize(ceil(size.width).toInt(), ceil(size.height).toInt()),
                 this@draw,
                 layoutDirection,
-                drawVectorBlock
+                drawVectorBlock,
             )
             isDirty = false
             previousDrawSize = size
@@ -298,6 +303,15 @@ internal class PathComponent : VNode() {
     private val path = Path()
     private var renderPath = path
 
+    private var _tmpPath: Path? = null
+    private val tmpPath: Path
+        get() {
+            val localTmp = _tmpPath
+            if (localTmp != null) return localTmp
+
+            return Path().also { _tmpPath = it }
+        }
+
     private val pathMeasure: PathMeasure by lazy(LazyThreadSafetyMode.NONE) { PathMeasure() }
 
     private fun updatePath() {
@@ -324,8 +338,13 @@ internal class PathComponent : VNode() {
             val start = ((trimPathStart + trimPathOffset) % 1f) * length
             val end = ((trimPathEnd + trimPathOffset) % 1f) * length
             if (start > end) {
-                pathMeasure.getSegment(start, length, renderPath, true)
-                pathMeasure.getSegment(0f, end, renderPath, true)
+                val dstPath = tmpPath
+                dstPath.reset()
+                pathMeasure.getSegment(start, length, dstPath, true)
+                renderPath.addPath(dstPath)
+                dstPath.reset()
+                pathMeasure.getSegment(0f, end, dstPath, true)
+                renderPath.addPath(dstPath)
             } else {
                 pathMeasure.getSegment(start, end, renderPath, true)
             }
@@ -628,6 +647,9 @@ internal class GroupComponent : VNode() {
  */
 internal fun Color.rgbEqual(other: Color) =
     this.red == other.red && this.green == other.green && this.blue == other.blue
+
+/** helper method to get the opaque version of color */
+internal fun Color.toOpaque(): Color = if (this.alpha != 1.0F) this.copy(alpha = 1.0F) else this
 
 /**
  * Helper method to determine if a particular ColorFilter will generate the same output if the

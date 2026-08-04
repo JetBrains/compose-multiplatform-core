@@ -21,23 +21,33 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.DeferredAnimatedContent
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.MutableContentTransform
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.DeferredTransitionState
+import androidx.compose.animation.core.ExperimentalDeferredTransitionApi
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberDeferredTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.unveilIn
+import androidx.compose.animation.veilOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CutCornerShape
@@ -45,7 +55,9 @@ import androidx.compose.material.Button
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,6 +66,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,7 +101,7 @@ fun AnimateIncrementDecrementSample() {
                         // the size transform is still needed from number getting longer
                     }
                     .using(SizeTransform(clip = false)) // Using default spring for the size change.
-            }
+            },
         ) { targetCount ->
             // This establishes a mapping between the target state and the content in the form of a
             // Composable function. IMPORTANT: The parameter of this content lambda should
@@ -142,7 +155,7 @@ fun SimpleAnimatedContentSample() {
 private enum class ContentState {
     Foo,
     Bar,
-    Baz
+    Baz,
 }
 
 @Suppress("UNUSED_VARIABLE")
@@ -170,7 +183,7 @@ fun AnimatedContentTransitionSpecSample() {
                             // timeframe between 150ms and duration (i.e. 500ms)
                             IntSize(
                                 initialSize.width,
-                                (initialSize.height + targetSize.height) / 2
+                                (initialSize.height + targetSize.height) / 2,
                             ) at 150
                         }
                     }
@@ -205,7 +218,7 @@ fun TransitionExtensionAnimatedContentSample() {
                         tween(durationMillis = 433, delayMillis = 67)
                     else -> tween(durationMillis = 150)
                 }
-            }
+            },
         ) {
             if (it == CartState.Expanded) 0.dp else 24.dp
         }
@@ -240,7 +253,7 @@ fun TransitionExtensionAnimatedContentSample() {
                                     // timeframe between 150ms and duration (i.e. 500ms)
                                     IntSize(
                                         initialSize.width,
-                                        (initialSize.height + targetSize.height) / 2
+                                        (initialSize.height + targetSize.height) / 2,
                                     ) at 150
                                 }
                             }
@@ -308,11 +321,77 @@ fun SlideIntoContainerSample() {
 
 private enum class CartState {
     Expanded,
-    Collapsed
+    Collapsed,
 }
 
 private enum class NestedMenuState {
     Level1,
     Level2,
-    Level3
+    Level3,
+}
+
+@Sampled
+@Composable
+fun AnimatedContentVeil() {
+    var visible by remember { mutableStateOf(true) }
+    Column {
+        Button(onClick = { visible = !visible }) { Text("Toggle") }
+        AnimatedContent(
+            targetState = visible,
+            transitionSpec = {
+                if (targetState) {
+                    (slideInHorizontally { it } togetherWith veilOut()).apply {
+                        targetContentZIndex = 1f
+                    }
+                } else {
+                    unveilIn() togetherWith slideOutHorizontally { it }
+                }
+            },
+        ) { isVisible ->
+            if (isVisible) {
+                Text(modifier = Modifier.fillMaxSize().background(Color.Red), text = "Page 2")
+            } else {
+                Text(modifier = Modifier.fillMaxSize(), text = "Page 1")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalDeferredTransitionApi::class)
+@Sampled
+@Composable
+fun DeferredAnimatedContentSample() {
+    // In a real app, these states would be driven by a gesture handler like PredictiveBackHandler
+    val targetScreen by remember { mutableIntStateOf(0) }
+    val isBackGestureInProgress by remember { mutableStateOf(false) }
+    val swipeOffset by remember { mutableStateOf(IntOffset.Zero) }
+
+    val transitionState = remember { DeferredTransitionState(targetScreen) }
+    val transition = rememberDeferredTransition(transitionState)
+    LaunchedEffect(isBackGestureInProgress, targetScreen) {
+        if (isBackGestureInProgress) {
+            transitionState.defer(targetScreen)
+        } else {
+            transitionState.animateTo(targetScreen)
+        }
+    }
+
+    transition.DeferredAnimatedContent(
+        transitionSpec = { slideInHorizontally { it } togetherWith slideOutHorizontally { -it } },
+        mutableTransformSpec = {
+            MutableContentTransform {
+                if (isBackGestureInProgress && targetScreen < transitionState.targetState) {
+                    // Shift the entering and exiting screens based on swipe offset
+                    targetContentTransform { offset = swipeOffset }
+                    initialContentTransform {
+                        offset = swipeOffset.copy(swipeOffset.x / 2, swipeOffset.y / 2)
+                    }
+                }
+            }
+        },
+    ) { screen ->
+        Box(Modifier.size(200.dp).background(if (screen % 2 == 0) Color.Blue else Color.Green)) {
+            Text("Screen $screen")
+        }
+    }
 }

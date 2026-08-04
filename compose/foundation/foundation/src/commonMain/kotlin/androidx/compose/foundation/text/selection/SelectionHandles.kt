@@ -33,8 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.window.PopupPositionProvider
 
-internal val HandleWidth = 25.dp
-internal val HandleHeight = 25.dp
+internal val HandleWidth
+    get() = 25.dp
+internal val HandleHeight
+    get() = 25.dp
 
 /**
  * [SelectionHandleInfo]s for the nodes representing selection handles. These nodes are in popup
@@ -69,7 +71,7 @@ internal data class SelectionHandleInfo(
 internal enum class SelectionHandleAnchor {
     Left,
     Middle,
-    Right
+    Right,
 }
 
 @Composable
@@ -91,7 +93,7 @@ internal fun interface OffsetProvider {
 /**
  * Adjust coordinates for given text offset.
  *
- * Currently [android.text.Layout.getLineBottom] returns y coordinates of the next line's top
+ * Currently `android.text.Layout.getLineBottom` returns y coordinates of the next line's top
  * offset, which is not included in current line's hit area. To be able to hit current line, move up
  * this y coordinates by 1 pixel.
  */
@@ -121,7 +123,7 @@ internal class HandlePositionProvider(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         val position = positionProvider.provide().takeOrElse { prevPosition }
         prevPosition = position
@@ -135,7 +137,7 @@ internal class HandlePositionProvider(
 internal fun isLeftSelectionHandle(
     isStartHandle: Boolean,
     direction: ResolvedTextDirection,
-    handlesCrossed: Boolean
+    handlesCrossed: Boolean,
 ): Boolean {
     return if (isStartHandle) {
         isHandleLtrDirection(direction, handlesCrossed)
@@ -156,7 +158,7 @@ internal fun isLeftSelectionHandle(
 /*@VisibleForTesting*/
 internal fun isHandleLtrDirection(
     direction: ResolvedTextDirection,
-    areHandlesCrossed: Boolean
+    areHandlesCrossed: Boolean,
 ): Boolean {
     return direction == ResolvedTextDirection.Ltr && !areHandlesCrossed ||
         direction == ResolvedTextDirection.Rtl && areHandlesCrossed

@@ -22,8 +22,11 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
+import android.support.wearable.authentication.IAuthenticationRequestCallback
+import android.support.wearable.authentication.IAuthenticationRequestService
 import android.util.Pair
 import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
@@ -32,6 +35,7 @@ import androidx.wear.phone.interactions.WearPhoneInteractionsTestRunner
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
 import java.util.function.Consumer
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -63,7 +67,8 @@ public class RemoteAuthTest {
         private val DIRECT_EXECUTOR = Executor { command -> command.run() }
         private const val authProviderUrlA = "http://myrequesturl/a?client_id=iamtheclient"
         private const val authProviderUrlB = "http://myrequesturl/b?client_id=iamtheclient"
-        private val responseUrl = Uri.parse("http://myresponseurl")
+        private val responseUrl =
+            Uri.parse("http://myresponseurl/androidx.wear.phone.interactions.test")
         private val appPackageName = context.packageName
 
         private var requestA: OAuthRequest
@@ -106,7 +111,7 @@ public class RemoteAuthTest {
             remoteInteractionsManager,
             fakeServiceBinder,
             DIRECT_EXECUTOR,
-            appPackageName
+            appPackageName,
         )
     private val executor: Executor = SyncExecutor()
 
@@ -128,7 +133,7 @@ public class RemoteAuthTest {
                 .setCodeChallenge(CodeChallenge(CodeVerifier()))
                 .build(),
             executor,
-            mockCallback
+            mockCallback,
         )
         // THEN a connection is made to Clockwork Home's Auth service
         assertThat(fakeServiceBinder.state).isEqualTo(ConnectionState.CONNECTING)
@@ -223,7 +228,7 @@ public class RemoteAuthTest {
             listOf(
                 RemoteAuthClient.STATUS_AVAILABLE,
                 RemoteAuthClient.STATUS_UNAVAILABLE,
-                RemoteAuthClient.STATUS_TEMPORARILY_UNAVAILABLE
+                RemoteAuthClient.STATUS_TEMPORARILY_UNAVAILABLE,
             )) {
             whenever(remoteInteractionsManager.isAvailabilityStatusApiSupported).thenReturn(true)
             doAnswer {
@@ -243,10 +248,50 @@ public class RemoteAuthTest {
         }
     }
 
+    @Test
+    fun remoteAuthService_openUrl_withMismatchedRedirectUri_throwsSecurityException() {
+        val binder = IAuthenticationRequestService.Stub.asInterface(fakeService.onBind(Intent()))
+        val requestUrl =
+            Uri.parse(
+                "https://provider.com?client_id=client" +
+                    "&redirect_uri=https://wear.googleapis.com/3p_auth/com.example.app" +
+                    "&response_type=code&code_challenge=xyz&code_challenge_method=S256"
+            )
+
+        val bundle =
+            Bundle().apply {
+                putString(RemoteAuthClient.KEY_PACKAGE_NAME, "com.example.differentApp")
+                putParcelable(RemoteAuthClient.KEY_REQUEST_URL, requestUrl)
+            }
+
+        val mockBinderCallback = Mockito.mock(IAuthenticationRequestCallback::class.java)
+
+        assertFailsWith<SecurityException>("redirect_uri package segment") {
+            binder.openUrl(bundle, mockBinderCallback)
+        }
+    }
+
+    @Test
+    fun remoteAuthService_sendResponseToCallback_withMismatchedResponseUrl_throwsSecurityException() {
+        clientUnderTest.sendAuthorizationRequest(requestA, executor, mockCallback)
+        fakeServiceBinder.completeConnection()
+        val requestPair = fakeService.requests[0]
+        val packageNameAndRequestId = requestPair.second
+
+        val mismatchedResponseUrl =
+            Uri.parse("https://wear.googleapis.com/3p_auth/com.example.app?code=code")
+        val maliciousResponse =
+            OAuthResponse.Builder().setResponseUrl(mismatchedResponseUrl).build()
+
+        assertFailsWith<SecurityException>("Response URL package segment") {
+            RemoteAuthService.sendResponseToCallback(maliciousResponse, packageNameAndRequestId)
+        }
+    }
+
     internal enum class ConnectionState {
         DISCONNECTED,
         CONNECTING,
-        CONNECTED
+        CONNECTED,
     }
 
     /** Fakes binding to Clockwork Home. */
@@ -257,7 +302,7 @@ public class RemoteAuthTest {
         override fun bindService(
             intent: Intent,
             connection: ServiceConnection,
-            flags: Int
+            flags: Int,
         ): Boolean {
             if (intent.getPackage() != RemoteAuthClient.WEARABLE_PACKAGE_NAME) {
                 throw UnsupportedOperationException()
@@ -313,7 +358,7 @@ public class RemoteAuthTest {
 
             override fun sendAuthRequest(
                 request: OAuthRequest,
-                packageNameAndRequestId: kotlin.Pair<String, Int>
+                packageNameAndRequestId: kotlin.Pair<String, Int>,
             ) {
                 if (fakeServiceBinder.state != ConnectionState.CONNECTED) {
                     throw RemoteException("not connected")

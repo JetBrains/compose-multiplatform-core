@@ -28,13 +28,10 @@ import kotlin.reflect.KClass
  * Contains information about the changed data.
  *
  * @param dataTypes a set of changed [Record] classes.
- * @see androidx.health.connect.client.HealthConnectClient.registerForDataNotifications
+ * @see androidx.health.platform.client.HealthDataAsyncClient.registerForDataNotifications
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY) // Not yet ready for public
-class DataNotification
-private constructor(
-    val dataTypes: Set<KClass<out Record>>,
-) {
+class DataNotification private constructor(val dataTypes: Set<KClass<out Record>>) {
 
     companion object {
         private const val EXTRA_DATA_TYPES = "com.google.android.healthdata.extra.DATA_TYPES"
@@ -47,7 +44,7 @@ private constructor(
          *   [BroadcastReceiver][android.content.BroadcastReceiver].
          * @return [DataNotification] if the notification data was successfully extracted, `null`
          *   otherwise.
-         * @see androidx.health.connect.client.HealthConnectClient.registerForDataNotifications
+         * @see androidx.health.platform.client.HealthDataAsyncClient.registerForDataNotifications
          */
         @JvmStatic
         fun from(intent: Intent): DataNotification? {
@@ -56,7 +53,7 @@ private constructor(
                     ?: return null
 
             return DataNotification(
-                dataTypes = dataTypes.mapTo(HashSet(), DataType::toDataTypeKClass),
+                dataTypes = dataTypes.mapTo(HashSet(), DataType::toDataTypeKClass)
             )
         }
     }

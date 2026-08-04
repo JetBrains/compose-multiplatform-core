@@ -18,6 +18,8 @@ package androidx.wear.compose.material3
 
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
@@ -34,6 +36,10 @@ import kotlin.math.sin
  * Example of [LevelIndicator]:
  *
  * @sample androidx.wear.compose.material3.samples.LevelIndicatorSample
+ *
+ * ![LevelIndicatorSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_LevelIndicatorSample_CompositeImage.png)
+ *
  * @param value Value of the indicator as a fraction in the range [0,1]. Values outside of the range
  *   [0,1] will be coerced.
  * @param modifier Modifier to be applied to the component
@@ -55,6 +61,7 @@ public fun LevelIndicator(
     @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
 ) {
+    val updatedValue by rememberUpdatedState(value)
     val screenWidthDp = LocalConfiguration.current.screenWidthDp
     val paddingHorizontal = LevelIndicatorDefaults.edgePadding
     val radius = screenWidthDp / 2 - paddingHorizontal.value - strokeWidth.value / 2
@@ -62,7 +69,7 @@ public fun LevelIndicator(
     val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius
 
     IndicatorImpl(
-        state = FractionPositionStateAdapter { value().coerceIn(0f, 1f) },
+        state = FractionPositionStateAdapter { updatedValue().coerceIn(0f, 1f) },
         indicatorHeight = indicatorHeight.dp,
         indicatorWidth = strokeWidth,
         paddingHorizontal = paddingHorizontal,
@@ -81,6 +88,10 @@ public fun LevelIndicator(
  * Example of [LevelIndicator] with a [Stepper]:
  *
  * @sample androidx.wear.compose.material3.samples.StepperSample
+ *
+ * ![StepperSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_StepperSample_CompositeImage.png)
+ *
  * @param value Value of the indicator in the [valueRange].
  * @param modifier Modifier to be applied to the component
  * @param valueRange range of values that [value] can take
@@ -120,6 +131,10 @@ public fun StepperLevelIndicator(
  * Example of [LevelIndicator] with a [Stepper] working on an [IntProgression]:
  *
  * @sample androidx.wear.compose.material3.samples.StepperWithIntegerSample
+ *
+ * ![StepperWithIntegerSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_StepperWithIntegerSample_CompositeImage.png)
+ *
  * @param value Current value of the Stepper. If outside of [valueProgression] provided, value will
  *   be coerced to this range.
  * @param modifier Modifier to be applied to the component
@@ -231,7 +246,7 @@ public class LevelIndicatorColors(
     public val indicatorColor: Color,
     public val trackColor: Color,
     public val disabledIndicatorColor: Color,
-    public val disabledTrackColor: Color
+    public val disabledTrackColor: Color,
 ) {
     /**
      * Returns a copy of this LevelIndicatorColors optionally overriding some of the values.
@@ -303,14 +318,15 @@ public class LevelIndicatorColors(
  * @param valueFraction the value fraction to adapt to a ScrollIndicatorState
  * @VisibleForTesting
  */
-internal class FractionPositionStateAdapter(
-    private val valueFraction: () -> Float,
-) : IndicatorState {
+internal class FractionPositionStateAdapter(private val valueFraction: () -> Float) :
+    IndicatorState {
 
     override val positionFraction = 1f // LevelIndicator always starts at the bottom
 
     override val sizeFraction: Float
         get() = valueFraction()
+
+    override var jiggleAmount: Float = 0f
 
     override fun equals(other: Any?): Boolean {
         // Compare lambdas with referential equality

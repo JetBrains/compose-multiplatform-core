@@ -42,7 +42,7 @@ import kotlinx.coroutines.flow.onEach
 internal class RaiseHandStateImpl(
     private val participants: StateFlow<List<Participant>>,
     initialRaisedHands: List<Participant>,
-    private val onHandRaisedChanged: suspend (Boolean) -> Unit
+    private val onHandRaisedChanged: suspend (Boolean) -> Unit,
 ) : RaiseHandState {
     companion object {
         const val LOG_TAG = Extensions.LOG_TAG + "(RHSI)"
@@ -65,7 +65,7 @@ internal class RaiseHandStateImpl(
     internal fun connect(
         scope: CoroutineScope,
         repository: ParticipantActionCallbackRepository,
-        remote: ParticipantStateListenerRemote
+        remote: ParticipantStateListenerRemote,
     ) {
         Log.i(LOG_TAG, "initialize: sync state")
         repository.raiseHandStateCallback = ::raiseHandStateChanged

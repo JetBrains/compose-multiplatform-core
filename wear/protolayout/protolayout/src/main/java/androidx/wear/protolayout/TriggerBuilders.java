@@ -25,10 +25,13 @@ import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
+import androidx.wear.protolayout.expression.pipeline.DynamicProtoHashEquals;
 import androidx.wear.protolayout.proto.TriggerProto;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Objects;
 
 /** Builders for triggers that can be used to start an animation. */
 public final class TriggerBuilders {
@@ -84,6 +87,20 @@ public final class TriggerBuilders {
         }
 
         @Override
+        public int hashCode() {
+            return 1;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            // Visible trigger doesn't have modifications
+            return obj instanceof OnVisibleTrigger;
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
@@ -117,7 +134,7 @@ public final class TriggerBuilders {
         }
 
         /** Builder for {@link OnVisibleTrigger}. */
-        @SuppressWarnings("HiddenSuperclass")
+        @SuppressWarnings({"HiddenSuperclass", "EmptyBuilder"})
         public static final class Builder implements Trigger.Builder {
             private final TriggerProto.OnVisibleTrigger.Builder mImpl =
                     TriggerProto.OnVisibleTrigger.newBuilder();
@@ -149,6 +166,20 @@ public final class TriggerBuilders {
                 TriggerProto.OnVisibleOnceTrigger impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
             this.mFingerprint = fingerprint;
+        }
+
+        @Override
+        public int hashCode() {
+            return 2;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            // VisibleOnce trigger doesn't have modifications
+            return obj instanceof OnVisibleOnceTrigger;
         }
 
         @Override
@@ -187,7 +218,7 @@ public final class TriggerBuilders {
         }
 
         /** Builder for {@link OnVisibleOnceTrigger}. */
-        @SuppressWarnings("HiddenSuperclass")
+        @SuppressWarnings({"HiddenSuperclass", "EmptyBuilder"})
         public static final class Builder implements Trigger.Builder {
             private final TriggerProto.OnVisibleOnceTrigger.Builder mImpl =
                     TriggerProto.OnVisibleOnceTrigger.newBuilder();
@@ -214,6 +245,20 @@ public final class TriggerBuilders {
         OnLoadTrigger(TriggerProto.OnLoadTrigger impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
             this.mFingerprint = fingerprint;
+        }
+
+        @Override
+        public int hashCode() {
+            return 3;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            // Visible trigger doesn't have modifications
+            return obj instanceof OnLoadTrigger;
         }
 
         @Override
@@ -293,6 +338,29 @@ public final class TriggerBuilders {
         }
 
         @Override
+        public int hashCode() {
+            DynamicBool condition = getCondition();
+            return condition == null
+                    ? 4
+                    : DynamicProtoHashEquals.hashCode(condition.toDynamicBoolProto());
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof OnConditionMetTrigger)) {
+                return false;
+            }
+            DynamicBool condition = getCondition();
+            DynamicBool thatCondition = ((OnConditionMetTrigger) obj).getCondition();
+            return DynamicProtoHashEquals.equals(
+                    condition != null ? condition.toDynamicBoolProto() : null,
+                    thatCondition != null ? thatCondition.toDynamicBoolProto() : null);
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
@@ -361,11 +429,45 @@ public final class TriggerBuilders {
      */
     @RequiresSchemaVersion(major = 1, minor = 200)
     public interface Trigger {
+        /**
+         * Returns hash code for the given {@link Trigger}, taking into account hash of the subclass
+         * and the inner position of this proto message.
+         */
+        @RestrictTo(Scope.LIBRARY)
+        static int hash(@Nullable Trigger trigger) {
+            // We need "Trigger" string so that if the object is implementing some other interface
+            // that has a oneof and subclass is on the exact same inner case, we want these two to
+            // be different.
+            return trigger != null
+                    ? Objects.hash(
+                            "Trigger", trigger.toTriggerProto().getInnerCase().getNumber(), trigger)
+                    : 0;
+        }
+
+        /**
+         * Checks whether the given {@link Trigger} is equal to the object taking into account inner
+         * position.
+         */
+        @SuppressWarnings("NullAway") // that.toTriggerProto()
+        @RestrictTo(Scope.LIBRARY)
+        static boolean equal(@Nullable Trigger trigger, @Nullable Trigger that) {
+            if (trigger == that) {
+                return true;
+            }
+            return that != null
+                    && trigger != null
+                    && that.toTriggerProto().getInnerCase().getNumber()
+                            == trigger.toTriggerProto().getInnerCase().getNumber()
+                    && Objects.equals(that, trigger);
+        }
+
         /** Get the protocol buffer representation of this object. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         TriggerProto.@NonNull Trigger toTriggerProto();
 
         /** Get the fingerprint for this object or null if unknown. */
+        @SuppressWarnings("HiddenAbstractMethodInInterface")
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable Fingerprint getFingerprint();
 

@@ -22,9 +22,8 @@ import androidx.recyclerview.widget.ListAdapter
 
 /** Base recycler view adapter with that will update data async with diff utils. */
 abstract class BaseListAdapter<T>(values: Array<T>) :
-    ListAdapter<AdapterItemWrapper, BaseViewHolder<*>>(AdapterItemWrapperDiffCallback()) where
-T : BaseAdapterItemType,
-T : Enum<T> {
+    ListAdapter<AdapterItemWrapper, BaseViewHolder<*>>(AdapterItemWrapperDiffCallback())
+    where T : BaseAdapterItemType, T : Enum<T> {
 
     protected val viewTypes: List<BaseAdapterItemType> =
         CommonAdapterItemType.values().toList().plus(values.toList())
@@ -75,7 +74,7 @@ T : Enum<T> {
     /** @return [CommonViewHolder] for [CommonAdapterItemType]. */
     private fun onCreateCommonViewHolder(
         parent: ViewGroup,
-        commonViewType: CommonAdapterItemType
+        commonViewType: CommonAdapterItemType,
     ): BaseViewHolder<*> {
         return CommonViewHolder(parent, commonViewType)
     }

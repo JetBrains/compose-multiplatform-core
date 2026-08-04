@@ -21,10 +21,7 @@ import android.media.CamcorderProfile
 import android.media.EncoderProfiles.VideoProfile.HDR_HLG
 import android.os.Build
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.Camera2EncoderProfilesProvider
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
-import androidx.camera.core.CameraSelector
+import androidx.camera.camera2.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
@@ -32,7 +29,6 @@ import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy.BIT_DEPTH_10
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.testing.impl.LabTestRule
@@ -58,17 +54,11 @@ import org.junit.runners.Parameterized
 
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class BackupHdrProfileEncoderProfilesProviderTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
-    private val quality: Int
+    private val quality: Int,
 ) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
 
     @get:Rule
     val cameraRule =
@@ -90,9 +80,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
                 CamcorderProfile.QUALITY_2160P,
             )
 
-        @JvmStatic
-        private val cameraXConfigs =
-            listOf(Camera2Config::class.simpleName, CameraPipeConfig::class.simpleName)
+        @JvmStatic private val cameraXConfigs = listOf(Camera2Config::class.simpleName)
 
         @JvmStatic
         @Parameterized.Parameters(name = "config={0}, quality={2}")
@@ -104,12 +92,10 @@ class BackupHdrProfileEncoderProfilesProviderTest(
                             arrayOf(
                                 configImplName,
                                 when (configImplName) {
-                                    CameraPipeConfig::class.simpleName ->
-                                        CameraPipeConfig.defaultConfig()
                                     Camera2Config::class.simpleName -> Camera2Config.defaultConfig()
                                     else -> Camera2Config.defaultConfig()
                                 },
-                                quality
+                                quality,
                             )
                         )
                     }
@@ -122,7 +108,6 @@ class BackupHdrProfileEncoderProfilesProviderTest(
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     private lateinit var cameraId: String
     private lateinit var cameraInfo: CameraInfoInternal
@@ -130,12 +115,12 @@ class BackupHdrProfileEncoderProfilesProviderTest(
 
     @Before
     fun setup() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()
@@ -144,12 +129,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
         cameraInfo =
             CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo
                 as CameraInfoInternal
-        baseProvider =
-            if (implName == CameraPipeConfig::class.simpleName) {
-                EncoderProfilesProviderAdapter(cameraId, cameraInfo.cameraQuirks)
-            } else {
-                Camera2EncoderProfilesProvider(cameraId, cameraInfo.cameraQuirks)
-            }
+        baseProvider = EncoderProfilesProviderAdapter(cameraId, cameraInfo.cameraQuirks)
     }
 
     @After

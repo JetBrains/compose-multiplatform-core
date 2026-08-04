@@ -21,7 +21,6 @@ import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -29,7 +28,6 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraTaskTrackingExecutor
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
@@ -60,19 +58,12 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class VideoRecordingMetadataTest(
     private val implName: String,
     private var cameraSelector: CameraSelector,
     private val cameraConfig: CameraXConfig,
     private val forceEnableStreamSharing: Boolean,
 ) {
-
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
 
     @get:Rule
     val cameraRule =
@@ -111,6 +102,14 @@ class VideoRecordingMetadataTest(
                     /*forceEnableStreamSharing=*/ false,
                 ),
                 arrayOf(
+                    "external+" + Camera2Config::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    Camera2Config.defaultConfig(),
+                    /*forceEnableStreamSharing=*/ false,
+                ),
+                arrayOf(
                     "back+" + Camera2Config::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config.defaultConfig(),
@@ -123,27 +122,11 @@ class VideoRecordingMetadataTest(
                     /*forceEnableStreamSharing=*/ true,
                 ),
                 arrayOf(
-                    "back+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ false,
-                ),
-                arrayOf(
-                    "front+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ false,
-                ),
-                arrayOf(
-                    "back+" + CameraPipeConfig::class.simpleName + "+streamSharing",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ true,
-                ),
-                arrayOf(
-                    "front+" + CameraPipeConfig::class.simpleName + "+streamSharing",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
+                    "external+" + Camera2Config::class.simpleName + "+streamSharing",
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    Camera2Config.defaultConfig(),
                     /*forceEnableStreamSharing=*/ true,
                 ),
             )
@@ -171,7 +154,7 @@ class VideoRecordingMetadataTest(
         cameraProvider =
             ProcessCameraProviderWrapper(
                 ProcessCameraProvider.getInstance(context).get(),
-                forceEnableStreamSharing
+                forceEnableStreamSharing,
             )
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
@@ -233,7 +216,7 @@ class VideoRecordingMetadataTest(
             // Verify. SDR video is not expected to have BT2020 color standard.
             verifyVideoColorStandard(
                 unexpectedColorStandard = MediaFormat.COLOR_STANDARD_BT2020,
-                file = result.file
+                file = result.file,
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }
@@ -262,7 +245,7 @@ class VideoRecordingMetadataTest(
             // Verify. SDR video is not expected to have BT2020 color standard.
             verifyVideoColorStandard(
                 unexpectedColorStandard = MediaFormat.COLOR_STANDARD_BT2020,
-                file = result.file
+                file = result.file,
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }

@@ -46,13 +46,13 @@ private class DatabaseImpl(driver: SqlDriver) : TransacterImpl(driver), Database
             driver.execute(
                 null,
                 """
-          |CREATE TABLE TestEntity(
-          |    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-          |    value TEXT NOT NULL
-          |)
-          """
+                |CREATE TABLE TestEntity(
+                |    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                |    value TEXT NOT NULL
+                |)
+                """
                     .trimMargin(),
-                0
+                0,
             )
         }
 
@@ -62,7 +62,7 @@ private class DatabaseImpl(driver: SqlDriver) : TransacterImpl(driver), Database
 
 private class TestEntityQueriesImpl(
     private val database: DatabaseImpl,
-    private val driver: SqlDriver
+    private val driver: SqlDriver,
 ) : TransacterImpl(driver), TestEntityQueries {
     internal val selectAll: MutableList<Query<*>> = copyOnWriteList()
 
@@ -73,7 +73,7 @@ private class TestEntityQueriesImpl(
             driver,
             "TestEntity.sq",
             "selectAll",
-            "SELECT * FROM TestEntity"
+            "SELECT * FROM TestEntity",
         ) { cursor ->
             mapper(cursor.getLong(0)!!, cursor.getString(1)!!)
         }
@@ -84,13 +84,13 @@ private class TestEntityQueriesImpl(
         driver.execute(
             -2020431062,
             """
-    |INSERT OR REPLACE INTO TestEntity(
-    |  value
-    |)
-    |VALUES (?1)
-    """
+            |INSERT OR REPLACE INTO TestEntity(
+            |  value
+            |)
+            |VALUES (?1)
+            """
                 .trimMargin(),
-            1
+            1,
         ) {
             bindString(1, value)
         }

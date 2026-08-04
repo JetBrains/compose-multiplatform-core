@@ -16,11 +16,15 @@
 
 package androidx.compose.foundation.text.input
 
+import androidx.compose.foundation.text.input.internal.addExactOrElse
+import androidx.compose.foundation.text.input.internal.subtractExactOrElse
 import androidx.compose.foundation.text.input.internal.toCharArray
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.coerceIn
 import kotlin.jvm.JvmInline
+import kotlin.math.max
+import kotlin.math.min
 
 internal typealias PlacedAnnotation = AnnotatedString.Range<AnnotatedString.Annotation>
 
@@ -44,9 +48,10 @@ internal class TextFieldCharSequence(
     selection: TextRange = TextRange.Zero,
     composition: TextRange? = null,
     highlight: Pair<TextHighlightType, TextRange>? = null,
-    val composingAnnotations: List<PlacedAnnotation>? = null
+    val composingAnnotations: List<PlacedAnnotation>? = null,
+    val outputAnnotations: List<PlacedAnnotation>? = null,
+    val textFieldTextStyles: TextFieldTextStylesImpl? = null,
 ) : CharSequence {
-
     override val length: Int
         get() = text.length
 
@@ -94,7 +99,7 @@ internal class TextFieldCharSequence(
         destination: CharArray,
         destinationOffset: Int,
         sourceStartIndex: Int,
-        sourceEndIndex: Int
+        sourceEndIndex: Int,
     ) {
         text.toCharArray(destination, destinationOffset, sourceStartIndex, sourceEndIndex)
     }
@@ -121,6 +126,7 @@ internal class TextFieldCharSequence(
         if (highlight != other.highlight) return false
         if (composingAnnotations != other.composingAnnotations) return false
         if (!contentEquals(other.text)) return false
+        if (textFieldTextStyles != other.textFieldTextStyles) return false
 
         return true
     }
@@ -131,6 +137,7 @@ internal class TextFieldCharSequence(
         result = 31 * result + (composition?.hashCode() ?: 0)
         result = 31 * result + highlight.hashCode()
         result = 31 * result + composingAnnotations.hashCode()
+        result = 31 * result + textFieldTextStyles.hashCode()
         return result
     }
 }
@@ -143,13 +150,15 @@ internal value class TextHighlightType private constructor(private val value: In
          * A highlight which previews the text range which would be selected by an ongoing stylus
          * handwriting select gesture.
          */
-        val HandwritingSelectPreview = TextHighlightType(0)
+        inline val HandwritingSelectPreview
+            get() = TextHighlightType(0)
 
         /**
          * A highlight which previews the text range which would be deleted by an ongoing stylus
          * handwriting delete gesture.
          */
-        val HandwritingDeletePreview = TextHighlightType(1)
+        inline val HandwritingDeletePreview
+            get() = TextHighlightType(1)
     }
 }
 
@@ -161,7 +170,7 @@ internal value class TextHighlightType private constructor(private val value: In
  * @see TextRange.min
  */
 internal fun TextFieldCharSequence.getTextBeforeSelection(maxChars: Int): CharSequence =
-    subSequence(kotlin.math.max(0, selection.min - maxChars), selection.min)
+    subSequence(max(0, selection.min.subtractExactOrElse(maxChars) { 0 }), selection.min)
 
 /**
  * Returns the text after the selection.
@@ -171,7 +180,7 @@ internal fun TextFieldCharSequence.getTextBeforeSelection(maxChars: Int): CharSe
  * @see TextRange.max
  */
 internal fun TextFieldCharSequence.getTextAfterSelection(maxChars: Int): CharSequence =
-    subSequence(selection.max, kotlin.math.min(selection.max + maxChars, length))
+    subSequence(selection.max, min(selection.max.addExactOrElse(maxChars) { length }, length))
 
 /** Returns the currently selected text. */
 internal fun TextFieldCharSequence.getSelectedText(): CharSequence =

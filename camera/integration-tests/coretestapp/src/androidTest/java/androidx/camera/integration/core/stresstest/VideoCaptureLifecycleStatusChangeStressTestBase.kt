@@ -22,6 +22,7 @@ import androidx.camera.integration.core.CameraXActivity.BIND_IMAGE_CAPTURE
 import androidx.camera.integration.core.CameraXActivity.BIND_PREVIEW
 import androidx.camera.integration.core.CameraXActivity.BIND_VIDEO_CAPTURE
 import androidx.camera.integration.core.util.StressTestUtil.LARGE_STRESS_TEST_REPEAT_COUNT
+import androidx.camera.integration.core.util.StressTestUtil.VERIFICATION_TARGET_PREVIEW
 import androidx.camera.integration.core.util.StressTestUtil.VERIFICATION_TARGET_VIDEO_CAPTURE
 import androidx.camera.integration.core.util.StressTestUtil.assumeCameraSupportUseCaseCombination
 import androidx.camera.testing.impl.LabTestRule
@@ -31,7 +32,7 @@ import org.junit.Test
 abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
     implName: String,
     cameraConfig: CameraXConfig,
-    cameraId: String
+    cameraId: String,
 ) : LifecycleStatusChangeStressTestBase(implName, cameraConfig, cameraId) {
 
     protected abstract val enableStreamSharing: Boolean
@@ -45,8 +46,8 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
         pauseResumeActivity_checkOutput_repeatedly(
             cameraId,
             useCaseCombination,
-            VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            VERIFICATION_TARGET_PREVIEW or VERIFICATION_TARGET_VIDEO_CAPTURE,
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -59,8 +60,8 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
         pauseResumeActivity_checkOutput_repeatedly(
             cameraId,
             useCaseCombination,
-            VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            VERIFICATION_TARGET_PREVIEW or VERIFICATION_TARGET_VIDEO_CAPTURE,
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -73,8 +74,8 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
         pauseResumeActivity_checkOutput_repeatedly(
             cameraId,
             useCaseCombination,
-            VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            VERIFICATION_TARGET_PREVIEW or VERIFICATION_TARGET_VIDEO_CAPTURE,
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -87,8 +88,8 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
         pauseResumeActivityRepeatedly_thenCheckOutput(
             cameraId,
             useCaseCombination,
-            VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            VERIFICATION_TARGET_PREVIEW or VERIFICATION_TARGET_VIDEO_CAPTURE,
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -101,8 +102,8 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
         pauseResumeActivityRepeatedly_thenCheckOutput(
             cameraId,
             useCaseCombination,
-            VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            VERIFICATION_TARGET_PREVIEW or VERIFICATION_TARGET_VIDEO_CAPTURE,
+            enableStreamSharing = enableStreamSharing,
         )
     }
 
@@ -115,8 +116,8 @@ abstract class VideoCaptureLifecycleStatusChangeStressTestBase(
         pauseResumeActivityRepeatedly_thenCheckOutput(
             cameraId,
             useCaseCombination,
-            VERIFICATION_TARGET_VIDEO_CAPTURE,
-            enableStreamSharing = enableStreamSharing
+            VERIFICATION_TARGET_PREVIEW or VERIFICATION_TARGET_VIDEO_CAPTURE,
+            enableStreamSharing = enableStreamSharing,
         )
     }
 }

@@ -113,8 +113,8 @@ abstract class ComposeBenchmarkBase {
                             override fun captureResumed() {
                                 // Unsupported for now
                             }
-                        }
-                    ),
+                        },
+                    )
             )
         )
 
@@ -204,7 +204,7 @@ abstract class ComposeBenchmarkBase {
                 Snapshot.sendApplyNotifications()
                 assertTrue(
                     "recomposer does not have invalidations for frame",
-                    recomposer.hasPendingWork
+                    recomposer.hasPendingWork,
                 )
             }
 
@@ -232,11 +232,14 @@ abstract class ComposeBenchmarkBase {
     }
 }
 
+// This is a benchmarking API only available on Android, so we don't need to use the result of
+// runTest, which will always be Unit.
+@Suppress("KotlinRunTestUncheckedResult")
 @ExperimentalCoroutinesApi
 @ExperimentalTestApi
 fun runBlockingTestWithFrameClock(
     context: CoroutineContext = EmptyCoroutineContext,
-    testBody: suspend TestScope.() -> Unit
+    testBody: suspend TestScope.() -> Unit,
 ): Unit =
     runTest(UnconfinedTestDispatcher() + context) {
         withContext(TestMonotonicFrameClock(this)) { testBody() }
@@ -244,7 +247,7 @@ fun runBlockingTestWithFrameClock(
 
 fun ControlledComposition.performRecompose(
     readObserver: (Any) -> Unit,
-    writeObserver: (Any) -> Unit
+    writeObserver: (Any) -> Unit,
 ): Boolean {
     val snapshot = Snapshot.takeMutableSnapshot(readObserver, writeObserver)
     val result = snapshot.enter { recompose().also { applyChanges() } }

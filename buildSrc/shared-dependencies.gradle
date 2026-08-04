@@ -3,6 +3,7 @@
 apply from: "${buildscript.sourceFile.parent}/kotlin-dsl-dependency.gradle"
 // copy findGradleKotlinDsl to a local variable: https://github.com/gradle/gradle/issues/26057
 def findGradleKotlinDsl = project.findGradleKotlinDsl
+
 dependencies {
 
     // Gradle APIs
@@ -22,10 +23,15 @@ dependencies {
     implementation(libs.androidToolsSdkCommon) // com.android.ide.common for Stable AIDL plugin
     implementation(libs.spdxGradlePluginz)
     runtimeOnly(libs.androidKotlinMultiplatform)
-    implementation(libs.binaryCompatibilityValidator)
+    runtimeOnly(libs.androidLegacyKaptPlugin)
+    compileOnly(libs.kotlinAbiTools)
+    implementation(libs.kotlinAbiToolsApi)
 
     // For Room Gradle Plugin
-    implementation(libs.kspGradlePlugin)
+    implementation(libs.kspGradlePlugin) {
+        // ensure that AGP dependency doesn't override KSP version we use
+        version { strictly(libs.versions.ksp.get()) }
+    }
 
     // Force jsoup upgrade on spdx (b/309773103)
     implementation(libs.jsoup)
@@ -48,7 +54,7 @@ dependencies {
     implementation(libs.protobufGradlePlugin) // needed to compile inspection plugin
     implementation(libs.kotlinPoet) // needed to compile glance-layout-generator
 
-    implementation("com.google.protobuf:protobuf-java:3.22.3") // needed to compile baseline-profile gradle plugins
+    implementation("com.google.protobuf:protobuf-java:3.25.5") // needed to compile baseline-profile gradle plugins
     implementation(libs.agpTestingPlatformCoreProto) // needed to compile baseline-profile gradle plugins
 
     // dependencies that aren't used by buildSrc directly but that we resolve here so that the
@@ -59,4 +65,9 @@ dependencies {
 
     // Plugin for analyzing dependencies
     implementation(libs.dependency.analysis.gradle.plugin)
+
+    implementation("com.google.cloud:google-cloud-secretmanager:2.67.0")
+
+    // Added to mark AndroidX plugins as configuration cache-compatible. See b/492141374
+    implementation(libs.gradlePluginCompatibility)
 }

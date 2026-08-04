@@ -16,28 +16,434 @@
 
 package androidx.xr.compose.subspace.layout
 
+import android.content.Intent
+import android.view.View
+import androidx.activity.ComponentActivity
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialActivityPanel
+import androidx.xr.compose.subspace.SpatialAndroidViewPanel
+import androidx.xr.compose.subspace.SpatialMainPanel
+import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.rememberSpatialActivityPanelController
+import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
+import androidx.xr.compose.testing.configureFakeSession
+import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.session
+import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.AnchorSpace
+import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
-import java.lang.IllegalArgumentException
-import kotlin.test.assertFailsWith
+import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.junit.rules.ExpectedLogMessagesRule
 
 @RunWith(AndroidJUnit4::class)
 class CoreEntityTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+    // available starting with v1.11.0.
+    // See API docs for details.
+    @Suppress("DEPRECATION")
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    @get:Rule val expectedLogMessagesRule = ExpectedLogMessagesRule()
+
+    private class SpatialPanelActivity : ComponentActivity() {}
 
     @Test
-    fun coreEntity_coreContentlessEntity_shouldThrowIfNotContentless() {
-        composeTestRule.setContent { TestSetup {} }
+    @Ignore("b/430291253 - behavior is different in presubmit after moving to targetSdk 35")
+    fun coreEntity_size_shouldNotTriggerRecomposition() {
+        var size = 100
+        var sizeCount = 0
+        var mutableSizeCount = 0
 
-        assertFailsWith<IllegalArgumentException> {
-            CoreContentlessEntity(composeTestRule.activity.session.scene.activitySpace)
+        composeTestRule.setContent {
+            val session = assertNotNull(composeTestRule.session)
+            val coreEntity = remember {
+                CoreGroupEntity(
+                        session.scene.virtualPixelDensity,
+                        Entity.create(session = session, name = "Test"),
+                    )
+                    .apply { this.size = IntVolumeSize(size, size, size) }
+            }
+
+            SizeWatcher(coreEntity) { sizeCount++ }
+            MutableSizeWatcher(coreEntity) { mutableSizeCount++ }
+
+            Button(
+                onClick = {
+                    size += 100
+                    coreEntity.size = IntVolumeSize(size, size, size)
+                }
+            ) {
+                Text("Increase")
+            }
         }
+
+        composeTestRule.onNodeWithText("Increase").performClick()
+        composeTestRule.onNodeWithText("Increase").performClick()
+        composeTestRule.onNodeWithText("Increase").performClick()
+        composeTestRule.onNodeWithText("Increase").performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(sizeCount).isEqualTo(1)
+        assertThat(mutableSizeCount).isEqualTo(5)
+    }
+
+    @Composable
+    private fun SizeWatcher(coreEntity: CoreEntity, onSizeChanged: () -> Unit) {
+        check(coreEntity.size != IntVolumeSize.Zero)
+        onSizeChanged()
+    }
+
+    @Composable
+    private fun MutableSizeWatcher(coreEntity: CoreEntity, onSizeChanged: () -> Unit) {
+        check(coreEntity.mutableSize != IntVolumeSize.Zero)
+        onSizeChanged()
+    }
+
+    @Test
+    fun coreBasePanelEntity_androidViewPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+        composeTestRule.setContent {
+            Subspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.width(size).height(size).testTag("panel"),
+                )
+            }
+        }
+
+        // Initial non-zero size should be enabled.
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        // Recompose with zero size, should be disabled.
+        size = 0.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isFalse()
+
+        // Recompose with non-zero size, should be enabled again.
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
+    }
+
+    @Test
+    fun coreBasePanelEntity_spatialPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+        composeTestRule.setContent {
+            Subspace { SpatialPanel(SubspaceModifier.width(size).height(size).testTag("panel")) {} }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        size = 0.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isFalse()
+
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
+    }
+
+    @Test
+    fun coreBasePanelEntity_mainPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+        composeTestRule.setContent {
+            Subspace {
+                SpatialMainPanel(SubspaceModifier.width(size).height(size).testTag("panel"))
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        size = 0.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isFalse()
+
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
+    }
+
+    @Test
+    fun coreBasePanelEntity_activityPanel_enabledStateFollowsSizeChanges() {
+        var size by mutableStateOf(100.dp)
+
+        composeTestRule.setContent {
+            Subspace {
+                SpatialActivityPanel(
+                    controller =
+                        rememberSpatialActivityPanelController(
+                            Intent(composeTestRule.activity, SpatialPanelActivity::class.java)
+                        ),
+                    SubspaceModifier.width(size).height(size).testTag("panel"),
+                )
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(panelNode.semanticsEntity as? PanelEntity)
+        assertThat(panelEntity.isEnabled()).isTrue()
+
+        size = 0.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isFalse()
+
+        size = 50.dp
+        composeTestRule.waitForIdle()
+        assertThat(panelEntity.isEnabled()).isTrue()
+    }
+
+    @Test
+    fun attachEntity_onExistingCoreEntity_replacesAndDisposesOldEntity() {
+        val session = composeTestRule.configureFakeSession()
+        val initialEntity = Entity.create(session = session, name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, initialEntity)
+        val newEntity = Entity.create(session = session, name = "New")
+
+        coreEntity.attachEntity(newEntity)
+
+        assertThat(coreEntity.semanticsEntity).isEqualTo(newEntity)
+        // SceneCore entities are not truly "disposed" in a way we can easily assert, but we can
+        // verify the new entity is the one being used.
+    }
+
+    @Test
+    fun parent_setParent_updatesEntityParent() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val parentCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val childEntity = Entity.create(session = assertNotNull(session), name = "Child")
+        val childCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, childEntity)
+
+        childCoreEntity.parent = parentCoreEntity
+
+        assertThat(childEntity.parent).isEqualTo(testEntity)
+    }
+
+    @Test
+    fun parent_setParentToNull_restoresOriginalParent() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "Initial")
+        val parentCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val childEntity = Entity.create(session = session, name = "Child")
+        val originalParent = childEntity.parent
+        val childCoreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, childEntity)
+
+        childCoreEntity.parent = parentCoreEntity
+        assertThat(childEntity.parent).isNotEqualTo(originalParent)
+
+        childCoreEntity.parent = null
+        assertThat(childEntity.parent).isEqualTo(originalParent)
+    }
+
+    @Test
+    fun poseInMeters_setPose_updatesEntityPose() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val newPose = Pose(Vector3(5f, 5f, 5f))
+
+        coreEntity.poseInMeters = newPose
+
+        assertThat(testEntity.getPose()).isEqualTo(newPose)
+    }
+
+    @Test
+    fun poseInMeters_setSamePose_doesNotUpdateEntity() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val initialPose = testEntity.getPose()
+
+        // We can't directly check if setPose was called, but we can ensure
+        // the value remains identical.
+        coreEntity.poseInMeters = initialPose
+
+        assertThat(testEntity.getPose()).isEqualTo(initialPose)
+    }
+
+    @Test
+    fun enabled_setEnabled_updatesEntityEnabledState() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        testEntity.setEnabled(true)
+
+        coreEntity.enabled = false
+
+        assertThat(testEntity.isEnabled(includeParents = false)).isFalse()
+    }
+
+    @Test
+    fun scale_setScale_updatesEntityScale() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val newScale = 2.5f
+
+        coreEntity.scale = newScale
+
+        assertThat(testEntity.getScale()).isEqualTo(newScale)
+    }
+
+    @Test
+    fun coreModelEntity_scaleGetterAndSetter_updatesOnlyWhenValueChanges() {
+        val session = composeTestRule.configureFakeSession()
+        val coreModelEntity = CoreModelEntity(session.scene.virtualPixelDensity)
+
+        // Initial scale is 1.0f
+        assertThat(coreModelEntity.scale).isEqualTo(1.0f)
+
+        // Branch 1: Set a different value (2.0f), should update scale
+        coreModelEntity.scale = 2.0f
+        assertThat(coreModelEntity.scale).isEqualTo(2.0f)
+
+        // Branch 2: Set the exact same value again (2.0f), no-op path where userScale == value
+        coreModelEntity.scale = 2.0f
+        assertThat(coreModelEntity.scale).isEqualTo(2.0f)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun coreModelEntity_sizeGetterAndSetter_updatesSizeAndSyncsCombinedScale() = runTest {
+        val session = composeTestRule.configureFakeSession()
+        val coreModelEntity = CoreModelEntity(session.scene.virtualPixelDensity)
+        @Suppress("NewApi")
+        val gltfModel = GltfModel.create(session, java.nio.file.Paths.get("test.glb"))
+        val gltfEntity = GltfModelEntity.create(session, gltfModel)
+        coreModelEntity.attachEntity(gltfEntity)
+
+        val newSize = IntVolumeSize(400, 400, 400)
+        coreModelEntity.size = newSize
+
+        assertThat(coreModelEntity.size).isEqualTo(newSize)
+        // modelSize is 2000x2000x2000px, so gltfUniformScale = 400/2000 = 0.2f (non-one)
+        assertThat(coreModelEntity.scale).isEqualTo(0.2f)
+
+        // Setting the exact same size again hits the no-op path (super.size == value)
+        val currentScale = coreModelEntity.scale
+        coreModelEntity.size = newSize
+        assertThat(coreModelEntity.size).isEqualTo(newSize)
+        assertThat(coreModelEntity.scale).isEqualTo(currentScale)
+    }
+
+    @Test
+    fun alpha_setAlpha_updatesEntityAlpha() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val newAlpha = 0.5f
+
+        coreEntity.alpha = newAlpha
+
+        assertThat(testEntity.getAlpha()).isEqualTo(newAlpha)
+    }
+
+    @Test
+    fun contentDescription_setContentDescription_updatesEntityContentDescription() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+        val description = "Test Description"
+
+        coreEntity.contentDescription = description
+
+        assertThat(coreEntity.contentDescription).isEqualTo(description)
+        assertThat(testEntity.contentDescription).isEqualTo(description)
+    }
+
+    @Test
+    fun contentDescription_setNull_updatesEntityWithEmptyStringAndReturnsNull() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        coreEntity.contentDescription = null
+
+        assertThat(testEntity.contentDescription).isEqualTo("")
+        assertThat(coreEntity.contentDescription).isNull()
+    }
+
+    @Test
+    fun contentDescription_returnsNull_whenUnderlyingEntityHasEmptyString() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        testEntity.contentDescription = ""
+
+        assertThat(coreEntity.contentDescription).isNull()
+    }
+
+    @Test
+    fun updatePoseFromLayout_whenIsAnchoredToExternalSpaceIsTrue_doesNotUpdatePose() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "TestEntity")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        val anchorResult = Anchor.create(session, Pose.Identity)
+        val success = assertIs<AnchorCreateSuccess>(anchorResult)
+        val anchorSpace = AnchorSpace.create(session, anchor = success.anchor)
+        testEntity.parent = anchorSpace
+
+        val customPose = Pose(Vector3(1f, 2f, 3f))
+        testEntity.setPose(customPose)
+
+        coreEntity.updatePoseFromLayout()
+
+        // Pose remains customPose because updatePoseFromLayout returned early when anchored to
+        // AnchorSpace.
+        assertThat(testEntity.getPose()).isEqualTo(customPose)
+    }
+
+    @Test
+    fun updatePoseFromLayout_whenIsAnchoredToExternalSpaceIsFalse_updatesPoseFromLayout() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "TestEntity")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        val customPose = Pose(Vector3(1f, 2f, 3f))
+        testEntity.setPose(customPose)
+
+        coreEntity.updatePoseFromLayout()
+
+        // Pose is updated from layout (Pose.Identity) because entity is not anchored to
+        // AnchorSpace.
+        assertThat(testEntity.getPose()).isEqualTo(Pose.Identity)
     }
 }

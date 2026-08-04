@@ -26,9 +26,7 @@ import kotlin.jvm.JvmName
 @JvmInline
 public actual value class SavedStateReader
 @PublishedApi
-internal actual constructor(
-    private actual val source: SavedState,
-) {
+internal actual constructor(private actual val source: SavedState) {
 
     public actual fun getBoolean(key: String): Boolean {
         return source.map[key] as? Boolean ?: keyOrValueNotFoundError(key)
@@ -99,8 +97,10 @@ internal actual constructor(
         return source.map[key] as? List<CharSequence> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getCharSequenceListOrNull(key: String): List<CharSequence>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? List<CharSequence>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? List<CharSequence>
     }
 
     public actual fun getIntList(key: String): List<Int> {
@@ -108,8 +108,10 @@ internal actual constructor(
         return source.map[key] as? List<Int> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getIntListOrNull(key: String): List<Int>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? List<Int>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? List<Int>
     }
 
     public actual fun getSavedStateList(key: String): List<SavedState> {
@@ -117,8 +119,10 @@ internal actual constructor(
         return source.map[key] as? List<SavedState> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getSavedStateListOrNull(key: String): List<SavedState>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? List<SavedState>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? List<SavedState>
     }
 
     public actual fun getStringList(key: String): List<String> {
@@ -126,14 +130,17 @@ internal actual constructor(
         return source.map[key] as? List<String> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getStringListOrNull(key: String): List<String>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? List<String>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? List<String>
     }
 
     public actual fun getCharArray(key: String): CharArray {
         return source.map[key] as? CharArray ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getCharArrayOrNull(key: String): CharArray? {
         return source.map[key] as? CharArray
     }
@@ -143,14 +150,17 @@ internal actual constructor(
         return source.map[key] as? Array<CharSequence> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getCharSequenceArrayOrNull(key: String): Array<CharSequence>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? Array<CharSequence>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? Array<CharSequence>
     }
 
     public actual fun getBooleanArray(key: String): BooleanArray {
         return source.map[key] as? BooleanArray ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getBooleanArrayOrNull(key: String): BooleanArray? {
         return source.map[key] as? BooleanArray
     }
@@ -159,6 +169,7 @@ internal actual constructor(
         return source.map[key] as? DoubleArray ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getDoubleArrayOrNull(key: String): DoubleArray? {
         return source.map[key] as? DoubleArray
     }
@@ -167,6 +178,7 @@ internal actual constructor(
         return source.map[key] as? FloatArray ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getFloatArrayOrNull(key: String): FloatArray? {
         return source.map[key] as? FloatArray
     }
@@ -175,6 +187,7 @@ internal actual constructor(
         return source.map[key] as? IntArray ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getIntArrayOrNull(key: String): IntArray? {
         return source.map[key] as? IntArray
     }
@@ -183,6 +196,7 @@ internal actual constructor(
         return source.map[key] as? LongArray ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getLongArrayOrNull(key: String): LongArray? {
         return source.map[key] as? LongArray
     }
@@ -192,8 +206,10 @@ internal actual constructor(
         return source.map[key] as? Array<SavedState> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getSavedStateArrayOrNull(key: String): Array<SavedState>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? Array<SavedState>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? Array<SavedState>
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -201,8 +217,10 @@ internal actual constructor(
         return source.map[key] as? Array<String> ?: keyOrValueNotFoundError(key)
     }
 
+    @Suppress("NullableCollection")
     public actual fun getStringArrayOrNull(key: String): Array<String>? {
-        @Suppress("UNCHECKED_CAST") return source.map[key] as? Array<String>
+        @Suppress("UNCHECKED_CAST")
+        return source.map[key] as? Array<String>
     }
 
     public actual fun getSavedState(key: String): SavedState {

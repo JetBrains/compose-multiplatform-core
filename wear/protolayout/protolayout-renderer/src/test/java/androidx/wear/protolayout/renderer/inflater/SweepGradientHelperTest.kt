@@ -91,7 +91,7 @@ class SweepGradientHelperTest {
             sweepGradient(
                 colorStop(Color.RED, 0f),
                 colorStop(Color.BLUE),
-                colorStop(Color.GREEN, 1f)
+                colorStop(Color.GREEN, 1f),
             )
 
         assertFailsWith<IllegalArgumentException> {

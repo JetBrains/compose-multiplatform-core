@@ -39,7 +39,7 @@ object ScrollIndicatorBenchmark : MacrobenchmarkScreen {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    state = scrollState
+                    state = scrollState,
                 ) {
                     items(numberOfItems) { Text(text = "Item $it") }
                 }
@@ -57,7 +57,7 @@ object ScrollIndicatorBenchmark : MacrobenchmarkScreen {
                     device.displayHeight / 2,
                     device.displayWidth / 2,
                     device.displayHeight * 9 / 10,
-                    10
+                    10,
                 )
                 device.waitForIdle()
                 // scroll up
@@ -66,7 +66,7 @@ object ScrollIndicatorBenchmark : MacrobenchmarkScreen {
                     device.displayHeight * 9 / 10,
                     device.displayWidth / 2,
                     device.displayHeight / 2,
-                    10
+                    10,
                 )
                 device.waitForIdle()
                 SystemClock.sleep(500)

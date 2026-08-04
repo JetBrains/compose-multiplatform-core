@@ -41,7 +41,7 @@ internal class SurfaceTextureRenderer(
     private val handler: Handler,
 
     /** Callback invoked when a new image frame is available on the underlying SurfaceTexture */
-    private val frameAvailable: (SurfaceTexture) -> Unit
+    private val frameAvailable: (SurfaceTexture) -> Unit,
 ) {
 
     // Workaround: b/272751501
@@ -58,8 +58,7 @@ internal class SurfaceTextureRenderer(
     //
     // Currently we go with the original option as it may not be explicit to implementations that
     // the initial detach is necessary here.
-    private class RenderSurfaceTexture(singleBufferMode: Boolean) :
-        SurfaceTexture(singleBufferMode)
+    private class RenderSurfaceTexture(singleBufferMode: Boolean) : SurfaceTexture(singleBufferMode)
 
     private var mIsReleased = false
 
@@ -68,7 +67,7 @@ internal class SurfaceTextureRenderer(
             setDefaultBufferSize(width, height)
             setOnFrameAvailableListener(
                 { surfaceTexture -> frameAvailable(surfaceTexture) },
-                handler
+                handler,
             )
         }
 
@@ -86,7 +85,7 @@ internal class SurfaceTextureRenderer(
         } else {
             Log.w(
                 TAG,
-                "Attempt to renderFrame when SurfaceTextureRenderer has already " + "been released"
+                "Attempt to renderFrame when SurfaceTextureRenderer has already " + "been released",
             )
         }
     }
@@ -107,7 +106,7 @@ internal class SurfaceTextureRenderer(
         } else {
             Log.w(
                 TAG,
-                "Attempt to release a SurfaceTextureRenderer that has " + "already been released"
+                "Attempt to release a SurfaceTextureRenderer that has " + "already been released",
             )
         }
     }

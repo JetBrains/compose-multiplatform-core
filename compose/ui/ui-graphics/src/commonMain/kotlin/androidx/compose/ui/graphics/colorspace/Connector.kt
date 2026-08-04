@@ -47,7 +47,7 @@ import androidx.compose.ui.util.unpackFloat2
  * @see ColorSpace.adapt
  * @see ColorSpace.connect
  */
-open class Connector
+public open class Connector
 /**
  * To connect between color spaces, we might need to use adapted transforms. This should be
  * transparent to the user so this constructor takes the original source and destinations (returned
@@ -60,14 +60,14 @@ internal constructor(
      * @return A non-null instance of [ColorSpace]
      * @see destination
      */
-    val source: ColorSpace,
+    public val source: ColorSpace,
     /**
      * Returns the destination color space this connector will convert to.
      *
      * @return A non-null instance of [ColorSpace]
      * @see source
      */
-    val destination: ColorSpace,
+    public val destination: ColorSpace,
     private val transformSource: ColorSpace,
     private val transformDestination: ColorSpace,
     /**
@@ -77,8 +77,8 @@ internal constructor(
      * @return A non-null [RenderIntent]
      * @see RenderIntent
      */
-    val renderIntent: RenderIntent,
-    private val transform: FloatArray?
+    public val renderIntent: RenderIntent,
+    private val transform: FloatArray?,
 ) {
     /**
      * Creates a new connector between a source and a destination color space.
@@ -90,7 +90,7 @@ internal constructor(
     internal constructor(
         source: ColorSpace,
         destination: ColorSpace,
-        intent: RenderIntent
+        intent: RenderIntent,
     ) : this(
         source,
         destination,
@@ -101,7 +101,7 @@ internal constructor(
             destination
         },
         intent,
-        computeTransform(source, destination, intent)
+        computeTransform(source, destination, intent),
     )
 
     /**
@@ -118,7 +118,7 @@ internal constructor(
      * @see transform
      */
     @Size(3)
-    fun transform(r: Float, g: Float, b: Float): FloatArray {
+    public fun transform(r: Float, g: Float, b: Float): FloatArray {
         return transform(floatArrayOf(r, g, b))
     }
 
@@ -133,7 +133,7 @@ internal constructor(
      * @see transform
      */
     @Size(min = 3)
-    open fun transform(@Size(min = 3) v: FloatArray): FloatArray {
+    public open fun transform(@Size(min = 3) v: FloatArray): FloatArray {
         val xyz = transformSource.toXyz(v)
         if (transform != null) {
             xyz[0] *= transform[0]
@@ -162,7 +162,7 @@ internal constructor(
     internal constructor(
         private val mSource: Rgb,
         private val mDestination: Rgb,
-        intent: RenderIntent
+        intent: RenderIntent,
     ) : Connector(mSource, mDestination, mSource, mDestination, intent, null) {
         private val mTransform: FloatArray
 
@@ -212,7 +212,7 @@ internal constructor(
         private fun computeTransform(
             source: Rgb,
             destination: Rgb,
-            intent: RenderIntent
+            intent: RenderIntent,
         ): FloatArray {
             if (compare(source.whitePoint, destination.whitePoint)) {
                 // RGB->RGB using the PCS of both color spaces since they have the same
@@ -230,7 +230,7 @@ internal constructor(
                         chromaticAdaptation(
                             Adaptation.Bradford.transform,
                             srcXYZ,
-                            Illuminant.newD50Xyz()
+                            Illuminant.newD50Xyz(),
                         )
                     transform = mul3x3(srcAdaptation, source.transform)
                 }
@@ -240,7 +240,7 @@ internal constructor(
                         chromaticAdaptation(
                             Adaptation.Bradford.transform,
                             dstXYZ,
-                            Illuminant.newD50Xyz()
+                            Illuminant.newD50Xyz(),
                         )
                     inverseTransform = inverse3x3(mul3x3(dstAdaptation, destination.transform))
                 }
@@ -251,9 +251,9 @@ internal constructor(
                             floatArrayOf(
                                 srcXYZ[0] / dstXYZ[0],
                                 srcXYZ[1] / dstXYZ[1],
-                                srcXYZ[2] / dstXYZ[2]
+                                srcXYZ[2] / dstXYZ[2],
                             ),
-                            transform
+                            transform,
                         )
                 }
 
@@ -270,7 +270,7 @@ internal constructor(
         private fun computeTransform(
             source: ColorSpace,
             destination: ColorSpace,
-            intent: RenderIntent
+            intent: RenderIntent,
         ): FloatArray? {
             if (intent != RenderIntent.Absolute) return null
 
@@ -286,7 +286,7 @@ internal constructor(
                 return floatArrayOf(
                     srcXYZ[0] / dstXYZ[0],
                     srcXYZ[1] / dstXYZ[1],
-                    srcXYZ[2] / dstXYZ[2]
+                    srcXYZ[2] / dstXYZ[2],
                 )
             }
 
@@ -317,7 +317,7 @@ internal val Connectors =
         connectorKey(ColorSpaces.Srgb.id, ColorSpaces.Oklab.id, RenderIntent.Perceptual),
         Connector(ColorSpaces.Srgb, ColorSpaces.Oklab, RenderIntent.Perceptual),
         connectorKey(ColorSpaces.Oklab.id, ColorSpaces.Srgb.id, RenderIntent.Perceptual),
-        Connector(ColorSpaces.Oklab, ColorSpaces.Srgb, RenderIntent.Perceptual)
+        Connector(ColorSpaces.Oklab, ColorSpaces.Srgb, RenderIntent.Perceptual),
     )
 
 // See [ColorSpace.MaxId], the id is encoded on 6 bits

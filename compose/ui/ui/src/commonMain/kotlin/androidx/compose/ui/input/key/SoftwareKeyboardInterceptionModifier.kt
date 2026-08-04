@@ -32,13 +32,13 @@ import androidx.compose.ui.platform.InspectorInfo
  *   [SoftKeyboardInterceptionModifierNode]'s parent, and ultimately to the software keyboard.
  * @sample androidx.compose.ui.samples.KeyEventSample
  */
-fun Modifier.onInterceptKeyBeforeSoftKeyboard(
+public fun Modifier.onInterceptKeyBeforeSoftKeyboard(
     onInterceptKeyBeforeSoftKeyboard: (KeyEvent) -> Boolean
 ): Modifier =
     this then
         SoftKeyboardInterceptionElement(
             onKeyEvent = onInterceptKeyBeforeSoftKeyboard,
-            onPreKeyEvent = null
+            onPreKeyEvent = null,
         )
 
 /**
@@ -55,20 +55,21 @@ fun Modifier.onInterceptKeyBeforeSoftKeyboard(
  *   will be sent to this [SoftKeyboardInterceptionModifierNode]'s child. If none of the children
  *   consume the event, it will be sent back up to the root [KeyInputModifierNode] using the
  *   onKeyEvent callback, and ultimately to the software keyboard.
+ * @return true if the event is consumed, false otherwise.
  * @sample androidx.compose.ui.samples.KeyEventSample
  */
-fun Modifier.onPreInterceptKeyBeforeSoftKeyboard(
-    onPreInterceptKeyBeforeSoftKeyboard: (KeyEvent) -> Boolean,
+public fun Modifier.onPreInterceptKeyBeforeSoftKeyboard(
+    onPreInterceptKeyBeforeSoftKeyboard: (KeyEvent) -> Boolean
 ): Modifier =
     this then
         SoftKeyboardInterceptionElement(
             onKeyEvent = null,
-            onPreKeyEvent = onPreInterceptKeyBeforeSoftKeyboard
+            onPreKeyEvent = onPreInterceptKeyBeforeSoftKeyboard,
         )
 
 private class SoftKeyboardInterceptionElement(
     val onKeyEvent: ((KeyEvent) -> Boolean)?,
-    val onPreKeyEvent: ((KeyEvent) -> Boolean)?
+    val onPreKeyEvent: ((KeyEvent) -> Boolean)?,
 ) : ModifierNodeElement<InterceptedKeyInputNode>() {
     override fun create() =
         InterceptedKeyInputNode(onEvent = onKeyEvent, onPreEvent = onPreKeyEvent)
@@ -108,7 +109,7 @@ private class SoftKeyboardInterceptionElement(
 
 private class InterceptedKeyInputNode(
     var onEvent: ((KeyEvent) -> Boolean)?,
-    var onPreEvent: ((KeyEvent) -> Boolean)?
+    var onPreEvent: ((KeyEvent) -> Boolean)?,
 ) : SoftKeyboardInterceptionModifierNode, Modifier.Node() {
     override fun onInterceptKeyBeforeSoftKeyboard(event: KeyEvent): Boolean =
         onEvent?.invoke(event) ?: false

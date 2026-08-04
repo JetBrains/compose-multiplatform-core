@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.dp
 @Deprecated("ContextualFlowLayouts are no longer maintained")
 @Composable
 @ExperimentalLayoutApi
-fun ContextualFlowRow(
+public fun ContextualFlowRow(
     itemCount: Int,
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
@@ -94,14 +94,14 @@ fun ContextualFlowRow(
             maxLines,
             overflowState,
             itemCount,
-            list
+            list,
         ) { index, info ->
             val scope =
                 ContextualFlowRowScopeImpl(
                     info.lineIndex,
                     info.positionInLine,
                     maxWidthInLine = info.maxMainAxisSize,
-                    maxHeight = info.maxCrossAxisSize
+                    maxHeight = info.maxCrossAxisSize,
                 )
             scope.content(index)
         }
@@ -142,7 +142,7 @@ fun ContextualFlowRow(
 @Deprecated("ContextualFlowLayouts are no longer maintained")
 @Composable
 @ExperimentalLayoutApi
-fun ContextualFlowColumn(
+public fun ContextualFlowColumn(
     itemCount: Int,
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -176,7 +176,7 @@ fun ContextualFlowColumn(
                     info.lineIndex,
                     info.positionInLine,
                     maxHeightInLine = info.maxMainAxisSize,
-                    maxWidth = info.maxCrossAxisSize
+                    maxWidth = info.maxCrossAxisSize,
                 )
             scope.content(index)
         }
@@ -189,7 +189,7 @@ fun ContextualFlowColumn(
 @LayoutScopeMarker
 @Stable
 @ExperimentalLayoutApi
-interface ContextualFlowRowScope : RowScope {
+public interface ContextualFlowRowScope : RowScope {
     /**
      * Have the item fill (possibly only partially) the max height of the tallest item in the row it
      * was placed in, within the [FlowRow].
@@ -202,8 +202,8 @@ interface ContextualFlowRowScope : RowScope {
      * @sample androidx.compose.foundation.layout.samples.SimpleFlowRow_EqualHeight
      */
     @ExperimentalLayoutApi
-    fun Modifier.fillMaxRowHeight(
-        @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f,
+    public fun Modifier.fillMaxRowHeight(
+        @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
     ): Modifier
 
     /**
@@ -218,7 +218,7 @@ interface ContextualFlowRowScope : RowScope {
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowRow_ItemPosition
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowColumn_ItemPosition
      */
-    val lineIndex: Int
+    public val lineIndex: Int
 
     /**
      * Marks the index within the current row/column where the next component is to be inserted,
@@ -233,7 +233,7 @@ interface ContextualFlowRowScope : RowScope {
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowRow_ItemPosition
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowColumn_ItemPosition
      */
-    val indexInLine: Int
+    public val indexInLine: Int
 
     /**
      * Specifies the maximum permissible width (main-axis) for the upcoming UI component at the
@@ -241,7 +241,7 @@ interface ContextualFlowRowScope : RowScope {
      * reallocated to the following row within the [ContextualFlowRow] structure, subject to
      * existing constraints.
      */
-    val maxWidthInLine: Dp
+    public val maxWidthInLine: Dp
 
     /**
      * Determines the maximum allowable height (cross-axis) for the forthcoming UI component,
@@ -249,7 +249,7 @@ interface ContextualFlowRowScope : RowScope {
      * component's visibility will depend on the overflow settings, potentially leading to its
      * exclusion.
      */
-    val maxHeight: Dp
+    public val maxHeight: Dp
 }
 
 /** Scope for the overflow [ContextualFlowRow]. */
@@ -257,21 +257,21 @@ interface ContextualFlowRowScope : RowScope {
 @LayoutScopeMarker
 @Stable
 @ExperimentalLayoutApi
-interface ContextualFlowRowOverflowScope : FlowRowOverflowScope
+public interface ContextualFlowRowOverflowScope : FlowRowOverflowScope
 
 /** Scope for the overflow [ContextualFlowColumn]. */
 @Deprecated("ContextualFlowLayouts are no longer maintained")
 @LayoutScopeMarker
 @Stable
 @ExperimentalLayoutApi
-interface ContextualFlowColumnOverflowScope : FlowColumnOverflowScope
+public interface ContextualFlowColumnOverflowScope : FlowColumnOverflowScope
 
 /** Provides a scope for items within a [ContextualFlowColumn]. */
 @Deprecated("ContextualFlowLayouts are no longer maintained")
 @LayoutScopeMarker
 @Stable
 @ExperimentalLayoutApi
-interface ContextualFlowColumnScope : ColumnScope {
+public interface ContextualFlowColumnScope : ColumnScope {
     /**
      * Have the item fill (possibly only partially) the max width of the widest item in the column
      * it was placed in, within the [FlowColumn].
@@ -284,8 +284,8 @@ interface ContextualFlowColumnScope : ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.SimpleFlowColumn_EqualWidth
      */
     @ExperimentalLayoutApi
-    fun Modifier.fillMaxColumnWidth(
-        @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f,
+    public fun Modifier.fillMaxColumnWidth(
+        @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
     ): Modifier
 
     /**
@@ -300,7 +300,7 @@ interface ContextualFlowColumnScope : ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowRow_ItemPosition
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowColumn_ItemPosition
      */
-    val lineIndex: Int
+    public val lineIndex: Int
 
     /**
      * Marks the index within the current row/column where the next component is to be inserted,
@@ -315,7 +315,7 @@ interface ContextualFlowColumnScope : ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowRow_ItemPosition
      * @sample androidx.compose.foundation.layout.samples.ContextualFlowColumn_ItemPosition
      */
-    val indexInLine: Int
+    public val indexInLine: Int
 
     /**
      * Sets the maximum width (cross-axis dimension) that the upcoming UI component can occupy,
@@ -323,7 +323,7 @@ interface ContextualFlowColumnScope : ColumnScope {
      * component not being displayed, depending on the [ContextualFlowColumnOverflow.Visible]
      * overflow configuration.
      */
-    val maxWidth: Dp
+    public val maxWidth: Dp
 
     /**
      * Establishes the maximum height (main-axis dimension) permissible for the next UI component,
@@ -331,7 +331,7 @@ interface ContextualFlowColumnScope : ColumnScope {
      * limit, it may be shifted to the subsequent column in [ContextualFlowColumn], subject to the
      * predefined constraints.
      */
-    val maxHeightInLine: Dp
+    public val maxHeightInLine: Dp
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -339,17 +339,13 @@ internal class ContextualFlowRowScopeImpl(
     override val lineIndex: Int,
     override val indexInLine: Int,
     override val maxWidthInLine: Dp,
-    override val maxHeight: Dp
+    override val maxHeight: Dp,
 ) : RowScope by RowScopeInstance, ContextualFlowRowScope {
     override fun Modifier.fillMaxRowHeight(fraction: Float): Modifier {
         requirePrecondition(fraction in 0.0f..1.0f) {
             "invalid fraction $fraction; must be >= 0 and <= 1.0"
         }
-        return this.then(
-            FillCrossAxisSizeElement(
-                fraction = fraction,
-            )
-        )
+        return this.then(FillCrossAxisSizeElement(fraction = fraction))
     }
 }
 
@@ -358,17 +354,13 @@ internal class ContextualFlowColumnScopeImpl(
     override val lineIndex: Int,
     override val indexInLine: Int,
     override val maxWidth: Dp,
-    override val maxHeightInLine: Dp
+    override val maxHeightInLine: Dp,
 ) : ColumnScope by ColumnScopeInstance, ContextualFlowColumnScope {
     override fun Modifier.fillMaxColumnWidth(fraction: Float): Modifier {
         requirePrecondition(fraction in 0.0f..1.0f) {
             "invalid fraction $fraction; must be >= 0 and <= 1.0"
         }
-        return this.then(
-            FillCrossAxisSizeElement(
-                fraction = fraction,
-            )
-        )
+        return this.then(FillCrossAxisSizeElement(fraction = fraction))
     }
 }
 
@@ -378,8 +370,7 @@ internal class ContextualFlowRowOverflowScopeImpl(private val state: FlowLayoutO
 
 @ExperimentalLayoutApi
 internal class ContextualFlowColumnOverflowScopeImpl(private val state: FlowLayoutOverflowState) :
-    FlowColumnOverflowScope by FlowColumnOverflowScopeImpl(state),
-    ContextualFlowColumnOverflowScope
+    FlowColumnOverflowScope by FlowColumnOverflowScopeImpl(state), ContextualFlowColumnOverflowScope
 
 @Composable
 internal fun contextualRowMeasurementHelper(
@@ -391,7 +382,7 @@ internal fun contextualRowMeasurementHelper(
     overflowState: FlowLayoutOverflowState,
     itemCount: Int,
     overflowComposables: List<@Composable () -> Unit>,
-    getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit
+    getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit,
 ): (SubcomposeMeasureScope, Constraints) -> MeasureResult {
     return remember(
         horizontalArrangement,
@@ -401,7 +392,7 @@ internal fun contextualRowMeasurementHelper(
         maxLines,
         overflowState,
         itemCount,
-        getComposable
+        getComposable,
     ) {
         FlowMeasureLazyPolicy(
                 isHorizontal = true,
@@ -415,7 +406,7 @@ internal fun contextualRowMeasurementHelper(
                 overflow = overflowState,
                 maxLines = maxLines,
                 getComposable = getComposable,
-                overflowComposables = overflowComposables
+                overflowComposables = overflowComposables,
             )
             .getMeasurePolicy()
     }
@@ -431,7 +422,7 @@ internal fun contextualColumnMeasureHelper(
     overflowState: FlowLayoutOverflowState,
     itemCount: Int,
     overflowComposables: List<@Composable () -> Unit>,
-    getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit
+    getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit,
 ): (SubcomposeMeasureScope, Constraints) -> MeasureResult {
     return remember(
         verticalArrangement,
@@ -441,7 +432,7 @@ internal fun contextualColumnMeasureHelper(
         maxLines,
         overflowState,
         itemCount,
-        getComposable
+        getComposable,
     ) {
         FlowMeasureLazyPolicy(
                 isHorizontal = false,
@@ -455,7 +446,7 @@ internal fun contextualColumnMeasureHelper(
                 overflow = overflowState,
                 maxLines = maxLines,
                 overflowComposables = overflowComposables,
-                getComposable = getComposable
+                getComposable = getComposable,
             )
             .getMeasurePolicy()
     }
@@ -475,7 +466,7 @@ private data class FlowMeasureLazyPolicy(
     private val maxItemsInMainAxis: Int,
     private val overflow: FlowLayoutOverflowState,
     private val overflowComposables: List<@Composable () -> Unit>,
-    private val getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit
+    private val getComposable: @Composable (index: Int, info: FlowLineInfo) -> Unit,
 ) : FlowLineMeasurePolicy {
 
     fun getMeasurePolicy(): (SubcomposeMeasureScope, Constraints) -> MeasureResult {
@@ -494,6 +485,7 @@ private data class FlowMeasureLazyPolicy(
         }
         val measurablesIterator =
             ContextualFlowItemIterator(itemCount) { index, info ->
+                @Suppress("ComposableLambdaInMeasurePolicy")
                 this.subcompose(index) { getComposable(index, info) }
             }
         overflow.itemCount = itemCount
@@ -516,18 +508,18 @@ private data class FlowMeasureLazyPolicy(
                     LayoutOrientation.Horizontal
                 } else {
                     LayoutOrientation.Vertical
-                }
+                },
             ),
             maxItemsInMainAxis,
             maxLines,
-            overflow
+            overflow,
         )
     }
 }
 
 internal class ContextualFlowItemIterator(
     private val itemCount: Int,
-    private val getMeasurables: (index: Int, info: FlowLineInfo) -> List<Measurable>
+    private val getMeasurables: (index: Int, info: FlowLineInfo) -> List<Measurable>,
 ) : Iterator<Measurable> {
     private val _list: MutableList<Measurable> = mutableListOf()
     private var itemIndex: Int = 0

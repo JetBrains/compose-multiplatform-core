@@ -39,6 +39,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * Registry where all views implementing [ViewRootForTest] should be registered while they are
  * attached to the window. This registry is used by the testing library to query the roots' state.
  */
+@Suppress("VisibleForTests")
 internal class ComposeRootRegistry {
 
     private val lock = makeSynchronizedObject()
@@ -46,19 +47,30 @@ internal class ComposeRootRegistry {
     private val resumedRoots = mutableSetOf<ViewRootForTest>()
     private val registryListeners = mutableSetOf<OnRegistrationChangedListener>()
 
+    /**
+     * Returns the set of [ViewRootForTest]s that were registered right before [tearDownRegistry]
+     * was called.
+     */
+    internal var registeredComposeRootsBeforeTearDown: Set<ViewRootForTest> = emptySet()
+        private set
+
     /** Returns if the registry is setup to receive registrations from [ViewRootForTest]s */
     val isSetUp: Boolean
         get() = ViewRootForTest.onViewCreatedCallback == ::onViewRootCreated
 
     /** Sets up this registry to be notified of any [ViewRootForTest] created */
     private fun setupRegistry() {
-        ViewRootForTest.onViewCreatedCallback = ::onViewRootCreated
+        synchronized(lock) {
+            registeredComposeRootsBeforeTearDown = emptySet()
+            ViewRootForTest.onViewCreatedCallback = ::onViewRootCreated
+        }
     }
 
     /** Cleans up the changes made by [setupRegistry]. Call this after your test has run. */
     @VisibleForTesting
     internal fun tearDownRegistry() {
         synchronized(lock) {
+            registeredComposeRootsBeforeTearDown = getRegisteredComposeRoots()
             // Stop accepting new roots
             ViewRootForTest.onViewCreatedCallback = null
             // Unregister the world
@@ -68,6 +80,11 @@ internal class ComposeRootRegistry {
             resumedRoots.clear()
             registryListeners.clear()
         }
+    }
+
+    /** Clears the captured roots to avoid leaking View hierarchies after the test completes. */
+    internal fun clearRegisteredComposeRootsBeforeTearDown() {
+        synchronized(lock) { registeredComposeRootsBeforeTearDown = emptySet() }
     }
 
     private fun onViewRootCreated(root: ViewRootForTest) {
@@ -238,7 +255,11 @@ private val ComposeRootRegistry.hasComposeRoots: Boolean
 private fun ComposeRootRegistry.ensureComposeRootRegistryIsSetUp() {
     check(isSetUp) {
         "Test not setup properly. Use a ComposeTestRule in your test to be able to interact " +
-            "with composables"
+            "with composables. Also ensure that you are not using a ComposeTestRule " +
+            "(e.g. createComposeRule) inside a ComposeUiTest scope (e.g. in runComposeUiTest " +
+            "block) or any of their respective variants. Since these APIs independently " +
+            "manage the test environment, use one or the other, but not both simultaneously in a " +
+            "test case."
     }
 }
 
@@ -253,7 +274,7 @@ internal fun ComposeRootRegistry.waitForComposeRoots(atLeastOneRootExpected: Boo
             object : ComposeRootRegistry.OnRegistrationChangedListener {
                 override fun onRegistrationChanged(
                     composeRoot: ViewRootForTest,
-                    registered: Boolean
+                    registered: Boolean,
                 ) {
                     if (hasComposeRoots) {
                         latch.countDown()
@@ -296,7 +317,7 @@ internal suspend fun ComposeRootRegistry.awaitComposeRoots() {
                 object : ComposeRootRegistry.OnRegistrationChangedListener {
                     override fun onRegistrationChanged(
                         composeRoot: ViewRootForTest,
-                        registered: Boolean
+                        registered: Boolean,
                     ) {
                         if (hasComposeRoots) {
                             resume(this)

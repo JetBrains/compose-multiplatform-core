@@ -16,12 +16,10 @@
 
 package androidx.pdf.testapp.ui
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.ext.SdkExtensions
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,10 +29,10 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import androidx.pdf.testapp.databinding.FragmentXmlStyledPdfBinding
-import androidx.pdf.viewer.fragment.PdfViewerFragmentV1
+import androidx.pdf.testapp.util.arePdfContentFeaturesAvailable
+import androidx.pdf.viewer.fragment.PdfViewerFragment
 import com.google.android.material.button.MaterialButton
 
-@SuppressLint("RestrictedApiAndroidX")
 class XmlStyledPdfFragment : Fragment() {
 
     private lateinit var binding: FragmentXmlStyledPdfBinding
@@ -46,7 +44,7 @@ class XmlStyledPdfFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentXmlStyledPdfBinding.inflate(inflater, container, false)
         return binding.root
@@ -57,14 +55,14 @@ class XmlStyledPdfFragment : Fragment() {
         val getContentButton: MaterialButton = binding.openPdf
 
         getContentButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
+        if (arePdfContentFeaturesAvailable()) {
             binding.searchButton.setOnClickListener { setFindInFileViewVisible() }
         }
     }
 
     private fun setDocumentUri(uri: Uri) {
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
-            binding.pdfStyledFragment.getFragment<PdfViewerFragmentV1>().documentUri = uri
+        if (arePdfContentFeaturesAvailable()) {
+            binding.pdfStyledFragment.getFragment<PdfViewerFragment>().documentUri = uri
         } else {
             /**
              * Send an intent to other apps who support opening PDFs in case PdfViewer library is
@@ -86,7 +84,7 @@ class XmlStyledPdfFragment : Fragment() {
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun setFindInFileViewVisible() {
-        binding.pdfStyledFragment.getFragment<PdfViewerFragmentV1>().isTextSearchActive = true
+        binding.pdfStyledFragment.getFragment<PdfViewerFragment>().isTextSearchActive = true
     }
 
     companion object {

@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -91,14 +91,14 @@ class TextTest {
                         "Lorem ipsum",
                         minLines = 1,
                         maxLines = 3,
-                        onTextLayout = { size1 = it.size.height }
+                        onTextLayout = { size1 = it.size.height },
                     )
 
                     Text(
                         "Lorem ipsum",
                         minLines = 2,
                         maxLines = 3,
-                        onTextLayout = { size2 = it.size.height }
+                        onTextLayout = { size2 = it.size.height },
                     )
                 }
             }
@@ -129,7 +129,7 @@ class TextTest {
                         Text(
                             TestText,
                             color = expectedColor,
-                            onTextLayout = { textColor = it.layoutInput.style.color }
+                            onTextLayout = { textColor = it.layoutInput.style.color },
                         )
                     }
                 }
@@ -194,7 +194,7 @@ class TextTest {
                             letterSpacing = it.layoutInput.style.letterSpacing
                             textDecoration = it.layoutInput.style.textDecoration
                             textAlign = it.layoutInput.style.textAlign
-                        }
+                        },
                     )
                 }
             }
@@ -239,7 +239,7 @@ class TextTest {
                             fontSize = it.layoutInput.style.fontSize
                             fontStyle = it.layoutInput.style.fontStyle
                             letterSpacing = it.layoutInput.style.letterSpacing
-                        }
+                        },
                     )
                 }
             }

@@ -18,6 +18,7 @@ package androidx.lifecycle
 
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.internal.SavedStateHandleImpl
 import androidx.lifecycle.internal.isAcceptableType
 import androidx.savedstate.SavedState
@@ -32,10 +33,12 @@ public actual class SavedStateHandle {
 
     private var impl: SavedStateHandleImpl
 
+    @VisibleForTesting
     public actual constructor(initialState: Map<String, Any?>) {
         impl = SavedStateHandleImpl(initialState)
     }
 
+    @VisibleForTesting
     public actual constructor() {
         impl = SavedStateHandleImpl()
     }
@@ -61,7 +64,7 @@ public actual class SavedStateHandle {
 
     @MainThread public actual fun keys(): Set<String> = impl.keys()
 
-    @MainThread public actual operator fun <T> get(key: String): T? = impl.get(key)
+    @MainThread public actual operator fun <T> get(key: String): T? = impl[key]
 
     @MainThread
     public actual operator fun <T> set(key: String, value: T?): Unit = impl.set(key, value)
@@ -71,7 +74,7 @@ public actual class SavedStateHandle {
     @MainThread
     public actual fun setSavedStateProvider(
         key: String,
-        provider: SavedStateRegistry.SavedStateProvider
+        provider: SavedStateRegistry.SavedStateProvider,
     ): Unit = impl.setSavedStateProvider(key, provider)
 
     @MainThread

@@ -47,6 +47,7 @@ import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_ICON_SIZ
 import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_ICON_TITLE_SPACER_HEIGHT_LARGE_DP
 import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_ICON_TITLE_SPACER_HEIGHT_SMALL_DP
 import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_MARGIN_BOTTOM_DP
+import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_MARGIN_BOTTOM_DP_SMALL
 import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_MARGIN_SIDE_PERCENTAGE
 import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.HEADER_MARGIN_TOP_DP
 import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.METADATA_TAG
@@ -74,7 +75,9 @@ import kotlin.math.ceil
  * is responsive and takes care of the elements placement, together with the recommended margin and
  * padding applied.
  *
- * This layout is meant to occupy the whole screen, so nothing else should be added on top of it.
+ * This layout is meant to occupy the whole screen, so nothing else should be added on top of it. It
+ * is highly recommended to use this directly as the first root layout element in the
+ * [androidx.wear.tiles.Material3TileService].
  *
  * On the top, there is an icon that will be automatically placed by the system, followed by the
  * optional title slot. The icon slot needs to be reserved for the whole ProtoLayout Layout and no
@@ -88,6 +91,12 @@ import kotlin.math.ceil
  * results across different screen sizes, it's recommended that this content's dimension are also
  * [DimensionBuilders.expand] or [DimensionBuilders.weight]. Additional content in the main one can
  * be added after a `225dp` breakpoint.
+ *
+ * See [slots](https://developer.android.com/training/wearables/tiles/get_started?version=3#slots),
+ * [common-layouts/tiles](https://developer.android.com/design/ui/wear/guides/foundations/common-layouts/tiles)
+ * and
+ * [bestpractices](https://developer.android.com/design/ui/wear/guides/surfaces/tiles/bestpractices)
+ * for more visuals and design recommendations.
  *
  * @param mainSlot The main, central content for this layout. It's recommended for this content to
  *   fill the available width and height for the best result across different screen size. This
@@ -104,21 +113,22 @@ import kotlin.math.ceil
  *   [text] with [Typography.TITLE_SMALL] typography, describing the main purpose of this layout.
  *   Title is an optional slot which can be omitted to make space for other elements. Defaults to
  *   [ColorScheme.onBackground] color. When this [titleSlot] is [text], it is considered as
- *   important for accessibility by default, which can be overridden by adding
- *   [LayoutModifier.clearSemantics] into the [text] modifier.
+ *   important for accessibility by default, and is marked as heading role, which can be overridden
+ *   by adding [androidx.wear.protolayout.modifiers.clearSemantics] into the [text] modifier.
  * @param bottomSlot The content for bottom slot in this layout, that will be anchored to the bottom
  *   edge of the screen. This should be either a small non tappable content such as Text with
  *   optional label for it or tappable main action with [textEdgeButton] or [iconEdgeButton] which
  *   is designed to have its bottom following the screen's curvature. This bottom slot is optional,
  *   if unset the main content will expand more towards the edge of the screen. When this
  *   [bottomSlot] is [text], it is considered as important for accessibility by default, which can
- *   be overridden by adding [LayoutModifier.clearSemantics] into the [text] modifiers.
+ *   be overridden by adding [androidx.wear.protolayout.modifiers.clearSemantics] into the [text]
+ *   modifiers.
  * @param labelForBottomSlot The label displayed just above the [bottomSlot]. Default will be one
  *   line of [text] with [Typography.TITLE_SMALL] typography, [ColorScheme.onSurface] color that
  *   should contain additional description of this layout. When the [bottomSlot] is not provided or
  *   it an edge button, the given label will be ignored. When this [labelForBottomSlot] is [text],
  *   it is considered as important for accessibility by default, which can be overridden by adding
- *   [LayoutModifier.clearSemantics] into the [text] modifiers.
+ *   [androidx.wear.protolayout.modifiers.clearSemantics] into the [text] modifiers.
  * @param onClick The clickable action for whole layout. If any area (outside of other added
  *   tappable components) is clicked, it will fire the associated action.
  * @param margins The customized outer margin that will be applied as following:
@@ -135,17 +145,16 @@ import kotlin.math.ceil
  * @sample androidx.wear.protolayout.material3.samples.cardSample
  * @sample androidx.wear.protolayout.material3.samples.oneSlotButtonsSample
  * @sample androidx.wear.protolayout.material3.samples.graphicDataCardSample
+ * @sample androidx.wear.protolayout.material3.samples.primaryLayoutWithTextNotImportantForAccessibility
  */
-// TODO: b/346958146 - Link visuals once they are available.
 // TODO: b/353247528 - Handle the icon.
-// TODO: b/370976767 - Specify that this should be used with MaterialTileService.
 public fun MaterialScope.primaryLayout(
     mainSlot: (MaterialScope.() -> LayoutElement),
     titleSlot: (MaterialScope.() -> LayoutElement)? = null,
     bottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     labelForBottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     onClick: Clickable? = null,
-    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN
+    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN,
 ): LayoutElement =
     primaryLayoutWithOverrideIcon(
         overrideIcon = false,
@@ -154,7 +163,7 @@ public fun MaterialScope.primaryLayout(
         bottomSlot = bottomSlot,
         labelForBottomSlot = labelForBottomSlot,
         onClick = onClick,
-        margins = margins
+        margins = margins,
     )
 
 /**
@@ -171,21 +180,22 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
     bottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     labelForBottomSlot: (MaterialScope.() -> LayoutElement)? = null,
     onClick: Clickable? = null,
-    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN
+    margins: PrimaryLayoutMargins = DEFAULT_PRIMARY_LAYOUT_MARGIN,
 ): LayoutElement {
     val screenWidth = deviceConfiguration.screenWidthDp
     val screenHeight = deviceConfiguration.screenHeightDp
     val labelSlot: LayoutElement? =
         labelForBottomSlot?.let {
             withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = Typography.TITLE_SMALL,
-                            color = theme.colorScheme.onSurface,
-                            importantForAccessibility = true
-                        )
-                )
-                .labelForBottomSlot()
+                defaultTextElementStyle =
+                    TextElementStyle(
+                        typography = Typography.TITLE_SMALL,
+                        color = theme.colorScheme.onSurface,
+                        importantForAccessibility = true,
+                    )
+            ) {
+                labelForBottomSlot()
+            }
         }
 
     val modifiers =
@@ -204,14 +214,16 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
                 getHeaderContent(
                     titleSlot?.let {
                         withStyle(
-                                defaultTextElementStyle =
-                                    TextElementStyle(
-                                        typography = Typography.TITLE_SMALL,
-                                        color = theme.colorScheme.onBackground,
-                                        importantForAccessibility = true
-                                    )
-                            )
-                            .titleSlot()
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = Typography.TITLE_SMALL,
+                                    color = theme.colorScheme.onBackground,
+                                    importantForAccessibility = true,
+                                    isAccessibilityHeading = true,
+                                )
+                        ) {
+                            it()
+                        }
                     },
                     overrideIcon,
                     overrideIconColor,
@@ -221,41 +233,45 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
     val bottomSlotValue =
         bottomSlot?.let {
             withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = Typography.TITLE_MEDIUM,
-                            color = theme.colorScheme.onBackground,
-                            importantForAccessibility = true
-                        )
-                )
-                .bottomSlot()
+                defaultTextElementStyle =
+                    TextElementStyle(
+                        typography = Typography.TITLE_MEDIUM,
+                        color = theme.colorScheme.onBackground,
+                        importantForAccessibility = true,
+                    )
+            ) {
+                it()
+            }
         }
 
     val marginsValues: Padding =
-        withStyle(
-                layoutSlotsPresence =
-                    LayoutSlotsPresence(
-                        isTitleSlotPresent = titleSlot != null,
-                        isBottomSlotPresent = bottomSlot != null,
-                        isBottomSlotEdgeButton = bottomSlotValue?.isSlotEdgeButton() == true
-                    )
-            )
-            .let { scope ->
-                if (margins is PrimaryLayoutMarginsImpl) {
+        withStyleOnPadding(
+            layoutSlotsPresence =
+                LayoutSlotsPresence(
+                    isTitleSlotPresent = titleSlot != null,
+                    isBottomSlotPresent = bottomSlot != null,
+                    isBottomSlotEdgeButton = bottomSlotValue?.isSlotEdgeButton() == true,
+                )
+        ) {
+            when (margins) {
+                is PrimaryLayoutMarginsImpl -> {
                     when (margins.size) {
-                        MIN -> scope.minPrimaryLayoutMargins()
-                        MID -> scope.midPrimaryLayoutMargins()
-                        MAX -> scope.maxPrimaryLayoutMargins()
-                        DEFAULT -> scope.defaultPrimaryLayoutMargins()
-                        else -> scope.defaultPrimaryLayoutMargins()
+                        MIN -> minPrimaryLayoutMargins()
+                        MID -> midPrimaryLayoutMargins()
+                        MAX -> maxPrimaryLayoutMargins()
+                        DEFAULT -> defaultPrimaryLayoutMargins()
+                        else -> defaultPrimaryLayoutMargins()
                     }
-                } else if (margins is CustomPrimaryLayoutMargins) {
-                    margins.toPadding(scope)
-                } else {
+                }
+                is CustomPrimaryLayoutMargins -> {
+                    margins.toPadding(this)
+                }
+                else -> {
                     // Fallback to default
-                    scope.defaultPrimaryLayoutMargins()
+                    defaultPrimaryLayoutMargins()
                 }
             }
+        }
 
     // Contains main content. This Box is needed to set to expand, even if empty so it
     // fills the empty space until bottom content.
@@ -264,7 +280,7 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
             mainSlot()
                 .getMainContentBox(
                     sideMargins = marginsValues,
-                    maxSideMarginFallbackDp = maxSideMargin()
+                    maxSideMarginFallbackDp = maxSideMargin(),
                 )
         )
     }
@@ -274,26 +290,43 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
         getFooterContent(
             bottomSlot = bottomSlotValue,
             labelSlot = labelSlot,
-            bottomMarginForNoContentDp = marginsValues.bottom?.value ?: maxBottomMargin()
+            bottomMarginForNoContentDp = marginsValues.bottom?.value ?: maxBottomMargin(),
         )
     )
 
     return mainLayout.build()
 }
 
+/**
+ * [overrideIconColor] means that this is used inside of verify test, so we want to avoid aliasing
+ * by making the icon 2dp smaller.
+ */
 private fun MaterialScope.getIconPlaceholder(
     overrideIcon: Boolean,
     overrideIconColor: LayoutColor? = null,
 ): LayoutElement {
-    val iconSlot = Box.Builder().setWidth(HEADER_ICON_SIZE_DP.dp).setHeight(HEADER_ICON_SIZE_DP.dp)
-    if (overrideIcon) {
-        iconSlot.setModifiers(
-            LayoutModifier.background(overrideIconColor ?: theme.colorScheme.onBackground)
-                .clip(shapes.full)
-                .toProtoLayoutModifiers()
-        )
-    }
-    return iconSlot.build()
+    val overriddenIcon =
+        if (overrideIcon) {
+            val overriddenIconSize = (HEADER_ICON_SIZE_DP + (overrideIconColor?.let { -2 } ?: 0)).dp
+            Box.Builder()
+                .setWidth(overriddenIconSize)
+                .setHeight(overriddenIconSize)
+                .setModifiers(
+                    LayoutModifier.background(overrideIconColor ?: theme.colorScheme.onBackground)
+                        .clip(shapes.full)
+                        .toProtoLayoutModifiers()
+                )
+                .build()
+        } else {
+            null
+        }
+
+    // Icon slot
+    return Box.Builder()
+        .setWidth(HEADER_ICON_SIZE_DP.dp)
+        .setHeight(HEADER_ICON_SIZE_DP.dp)
+        .apply { overriddenIcon?.let { addContent(it) } }
+        .build()
 }
 
 /** Returns header content with the mandatory icon and optional title. */
@@ -306,18 +339,22 @@ private fun MaterialScope.getHeaderContent(
         Column.Builder()
             .setWidth(wrap())
             .setHeight(wrap())
-            .setModifiers(Modifiers.Builder().setPadding(getMarginForHeader()).build())
+            .setModifiers(
+                Modifiers.Builder().setPadding(getMarginForHeader(titleSlot != null)).build()
+            )
             .addContent(getIconPlaceholder(overrideIcon, overrideIconColor))
 
     titleSlot?.apply {
         headerBuilder
             .addContent(
                 horizontalSpacer(
-                    if (deviceConfiguration.screenHeightDp.isBreakpoint()) {
-                        HEADER_ICON_TITLE_SPACER_HEIGHT_LARGE_DP
-                    } else {
-                        HEADER_ICON_TITLE_SPACER_HEIGHT_SMALL_DP
-                    }
+                    heightDp =
+                        if (deviceConfiguration.screenHeightDp.isBreakpoint()) {
+                            HEADER_ICON_TITLE_SPACER_HEIGHT_LARGE_DP
+                        } else {
+                            HEADER_ICON_TITLE_SPACER_HEIGHT_SMALL_DP
+                        },
+                    overrideColor = overrideIconColor,
                 )
             )
             .addContent(titleSlot)
@@ -355,7 +392,7 @@ private fun LayoutElement.getMainContentBox(
 private fun MaterialScope.getFooterContent(
     bottomSlot: LayoutElement?,
     labelSlot: LayoutElement?,
-    bottomMarginForNoContentDp: Float
+    bottomMarginForNoContentDp: Float,
 ): LayoutElement {
     val footer = Box.Builder().setWidth(wrap()).setHeight(wrap())
 
@@ -434,12 +471,18 @@ private fun LayoutElement.generateLabelContent(sidePadding: DpProp): LayoutEleme
         .addContent(this)
         .build()
 
-private fun MaterialScope.getMarginForHeader() =
+private fun MaterialScope.getMarginForHeader(isTitleSlotPresent: Boolean) =
     padding(
         top = HEADER_MARGIN_TOP_DP,
-        bottom = HEADER_MARGIN_BOTTOM_DP,
+        // Only use the smaller margin on small screen with title slot.
+        bottom =
+            if (isTitleSlotPresent && !deviceConfiguration.screenHeightDp.isBreakpoint()) {
+                HEADER_MARGIN_BOTTOM_DP_SMALL
+            } else {
+                HEADER_MARGIN_BOTTOM_DP
+            },
         start = HEADER_MARGIN_SIDE_PERCENTAGE * deviceConfiguration.screenWidthDp,
-        end = HEADER_MARGIN_SIDE_PERCENTAGE * deviceConfiguration.screenWidthDp
+        end = HEADER_MARGIN_SIDE_PERCENTAGE * deviceConfiguration.screenWidthDp,
     )
 
 /** Contains the default values used by Material layout. */
@@ -456,6 +499,8 @@ internal object PrimaryLayoutDefaults {
     @VisibleForTesting internal const val METADATA_TAG: String = "M3_PL"
 
     @Dimension(DP) internal const val HEADER_MARGIN_TOP_DP = 3f
+
+    @Dimension(DP) internal const val HEADER_MARGIN_BOTTOM_DP_SMALL = 4f
 
     @Dimension(DP) internal const val HEADER_MARGIN_BOTTOM_DP = 6f
 

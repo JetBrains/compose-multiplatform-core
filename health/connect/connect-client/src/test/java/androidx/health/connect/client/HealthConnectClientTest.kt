@@ -21,26 +21,37 @@ import android.content.Context
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.health.connect.HealthConnectManager
 import android.os.Build
 import android.os.UserManager
 import androidx.health.connect.client.impl.HealthConnectClientImpl
 import androidx.health.platform.client.HealthDataService
+import androidx.health.platform.client.service.HealthDataServiceConstants
+import androidx.health.platform.client.service.HealthDataServiceConstants.DEFAULT_PROVIDER_PACKAGE_NAME
+import androidx.health.platform.client.utils.sBypassSignatureCheckForTesting
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.any
+import org.mockito.Mockito.anyInt
+import org.mockito.Mockito.eq
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.Shadows
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowContextImpl
 import org.robolectric.shadows.ShadowUserManager
+import org.robolectric.util.ReflectionHelpers
 
 private const val PROVIDER_PACKAGE_NAME = "com.example.fake.provider"
 
@@ -52,6 +63,12 @@ class HealthConnectClientTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        sBypassSignatureCheckForTesting = true
+    }
+
+    @After
+    fun tearDown() {
+        sBypassSignatureCheckForTesting = false
     }
 
     @Test
@@ -74,8 +91,8 @@ class HealthConnectClientTest {
         installPackage(
             context,
             PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE,
-            enabled = false
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = false,
         )
         assertThat(HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
@@ -91,8 +108,8 @@ class HealthConnectClientTest {
         installPackage(
             context,
             PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE,
-            enabled = true
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
         )
         assertThat(HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
@@ -107,11 +124,11 @@ class HealthConnectClientTest {
     fun backingImplementation_enabledUnsupportedVersion_unavailable() {
         installPackage(
             context,
-            HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE - 1,
-            enabled = true
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE - 1,
+            enabled = true,
         )
-        installService(context, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME)
+        installService(context, DEFAULT_PROVIDER_PACKAGE_NAME)
 
         assertThat(HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
@@ -124,21 +141,140 @@ class HealthConnectClientTest {
     fun backingImplementation_enabledSupportedVersion_isAvailable() {
         installPackage(
             context,
-            HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE,
-            enabled = true
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
         )
-        installService(context, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME)
+        installService(context, DEFAULT_PROVIDER_PACKAGE_NAME)
 
-        assertThat(
-                HealthConnectClient.getSdkStatus(
-                    context,
-                    HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-                )
-            )
+        assertThat(HealthConnectClient.getSdkStatus(context, DEFAULT_PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_AVAILABLE)
         assertThat(HealthConnectClient.getOrCreate(context))
             .isInstanceOf(HealthConnectClientImpl::class.java)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.P])
+    fun getSdkStatus_whenCertMismatch_returnsUnavailable() {
+        sBypassSignatureCheckForTesting = false
+        val mockContext = mock(Context::class.java)
+        val mockPackageManager = mock(PackageManager::class.java)
+        `when`(mockContext.packageManager).thenReturn(mockPackageManager)
+
+        val packageInfo = PackageInfo()
+        packageInfo.applicationInfo = ApplicationInfo()
+        packageInfo.applicationInfo!!.enabled = true
+        @Suppress("Deprecation")
+        packageInfo.versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE
+
+        `when`(mockPackageManager.getPackageInfo(eq(DEFAULT_PROVIDER_PACKAGE_NAME), anyInt()))
+            .thenReturn(packageInfo)
+        // hasSigningCertificate will return false by default for mock
+
+        assertThat(HealthConnectClient.getSdkStatus(mockContext, DEFAULT_PROVIDER_PACKAGE_NAME))
+            .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.P])
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+    fun backingImplementation_devKey_notUserBuild_available() {
+        sBypassSignatureCheckForTesting = false
+        val originalBuildType = Build.TYPE
+        ReflectionHelpers.setStaticField(Build::class.java, "TYPE", "userdebug")
+
+        try {
+            val mockContext = mock(Context::class.java)
+            val mockPackageManager = mock(PackageManager::class.java)
+            `when`(mockContext.packageManager).thenReturn(mockPackageManager)
+
+            val packageInfo = PackageInfo()
+            packageInfo.applicationInfo = ApplicationInfo()
+            packageInfo.applicationInfo!!.enabled = true
+            @Suppress("Deprecation")
+            packageInfo.versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE
+
+            `when`(mockPackageManager.getPackageInfo(eq(DEFAULT_PROVIDER_PACKAGE_NAME), anyInt()))
+                .thenReturn(packageInfo)
+
+            val resolveInfo = ResolveInfo()
+            `when`(mockPackageManager.queryIntentServices(any(), anyInt()))
+                .thenReturn(listOf(resolveInfo))
+
+            `when`(
+                    mockPackageManager.hasSigningCertificate(
+                        eq(DEFAULT_PROVIDER_PACKAGE_NAME),
+                        eq(HealthDataServiceConstants.DEFAULT_PROVIDER_DEV_CERT_SHA256),
+                        eq(PackageManager.CERT_INPUT_SHA256),
+                    )
+                )
+                .thenReturn(true)
+
+            `when`(
+                    mockPackageManager.hasSigningCertificate(
+                        eq(DEFAULT_PROVIDER_PACKAGE_NAME),
+                        eq(HealthDataServiceConstants.DEFAULT_PROVIDER_RELEASE_CERT_SHA256),
+                        eq(PackageManager.CERT_INPUT_SHA256),
+                    )
+                )
+                .thenReturn(false)
+
+            assertThat(HealthConnectClient.getSdkStatus(mockContext, DEFAULT_PROVIDER_PACKAGE_NAME))
+                .isEqualTo(HealthConnectClient.SDK_AVAILABLE)
+        } finally {
+            ReflectionHelpers.setStaticField(Build::class.java, "TYPE", originalBuildType)
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.P])
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+    fun backingImplementation_devKey_userBuild_unavailable() {
+        sBypassSignatureCheckForTesting = false
+        val originalBuildType = Build.TYPE
+        ReflectionHelpers.setStaticField(Build::class.java, "TYPE", "user")
+
+        try {
+            val mockContext = mock(Context::class.java)
+            val mockPackageManager = mock(PackageManager::class.java)
+            `when`(mockContext.packageManager).thenReturn(mockPackageManager)
+
+            val packageInfo = PackageInfo()
+            packageInfo.applicationInfo = ApplicationInfo()
+            packageInfo.applicationInfo!!.enabled = true
+            @Suppress("Deprecation")
+            packageInfo.versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE
+
+            `when`(mockPackageManager.getPackageInfo(eq(DEFAULT_PROVIDER_PACKAGE_NAME), anyInt()))
+                .thenReturn(packageInfo)
+
+            val resolveInfo = ResolveInfo()
+            `when`(mockPackageManager.queryIntentServices(any(), anyInt()))
+                .thenReturn(listOf(resolveInfo))
+
+            `when`(
+                    mockPackageManager.hasSigningCertificate(
+                        eq(DEFAULT_PROVIDER_PACKAGE_NAME),
+                        eq(HealthDataServiceConstants.DEFAULT_PROVIDER_DEV_CERT_SHA256),
+                        eq(PackageManager.CERT_INPUT_SHA256),
+                    )
+                )
+                .thenReturn(true)
+
+            `when`(
+                    mockPackageManager.hasSigningCertificate(
+                        eq(DEFAULT_PROVIDER_PACKAGE_NAME),
+                        eq(HealthDataServiceConstants.DEFAULT_PROVIDER_RELEASE_CERT_SHA256),
+                        eq(PackageManager.CERT_INPUT_SHA256),
+                    )
+                )
+                .thenReturn(false)
+
+            assertThat(HealthConnectClient.getSdkStatus(mockContext, DEFAULT_PROVIDER_PACKAGE_NAME))
+                .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE)
+        } finally {
+            ReflectionHelpers.setStaticField(Build::class.java, "TYPE", originalBuildType)
+        }
     }
 
     @Test
@@ -159,14 +295,9 @@ class HealthConnectClientTest {
         val shadowContext: ShadowContextImpl = Shadow.extract((context as Application).baseContext)
         shadowContext.setSystemService(
             Context.HEALTHCONNECT_SERVICE,
-            mock(HealthConnectManager::class.java)
+            mock(HealthConnectManager::class.java),
         )
-        assertThat(
-                HealthConnectClient.getSdkStatus(
-                    context,
-                    HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-                )
-            )
+        assertThat(HealthConnectClient.getSdkStatus(context, DEFAULT_PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_AVAILABLE)
     }
 
@@ -175,20 +306,16 @@ class HealthConnectClientTest {
     fun healthConnectManagerNull_unavailable() {
         val shadowContext: ShadowContextImpl = Shadow.extract((context as Application).baseContext)
         shadowContext.removeSystemService(Context.HEALTHCONNECT_SERVICE)
-        assertThat(
-                HealthConnectClient.getSdkStatus(
-                    context,
-                    HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-                )
-            )
+        assertThat(HealthConnectClient.getSdkStatus(context, DEFAULT_PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE)
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.P])
     fun getHealthConnectManageDataAction_noProvider_returnsDefaultIntent() {
-        assertThat(HealthConnectClient.getHealthConnectManageDataIntent(context).action)
-            .isEqualTo(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        val intent = HealthConnectClient.getHealthConnectManageDataIntent(context)
+        assertThat(intent.action).isEqualTo(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        assertThat(intent.`package`).isNull()
     }
 
     @Test
@@ -196,13 +323,14 @@ class HealthConnectClientTest {
     fun getHealthConnectManageDataAction_unsupportedClient_returnsDefaultIntent() {
         installPackage(
             context,
-            HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE - 1,
-            enabled = true
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE - 1,
+            enabled = true,
         )
 
-        assertThat(HealthConnectClient.getHealthConnectManageDataIntent(context).action)
-            .isEqualTo(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        val intent = HealthConnectClient.getHealthConnectManageDataIntent(context)
+        assertThat(intent.action).isEqualTo(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        assertThat(intent.`package`).isNull()
     }
 
     @Test
@@ -210,15 +338,51 @@ class HealthConnectClientTest {
     fun getHealthConnectManageDataAction_supportedClient() {
         installPackage(
             context,
-            HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE,
-            enabled = true
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
         )
-        installDataManagementHandler(context, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME)
-        installService(context, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME)
+        installDataManagementHandler(context, DEFAULT_PROVIDER_PACKAGE_NAME)
+        installService(context, DEFAULT_PROVIDER_PACKAGE_NAME)
 
-        assertThat(HealthConnectClient.getHealthConnectManageDataIntent(context).action)
-            .isEqualTo("androidx.health.ACTION_MANAGE_HEALTH_DATA")
+        val intent = HealthConnectClient.getHealthConnectManageDataIntent(context)
+        assertThat(intent.action).isEqualTo("androidx.health.ACTION_MANAGE_HEALTH_DATA")
+        assertThat(intent.`package`).isEqualTo(DEFAULT_PROVIDER_PACKAGE_NAME)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.P])
+    fun getHealthConnectManageDataAction_supportedClient_customProvider() {
+        val customPackage = "com.custom.provider"
+        installPackage(
+            context,
+            customPackage,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
+        )
+        installDataManagementHandler(context, customPackage)
+        installService(context, customPackage)
+
+        val intent = HealthConnectClient.getHealthConnectManageDataIntent(context, customPackage)
+        assertThat(intent.action).isEqualTo("androidx.health.ACTION_MANAGE_HEALTH_DATA")
+        assertThat(intent.`package`).isEqualTo(customPackage)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.P])
+    fun getHealthConnectManageDataAction_supportedClient_noManageDataHandler_returnsSettingsIntentWithPackage() {
+        installPackage(
+            context,
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
+        )
+        // Do NOT installDataManagementHandler
+        installService(context, DEFAULT_PROVIDER_PACKAGE_NAME)
+
+        val intent = HealthConnectClient.getHealthConnectManageDataIntent(context)
+        assertThat(intent.action).isEqualTo(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        assertThat(intent.`package`).isEqualTo(DEFAULT_PROVIDER_PACKAGE_NAME)
     }
 
     @Test
@@ -228,7 +392,7 @@ class HealthConnectClientTest {
         val shadowContext: ShadowContextImpl = Shadow.extract((context as Application).baseContext)
         shadowContext.setSystemService(
             Context.HEALTHCONNECT_SERVICE,
-            mock(HealthConnectManager::class.java)
+            mock(HealthConnectManager::class.java),
         )
         installDataManagementHandler(context, PROVIDER_PACKAGE_NAME)
         assertThat(HealthConnectClient.getHealthConnectManageDataIntent(context).action)
@@ -240,26 +404,16 @@ class HealthConnectClientTest {
     fun getSdkStatus_withProfileInT_isAvailable() {
         installPackage(
             context,
-            HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE,
-            enabled = true
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
         )
-        installService(context, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME)
+        installService(context, DEFAULT_PROVIDER_PACKAGE_NAME)
         addProfile()
 
-        assertThat(
-                HealthConnectClient.getSdkStatus(
-                    context,
-                    HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-                )
-            )
+        assertThat(HealthConnectClient.getSdkStatus(context, DEFAULT_PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_AVAILABLE)
-        assertThat(
-                HealthConnectClient.getOrCreate(
-                    context,
-                    HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-                )
-            )
+        assertThat(HealthConnectClient.getOrCreate(context, DEFAULT_PROVIDER_PACKAGE_NAME))
             .isNotNull()
     }
 
@@ -268,26 +422,18 @@ class HealthConnectClientTest {
     fun getSdkStatus_withProfileInU_isNotAvailable() {
         installPackage(
             context,
-            HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME,
-            versionCode = HealthConnectClient.DEFAULT_PROVIDER_MIN_VERSION_CODE,
-            enabled = true
+            DEFAULT_PROVIDER_PACKAGE_NAME,
+            versionCode = HealthDataServiceConstants.DEFAULT_PROVIDER_MIN_VERSION_CODE,
+            enabled = true,
         )
-        installService(context, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME)
+        installService(context, DEFAULT_PROVIDER_PACKAGE_NAME)
         addProfile()
 
-        assertThat(
-                HealthConnectClient.getSdkStatus(
-                    context,
-                    HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-                )
-            )
+        assertThat(HealthConnectClient.getSdkStatus(context, DEFAULT_PROVIDER_PACKAGE_NAME))
             .isEqualTo(HealthConnectClient.SDK_UNAVAILABLE)
 
         assertThrows(UnsupportedOperationException::class.java) {
-            HealthConnectClient.getOrCreate(
-                context,
-                HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME
-            )
+            HealthConnectClient.getOrCreate(context, DEFAULT_PROVIDER_PACKAGE_NAME)
         }
     }
 
@@ -297,7 +443,7 @@ class HealthConnectClientTest {
                 /* userHandle= */ 1,
                 /* profileUserHandle= */ 0,
                 "Profile Name",
-                ShadowUserManager.FLAG_PROFILE
+                ShadowUserManager.FLAG_PROFILE,
             )
     }
 
@@ -305,7 +451,7 @@ class HealthConnectClientTest {
         context: Context,
         packageName: String,
         versionCode: Int,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         val packageInfo = PackageInfo()
         packageInfo.packageName = packageName
@@ -334,7 +480,7 @@ class HealthConnectClientTest {
         val serviceComponentName =
             ComponentName(
                 packageName,
-                HealthDataService.ANDROID_HEALTH_PLATFORM_SERVICE_BIND_ACTION
+                HealthDataService.ANDROID_HEALTH_PLATFORM_SERVICE_BIND_ACTION,
             )
         shadowOf(packageManager).addServiceIfNotPresent(serviceComponentName)
         shadowOf(packageManager)

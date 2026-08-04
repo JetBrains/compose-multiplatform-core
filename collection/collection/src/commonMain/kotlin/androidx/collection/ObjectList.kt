@@ -17,7 +17,8 @@
     "NOTHING_TO_INLINE",
     "RedundantVisibilityModifier",
     "UNCHECKED_CAST",
-    "KotlinRedundantDiagnosticSuppress"
+    "KotlinRedundantDiagnosticSuppress",
+    "FacadeClassJvmName",
 )
 @file:OptIn(ExperimentalContracts::class)
 
@@ -239,7 +240,7 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
      */
     public inline fun <R> foldIndexed(
         initial: R,
-        operation: (index: Int, acc: R, element: E) -> R
+        operation: (index: Int, acc: R, element: E) -> R,
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
@@ -269,7 +270,7 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
      */
     public inline fun <R> foldRightIndexed(
         initial: R,
-        operation: (index: Int, element: E, acc: R) -> R
+        operation: (index: Int, element: E, acc: R) -> R,
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
@@ -369,7 +370,7 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
      */
     public inline fun elementAtOrElse(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        defaultValue: (index: Int) -> E
+        defaultValue: (index: Int) -> E,
     ): E {
         if (index !in 0 until _size) {
             return defaultValue(index)
@@ -426,6 +427,65 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         }
         return -1
     }
+
+    /**
+     * Searches this [ObjectList] or its range for an element for which the given [comparison]
+     * function returns zero using binary search algorithm.
+     */
+    public inline fun binarySearch(
+        @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+        @androidx.annotation.IntRange(from = 0) toIndex: Int = _size,
+        comparison: (element: E) -> Int,
+    ): Int {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > _size) {
+            throw IndexOutOfBoundsException(
+                "fromIndex ($fromIndex) and toIndex ($toIndex) must be in range 0..$_size"
+            )
+        }
+        var low = fromIndex
+        var high = toIndex - 1
+
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            @Suppress("UNCHECKED_CAST") val midVal = content[mid] as E
+            val cmp = comparison(midVal)
+
+            if (cmp < 0) {
+                low = mid + 1
+            } else if (cmp > 0) {
+                high = mid - 1
+            } else {
+                return mid
+            }
+        }
+        return -(low + 1)
+    }
+
+    /**
+     * Searches this [ObjectList] or its range for the provided [element] using the specified
+     * [comparator] across elements. The list is expected to be sorted in order specified by
+     * [comparator].
+     */
+    @JvmOverloads
+    public fun binarySearch(
+        element: E,
+        comparator: Comparator<in E>,
+        @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+        @androidx.annotation.IntRange(from = 0) toIndex: Int = _size,
+    ): Int =
+        binarySearch(fromIndex = fromIndex, toIndex = toIndex) { comparator.compare(it, element) }
+
+    /**
+     * Searches this [ObjectList] or its range for an element having a key returned by [selector]
+     * equal to the specified [key] using binary search algorithm. The list is expected to be sorted
+     * in ascending order according to the natural ordering of keys produced by [selector].
+     */
+    public inline fun <K : Comparable<K>> binarySearchBy(
+        key: K?,
+        @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+        @androidx.annotation.IntRange(from = 0) toIndex: Int = _size,
+        crossinline selector: (element: E) -> K?,
+    ): Int = binarySearch(fromIndex, toIndex) { compareValues(selector(it), key) }
 
     /** Returns `true` if the [ObjectList] has no elements in it or `false` otherwise. */
     public fun isEmpty(): Boolean = _size == 0
@@ -522,21 +582,23 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        transform: ((E) -> CharSequence)? = null
+        transform: ((E) -> CharSequence)? = null,
     ): String = buildString {
         append(prefix)
-        this@ObjectList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
-            }
-            if (index != 0) {
-                append(separator)
-            }
-            if (transform == null) {
-                append(element)
-            } else {
-                append(transform(element))
+        run {
+            this@ObjectList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                if (transform == null) {
+                    append(element)
+                } else {
+                    append(transform(element))
+                }
             }
         }
         append(postfix)
@@ -653,7 +715,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
                 destination = content,
                 destinationOffset = index + 1,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         content[index] = element
@@ -669,7 +731,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
      */
     public fun addAll(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        @Suppress("ArrayReturn") elements: Array<E>
+        @Suppress("ArrayReturn") elements: Array<E>,
     ): Boolean {
         if (index !in 0.._size) {
             throwIndexOutOfBoundsInclusiveException(index)
@@ -682,7 +744,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
                 destination = content,
                 destinationOffset = index + elements.size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.copyInto(content, index)
@@ -699,7 +761,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
      */
     public fun addAll(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        elements: Collection<E>
+        elements: Collection<E>,
     ): Boolean {
         if (index !in 0.._size) {
             throwIndexOutOfBoundsInclusiveException(index)
@@ -712,7 +774,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
                 destination = content,
                 destinationOffset = index + elements.size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.forEachIndexed { i, element -> content[index + i] = element }
@@ -729,7 +791,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
      */
     public fun addAll(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        elements: ObjectList<E>
+        elements: ObjectList<E>,
     ): Boolean {
         if (index !in 0.._size) {
             throwIndexOutOfBoundsInclusiveException(index)
@@ -742,14 +804,14 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
                 destination = content,
                 destinationOffset = index + elements._size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.content.copyInto(
             destination = content,
             destinationOffset = index,
             startIndex = 0,
-            endIndex = elements._size
+            endIndex = elements._size,
         )
         _size += elements._size
         return true
@@ -828,7 +890,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
             destination = content,
             destinationOffset = _size,
             startIndex = 0,
-            endIndex = elements._size
+            endIndex = elements._size,
         )
         _size += elements._size
     }
@@ -887,6 +949,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
      *
      * @see ensureCapacity
      */
+    @JvmOverloads
     public fun trim(minCapacity: Int = _size) {
         val minSize = maxOf(minCapacity, _size)
         if (capacity > minSize) {
@@ -1063,7 +1126,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
                 destination = content,
                 destinationOffset = index,
                 startIndex = index + 1,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         _size--
@@ -1079,7 +1142,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
      */
     public fun removeRange(
         @androidx.annotation.IntRange(from = 0) start: Int,
-        @androidx.annotation.IntRange(from = 0) end: Int
+        @androidx.annotation.IntRange(from = 0) end: Int,
     ) {
         if (start !in 0.._size || end !in 0.._size) {
             throwIndexOutOfBoundsException("Start ($start) and end ($end) must be in 0..$_size")
@@ -1093,7 +1156,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
                     destination = content,
                     destinationOffset = start,
                     startIndex = end,
-                    endIndex = _size
+                    endIndex = _size,
                 )
             }
             val newSize = _size - (end - start)
@@ -1201,6 +1264,37 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
         val old = content[index]
         content[index] = element
         return old as E
+    }
+
+    /** Sorts elements in the [MutableObjectList] in-place using the specified [comparator]. */
+    public fun sortWith(comparator: Comparator<in E>) {
+        if (_size == 0) return
+        (content as Array<E>).sortWith(comparator, fromIndex = 0, toIndex = _size)
+    }
+
+    /**
+     * Sorts elements in the [MutableObjectList] in-place using the specified [comparison] function.
+     */
+    public inline fun sortWith(crossinline comparison: (a: E, b: E) -> Int) {
+        sortWith(Comparator { a, b -> comparison(a, b) })
+    }
+
+    /**
+     * Sorts elements in the [MutableObjectList] in-place using values produced by [selector] in
+     * ascending order.
+     */
+    public inline fun <R : Comparable<R>> sortBy(crossinline selector: (element: E) -> R?) {
+        sortWith(compareBy(selector))
+    }
+
+    /**
+     * Sorts elements in the [MutableObjectList] in-place using values produced by [selector] in
+     * descending order.
+     */
+    public inline fun <R : Comparable<R>> sortByDescending(
+        crossinline selector: (element: E) -> R?
+    ) {
+        sortWith(compareByDescending(selector))
     }
 
     override fun asList(): List<E> = asMutableList()
@@ -1327,7 +1421,7 @@ public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(ini
     private class SubList<T>(
         private val list: MutableList<T>,
         private val start: Int,
-        private var end: Int
+        private var end: Int,
     ) : MutableList<T> {
         override val size: Int
             get() = end - start
@@ -1545,3 +1639,29 @@ public fun <E> mutableObjectListOf(element1: E, element2: E, element3: E): Mutab
 /** @return a new [MutableObjectList] with the given elements, in order. */
 public inline fun <E> mutableObjectListOf(vararg elements: E): MutableObjectList<E> =
     MutableObjectList<E>(elements.size).apply { plusAssign(elements as Array<E>) }
+
+/**
+ * Sorts elements in the [MutableObjectList] of [Comparable] elements in-place in ascending order.
+ */
+public inline fun <E : Comparable<E>> MutableObjectList<E>.sort() {
+    sortWith(naturalOrder())
+}
+
+/**
+ * Sorts elements in the [MutableObjectList] of [Comparable] elements in-place in descending order.
+ */
+public inline fun <E : Comparable<E>> MutableObjectList<E>.sortDescending() {
+    sortWith(reverseOrder())
+}
+
+/**
+ * Searches this [ObjectList] or its range for the provided [element] using binary search algorithm.
+ * The list is expected to be sorted in ascending order according to the natural ordering of
+ * elements.
+ */
+@JvmOverloads
+public fun <E : Comparable<E>> ObjectList<E>.binarySearch(
+    element: E,
+    @androidx.annotation.IntRange(from = 0) fromIndex: Int = 0,
+    @androidx.annotation.IntRange(from = 0) toIndex: Int = size,
+): Int = binarySearch(fromIndex = fromIndex, toIndex = toIndex) { it.compareTo(element) }

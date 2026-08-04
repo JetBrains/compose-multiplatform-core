@@ -28,12 +28,13 @@ import androidx.compose.runtime.Immutable
  * area.
  *
  * See also: [LinearGradientShader], [RadialGradientShader] which works in relative coordinates and
- * can create a [Shader] representing the gradient for a particular [Rect] on demand.
+ * can create a [Shader] representing the gradient for a particular
+ * [androidx.compose.ui.geometry.Rect] on demand.
  */
 @Immutable
 @kotlin.jvm.JvmInline
-value class TileMode internal constructor(@Suppress("unused") private val value: Int) {
-    companion object {
+public value class TileMode internal constructor(@Suppress("unused") private val value: Int) {
+    public companion object {
         /**
          * Edge is clamped to the final color.
          *
@@ -41,7 +42,8 @@ value class TileMode internal constructor(@Suppress("unused") private val value:
          * point closest to that region.
          * ![TileMode.Clamp](https://developer.android.com/static/images/jetpack/compose/graphics/brush/tile_mode_clamp.png)
          */
-        val Clamp = TileMode(0)
+        public val Clamp: TileMode
+            get() = TileMode(0)
 
         /**
          * Edge is repeated from first color to last.
@@ -51,7 +53,8 @@ value class TileMode internal constructor(@Suppress("unused") private val value:
          * etc).
          * ![TileMode.Repeated](https://developer.android.com/static/images/jetpack/compose/graphics/brush/tile_mode_repeated.png)
          */
-        val Repeated = TileMode(1)
+        public val Repeated: TileMode
+            get() = TileMode(1)
 
         /**
          * Edge is mirrored from last color to first. This is as if the stop points from 0.0 to 1.0
@@ -60,17 +63,19 @@ value class TileMode internal constructor(@Suppress("unused") private val value:
          * in the negative direction).
          * ![TileMode.Mirror](https://developer.android.com/static/images/jetpack/compose/graphics/brush/tile_mode_mirror.png)
          */
-        val Mirror = TileMode(2)
+        public val Mirror: TileMode
+            get() = TileMode(2)
 
         /**
          * Render the shader's image pixels only within its original bounds. If the shader draws
          * outside of its original bounds, transparent black is drawn instead.
          * ![TileMode.Decal](https://developer.android.com/static/images/jetpack/compose/graphics/brush/tile_mode_decal.png)
          */
-        val Decal = TileMode(3)
+        public val Decal: TileMode
+            get() = TileMode(3)
     }
 
-    override fun toString() =
+    override fun toString(): String =
         when (this) {
             Clamp -> "Clamp"
             Repeated -> "Repeated"
@@ -86,4 +91,4 @@ value class TileMode internal constructor(@Suppress("unused") private val value:
  * [TileMode.Mirror] are guaranteed to be supported. If a [TileMode] that is not supported is used,
  * the default of [TileMode.Clamp] is consumed instead.
  */
-expect fun TileMode.isSupported(): Boolean
+public expect fun TileMode.isSupported(): Boolean

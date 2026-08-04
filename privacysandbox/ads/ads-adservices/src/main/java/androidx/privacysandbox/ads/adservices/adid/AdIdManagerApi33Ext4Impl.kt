@@ -25,7 +25,5 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
-class AdIdManagerApi33Ext4Impl(context: Context) :
-    AdIdManagerImplCommon(
-        context.getSystemService(android.adservices.adid.AdIdManager::class.java)
-    )
+public class AdIdManagerApi33Ext4Impl(context: Context) :
+    AdIdManagerImplCommon(context.getSystemService(android.adservices.adid.AdIdManager::class.java))

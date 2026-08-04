@@ -21,10 +21,12 @@ import android.graphics.Color
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
 import android.os.DeadObjectException
 import android.os.ParcelFileDescriptor
+import android.os.RemoteException
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.RequiresExtension
@@ -33,19 +35,41 @@ import androidx.annotation.WorkerThread
 import androidx.pdf.PdfDocument.BitmapSource
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PdfObject
+import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
+import androidx.pdf.models.FormEditInfo
+import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.models.PdfModelMapper.toContent
+import androidx.pdf.models.PdfModelMapper.toParcelable
+import androidx.pdf.service.PdfDocumentServiceImpl
 import androidx.pdf.service.connect.PdfServiceConnection
+import androidx.pdf.utils.areCorePdfApisAvailableInSdk
+import androidx.pdf.utils.isAnnotationsFeatureAvailable
+import androidx.pdf.utils.isFormFillingAvailable
+import androidx.pdf.utils.isGetTopObjectAvailable
+import androidx.pdf.utils.isSignatureFeatureAvailable
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
+import java.util.Collections
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeoutException
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CoroutineDispatcher
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -64,9 +88,11 @@ import kotlinx.coroutines.withContext
  * @param uri The URI of the PDF document.
  * @param fileDescriptor The [ParcelFileDescriptor] associated with the document.
  * @param connection The [PdfServiceConnection] used to interact with the service.
- * @param dispatcher The [CoroutineDispatcher] used for asynchronous operations.
+ * @param coroutineContext The [CoroutineContext] used for asynchronous operations, particularly for
+ *   I/O-bound tasks such as interacting with the PDF service. It is recommended to use a dispatcher
+ *   appropriate for blocking I/O operations, such as `Dispatchers.IO`.
  * @param pageCount The total number of pages in the document.
- * @param isLinearized Indicates whether the document is linearized.
+ * @param linearizationStatus Indicates the linearization status of the document.
  * @param formType The type of form present in the document.
  * @constructor Creates a new [SandboxedPdfDocument] instance.
  */
@@ -76,14 +102,27 @@ public class SandboxedPdfDocument(
     public val connection: PdfServiceConnection,
     private val password: String?,
     private val fileDescriptor: ParcelFileDescriptor,
-    private val dispatcher: CoroutineDispatcher,
+    private val coroutineContext: CoroutineContext,
     override val pageCount: Int,
-    override val isLinearized: Boolean,
-    override val formType: Int
-) : PdfDocument {
+    override val linearizationStatus: Int,
+    override val formType: Int,
+    override val renderParams: RenderParams,
+) : EditablePdfDocument {
+
+    private val refCount = AtomicInteger(1)
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
-    private val closeScope = CoroutineScope(dispatcher + SupervisorJob())
+    private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
+
+    private val onPdfContentInvalidatedListeners:
+        CopyOnWriteArrayList<PdfContentInvalidationEntry> =
+        CopyOnWriteArrayList()
+
+    private val onEditsAppliedListenerEntries: MutableList<OnEditsAppliedListenerEntry> =
+        Collections.synchronizedList(mutableListOf())
+
+    private val batchPdfAnnotationsProcessor =
+        BatchPdfAnnotationsProcessor(requireNotNull(connection.documentBinder))
 
     /**
      * Indicates whether this [androidx.pdf.SandboxedPdfDocument] is closed explicitly by calling
@@ -91,18 +130,40 @@ public class SandboxedPdfDocument(
      *
      * Once closed, any further operations on the document are invalid.
      */
-    private var isDocumentClosedExplicitly = false
+    private val isDocumentClosedExplicitly = AtomicBoolean(false)
 
+    @Suppress("WrongConstant")
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
+        return getPageInfo(pageNumber, PdfDocument.PAGE_INFO_EXCLUDE_FORM_WIDGETS)
+    }
+
+    override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
         return withDocument { document ->
             // TODO(b/407777410): Update the logic so that callers can refetch the information in
             // case
             //  default value is returned
             val dimensions = document.getPageDimensions(pageNumber)
+
+            // Check if the INCLUDE_FORM_WIDGET_INFO flag is set
+            val formWidgetInfo =
+                if (
+                    isFormFillingAvailable() &&
+                        (pageInfoFlags and PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET) != 0L
+                ) {
+                    document.getFormWidgetInfos(pageNumber).map { it.toContentClass() }
+                } else {
+                    emptyList()
+                }
+
             if (dimensions == null || dimensions.height <= 0 || dimensions.width <= 0) {
-                PdfDocument.PageInfo(pageNumber, DEFAULT_PAGE, DEFAULT_PAGE)
+                PdfDocument.PageInfo(pageNumber, DEFAULT_PAGE, DEFAULT_PAGE, formWidgetInfo)
             } else {
-                PdfDocument.PageInfo(pageNumber, dimensions.height, dimensions.width)
+                PdfDocument.PageInfo(
+                    pageNumber,
+                    dimensions.height,
+                    dimensions.width,
+                    formWidgetInfo,
+                )
             }
         }
     }
@@ -111,13 +172,23 @@ public class SandboxedPdfDocument(
         return pageRange.map { getPageInfo(pageNumber = it) }
     }
 
+    override suspend fun getPageInfos(
+        pageRange: IntRange,
+        pageInfoFlags: Long,
+    ): List<PdfDocument.PageInfo> {
+        return pageRange.map { getPageInfo(pageNumber = it, pageInfoFlags = pageInfoFlags) }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
-    ): SparseArray<List<PageMatchBounds>> {
-        return withDocument { document ->
+        pageRange: IntRange,
+    ): SparseArray<List<PageMatchBounds>> = coroutineScope {
+        return@coroutineScope withDocument { document ->
             SparseArray<List<PageMatchBounds>>(pageRange.last + 1).apply {
                 pageRange.forEach { pageNum ->
+                    // Check for cancellation at the start of new page search
+                    ensureActive()
                     (document.searchPageText(pageNum, query) ?: listOf())
                         .takeIf { it.isNotEmpty() }
                         ?.let { put(pageNum, it.map { result -> result.toContentClass() }) }
@@ -130,7 +201,7 @@ public class SandboxedPdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection? {
         return withDocument { document ->
             val startBoundary =
@@ -142,18 +213,32 @@ public class SandboxedPdfDocument(
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection? {
+        return withDocument { document ->
+            document
+                .selectPageText(pageNumber, start.toAndroidClass(), stop.toAndroidClass())
+                ?.toContentClass()
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
         return withDocument { document ->
             document
                 .selectPageText(
                     pageNumber,
                     android.graphics.pdf.models.selection.SelectionBoundary(0),
-                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE)
+                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE),
                 )
                 ?.toContentClass()
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun getPageContent(pageNumber: Int): PdfPageContent {
         return withDocument { document ->
             val textContents =
@@ -164,6 +249,7 @@ public class SandboxedPdfDocument(
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return withDocument { document ->
             val gotoLinks =
@@ -176,9 +262,176 @@ public class SandboxedPdfDocument(
 
     override fun getPageBitmapSource(pageNumber: Int): BitmapSource = PageBitmapSource(pageNumber)
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getFormWidgetInfos(pageNum: Int, types: Long): List<FormWidgetInfo> {
+        return withDocument { document ->
+            document.getFormWidgetInfosOfType(pageNum, getFormWidgetTypesArray(types)).map {
+                it.toContentClass()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
+        val parcelablePdfObject = withDocument { document ->
+            document.getTopPageObjectAtPosition(pageNum, point, intArrayOf())
+        }
+        return parcelablePdfObject?.toContent()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override suspend fun addPageObject(pageNum: Int, newObject: PdfObject): String {
+        val parcelableObject = newObject.toParcelable()
+
+        return withDocument { document -> document.addPageObject(pageNum, parcelableObject) }
+    }
+
+    override fun addOnPdfContentInvalidatedListener(
+        executor: Executor,
+        listener: PdfDocument.OnPdfContentInvalidatedListener,
+    ) {
+        onPdfContentInvalidatedListeners.add(PdfContentInvalidationEntry(executor, listener))
+    }
+
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        for (pdfContentInvalidationEntry in onPdfContentInvalidatedListeners) {
+            if (pdfContentInvalidationEntry.listener == listener) {
+                onPdfContentInvalidatedListeners.remove(pdfContentInvalidationEntry)
+                break
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun applyEdit(record: FormEditInfo) {
+        val dirtyAreas: List<Rect> =
+            withDocument { document ->
+                document.applyEdit(record.pageNumber, record.toAndroidClass())
+            } ?: listOf()
+        onPdfContentInvalidatedListeners.forEach { (executor, listener) ->
+            executor.execute { listener.onPdfContentInvalidated(record.pageNumber, dirtyAreas) }
+        }
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
+        val parcelableOperations = editsDraft.operations.map { it.toParcelable() }
+
+        return batchPdfAnnotationsProcessor.process(parcelableOperations) { appliedBatchEdits ->
+            appliedBatchEdits.forEach { appliedEdit ->
+                onEditsAppliedListenerEntries.forEach { entry ->
+                    entry.executor.execute {
+                        entry.listener.onEditApplied(appliedEdit.pageNum, appliedEdit.editId)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Generates a handle for writing the document. This handle should be closed after use.
+     *
+     * @return A [PdfWriteHandle] for the document.
+     */
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override fun createWriteHandle(): PdfWriteHandle {
+        refCount.incrementAndGet()
+        return PdfWriteHandleImpl(this)
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
+        val firstBatch = withDocument { it.getPageAnnotations(pageNum) } ?: return emptyList()
+        if (firstBatch.totalBatchCount <= 1) {
+            return firstBatch.annotations.map { it.toContent() }
+        }
+
+        return coroutineScope {
+            val firstAnnotations = firstBatch.annotations.map { it.toContent() }
+            val deferredRemainingBatches =
+                (1 until firstBatch.totalBatchCount).map { batchIndex ->
+                    async {
+                        withDocument { remote ->
+                            remote
+                                .getBatchedPageAnnotations(pageNum, batchIndex)
+                                ?.annotations
+                                ?.map { it.toContent() } ?: emptyList()
+                        }
+                    }
+                }
+
+            val remainingAnnotations = deferredRemainingBatches.awaitAll().flatten()
+            firstAnnotations + remainingAnnotations
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
+        val firstBatch = withDocument { it.getPageObjects(pageNum, types) } ?: return emptyList()
+        if (firstBatch.totalBatchCount <= 1) {
+            return firstBatch.objects.map { it.toContent() }
+        }
+
+        return coroutineScope {
+            val firstObjects = firstBatch.objects.map { it.toContent() }
+            val deferredRemainingBatches =
+                (1 until firstBatch.totalBatchCount).map { batchIndex ->
+                    async {
+                        withDocument { remote ->
+                            remote.getBatchedPageObjects(pageNum, batchIndex, types)?.objects?.map {
+                                it.toContent()
+                            } ?: emptyList()
+                        }
+                    }
+                }
+
+            val remainingObjects = deferredRemainingBatches.awaitAll().flatten()
+            firstObjects + remainingObjects
+        }
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override fun addOnEditAppliedListener(
+        executor: Executor,
+        listener: PdfDocument.OnEditAppliedListener,
+    ) {
+        onEditsAppliedListenerEntries.add(OnEditsAppliedListenerEntry(executor, listener))
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override fun removeOnEditAppliedListener(listener: PdfDocument.OnEditAppliedListener) {
+        for (onEditsAppliedListener in onEditsAppliedListenerEntries) {
+            if (onEditsAppliedListener.listener == listener) {
+                onEditsAppliedListenerEntries.remove(onEditsAppliedListener)
+                break
+            }
+        }
+    }
+
+    override fun isFeatureSupported(feature: PdfFeature): Boolean {
+        return when (feature) {
+            PdfFeature.TEXT_SELECTION,
+            PdfFeature.SEARCH,
+            PdfFeature.TEXT_EXTRACTION,
+            PdfFeature.LINKS -> areCorePdfApisAvailableInSdk()
+            PdfFeature.FORM_FILLING -> isFormFillingAvailable()
+            PdfFeature.ANNOTATIONS -> isAnnotationsFeatureAvailable()
+            PdfFeature.IMAGE_EXTRACTION -> isGetTopObjectAvailable()
+            PdfFeature.SIGNATURE_HANDLING -> isSignatureFeatureAvailable()
+            else -> false
+        }
+    }
+
     @WorkerThread
     override fun close() {
-        isDocumentClosedExplicitly = true
+        if (refCount.decrementAndGet() > 0) return
+
+        isDocumentClosedExplicitly.set(true)
 
         connection.disconnect()
 
@@ -206,7 +459,8 @@ public class SandboxedPdfDocument(
                     document.getPageBitmap(
                         pageNumber,
                         scaledPageSizePx.width,
-                        scaledPageSizePx.height
+                        scaledPageSizePx.height,
+                        renderParams,
                     ) ?: getDefaultBitmap(scaledPageSizePx.width, scaledPageSizePx.height)
                 } else {
                     val offsetX = tileRegion.left
@@ -218,7 +472,8 @@ public class SandboxedPdfDocument(
                         scaledPageSizePx.width,
                         scaledPageSizePx.height,
                         offsetX,
-                        offsetY
+                        offsetY,
+                        renderParams,
                     ) ?: getDefaultBitmap(tileRegion.width(), tileRegion.height())
                 }
             }
@@ -234,7 +489,14 @@ public class SandboxedPdfDocument(
         override fun close() {
             if (connection.isConnected) {
                 // We can't block the main thread with this IPC
-                closeScope.launch { withDocument { it.releasePage(pageNumber) } }
+                closeScope.launch {
+                    try {
+                        withDocument { it.releasePage(pageNumber) }
+                    } catch (_: RemoteException) {
+                        // Ignore remote exceptions during releasePage as it's a fire-and-forget
+                        // operation
+                    }
+                }
             }
 
             // TODO(b/397324529): Enqueue releasePage requests and execute when connection is
@@ -242,7 +504,7 @@ public class SandboxedPdfDocument(
         }
     }
 
-    private suspend fun <T> withDocument(block: (PdfDocumentRemote) -> T): T {
+    internal suspend fun <T> withDocument(block: (PdfDocumentRemote) -> T): T {
         var trial = 1
         while (true) {
             try {
@@ -264,7 +526,7 @@ public class SandboxedPdfDocument(
 
     private suspend fun <T> withDocumentWithoutRetry(block: (PdfDocumentRemote) -> T): T {
         // If document is already closed, cancel all the pending operations on this document
-        if (isDocumentClosedExplicitly) throw DocumentClosedException()
+        ensureDocumentNotClosed()
 
         // Create a new job in parent's context. Since with document can be called from any scope,
         // we need a handle to check coroutines actively working with document. Linking to parent's
@@ -277,7 +539,7 @@ public class SandboxedPdfDocument(
                 job.invokeOnCompletion { connection.pendingJobs.remove(job) }
             }
 
-        return withContext(dispatcher + taskJob) {
+        return withContext(coroutineContext + taskJob) {
             // Binder object will be null if the service is disconnected. Let's try reconnecting
             // explicitly
             if (connection.documentBinder == null) {
@@ -299,12 +561,15 @@ public class SandboxedPdfDocument(
                     // document.close() could be triggered independently while current block is
                     // waiting to be resumed.
                     // Ensure cancelling any work on this document, if it's closed.
-                    throw if (isDocumentClosedExplicitly) DocumentClosedException(cause = e) else e
+                    ensureDocumentNotClosed(cause = e)
+                    throw e
                 }
 
                 connection.needsToReopenDocument = false
             }
 
+            // Guard: Verify the document is still open before proceeding
+            ensureDocumentNotClosed()
             val result = block(binder)
 
             // Manually completing taskJob because a Job created using Job() does not complete on
@@ -314,6 +579,46 @@ public class SandboxedPdfDocument(
 
             return@withContext result
         }
+    }
+
+    private fun getFormWidgetTypesArray(types: Long): IntArray {
+        if (types == PdfDocument.FORM_WIDGET_INCLUDE_ALL_TYPES) return intArrayOf()
+
+        return buildList {
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_TEXTFIELD_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_TEXTFIELD)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_PUSHBUTTON_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_RADIOBUTTON_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_CHECKBOX_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_CHECKBOX)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_COMBOBOX_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_COMBOBOX)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_LISTBOX_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_LISTBOX)
+                if (types and PdfDocument.FORM_WIDGET_INCLUDE_SIGNATURE_TYPE != 0L)
+                    add(FormWidgetInfo.WIDGET_TYPE_SIGNATURE)
+            }
+            .toIntArray()
+    }
+
+    private data class PdfContentInvalidationEntry(
+        val executor: Executor,
+        val listener: PdfDocument.OnPdfContentInvalidatedListener,
+    )
+
+    @OptIn(ExperimentalPdfApi::class)
+    private data class OnEditsAppliedListenerEntry
+    constructor(val executor: Executor, val listener: PdfDocument.OnEditAppliedListener)
+
+    /**
+     * Verifies that the document has not been explicitly closed.
+     *
+     * @throws DocumentClosedException if the document has been closed by a call to [close].
+     */
+    private fun ensureDocumentNotClosed(cause: Exception? = null) {
+        if (isDocumentClosedExplicitly.get()) throw DocumentClosedException(cause = cause)
     }
 
     private companion object {

@@ -1,5 +1,3 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetMillis():
-    Removed method androidx.compose.animation.core.StartOffset.getOffsetMillis()
-RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetType():
-    Removed method androidx.compose.animation.core.StartOffset.getOffsetType()
+AddedSealed: androidx.compose.animation.core.Transition:
+    Source breaking change: Cannot add 'sealed' modifier to class androidx.compose.animation.core.Transition: Incompatible change

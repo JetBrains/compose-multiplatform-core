@@ -18,7 +18,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -30,13 +29,10 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.espressoCore)
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.ui.test.manifest.integration.testapp"
-
-    defaultConfig {
-        targetSdkVersion 35
-    }
 }

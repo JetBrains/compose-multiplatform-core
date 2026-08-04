@@ -17,7 +17,6 @@
 package androidx.compose.animation.demos.layoutanimation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -70,12 +69,12 @@ fun AnimatedVisibilityLazyColumnDemo() {
                 AnimatedVisibility(
                     item.visible,
                     enter = expandVertically(),
-                    exit = shrinkVertically()
+                    exit = shrinkVertically(),
                 ) {
                     Box(Modifier.fillMaxWidth().requiredHeight(90.dp).background(item.color)) {
                         Button(
                             { model.removeItem(item) },
-                            modifier = Modifier.align(CenterEnd).padding(15.dp)
+                            modifier = Modifier.align(CenterEnd).padding(15.dp),
                         ) {
                             Text("Remove")
                         }
@@ -111,7 +110,6 @@ private class MyModel {
         item.visible.targetState = false
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     fun pruneItems() {
         _items.removeAll(items.filter { it.visible.isIdle && !it.visible.targetState })
     }
@@ -128,5 +126,5 @@ internal val turquoiseColors =
         Color(0xff50B6CD),
         Color(0xffBCF8FF),
         Color(0xff8AEAE9),
-        Color(0xff46CECA)
+        Color(0xff46CECA),
     )

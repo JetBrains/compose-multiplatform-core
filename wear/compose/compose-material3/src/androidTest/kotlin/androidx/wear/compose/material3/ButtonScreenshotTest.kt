@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3.test
 
-import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -27,7 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -43,9 +41,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -58,6 +54,7 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CenteredText
 import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.CompactButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
@@ -67,6 +64,7 @@ import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.TEST_TAG
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.setContentWithTheme
+import androidx.wear.compose.material3.verifyScreenshot
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -74,7 +72,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ButtonScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -110,13 +108,13 @@ class ButtonScreenshotTest {
     fun three_slot_button_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) { ThreeSlotButton() }
 
-    @Test fun button_outlined_enabled() = verifyScreenshot() { OutlinedButton() }
+    @Test fun button_outlined_enabled() = verifyScreenshot { OutlinedButton() }
 
-    @Test fun button_outlined_disabled() = verifyScreenshot() { OutlinedButton(enabled = false) }
+    @Test fun button_outlined_disabled() = verifyScreenshot { OutlinedButton(enabled = false) }
 
     @Test
     fun button_image_background_enabled() = verifyScreenshot {
-        ImageBackgroundButton(
+        BaseImageBackgroundButton(
             enabled = true,
             containerImage = painterResource(R.drawable.backgroundimage1),
             sizeToIntrinsics = false,
@@ -125,28 +123,64 @@ class ButtonScreenshotTest {
 
     @Test
     fun button_image_background_disabled() = verifyScreenshot {
-        ImageBackgroundButton(
+        BaseImageBackgroundButton(
             enabled = false,
             containerImage = painterResource(R.drawable.backgroundimage1),
-            sizeToIntrinsics = false
+            sizeToIntrinsics = false,
         )
     }
 
     @Test
     fun button_image_background_with_alignment_center_end() = verifyScreenshot {
-        ImageBackgroundButton(
+        BaseImageBackgroundButton(
             sizeToIntrinsics = true,
             alignment = Alignment.CenterEnd,
-            contentScale = ContentScale.None
+            contentScale = ContentScale.None,
         )
     }
 
     @Test
     fun button_image_background_with_alignment_center() = verifyScreenshot {
-        ImageBackgroundButton(
+        BaseImageBackgroundButton(
             sizeToIntrinsics = true,
             alignment = Alignment.Center,
-            contentScale = ContentScale.None
+            contentScale = ContentScale.None,
+        )
+    }
+
+    @Test
+    fun button_three_slot_image_background_enabled() = verifyScreenshot {
+        ThreeSlotImageBackgroundButton(
+            enabled = true,
+            containerImage = painterResource(R.drawable.backgroundimage1),
+            sizeToIntrinsics = false,
+        )
+    }
+
+    @Test
+    fun button_three_slot_image_background_disabled() = verifyScreenshot {
+        ThreeSlotImageBackgroundButton(
+            enabled = false,
+            containerImage = painterResource(R.drawable.backgroundimage1),
+            sizeToIntrinsics = false,
+        )
+    }
+
+    @Test
+    fun button_three_slot_image_background_with_alignment_center_end() = verifyScreenshot {
+        ThreeSlotImageBackgroundButton(
+            sizeToIntrinsics = true,
+            alignment = Alignment.CenterEnd,
+            contentScale = ContentScale.None,
+        )
+    }
+
+    @Test
+    fun button_three_slot_image_background_with_alignment_center() = verifyScreenshot {
+        ThreeSlotImageBackgroundButton(
+            sizeToIntrinsics = true,
+            alignment = Alignment.Center,
+            contentScale = ContentScale.None,
         )
     }
 
@@ -155,7 +189,7 @@ class ButtonScreenshotTest {
         Button(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -177,7 +211,7 @@ class ButtonScreenshotTest {
             label = { Text("Label", modifier = Modifier.fillMaxWidth()) },
             secondaryLabel = { Text("Secondary label", modifier = Modifier.fillMaxWidth()) },
             icon = { ButtonIcon(size = ButtonDefaults.LargeIconSize) },
-            contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding
+            contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding,
         )
     }
 
@@ -189,7 +223,7 @@ class ButtonScreenshotTest {
             label = { Text("Label", modifier = Modifier.fillMaxWidth()) },
             secondaryLabel = { Text("Secondary label", modifier = Modifier.fillMaxWidth()) },
             icon = { ButtonIcon(size = ButtonDefaults.ExtraLargeIconSize) },
-            contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding
+            contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding,
         )
     }
 
@@ -198,7 +232,7 @@ class ButtonScreenshotTest {
         FilledTonalButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -217,7 +251,7 @@ class ButtonScreenshotTest {
         OutlinedButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -236,7 +270,7 @@ class ButtonScreenshotTest {
         ChildButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -259,7 +293,7 @@ class ButtonScreenshotTest {
         CompactButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -269,7 +303,7 @@ class ButtonScreenshotTest {
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Icon & label", modifier = Modifier.fillMaxWidth()) },
-            icon = { ButtonIcon(size = ButtonDefaults.ExtraSmallIconSize) },
+            icon = { ButtonIcon(size = CompactButtonDefaults.ExtraSmallIconSize) },
         )
     }
 
@@ -280,7 +314,7 @@ class ButtonScreenshotTest {
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
             transformation =
-                morphingSurfaceTransformation(heightProportion = 0.6f, contentAlpha = 0.5f)
+                morphingSurfaceTransformation(heightProportion = 0.6f, contentAlpha = 0.5f),
         )
     }
 
@@ -291,7 +325,7 @@ class ButtonScreenshotTest {
             enabled = true,
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
-            transformation = morphingSurfaceTransformation(heightProportion = 0.6f)
+            transformation = morphingSurfaceTransformation(heightProportion = 0.6f),
         )
     }
 
@@ -301,7 +335,7 @@ class ButtonScreenshotTest {
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
-            transformation = morphingSurfaceTransformation(heightProportion = 1f, contentAlpha = 0f)
+            transformation = morphingSurfaceTransformation(heightProportion = 1f, contentAlpha = 0f),
         )
     }
 
@@ -320,7 +354,7 @@ class ButtonScreenshotTest {
             label = { Text("Three Slot Button") },
             secondaryLabel = { Text("Secondary Label") },
             icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
@@ -332,13 +366,38 @@ class ButtonScreenshotTest {
     }
 
     @Composable
-    private fun ImageBackgroundButton(
+    private fun BaseImageBackgroundButton(
         sizeToIntrinsics: Boolean,
         containerImage: Painter =
             painterResource(androidx.wear.compose.material3.samples.R.drawable.backgroundimage),
         enabled: Boolean = true,
         alignment: Alignment = Alignment.Center,
-        contentScale: ContentScale = ContentScale.Fit
+        contentScale: ContentScale = ContentScale.Fit,
+    ) {
+        Button(
+            enabled = enabled,
+            onClick = {},
+            containerPainter =
+                ButtonDefaults.containerPainter(
+                    image = containerImage,
+                    sizeToIntrinsics = sizeToIntrinsics,
+                    alignment = alignment,
+                    contentScale = contentScale,
+                ),
+            modifier = Modifier.testTag(TEST_TAG),
+        ) {
+            Text("Image Button")
+        }
+    }
+
+    @Composable
+    private fun ThreeSlotImageBackgroundButton(
+        sizeToIntrinsics: Boolean,
+        containerImage: Painter =
+            painterResource(androidx.wear.compose.material3.samples.R.drawable.backgroundimage),
+        enabled: Boolean = true,
+        alignment: Alignment = Alignment.Center,
+        contentScale: ContentScale = ContentScale.Fit,
     ) {
         Button(
             enabled = enabled,
@@ -353,7 +412,7 @@ class ButtonScreenshotTest {
                     contentScale = contentScale,
                 ),
             icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
@@ -362,15 +421,15 @@ class ButtonScreenshotTest {
         CompactButton(
             onClick = {},
             label = { Text("Compact Button") },
-            icon = { ButtonIcon(size = ButtonDefaults.ExtraSmallIconSize) },
+            icon = { ButtonIcon(size = CompactButtonDefaults.ExtraSmallIconSize) },
             enabled = enabled,
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
@@ -383,10 +442,7 @@ class ButtonScreenshotTest {
             }
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Composable
@@ -399,7 +455,7 @@ class ButtonScreenshotTest {
         Icon(
             imageVector = testImage,
             contentDescription = iconLabel,
-            modifier = modifier.testTag(iconLabel).size(size)
+            modifier = modifier.testTag(iconLabel).size(size),
         )
     }
 
@@ -408,7 +464,7 @@ class ButtonScreenshotTest {
             override fun createContainerPainter(
                 painter: Painter,
                 shape: Shape,
-                border: BorderStroke?
+                border: BorderStroke?,
             ): Painter =
                 object : Painter() {
                     override val intrinsicSize: Size
@@ -419,7 +475,7 @@ class ButtonScreenshotTest {
                             shape.createOutline(
                                 size.copy(height = size.height * heightProportion),
                                 layoutDirection,
-                                this@onDraw
+                                this@onDraw,
                             )
                         clipPath(Path().apply { addOutline(shapeOutline) }) {
                             with(painter) {
@@ -441,12 +497,12 @@ class ButtonScreenshotTest {
                         override fun createOutline(
                             size: Size,
                             layoutDirection: LayoutDirection,
-                            density: Density
+                            density: Density,
                         ): Outline =
                             shape.createOutline(
                                 size = size.copy(height = size.height * heightProportion),
                                 layoutDirection = layoutDirection,
-                                density = density
+                                density = density,
                             )
                     }
             }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.navigation.testing
 
 import androidx.lifecycle.SavedStateHandle
@@ -37,7 +39,8 @@ import kotlinx.serialization.serializer
  * Returns a [SavedStateHandle] populated with arguments from [route].
  *
  * Note: To use this api in non-instrumented tests, run with robolectric. This is because android's
- * [Bundle] is necessarily integrated into the parsing of route arguments.
+ * [Bundle](https://developer.android.com/reference/android/os/Bundle) is necessarily integrated
+ * into the parsing of route arguments.
  *
  * @param route The route to extract argument values from
  * @param typeMap A mapping of KType to custom NavType<*> in the [route]. May be empty if [route]
@@ -47,7 +50,7 @@ import kotlinx.serialization.serializer
 @Suppress("UNCHECKED_CAST", "DEPRECATION")
 public operator fun SavedStateHandle.Companion.invoke(
     route: Any,
-    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap()
+    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
 ): SavedStateHandle {
     val serializer = route::class.serializer()
     // generate type maps
@@ -90,5 +93,6 @@ public operator fun SavedStateHandle.Companion.invoke(
     // convert arg bundle to arg map
     val finalMap = savedState.read { toMap() }
     // populate handle with arg map
-    return SavedStateHandle(finalMap)
+    @Suppress("VisibleForTests") // Safe to use here as this is a test utilities module.
+    return SavedStateHandle(initialState = finalMap)
 }

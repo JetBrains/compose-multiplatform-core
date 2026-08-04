@@ -17,9 +17,9 @@
 package androidx.pdf.util;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
 
 import androidx.annotation.RestrictTo;
-import androidx.pdf.models.Dimensions;
 
 import org.jspecify.annotations.NonNull;
 
@@ -29,8 +29,17 @@ import org.jspecify.annotations.NonNull;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class RectUtils {
 
-    /** Scales the given Rect by the given scaling factor. Modifies (and returns) the given rect. */
+    /**
+     * Scales the given Rect by the given scaling factor. Modifies (and returns) the given rect.
+     */
     public static @NonNull Rect scale(@NonNull Rect rect, float scale) {
+        return scale(rect, scale, scale);
+    }
+
+    /**
+     * Scales the given RectF by the given scaling factor. Modifies (and returns) the given rect.
+     */
+    public static @NonNull RectF scale(@NonNull RectF rect, float scale) {
         return scale(rect, scale, scale);
     }
 
@@ -49,15 +58,20 @@ public final class RectUtils {
     /**
      *
      */
-    public static int area(@NonNull Rect rect) {
-        return rect.width() * rect.height();
+    public static @NonNull RectF scale(@NonNull RectF rect, float scaleX, float scaleY) {
+        rect.set(
+                rect.left * scaleX,
+                rect.top * scaleY,
+                rect.right * scaleX,
+                rect.bottom * scaleY);
+        return rect;
     }
 
     /**
      *
      */
-    public static @NonNull Rect fromDimensions(@NonNull Dimensions dimensions) {
-        return new Rect(0, 0, dimensions.getWidth(), dimensions.getHeight());
+    public static int area(@NonNull Rect rect) {
+        return rect.width() * rect.height();
     }
 
     /**

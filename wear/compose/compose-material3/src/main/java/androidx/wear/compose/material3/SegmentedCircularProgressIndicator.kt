@@ -49,9 +49,18 @@ import kotlinx.coroutines.launch
  *
  * Example of [SegmentedCircularProgressIndicator] with progress value:
  *
- * @sample androidx.wear.compose.material3.samples.SegmentedProgressIndicatorSample Example of
- *   smaller size [SegmentedCircularProgressIndicator]:
+ * @sample androidx.wear.compose.material3.samples.SegmentedProgressIndicatorSample
+ *
+ * ![SegmentedProgressIndicatorSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SegmentedProgressIndicatorSample_CompositeImage.png)
+ *
+ * Example of smaller size [SegmentedCircularProgressIndicator]:
+ *
  * @sample androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorSample
+ *
+ * ![SmallSegmentedProgressIndicatorSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SmallSegmentedProgressIndicatorSample_CompositeImage.png)
+ *
  * @param segmentCount Number of equal segments that the progress indicator should be divided into.
  *   Has to be a number equal or greater to 1.
  * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
@@ -130,10 +139,10 @@ public fun SegmentedCircularProgressIndicator(
                         async {
                             animatedProgress.animateTo(
                                 newProgress,
-                                actualOverflowProgressAnimationSpec
+                                actualOverflowProgressAnimationSpec,
                             )
                         },
-                        async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) }
+                        async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) },
                     )
                 }
             } else {
@@ -176,7 +185,7 @@ public fun SegmentedCircularProgressIndicator(
                                     brush =
                                         colors.overflowTrackBrush(
                                             enabled,
-                                            animatedOverflowColor.value
+                                            animatedOverflowColor.value,
                                         ),
                                     strokeWidth = strokePx,
                                 )
@@ -216,7 +225,7 @@ public fun SegmentedCircularProgressIndicator(
                                 gapSweep = gapSweep,
                                 brush = colors.indicatorBrush(enabled),
                                 strokeWidth = strokePx,
-                                strokePadding = AntiAliasingStrokePadding
+                                strokePadding = AntiAliasingStrokePadding,
                             )
                         }
                     }
@@ -236,9 +245,16 @@ public fun SegmentedCircularProgressIndicator(
  *
  * @sample androidx.wear.compose.material3.samples.SegmentedProgressIndicatorBinarySample
  *
+ * ![SegmentedProgressIndicatorBinarySample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SegmentedProgressIndicatorBinarySample_CompositeImage.png)
+ *
  * Example of smaller size [SegmentedCircularProgressIndicator]:
  *
  * @sample androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorBinarySample
+ *
+ * ![SmallSegmentedProgressIndicatorBinarySample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_SmallSegmentedProgressIndicatorBinarySample_CompositeImage.png)
+ *
  * @param segmentCount Number of equal segments that the progress indicator should be divided into.
  *   Has to be a number equal or greater to 1.
  * @param segmentValue A function that for each segment between 1..[segmentCount] returns true if
@@ -330,7 +346,7 @@ public fun SegmentedCircularProgressIndicator(
                                 gapSweep = gapSweep,
                                 brush = colors.indicatorBrush(enabled),
                                 strokeWidth = strokePx,
-                                strokePadding = AntiAliasingStrokePadding
+                                strokePadding = AntiAliasingStrokePadding,
                             )
                         }
                     }

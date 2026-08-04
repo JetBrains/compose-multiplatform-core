@@ -25,7 +25,7 @@ internal class MetricsContainer(
      * Metrics are usually indexed by the names provided for them by the MetricCaptures, or an index
      */
     private val metrics: Array<MetricCapture> = arrayOf(TimeCapture()),
-    private val repeatCount: Int
+    private val repeatCount: Int,
 ) {
 
     internal val names: List<String> = metrics.flatMap { it.names }
@@ -155,8 +155,8 @@ internal class MetricsContainer(
                                 .format(
                                     chunkNum * 10,
                                     (chunkNum + 1) * 10,
-                                    chunk.joinToString(" ") { it.toLong().toString() }
-                                )
+                                    chunk.joinToString(" ") { it.toLong().toString() },
+                                ),
                     )
                 }
                 MetricResult(name, metricData)
@@ -170,7 +170,7 @@ internal class MetricsContainer(
                 nanoTime = repeatTiming[i],
                 counterNames = metricTraceLabels,
                 counterValues =
-                    results.map { it.data[measurementIndex] } + listOf(maxIterations.toDouble())
+                    results.map { it.data[measurementIndex] } + listOf(maxIterations.toDouble()),
             )
             InMemoryTracing.endSection(nanoTime = repeatTiming[i + 1])
         }

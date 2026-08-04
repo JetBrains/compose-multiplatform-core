@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.O)
 internal class ExtrasCallExtensionProcessor(
     private val callScope: CoroutineScope,
-    private val call: Call
+    private val call: Call,
 ) {
     companion object {
         private const val TAG = "ECEP"
@@ -117,43 +117,42 @@ internal class ExtrasCallExtensionProcessor(
     /**
      * Processes call extensions based on a [Flow] of [Call.Details]. This function sets up the
      * necessary extensions using a [CapabilityExchangeRepository], collects updates from the
-     * provided [detailsFlow], and returns a [CapabilityExchangeResult]. It uses a
+     * provided [extrasFlow], and returns a [CapabilityExchangeResult]. It uses a
      * [CompletableDeferred] to ensure all asynchronous operations related to extension setup are
      * completed before returning.
      *
-     * @param detailsFlow A [Flow] of [Call.Details], providing updates to the call's state and
-     *   extras.
+     * @param extrasFlow A [Flow] of [Bundle], providing updates to the call's extras.
      * @return A [CapabilityExchangeResult] containing the negotiated capabilities, or `null` if no
      *   relevant extras were found.
      */
     internal suspend fun handleExtrasExtensionsFromVoipApp(
-        detailsFlow: Flow<Call.Details>
+        extrasFlow: Flow<Bundle>
     ): CapabilityExchangeResult? {
         Log.i(TAG, "handleExtrasExtensionsFromVoipApp: consuming extras")
         val callbackRepository = CapabilityExchangeRepository(callScope)
         initMeetingExtension(callbackRepository)
         initCallIconExtension(callbackRepository)
         initLocalSilenceExtension(callbackRepository)
-        callScope.launch { detailsFlow.collect { details -> processExtras(details.extras) } }
-        return getExtensionsUpdateFromNewExtras(detailsFlow.first(), callbackRepository)
+        callScope.launch { extrasFlow.collect { extras -> processExtras(extras) } }
+        return getExtensionsUpdateFromNewExtras(extrasFlow.first(), callbackRepository)
     }
 
     /**
      * Extracts extension updates from [Call.Details] and returns a [CapabilityExchangeResult]. This
-     * method retrieves the extras from the provided [details], determines the VoIP API version, and
+     * method retrieves the extras from the provided [extras], determines the VoIP API version, and
      * constructs a set of supported capabilities. It then calls [processExtras] to handle the
      * individual extra values.
      *
-     * @param details The current [Call.Details] of the call.
+     * @param extras The current [Bundle] extras of the call.
      * @param r The [CapabilityExchangeRepository] instance for capability exchange.
      * @return A [CapabilityExchangeResult] representing the updated capabilities and remote
      *   listener, or `null` if no relevant extras are found.
      */
     private suspend fun getExtensionsUpdateFromNewExtras(
-        details: Call.Details,
-        r: CapabilityExchangeRepository
+        extras: Bundle,
+        r: CapabilityExchangeRepository,
     ): CapabilityExchangeResult? {
-        val extras = details.extras?.takeIf { it.size() > 0 } ?: return null
+        if (extras.isEmpty) return null
 
         val apiVersion = extras.getInt(EXTRA_VOIP_API_VERSION, 0)
         if (extras.containsKey(EXTRA_USE_LOCAL_CALL_SILENCE_CAPABILITY)) {
@@ -164,14 +163,14 @@ internal class ExtrasCallExtensionProcessor(
             setOf(
                 getVoipMeetingSummaryCapability(apiVersion),
                 getVoipIconCapability(apiVersion),
-                getVoipLocalCallSilenceCapability(apiVersion)
+                getVoipLocalCallSilenceCapability(apiVersion),
             )
 
         processExtras(extras)
 
         return CapabilityExchangeResult(
             voipCapabilities,
-            CapabilityExchangeListenerRemote(r.listener)
+            CapabilityExchangeListenerRemote(r.listener),
         )
     }
 
@@ -191,7 +190,7 @@ internal class ExtrasCallExtensionProcessor(
             currentKeys = currentKeys,
             getValue = { b -> b.getParcelableCompat(EXTRA_CALL_IMAGE_URI, Uri::class.java) },
             defaultValue = Uri.EMPTY,
-            flow = mUriFlow
+            flow = mUriFlow,
         )
 
         processKey(
@@ -200,7 +199,7 @@ internal class ExtrasCallExtensionProcessor(
             currentKeys = currentKeys,
             getValue = { b -> b.getInt(EXTRA_PARTICIPANT_COUNT) },
             defaultValue = 0,
-            flow = mParticipantCountFlow
+            flow = mParticipantCountFlow,
         )
         processKey(
             key = EXTRA_CURRENT_SPEAKER,
@@ -208,7 +207,7 @@ internal class ExtrasCallExtensionProcessor(
             currentKeys = currentKeys,
             getValue = { b -> b.getString(EXTRA_CURRENT_SPEAKER) },
             defaultValue = "",
-            flow = mSpeakerNameFlow
+            flow = mSpeakerNameFlow,
         )
 
         if (extras?.containsKey(EXTRA_CALL_SILENCE_AVAILABILITY) == true) {
@@ -221,7 +220,7 @@ internal class ExtrasCallExtensionProcessor(
                 currentKeys = currentKeys,
                 getValue = { b -> b.getBoolean(EXTRA_LOCAL_CALL_SILENCE_STATE) },
                 defaultValue = false,
-                flow = mLocalCallSilenceFlow
+                flow = mLocalCallSilenceFlow,
             )
         } else {
             Log.w(TAG, "processExtras: attempted to toggle LCS but global mute is enabled")
@@ -251,7 +250,7 @@ internal class ExtrasCallExtensionProcessor(
         currentKeys: Set<String>,
         getValue: (Bundle) -> T?,
         defaultValue: T,
-        flow: MutableStateFlow<T>
+        flow: MutableStateFlow<T>,
     ) {
         if (currentKeys.contains(key)) {
             mProcessedKeys.add(key)
@@ -289,7 +288,7 @@ internal class ExtrasCallExtensionProcessor(
      * @param r The [CapabilityExchangeRepository] used to register the extension.
      */
     private fun initLocalSilenceExtension(r: CapabilityExchangeRepository) {
-        r.onCreateLocalCallSilenceExtension = { coroutineScope, _, binder ->
+        r.onCreateLocalCallSilenceExtension = { coroutineScope, version, _, binder ->
             mLocalCallSilenceFlow
                 .onEach { binder.updateIsLocallySilenced(it) }
                 .launchIn(coroutineScope)
@@ -297,13 +296,13 @@ internal class ExtrasCallExtensionProcessor(
                 object : ILocalSilenceActions.Stub() {
                     override fun setIsLocallySilenced(
                         isLocallySilenced: Boolean,
-                        cb: IActionsResultCallback?
+                        cb: IActionsResultCallback?,
                     ) {
                         call.sendCallEvent(
                             EVENT_LOCAL_CALL_SILENCE_STATE_CHANGED,
                             Bundle().apply {
                                 putBoolean(EXTRA_LOCAL_CALL_SILENCE_STATE, isLocallySilenced)
-                            }
+                            },
                         )
                         cb?.onSuccess()
                     }

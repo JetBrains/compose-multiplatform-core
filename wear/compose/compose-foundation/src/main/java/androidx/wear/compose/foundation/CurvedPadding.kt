@@ -20,6 +20,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -85,7 +86,7 @@ public interface ArcPaddingValues {
      */
     public fun calculateAfterPadding(
         layoutDirection: LayoutDirection,
-        angularDirection: CurvedDirection.Angular
+        angularDirection: CurvedDirection.Angular,
     ): Dp
 
     /**
@@ -94,7 +95,7 @@ public interface ArcPaddingValues {
      */
     public fun calculateBeforePadding(
         layoutDirection: LayoutDirection,
-        angularDirection: CurvedDirection.Angular
+        angularDirection: CurvedDirection.Angular,
     ): Dp
 }
 
@@ -111,7 +112,7 @@ public fun ArcPaddingValues(
     outer: Dp = 0.dp,
     inner: Dp = 0.dp,
     before: Dp = 0.dp,
-    after: Dp = 0.dp
+    after: Dp = 0.dp,
 ): ArcPaddingValues = ArcPaddingValuesImpl(outer, inner, before, after)
 
 /** Apply [all] dp of additional space along each edge of the content. */
@@ -149,12 +150,12 @@ internal class ArcPaddingValuesImpl(val outer: Dp, val inner: Dp, val before: Dp
 
     override fun calculateBeforePadding(
         layoutDirection: LayoutDirection,
-        angularDirection: CurvedDirection.Angular
+        angularDirection: CurvedDirection.Angular,
     ) = before
 
     override fun calculateAfterPadding(
         layoutDirection: LayoutDirection,
-        angularDirection: CurvedDirection.Angular
+        angularDirection: CurvedDirection.Angular,
     ) = after
 }
 
@@ -165,24 +166,26 @@ internal class PaddingWrapper(child: CurvedChild, val paddingValues: ArcPaddingV
     private var beforePx = 0f
     private var afterPx = 0f
 
-    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
+    override fun CurvedMeasureScope.initializeMeasure(
+        measurables: Iterator<Measurable>
+    ): (Placeable.PlacementScope).() -> Unit {
         outerPx = paddingValues.calculateOuterPadding(curvedLayoutDirection.radial).toPx()
         innerPx = paddingValues.calculateInnerPadding(curvedLayoutDirection.radial).toPx()
         beforePx =
             paddingValues
                 .calculateBeforePadding(
                     curvedLayoutDirection.layoutDirection,
-                    curvedLayoutDirection.angular
+                    curvedLayoutDirection.angular,
                 )
                 .toPx()
         afterPx =
             paddingValues
                 .calculateAfterPadding(
                     curvedLayoutDirection.layoutDirection,
-                    curvedLayoutDirection.angular
+                    curvedLayoutDirection.angular,
                 )
                 .toPx()
-        with(wrapped) { initializeMeasure(measurables) }
+        return with(wrapped) { initializeMeasure(measurables) }
     }
 
     override fun doEstimateThickness(maxRadius: Float) =
@@ -190,7 +193,7 @@ internal class PaddingWrapper(child: CurvedChild, val paddingValues: ArcPaddingV
 
     override fun doRadialPosition(
         parentOuterRadius: Float,
-        parentThickness: Float
+        parentThickness: Float,
     ): PartialLayoutInfo {
         val partialLayoutInfo =
             wrapped.radialPosition(parentOuterRadius - outerPx, parentThickness - outerPx - innerPx)
@@ -199,21 +202,21 @@ internal class PaddingWrapper(child: CurvedChild, val paddingValues: ArcPaddingV
             partialLayoutInfo.sweepRadians + angularPadding,
             partialLayoutInfo.outerRadius + outerPx,
             partialLayoutInfo.thickness + innerPx + outerPx,
-            partialLayoutInfo.measureRadius
+            partialLayoutInfo.measureRadius,
         )
     }
 
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ): Float {
         val startAngularPadding = beforePx / measureRadius
         val angularPadding = (beforePx + afterPx) / measureRadius
         return wrapped.angularPosition(
             parentStartAngleRadians + startAngularPadding,
             parentSweepRadians - angularPadding,
-            centerOffset
+            centerOffset,
         ) - startAngularPadding
     }
 }

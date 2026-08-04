@@ -23,11 +23,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 
 /** Create a new Canvas instance that targets its drawing commands to the provided [ImageBitmap] */
-fun Canvas(image: ImageBitmap): Canvas = ActualCanvas(image)
+public fun Canvas(image: ImageBitmap): Canvas = ActualCanvas(image)
 
 internal expect fun ActualCanvas(image: ImageBitmap): Canvas
 
-expect class NativeCanvas
+@Deprecated("Use direct reference to platform type instead of typealias")
+public expect class NativeCanvas
 
 /**
  * Saves a copy of the current transform and clip on the save stack and executes the provided lambda
@@ -38,7 +39,7 @@ expect class NativeCanvas
  *
  * [Canvas.saveLayer], which does the same thing but additionally also groups the commands
  */
-/* expect */ inline fun Canvas.withSave(block: () -> Unit) {
+public inline fun Canvas.withSave(block: () -> Unit) {
     try {
         save()
         block()
@@ -88,10 +89,10 @@ expect class NativeCanvas
  * See also:
  * * [Canvas.save], which saves the current state, but does not create a new layer for subsequent
  *   commands.
- * * [BlendMode], which discusses the use of [Paint.blendMode] with [saveLayer].
+ * * [BlendMode], which discusses the use of [Paint.blendMode] with [Canvas.saveLayer].
  */
 @Suppress("DEPRECATION")
-inline fun Canvas.withSaveLayer(bounds: Rect, paint: Paint, block: () -> Unit) {
+public inline fun Canvas.withSaveLayer(bounds: Rect, paint: Paint, block: () -> Unit) {
     try {
         saveLayer(bounds, paint)
         block()
@@ -108,7 +109,7 @@ inline fun Canvas.withSaveLayer(bounds: Rect, paint: Paint, block: () -> Unit) {
  * @param pivotX The x-coord for the pivot point
  * @param pivotY The y-coord for the pivot point
  */
-fun Canvas.rotate(degrees: Float, pivotX: Float, pivotY: Float) {
+public fun Canvas.rotate(degrees: Float, pivotX: Float, pivotY: Float) {
     if (degrees == 0.0f) return
     translate(pivotX, pivotY)
     rotate(degrees)
@@ -123,7 +124,7 @@ fun Canvas.rotate(degrees: Float, pivotX: Float, pivotY: Float) {
  * @param pivotX The x-coord for the pivot point
  * @param pivotY The y-coord for the pivot point
  */
-fun Canvas.rotateRad(radians: Float, pivotX: Float = 0.0f, pivotY: Float = 0.0f) {
+public fun Canvas.rotateRad(radians: Float, pivotX: Float = 0.0f, pivotY: Float = 0.0f) {
     rotate(degrees(radians), pivotX, pivotY)
 }
 
@@ -139,18 +140,15 @@ fun Canvas.rotateRad(radians: Float, pivotX: Float = 0.0f, pivotY: Float = 0.0f)
  * @param pivotX The x-coord for the pivot point
  * @param pivotY The y-coord for the pivot point
  */
-fun Canvas.scale(sx: Float, sy: Float = sx, pivotX: Float, pivotY: Float) {
+public fun Canvas.scale(sx: Float, sy: Float = sx, pivotX: Float, pivotY: Float) {
     if (sx == 1.0f && sy == 1.0f) return
     translate(pivotX, pivotY)
     scale(sx, sy)
     translate(-pivotX, -pivotY)
 }
 
-/** Return an instance of the native primitive that implements the Canvas interface */
-expect val Canvas.nativeCanvas: NativeCanvas
-
 @JvmDefaultWithCompatibility
-interface Canvas {
+public interface Canvas {
 
     /**
      * Saves a copy of the current transform and clip on the save stack.
@@ -161,7 +159,7 @@ interface Canvas {
      * * [saveLayer], which does the same thing but additionally also groups the commands done until
      *   the matching [restore].
      */
-    fun save()
+    public fun save()
 
     /**
      * Pops the current save stack, if there is anything to pop. Otherwise, does nothing.
@@ -171,7 +169,7 @@ interface Canvas {
      * If the state was pushed with with [saveLayer], then this call will also cause the new layer
      * to be composited into the previous layer.
      */
-    fun restore()
+    public fun restore()
 
     /**
      * Saves a copy of the current transform and clip on the save stack, and then creates a new
@@ -222,13 +220,13 @@ interface Canvas {
      *   commands.
      * * [BlendMode], which discusses the use of [Paint.blendMode] with [saveLayer].
      */
-    fun saveLayer(bounds: Rect, paint: Paint)
+    public fun saveLayer(bounds: Rect, paint: Paint)
 
     /**
      * Add a translation to the current transform, shifting the coordinate space horizontally by the
      * first argument and vertically by the second argument.
      */
-    fun translate(dx: Float, dy: Float)
+    public fun translate(dx: Float, dy: Float)
 
     /**
      * Add an axis-aligned scale to the current transform, scaling by the first argument in the
@@ -239,28 +237,28 @@ interface Canvas {
      * @param sx The amount to scale in X
      * @param sy The amount to scale in Y
      */
-    fun scale(sx: Float, sy: Float = sx)
+    public fun scale(sx: Float, sy: Float = sx)
 
     /**
      * Add a rotation (in degrees clockwise) to the current transform
      *
      * @param degrees to rotate clockwise
      */
-    fun rotate(degrees: Float)
+    public fun rotate(degrees: Float)
 
     /**
      * Add an axis-aligned skew to the current transform, with the first argument being the
      * horizontal skew in degrees clockwise around the origin, and the second argument being the
      * vertical skew in degrees clockwise around the origin.
      */
-    fun skew(sx: Float, sy: Float)
+    public fun skew(sx: Float, sy: Float)
 
     /**
      * Add an axis-aligned skew to the current transform, with the first argument being the
      * horizontal skew in radians clockwise around the origin, and the second argument being the
      * vertical skew in radians clockwise around the origin.
      */
-    fun skewRad(sxRad: Float, syRad: Float) {
+    public fun skewRad(sxRad: Float, syRad: Float) {
         skew(degrees(sxRad), degrees(syRad))
     }
 
@@ -268,7 +266,7 @@ interface Canvas {
      * Multiply the current transform by the specified 4⨉4 transformation matrix specified as a list
      * of values in column-major order.
      */
-    fun concat(matrix: Matrix)
+    public fun concat(matrix: Matrix)
 
     /**
      * Reduces the clip region to the intersection of the current clip and the given rectangle.
@@ -276,7 +274,7 @@ interface Canvas {
      * Use [ClipOp.Difference] to subtract the provided rectangle from the current clip.
      */
     @Suppress("DEPRECATION")
-    fun clipRect(rect: Rect, clipOp: ClipOp = ClipOp.Intersect) =
+    public fun clipRect(rect: Rect, clipOp: ClipOp = ClipOp.Intersect): Unit =
         clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp)
 
     /**
@@ -291,16 +289,16 @@ interface Canvas {
      * @param clipOp Clipping operation to conduct on the given bounds, defaults to
      *   [ClipOp.Intersect]
      */
-    fun clipRect(
+    public fun clipRect(
         left: Float,
         top: Float,
         right: Float,
         bottom: Float,
-        clipOp: ClipOp = ClipOp.Intersect
+        clipOp: ClipOp = ClipOp.Intersect,
     )
 
     /** Reduces the clip region to the intersection of the current clip and the given [Path]. */
-    fun clipPath(path: Path, clipOp: ClipOp = ClipOp.Intersect)
+    public fun clipPath(path: Path, clipOp: ClipOp = ClipOp.Intersect)
 
     /**
      * Draws a line between the given points using the given paint. The line is stroked, the value
@@ -308,19 +306,19 @@ interface Canvas {
      *
      * The `p1` and `p2` arguments are interpreted as offsets from the origin.
      */
-    fun drawLine(p1: Offset, p2: Offset, paint: Paint)
+    public fun drawLine(p1: Offset, p2: Offset, paint: Paint)
 
     /**
      * Draws a rectangle with the given [Paint]. Whether the rectangle is filled or stroked (or
      * both) is controlled by [Paint.style].
      */
-    fun drawRect(rect: Rect, paint: Paint) =
+    public fun drawRect(rect: Rect, paint: Paint): Unit =
         drawRect(
             left = rect.left,
             top = rect.top,
             right = rect.right,
             bottom = rect.bottom,
-            paint = paint
+            paint = paint,
         )
 
     /**
@@ -333,33 +331,33 @@ interface Canvas {
      * @param bottom The bottom bound of the rectangle
      * @param paint Paint used to color the rectangle with a fill or stroke
      */
-    fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint)
+    public fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint)
 
     /**
      * Draws a rounded rectangle with the given [Paint]. Whether the rectangle is filled or stroked
      * (or both) is controlled by [Paint.style].
      */
-    fun drawRoundRect(
+    public fun drawRoundRect(
         left: Float,
         top: Float,
         right: Float,
         bottom: Float,
         radiusX: Float,
         radiusY: Float,
-        paint: Paint
+        paint: Paint,
     )
 
     /**
      * Draws an axis-aligned oval that fills the given axis-aligned rectangle with the given
      * [Paint]. Whether the oval is filled or stroked (or both) is controlled by [Paint.style].
      */
-    fun drawOval(rect: Rect, paint: Paint) =
+    public fun drawOval(rect: Rect, paint: Paint): Unit =
         drawOval(
             left = rect.left,
             top = rect.top,
             right = rect.right,
             bottom = rect.bottom,
-            paint = paint
+            paint = paint,
         )
 
     /**
@@ -372,14 +370,14 @@ interface Canvas {
      * @param bottom The bottom bound of the rectangle
      * @param paint Paint used to color the rectangle with a fill or stroke
      */
-    fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint)
+    public fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint)
 
     /**
      * Draws a circle centered at the point given by the first argument and that has the radius
      * given by the second argument, with the [Paint] given in the third argument. Whether the
      * circle is filled or stroked (or both) is controlled by [Paint.style].
      */
-    fun drawCircle(center: Offset, radius: Float, paint: Paint)
+    public fun drawCircle(center: Offset, radius: Float, paint: Paint)
 
     /**
      * Draw an arc scaled to fit inside the given rectangle. It starts from startAngle degrees
@@ -391,13 +389,13 @@ interface Canvas {
      *
      * This method is optimized for drawing arcs and should be faster than [Path.arcTo].
      */
-    fun drawArc(
+    public fun drawArc(
         rect: Rect,
         startAngle: Float,
         sweepAngle: Float,
         useCenter: Boolean,
-        paint: Paint
-    ) =
+        paint: Paint,
+    ): Unit =
         drawArc(
             left = rect.left,
             top = rect.top,
@@ -406,7 +404,7 @@ interface Canvas {
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = useCenter,
-            paint = paint
+            paint = paint,
         )
 
     /**
@@ -429,7 +427,7 @@ interface Canvas {
      * @param paint Paint used to draw the arc. arc, and close it if it is being stroked. This will
      *   draw a wedge.
      */
-    fun drawArc(
+    public fun drawArc(
         left: Float,
         top: Float,
         right: Float,
@@ -437,7 +435,7 @@ interface Canvas {
         startAngle: Float,
         sweepAngle: Float,
         useCenter: Boolean,
-        paint: Paint
+        paint: Paint,
     )
 
     /**
@@ -450,12 +448,12 @@ interface Canvas {
      *
      * This method is optimized for drawing arcs and should be faster than [Path.arcTo].
      */
-    fun drawArcRad(
+    public fun drawArcRad(
         rect: Rect,
         startAngleRad: Float,
         sweepAngleRad: Float,
         useCenter: Boolean,
-        paint: Paint
+        paint: Paint,
     ) {
         drawArc(rect, degrees(startAngleRad), degrees(sweepAngleRad), useCenter, paint)
     }
@@ -465,13 +463,13 @@ interface Canvas {
      * both) is controlled by [Paint.style]. If the path is filled, then subpaths within it are
      * implicitly closed (see [Path.close]).
      */
-    fun drawPath(path: Path, paint: Paint)
+    public fun drawPath(path: Path, paint: Paint)
 
     /**
      * Draws the given [ImageBitmap] into the canvas with its top-left corner at the given [Offset].
      * The image is composited into the canvas using the given [Paint].
      */
-    fun drawImage(image: ImageBitmap, topLeftOffset: Offset, paint: Paint)
+    public fun drawImage(image: ImageBitmap, topLeftOffset: Offset, paint: Paint)
 
     /**
      * Draws the subset of the given image described by the `src` argument into the canvas in the
@@ -488,13 +486,13 @@ interface Canvas {
      * @param dstSize: Dimensions of the destination to draw
      * @param paint Paint used to composite the [ImageBitmap] pixels into the canvas
      */
-    fun drawImageRect(
+    public fun drawImageRect(
         image: ImageBitmap,
         srcOffset: IntOffset = IntOffset.Zero,
         srcSize: IntSize = IntSize(image.width, image.height),
         dstOffset: IntOffset = IntOffset.Zero,
         dstSize: IntSize = srcSize,
-        paint: Paint
+        paint: Paint,
     )
 
     /**
@@ -505,7 +503,7 @@ interface Canvas {
      * See also:
      * * [drawRawPoints], which takes `points` as a [FloatArray] rather than a [List<Offset>].
      */
-    fun drawPoints(pointMode: PointMode, points: List<Offset>, paint: Paint)
+    public fun drawPoints(pointMode: PointMode, points: List<Offset>, paint: Paint)
 
     /**
      * Draws a sequence of points according to the given [PointMode].
@@ -516,9 +514,9 @@ interface Canvas {
      * See also:
      * * [drawPoints], which takes `points` as a [List<Offset>] rather than a [List<Float32List>].
      */
-    fun drawRawPoints(pointMode: PointMode, points: FloatArray, paint: Paint)
+    public fun drawRawPoints(pointMode: PointMode, points: FloatArray, paint: Paint)
 
-    fun drawVertices(vertices: Vertices, blendMode: BlendMode, paint: Paint)
+    public fun drawVertices(vertices: Vertices, blendMode: BlendMode, paint: Paint)
 
     /**
      * Enables Z support which defaults to disabled. This allows layers drawn with different
@@ -526,7 +524,7 @@ interface Canvas {
      *
      * @see disableZ
      */
-    fun enableZ()
+    public fun enableZ()
 
     /**
      * Disables Z support, preventing any layers drawn after this point from being visually
@@ -535,5 +533,5 @@ interface Canvas {
      *
      * @see enableZ
      */
-    fun disableZ()
+    public fun disableZ()
 }

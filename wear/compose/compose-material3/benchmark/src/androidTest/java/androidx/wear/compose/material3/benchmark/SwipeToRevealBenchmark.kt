@@ -26,28 +26,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
-import androidx.compose.testutils.benchmark.benchmarkDrawPerf
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
-import androidx.compose.testutils.benchmark.benchmarkLayoutPerf
-import androidx.compose.testutils.benchmark.toggleStateBenchmarkDraw
-import androidx.compose.testutils.benchmark.toggleStateBenchmarkLayout
-import androidx.compose.testutils.benchmark.toggleStateBenchmarkMeasure
-import androidx.compose.testutils.benchmark.toggleStateBenchmarkRecompose
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.wear.compose.foundation.RevealState
-import androidx.wear.compose.foundation.RevealValue
-import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
+import androidx.wear.compose.material3.RevealState
+import androidx.wear.compose.material3.RevealValue
 import androidx.wear.compose.material3.SwipeToReveal
-import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.rememberRevealState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Rule
@@ -65,36 +59,6 @@ class SwipeToRevealBenchmark {
     fun first_compose() {
         benchmarkRule.benchmarkFirstCompose(testCaseFactory)
     }
-
-    @Test
-    fun update_recompose() {
-        benchmarkRule.toggleStateBenchmarkRecompose(testCaseFactory, assertOneRecomposition = false)
-    }
-
-    @Test
-    fun update_measure() {
-        benchmarkRule.toggleStateBenchmarkMeasure(testCaseFactory, assertOneRecomposition = false)
-    }
-
-    @Test
-    fun update_layout() {
-        benchmarkRule.toggleStateBenchmarkLayout(testCaseFactory, assertOneRecomposition = false)
-    }
-
-    @Test
-    fun update_draw() {
-        benchmarkRule.toggleStateBenchmarkDraw(testCaseFactory, assertOneRecomposition = false)
-    }
-
-    @Test
-    fun layout() {
-        benchmarkRule.benchmarkLayoutPerf(testCaseFactory)
-    }
-
-    @Test
-    fun draw() {
-        benchmarkRule.benchmarkDrawPerf(testCaseFactory)
-    }
 }
 
 internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestCase {
@@ -104,35 +68,30 @@ internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestC
     @Composable
     override fun MeasuredContent() {
         coroutineScope = rememberCoroutineScope()
-        revealState =
-            rememberRevealState(
-                anchors =
-                    SwipeToRevealDefaults.bidirectionalAnchors(
-                        useAnchoredActions = false,
-                    )
-            )
+        revealState = rememberRevealState()
 
         SwipeToReveal(
-            revealState = revealState,
-            actions = {
-                primaryAction(
+            primaryAction = {
+                PrimaryActionButton(
                     onClick = {},
                     icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                    text = { Text("Delete") }
+                    text = { Text("Delete") },
                 )
-                secondaryAction(
+            },
+            onSwipePrimaryAction = {},
+            secondaryAction = {
+                SecondaryActionButton(
                     onClick = {},
-                    icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") }
+                    icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
                 )
-                undoPrimaryAction(
-                    onClick = {},
-                    text = { Text("Undo Delete") },
-                )
-                undoSecondaryAction(
-                    onClick = {},
-                    text = { Text("Undo Delete") },
-                )
-            }
+            },
+            undoPrimaryAction = { UndoActionButton(onClick = {}, text = { Text("Undo Delete") }) },
+            undoSecondaryAction = {
+                UndoActionButton(onClick = {}, text = { Text("Undo Delete") })
+            },
+            revealState = revealState,
+            revealDirection = Bidirectional,
+            hasPartiallyRevealedState = false,
         ) {
             Button(
                 modifier =
@@ -143,7 +102,7 @@ internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestC
                                 CustomAccessibilityAction("Options") { true },
                             )
                     },
-                onClick = {}
+                onClick = {},
             ) {
                 Text("This Button has two actions", modifier = Modifier.fillMaxSize())
             }

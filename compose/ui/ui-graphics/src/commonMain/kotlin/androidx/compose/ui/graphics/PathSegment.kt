@@ -34,18 +34,25 @@ package androidx.compose.ui.graphics
  * @property weight Conic weight, only valid if [type] is [Type.Conic]. See [Type.Conic] for more
  *   information.
  */
-class PathSegment
-internal constructor(
-    val type: Type,
-    @get:Suppress("ArrayReturn") val points: FloatArray,
-    val weight: Float
+public class PathSegment(
+    public val type: Type,
+    @get:Suppress("ArrayReturn") public val points: FloatArray,
+    public val weight: Float,
 ) {
+    init {
+        requirePrecondition(points.size == type.expectedPointCount * 2) {
+            "The number of points for $type must be ${type.expectedPointCount * 2} (got ${points.size})"
+        }
+        requirePrecondition(type == Type.Conic || weight == 0.0f) {
+            "The weight for $type must be 0.0f (got $weight)"
+        }
+    }
 
     /**
      * Type of a given segment in a [Path], either a command ([Type.Move], [Type.Close],
      * [Type.Done]) or a curve ([Type.Line], [Type.Cubic], [Type.Quadratic], [Type.Conic]).
      */
-    enum class Type {
+    public enum class Type {
         /**
          * Move command, the path segment contains 1 point indicating the move destination. The
          * weight is set 0.0f and not meaningful.
@@ -99,7 +106,7 @@ internal constructor(
          * Done command, which indicates that no further segment will be found in the path. It
          * typically indicates the end of an iteration over a path and can be ignored.
          */
-        Done
+        Done,
     }
 
     override fun equals(other: Any?): Boolean {
@@ -127,16 +134,29 @@ internal constructor(
     }
 }
 
+/** The number of points required to represent this [PathSegment.Type]. */
+private val PathSegment.Type.expectedPointCount
+    get() =
+        when (this) {
+            PathSegment.Type.Move -> 1
+            PathSegment.Type.Line -> 2
+            PathSegment.Type.Quadratic -> 3
+            PathSegment.Type.Conic -> 3
+            PathSegment.Type.Cubic -> 4
+            PathSegment.Type.Close -> 0
+            PathSegment.Type.Done -> 0
+        }
+
 /**
  * A [PathSegment] containing the [Done][PathSegment.Type.Done] command. This static object exists
  * to avoid allocating a new segment when returning a [Done][PathSegment.Type.Done] result from
  * [PathIterator.next].
  */
-val DoneSegment = PathSegment(PathSegment.Type.Done, FloatArray(0), 0.0f)
+public val DoneSegment: PathSegment = PathSegment(PathSegment.Type.Done, FloatArray(0), 0.0f)
 
 /**
  * A [PathSegment] containing the [Close][PathSegment.Type.Close] command. This static object exists
  * to avoid allocating a new segment when returning a [Close][PathSegment.Type.Close] result from
  * [PathIterator.next].
  */
-val CloseSegment = PathSegment(PathSegment.Type.Close, FloatArray(0), 0.0f)
+public val CloseSegment: PathSegment = PathSegment(PathSegment.Type.Close, FloatArray(0), 0.0f)

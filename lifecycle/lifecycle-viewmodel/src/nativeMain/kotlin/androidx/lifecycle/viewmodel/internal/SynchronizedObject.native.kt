@@ -13,78 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.lifecycle.viewmodel.internal
 
-import kotlin.experimental.ExperimentalNativeApi
-import kotlin.native.ref.createCleaner
-import kotlinx.cinterop.Arena
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.ptr
-import platform.posix.pthread_mutex_destroy
-import platform.posix.pthread_mutex_init
-import platform.posix.pthread_mutex_lock
-import platform.posix.pthread_mutex_t
-import platform.posix.pthread_mutex_unlock
-import platform.posix.pthread_mutexattr_destroy
-import platform.posix.pthread_mutexattr_init
-import platform.posix.pthread_mutexattr_settype
-import platform.posix.pthread_mutexattr_t
-
-/**
- * Wrapper for platform.posix.PTHREAD_MUTEX_RECURSIVE which is represented as kotlin.Int on darwin
- * platforms and kotlin.UInt on linuxX64 See: // https://youtrack.jetbrains.com/issue/KT-41509
- */
-internal expect val PTHREAD_MUTEX_RECURSIVE: Int
-
-internal actual class SynchronizedObject actual constructor() {
-
-    private val resource = Resource()
-
-    @Suppress("unused") // The returned Cleaner must be assigned to a property
-    @OptIn(ExperimentalNativeApi::class)
-    private val cleaner = createCleaner(resource, Resource::dispose)
-
-    fun lock() {
-        resource.lock()
-    }
-
-    fun unlock() {
-        resource.unlock()
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    private class Resource {
-        private val arena: Arena = Arena()
-        private val attr: pthread_mutexattr_t = arena.alloc()
-        private val mutex: pthread_mutex_t = arena.alloc()
-
-        init {
-            pthread_mutexattr_init(attr.ptr)
-            pthread_mutexattr_settype(attr.ptr, PTHREAD_MUTEX_RECURSIVE)
-            pthread_mutex_init(mutex.ptr, attr.ptr)
-        }
-
-        fun lock(): Int = pthread_mutex_lock(mutex.ptr)
-
-        fun unlock(): Int = pthread_mutex_unlock(mutex.ptr)
-
-        fun dispose() {
-            pthread_mutex_destroy(mutex.ptr)
-            pthread_mutexattr_destroy(attr.ptr)
-            arena.clear()
-        }
-    }
-}
+internal actual class SynchronizedObject : kotlinx.atomicfu.locks.SynchronizedObject()
 
 internal actual inline fun <T> synchronizedImpl(
     lock: SynchronizedObject,
-    crossinline action: () -> T
-): T {
-    lock.lock()
-    return try {
-        action()
-    } finally {
-        lock.unlock()
-    }
-}
+    crossinline action: () -> T,
+): T = kotlinx.atomicfu.locks.synchronized(lock, action)

@@ -23,20 +23,22 @@ import kotlin.jvm.JvmInline
  * considered by the [Paragraph.getRangeForRect].
  */
 @JvmInline
-value class TextGranularity private constructor(private val value: Int) {
-    companion object {
+public value class TextGranularity private constructor(private val value: Int) {
+    public companion object {
         /**
          * Character level granularity. The text string will be break into ranges each corresponding
          * to a visual character. e.g. "Hi \uD83D\uDE00" will be break into: 'H', 'i', ' ',
          * '\uD83D\uDE00' (grin face emoji).
          */
-        val Character = TextGranularity(0)
+        public val Character: TextGranularity
+            get() = TextGranularity(0)
 
         /**
          * Word level granularity. The text string will be break into ranges each corresponding to a
          * word. e.g. "Hello world" wil be break into "Hello", "world" the space character is not
          * considered as a word.
          */
-        val Word = TextGranularity(1)
+        public val Word: TextGranularity
+            get() = TextGranularity(1)
     }
 }

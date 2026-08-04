@@ -90,13 +90,13 @@ import kotlinx.coroutines.flow.collectLatest
  */
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
-fun Switch(
+public fun Switch(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    colors: SwitchColors = SwitchDefaults.colors()
+    colors: SwitchColors = SwitchDefaults.colors(),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -119,7 +119,7 @@ fun Switch(
                         true at maxBound
                     },
                 positionalThreshold = { distance -> distance * SwitchPositionalThreshold },
-                velocityThreshold = { switchVelocityThresholdPx }
+                velocityThreshold = { switchVelocityThresholdPx },
             )
         }
     val currentOnCheckedChange by rememberUpdatedState(onCheckedChange)
@@ -147,7 +147,7 @@ fun Switch(
                 enabled = enabled,
                 role = Role.Switch,
                 interactionSource = interactionSource,
-                indication = null
+                indication = null,
             )
         } else {
             Modifier
@@ -169,7 +169,7 @@ fun Switch(
                 enabled = enabled && onCheckedChange != null,
                 reverseDirection = isRtl,
                 interactionSource = interactionSource,
-                startDragImmediately = false
+                startDragImmediately = false,
             )
             .wrapContentSize(Alignment.Center)
             .padding(DefaultSwitchPadding)
@@ -180,7 +180,7 @@ fun Switch(
             enabled = enabled,
             colors = colors,
             thumbValue = { anchoredDraggableState.requireOffset() },
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
     }
 }
@@ -191,7 +191,7 @@ fun Switch(
  * See [SwitchDefaults.colors] for the default implementation that follows Material specifications.
  */
 @Stable
-interface SwitchColors {
+public interface SwitchColors {
 
     /**
      * Represents the color used for the switch's thumb, depending on [enabled] and [checked].
@@ -199,7 +199,7 @@ interface SwitchColors {
      * @param enabled whether the [Switch] is enabled or not
      * @param checked whether the [Switch] is checked or not
      */
-    @Composable fun thumbColor(enabled: Boolean, checked: Boolean): State<Color>
+    @Composable public fun thumbColor(enabled: Boolean, checked: Boolean): State<Color>
 
     /**
      * Represents the color used for the switch's track, depending on [enabled] and [checked].
@@ -207,7 +207,7 @@ interface SwitchColors {
      * @param enabled whether the [Switch] is enabled or not
      * @param checked whether the [Switch] is checked or not
      */
-    @Composable fun trackColor(enabled: Boolean, checked: Boolean): State<Color>
+    @Composable public fun trackColor(enabled: Boolean, checked: Boolean): State<Color>
 }
 
 @Composable
@@ -216,7 +216,7 @@ private fun BoxScope.SwitchImpl(
     enabled: Boolean,
     colors: SwitchColors,
     thumbValue: () -> Float,
-    interactionSource: InteractionSource
+    interactionSource: InteractionSource,
 ) {
     val interactions = remember { mutableStateListOf<Interaction>() }
 
@@ -260,7 +260,7 @@ private fun BoxScope.SwitchImpl(
             .offset { IntOffset(thumbValue().roundToInt(), 0) }
             .indication(
                 interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = ThumbRippleRadius)
+                indication = ripple(bounded = false, radius = ThumbRippleRadius),
             )
             .requiredSize(ThumbDiameter)
             .shadow(elevation, CircleShape, clip = false)
@@ -275,28 +275,38 @@ private fun DrawScope.drawTrack(trackColor: Color, trackWidth: Float, strokeWidt
         Offset(strokeRadius, center.y),
         Offset(trackWidth - strokeRadius, center.y),
         strokeWidth,
-        StrokeCap.Round
+        StrokeCap.Round,
     )
 }
 
-internal val TrackWidth = 34.dp
-internal val TrackStrokeWidth = 14.dp
-internal val ThumbDiameter = 20.dp
+internal val TrackWidth
+    get() = 34.dp
+internal val TrackStrokeWidth
+    get() = 14.dp
+internal val ThumbDiameter
+    get() = 20.dp
 
-private val ThumbRippleRadius = 24.dp
+private val ThumbRippleRadius
+    get() = 24.dp
 
-private val DefaultSwitchPadding = 2.dp
-private val SwitchWidth = TrackWidth
-private val SwitchHeight = ThumbDiameter
-private val ThumbPathLength = TrackWidth - ThumbDiameter
+private val DefaultSwitchPadding
+    get() = 2.dp
+private val SwitchWidth
+    get() = TrackWidth
+private val SwitchHeight
+    get() = ThumbDiameter
+private val ThumbPathLength
+    get() = TrackWidth - ThumbDiameter
 
 private val AnimationSpec = TweenSpec<Float>(durationMillis = 100)
 
-private val ThumbDefaultElevation = 1.dp
-private val ThumbPressedElevation = 6.dp
+private val ThumbDefaultElevation
+    get() = 1.dp
+private val ThumbPressedElevation
+    get() = 6.dp
 
 /** Contains the default values used by [Switch] */
-object SwitchDefaults {
+public object SwitchDefaults {
     /**
      * Creates a [SwitchColors] that represents the different colors used in a [Switch] in different
      * states.
@@ -315,7 +325,7 @@ object SwitchDefaults {
      * @param disabledUncheckedTrackColor the color used for the track when disabled and unchecked
      */
     @Composable
-    fun colors(
+    public fun colors(
         checkedThumbColor: Color = MaterialTheme.colors.secondaryVariant,
         checkedTrackColor: Color = checkedThumbColor,
         checkedTrackAlpha: Float = 0.54f,
@@ -337,7 +347,7 @@ object SwitchDefaults {
         disabledUncheckedTrackColor: Color =
             uncheckedTrackColor
                 .copy(alpha = ContentAlpha.disabled)
-                .compositeOver(MaterialTheme.colors.surface)
+                .compositeOver(MaterialTheme.colors.surface),
     ): SwitchColors =
         DefaultSwitchColors(
             checkedThumbColor = checkedThumbColor,
@@ -348,7 +358,7 @@ object SwitchDefaults {
             disabledCheckedTrackColor = disabledCheckedTrackColor.copy(alpha = checkedTrackAlpha),
             disabledUncheckedThumbColor = disabledUncheckedThumbColor,
             disabledUncheckedTrackColor =
-                disabledUncheckedTrackColor.copy(alpha = uncheckedTrackAlpha)
+                disabledUncheckedTrackColor.copy(alpha = uncheckedTrackAlpha),
         )
 }
 
@@ -362,7 +372,7 @@ private class DefaultSwitchColors(
     private val disabledCheckedThumbColor: Color,
     private val disabledCheckedTrackColor: Color,
     private val disabledUncheckedThumbColor: Color,
-    private val disabledUncheckedTrackColor: Color
+    private val disabledUncheckedTrackColor: Color,
 ) : SwitchColors {
     @Composable
     override fun thumbColor(enabled: Boolean, checked: Boolean): State<Color> {
@@ -418,4 +428,5 @@ private class DefaultSwitchColors(
 }
 
 private const val SwitchPositionalThreshold = 0.7f
-private val SwitchVelocityThreshold = 125.dp
+private val SwitchVelocityThreshold
+    get() = 125.dp

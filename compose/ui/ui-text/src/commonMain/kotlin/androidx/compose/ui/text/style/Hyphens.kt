@@ -16,31 +16,27 @@
 
 package androidx.compose.ui.text.style
 
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.text.internal.requirePrecondition
 import kotlin.jvm.JvmInline
 
 /**
- * Automatic hyphenation configuration.
+ * Automatically hyphenates words when wrapping text.
  *
- * Hyphenation is a dash-like punctuation mark used to join two-words into one or separate
- * syl-lab-les of a word.
+ * Inserts hyphens at syllable boundaries based on language rules.
  *
- * Automatic hyphenation is added between syllables at appropriate hyphenation points, following
- * language rules.
+ * Suggest manual line break opportunities using:
+ * - **Soft hyphen (`\u00AD`)**: Marks a wrapping opportunity. The hyphen is only visible if the
+ *   word wraps at this point.
+ * - **Hard hyphen (`\u2010`)**: Inserts a permanently visible hyphen that also allows wrapping.
  *
- * However, user can override automatic break point selection, suggesting line break opportunities
- * (see Suggesting line break opportunities below).
+ * Default is [Hyphens.None] (no automatic hyphenation).
  *
- * Suggesting line break opportunities:
- * - <code>\u2010</code> ("hard" hyphen) Indicates a visible line break opportunity. Even if the
- *   line is not actually broken at that point, the hyphen is still rendered.
- * - <code>\u00AD</code> ("soft" hyphen) This character is not rendered visibly; instead, it marks a
- *   place where the word can be broken if hyphenation is necessary.
- *
- * The default configuration for [Hyphens] = [Hyphens.None]
+ * @property value internal integer representation of the hyphenation mode.
  */
 @JvmInline
-value class Hyphens private constructor(internal val value: Int) {
-    companion object {
+public value class Hyphens internal constructor(public val value: Int) {
+    public companion object {
         /**
          * Lines will break with no hyphenation.
          *
@@ -54,13 +50,13 @@ value class Hyphens private constructor(internal val value: Int) {
          * +---------+
          * </pre>
          */
-        val None = Hyphens(1)
+        public val None: Hyphens
+            get() = Hyphens(1)
 
         /**
-         * The words will be automatically broken at appropriate hyphenation points.
+         * Breaks words automatically at syllable boundaries.
          *
-         * However, suggested line break opportunities (see Suggesting line break opportunities
-         * above) will override automatic break point selection when present.
+         * Manual suggestions (like soft hyphens) override automatic breaks.
          * <pre>
          * +---------+
          * | Experi- |
@@ -68,20 +64,51 @@ value class Hyphens private constructor(internal val value: Int) {
          * +---------+
          * </pre>
          */
-        val Auto = Hyphens(2)
+        public val Auto: Hyphens
+            get() = Hyphens(2)
+
+        /** Represents an unset [Hyphens] value. */
+        public val Unspecified: Hyphens
+            get() = Hyphens(0)
 
         /**
-         * This represents an unset value, a usual replacement for "null" when a primitive value is
-         * desired.
+         * Creates [Hyphens] from [value].
+         *
+         * Useful for serialization/deserialization.
+         *
+         * @param value internal integer representation.
+         * @throws IllegalArgumentException if [value] is invalid.
+         * @see androidx.compose.ui.text.style.Hyphens.value
          */
-        val Unspecified = Hyphens(Int.MIN_VALUE)
+        public fun valueOf(value: Int): Hyphens {
+            requirePrecondition(value in 0..2) {
+                "The given value=$value is not recognized by Hyphens."
+            }
+            return Hyphens(value)
+        }
     }
 
-    override fun toString() =
+    public override fun toString(): String =
         when (this) {
             None -> "Hyphens.None"
             Auto -> "Hyphens.Auto"
             Unspecified -> "Hyphens.Unspecified"
             else -> "Invalid"
         }
+}
+
+/**
+ * Returns `true` if it is not [Hyphens.Unspecified].
+ *
+ * @see Hyphens.Unspecified
+ */
+public inline val Hyphens.isSpecified: Boolean
+    get() = value != 0
+
+/**
+ * If [isSpecified] is true then this is returned, otherwise [block] is executed and its result is
+ * returned.
+ */
+public inline fun Hyphens.takeOrElse(block: () -> Hyphens): Hyphens {
+    return if (isSpecified) this else block()
 }

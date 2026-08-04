@@ -21,6 +21,7 @@ import android.view.View
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.testutils.ComposeExecutionControl
 import androidx.compose.testutils.ComposeTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
@@ -29,7 +30,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewRootForTest
-import kotlinx.coroutines.runBlocking
 
 internal object NoFlingBehavior : FlingBehavior {
     override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
@@ -79,7 +79,7 @@ class MotionEventHelper(private val view: View) {
                     0,
                     0,
                     0,
-                    0
+                    0,
                 )
                 .apply {
                     offsetLocation(-locationOnScreen[0].toFloat(), -locationOnScreen[1].toFloat())
@@ -101,9 +101,7 @@ internal fun ComposeBenchmarkRule.toggleStateBenchmark(caseFactory: () -> LazyBe
             }
 
             runWithMeasurementDisabled {
-                if (hasPendingChanges() || hasPendingMeasureOrLayout()) {
-                    doFrame()
-                }
+                doFramesUntilNoChangesPending()
                 assertNoPendingRecompositionMeasureOrLayout()
                 getTestCase().beforeToggleCheck()
             }
@@ -123,6 +121,7 @@ internal fun ComposeBenchmarkRule.toggleStateBenchmark(caseFactory: () -> LazyBe
 // we are not measuring, like beforeToggle() and afterToggle().
 private fun ComposeExecutionControl.performToggle(testCase: LazyBenchmarkTestCase) {
     testCase.toggle()
+    Snapshot.sendApplyNotifications()
     if (hasPendingChanges()) {
         recompose()
     }
@@ -175,7 +174,7 @@ internal fun ComposeBenchmarkRule.toggleStateBenchmarkDraw(
 
 abstract class LazyBenchmarkTestCase(
     private val isVertical: Boolean,
-    private val usePointerInput: Boolean
+    private val usePointerInput: Boolean,
 ) : ComposeTestCase {
 
     lateinit var scrollingHelper: ScrollingHelper
@@ -198,7 +197,7 @@ abstract class LazyBenchmarkTestCase(
                     scrollAmount,
                     isVertical,
                     usePointerInput,
-                    ::programmaticScroll
+                    ::programmaticScroll,
                 )
     }
 
@@ -206,7 +205,7 @@ abstract class LazyBenchmarkTestCase(
 
     abstract fun afterToggleCheck()
 
-    abstract suspend fun programmaticScroll(amount: Int)
+    abstract fun programmaticScroll(amount: Int)
 
     // first instruction to run in the before toggle cycle
     abstract fun setUp()
@@ -222,7 +221,7 @@ class ScrollingHelper(
     val scrollAmount: Int,
     private val isVertical: Boolean,
     private val usePointerInput: Boolean,
-    private val programmaticScroll: suspend (scrollAmount: Int) -> Unit
+    private val programmaticScroll: (scrollAmount: Int) -> Unit,
 ) {
 
     fun onScroll() {
@@ -233,11 +232,11 @@ class ScrollingHelper(
             motionEventHelper.sendEvent(MotionEvent.ACTION_MOVE, touchSlop.toSingleAxisOffset())
             motionEventHelper.sendEvent(
                 MotionEvent.ACTION_MOVE,
-                -scrollAmount.toFloat().toSingleAxisOffset()
+                -scrollAmount.toFloat().toSingleAxisOffset(),
             )
             motionEventHelper.sendEvent(MotionEvent.ACTION_UP, Offset.Zero)
         } else {
-            runBlocking { programmaticScroll.invoke(scrollAmount) }
+            programmaticScroll.invoke(scrollAmount)
         }
     }
 

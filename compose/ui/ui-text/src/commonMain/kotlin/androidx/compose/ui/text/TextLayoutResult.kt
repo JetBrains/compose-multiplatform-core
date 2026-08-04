@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
@@ -33,14 +34,14 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 
-/** The data class which holds the set of parameters of the text layout computation. */
-class TextLayoutInput
+/** Holds parameters used to compute text layout. */
+public class TextLayoutInput
 private constructor(
     /** The text used for computing text layout. */
-    val text: AnnotatedString,
+    public val text: AnnotatedString,
 
     /** The text layout used for computing this text layout. */
-    val style: TextStyle,
+    public val style: TextStyle,
 
     /**
      * A list of [Placeholder]s inserted into text layout that reserves space to embed icons or
@@ -51,22 +52,22 @@ private constructor(
      * @see MultiParagraph
      * @see MultiParagraphIntrinsics
      */
-    val placeholders: List<AnnotatedString.Range<Placeholder>>,
+    public val placeholders: List<AnnotatedString.Range<Placeholder>>,
 
     /** The maxLines param used for computing this text layout. */
-    val maxLines: Int,
+    public val maxLines: Int,
 
     /** The maxLines param used for computing this text layout. */
-    val softWrap: Boolean,
+    public val softWrap: Boolean,
 
     /** The overflow param used for computing this text layout */
-    val overflow: TextOverflow,
+    public val overflow: TextOverflow,
 
     /** The density param used for computing this text layout. */
-    val density: Density,
+    public val density: Density,
 
     /** The layout direction used for computing this text layout. */
-    val layoutDirection: LayoutDirection,
+    public val layoutDirection: LayoutDirection,
 
     /**
      * The font resource loader used for computing this text layout.
@@ -78,10 +79,10 @@ private constructor(
     @Suppress("DEPRECATION") resourceLoader: Font.ResourceLoader?,
 
     /** The font resolver used for computing this text layout. */
-    val fontFamilyResolver: FontFamily.Resolver,
+    public val fontFamilyResolver: FontFamily.Resolver,
 
     /** The minimum width provided while calculating this text layout. */
-    val constraints: Constraints
+    public val constraints: Constraints,
 ) {
 
     private var _developerSuppliedResourceLoader = resourceLoader
@@ -90,7 +91,7 @@ private constructor(
         replaceWith = ReplaceWith("fontFamilyResolver"),
     )
     @Suppress("DEPRECATION")
-    val resourceLoader: Font.ResourceLoader
+    public val resourceLoader: Font.ResourceLoader
         get() {
             return _developerSuppliedResourceLoader
                 ?: DeprecatedBridgeFontResourceLoader.from(fontFamilyResolver)
@@ -103,10 +104,10 @@ private constructor(
                 "TextLayoutInput(text, style, placeholders, " +
                     "maxLines, softWrap, overflow, density, layoutDirection, fontFamilyResolver, " +
                     "constraints"
-            )
+            ),
     )
     @Suppress("DEPRECATION")
-    constructor(
+    public constructor(
         text: AnnotatedString,
         style: TextStyle,
         placeholders: List<AnnotatedString.Range<Placeholder>>,
@@ -116,7 +117,7 @@ private constructor(
         density: Density,
         layoutDirection: LayoutDirection,
         resourceLoader: Font.ResourceLoader,
-        constraints: Constraints
+        constraints: Constraints,
     ) : this(
         text,
         style,
@@ -128,10 +129,10 @@ private constructor(
         layoutDirection,
         resourceLoader,
         createFontFamilyResolver(resourceLoader),
-        constraints
+        constraints,
     )
 
-    constructor(
+    public constructor(
         text: AnnotatedString,
         style: TextStyle,
         placeholders: List<AnnotatedString.Range<Placeholder>>,
@@ -141,7 +142,7 @@ private constructor(
         density: Density,
         layoutDirection: LayoutDirection,
         fontFamilyResolver: FontFamily.Resolver,
-        constraints: Constraints
+        constraints: Constraints,
     ) : this(
         text,
         style,
@@ -153,7 +154,7 @@ private constructor(
         layoutDirection,
         @Suppress("DEPRECATION") null,
         fontFamilyResolver,
-        constraints
+        constraints,
     )
 
     @Deprecated(
@@ -163,14 +164,14 @@ private constructor(
                 "TextLayoutInput(text, style, placeholders," +
                     " maxLines, softWrap, overFlow, density, layoutDirection, fontFamilyResolver, " +
                     "constraints)"
-            )
+            ),
     )
     // Unfortunately, there's no way to deprecate and add a parameter to a copy chain such that the
     // resolution is valid.
     //
     // However, as this was never intended to be a public function we will not replace it. There is
     // no use case for calling this method directly.
-    fun copy(
+    public fun copy(
         text: AnnotatedString = this.text,
         style: TextStyle = this.style,
         placeholders: List<AnnotatedString.Range<Placeholder>> = this.placeholders,
@@ -180,7 +181,7 @@ private constructor(
         density: Density = this.density,
         layoutDirection: LayoutDirection = this.layoutDirection,
         @Suppress("DEPRECATION") resourceLoader: Font.ResourceLoader = this.resourceLoader,
-        constraints: Constraints = this.constraints
+        constraints: Constraints = this.constraints,
     ): TextLayoutInput {
         return TextLayoutInput(
             text = text,
@@ -193,11 +194,11 @@ private constructor(
             layoutDirection = layoutDirection,
             resourceLoader = resourceLoader,
             fontFamilyResolver = fontFamilyResolver,
-            constraints = constraints
+            constraints = constraints,
         )
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TextLayoutInput) return false
 
@@ -215,7 +216,7 @@ private constructor(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = text.hashCode()
         result = 31 * result + style.hashCode()
         result = 31 * result + placeholders.hashCode()
@@ -229,7 +230,7 @@ private constructor(
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "TextLayoutInput(" +
             "text=$text, " +
             "style=$style, " +
@@ -267,7 +268,7 @@ private constructor(private val fontFamilyResolver: FontFamily.Resolver) : Font.
         // If this map is found to be large in profiling of an app, please modify your code to not
         // call getFontResourceLoader, and evaluate if FontFamily.Resolver is being correctly cached
         // (via e.g. remember)
-        var cache = mutableMapOf<FontFamily.Resolver, Font.ResourceLoader>()
+        var cache = mutableScatterMapOf<FontFamily.Resolver, Font.ResourceLoader>()
         val lock: SynchronizedObject = makeSynchronizedObject()
 
         fun from(fontFamilyResolver: FontFamily.Resolver): Font.ResourceLoader {
@@ -286,38 +287,38 @@ private constructor(private val fontFamilyResolver: FontFamily.Resolver) : Font.
     }
 }
 
-/** The data class which holds text layout result. */
-class TextLayoutResult
-constructor(
-    /** The parameters used for computing this text layout result. */
-    val layoutInput: TextLayoutInput,
+/** Holds the result of a text layout computation. */
+public class TextLayoutResult
+public constructor(
+    /** The input parameters used for this layout. */
+    public val layoutInput: TextLayoutInput,
+
+    /** The computed [MultiParagraph] layout. */
+    public val multiParagraph: MultiParagraph,
 
     /**
-     * The multi paragraph object.
+     * The width and height of this text layout.
      *
-     * This is the result of the text layout computation.
+     * Unlike [multiParagraph] dimensions, this size respects the input constraints.
      */
-    val multiParagraph: MultiParagraph,
-
-    /** The amount of space required to paint this text in Int. */
-    val size: IntSize
+    public val size: IntSize,
 ) {
     /** The distance from the top to the alphabetic baseline of the first line. */
-    val firstBaseline: Float = multiParagraph.firstBaseline
+    public val firstBaseline: Float = multiParagraph.firstBaseline
 
     /** The distance from the top to the alphabetic baseline of the last line. */
-    val lastBaseline: Float = multiParagraph.lastBaseline
+    public val lastBaseline: Float = multiParagraph.lastBaseline
 
-    /** Returns true if the text is too tall and couldn't fit with given height. */
-    val didOverflowHeight: Boolean
+    /** True if the text height exceeds the layout boundaries. */
+    public val didOverflowHeight: Boolean
         get() = multiParagraph.didExceedMaxLines || size.height < multiParagraph.height
 
-    /** Returns true if the text is too wide and couldn't fit with given width. */
-    val didOverflowWidth: Boolean
+    /** True if the text width exceeds the layout boundaries. */
+    public val didOverflowWidth: Boolean
         get() = size.width < multiParagraph.width
 
-    /** Returns true if either vertical overflow or horizontal overflow happens. */
-    val hasVisualOverflow: Boolean
+    /** True if the text overflows vertically or horizontally. */
+    public val hasVisualOverflow: Boolean
         get() = didOverflowWidth || didOverflowHeight
 
     /**
@@ -330,10 +331,10 @@ constructor(
      * @see TextLayoutInput.placeholders
      * @see Placeholder
      */
-    val placeholderRects: List<Rect?> = multiParagraph.placeholderRects
+    public val placeholderRects: List<Rect?> = multiParagraph.placeholderRects
 
     /** Returns a number of lines of this text layout */
-    val lineCount: Int
+    public val lineCount: Int
         get() = multiParagraph.lineCount
 
     /**
@@ -351,7 +352,7 @@ constructor(
      * @param lineIndex the line number
      * @return the start offset of the line
      */
-    fun getLineStart(lineIndex: Int): Int = multiParagraph.getLineStart(lineIndex)
+    public fun getLineStart(lineIndex: Int): Int = multiParagraph.getLineStart(lineIndex)
 
     /**
      * Returns the end offset of the given line.
@@ -374,7 +375,7 @@ constructor(
      *   it's false.
      * @return an exclusive end offset of the line.
      */
-    fun getLineEnd(lineIndex: Int, visibleEnd: Boolean = false): Int =
+    public fun getLineEnd(lineIndex: Int, visibleEnd: Boolean = false): Int =
         multiParagraph.getLineEnd(lineIndex, visibleEnd)
 
     /**
@@ -383,7 +384,8 @@ constructor(
      * @param lineIndex a 0 based line index
      * @return true if the given line is ellipsized, otherwise false
      */
-    fun isLineEllipsized(lineIndex: Int): Boolean = multiParagraph.isLineEllipsized(lineIndex)
+    public fun isLineEllipsized(lineIndex: Int): Boolean =
+        multiParagraph.isLineEllipsized(lineIndex)
 
     /**
      * Returns the top y coordinate of the given line.
@@ -391,13 +393,13 @@ constructor(
      * @param lineIndex the line number
      * @return the line top y coordinate
      */
-    fun getLineTop(lineIndex: Int): Float = multiParagraph.getLineTop(lineIndex)
+    public fun getLineTop(lineIndex: Int): Float = multiParagraph.getLineTop(lineIndex)
 
     /**
      * Returns the distance in pixels from the top of the text layout to the alphabetic baseline of
      * the line at index [lineIndex].
      */
-    fun getLineBaseline(lineIndex: Int): Float = multiParagraph.getLineBaseline(lineIndex)
+    public fun getLineBaseline(lineIndex: Int): Float = multiParagraph.getLineBaseline(lineIndex)
 
     /**
      * Returns the bottom y coordinate of the given line.
@@ -405,7 +407,7 @@ constructor(
      * @param lineIndex the line number
      * @return the line bottom y coordinate
      */
-    fun getLineBottom(lineIndex: Int): Float = multiParagraph.getLineBottom(lineIndex)
+    public fun getLineBottom(lineIndex: Int): Float = multiParagraph.getLineBottom(lineIndex)
 
     /**
      * Returns the left x coordinate of the given line.
@@ -413,7 +415,7 @@ constructor(
      * @param lineIndex the line number
      * @return the line left x coordinate
      */
-    fun getLineLeft(lineIndex: Int): Float = multiParagraph.getLineLeft(lineIndex)
+    public fun getLineLeft(lineIndex: Int): Float = multiParagraph.getLineLeft(lineIndex)
 
     /**
      * Returns the right x coordinate of the given line.
@@ -421,7 +423,7 @@ constructor(
      * @param lineIndex the line number
      * @return the line right x coordinate
      */
-    fun getLineRight(lineIndex: Int): Float = multiParagraph.getLineRight(lineIndex)
+    public fun getLineRight(lineIndex: Int): Float = multiParagraph.getLineRight(lineIndex)
 
     /**
      * Returns the line number on which the specified text offset appears.
@@ -432,7 +434,7 @@ constructor(
      * @param offset a character offset
      * @return the 0 origin line number.
      */
-    fun getLineForOffset(offset: Int): Int = multiParagraph.getLineForOffset(offset)
+    public fun getLineForOffset(offset: Int): Int = multiParagraph.getLineForOffset(offset)
 
     /**
      * Returns line number closest to the given graphical vertical position.
@@ -443,7 +445,7 @@ constructor(
      * @param vertical the vertical position
      * @return the 0 origin line number.
      */
-    fun getLineForVerticalPosition(vertical: Float): Int =
+    public fun getLineForVerticalPosition(vertical: Float): Int =
         multiParagraph.getLineForVerticalPosition(vertical)
 
     /**
@@ -464,7 +466,7 @@ constructor(
      * @return the relative distance from the text starting edge.
      * @see MultiParagraph.getHorizontalPosition
      */
-    fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float =
+    public fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float =
         multiParagraph.getHorizontalPosition(offset, usePrimaryDirection)
 
     /**
@@ -473,7 +475,7 @@ constructor(
      * @param offset a character offset
      * @return the paragraph direction
      */
-    fun getParagraphDirection(offset: Int): ResolvedTextDirection =
+    public fun getParagraphDirection(offset: Int): ResolvedTextDirection =
         multiParagraph.getParagraphDirection(offset)
 
     /**
@@ -483,7 +485,7 @@ constructor(
      * @param offset a character offset
      * @return the direction of the BiDi run of the given character offset.
      */
-    fun getBidiRunDirection(offset: Int): ResolvedTextDirection =
+    public fun getBidiRunDirection(offset: Int): ResolvedTextDirection =
         multiParagraph.getBidiRunDirection(offset)
 
     /**
@@ -492,7 +494,8 @@ constructor(
      * @param position a graphical position in this text layout
      * @return a character offset that is closest to the given graphical position.
      */
-    fun getOffsetForPosition(position: Offset): Int = multiParagraph.getOffsetForPosition(position)
+    public fun getOffsetForPosition(position: Offset): Int =
+        multiParagraph.getOffsetForPosition(position)
 
     /**
      * Returns the bounding box of the character for given character offset.
@@ -500,7 +503,7 @@ constructor(
      * @param offset a character offset
      * @return a bounding box for the character in pixels.
      */
-    fun getBoundingBox(offset: Int): Rect = multiParagraph.getBoundingBox(offset)
+    public fun getBoundingBox(offset: Int): Rect = multiParagraph.getBoundingBox(offset)
 
     /**
      * Returns the text range of the word at the given character offset.
@@ -512,7 +515,7 @@ constructor(
      * Word boundaries are defined more precisely in Unicode Standard Annex #29
      * <http://www.unicode.org/reports/tr29/#Word_Boundaries>.
      */
-    fun getWordBoundary(offset: Int): TextRange = multiParagraph.getWordBoundary(offset)
+    public fun getWordBoundary(offset: Int): TextRange = multiParagraph.getWordBoundary(offset)
 
     /**
      * Returns the rectangle of the cursor area
@@ -520,7 +523,7 @@ constructor(
      * @param offset An character offset of the cursor
      * @return a rectangle of cursor region
      */
-    fun getCursorRect(offset: Int): Rect = multiParagraph.getCursorRect(offset)
+    public fun getCursorRect(offset: Int): Rect = multiParagraph.getCursorRect(offset)
 
     /**
      * Returns path that enclose the given text range.
@@ -529,20 +532,21 @@ constructor(
      * @param end an exclusive end character offset
      * @return a drawing path
      */
-    fun getPathForRange(start: Int, end: Int): Path = multiParagraph.getPathForRange(start, end)
+    public fun getPathForRange(start: Int, end: Int): Path =
+        multiParagraph.getPathForRange(start, end)
 
-    fun copy(
+    public fun copy(
         layoutInput: TextLayoutInput = this.layoutInput,
-        size: IntSize = this.size
+        size: IntSize = this.size,
     ): TextLayoutResult {
         return TextLayoutResult(
             layoutInput = layoutInput,
             multiParagraph = multiParagraph,
-            size = size
+            size = size,
         )
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TextLayoutResult) return false
 
@@ -556,7 +560,7 @@ constructor(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = layoutInput.hashCode()
         result = 31 * result + multiParagraph.hashCode()
         result = 31 * result + size.hashCode()
@@ -566,7 +570,7 @@ constructor(
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "TextLayoutResult(" +
             "layoutInput=$layoutInput, " +
             "multiParagraph=$multiParagraph, " +

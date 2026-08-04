@@ -21,7 +21,6 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
@@ -37,7 +36,6 @@ import androidx.camera.core.TorchState
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
@@ -70,17 +68,11 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 35)
 class LowLightBoostDeviceTest(
-    private val selectorName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
-
     @get:Rule
     val cameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
@@ -137,7 +129,8 @@ class LowLightBoostDeviceTest(
     @LabTestRule.LabTestRearCamera
     fun turnsOnLowLightBoost_willTurnsOffTorch() {
         assumeTrue(
-            cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA && camera.cameraInfo.hasFlashUnit()
+            cameraSelector.lensFacing == CameraSelector.LENS_FACING_BACK &&
+                camera.cameraInfo.hasFlashUnit()
         )
 
         // Binds a Preview
@@ -160,7 +153,8 @@ class LowLightBoostDeviceTest(
     @Test
     fun turnsOnTorchThrowsException_whenLowLightBoostIsOn() {
         assumeTrue(
-            cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA && camera.cameraInfo.hasFlashUnit()
+            cameraSelector.lensFacing == CameraSelector.LENS_FACING_BACK &&
+                camera.cameraInfo.hasFlashUnit()
         )
 
         // Binds a Preview
@@ -229,13 +223,13 @@ class LowLightBoostDeviceTest(
     }
 
     @Test
-    fun turnsOnLowLightBoostThrowsException_when10BitDynamicRangeIsOn() {
+    fun canTurnsOnLowLightBoost_when10BitDynamicRangeIsOn() {
         // Finds 10-bit supported dynamic ranges
         val candidate10BitDynamicRanges =
             setOf(
                 DynamicRange.HLG_10_BIT,
                 DynamicRange.HDR10_10_BIT,
-                DynamicRange.DOLBY_VISION_10_BIT
+                DynamicRange.DOLBY_VISION_10_BIT,
             )
         val supported10BitDynamicRange =
             camera.cameraInfo.querySupportedDynamicRanges(candidate10BitDynamicRanges).firstOrNull()
@@ -250,10 +244,9 @@ class LowLightBoostDeviceTest(
             assumeTrue(preview.attachedStreamSpec!!.dynamicRange == supported10BitDynamicRange)
         }
 
-        // Checks that ExecutionException will be thrown after turning low-light boost on
-        assertThrows<ExecutionException> {
-            camera.cameraControl.enableLowLightBoostAsync(true)[1, TimeUnit.SECONDS]
-        }
+        // Enables low-light boost
+        camera.cameraControl.enableLowLightBoostAsync(true)[1, TimeUnit.SECONDS]
+        verifyLowLightBoostOnStatesReceived()
     }
 
     @Test
@@ -289,7 +282,7 @@ class LowLightBoostDeviceTest(
                     error = exception
                     capturedCountDownLatch.countDown()
                 }
-            }
+            },
         )
 
         // Checks the image is captured successfully with flash state NOT_FIRED
@@ -381,33 +374,20 @@ class LowLightBoostDeviceTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "selector={0},config={2}")
+        @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                ),
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
-                ),
-                arrayOf(
-                    "front",
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                )
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 }

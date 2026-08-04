@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.wear.protolayout.modifiers
 
 import android.annotation.SuppressLint
@@ -57,7 +59,7 @@ public fun LayoutModifier.enterTransition(transition: EnterTransition): LayoutMo
         transition.fadeIn?.let { FadeInTransition.fromProto(it.toProto(), transition.fingerprint) },
         transition.slideIn?.let {
             SlideInTransition.fromProto(it.toProto(), transition.fingerprint)
-        }
+        },
     )
 
 /**
@@ -93,7 +95,7 @@ public fun LayoutModifier.exitTransition(transition: ExitTransition): LayoutModi
         },
         transition.slideOut?.let {
             SlideOutTransition.fromProto(it.toProto(), transition.fingerprint)
-        }
+        },
     )
 
 @RequiresSchemaVersion(major = 1, minor = 200)

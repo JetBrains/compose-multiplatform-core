@@ -20,13 +20,15 @@ import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
 
 /**
- * This is similar to a [ThreadLocal] but has lower overhead because it avoids a weak reference.
- * This should only be used when the writes are delimited by a try...finally call that will clean up
- * the reference such as [androidx.compose.runtime.snapshots.Snapshot.enter] else the reference
- * could get pinned by the thread local causing a leak.
+ * This is similar to a
+ * [java.lang.ThreadLocal](https://developer.android.com/reference/java/lang/ThreadLocal) but has
+ * lower overhead because it avoids a weak reference. This should only be used when the writes are
+ * delimited by a try...finally call that will clean up the reference such as
+ * [androidx.compose.runtime.snapshots.Snapshot.enter] else the reference could get pinned by the
+ * thread local causing a leak.
  *
- * [ThreadLocal] can be used to implement the actual for platforms that do not exhibit the same
- * overhead for thread locals as the JVM and ART.
+ * [kotlin.native.concurrent.ThreadLocal] can be used to implement the actual for platforms that do
+ * not exhibit the same overhead for thread locals as the JVM and ART.
  */
 internal class SnapshotThreadLocal<T> {
     private val map = AtomicReference(emptyThreadMap)
@@ -61,7 +63,7 @@ internal class SnapshotThreadLocal<T> {
 internal class ThreadMap(
     private val size: Int,
     private val keys: LongArray,
-    private val values: Array<Any?>
+    private val values: Array<Any?>,
 ) {
     fun get(key: Long): Any? {
         val index = find(key)

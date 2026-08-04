@@ -18,10 +18,8 @@
 
 package androidx.compose.ui.node
 
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Density
@@ -29,37 +27,39 @@ import androidx.compose.ui.unit.Density
 /**
  * The marker interface to be implemented by the root backing the composition. To be used in tests.
  */
-interface RootForTest {
+public interface RootForTest {
     /** Current device density. */
-    val density: Density
+    public val density: Density
 
     /** Semantics owner for this root. Manages all the semantics nodes. */
-    val semanticsOwner: SemanticsOwner
+    public val semanticsOwner: SemanticsOwner
 
     /** The service handling text input. */
-    @Deprecated("Use PlatformTextInputModifierNode instead.") val textInputService: TextInputService
+    @Deprecated("Use PlatformTextInputModifierNode instead.")
+    public val textInputService: TextInputService
 
     /**
      * Send this [KeyEvent] to the focused component in this [Owner].
      *
      * @return true if the event was consumed. False otherwise.
      */
-    fun sendKeyEvent(keyEvent: KeyEvent): Boolean
+    public fun sendKeyEvent(keyEvent: KeyEvent): Boolean
 
     /**
-     * Send this [IndirectTouchEvent] to the focused component in this [Owner].
+     * Sends [IndirectPointerEvent] to the focused component in this [Owner] for testing. In most
+     * cases, you should use the indirect testing APIs provided in ui-test. See
+     * [androidx.compose.ui.test.IndirectPointerInjectionScope] for more information.
      *
      * @return true if the event was consumed. False otherwise.
      */
-    @ExperimentalComposeUiApi
-    fun sendIndirectTouchEvent(indirectTouchEvent: IndirectTouchEvent): Boolean = false
+    public fun sendIndirectPointerEvent(indirectPointerEvent: IndirectPointerEvent): Boolean = false
 
     /**
      * Force accessibility to be enabled for testing.
      *
      * @param enable force enable accessibility if true.
      */
-    fun forceAccessibilityForTesting(enable: Boolean) {}
+    public fun forceAccessibilityForTesting(enable: Boolean) {}
 
     /**
      * Set the time interval between sending accessibility events in milliseconds.
@@ -69,7 +69,7 @@ interface RootForTest {
      * batches. A recurring event will be sent at most once during the [intervalMillis] timeframe.
      * The default time delay is 100 milliseconds.
      */
-    fun setAccessibilityEventBatchIntervalMillis(intervalMillis: Long) {}
+    public fun setAccessibilityEventBatchIntervalMillis(intervalMillis: Long) {}
 
     /**
      * Requests another layout (measure + placement) pass be performed for any nodes that need it.
@@ -81,7 +81,24 @@ interface RootForTest {
      * fast as possible (i.e. without waiting for the choreographer to schedule them) in order to
      * get to idle, e.g. during a `waitForIdle` call.
      */
-    fun measureAndLayoutForTest() {}
+    public fun measureAndLayoutForTest() {}
+
+    /**
+     * Recalculates semantic node bounds for previously measured and laid out nodes.
+     *
+     * This method is used in benchmarks to isolate semantics update that is usually performed out
+     * of frame.
+     */
+    public fun updateSemanticsForTest() {}
+
+    /**
+     * Unregisters callbacks scheduled by delegating to the event queue (e.g. Handler on Android)
+     * and runs them immediately.
+     *
+     * This method is used to ensure that root instance does not leak when the event queue is not
+     * drained.
+     */
+    public fun runAndClearPendingCallbacks() {}
 
     /**
      * Sets the [UncaughtExceptionHandler] callback to dispatch layout, measure, and draw exceptions
@@ -94,7 +111,7 @@ interface RootForTest {
      * exception handler is overwritten, it may lead to unhandled exceptions crashing the
      * instrumented process and terminating the entire test suite early.
      */
-    fun setUncaughtExceptionHandler(handler: UncaughtExceptionHandler?) {
+    public fun setUncaughtExceptionHandler(handler: UncaughtExceptionHandler?) {
         // Not implemented.
     }
 
@@ -109,7 +126,7 @@ interface RootForTest {
      * This interface should generally not be used in production, and is intended for error routing
      * or introspection rather than true error recovery.
      */
-    interface UncaughtExceptionHandler {
+    public interface UncaughtExceptionHandler {
         /**
          * Invoked for testing infrastructure to be able to redirect an exception [t] that occurred
          * during the layout, measure, or draw phase of the underlying view. When this function is
@@ -124,6 +141,6 @@ interface RootForTest {
          * @param t The exception thrown by the composition hierarchy during the layout, measure, or
          *   draw phase of the associated view.
          */
-        fun onUncaughtException(t: Throwable)
+        public fun onUncaughtException(t: Throwable)
     }
 }

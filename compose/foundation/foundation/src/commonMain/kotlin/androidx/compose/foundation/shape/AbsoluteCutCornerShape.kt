@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -37,27 +38,27 @@ import androidx.compose.ui.unit.dp
  * @param bottomRight a size of the bottom right corner
  * @param bottomLeft a size of the bottom left corner
  */
-class AbsoluteCutCornerShape(
+public class AbsoluteCutCornerShape(
     topLeft: CornerSize,
     topRight: CornerSize,
     bottomRight: CornerSize,
-    bottomLeft: CornerSize
+    bottomLeft: CornerSize,
 ) :
     CornerBasedShape(
         topStart = topLeft,
         topEnd = topRight,
         bottomEnd = bottomRight,
-        bottomStart = bottomLeft
+        bottomStart = bottomLeft,
     ) {
 
-    override fun createOutline(
+    public override fun createOutline(
         size: Size,
         topStart: Float,
         topEnd: Float,
         bottomEnd: Float,
         bottomStart: Float,
-        layoutDirection: LayoutDirection
-    ) =
+        layoutDirection: LayoutDirection,
+    ): Outline =
         if (topStart + topEnd + bottomStart + bottomEnd == 0.0f) {
             Outline.Rectangle(size.toRect())
         } else
@@ -79,25 +80,25 @@ class AbsoluteCutCornerShape(
                 }
             )
 
-    override fun copy(
+    public override fun copy(
         topStart: CornerSize,
         topEnd: CornerSize,
         bottomEnd: CornerSize,
-        bottomStart: CornerSize
-    ) =
+        bottomStart: CornerSize,
+    ): AbsoluteCutCornerShape =
         AbsoluteCutCornerShape(
             topLeft = topStart,
             topRight = topEnd,
             bottomRight = bottomEnd,
-            bottomLeft = bottomStart
+            bottomLeft = bottomStart,
         )
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "AbsoluteCutCornerShape(topLeft = $topStart, topRight = $topEnd, bottomRight = " +
             "$bottomEnd, bottomLeft = $bottomStart)"
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is AbsoluteCutCornerShape) return false
 
@@ -109,13 +110,37 @@ class AbsoluteCutCornerShape(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = topStart.hashCode()
         result = 31 * result + topEnd.hashCode()
         result = 31 * result + bottomEnd.hashCode()
         result = 31 * result + bottomStart.hashCode()
         return result
     }
+
+    public override fun lerp(other: Any?, t: Float): Any? {
+        var other: Any? = other
+        if (other == RectangleShape || other == null) {
+            other = AbsoluteCutCornerShape(0f)
+        }
+        if (other is AbsoluteCutCornerShape) {
+            return lerp(this, other, t)
+        }
+        return null
+    }
+}
+
+internal fun lerp(
+    a: AbsoluteCutCornerShape,
+    b: AbsoluteCutCornerShape,
+    t: Float,
+): AbsoluteCutCornerShape {
+    return AbsoluteCutCornerShape(
+        lerp(a.topStart, b.topStart, t),
+        lerp(a.topEnd, b.topEnd, t),
+        lerp(a.bottomEnd, b.bottomEnd, t),
+        lerp(a.bottomStart, b.bottomStart, t),
+    )
 }
 
 /**
@@ -123,7 +148,7 @@ class AbsoluteCutCornerShape(
  *
  * @param corner [CornerSize] to apply.
  */
-fun AbsoluteCutCornerShape(corner: CornerSize) =
+public fun AbsoluteCutCornerShape(corner: CornerSize): AbsoluteCutCornerShape =
     AbsoluteCutCornerShape(corner, corner, corner, corner)
 
 /**
@@ -131,48 +156,51 @@ fun AbsoluteCutCornerShape(corner: CornerSize) =
  *
  * @param size Size in [Dp] to apply.
  */
-fun AbsoluteCutCornerShape(size: Dp) = AbsoluteCutCornerShape(CornerSize(size))
+public fun AbsoluteCutCornerShape(size: Dp): AbsoluteCutCornerShape =
+    AbsoluteCutCornerShape(CornerSize(size))
 
 /**
  * Creates [AbsoluteCutCornerShape] with the same size applied for all four corners.
  *
  * @param size Size in pixels to apply.
  */
-fun AbsoluteCutCornerShape(size: Float) = AbsoluteCutCornerShape(CornerSize(size))
+public fun AbsoluteCutCornerShape(size: Float): AbsoluteCutCornerShape =
+    AbsoluteCutCornerShape(CornerSize(size))
 
 /**
  * Creates [AbsoluteCutCornerShape] with the same size applied for all four corners.
  *
  * @param percent Size in percents to apply.
  */
-fun AbsoluteCutCornerShape(percent: Int) = AbsoluteCutCornerShape(CornerSize(percent))
+public fun AbsoluteCutCornerShape(percent: Int): AbsoluteCutCornerShape =
+    AbsoluteCutCornerShape(CornerSize(percent))
 
 /** Creates [AbsoluteCutCornerShape] with sizes defined in [Dp]. */
-fun AbsoluteCutCornerShape(
+public fun AbsoluteCutCornerShape(
     topLeft: Dp = 0.dp,
     topRight: Dp = 0.dp,
     bottomRight: Dp = 0.dp,
-    bottomLeft: Dp = 0.dp
-) =
+    bottomLeft: Dp = 0.dp,
+): AbsoluteCutCornerShape =
     AbsoluteCutCornerShape(
         topLeft = CornerSize(topLeft),
         topRight = CornerSize(topRight),
         bottomRight = CornerSize(bottomRight),
-        bottomLeft = CornerSize(bottomLeft)
+        bottomLeft = CornerSize(bottomLeft),
     )
 
 /** Creates [AbsoluteCutCornerShape] with sizes defined in float. */
-fun AbsoluteCutCornerShape(
+public fun AbsoluteCutCornerShape(
     topLeft: Float = 0.0f,
     topRight: Float = 0.0f,
     bottomRight: Float = 0.0f,
-    bottomLeft: Float = 0.0f
-) =
+    bottomLeft: Float = 0.0f,
+): AbsoluteCutCornerShape =
     AbsoluteCutCornerShape(
         topLeft = CornerSize(topLeft),
         topRight = CornerSize(topRight),
         bottomRight = CornerSize(bottomRight),
-        bottomLeft = CornerSize(bottomLeft)
+        bottomLeft = CornerSize(bottomLeft),
     )
 
 /**
@@ -187,15 +215,15 @@ fun AbsoluteCutCornerShape(
  * @param bottomLeftPercent The bottom left clip size radius as a percentage of the smaller side,
  *   with a range of 0 - 100.
  */
-fun AbsoluteCutCornerShape(
+public fun AbsoluteCutCornerShape(
     @IntRange(from = 0, to = 100) topLeftPercent: Int = 0,
     @IntRange(from = 0, to = 100) topRightPercent: Int = 0,
     @IntRange(from = 0, to = 100) bottomRightPercent: Int = 0,
-    @IntRange(from = 0, to = 100) bottomLeftPercent: Int = 0
-) =
+    @IntRange(from = 0, to = 100) bottomLeftPercent: Int = 0,
+): AbsoluteCutCornerShape =
     AbsoluteCutCornerShape(
         topLeft = CornerSize(topLeftPercent),
         topRight = CornerSize(topRightPercent),
         bottomRight = CornerSize(bottomRightPercent),
-        bottomLeft = CornerSize(bottomLeftPercent)
+        bottomLeft = CornerSize(bottomLeftPercent),
     )

@@ -51,7 +51,7 @@ class ColorStateListLoadingDetectorTest {
                    ResourceLoader().getColorStateList(R.color.color_state_list)
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -63,7 +63,7 @@ class ColorStateListLoadingDetectorTest {
                 Stubs.APPCOMPAT_ACTIVITY,
                 Stubs.APPCOMPAT_RESOURCES,
                 Stubs.COLOR_STATE_LIST,
-                customActivity
+                customActivity,
             )
             .issues(ColorStateListLoadingDetector.NOT_USING_COMPAT_LOADING)
             .addTestModes(TestMode.DEFAULT, TestMode.PARTIAL)
@@ -87,7 +87,7 @@ class ColorStateListLoadingDetectorTest {
                     getResources().getColorStateList(R.color.color_state_list)
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -110,7 +110,7 @@ class ColorStateListLoadingDetectorTest {
                         <activity android:name=".CustomActivity"/>
                     </application>
                 </manifest>
-            """
+                """
                     .trimIndent()
             )
 
@@ -124,10 +124,10 @@ class ColorStateListLoadingDetectorTest {
             .run()
             .expect(
                 """
-src/com/example/CustomActivity.kt:8: Warning: Use ContextCompat.getColorStateList() [UseCompatLoadingForColorStateLists]
-        getResources().getColorStateList(R.color.color_state_list)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                src/com/example/CustomActivity.kt:8: Warning: Use ContextCompat.getColorStateList() [UseCompatLoadingForColorStateLists]
+                        getResources().getColorStateList(R.color.color_state_list)
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )
@@ -149,7 +149,7 @@ src/com/example/CustomActivity.kt:8: Warning: Use ContextCompat.getColorStateLis
                     getResources().getColorStateList(R.color.color_state_list)
                 }
             }
-            """
+            """,
                 )
                 .indented()
                 .within("src")
@@ -172,7 +172,7 @@ src/com/example/CustomActivity.kt:8: Warning: Use ContextCompat.getColorStateLis
                         <activity android:name=".CustomActivity"/>
                     </application>
                 </manifest>
-            """
+                """
                     .trimIndent()
             )
 
@@ -186,10 +186,10 @@ src/com/example/CustomActivity.kt:8: Warning: Use ContextCompat.getColorStateLis
             .run()
             .expect(
                 """
-src/com/example/CustomActivity.kt:8: Warning: Use AppCompatResources.getColorStateList() [UseCompatLoadingForColorStateLists]
-        getResources().getColorStateList(R.color.color_state_list)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 1 warnings
+                src/com/example/CustomActivity.kt:8: Warning: Use AppCompatResources.getColorStateList() [UseCompatLoadingForColorStateLists]
+                        getResources().getColorStateList(R.color.color_state_list)
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                0 errors, 1 warnings
                 """
                     .trimIndent()
             )

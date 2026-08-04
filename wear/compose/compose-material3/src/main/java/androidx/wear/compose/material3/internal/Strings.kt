@@ -80,6 +80,12 @@ internal value class Strings(@StringRes val value: Int) {
         inline val DatePickerHeading
             get() = Strings(R.string.wear_m3c_date_picker_heading)
 
+        inline val PickerClickToAdjustHint
+            get() = Strings(R.string.wear_m3c_picker_click_to_adjust_hint)
+
+        inline val PickerClickToSelectHint
+            get() = Strings(R.string.wear_m3c_picker_click_to_select_hint)
+
         inline val PickerConfirmButtonContentDescription
             get() = Strings(R.string.wear_m3c_picker_confirm_button_content_description)
 
@@ -100,6 +106,21 @@ internal value class Strings(@StringRes val value: Int) {
 
         inline val OpenOnPhoneContentDescriptionIcon
             get() = Strings(R.string.wear_m3c_open_on_phone_icon_content_description)
+
+        inline val OnStateDescription
+            get() = Strings(R.string.wear_m3c_capital_on_state_description)
+
+        inline val OffStateDescription
+            get() = Strings(R.string.wear_m3c_capital_off_state_description)
+
+        inline val CheckedStateDescription
+            get() = Strings(R.string.wear_m3c_checked_state_description)
+
+        inline val NotCheckedStateDescription
+            get() = Strings(R.string.wear_m3c_not_checked_state_description)
+
+        inline val DatePickerContentDescription
+            get() = Strings(R.string.wear_m3c_date_picker_content_description)
     }
 }
 

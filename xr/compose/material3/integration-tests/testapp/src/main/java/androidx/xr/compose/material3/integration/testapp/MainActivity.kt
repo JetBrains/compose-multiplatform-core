@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// TODO(b/289518597): Remove this SuppressLint
-@file:SuppressLint("NullAnnotationGroup")
 @file:OptIn(
     ExperimentalMaterial3AdaptiveApi::class,
     ExperimentalMaterial3Api::class,
@@ -24,7 +22,6 @@
 
 package androidx.xr.compose.material3.integration.testapp
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,36 +48,50 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.xr.compose.material3.DefaultNavigationBarOrbiterProperties
 import androidx.xr.compose.material3.DefaultNavigationRailOrbiterProperties
-import androidx.xr.compose.material3.EnableXrComponentOverrides
+import androidx.xr.compose.material3.DefaultWideNavigationRailOrbiterProperties
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
 import androidx.xr.compose.material3.LocalNavigationBarOrbiterProperties
 import androidx.xr.compose.material3.LocalNavigationRailOrbiterProperties
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.material3.LocalShortNavigationBarOrbiterProperties
+import androidx.xr.compose.material3.LocalWideNavigationRailOrbiterProperties
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { EnableXrComponentOverrides { Content() } }
+        setContent { Content() }
     }
 }
 
 @Composable
+@Suppress("DEPRECATION") // Move to currentWindowAdaptiveInfoV2 when dependency is updated
 private fun Content() {
     var navSuiteType: NavigationSuiteType? by remember { mutableStateOf(null) }
-    var edgeOffset: EdgeOffset? by remember { mutableStateOf(null) }
+    var orbiterPosition: OrbiterPosition by remember { mutableStateOf(OrbiterPosition.Outside) }
 
     var navSuiteSelectedItem by remember { mutableStateOf(NavSuiteItem.HOME) }
 
     CompositionLocalProvider(
         LocalNavigationBarOrbiterProperties provides
-            DefaultNavigationBarOrbiterProperties.copy(offset = edgeOffset),
+            DefaultNavigationBarOrbiterProperties.copy(
+                alignment = orbiterPosition.toHorizontalAlignment()
+            ),
         LocalNavigationRailOrbiterProperties provides
-            DefaultNavigationRailOrbiterProperties.copy(offset = edgeOffset),
+            DefaultNavigationRailOrbiterProperties.copy(
+                alignment = orbiterPosition.toVerticalAlignment()
+            ),
+        LocalShortNavigationBarOrbiterProperties provides
+            DefaultNavigationBarOrbiterProperties.copy(
+                alignment = orbiterPosition.toHorizontalAlignment()
+            ),
+        LocalWideNavigationRailOrbiterProperties provides
+            DefaultWideNavigationRailOrbiterProperties.copy(
+                alignment = orbiterPosition.toVerticalAlignment()
+            ),
     ) {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
-                NavSuiteItem.values().forEach { item ->
+                NavSuiteItem.entries.forEach { item ->
                     item(
                         selected = navSuiteSelectedItem == item,
                         onClick = { navSuiteSelectedItem = item },
@@ -101,8 +112,10 @@ private fun Content() {
                 }
                 NavSuiteItem.SETTINGS -> {
                     XrSettingsPane(
+                        selectedNavSuiteType = navSuiteType,
+                        selectedOrbiterPosition = orbiterPosition,
                         onNavSuiteTypeChanged = { navSuiteType = it },
-                        onOrbiterEdgeOffsetChanged = { edgeOffset = it },
+                        onOrbiterPositionChanged = { orbiterPosition = it },
                     )
                 }
             }
@@ -125,4 +138,11 @@ private fun Home() {
     )
 }
 
-private const val TAG = "MainActivity"
+enum class OrbiterPosition {
+    /** The default, outside-positioned Orbiter, as defined in the implementation. */
+    Outside,
+    /** An inside-positioned Orbiter. */
+    Inside,
+    /** An overlapping-positioned Orbiter. */
+    Overlapping,
+}

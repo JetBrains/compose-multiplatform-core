@@ -17,10 +17,12 @@
 package androidx.benchmark
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import java.io.File
 import java.io.IOException
 
-internal object CpuInfo {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+object CpuInfo {
     private const val TAG = "Benchmark"
 
     val coreDirs: List<CoreDir>
@@ -41,7 +43,7 @@ internal object CpuInfo {
         val setSpeedKhz: Long,
 
         // cpuinfo_max_freq, or -1 if can't access
-        val maxFreqKhz: Long
+        val maxFreqKhz: Long,
     )
 
     init {
@@ -76,9 +78,11 @@ internal object CpuInfo {
                                 ?: readFileTextOrNull("$path/cpufreq/scaling_min_freq")?.toLong()
                                 ?: -1,
                         maxFreqKhz =
-                            readFileTextOrNull("$path/cpufreq/cpuinfo_max_freq")?.toLong() ?: -1L
+                            readFileTextOrNull("$path/cpufreq/cpuinfo_max_freq")?.toLong() ?: -1L,
                     )
-                } ?: emptyList()
+                }
+                ?.sortedBy { it.path } // sort, since dirs may be discovered in arbitrary order
+            ?: emptyList()
 
         maxFreqHz =
             coreDirs
@@ -88,7 +92,8 @@ internal object CpuInfo {
                 ?.times(1000) ?: -1
 
         locked = isCpuLocked(coreDirs)
-        coreDirs.forEachIndexed { index, coreDir -> Log.d(TAG, "cpu$index $coreDir") }
+        Log.d(TAG, "Observed clock state of ${coreDirs.size} CPUs:")
+        coreDirs.forEach { coreDir -> Log.d(TAG, coreDir.toString()) }
     }
 
     fun isCpuLocked(coreDirs: List<CoreDir>): Boolean {
@@ -101,7 +106,7 @@ internal object CpuInfo {
                     Log.d(
                         TAG,
                         "Clocks not locked: cores with same available frequencies " +
-                            "running with different current min freq"
+                            "running with different current min freq",
                     )
                     return false
                 }
@@ -126,5 +131,25 @@ internal object CpuInfo {
         } catch (e: IOException) {
             return null
         }
+    }
+
+    object Error {
+        const val ID = "UNLOCKED"
+        const val SUMMARY = "Unlocked CPU clocks"
+        const val MESSAGE =
+            """
+                |    Benchmark appears to be running on a rooted device with unlocked CPU
+                |    clocks. Unlocked CPU clocks can lead to inconsistent results due to
+                |    dynamic frequency scaling, and thermal throttling. On a rooted device,
+                |    lock your device clocks to a stable frequency with `./gradlew lockClocks`.
+                |    You can disable this check by specifying androidx.benchmark.requireLockedClocks
+                |    in the arguments.
+            """
+
+        fun hasError() =
+            Arguments.requireLockedClocks &&
+                !DeviceInfo.isEmulator &&
+                DeviceInfo.isRooted &&
+                !locked
     }
 }

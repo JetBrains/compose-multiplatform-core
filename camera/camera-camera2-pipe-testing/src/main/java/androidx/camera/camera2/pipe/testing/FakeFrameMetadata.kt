@@ -24,7 +24,7 @@ import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.RequestMetadata
-import kotlin.reflect.KClass
+import java.lang.Class
 import kotlinx.atomicfu.atomic
 
 private val fakeFrameNumbers = atomic(0L)
@@ -37,7 +37,7 @@ public class FakeFrameMetadata(
     extraResultMetadata: Map<Metadata.Key<*>, Any?> = emptyMap(),
     override val camera: CameraId = FakeCameraIds.default,
     override val frameNumber: FrameNumber = nextFakeFrameNumber(),
-    override val extraMetadata: Map<*, Any?> = emptyMap<Any, Any>()
+    override val extraMetadata: Map<*, Any?> = emptyMap<Any, Any>(),
 ) : FakeMetadata(extraResultMetadata), FrameMetadata {
 
     @Suppress("UNCHECKED_CAST")
@@ -46,7 +46,7 @@ public class FakeFrameMetadata(
 
     override fun <T> getOrDefault(key: CaptureResult.Key<T>, default: T): T = get(key) ?: default
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 
     override fun toString(): String =
         "FakeFrameMetadata(camera: ${camera.value}, frameNumber: ${frameNumber.value})"
@@ -56,7 +56,7 @@ public class FakeFrameMetadata(
 public class FakeFrameInfo(
     override val metadata: FrameMetadata = FakeFrameMetadata(),
     override val requestMetadata: RequestMetadata = FakeRequestMetadata(),
-    private val physicalMetadata: Map<CameraId, FrameMetadata> = emptyMap()
+    private val physicalMetadata: Map<CameraId, FrameMetadata> = emptyMap(),
 ) : FrameInfo {
     override fun get(camera: CameraId): FrameMetadata? = physicalMetadata[camera]
 
@@ -66,7 +66,7 @@ public class FakeFrameInfo(
     override val frameNumber: FrameNumber
         get() = metadata.frameNumber
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 
     override fun toString(): String =
         "FakeFrameInfo(camera: ${camera.value}, frameNumber: ${frameNumber.value})"

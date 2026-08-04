@@ -24,16 +24,15 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.konan.target.Family
-import org.jetbrains.kotlin.konan.target.KonanTarget
 
 /**
- * Represents a C compilation for a single [konanTarget].
+ * Represents a C compilation for a single [NativeTarget].
  *
- * @param konanTarget Target host for the compilation.
+ * @param target Target host for the compilation.
  * @param compileTask The task that compiles the sources and build .o file for each source file.
  * @param archiveTask The task that will archive the output of the [compileTask] into a single .a
  *   file.
- * @param sharedLibTask The task that will created a shared library from the output of [compileTask]
+ * @param linkerTask The task that will create a shared library from the output of [compileTask]
  *   that also optionally links with [linkedObjects]
  * @param sources List of source files for the compilation.
  * @param includes List of include directories containing .h files for the compilation.
@@ -45,19 +44,19 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 class NativeTargetCompilation
 internal constructor(
     val project: Project,
-    val konanTarget: KonanTarget,
+    val target: NativeTarget,
     internal val compileTask: TaskProvider<ClangCompileTask>,
     internal val archiveTask: TaskProvider<ClangArchiveTask>,
-    internal val sharedLibTask: TaskProvider<ClangSharedLibraryTask>,
+    internal val linkerTask: TaskProvider<ClangLinkerTask>,
     val sources: ConfigurableFileCollection,
     val includes: ConfigurableFileCollection,
     val linkedObjects: ConfigurableFileCollection,
     @Suppress("unused") // used via build.gradle
     val linkerArgs: ListProperty<String>,
     @Suppress("unused") // used via build.gradle
-    val freeArgs: ListProperty<String>
+    val freeArgs: ListProperty<String>,
 ) : Named {
-    override fun getName(): String = konanTarget.name
+    override fun getName(): String = target.name
 
     /**
      * Dynamically links the shared library output of this target with the given [dependency]'s
@@ -65,7 +64,7 @@ internal constructor(
      */
     @Suppress("unused") // used from build.gradle
     fun linkWith(dependency: MultiTargetNativeCompilation) {
-        linkedObjects.from(dependency.sharedObjectOutputFor(konanTarget))
+        linkedObjects.from(dependency.sharedObjectOutputFor(target))
     }
 
     /**
@@ -74,13 +73,13 @@ internal constructor(
      */
     @Suppress("unused") // used from build.gradle
     fun include(dependency: MultiTargetNativeCompilation) {
-        linkedObjects.from(dependency.sharedArchiveOutputFor(konanTarget))
+        linkedObjects.from(dependency.sharedArchiveOutputFor(target))
     }
 
     /** Convenience method to add jni headers to the compilation. */
     @Suppress("unused") // used from build.gradle
     fun addJniHeaders() {
-        if (konanTarget.family == Family.ANDROID) {
+        if (target.isAndroid) {
             // android already has JNI
             return
         }
@@ -103,22 +102,19 @@ internal constructor(
         val jdkPrebuiltsRoot = javaHome.parentFile
 
         val relativeHeaderPaths =
-            when (konanTarget.family) {
+            when (target.family) {
                 Family.MINGW -> {
                     listOf("windows-x86/include", "windows-x86/include/win32")
                 }
                 Family.OSX -> {
-                    // it is OK that we are using x86 here, they are the same files (openjdk only
+                    // it is OK that we are using arm64 here, they are the same files (openjdk only
                     // distinguishes between unix and windows).
-                    listOf("darwin-x86/include", "darwin-x86/include/darwin")
+                    listOf("darwin-arm64/include", "darwin-arm64/include/darwin")
                 }
                 Family.LINUX -> {
-                    listOf(
-                        "linux-x86/include",
-                        "linux-x86/include/linux",
-                    )
+                    listOf("linux-x86/include", "linux-x86/include/linux")
                 }
-                else -> error("unsupported family ($konanTarget) for JNI compilation")
+                else -> error("unsupported family (${target.family}) for JNI compilation")
             }
         return relativeHeaderPaths
             .map { jdkPrebuiltsRoot.resolve(it) }

@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import androidx.compose.animation.core.snap
@@ -32,8 +29,6 @@ import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyList
@@ -54,13 +49,6 @@ import kotlinx.coroutines.runBlocking
 
 open class BaseLazyListTestWithOrientation(private val orientation: Orientation) :
     BaseLazyLayoutTestWithOrientation(orientation) {
-
-    fun Modifier.fillMaxCrossAxis() =
-        if (vertical) {
-            this.fillMaxWidth()
-        } else {
-            this.fillMaxHeight()
-        }
 
     fun LazyItemScope.fillParentMaxMainAxis() =
         if (vertical) {
@@ -90,7 +78,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
         scrollBy(
             x = if (vertical) 0.dp else offset,
             y = if (!vertical) 0.dp else offset,
-            density = rule.density
+            density = rule.density,
         )
 
     fun composeViewSwipeForward() {
@@ -125,7 +113,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
         overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
         spacedBy: Dp = 0.dp,
         isCrossAxis: Boolean = false,
-        content: LazyListScope.() -> Unit
+        content: LazyListScope.() -> Unit,
     ) {
         if (vertical xor isCrossAxis) {
             val verticalArrangement =
@@ -143,7 +131,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
                 userScrollEnabled = userScrollEnabled,
                 overscrollEffect = overscrollEffect,
                 verticalArrangement = verticalArrangement,
-                content = content
+                content = content,
             )
         } else {
             val horizontalArrangement =
@@ -161,7 +149,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
                 userScrollEnabled = userScrollEnabled,
                 overscrollEffect = overscrollEffect,
                 horizontalArrangement = horizontalArrangement,
-                content = content
+                content = content,
             )
         }
     }
@@ -177,7 +165,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
         userScrollEnabled: Boolean = true,
         spacedBy: Dp = 0.dp,
         beyondBoundsItemCount: Int,
-        content: LazyListScope.() -> Unit
+        content: LazyListScope.() -> Unit,
     ) {
         if (vertical) {
             val verticalArrangement =
@@ -195,7 +183,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
                 userScrollEnabled = userScrollEnabled,
                 verticalArrangement = verticalArrangement,
                 beyondBoundsItemCount = beyondBoundsItemCount,
-                content = content
+                content = content,
             )
         } else {
             val horizontalArrangement =
@@ -213,7 +201,7 @@ open class BaseLazyListTestWithOrientation(private val orientation: Orientation)
                 userScrollEnabled = userScrollEnabled,
                 horizontalArrangement = horizontalArrangement,
                 beyondBoundsItemCount = beyondBoundsItemCount,
-                content = content
+                content = content,
             )
         }
     }
@@ -231,7 +219,7 @@ private fun LazyColumn(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     beyondBoundsItemCount: Int,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -245,7 +233,7 @@ private fun LazyColumn(
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
-        content = content
+        content = content,
     )
 }
 
@@ -261,7 +249,7 @@ private fun LazyRow(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     beyondBoundsItemCount: Int,
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -275,6 +263,6 @@ private fun LazyRow(
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
-        content = content
+        content = content,
     )
 }

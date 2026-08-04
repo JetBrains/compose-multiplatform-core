@@ -57,6 +57,10 @@ import kotlinx.coroutines.flow.collectLatest
  * [LinearProgressIndicator] sample:
  *
  * @sample androidx.wear.compose.material3.samples.LinearProgressIndicatorSample
+ *
+ * ![LinearProgressIndicatorSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_LinearProgressIndicatorSample_CompositeImage.png)
+ *
  * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
  *   represents completion. Values outside of this range are coerced into the range 0..1. Progress
  *   value changes will be animated.
@@ -136,7 +140,7 @@ private fun LinearProgressIndicatorContent(
                 .fillMaxWidth()
                 .height(strokeWidth)
                 .padding(LinearProgressIndicatorDefaults.OuterHorizontalMargin)
-                .scale(scaleX = if (isRtl) -1f else 1f, scaleY = 1f), // Flip X axis for RTL layouts
+                .scale(scaleX = if (isRtl) -1f else 1f, scaleY = 1f) // Flip X axis for RTL layouts
     ) {
         val progressPx = progress() * (size.width - strokeWidth.toPx())
         val strokeCapOffset = strokeWidth.toPx() / 2f
@@ -146,7 +150,7 @@ private fun LinearProgressIndicatorContent(
             start = strokeCapOffset,
             end = size.width - strokeCapOffset,
             brush = colors.trackBrush(enabled),
-            strokeWidth = strokeWidth.toPx()
+            strokeWidth = strokeWidth.toPx(),
         )
 
         if (progressPx > 0f) {
@@ -176,7 +180,7 @@ private fun LinearProgressIndicatorContent(
                 brush = colors.indicatorBrush(enabled),
                 radius = dotRadius,
                 center = Offset(dotCenterX, dotCenterY),
-                scaleFraction = scaleFraction
+                scaleFraction = scaleFraction,
             )
         }
     }
@@ -236,7 +240,7 @@ private fun DrawScope.drawLinearIndicatorDot(
     brush: Brush,
     radius: Float,
     center: Offset,
-    scaleFraction: Float = 1f
+    scaleFraction: Float = 1f,
 ) {
     // Scale down the dot by the scale fraction.
     val scaledDotRadius = radius * scaleFraction

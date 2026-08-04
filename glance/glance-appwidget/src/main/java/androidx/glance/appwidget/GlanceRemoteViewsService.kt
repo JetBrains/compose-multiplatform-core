@@ -25,14 +25,13 @@ import android.util.Log
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import kotlinx.coroutines.runBlocking
 
 /**
  * [RemoteViewsService] to be connected to for a remote adapter that returns RemoteViews for lazy
  * lists / grids.
  */
-open class GlanceRemoteViewsService : RemoteViewsService() {
+public open class GlanceRemoteViewsService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent?): RemoteViewsFactory {
         requireNotNull(intent) { "Intent is null" }
         val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
@@ -47,7 +46,6 @@ open class GlanceRemoteViewsService : RemoteViewsService() {
         return GlanceRemoteViewsFactory(this, appWidgetId, viewId, sizeInfo)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal companion object {
         internal const val EXTRA_VIEW_ID = "androidx.glance.widget.extra.view_id"
         internal const val EXTRA_SIZE_INFO = "androidx.glance.widget.extra.size_info"
@@ -61,7 +59,7 @@ open class GlanceRemoteViewsService : RemoteViewsService() {
             appWidgetId: Int,
             viewId: Int,
             sizeInfo: String,
-            remoteCollectionItems: RemoteCollectionItems
+            remoteCollectionItems: RemoteCollectionItems,
         ) {
             synchronized(InMemoryStore) {
                 InMemoryStore.save(appWidgetId, viewId, sizeInfo, remoteCollectionItems)
@@ -72,7 +70,7 @@ open class GlanceRemoteViewsService : RemoteViewsService() {
         private fun getItems(
             appWidgetId: Int,
             viewId: Int,
-            sizeInfo: String
+            sizeInfo: String,
         ): RemoteCollectionItems {
             return synchronized(InMemoryStore) {
                 InMemoryStore.getItems(appWidgetId, viewId, sizeInfo)
@@ -95,7 +93,7 @@ open class GlanceRemoteViewsService : RemoteViewsService() {
         private val context: Context,
         private val appWidgetId: Int,
         private val viewId: Int,
-        private val size: String
+        private val size: String,
     ) : RemoteViewsFactory {
         override fun onCreate() {
             // OnDataSetChanged is always called even onCreate, so we don't need to load data here.
@@ -119,7 +117,7 @@ open class GlanceRemoteViewsService : RemoteViewsService() {
                 getGlanceAppWidget()?.getOrCreateAppWidgetSession(
                     context = context,
                     glanceId = glanceId,
-                    options = null
+                    options = null,
                 ) { session, wasRunning ->
                     // If session is already running, data must have already been loaded
                     // into
@@ -185,7 +183,7 @@ private class RemoteCollectionItemsInMemoryStore {
         appWidgetId: Int,
         viewId: Int,
         sizeInfo: String,
-        remoteCollectionItems: RemoteCollectionItems
+        remoteCollectionItems: RemoteCollectionItems,
     ) {
         items[key(appWidgetId, viewId, sizeInfo)] = remoteCollectionItems
     }
@@ -218,7 +216,7 @@ internal fun RemoteViews.setRemoteAdapter(
     translationContext: TranslationContext,
     viewId: Int,
     sizeInfo: String,
-    items: RemoteCollectionItems
+    items: RemoteCollectionItems,
 ) {
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
         CollectionItemsApi31Impl.setRemoteAdapter(this, viewId, items)

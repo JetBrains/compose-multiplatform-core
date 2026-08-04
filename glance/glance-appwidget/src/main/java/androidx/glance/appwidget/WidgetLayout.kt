@@ -95,20 +95,20 @@ private constructor(
                     GlanceState.getValue(
                         context,
                         LayoutStateDefinition,
-                        layoutDatastoreKey(appWidgetId)
+                        layoutDatastoreKey(appWidgetId),
                     )
                 } catch (ex: CorruptionException) {
                     Log.e(
                         GlanceAppWidgetTag,
                         "Set of layout structures for App Widget id $appWidgetId is corrupted",
-                        ex
+                        ex,
                     )
                     LayoutProto.LayoutConfig.getDefaultInstance()
                 } catch (ex: IOException) {
                     Log.e(
                         GlanceAppWidgetTag,
                         "I/O error reading set of layout structures for App Widget id $appWidgetId",
-                        ex
+                        ex,
                     )
                     LayoutProto.LayoutConfig.getDefaultInstance()
                 }
@@ -118,7 +118,7 @@ private constructor(
                 layouts,
                 nextIndex = config.nextIndex,
                 appWidgetId = appWidgetId,
-                existingLayoutIds = layouts.values.toMutableSet()
+                existingLayoutIds = layouts.values.toMutableSet(),
             )
         }
 
@@ -137,7 +137,7 @@ private constructor(
             context: Context,
             appWidgetId: Int,
             nextIndex: Int,
-            existingLayoutIds: Collection<Int> = emptyList()
+            existingLayoutIds: Collection<Int> = emptyList(),
         ): LayoutConfiguration =
             LayoutConfiguration(
                 context,
@@ -147,25 +147,12 @@ private constructor(
                 existingLayoutIds = existingLayoutIds.toMutableSet(),
             )
 
-        /** @return the file after delete() has been called on it. This is for testing. */
-        fun delete(context: Context, id: GlanceId): Boolean {
-
+        suspend fun delete(context: Context, id: GlanceId): Boolean {
             if (id is AppWidgetId && id.isRealId) {
                 val key = layoutDatastoreKey(id.appWidgetId)
-                val file = context.dataStoreFile(key)
-                try {
-                    return file.delete()
-                } catch (e: Exception) {
-                    // This is a minor error, File.delete() shouldn't throw an exception and these
-                    // files
-                    // are <1kb.
-                    Log.d(
-                        GlanceAppWidgetTag,
-                        "Could not delete LayoutConfiguration dataStoreFile when cleaning up" +
-                            "old appwidget id $id",
-                        e
-                    )
-                }
+
+                GlanceState.deleteStore(context, LayoutStateDefinition, key)
+                return true
             }
             return false
         }
@@ -299,7 +286,10 @@ private val GlanceModifier.heightModifier: Dimension
     get() = findModifier<HeightModifier>()?.height ?: Dimension.Wrap
 
 @VisibleForTesting
-internal fun layoutDatastoreKey(appWidgetId: Int): String = "appWidgetLayout-$appWidgetId"
+internal fun layoutDatastoreKey(appWidgetId: Int): String {
+    val key = "appWidgetLayout-$appWidgetId"
+    return key
+}
 
 private object LayoutStateDefinition : GlanceStateDefinition<LayoutProto.LayoutConfig> {
     override fun getLocation(context: Context, fileKey: String): File =

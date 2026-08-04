@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -34,6 +35,80 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+
+/**
+ * Vertical staggered grid layout that composes and lays out only items currently visible on screen.
+ *
+ * Sample:
+ *
+ * @sample androidx.compose.foundation.samples.LazyVerticalStaggeredGridSample
+ *
+ * Sample with custom item spans:
+ *
+ * @sample androidx.compose.foundation.samples.LazyVerticalStaggeredGridSpanSample
+ *
+ * Sample with custom cache window:
+ *
+ * @sample androidx.compose.foundation.samples.LazyStaggeredGridCacheWindowSample
+ * @param columns description of the size and number of staggered grid columns.
+ * @param modifier modifier to apply to the layout.
+ * @param state state object that can be used to control and observe staggered grid state.
+ * @param contentPadding padding around the content.
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, items are laid
+ *   out in the reverse order and [LazyStaggeredGridState.firstVisibleItemIndex] == 0 means that
+ *   grid is scrolled to the bottom.
+ * @param verticalItemSpacing vertical spacing between items.
+ * @param horizontalArrangement arrangement specifying horizontal spacing between items. The item
+ *   arrangement specifics are ignored for now.
+ * @param flingBehavior logic responsible for handling fling.
+ * @param userScrollEnabled whether scroll with gestures or accessibility actions are allowed. It is
+ *   still possible to scroll programmatically through state when [userScrollEnabled] is set to
+ *   false
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use `Modifier.overscroll` separately.
+ * @param cacheWindow specifies the size of the ahead and behind window to be used as per
+ *   [LazyLayoutCacheWindow].
+ * @param content a lambda describing the staggered grid content. Inside this block you can use
+ *   [LazyStaggeredGridScope.items] to present list of items or [LazyStaggeredGridScope.item] for a
+ *   single one.
+ */
+@Composable
+public fun LazyVerticalStaggeredGrid(
+    columns: StaggeredGridCells,
+    modifier: Modifier = Modifier,
+    state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    verticalItemSpacing: Dp = 0.dp,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    cacheWindow: LazyLayoutCacheWindow =
+        LazyLayoutCacheWindow(
+            behindFraction = 0f,
+            aheadFraction = 0.5f,
+            isNonScrollCachingEnabled = false,
+        ),
+    content: LazyStaggeredGridScope.() -> Unit,
+) {
+    LazyStaggeredGrid(
+        modifier = modifier,
+        orientation = Orientation.Vertical,
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        mainAxisSpacing = verticalItemSpacing,
+        crossAxisSpacing = horizontalArrangement.spacing,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        overscrollEffect = overscrollEffect,
+        slots = rememberColumnSlots(columns, horizontalArrangement, contentPadding),
+        cacheWindow = cacheWindow,
+        content = content,
+    )
+}
 
 /**
  * Vertical staggered grid layout that composes and lays out only items currently visible on screen.
@@ -67,7 +142,7 @@ import androidx.compose.ui.unit.dp
  *   single one.
  */
 @Composable
-fun LazyVerticalStaggeredGrid(
+public fun LazyVerticalStaggeredGrid(
     columns: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -78,27 +153,32 @@ fun LazyVerticalStaggeredGrid(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: LazyStaggeredGridScope.() -> Unit
+    content: LazyStaggeredGridScope.() -> Unit,
 ) {
-    LazyStaggeredGrid(
+    LazyVerticalStaggeredGrid(
+        columns = columns,
         modifier = modifier,
-        orientation = Orientation.Vertical,
         state = state,
         contentPadding = contentPadding,
         reverseLayout = reverseLayout,
-        mainAxisSpacing = verticalItemSpacing,
-        crossAxisSpacing = horizontalArrangement.spacing,
+        verticalItemSpacing = verticalItemSpacing,
+        horizontalArrangement = horizontalArrangement,
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
-        slots = rememberColumnSlots(columns, horizontalArrangement, contentPadding),
-        content = content
+        cacheWindow =
+            LazyLayoutCacheWindow(
+                behindFraction = 0f,
+                aheadFraction = 0.5f,
+                isNonScrollCachingEnabled = false,
+            ),
+        content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyVerticalStaggeredGrid(
+public fun LazyVerticalStaggeredGrid(
     columns: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -108,7 +188,7 @@ fun LazyVerticalStaggeredGrid(
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyStaggeredGridScope.() -> Unit
+    content: LazyStaggeredGridScope.() -> Unit,
 ) {
     LazyVerticalStaggeredGrid(
         columns = columns,
@@ -121,7 +201,7 @@ fun LazyVerticalStaggeredGrid(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
-        content = content
+        content = content,
     )
 }
 
@@ -130,13 +210,9 @@ fun LazyVerticalStaggeredGrid(
 private fun rememberColumnSlots(
     columns: StaggeredGridCells,
     horizontalArrangement: Arrangement.Horizontal,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
 ) =
-    remember<LazyGridStaggeredGridSlotsProvider>(
-        columns,
-        horizontalArrangement,
-        contentPadding,
-    ) {
+    remember<LazyGridStaggeredGridSlotsProvider>(columns, horizontalArrangement, contentPadding) {
         LazyStaggeredGridSlotCache { constraints ->
             requirePrecondition(constraints.maxWidth != Constraints.Infinity) {
                 "LazyVerticalStaggeredGrid's width should be bound by parent."
@@ -158,6 +234,81 @@ private fun rememberColumnSlots(
             }
         }
     }
+
+/**
+ * Horizontal staggered grid layout that composes and lays out only items currently visible on
+ * screen.
+ *
+ * Sample:
+ *
+ * @sample androidx.compose.foundation.samples.LazyHorizontalStaggeredGridSample
+ *
+ * Sample with custom item spans:
+ *
+ * @sample androidx.compose.foundation.samples.LazyHorizontalStaggeredGridSpanSample
+ *
+ * Sample with custom cache window:
+ *
+ * @sample androidx.compose.foundation.samples.LazyStaggeredGridCacheWindowSample
+ * @param rows description of the size and number of staggered grid columns.
+ * @param modifier modifier to apply to the layout.
+ * @param state state object that can be used to control and observe staggered grid state.
+ * @param contentPadding padding around the content.
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, items are laid
+ *   out in the reverse order and [LazyStaggeredGridState.firstVisibleItemIndex] == 0 means that
+ *   grid is scrolled to the end.
+ * @param verticalArrangement arrangement specifying vertical spacing between items. The item
+ *   arrangement specifics are ignored for now.
+ * @param horizontalItemSpacing horizontal spacing between items.
+ * @param flingBehavior logic responsible for handling fling.
+ * @param userScrollEnabled whether scroll with gestures or accessibility actions are allowed. It is
+ *   still possible to scroll programmatically through state when [userScrollEnabled] is set to
+ *   false
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
+ * @param cacheWindow specifies the size of the ahead and behind window to be used as per
+ *   [LazyLayoutCacheWindow].
+ * @param content a lambda describing the staggered grid content. Inside this block you can use
+ *   [LazyStaggeredGridScope.items] to present list of items or [LazyStaggeredGridScope.item] for a
+ *   single one.
+ */
+@Composable
+public fun LazyHorizontalStaggeredGrid(
+    rows: StaggeredGridCells,
+    modifier: Modifier = Modifier,
+    state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
+    horizontalItemSpacing: Dp = 0.dp,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    cacheWindow: LazyLayoutCacheWindow =
+        LazyLayoutCacheWindow(
+            behindFraction = 0f,
+            aheadFraction = 0.5f,
+            isNonScrollCachingEnabled = false,
+        ),
+    content: LazyStaggeredGridScope.() -> Unit,
+) {
+    LazyStaggeredGrid(
+        modifier = modifier,
+        orientation = Orientation.Horizontal,
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        mainAxisSpacing = horizontalItemSpacing,
+        crossAxisSpacing = verticalArrangement.spacing,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        overscrollEffect = overscrollEffect,
+        slots = rememberRowSlots(rows, verticalArrangement, contentPadding),
+        cacheWindow = cacheWindow,
+        content = content,
+    )
+}
 
 /**
  * Horizontal staggered grid layout that composes and lays out only items currently visible on
@@ -192,7 +343,7 @@ private fun rememberColumnSlots(
  *   single one.
  */
 @Composable
-fun LazyHorizontalStaggeredGrid(
+public fun LazyHorizontalStaggeredGrid(
     rows: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -203,27 +354,32 @@ fun LazyHorizontalStaggeredGrid(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: LazyStaggeredGridScope.() -> Unit
+    content: LazyStaggeredGridScope.() -> Unit,
 ) {
-    LazyStaggeredGrid(
+    LazyHorizontalStaggeredGrid(
+        rows = rows,
         modifier = modifier,
-        orientation = Orientation.Horizontal,
         state = state,
         contentPadding = contentPadding,
         reverseLayout = reverseLayout,
-        mainAxisSpacing = horizontalItemSpacing,
-        crossAxisSpacing = verticalArrangement.spacing,
+        horizontalItemSpacing = horizontalItemSpacing,
+        verticalArrangement = verticalArrangement,
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
-        slots = rememberRowSlots(rows, verticalArrangement, contentPadding),
-        content = content
+        cacheWindow =
+            LazyLayoutCacheWindow(
+                behindFraction = 0f,
+                aheadFraction = 0.5f,
+                isNonScrollCachingEnabled = false,
+            ),
+        content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyHorizontalStaggeredGrid(
+public fun LazyHorizontalStaggeredGrid(
     rows: StaggeredGridCells,
     modifier: Modifier = Modifier,
     state: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
@@ -233,7 +389,7 @@ fun LazyHorizontalStaggeredGrid(
     horizontalItemSpacing: Dp = 0.dp,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyStaggeredGridScope.() -> Unit
+    content: LazyStaggeredGridScope.() -> Unit,
 ) {
     LazyHorizontalStaggeredGrid(
         rows = rows,
@@ -246,7 +402,7 @@ fun LazyHorizontalStaggeredGrid(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
-        content = content
+        content = content,
     )
 }
 
@@ -255,13 +411,9 @@ fun LazyHorizontalStaggeredGrid(
 private fun rememberRowSlots(
     rows: StaggeredGridCells,
     verticalArrangement: Arrangement.Vertical,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
 ) =
-    remember<LazyGridStaggeredGridSlotsProvider>(
-        rows,
-        verticalArrangement,
-        contentPadding,
-    ) {
+    remember<LazyGridStaggeredGridSlotsProvider>(rows, verticalArrangement, contentPadding) {
         LazyStaggeredGridSlotCache { constraints ->
             requirePrecondition(constraints.maxHeight != Constraints.Infinity) {
                 "LazyHorizontalStaggeredGrid's height should be bound by parent."
@@ -316,7 +468,7 @@ private class LazyStaggeredGridSlotCache(
 
 /** Receiver scope for [LazyVerticalStaggeredGrid] and [LazyHorizontalStaggeredGrid] */
 @LazyStaggeredGridScopeMarker
-sealed interface LazyStaggeredGridScope {
+public sealed interface LazyStaggeredGridScope {
 
     /**
      * Add a single item to the staggered grid.
@@ -337,11 +489,11 @@ sealed interface LazyStaggeredGridScope {
      *   [StaggeredGridCells] the item will occupy. By default each item will take one lane.
      * @param content composable content displayed by current item
      */
-    fun item(
+    public fun item(
         key: Any? = null,
         contentType: Any? = null,
         span: StaggeredGridItemSpan? = null,
-        content: @Composable LazyStaggeredGridItemScope.() -> Unit
+        content: @Composable LazyStaggeredGridItemScope.() -> Unit,
     )
 
     /**
@@ -365,12 +517,12 @@ sealed interface LazyStaggeredGridScope {
      *   by [StaggeredGridCells] the item will occupy. By default each item will take one lane.
      * @param itemContent composable content displayed by item on provided position
      */
-    fun items(
+    public fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
         contentType: (index: Int) -> Any? = { null },
         span: ((index: Int) -> StaggeredGridItemSpan)? = null,
-        itemContent: @Composable LazyStaggeredGridItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyStaggeredGridItemScope.(index: Int) -> Unit,
     )
 }
 
@@ -394,19 +546,19 @@ sealed interface LazyStaggeredGridScope {
  *   [StaggeredGridCells] the item will occupy. By default each item will take one lane.
  * @param itemContent composable content displayed by the provided item
  */
-inline fun <T> LazyStaggeredGridScope.items(
+public inline fun <T> LazyStaggeredGridScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
     crossinline contentType: (item: T) -> Any? = { null },
     noinline span: ((item: T) -> StaggeredGridItemSpan)? = null,
-    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(item: T) -> Unit,
 ) {
     items(
         count = items.size,
         key = key?.let { { index -> key(items[index]) } },
         contentType = { index -> contentType(items[index]) },
         span = span?.let { { index -> span(items[index]) } },
-        itemContent = { index -> itemContent(items[index]) }
+        itemContent = { index -> itemContent(items[index]) },
     )
 }
 
@@ -430,19 +582,19 @@ inline fun <T> LazyStaggeredGridScope.items(
  *   [StaggeredGridCells] the item will occupy. By default each item will take one lane.
  * @param itemContent composable content displayed given item and index
  */
-inline fun <T> LazyStaggeredGridScope.itemsIndexed(
+public inline fun <T> LazyStaggeredGridScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
     noinline span: ((index: Int, item: T) -> StaggeredGridItemSpan)? = null,
-    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(index: Int, item: T) -> Unit,
 ) {
     items(
         count = items.size,
         key = key?.let { { index -> key(index, items[index]) } },
         contentType = { index -> contentType(index, items[index]) },
         span = span?.let { { index -> span(index, items[index]) } },
-        itemContent = { index -> itemContent(index, items[index]) }
+        itemContent = { index -> itemContent(index, items[index]) },
     )
 }
 
@@ -466,19 +618,19 @@ inline fun <T> LazyStaggeredGridScope.itemsIndexed(
  *   [StaggeredGridCells] the item will occupy. By default each item will take one lane.
  * @param itemContent composable content displayed by the provided item
  */
-inline fun <T> LazyStaggeredGridScope.items(
+public inline fun <T> LazyStaggeredGridScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
     crossinline contentType: (item: T) -> Any? = { null },
     noinline span: ((item: T) -> StaggeredGridItemSpan)? = null,
-    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(item: T) -> Unit,
 ) {
     items(
         count = items.size,
         key = key?.let { { index -> key(items[index]) } },
         contentType = { index -> contentType(items[index]) },
         span = span?.let { { index -> span(items[index]) } },
-        itemContent = { index -> itemContent(items[index]) }
+        itemContent = { index -> itemContent(items[index]) },
     )
 }
 
@@ -502,18 +654,18 @@ inline fun <T> LazyStaggeredGridScope.items(
  *   [StaggeredGridCells] the item will occupy. By default each item will take one lane.
  * @param itemContent composable content displayed given item and index
  */
-inline fun <T> LazyStaggeredGridScope.itemsIndexed(
+public inline fun <T> LazyStaggeredGridScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
     noinline span: ((index: Int, item: T) -> StaggeredGridItemSpan)? = null,
-    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable LazyStaggeredGridItemScope.(index: Int, item: T) -> Unit,
 ) {
     items(
         count = items.size,
         key = key?.let { { index -> key(index, items[index]) } },
         contentType = { index -> contentType(index, items[index]) },
         span = span?.let { { index -> span(index, items[index]) } },
-        itemContent = { index -> itemContent(index, items[index]) }
+        itemContent = { index -> itemContent(index, items[index]) },
     )
 }

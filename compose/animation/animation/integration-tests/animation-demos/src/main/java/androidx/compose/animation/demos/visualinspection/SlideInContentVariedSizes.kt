@@ -21,7 +21,6 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Left
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Right
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Up
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -57,7 +56,6 @@ import kotlin.math.max
 import kotlin.math.min
 
 @Preview
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SlideInContentVariedSizes() {
     Column {
@@ -109,7 +107,7 @@ fun SlideInContentVariedSizes() {
                                     PaneState.Pane3 -> 3f
                                 }
                         }
-                }
+                },
             ) {
                 when (it) {
                     PaneState.Pane1 -> Pane1()
@@ -124,7 +122,7 @@ fun SlideInContentVariedSizes() {
                     Modifier.clickable {
                             contentState = PaneState.values()[max(0, contentState.ordinal - 1)]
                         }
-                        .padding(top = 300.dp, bottom = 300.dp, end = 60.dp)
+                        .padding(top = 300.dp, bottom = 300.dp, end = 60.dp),
                 )
                 Icon(
                     Icons.AutoMirrored.Default.ArrowForward,
@@ -132,7 +130,7 @@ fun SlideInContentVariedSizes() {
                     Modifier.clickable {
                             contentState = PaneState.values()[min(2, contentState.ordinal + 1)]
                         }
-                        .padding(top = 300.dp, bottom = 300.dp, start = 60.dp)
+                        .padding(top = 300.dp, bottom = 300.dp, start = 60.dp),
                 )
             }
         }
@@ -201,5 +199,5 @@ fun Pane2() {
 private enum class PaneState {
     Pane1,
     Pane2,
-    Pane3
+    Pane3,
 }

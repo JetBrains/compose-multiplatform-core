@@ -19,7 +19,8 @@ package androidx.compose.foundation.text.selection
 import androidx.collection.LongIntMap
 import androidx.collection.LongObjectMap
 import androidx.collection.MutableLongIntMap
-import androidx.collection.MutableLongObjectMap
+import androidx.collection.buildLongObjectMap
+import androidx.collection.emptyLongObjectMap
 import androidx.collection.longObjectMapOf
 import androidx.collection.mutableLongIntMapOf
 import androidx.collection.mutableLongObjectMapOf
@@ -31,7 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.style.ResolvedTextDirection
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 
 /**
@@ -120,6 +121,9 @@ internal interface SelectionLayout {
     /** The previous [Selection] that we are modifying. */
     val previousSelection: Selection?
 
+    /** Returns the [SelectableInfo] of the selectable with the given id. */
+    fun infoForSelectable(selectableId: Long): SelectableInfo?
+
     /**
      * Whether this layout, compared to another layout, has any relevant changes that would require
      * recomputing selection.
@@ -149,6 +153,17 @@ private class MultiSelectionLayout(
             "MultiSelectionLayout requires an infoList size greater than 1, was ${infoList.size}."
         }
     }
+
+    private var _infoBySelectableId: LongObjectMap<SelectableInfo>? = null
+    private val infoBySelectableId: LongObjectMap<SelectableInfo>
+        get() {
+            var result = _infoBySelectableId
+            if (result == null) {
+                result = buildLongObjectMap { infoList.fastForEach { put(it.selectableId, it) } }
+                _infoBySelectableId = result
+            }
+            return result
+        }
 
     // Most of these properties are unused unless shouldRecomputeSelection returns true,
     // hence why getters are used everywhere.
@@ -196,6 +211,10 @@ private class MultiSelectionLayout(
         }
     }
 
+    override fun infoForSelectable(selectableId: Long): SelectableInfo? {
+        return infoBySelectableId[selectableId]
+    }
+
     override fun shouldRecomputeSelection(other: SelectionLayout?): Boolean =
         previousSelection == null ||
             other == null ||
@@ -218,56 +237,34 @@ private class MultiSelectionLayout(
     }
 
     override fun createSubSelections(selection: Selection): LongObjectMap<Selection> =
-        // Selection is within one selectable, we can return a singleton map of this selection.
-        if (selection.start.selectableId == selection.end.selectableId) {
-            // this check, if not passed, leads to exceptions when selection
-            // highlighting is rendered, so check here instead.
-            checkPrecondition(
-                (selection.handlesCrossed && selection.start.offset >= selection.end.offset) ||
-                    (!selection.handlesCrossed && selection.start.offset <= selection.end.offset)
-            ) {
-                "unexpectedly miss-crossed selection: $selection"
-            }
-            longObjectMapOf(selection.start.selectableId, selection)
-        } else
-            mutableLongObjectMapOf<Selection>().apply {
-                val minAnchor = with(selection) { if (handlesCrossed) end else start }
-                createAndPutSubSelection(
-                    selection,
-                    firstInfo,
-                    minAnchor.offset,
-                    firstInfo.textLength
-                )
-
-                forEachMiddleInfo { info ->
-                    createAndPutSubSelection(selection, info, minOffset = 0, info.textLength)
+        createSubSelections(
+            selection = selection,
+            sortedItems = infoList,
+            getId = { it.selectableId },
+            getSelectAll = { info, _ ->
+                if (selection.handlesCrossed) {
+                    info.makeSingleLayoutSelection(info.textLength, 0)
+                } else {
+                    info.makeSingleLayoutSelection(0, info.textLength)
                 }
-
-                val maxAnchor = with(selection) { if (handlesCrossed) start else end }
-                createAndPutSubSelection(selection, lastInfo, minOffset = 0, maxAnchor.offset)
-            }
-
-    private fun MutableLongObjectMap<Selection>.createAndPutSubSelection(
-        selection: Selection,
-        info: SelectableInfo,
-        minOffset: Int,
-        maxOffset: Int
-    ) {
-        val subSelection =
-            if (selection.handlesCrossed) {
-                info.makeSingleLayoutSelection(start = maxOffset, end = minOffset)
-            } else {
-                info.makeSingleLayoutSelection(start = minOffset, end = maxOffset)
-            }
-
-        // this check, if not passed, leads to exceptions when selection
-        // highlighting is rendered, so check here instead.
-        checkPrecondition(minOffset <= maxOffset) {
-            "minOffset should be less than or equal to maxOffset: $subSelection"
-        }
-
-        put(info.selectableId, subSelection)
-    }
+            },
+            createBoundarySelection = { info, isStart, offset, _ ->
+                val isCrossed = selection.handlesCrossed
+                if (isStart) {
+                    if (isCrossed) {
+                        info.makeSingleLayoutSelection(start = offset, end = 0)
+                    } else {
+                        info.makeSingleLayoutSelection(start = offset, end = info.textLength)
+                    }
+                } else {
+                    if (isCrossed) {
+                        info.makeSingleLayoutSelection(start = info.textLength, end = offset)
+                    } else {
+                        info.makeSingleLayoutSelection(start = 0, end = offset)
+                    }
+                }
+            },
+        )
 
     override fun toString(): String =
         "MultiSelectionLayout(isStartHandle=$isStartHandle, " +
@@ -301,7 +298,7 @@ private class MultiSelectionLayout(
                     CrossStatus.COLLAPSED -> true
                     CrossStatus.NOT_CROSSED -> isStartSlot
                     CrossStatus.CROSSED -> !isStartSlot
-                }
+                },
         )
 
     private fun slotToIndex(slot: Int, isMinimumSlot: Boolean): Int {
@@ -364,6 +361,10 @@ private class SingleSelectionLayout(
 
     override fun forEachMiddleInfo(block: (SelectableInfo) -> Unit) {
         // there are no middle infos, so do nothing
+    }
+
+    override fun infoForSelectable(selectableId: Long): SelectableInfo? {
+        return if (selectableId == info.selectableId) info else null
     }
 
     override fun shouldRecomputeSelection(other: SelectionLayout?): Boolean =
@@ -430,15 +431,15 @@ internal fun getTextFieldSelectionLayout(
                         Selection.AnchorInfo(
                             layoutResult.getTextDirectionForOffset(previousSelectionRange.start),
                             previousSelectionRange.start,
-                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID
+                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID,
                         ),
                     end =
                         Selection.AnchorInfo(
                             layoutResult.getTextDirectionForOffset(previousSelectionRange.end),
                             previousSelectionRange.end,
-                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID
+                            SingleSelectionLayout.DEFAULT_SELECTABLE_ID,
                         ),
-                    handlesCrossed = previousSelectionRange.reversed
+                    handlesCrossed = previousSelectionRange.reversed,
                 ),
         info =
             SelectableInfo(
@@ -447,7 +448,7 @@ internal fun getTextFieldSelectionLayout(
                 rawStartHandleOffset = rawStartHandleOffset,
                 rawEndHandleOffset = rawEndHandleOffset,
                 textLayoutResult = layoutResult,
-                rawPreviousHandleOffset = rawPreviousHandleOffset
+                rawPreviousHandleOffset = rawPreviousHandleOffset,
             ),
     )
 
@@ -460,7 +461,7 @@ internal enum class CrossStatus {
     NOT_CROSSED,
 
     /** The start is the same as the end. */
-    COLLAPSED
+    COLLAPSED,
 }
 
 /** Slot has not been assigned yet */
@@ -475,7 +476,17 @@ internal const val UNASSIGNED_SLOT = -1
  * @param containerCoordinates the coordinates of the [SelectionContainer] for converting
  *   [SelectionContainer] coordinates to their respective [Selectable] coordinates
  * @param isStartHandle whether the currently pressed/clicked handle is the start
+ * @param previousLayout The [SelectionLayout] created when [currentPosition] was
+ *   [previousHandlePosition]. When non-null, it is used to obtain
+ *   [SelectableInfo.rawPreviousHandleOffset] instead of re-computing it from
+ *   [previousHandlePosition]. Note that this is not just an optimization. When selectables are
+ *   moved (due to drag-to-scroll, for example) inside the selection container, it becomes
+ *   impossible to correctly deduce [SelectableInfo.rawPreviousHandleOffset] from
+ *   [previousHandlePosition] (because to do that, the "previous" layout coordinates are needed, but
+ *   are not available).
  * @param selectableIdOrderingComparator determines the ordering of selectables by their IDs
+ * @param allowSelectionBetweenSelectables whether selection in the "empty" area where there are no
+ *   selectables is allowed.
  */
 internal class SelectionLayoutBuilder(
     val currentPosition: Offset,
@@ -483,7 +494,9 @@ internal class SelectionLayoutBuilder(
     val containerCoordinates: LayoutCoordinates,
     val isStartHandle: Boolean,
     val previousSelection: Selection?,
-    val selectableIdOrderingComparator: Comparator<Long>
+    val previousLayout: SelectionLayout?,
+    val selectableIdOrderingComparator: Comparator<Long>,
+    val allowSelectionBetweenSelectables: Boolean = false,
 ) {
     private val selectableIdToInfoListIndex: MutableLongIntMap = mutableLongIntMapOf()
     private val infoList: MutableList<SelectableInfo> = mutableListOf()
@@ -500,7 +513,7 @@ internal class SelectionLayoutBuilder(
         val lastSlot = currentSlot + 1
         return when (infoList.size) {
             0 -> {
-                return null
+                null
             }
             1 -> {
                 SingleSelectionLayout(
@@ -607,7 +620,7 @@ internal enum class Direction {
     ON,
 
     /** The cursor/press is after the selectable */
-    AFTER
+    AFTER,
 }
 
 /**
@@ -676,7 +689,7 @@ internal class SelectableInfo(
         Selection.AnchorInfo(
             direction = textLayoutResult.getTextDirectionForOffset(offset),
             offset = offset,
-            selectableId = selectableId
+            selectableId = selectableId,
         )
 
     /**
@@ -687,7 +700,7 @@ internal class SelectableInfo(
         Selection(
             start = anchorForOffset(start),
             end = anchorForOffset(end),
-            handlesCrossed = start > end
+            handlesCrossed = start > end,
         )
 
     override fun toString(): String =
@@ -695,28 +708,6 @@ internal class SelectableInfo(
             "range=($rawStartHandleOffset-$startRunDirection,$rawEndHandleOffset-$endRunDirection), " +
             "prevOffset=$rawPreviousHandleOffset)"
 }
-
-/**
- * Get the text direction for a given offset.
- *
- * This simply calls [TextLayoutResult.getBidiRunDirection] with one exception, if the offset is an
- * empty line, then we defer to [TextLayoutResult.multiParagraph] and
- * [androidx.compose.ui.text.MultiParagraph.getParagraphDirection]. This is because an empty line
- * always resolves to LTR, even if the paragraph is RTL.
- */
-// TODO(b/295197585)
-//   Can this logic be moved to a new method in `androidx.compose.ui.text.Paragraph`?
-private fun TextLayoutResult.getTextDirectionForOffset(offset: Int): ResolvedTextDirection =
-    if (isOffsetAnEmptyLine(offset)) getParagraphDirection(offset) else getBidiRunDirection(offset)
-
-private fun TextLayoutResult.isOffsetAnEmptyLine(offset: Int): Boolean =
-    layoutInput.text.isEmpty() ||
-        getLineForOffset(offset).let { currentLine ->
-            // verify the previous and next offsets either don't exist because they're at a boundary
-            // or that they are different lines than the current line.
-            (offset == 0 || currentLine != getLineForOffset(offset - 1)) &&
-                (offset == layoutInput.text.length || currentLine != getLineForOffset(offset + 1))
-        }
 
 /**
  * Verify that the selection is truly collapsed.
@@ -758,4 +749,49 @@ internal fun Selection?.isCollapsed(layout: SelectionLayout?): Boolean {
     }
 
     return allTextsEmpty
+}
+
+internal fun <T> createSubSelections(
+    selection: Selection,
+    sortedItems: List<T>,
+    getId: (T) -> Long,
+    getSelectAll: (T, handlesCrossed: Boolean) -> Selection?,
+    createBoundarySelection:
+        (item: T, isStart: Boolean, offset: Int, handlesCrossed: Boolean) -> Selection?,
+): LongObjectMap<Selection> {
+    val startId = selection.start.selectableId
+    val endId = selection.end.selectableId
+
+    if (startId == endId) {
+        return longObjectMapOf(startId, selection)
+    }
+
+    val startIndex = sortedItems.indexOfFirst { getId(it) == startId }
+    val endIndex = sortedItems.indexOfFirst { getId(it) == endId }
+
+    if (startIndex == -1 || endIndex == -1) {
+        return emptyLongObjectMap()
+    }
+
+    val firstIndex = minOf(startIndex, endIndex)
+    val lastIndex = maxOf(startIndex, endIndex)
+    val handlesCrossed = startIndex > endIndex
+
+    val result = mutableLongObjectMapOf<Selection>()
+
+    for (i in firstIndex..lastIndex) {
+        val item = sortedItems[i]
+        val id = getId(item)
+
+        val subSelection =
+            when (id) {
+                startId ->
+                    createBoundarySelection(item, true, selection.start.offset, handlesCrossed)
+                endId -> createBoundarySelection(item, false, selection.end.offset, handlesCrossed)
+                else -> getSelectAll(item, handlesCrossed)
+            }
+        subSelection?.let { result[id] = it }
+    }
+
+    return result
 }

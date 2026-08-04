@@ -34,7 +34,7 @@ object TimePickerBenchmark : MacrobenchmarkScreen {
             TimePicker(
                 onTimePicked = {},
                 timePickerType = TimePickerType.HoursMinutesAmPm12H,
-                initialTime = LocalTime.of(11, 30)
+                initialTime = LocalTime.of(11, 30),
             )
         }
 
@@ -50,13 +50,38 @@ object TimePickerBenchmark : MacrobenchmarkScreen {
                 }
             assert(testObjects.size == 3)
 
-            repeat(20) {
+            repeat(6) {
                 for (obj in testObjects) {
                     val x = obj.visibleBounds.centerX()
                     device.swipe(x, startY, x, endY, 10)
                     device.waitForIdle()
                     SystemClock.sleep(500)
                 }
+            }
+        }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+object TimePickerScrollMinutesBenchmark : MacrobenchmarkScreen {
+    override val content: @Composable (BoxScope.() -> Unit)
+        get() = {
+            TimePicker(
+                onTimePicked = {},
+                timePickerType = TimePickerType.HoursMinutesAmPm12H,
+                initialTime = LocalTime.of(11, 30),
+            )
+        }
+
+    override val exercise: MacrobenchmarkScope.() -> Unit
+        get() = {
+            val startY = device.displayHeight / 2
+            val endY = device.displayHeight * 9 / 10 // scroll down
+            val x = device.displayWidth / 2
+
+            repeat(6) {
+                device.swipe(x, startY, x, endY, 10)
+                device.waitForIdle()
+                SystemClock.sleep(500)
             }
         }
 }

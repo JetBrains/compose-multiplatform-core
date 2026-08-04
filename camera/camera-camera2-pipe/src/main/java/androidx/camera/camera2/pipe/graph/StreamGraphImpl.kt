@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.graph
 
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.OutputConfiguration
 import android.os.Build
 import android.util.Size
@@ -28,6 +27,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelExternal
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLimited
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.streamConfigurationMap
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.InputStream
 import androidx.camera.camera2.pipe.InputStreamId
@@ -36,8 +36,9 @@ import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.compat.Api24Compat
 import androidx.camera.camera2.pipe.config.CameraGraphScope
+import androidx.camera.camera2.pipe.media.ImageSource
+import androidx.camera.camera2.pipe.media.ImageSources
 import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.atomicfu.atomic
@@ -53,13 +54,15 @@ internal class StreamGraphImpl
 constructor(
     val cameraMetadata: CameraMetadata,
     val graphConfig: CameraGraph.Config,
+    val imageSources: ImageSources,
     private val cameraControllerProvider: Provider<CameraController>,
-) : StreamGraph {
+) : StreamGraph, AutoCloseable {
     private val _streamMap: Map<CameraStream.Config, CameraStream>
 
     internal val outputConfigs: List<OutputConfig>
+    internal val outputConfigMap: Map<OutputStream, OutputConfig>
+    internal val imageSourceMap: Map<StreamId, ImageSource>
 
-    // TODO: Build InputStream(s)
     override val inputs: List<InputStream>
     override val streams: List<CameraStream>
     override val streamIds: Set<StreamId>
@@ -69,7 +72,7 @@ constructor(
 
     override fun getOutputLatency(
         streamId: StreamId,
-        outputId: OutputId?
+        outputId: OutputId?,
     ): StreamGraph.OutputLatency? {
         val cameraController = cameraControllerProvider.get()
         val outputLatency = cameraController.getOutputLatency(streamId)
@@ -87,16 +90,22 @@ constructor(
                     "No output found for given outputId $outputId"
             }
         }
-        val streamConfigurationMap =
-            cameraMetadata[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]
+        val streamConfigurationMap = cameraMetadata.streamConfigurationMap
         val stallDuration =
-            streamConfigurationMap?.getOutputStallDuration(output.format.value, output.size)
+            streamConfigurationMap?.getOutputStallDuration(output.format, output.size)
         return stallDuration?.let { StreamGraph.OutputLatency(it, 0) }
     }
 
+    override fun getImageSource(streamId: StreamId): ImageSource? {
+        return imageSourceMap[streamId]
+    }
+
+    fun getCameraStreamConfig(streamId: StreamId) =
+        _streamMap.entries.firstOrNull { it.value.id == streamId }?.key
+
     init {
         val outputConfigListBuilder = mutableListOf<OutputConfig>()
-        val outputConfigMap = mutableMapOf<OutputStream.Config, OutputConfig>()
+        val internalOutputConfigMap = mutableMapOf<OutputStream.Config, OutputConfig>()
 
         val streamListBuilder = mutableListOf<CameraStream>()
         val streamMapBuilder = mutableMapOf<CameraStream.Config, CameraStream>()
@@ -119,7 +128,7 @@ constructor(
         // are streams.
         for (streamConfig in graphConfig.streams) {
             for (output in streamConfig.outputs) {
-                if (outputConfigMap.containsKey(output)) {
+                if (internalOutputConfigMap.containsKey(output)) {
                     continue
                 }
 
@@ -144,18 +153,19 @@ constructor(
                         sensorPixelModes = output.sensorPixelModes,
                         externalOutputConfig = getOutputConfigurationOrNull(output),
                     )
-                outputConfigMap[output] = outputConfig
+                internalOutputConfigMap[output] = outputConfig
                 outputConfigListBuilder.add(outputConfig)
             }
         }
 
         // Build the streams
+        val streamOutputConfigMap = mutableMapOf<OutputStream, OutputConfig>()
         for (streamConfigIdx in graphConfig.streams.indices) {
             val streamConfig = graphConfig.streams[streamConfigIdx]
 
             val outputs =
                 streamConfig.outputs.map {
-                    val outputConfig = outputConfigMap[it]!!
+                    val outputConfig = internalOutputConfigMap[it]!!
 
                     val outputStream =
                         OutputStreamImpl(
@@ -168,8 +178,9 @@ constructor(
                             outputConfig.dynamicRangeProfile,
                             outputConfig.streamUseCase,
                             outputConfig.deferredOutputType,
-                            outputConfig.streamUseHint
+                            outputConfig.streamUseHint,
                         )
+                    streamOutputConfigMap[outputStream] = outputConfig
                     outputStream
                 }
 
@@ -180,17 +191,12 @@ constructor(
                 output.stream = stream
             }
             for (cameraOutputConfig in streamConfig.outputs) {
-                outputConfigMap[cameraOutputConfig]!!.streamBuilder.add(stream)
+                internalOutputConfigMap[cameraOutputConfig]!!.streamBuilder.add(stream)
             }
         }
         inputs =
-            graphConfig.input?.map {
-                InputStreamImpl(
-                    nextInputId(),
-                    it.maxImages,
-                    it.streamFormat,
-                )
-            } ?: emptyList()
+            graphConfig.input?.map { InputStreamImpl(nextInputId(), it.maxImages, it.streamFormat) }
+                ?: emptyList()
 
         val streamSortedByPreview = sortOutputsByPreviewStream(streamListBuilder)
         val streamSortedByVideo = sortOutputsByVideoStream(streamSortedByPreview)
@@ -202,7 +208,18 @@ constructor(
             outputConfigListBuilder.sortedBy {
                 it.streams.minOf { stream -> streams.indexOf(stream) }
             }
+        outputConfigMap = streamOutputConfigMap
         outputs = streams.flatMap { it.outputs }
+
+        imageSourceMap = buildMap {
+            for (config in graphConfig.streams) {
+                val imageSourceConfig = config.imageSourceConfig ?: continue
+
+                val cameraStream = checkNotNull(_streamMap[config])
+                val imageSource = imageSources.createImageSource(cameraStream, imageSourceConfig)
+                this[cameraStream.id] = imageSource
+            }
+        }
     }
 
     class OutputConfig(
@@ -233,17 +250,17 @@ constructor(
         override fun toString(): String = id.toString()
     }
 
-    private class OutputStreamImpl(
+    internal class OutputStreamImpl(
         override val id: OutputId,
         override val size: Size,
         override val format: StreamFormat,
         override val camera: CameraId,
-        override val mirrorMode: OutputStream.MirrorMode?,
-        override val timestampBase: OutputStream.TimestampBase?,
-        override val dynamicRangeProfile: OutputStream.DynamicRangeProfile?,
-        override val streamUseCase: OutputStream.StreamUseCase?,
-        override val outputType: OutputStream.OutputType?,
-        override val streamUseHint: OutputStream.StreamUseHint?
+        override val mirrorMode: OutputStream.MirrorMode? = null,
+        override val timestampBase: OutputStream.TimestampBase? = null,
+        override val dynamicRangeProfile: OutputStream.DynamicRangeProfile? = null,
+        override val streamUseCase: OutputStream.StreamUseCase? = null,
+        override val outputType: OutputStream.OutputType? = null,
+        override val streamUseHint: OutputStream.StreamUseHint? = null,
     ) : OutputStream {
         override lateinit var stream: CameraStream
 
@@ -253,7 +270,7 @@ constructor(
     private class InputStreamImpl(
         override val id: InputStreamId,
         override val maxImages: Int,
-        override val format: StreamFormat
+        override val format: StreamFormat,
     ) : InputStream
 
     interface SurfaceListener {
@@ -283,25 +300,21 @@ constructor(
     }
 
     private fun readExistingGroupNumbers(outputs: List<CameraStream.Config>): List<Int> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            outputs
-                .flatMap { it.outputs }
-                .filterIsInstance<OutputStream.Config.ExternalOutputConfig>()
-                .fold(mutableListOf()) { values, config ->
-                    val groupId = Api24Compat.getSurfaceGroupId(config.output)
-                    if (!values.contains(groupId)) {
-                        values.add(groupId)
-                    }
-                    values
+        return outputs
+            .flatMap { it.outputs }
+            .filterIsInstance<OutputStream.Config.ExternalOutputConfig>()
+            .fold(mutableListOf()) { values, config ->
+                val groupId = config.output.surfaceGroupId
+                if (!values.contains(groupId)) {
+                    values.add(groupId)
                 }
-        } else {
-            emptyList()
-        }
+                values
+            }
     }
 
     private fun computeIfDeferredStreamsAreSupported(
         cameraMetadata: CameraMetadata,
-        graphConfig: CameraGraph.Config
+        graphConfig: CameraGraph.Config,
     ): Boolean {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             graphConfig.sessionMode == CameraGraph.OperatingMode.NORMAL &&
@@ -403,6 +416,13 @@ constructor(
 
         // Return outputs in original order if no video streams found
         return unsortedOutputs
+    }
+
+    override fun close() {
+        val imageSources = imageSourceMap.values
+        for (imageSource in imageSources) {
+            imageSource.close()
+        }
     }
 
     companion object {

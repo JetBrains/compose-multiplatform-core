@@ -61,7 +61,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
                 "--spec",
                 yamlFile.get().asFile.absolutePath,
                 "--project",
-                outputFile.parent
+                outputFile.parent,
             )
         execOperations.executeQuietly(args)
         require(outputFile.exists()) {

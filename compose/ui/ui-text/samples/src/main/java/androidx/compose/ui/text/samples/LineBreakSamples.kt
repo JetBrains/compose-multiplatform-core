@@ -17,7 +17,7 @@
 package androidx.compose.ui.text.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineBreak
@@ -28,12 +28,12 @@ import androidx.compose.ui.unit.sp
 fun LineBreakSample() {
     Text(
         text = "Title of an article",
-        style = TextStyle(fontSize = 20.sp, lineBreak = LineBreak.Heading)
+        style = TextStyle(fontSize = 20.sp, lineBreak = LineBreak.Heading),
     )
 
     Text(
         text = "A long paragraph in an article",
-        style = TextStyle(lineBreak = LineBreak.Paragraph)
+        style = TextStyle(lineBreak = LineBreak.Paragraph),
     )
 }
 
@@ -44,12 +44,12 @@ fun AndroidLineBreakSample() {
         LineBreak(
             strategy = LineBreak.Strategy.Simple,
             strictness = LineBreak.Strictness.Loose,
-            wordBreak = LineBreak.WordBreak.Default
+            wordBreak = LineBreak.WordBreak.Default,
         )
 
     Text(
         text = "Title of an article",
-        style = TextStyle(fontSize = 20.sp, lineBreak = customTitleLineBreak)
+        style = TextStyle(fontSize = 20.sp, lineBreak = customTitleLineBreak),
     )
 
     val defaultStrictnessParagraphLineBreak =
@@ -57,6 +57,6 @@ fun AndroidLineBreakSample() {
 
     Text(
         text = "A long paragraph in an article",
-        style = TextStyle(lineBreak = defaultStrictnessParagraphLineBreak)
+        style = TextStyle(lineBreak = defaultStrictnessParagraphLineBreak),
     )
 }

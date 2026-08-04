@@ -17,16 +17,13 @@
 package androidx.pdf.utils
 
 import android.graphics.Matrix
-import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @SmallTest
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM, codeName = "VanillaIceCream")
 @RunWith(AndroidJUnit4::class)
 class RenderingUtilsTest {
     @Test
@@ -45,7 +42,7 @@ class RenderingUtilsTest {
                 scaledPageWidth,
                 scaledPageHeight,
                 pageWidth,
-                pageHeight
+                pageHeight,
             )
 
         val expectedMatrix =
@@ -73,7 +70,7 @@ class RenderingUtilsTest {
                 scaledPageWidth,
                 scaledPageHeight,
                 pageWidth,
-                pageHeight
+                pageHeight,
             )
 
         val expectedMatrix =

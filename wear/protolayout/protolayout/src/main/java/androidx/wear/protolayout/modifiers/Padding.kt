@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.wear.protolayout.modifiers
 
 import androidx.annotation.Dimension
@@ -24,22 +26,22 @@ import androidx.wear.protolayout.types.dp
 /**
  * Applies [all] dp of additional space along each edge of the content, left, top, right and bottom.
  */
-fun LayoutModifier.padding(@Dimension(DP) all: Float): LayoutModifier =
+public fun LayoutModifier.padding(@Dimension(DP) all: Float): LayoutModifier =
     this then BasePaddingElement(start = all, top = all, end = all, bottom = all, rtlAware = false)
 
 /**
  * Creates a [Padding] that applies [all] dp of additional space along each edge of the content,
  * left, top, right and bottom.
  */
-fun padding(@Dimension(DP) all: Float): Padding = Padding.Builder().setAll(all.dp).build()
+public fun padding(@Dimension(DP) all: Float): Padding = Padding.Builder().setAll(all.dp).build()
 
 /**
  * Applies [horizontal] dp of additional space along the left and right edges of the content and
  * [vertical] dp of additional space along the top and bottom edges of the content.
  */
-fun LayoutModifier.padding(
+public fun LayoutModifier.padding(
     @Dimension(DP) horizontal: Float,
-    @Dimension(DP) vertical: Float
+    @Dimension(DP) vertical: Float,
 ): LayoutModifier = padding(horizontal, vertical, horizontal, vertical, rtlAware = false)
 
 /**
@@ -47,7 +49,7 @@ fun LayoutModifier.padding(
  * edges of the content and [vertical] dp of additional space along the top and bottom edges of the
  * content.
  */
-fun padding(@Dimension(DP) horizontal: Float, @Dimension(DP) vertical: Float): Padding =
+public fun padding(@Dimension(DP) horizontal: Float, @Dimension(DP) vertical: Float): Padding =
     padding(horizontal, vertical, horizontal, vertical)
 
 /**
@@ -65,12 +67,12 @@ fun padding(@Dimension(DP) horizontal: Float, @Dimension(DP) vertical: Float): P
  *   right hand side of the container if the device is using an RTL locale). If `false`,
  *   [start]/[end] will always map to left/right, accordingly.
  */
-fun LayoutModifier.padding(
+public fun LayoutModifier.padding(
     @Dimension(DP) start: Float = Float.NaN,
     @Dimension(DP) top: Float = Float.NaN,
     @Dimension(DP) end: Float = Float.NaN,
     @Dimension(DP) bottom: Float = Float.NaN,
-    rtlAware: Boolean = true
+    rtlAware: Boolean = true,
 ): LayoutModifier =
     this then
         BasePaddingElement(
@@ -78,16 +80,16 @@ fun LayoutModifier.padding(
             top = top,
             end = end,
             bottom = bottom,
-            rtlAware = rtlAware
+            rtlAware = rtlAware,
         )
 
 /** Applies additional space along each edge of the content. */
-fun LayoutModifier.padding(padding: Padding): LayoutModifier =
+public fun LayoutModifier.padding(padding: Padding): LayoutModifier =
     padding(
         start = padding.start?.value ?: Float.NaN,
         top = padding.top?.value ?: Float.NaN,
         end = padding.end?.value ?: Float.NaN,
-        bottom = padding.bottom?.value ?: Float.NaN
+        bottom = padding.bottom?.value ?: Float.NaN,
     )
 
 /**
@@ -106,12 +108,12 @@ fun LayoutModifier.padding(padding: Padding): LayoutModifier =
  *   [start]/[end] will always map to left/right, accordingly.
  */
 @Suppress("MissingJvmstatic") // Conflicts with the other overloads
-fun padding(
+public fun padding(
     @Dimension(DP) start: Float = Float.NaN,
     @Dimension(DP) top: Float = Float.NaN,
     @Dimension(DP) end: Float = Float.NaN,
     @Dimension(DP) bottom: Float = Float.NaN,
-    rtlAware: Boolean = true
+    rtlAware: Boolean = true,
 ): Padding =
     Padding.Builder()
         .apply {
@@ -136,7 +138,7 @@ internal class BasePaddingElement(
     val top: Float = Float.NaN,
     val end: Float = Float.NaN,
     val bottom: Float = Float.NaN,
-    val rtlAware: Boolean = true
+    val rtlAware: Boolean = true,
 ) : BaseProtoLayoutModifiersElement<Padding.Builder> {
 
     override fun mergeTo(initialBuilder: Padding.Builder?): Padding.Builder =

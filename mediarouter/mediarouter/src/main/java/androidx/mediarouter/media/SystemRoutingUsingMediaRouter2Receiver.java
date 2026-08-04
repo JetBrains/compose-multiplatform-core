@@ -24,8 +24,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -52,6 +53,6 @@ final class SystemRoutingUsingMediaRouter2Receiver extends BroadcastReceiver {
         PackageManager pm = applicationContext.getPackageManager();
         List<ResolveInfo> resolveInfos = pm.queryBroadcastReceivers(queryIntent, 0);
 
-        return resolveInfos.size() > 0;
+        return !resolveInfos.isEmpty();
     }
 }

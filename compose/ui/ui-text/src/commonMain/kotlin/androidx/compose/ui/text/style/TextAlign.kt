@@ -15,14 +15,18 @@
  */
 package androidx.compose.ui.text.style
 
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.text.internal.requirePrecondition
+
 /**
- * Defines how to align text horizontally. `TextAlign` controls how text aligns in the space it
- * appears.
+ * Aligns text horizontally within its container.
+ *
+ * @property value internal integer representation of the text alignment.
  */
 @kotlin.jvm.JvmInline
-value class TextAlign internal constructor(internal val value: Int) {
+public value class TextAlign internal constructor(public val value: Int) {
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return when (this) {
             Left -> "Left"
             Right -> "Right"
@@ -35,49 +39,80 @@ value class TextAlign internal constructor(internal val value: Int) {
         }
     }
 
-    companion object {
-        /** Align the text on the left edge of the container. */
-        val Left = TextAlign(1)
+    public companion object {
+        /** Aligns text to the left edge. */
+        public val Left: TextAlign
+            get() = TextAlign(1)
 
-        /** Align the text on the right edge of the container. */
-        val Right = TextAlign(2)
+        /** Aligns text to the right edge. */
+        public val Right: TextAlign
+            get() = TextAlign(2)
 
-        /** Align the text in the center of the container. */
-        val Center = TextAlign(3)
-
-        /**
-         * Stretch lines of text that end with a soft line break to fill the width of the container.
-         *
-         * Lines that end with hard line breaks are aligned towards the [Start] edge.
-         */
-        val Justify = TextAlign(4)
+        /** Aligns text to the center. */
+        public val Center: TextAlign
+            get() = TextAlign(3)
 
         /**
-         * Align the text on the leading edge of the container.
+         * Stretches lines of text to fill the container width.
          *
-         * For Left to Right text ([ResolvedTextDirection.Ltr]), this is the left edge.
-         *
-         * For Right to Left text ([ResolvedTextDirection.Rtl]), like Arabic, this is the right
-         * edge.
+         * Lines ending with hard line breaks align to [Start].
          */
-        val Start = TextAlign(5)
+        public val Justify: TextAlign
+            get() = TextAlign(4)
 
         /**
-         * Align the text on the trailing edge of the container.
+         * Aligns text to the leading edge.
          *
-         * For Left to Right text ([ResolvedTextDirection.Ltr]), this is the right edge.
-         *
-         * For Right to Left text ([ResolvedTextDirection.Rtl]), like Arabic, this is the left edge.
+         * Maps to the left edge for LTR, and the right edge for RTL.
          */
-        val End = TextAlign(6)
+        public val Start: TextAlign
+            get() = TextAlign(5)
+
+        /**
+         * Aligns text to the trailing edge.
+         *
+         * Maps to the right edge for LTR, and the left edge for RTL.
+         */
+        public val End: TextAlign
+            get() = TextAlign(6)
+
+        /** Represents an unset [TextAlign] value. */
+        public val Unspecified: TextAlign
+            get() = TextAlign(0)
 
         /** Return a list containing all possible values of TextAlign. */
-        fun values(): List<TextAlign> = listOf(Left, Right, Center, Justify, Start, End)
+        public fun values(): List<TextAlign> = listOf(Left, Right, Center, Justify, Start, End)
 
         /**
-         * This represents an unset value, a usual replacement for "null" when a primitive value is
-         * desired.
+         * Creates [TextAlign] from [value].
+         *
+         * Useful for serialization/deserialization.
+         *
+         * @param value internal integer representation.
+         * @throws IllegalArgumentException if [value] is invalid.
+         * @see [TextAlign.value]
          */
-        val Unspecified = TextAlign(Int.MIN_VALUE)
+        public fun valueOf(value: Int): TextAlign {
+            requirePrecondition(value in 0..6) {
+                "The given value=$value is not recognized by TextAlign."
+            }
+            return TextAlign(value)
+        }
     }
+}
+
+/**
+ * Returns `true` if this [TextAlign] is not [TextAlign.Unspecified].
+ *
+ * @see TextAlign.Unspecified
+ */
+public inline val TextAlign.isSpecified: Boolean
+    get() = value != 0
+
+/**
+ * If [isSpecified] is true then this is returned, otherwise [block] is executed and its result is
+ * returned.
+ */
+public inline fun TextAlign.takeOrElse(block: () -> TextAlign): TextAlign {
+    return if (isSpecified) this else block()
 }

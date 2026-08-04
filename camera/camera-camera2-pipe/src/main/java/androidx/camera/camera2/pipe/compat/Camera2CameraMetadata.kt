@@ -28,7 +28,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
-import kotlin.reflect.KClass
+import java.lang.Class
 
 /**
  * This implementation provides access to [CameraCharacteristics] and lazy caching of properties
@@ -48,7 +48,6 @@ internal class Camera2CameraMetadata(
     @GuardedBy("extensionCache")
     private val extensionCache = ArrayMap<Int, CameraExtensionMetadata>()
 
-    // TODO: b/299356087 - this here may need a switch statement on the key
     @Suppress("UNCHECKED_CAST") override fun <T> get(key: Metadata.Key<T>): T? = metadata[key] as T?
 
     @Suppress("UNCHECKED_CAST")
@@ -88,9 +87,9 @@ internal class Camera2CameraMetadata(
         get(key) ?: default
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraCharacteristics::class -> characteristics as T
+            CameraCharacteristics::class.java -> characteristics as T
             else -> null
         }
 
@@ -105,6 +104,9 @@ internal class Camera2CameraMetadata(
 
     override val sessionKeys: Set<CaptureRequest.Key<*>>
         get() = _sessionKeys.value
+
+    override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>>
+        get() = _sessionCharacteristicsKeys.value
 
     override val physicalCameraIds: Set<CameraId>
         get() = _physicalCameraIds.value
@@ -239,6 +241,26 @@ internal class Camera2CameraMetadata(
                     Log.warn(e) {
                         "Failed to getAvailablePhysicalCameraRequestKeys from " +
                             "Camera-${camera.value}"
+                    }
+                    emptySet()
+                }
+            }
+        }
+
+    private val _sessionCharacteristicsKeys: Lazy<Set<CameraCharacteristics.Key<*>>> =
+        lazy(LazyThreadSafetyMode.PUBLICATION) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                emptySet()
+            } else {
+                try {
+                    Debug.trace("Camera-${camera.value}#getAvailableSessionCharacteristicsKeys") {
+                        Api35Compat.getAvailableSessionCharacteristicsKeys(characteristics)
+                            .orEmpty()
+                            .toSet()
+                    }
+                } catch (e: AssertionError) {
+                    Log.warn(e) {
+                        "Failed to getAvailableSessionCharacteristicsKeys from Camera-${camera.value}"
                     }
                     emptySet()
                 }

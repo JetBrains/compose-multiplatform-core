@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -23,6 +24,7 @@ import java.time.Instant
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class SleepSessionRecordTest {
@@ -44,7 +46,7 @@ class SleepSessionRecordTest {
                                 startTime = Instant.ofEpochMilli(1234),
                                 endTime = Instant.ofEpochMilli(1236),
                                 stage = SleepSessionRecord.STAGE_TYPE_DEEP,
-                            ),
+                            )
                         ),
                 )
             )
@@ -63,12 +65,13 @@ class SleepSessionRecordTest {
                                 startTime = Instant.ofEpochMilli(1234),
                                 endTime = Instant.ofEpochMilli(1236),
                                 stage = SleepSessionRecord.STAGE_TYPE_DEEP,
-                            ),
+                            )
                         ),
                 )
             )
     }
 
+    @Config(maxSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun record_invalidTimes_throws() {
         assertFailsWith<IllegalArgumentException> {
@@ -84,6 +87,22 @@ class SleepSessionRecordTest {
         }
     }
 
+    @Test
+    fun startTimeAfterEndTime_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            SleepSessionRecord(
+                startTime = Instant.ofEpochMilli(1235L),
+                startZoneOffset = null,
+                endTime = Instant.ofEpochMilli(1234L),
+                endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
+                title = "title",
+                notes = "note",
+            )
+        }
+    }
+
+    @Config(maxSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun record_stageOutOfRange_throws() {
         assertFailsWith<IllegalArgumentException> {
@@ -102,7 +121,7 @@ class SleepSessionRecordTest {
                             endTime = Instant.ofEpochMilli(1235L),
                             stage = SleepSessionRecord.STAGE_TYPE_DEEP,
                         )
-                    )
+                    ),
             )
         }
 
@@ -122,7 +141,7 @@ class SleepSessionRecordTest {
                             endTime = Instant.ofEpochMilli(1236L),
                             stage = SleepSessionRecord.STAGE_TYPE_DEEP,
                         )
-                    )
+                    ),
             )
         }
     }
@@ -150,7 +169,7 @@ class SleepSessionRecordTest {
                             endTime = Instant.ofEpochMilli(1236L),
                             stage = SleepSessionRecord.STAGE_TYPE_DEEP,
                         ),
-                    )
+                    ),
             )
         }
     }
@@ -179,7 +198,7 @@ class SleepSessionRecordTest {
             SleepSessionRecord.Stage(
                 startTime = Instant.ofEpochMilli(1234L),
                 endTime = Instant.ofEpochMilli(1234L),
-                stage = SleepSessionRecord.STAGE_TYPE_AWAKE
+                stage = SleepSessionRecord.STAGE_TYPE_AWAKE,
             )
         }
     }
@@ -201,7 +220,7 @@ class SleepSessionRecordTest {
                                     startTime = Instant.ofEpochMilli(1234),
                                     endTime = Instant.ofEpochMilli(1236),
                                     stage = SleepSessionRecord.STAGE_TYPE_DEEP,
-                                ),
+                                )
                             ),
                     )
                     .toString()

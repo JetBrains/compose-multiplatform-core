@@ -25,13 +25,13 @@ import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@Ignore
 @RequiresApi(Build.VERSION_CODES.O)
 @LargeTest
-@Ignore("b/404626024")
 @RunWith(Parameterized::class)
 class DatePickerBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,
         macrobenchmarkScreen = DatePickerBenchmark,
-        actionSuffix = "DATE_PICKER_ACTIVITY"
+        actionSuffix = "DATE_PICKER_ACTIVITY",
     )

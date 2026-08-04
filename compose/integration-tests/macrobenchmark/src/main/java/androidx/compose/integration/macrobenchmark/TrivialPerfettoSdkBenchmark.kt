@@ -18,13 +18,11 @@ package androidx.compose.integration.macrobenchmark
 
 import android.content.Intent
 import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.benchmark.perfetto.PerfettoCapture
-import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig
-import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProcessState
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import junit.framework.TestCase.assertTrue
@@ -40,19 +38,19 @@ import org.junit.runners.Parameterized.Parameters
  * End-to-end test for compose-runtime-tracing verifying that names of Composables show up in a
  * Perfetto trace.
  */
-@OptIn(ExperimentalMetricApi::class)
+@OptIn(ExperimentalMetricApi::class, ExperimentalBenchmarkConfigApi::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R) // TODO(234351579): Support API < 30
 class TrivialPerfettoSdkBenchmark(private val composableName: String) {
     @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
-    @RequiresApi(Build.VERSION_CODES.R) // TODO(234351579): Support API < 30
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R) // TODO(234351579): Support API < 30
     @Test
     fun test_composable_names_present_in_trace() {
         val metrics =
             listOf(
                 TraceSectionMetric(
                     "%$PACKAGE_NAME.$composableName %$FILE_NAME:%",
-                    TraceSectionMetric.Mode.First
+                    TraceSectionMetric.Mode.First,
                 )
             )
         benchmarkRule.measureRepeated(
@@ -62,15 +60,18 @@ class TrivialPerfettoSdkBenchmark(private val composableName: String) {
             setupBlock = {
                 PerfettoCapture()
                     .enableAndroidxTracingPerfetto(
-                        PerfettoSdkConfig(PACKAGE_NAME, InitialProcessState.Alive)
+                        PerfettoCapture.TracingLibraryConfig(
+                            PACKAGE_NAME,
+                            PerfettoCapture.TracingLibraryConfig.InitialProcessState.Alive,
+                        )
                     )
                     .let { (resultCode, _) ->
                         assertTrue(
                             "Ensuring Perfetto SDK is enabled",
-                            resultCode in arrayOf(1, 2) // 1 = success, 2 = already enabled
+                            resultCode in arrayOf(1, 2), // 1 = success, 2 = already enabled
                         )
                     }
-            }
+            },
         ) {
             startActivityAndWait(Intent(ACTION))
         }
@@ -88,7 +89,7 @@ class TrivialPerfettoSdkBenchmark(private val composableName: String) {
             listOf(
                 "Foo_BBC27C8E_13A7_4A5F_A735_AFDC433F54C3",
                 "Bar_4888EA32_ABC5_4550_BA78_1247FEC1AAC9",
-                "Baz_609801AB_F5A9_47C3_94蛸5_2E82542F21B8"
+                "Baz_609801AB_F5A9_47C3_94蛸5_2E82542F21B8",
             )
 
         @JvmStatic @Parameters(name = "{0}") fun parameters() = COMPOSABLE_NAMES

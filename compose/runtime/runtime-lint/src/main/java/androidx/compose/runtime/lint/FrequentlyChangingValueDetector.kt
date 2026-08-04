@@ -52,7 +52,7 @@ class FrequentlyChangingValueDetector : Detector(), SourceCodeScanner {
                     methodOrSuperMethodsHaveAnnotation(
                         context,
                         node,
-                        Names.Runtime.Annotation.FrequentlyChangingValue
+                        Names.Runtime.Annotation.FrequentlyChangingValue,
                     )
                 if (frequentlyChangingValue && node.isInvokedWithinComposable()) {
                     report(node, context)
@@ -64,7 +64,7 @@ class FrequentlyChangingValueDetector : Detector(), SourceCodeScanner {
                 val frequentlyChangingValue =
                     getterOrSuperDeclarationsHaveAnnotation(
                         node,
-                        Names.Runtime.Annotation.FrequentlyChangingValue
+                        Names.Runtime.Annotation.FrequentlyChangingValue,
                     )
                 if (frequentlyChangingValue && node.isInvokedWithinComposable()) {
                     report(node, context)
@@ -82,7 +82,7 @@ class FrequentlyChangingValueDetector : Detector(), SourceCodeScanner {
             FrequentlyChangingValue,
             node,
             context.getNameLocation(node),
-            "Reading a value annotated with @FrequentlyChangingValue inside composition"
+            "Reading a value annotated with @FrequentlyChangingValue inside composition",
         )
     }
 
@@ -106,8 +106,8 @@ Reading a value annotated with @FrequentlyChangingValue inside composition can c
                 Severity.WARNING,
                 Implementation(
                     FrequentlyChangingValueDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
 
         // Removed issue so we can still check suppressions against the old issue
@@ -120,7 +120,7 @@ Reading a value annotated with @FrequentlyChangingValue inside composition can c
                 priority = 5,
                 severity = Severity.ERROR,
                 implementation =
-                    Implementation(RememberInCompositionDetector::class.java, Scope.EMPTY)
+                    Implementation(RememberInCompositionDetector::class.java, Scope.EMPTY),
             )
     }
 }

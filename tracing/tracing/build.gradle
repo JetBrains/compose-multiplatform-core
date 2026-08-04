@@ -14,63 +14,62 @@
  * limitations under the License.
  */
 
-/**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
- *
- * Please use that script when creating a new project, rather than copying an existing project and
- * modifying its settings.
- */
-import androidx.build.SoftwareType
+
 import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("AndroidXPlugin")
 }
 
 androidXMultiplatform {
+    desktop()
     androidLibrary {
         namespace = "androidx.tracing"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinStdlib)
-            }
+        commonMain.dependencies {
+            api(libs.kotlinCoroutinesCore)
+            api(libs.androidx.annotation)
+            implementation("androidx.annotation:annotation:1.10.0")
+            implementation("androidx.collection:collection:1.6.0")
         }
 
-        androidMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation("androidx.annotation:annotation:1.8.1")
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.kotlinCoroutinesCore)
+            implementation(libs.kotlinCoroutinesTest)
         }
 
-        androidInstrumentedTest {
-            dependencies {
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-            }
+        desktopTest.dependencies {
+            implementation(libs.kotlinTestJunit)
+            implementation(libs.truth)
         }
+
+        androidDeviceTest.dependencies {
+            implementation(libs.testExtJunit)
+            implementation(libs.testCore)
+            implementation(libs.testRunner)
+            implementation(libs.junit)
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.DelicateTracingApi")
     }
 }
 
 androidx {
     name = "Tracing"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Android Tracing"
-    legacyDisableKotlinStrictApiMode = true
     deviceTests {
         enableAlsoRunningOnPhysicalDevices = true
     }

@@ -23,23 +23,29 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
 /**
- * Specify the indentation of a paragraph.
+ * Indents paragraph lines.
  *
- * @param firstLine the amount of indentation applied to the first line.
- * @param restLine the amount of indentation applied to every line except the first line.
+ * @param firstLine indentation amount for the first line
+ * @param restLine indentation amount for all lines except the first
  */
 @Immutable
-class TextIndent(val firstLine: TextUnit = 0.sp, val restLine: TextUnit = 0.sp) {
-    companion object {
-        /** Constant fot no text indent. */
-        @Stable val None = TextIndent()
+public class TextIndent(
+    public val firstLine: TextUnit = 0.sp,
+    public val restLine: TextUnit = 0.sp,
+) {
+    public companion object {
+        /** Default configuration representing no text indent. */
+        @Stable public val None: TextIndent = TextIndent()
     }
 
-    fun copy(firstLine: TextUnit = this.firstLine, restLine: TextUnit = this.restLine): TextIndent {
+    public fun copy(
+        firstLine: TextUnit = this.firstLine,
+        restLine: TextUnit = this.restLine,
+    ): TextIndent {
         return TextIndent(firstLine, restLine)
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is TextIndent) return false
         if (firstLine != other.firstLine) return false
@@ -47,13 +53,13 @@ class TextIndent(val firstLine: TextUnit = 0.sp, val restLine: TextUnit = 0.sp) 
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = firstLine.hashCode()
         result = 31 * result + restLine.hashCode()
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "TextIndent(firstLine=$firstLine, restLine=$restLine)"
     }
 }
@@ -68,9 +74,9 @@ class TextIndent(val firstLine: TextUnit = 0.sp, val restLine: TextUnit = 0.sp) 
  * timeline between [start] and [stop]. The interpolation can be extrapolated beyond 0.0 and 1.0, so
  * negative values and values greater than 1.0 are valid.
  */
-fun lerp(start: TextIndent, stop: TextIndent, fraction: Float): TextIndent {
+public fun lerp(start: TextIndent, stop: TextIndent, fraction: Float): TextIndent {
     return TextIndent(
         lerpTextUnitInheritable(start.firstLine, stop.firstLine, fraction),
-        lerpTextUnitInheritable(start.restLine, stop.restLine, fraction)
+        lerpTextUnitInheritable(start.restLine, stop.restLine, fraction),
     )
 }

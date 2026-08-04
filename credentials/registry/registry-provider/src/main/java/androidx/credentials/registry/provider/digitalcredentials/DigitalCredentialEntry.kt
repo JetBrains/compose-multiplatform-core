@@ -16,15 +16,18 @@
 
 package androidx.credentials.registry.provider.digitalcredentials
 
+import androidx.credentials.registry.provider.DelegationType
+import androidx.credentials.registry.provider.DelegationTypeAnnotation
+
 /**
  * A digital credential entry to be registered.
  *
  * This entry contains information that serves two major purposes:
  * 1. Credential metadata for filtering / request matching purpose. When another app makes a
- *    [CredentialManager.getCredential] request, it will specify the specific credential properties
- *    it is looking for. The Credential Manager will use the info stored for the given entry and the
- *    registry matcher you registered to determine whether this entry can fulfill an incoming
- *    request.
+ *    [androidx.credentials.CredentialManager.getCredential] request, it will specify the specific
+ *    credential properties it is looking for. The Credential Manager will use the info stored for
+ *    the given entry and the registry matcher you registered to determine whether this entry can
+ *    fulfill an incoming request.
  * 2. Display metadata that will be rendered as part of the Credential Manager selector UI. The
  *    selector UI, post filtering, will display to the user their qualified, available credential
  *    candidates, in order for the user to make an informed choice.
@@ -34,9 +37,18 @@ package androidx.credentials.registry.provider.digitalcredentials
  * @property id the provider unique identifier of this credential entry, which can be used to
  *   identify the exact credential that the user has chosen
  * @property entryDisplayPropertySet the display properties associated with the given entry
+ * @property delegationType the delegation type the provider is opting into for this specific
+ *   credential entry
+ * @throws IllegalArgumentException if [id] length is greater than 64 characters
  */
 public abstract class DigitalCredentialEntry
+@JvmOverloads
 constructor(
     public val id: String,
     public val entryDisplayPropertySet: Set<EntryDisplayProperties>,
-)
+    @param:DelegationTypeAnnotation public val delegationType: Int = DelegationType.NONE,
+) {
+    init {
+        require(id.length <= 64) { "`id` length must be less than 64" }
+    }
+}

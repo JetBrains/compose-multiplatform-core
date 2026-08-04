@@ -18,15 +18,16 @@ package androidx.health.connect.client.permission
 import android.content.Context
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
-import androidx.annotation.RestrictTo
-import androidx.health.connect.client.HealthConnectClient.Companion.DEFAULT_PROVIDER_PACKAGE_NAME
 import androidx.health.connect.client.HealthConnectClient.Companion.HEALTH_CONNECT_CLIENT_TAG
 import androidx.health.platform.client.impl.logger.Logger
 import androidx.health.platform.client.permission.Permission as ParcelablePermission
 import androidx.health.platform.client.proto.PermissionProto
 import androidx.health.platform.client.service.HealthDataServiceConstants.ACTION_REQUEST_PERMISSIONS
+import androidx.health.platform.client.service.HealthDataServiceConstants.DEFAULT_PROVIDER_PACKAGE_NAME
 import androidx.health.platform.client.service.HealthDataServiceConstants.KEY_GRANTED_PERMISSIONS_STRING
 import androidx.health.platform.client.service.HealthDataServiceConstants.KEY_REQUESTED_PERMISSIONS_STRING
+import androidx.health.platform.client.utils.isPackageInstalled
+import androidx.health.platform.client.utils.isTargetSignatureValid
 
 /**
  * An [ActivityResultContract] to request Health Connect permissions from the HealthConnect APK.
@@ -35,12 +36,20 @@ import androidx.health.platform.client.service.HealthDataServiceConstants.KEY_RE
  *   choice.
  * @see androidx.activity.ComponentActivity.registerForActivityResult
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class HealthPermissionsRequestAppContract(
-    private val providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME,
+    private val providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME
 ) : ActivityResultContract<Set<String>, Set<String>>() {
 
     override fun createIntent(context: Context, input: Set<String>): Intent {
+        require(providerPackageName.isNotEmpty()) { "providerPackageName can't be empty" }
+        if (
+            isPackageInstalled(context.packageManager, providerPackageName) &&
+                !isTargetSignatureValid(context.packageManager, providerPackageName)
+        ) {
+            throw SecurityException(
+                "Package $providerPackageName is installed but signature is invalid!"
+            )
+        }
         val protoPermissionList =
             input
                 .asSequence()
@@ -53,9 +62,7 @@ internal class HealthPermissionsRequestAppContract(
         Logger.debug(HEALTH_CONNECT_CLIENT_TAG, "Requesting ${input.size} permissions.")
         return Intent(ACTION_REQUEST_PERMISSIONS).apply {
             putParcelableArrayListExtra(KEY_REQUESTED_PERMISSIONS_STRING, protoPermissionList)
-            if (providerPackageName.isNotEmpty()) {
-                setPackage(providerPackageName)
-            }
+            setPackage(providerPackageName)
         }
     }
 

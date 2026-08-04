@@ -1,193 +1,36 @@
 #!/usr/bin/env bash
 
+cd "$(dirname $0)"
+source development/ide-common.sh
+
 function usage() {
-  echo "Usage: studiow [--clear-caches] [--clean] [--reinstall] [--profile] <project subset>"
-  echo
-  echo "OPTIONS"
-  echo
-  echo " --clear-caches"
-  echo "   Clear generated caches (but not user settings) before launching"
-  echo
-  echo " --clean"
-  echo "   Clear (with backup) generated files (settings, caches, etc) before launching"
-  echo "   Also implies --clear-caches"
-  echo
-  echo " --reinstall"
-  echo "   Remove and re-download Studio itself. Also implies --clean"
-  echo
-  echo " --profile"
-  echo "   Enables profiling of Studio"
-  echo
-  echo "Project subsets:"
-  echo " m, main"
-  echo "  Open the project subset main: non-Compose Jetpack libraries"
-  echo
-  echo " c, compose"
-  echo "  Open the project subset compose"
-  echo
-  echo " ca, camera"
-  echo "  Open the project subset camera"
-  echo
-  echo " f, flan"
-  echo "  Open the project subset flan: Fragment, Lifecycle, Activity, and Navigation"
-  echo
-  echo " media"
-  echo "  Open the project subset media: Media, Media2, and MediaRouter"
-  echo
-  echo " kmp"
-  echo "  Open the project subset KMP: Projects that have KMP builds"
-  echo
-  echo " w, wear"
-  echo "  Open the project subset for Wear OS libraries"
-  echo
-  echo " g, glance"
-  echo "  Open the project subset for glance projects"
-  echo
-  echo " x, xr"
-  echo "  Open the project subset for XR projects"
-  echo
-  echo
-  echo " native"
-  echo "  Open the project subset for native projects"
-  echo
-  echo " a, all"
-  echo "  Open the project subset all"
-  echo
+  show_usage "studiow"
   exit 1
 }
 
-cd "$(dirname $0)"
-
-subsetArg=""
-clearCaches=false
-cleanSettings=false
-reinstall=false
-projectSubset=""
-profile=false
-acceptTos=false
-while [ "$1" != "" ]; do
-  arg="$1"
-  shift
-  # parse options
-  if [ "$arg" == "--acceptTos" ]; then
-    acceptTos=true
-    continue
-  fi
-  if [ "$arg" == "--clear-caches" ]; then
-    clearCaches=true
-    continue
-  fi
-  if [ "$arg" == "--clean" ]; then
-    clearCaches=true
-    cleanSettings=true
-    continue
-  fi
-  if [ "$arg" == "--reinstall" ]; then
-    clearCaches=true
-    cleanSettings=true
-    reinstall=true
-    continue
-  fi
-  if [ "$arg" == "--profile" ]; then
-    profile=true
-    continue
-  fi
-  # parse arguments
-  subsetArg="$arg"
-  newSubset=""
-  if [ "$subsetArg" == "m" -o "$subsetArg" == "main" ]; then
-    newSubset=main
-  fi
-  if [ "$subsetArg" == "c" -o "$subsetArg" == "compose" ]; then
-    newSubset=compose
-  fi
-  if [ "$subsetArg" == "ca" -o "$subsetArg" == "camera" ]; then
-    newSubset=camera
-  fi
-  if [ "$subsetArg" == "f" -o "$subsetArg" == "flan" ]; then
-    newSubset=flan
-  fi
-  if [ "$subsetArg" == "media" ]; then
-    newSubset=media
-  fi
-  if [ "$subsetArg" == "w" -o "$subsetArg" == "wear" ]; then
-    newSubset=wear
-  fi
-  if [ "$subsetArg" == "g" -o "$subsetArg" == "glance" ]; then
-      newSubset=glance
-  fi
-  if [ "$subsetArg" == "k" -o "$subsetArg" == "kmp" ]; then
-      newSubset=kmp
-  fi
-  if [ "$subsetArg" == "native" ]; then
-    newSubset=native
-  fi
-  if [ "$subsetArg" == "a" -o "$subsetArg" == "all" ]; then
-    newSubset=all
-  fi
-  if [ "$subsetArg" == "t" -o "$subsetArg" == "tools" ]; then
-    newSubset=tools
-  fi
-  if [ "$subsetArg" == "wm" -o "$subsetArg" == "window" ]; then
-    newSubset=window
-  fi
-  if [ "$subsetArg" == "x" -o "$subsetArg" == "xr" ]; then
-      newSubset=xr
-  fi
-  if [ "$newSubset" == "" ]; then
-    echo "Unrecognized argument: '$subsetArg'"
-    usage
-  fi
-  if [ "$projectSubset" != "" ]; then
-    echo "Unrecognized argument '$subsetArg', cannot specify project subset more than once"
-    usage
-  fi
-  projectSubset=$newSubset
-done
-
-if [ "$projectSubset" == "" ]; then
-  echo "Project subset is required"
+if ! parse_ide_args "$@"; then
   usage
 fi
 
-export ANDROIDX_PROJECTS=$projectSubset
+setup_env "studiow"
 
-# ensures the nonexistence of a file or directory, and makes a backup
-function remove() {
-  path="$1"
-  backup="$(dirname $path)/studio-backup/$(basename $path)"
-  if [ -e "$path" ]; then
-    echo "Moving $path to $backup"
-    rm -rf "$backup"
-    mkdir -p "$(dirname $backup)"
-    mv "$path" "$backup"
-  fi
-}
 
 if [ "$reinstall" == "true" ]; then
   # remove Studio itself so Gradle will re-download it
   rm -rf studio
 fi
 
-if [ "$profile" == "true" ]; then
-  PROFILE_FILE=/tmp/report.json
-  traceConfig="$(cd development/studio && pwd)/profile.config"
-  rm -f "$PROFILE_FILE"
-  echo "Profile file will be $PROFILE_FILE , which will be able to be loaded into chrome://tracing"
-  echo
-  echo "If you find that too many or too few function calls are included in the trace, modify $traceConfig"
-  echo
-  tracerJar="$(cd ../../prebuilts/androidx/external/com/android/tools/tracer/agent && pwd)/trace_agent.jar"
-  # Make sure to set _JAVA_OPTIONS before starting Gradle
-  export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:${tracerJar}=${traceConfig}"
-fi
-
 # remove studio-specific caches
 if [ "$cleanSettings" == "true" ]; then
   # make backups of files that users might have customized
-  remove ~/.AndroidStudioAndroidX
-  remove ~/.AndroidStudioAndroidXPlayground
-  remove ~/.android
+  backup_and_remove ~/.AndroidStudioAndroidX "studio-backup"
+  backup_and_remove ~/.AndroidStudioAndroidXPlayground "studio-backup"
+  backup_and_remove ~/.android "studio-backup"
+fi
+
+extraArgs=()
+if [ "$acceptTos" == "true" ]; then
+  extraArgs+=("--acceptTos")
 fi
 
 if [ "$clearCaches" == "true" ]; then
@@ -195,19 +38,8 @@ if [ "$clearCaches" == "true" ]; then
   git clean -fdX .idea/
 
   # remove gradle caches too and build
-  ./cleanBuild.sh -y studio
+  ./cleanBuild.sh -y :studio "${extraArgs[@]}"
 else
-  # If not a clean launch, then a Gradle daemon might be running.
-  # If profiling, we need to stop the Gradle daemon to make sure any changes to the
-  # profiling properties will be used.
-  if [ "$profile" == "true" ]; then
-    ./gradlew --stop
-  fi
-
   # ask gradle to launch studio
-  if [ "$acceptTos" == "true" ]; then
-    ./gradlew :studio --acceptTos
-  else
-    ./gradlew :studio
-  fi
+  ./gradlew :studio "${extraArgs[@]}"
 fi

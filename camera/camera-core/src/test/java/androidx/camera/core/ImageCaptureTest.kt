@@ -19,7 +19,7 @@ package androidx.camera.core
 import android.content.Context
 import android.graphics.ImageFormat
 import android.graphics.Rect
-import android.os.Build
+import android.hardware.camera2.CameraCharacteristics
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper.getMainLooper
@@ -36,6 +36,7 @@ import androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW
 import androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW_JPEG
 import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 import androidx.camera.core.MirrorMode.MIRROR_MODE_UNSPECIFIED
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_HDR
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraConfig
 import androidx.camera.core.impl.CameraFactory
@@ -57,6 +58,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.ScreenFlashWrapper
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -76,12 +78,12 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.mocks.MockScreenFlashListener
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Collections
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -100,7 +102,7 @@ import org.robolectric.shadows.ShadowLooper
 /** Unit tests for [ImageCapture]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ImageCaptureTest {
     private val resolution = Size(640, 480)
 
@@ -123,10 +125,12 @@ class ImageCaptureTest {
                 captureError = exception
             }
         }
+    private val onImageSavedCallback = mock(ImageCapture.OnImageSavedCallback::class.java)
+
     private val testImplementationOption: androidx.camera.core.impl.Config.Option<Int> =
         androidx.camera.core.impl.Config.Option.create(
             "test.testOption",
-            Int::class.javaPrimitiveType!!
+            Int::class.javaPrimitiveType!!,
         )
     private val testImplementationOptionValue = 5
 
@@ -140,7 +144,7 @@ class ImageCaptureTest {
             FakeCamera("1", null, FakeCameraInfoInternal("1", CameraSelector.LENS_FACING_FRONT))
 
         val cameraFactoryProvider =
-            CameraFactory.Provider { _, _, _, _ ->
+            CameraFactory.Provider { _, _, _, _, _, _ ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertDefaultBackCamera(camera.cameraInfoInternal.cameraId) { camera }
                 cameraFactory.insertDefaultFrontCamera(cameraFront.cameraInfoInternal.cameraId) {
@@ -169,19 +173,24 @@ class ImageCaptureTest {
     @Throws(ExecutionException::class, InterruptedException::class)
     fun tearDown() {
         capturedImage?.close()
-        CameraXUtil.shutdown().get()
+        if (::cameraUseCaseAdapter.isInitialized) {
+            cameraUseCaseAdapter.removeAllUseCases()
+        }
+        CameraXUtil.shutdown().get(10, TimeUnit.SECONDS)
         fakeImageReaderProxy = null
+
+        // Drain tasks before quitting the callback thread to avoid RejectedExecutionException
+        flushAll()
+
         callbackThread.quitSafely()
+        callbackThread.join()
     }
 
     @Test
     fun virtualCamera_canRecreatePipeline() {
         // Arrange
         camera.hasTransform = false
-        val imageCapture =
-            bindImageCapture(
-                bufferFormat = ImageFormat.JPEG,
-            )
+        val imageCapture = bindImageCapture(bufferFormat = ImageFormat.JPEG)
         // Act: pipeline can be recreated without crashing.
         imageCapture.updateSuggestedStreamSpec(StreamSpec.builder(resolution).build(), null)
     }
@@ -192,10 +201,7 @@ class ImageCaptureTest {
         camera.hasTransform = false
 
         // Act.
-        val imageCapture =
-            bindImageCapture(
-                bufferFormat = ImageFormat.JPEG,
-            )
+        val imageCapture = bindImageCapture(bufferFormat = ImageFormat.JPEG)
 
         // Assert.
         assertThat(imageCapture.imagePipeline!!.expectsMetadata()).isFalse()
@@ -263,7 +269,6 @@ class ImageCaptureTest {
         // Arrange.
         val imageCapture = createImageCapture()
         val options = ImageCapture.OutputFileOptions.Builder(File("fake_path")).build()
-        val onImageSavedCallback = mock(ImageCapture.OnImageSavedCallback::class.java)
 
         // Act.
         imageCapture.takePicture(options, executor, onImageSavedCallback)
@@ -277,17 +282,14 @@ class ImageCaptureTest {
     @Test
     fun onError_surfaceIsRecreated() {
         // Arrange: create ImageCapture and get the Surface
-        val imageCapture =
-            bindImageCapture(
-                bufferFormat = ImageFormat.JPEG,
-            )
+        val imageCapture = bindImageCapture(bufferFormat = ImageFormat.JPEG)
         val oldSurface = imageCapture.sessionConfig.surfaces.single().surface.get()
         assertTakePictureManagerHasTheSameSurface(imageCapture)
 
         // Act: invoke onError callback.
         imageCapture.sessionConfig.errorListener!!.onError(
             imageCapture.sessionConfig,
-            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
         )
 
         // Assert: the surface has been recreated.
@@ -321,7 +323,7 @@ class ImageCaptureTest {
             bindImageCapture(
                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
                 ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
-                imageReaderProxyProvider = getFakeImageReaderProxyProvider()
+                imageReaderProxyProvider = getFakeImageReaderProxyProvider(),
             )
 
         // Act
@@ -340,7 +342,7 @@ class ImageCaptureTest {
                     expectedPadding,
                     0,
                     fakeImageReaderProxy!!.width - expectedPadding,
-                    fakeImageReaderProxy!!.height
+                    fakeImageReaderProxy!!.height,
                 )
             )
     }
@@ -351,7 +353,7 @@ class ImageCaptureTest {
         val imageCapture =
             bindImageCapture(
                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-                ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build()
+                ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
             )
 
         // Act
@@ -375,7 +377,7 @@ class ImageCaptureTest {
         val imageCapture =
             bindImageCapture(
                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-                imageReaderProxyProvider = getFakeImageReaderProxyProvider()
+                imageReaderProxyProvider = getFakeImageReaderProxyProvider(),
             )
 
         // Act
@@ -404,10 +406,10 @@ class ImageCaptureTest {
                             height,
                             ImageFormat.JPEG,
                             queueDepth,
-                            usage
+                            usage,
                         )
                     fakeImageReaderProxy!!
-                }
+                },
             )
 
         // Verify.
@@ -417,7 +419,12 @@ class ImageCaptureTest {
 
     @Test
     fun canGetSupportedOutputFormats_fromOriginalCameraInfo() {
-        val cameraInfo = FakeCameraInfoInternal()
+        val cameraInfo =
+            FakeCameraInfoInternal().apply {
+                setAvailableCapabilities(
+                    setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                )
+            }
         cameraInfo.setSupportedResolutions(ImageFormat.JPEG, listOf())
         cameraInfo.setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
 
@@ -431,7 +438,12 @@ class ImageCaptureTest {
 
     @Test
     fun canGetSupportedOutputFormats_fromAdapterCameraInfo_notOverwriteOutputFormats() {
-        val cameraInfo = FakeCameraInfoInternal()
+        val cameraInfo =
+            FakeCameraInfoInternal().apply {
+                setAvailableCapabilities(
+                    setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                )
+            }
         cameraInfo.setSupportedResolutions(ImageFormat.JPEG, listOf())
         cameraInfo.setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
 
@@ -448,14 +460,19 @@ class ImageCaptureTest {
 
     @Test
     fun canGetSupportedOutputFormats_fromAdapterCameraInfo_overwriteRawNotSupported() {
-        val cameraInfo = FakeCameraInfoInternal()
+        val cameraInfo =
+            FakeCameraInfoInternal().apply {
+                setAvailableCapabilities(
+                    setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                )
+            }
         cameraInfo.setSupportedResolutions(ImageFormat.JPEG, listOf())
         cameraInfo.setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
 
         val adapterCameraInfo =
             AdapterCameraInfo(
                 cameraInfo,
-                createCameraConfigWithSupportedOutputFormats(listOf(ImageFormat.JPEG))
+                createCameraConfigWithSupportedOutputFormats(listOf(ImageFormat.JPEG)),
             )
 
         // Verify.
@@ -489,7 +506,7 @@ class ImageCaptureTest {
                 cameraInfo,
                 createCameraConfigWithSupportedOutputFormats(
                     listOf(ImageFormat.JPEG, ImageFormat.JPEG_R)
-                )
+                ),
             )
 
         // Verify.
@@ -508,7 +525,7 @@ class ImageCaptureTest {
         val adapterCameraInfo =
             AdapterCameraInfo(
                 cameraInfo,
-                createCameraConfigWithSupportedOutputFormats(listOf(ImageFormat.JPEG))
+                createCameraConfigWithSupportedOutputFormats(listOf(ImageFormat.JPEG)),
             )
 
         // Verify.
@@ -531,7 +548,7 @@ class ImageCaptureTest {
                                     outputFormats.forEach { outputFormat ->
                                         add(Pair.create(outputFormat, arrayOf()))
                                     }
-                                }
+                                },
                             )
                         }
                     }
@@ -594,17 +611,21 @@ class ImageCaptureTest {
             setOf(listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, ImageFormat.JPEG_R))
         )
         val fakeCameraInfo =
-            FakeCameraInfoInternal().apply {
-                setSupportedResolutions(ImageFormat.PRIVATE, listOf())
-                setSupportedResolutions(ImageFormat.JPEG, listOf())
-                setSupportedResolutions(ImageFormat.JPEG_R, listOf())
-            }
+            FakeCameraInfoInternal(
+                    StreamSpecsCalculatorImpl(FakeUseCaseConfigFactory(), fakeManager)
+                )
+                .apply {
+                    setSupportedResolutions(ImageFormat.PRIVATE, listOf())
+                    setSupportedResolutions(ImageFormat.JPEG, listOf())
+                    setSupportedResolutions(ImageFormat.JPEG_R, listOf())
+                }
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         val adapter =
             CameraUseCaseAdapter(
                 FakeCamera(FakeCameraControl(), fakeCameraInfo),
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory()
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
         adapter.addUseCases(listOf(imageCapture))
 
@@ -618,7 +639,7 @@ class ImageCaptureTest {
     fun bindImageCaptureWithZslUnsupportedSdkVersion_notAddZslConfig() {
         bindImageCapture(
             ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
-            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build()
+            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
         )
 
         assertThat(camera.cameraControlInternal).isInstanceOf(FakeCameraControl::class.java)
@@ -626,12 +647,11 @@ class ImageCaptureTest {
         assertThat(cameraControl.isZslConfigAdded).isFalse()
     }
 
-    @Config(minSdk = 23)
     @Test
     fun bindImageCaptureInRegularCaptureModeWithZslSupportedSdkVersion_notAddZslConfig() {
         bindImageCapture(
             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
-            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build()
+            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
         )
 
         assertThat(camera.cameraControlInternal).isInstanceOf(FakeCameraControl::class.java)
@@ -639,12 +659,11 @@ class ImageCaptureTest {
         assertThat(cameraControl.isZslConfigAdded).isFalse()
     }
 
-    @Config(minSdk = 23)
     @Test
     fun bindImageCaptureInZslCaptureModeWithZslSupportedSdkVersion_addZslConfig() {
         bindImageCapture(
             ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
-            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build()
+            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
         )
 
         assertThat(camera.cameraControlInternal).isInstanceOf(FakeCameraControl::class.java)
@@ -656,9 +675,7 @@ class ImageCaptureTest {
     fun sessionConfigMatchesStreamSpec() {
         val imageCapture =
             ImageCapture.Builder()
-                .setSessionOptionUnpacker { _, _, _,
-                    ->
-                }
+                .setSessionOptionUnpacker { _, _, _ -> }
                 .setCaptureOptionUnpacker { _, _ -> }
                 .build()
         val streamSpec =
@@ -673,10 +690,7 @@ class ImageCaptureTest {
 
     @Test
     fun sessionConfigHasStreamSpecImplementationOptions_whenUpdateStreamSpecImplOptions() {
-        val imageCapture =
-            bindImageCapture(
-                bufferFormat = ImageFormat.JPEG,
-            )
+        val imageCapture = bindImageCapture(bufferFormat = ImageFormat.JPEG)
         val newImplementationOptionValue = 6
         val streamSpecOptions = MutableOptionsBundle.create()
         streamSpecOptions.insertOption(testImplementationOption, newImplementationOptionValue)
@@ -778,7 +792,7 @@ class ImageCaptureTest {
             val cameraUseCaseAdapter =
                 CameraUtil.createCameraUseCaseAdapter(
                     ApplicationProvider.getApplicationContext(),
-                    CameraSelector.DEFAULT_BACK_CAMERA
+                    CameraSelector.DEFAULT_BACK_CAMERA,
                 )
             cameraUseCaseAdapter.addUseCases(Collections.singleton<UseCase>(imageCapture))
         }
@@ -982,7 +996,6 @@ class ImageCaptureTest {
             .isSameInstanceAs(resolutionSelector)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useMaximumSize_whenNotSettingPostviewResolutioSelector() {
         val imageCapture = ImageCapture.Builder().setPostviewEnabled(true).build()
@@ -997,14 +1010,13 @@ class ImageCaptureTest {
                             postviewSupportedSizes =
                                 mapOf(ImageFormat.JPEG to listOf(Size(1920, 1080), Size(640, 480)))
                         )
-                )
+                ),
             )
         cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
         assertThat(imageCapture.imagePipeline!!.postviewSettings!!.resolution)
             .isEqualTo(Size(1920, 1080))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun postviewResolutioSelectorCanWork() {
         val resolutionSelector =
@@ -1030,7 +1042,7 @@ class ImageCaptureTest {
                                     ImageFormat.JPEG to listOf(Size(4000, 3000), Size(1920, 1080))
                                 )
                         )
-                )
+                ),
             )
 
         cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
@@ -1038,7 +1050,6 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun throwException_whenPostviewResolutionSelectorCannotSelectSize() {
         val resolutionSelector =
@@ -1059,13 +1070,148 @@ class ImageCaptureTest {
                             postviewSupportedSizes =
                                 mapOf(ImageFormat.JPEG to listOf(Size(1920, 1080)))
                         )
-                )
+                ),
             )
 
         // the CameraException will be converted to IllegalArgumentException in camera-lifecycle.
         assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
             cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
         }
+    }
+
+    @Test
+    fun dynamicRange_isSetToSdrByDefault_whenImageCaptureBoundWithDefaultConfig() {
+        val imageCapture = ImageCapture.Builder().build()
+
+        imageCapture.bindToCamera(
+            FakeCamera(),
+            null,
+            null,
+            imageCapture.getDefaultConfig(true, FakeUseCaseConfigFactory()),
+        )
+
+        assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.SDR)
+    }
+
+    @Test
+    fun dynamicRange_isSetToUnspecified_whenUltraHdrFeatureIsSetButImageCaptureNotBoundYet() {
+        val imageCapture = ImageCapture.Builder().build()
+
+        imageCapture.featureGroup = setOf(IMAGE_ULTRA_HDR)
+
+        assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.UNSPECIFIED)
+    }
+
+    @Test
+    fun dynamicRange_isSetToUnspecified_whenUltraHdrFeatureIsSetAndImageCaptureBoundWithDefaults() {
+        val imageCapture = ImageCapture.Builder().build()
+
+        imageCapture.featureGroup = setOf(IMAGE_ULTRA_HDR)
+
+        imageCapture.bindToCamera(
+            FakeCamera(),
+            null,
+            null,
+            imageCapture.getDefaultConfig(true, FakeUseCaseConfigFactory()),
+        )
+
+        assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.UNSPECIFIED)
+    }
+
+    @Test
+    fun setTargetRotationByRotationProvider_rotationIsUpdated() {
+        // Arrange.
+        val imageCapture = ImageCapture.Builder().build()
+        val rotationProvider = RotationProvider(ApplicationProvider.getApplicationContext(), true)
+        imageCapture.setRotationProvider(rotationProvider)
+
+        cameraUseCaseAdapter =
+            CameraUtil.createCameraUseCaseAdapter(
+                ApplicationProvider.getApplicationContext(),
+                CameraSelector.DEFAULT_BACK_CAMERA,
+            )
+
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+
+        // Act.
+        rotationProvider.updateOrientationForTesting(180)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert.
+        assertThat(imageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
+    @Test
+    fun takePictureInMemoryWithRawJpeg_doesNotThrowException() {
+        // Arrange.
+        val imageCapture = bindImageCaptureWithRawJpegSupport()
+
+        // Act & Assert.
+        // Should not throw IllegalArgumentException for in-memory RAW_JPEG capture
+        imageCapture.takePicture(executor, onImageCapturedCallback)
+    }
+
+    @Test
+    fun takePictureToFileWithRawJpegButOnlyOneOption_throwException() {
+        // Arrange.
+        val imageCapture = bindImageCaptureWithRawJpegSupport()
+        val options = ImageCapture.OutputFileOptions.Builder(File("fake_path")).build()
+
+        // Act & Assert.
+        assertThrows(IllegalArgumentException::class.java) {
+            imageCapture.takePicture(options, executor, onImageSavedCallback)
+        }
+    }
+
+    @Test
+    fun takePictureToFileWithJpegButTwoOptions_throwException() {
+        // Arrange.
+        // Default format is JPEG
+        val imageCapture = bindImageCapture()
+        val options1 = ImageCapture.OutputFileOptions.Builder(File("fake_path1")).build()
+        val options2 = ImageCapture.OutputFileOptions.Builder(File("fake_path2")).build()
+
+        // Act & Assert.
+        assertThrows(IllegalArgumentException::class.java) {
+            imageCapture.takePicture(options1, options2, executor, onImageSavedCallback)
+        }
+    }
+
+    private fun bindImageCaptureWithRawJpegSupport(): ImageCapture {
+        val imageCapture = ImageCapture.Builder().setOutputFormat(OUTPUT_FORMAT_RAW_JPEG).build()
+
+        val fakeManager = FakeCameraDeviceSurfaceManager()
+        fakeManager.setValidSurfaceCombos(
+            setOf(
+                listOf(
+                    INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+                    ImageFormat.JPEG,
+                    ImageFormat.RAW_SENSOR,
+                )
+            )
+        )
+        val fakeCameraInfo =
+            FakeCameraInfoInternal(
+                    StreamSpecsCalculatorImpl(FakeUseCaseConfigFactory(), fakeManager)
+                )
+                .apply {
+                    setSupportedResolutions(ImageFormat.PRIVATE, listOf())
+                    setSupportedResolutions(ImageFormat.JPEG, listOf())
+                    setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
+                    setAvailableCapabilities(
+                        setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                    )
+                }
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
+        cameraUseCaseAdapter =
+            CameraUseCaseAdapter(
+                FakeCamera(FakeCameraControl(), fakeCameraInfo),
+                FakeCameraCoordinator(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
+            )
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+        return imageCapture
     }
 
     private fun bindImageCapture(
@@ -1078,19 +1224,14 @@ class ImageCaptureTest {
         cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
     ): ImageCapture {
         // Arrange.
-        val imageCapture =
-            createImageCapture(
-                captureMode,
-                bufferFormat,
-                imageReaderProxyProvider,
-            )
+        val imageCapture = createImageCapture(captureMode, bufferFormat, imageReaderProxyProvider)
 
         val cameraConfig = FakeCameraConfig(sessionProcessor = sessionProcessor)
         cameraUseCaseAdapter =
             CameraUtil.createCameraUseCaseAdapter(
                 ApplicationProvider.getApplicationContext(),
                 cameraSelector,
-                cameraConfig
+                cameraConfig,
             )
 
         cameraUseCaseAdapter.setViewPort(viewPort)
@@ -1098,11 +1239,50 @@ class ImageCaptureTest {
         return imageCapture
     }
 
+    @Test
+    fun setFlashMode_sameValueDoesNotCallControl() {
+        // Arrange
+        val fakeCameraControl = FakeCameraControl()
+        val fakeCameraInfo = FakeCameraInfoInternal()
+        val fakeManager = FakeCameraDeviceSurfaceManager()
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
+
+        val fakeCamera = FakeCamera(fakeCameraControl, fakeCameraInfo)
+        cameraUseCaseAdapter =
+            CameraUseCaseAdapter(
+                fakeCamera,
+                FakeCameraCoordinator(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
+            )
+
+        // Default flash mode in createImageCapture is ImageCapture.FLASH_MODE_OFF
+        val imageCapture = createImageCapture()
+
+        // Act: bind use case
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+
+        // Assert: initial set of flash mode (should be called exactly once during bind)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(1)
+
+        // Act: set same flash mode again
+        imageCapture.setFlashMode(ImageCapture.FLASH_MODE_OFF)
+
+        // Assert: should still be called exactly once (no redundant calls)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(1)
+
+        // Act: set a different flash mode
+        imageCapture.setFlashMode(ImageCapture.FLASH_MODE_ON)
+
+        // Assert: should be called again (total count 2)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(2)
+    }
+
     private fun createImageCapture(
         captureMode: Int = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
         // Set non jpg format by default so it doesn't trigger the exif code path.
         bufferFormat: Int = ImageFormat.YUV_420_888,
-        imageReaderProxyProvider: ImageReaderProxyProvider? = null
+        imageReaderProxyProvider: ImageReaderProxyProvider? = null,
     ): ImageCapture {
         val builder =
             ImageCapture.Builder()

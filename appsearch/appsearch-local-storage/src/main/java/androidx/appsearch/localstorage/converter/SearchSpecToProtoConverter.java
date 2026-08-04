@@ -25,6 +25,7 @@ import android.util.Log;
 
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.FeatureConstants;
@@ -67,9 +68,8 @@ import java.util.Set;
 
 /**
  * Translates a {@link SearchSpec} into icing search protos.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class SearchSpecToProtoConverter {
     private static final String TAG = "AppSearchSearchSpecConv";
@@ -282,10 +282,13 @@ public final class SearchSpecToProtoConverter {
         }
     }
 
-
-    /** Extracts {@link SearchSpecProto} information from a {@link SearchSpec}. */
+    /**
+     * Extracts {@link SearchSpecProto} information from a {@link SearchSpec}.
+     *
+     * @param isVMEnabled Whether or not icing is running in a pVM.
+     */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public @NonNull SearchSpecProto toSearchSpecProto() {
+    public @NonNull SearchSpecProto toSearchSpecProto(boolean isVMEnabled) {
         // set query to SearchSpecProto and override schema and namespace filter by
         // targetPrefixedFilters which contains all existing and also accessible to the caller
         // filters.
@@ -294,7 +297,8 @@ public final class SearchSpecToProtoConverter {
                 .addAllNamespaceFilters(mTargetPrefixedNamespaceFilters)
                 .addAllSchemaTypeFilters(mTargetPrefixedSchemaFilters)
                 .setUseReadOnlySearch(mIcingOptionsConfig.getUseReadOnlySearch())
-                .addAllQueryParameterStrings(mSearchSpec.getSearchStringParameters());
+                .addAllQueryParameterStrings(mSearchSpec.getSearchStringParameters())
+                .setEmbeddingQueryNprobe(mSearchSpec.getEmbeddingQueryProbeCount());
 
         List<EmbeddingVector> searchEmbeddings = mSearchSpec.getEmbeddingParameters();
         for (int i = 0; i < searchEmbeddings.size(); i++) {
@@ -354,26 +358,28 @@ public final class SearchSpecToProtoConverter {
         protoBuilder.setEmbeddingQueryMetricType(embeddingSearchMetricTypeProto);
 
         if (mNestedConverter != null && !mNestedConverter.hasNothingToSearch()) {
+            SearchSpecToProtoConverter nestedConverter = mNestedConverter;
             JoinSpecProto.NestedSpecProto nestedSpec =
                     JoinSpecProto.NestedSpecProto.newBuilder()
-                            .setResultSpec(mNestedConverter.toResultSpecProto(
-                                    mNamespaceCache, mSchemaCache))
-                            .setScoringSpec(mNestedConverter.toScoringSpecProto())
-                            .setSearchSpec(mNestedConverter.toSearchSpecProto())
+                            .setResultSpec(nestedConverter.toResultSpecProto(
+                                    mNamespaceCache, mSchemaCache, isVMEnabled))
+                            .setScoringSpec(nestedConverter.toScoringSpecProto())
+                            .setSearchSpec(nestedConverter.toSearchSpecProto(isVMEnabled))
                             .build();
 
             // This cannot be null, otherwise mNestedConverter would be null as well.
             JoinSpec joinSpec = mSearchSpec.getJoinSpec();
-            JoinSpecProto.Builder joinSpecProtoBuilder =
+            JoinSpecProto joinSpecProto =
                     JoinSpecProto.newBuilder()
                             .setNestedSpec(nestedSpec)
                             .setParentPropertyExpression(JoinSpec.QUALIFIED_ID)
                             .setChildPropertyExpression(joinSpec.getChildPropertyExpression())
                             .setAggregationScoringStrategy(
                                     toAggregationScoringStrategy(
-                                            joinSpec.getAggregationScoringStrategy()));
+                                            joinSpec.getAggregationScoringStrategy()))
+                            .build();
 
-            protoBuilder.setJoinSpec(joinSpecProtoBuilder);
+            protoBuilder.setJoinSpec(joinSpecProto);
         }
 
         if (mSearchSpec.isListFilterHasPropertyFunctionEnabled()
@@ -423,13 +429,14 @@ public final class SearchSpecToProtoConverter {
     /**
      * Extracts {@link ResultSpecProto} information from a {@link SearchSpec}.
      *
-     * @param namespaceCache  The NamespaceCache instance held in AppSearch.
-     * @param schemaCache     The SchemaCache instance held in AppSearch.
+     * @param namespaceCache The NamespaceCache instance held in AppSearch.
+     * @param schemaCache The SchemaCache instance held in AppSearch.
+     * @param isVMEnabled Whether or not icing is running in a pVM.
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public @NonNull ResultSpecProto toResultSpecProto(
-            @NonNull NamespaceCache namespaceCache,
-            @NonNull SchemaCache schemaCache) {
+            @NonNull NamespaceCache namespaceCache, @NonNull SchemaCache schemaCache,
+            boolean isVMEnabled) {
         ResultSpecProto.Builder resultSpecBuilder = ResultSpecProto.newBuilder()
                 .setNumPerPage(mSearchSpec.getResultCountPerPage())
                 .setSnippetSpec(
@@ -438,8 +445,14 @@ public final class SearchSpecToProtoConverter {
                                 .setNumMatchesPerProperty(mSearchSpec.getSnippetCountPerProperty())
                                 .setMaxWindowUtf32Length(mSearchSpec.getMaxSnippetSize())
                                 .setGetEmbeddingMatchInfo(
-                                        mSearchSpec.shouldRetrieveEmbeddingMatchInfos()))
-                .setNumTotalBytesPerPageThreshold(mIcingOptionsConfig.getMaxPageBytesLimit());
+                                        mSearchSpec.shouldRetrieveEmbeddingMatchInfos()));
+        if (isVMEnabled) {
+            resultSpecBuilder.setNumTotalBytesPerPageThreshold(
+                    mIcingOptionsConfig.getMaxPageBytesLimitForVm());
+        } else {
+            resultSpecBuilder.setNumTotalBytesPerPageThreshold(
+                    mIcingOptionsConfig.getMaxPageBytesLimit());
+        }
         JoinSpec joinSpec = mSearchSpec.getJoinSpec();
         if (joinSpec != null) {
             resultSpecBuilder.setMaxJoinedChildrenPerParentToReturn(
@@ -904,7 +917,7 @@ public final class SearchSpecToProtoConverter {
                         }
                     }
                 }
-                if (entries.size() > 0) {
+                if (!entries.isEmpty()) {
                     resultSpecBuilder.addResultGroupings(
                             ResultSpecProto.ResultGrouping.newBuilder()
                                 .addAllEntryGroupings(entries).setMaxResults(maxNumResults));
@@ -1061,7 +1074,7 @@ public final class SearchSpecToProtoConverter {
                         }
                     }
                 }
-                if (entries.size() > 0) {
+                if (!entries.isEmpty()) {
                     resultSpecBuilder.addResultGroupings(
                             ResultSpecProto.ResultGrouping.newBuilder()
                                 .addAllEntryGroupings(entries).setMaxResults(maxNumResults));

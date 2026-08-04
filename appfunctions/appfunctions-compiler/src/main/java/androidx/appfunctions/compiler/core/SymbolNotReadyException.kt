@@ -19,7 +19,5 @@ package androidx.appfunctions.compiler.core
 import com.google.devtools.ksp.symbol.KSNode
 
 /** Throws when [node] is not ready for processing yet. */
-class SymbolNotReadyException(
-    message: String? = null,
-    val node: KSNode? = null,
-) : Exception(message)
+class SymbolNotReadyException(message: String? = null, val node: KSNode? = null) :
+    Exception(message)

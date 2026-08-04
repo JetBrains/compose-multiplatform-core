@@ -152,7 +152,7 @@ class FhirResource(@FhirResourceType val type: Int, val id: String, val data: St
             FHIR_RESOURCE_TYPE_PRACTITIONER_ROLE,
             FHIR_RESOURCE_TYPE_ENCOUNTER,
             FHIR_RESOURCE_TYPE_LOCATION,
-            FHIR_RESOURCE_TYPE_ORGANIZATION
+            FHIR_RESOURCE_TYPE_ORGANIZATION,
         )
         @Retention(AnnotationRetention.SOURCE)
         annotation class FhirResourceType

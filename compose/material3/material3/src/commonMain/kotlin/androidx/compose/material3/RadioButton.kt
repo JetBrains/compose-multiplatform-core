@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.RadioButtonTokens
 import androidx.compose.runtime.Composable
@@ -71,19 +72,19 @@ import androidx.compose.ui.unit.dp
  *   interactions will still happen internally.
  */
 @Composable
-fun RadioButton(
+public fun RadioButton(
     selected: Boolean,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: RadioButtonColors = RadioButtonDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val dotRadius =
         animateDpAsState(
             targetValue = if (selected) RadioButtonDotSize / 2 else 0.dp,
             // TODO Load the motionScheme tokens from the component tokens file
-            animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
+            animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
         )
     val radioColor = colors.radioColor(enabled, selected)
     val selectableModifier =
@@ -94,7 +95,13 @@ fun RadioButton(
                 enabled = enabled,
                 role = Role.RadioButton,
                 interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = RadioButtonTokens.StateLayerSize / 2)
+                indication =
+                    @OptIn(ExperimentalMaterial3Api::class)
+                    ripple(
+                        bounded = false,
+                        radius = RadioButtonTokens.StateLayerSize / 2,
+                        focusRingShape = CircleShape,
+                    ),
             )
         } else {
             Modifier
@@ -118,7 +125,7 @@ fun RadioButton(
         drawCircle(
             radioColor.value,
             radius = (RadioButtonTokens.IconSize / 2).toPx() - strokeWidth / 2,
-            style = Stroke(strokeWidth)
+            style = Stroke(strokeWidth),
         )
         if (dotRadius.value > 0.dp) {
             drawCircle(radioColor.value, dotRadius.value.toPx() - strokeWidth / 2, style = Fill)
@@ -127,13 +134,14 @@ fun RadioButton(
 }
 
 /** Defaults used in [RadioButton]. */
-object RadioButtonDefaults {
+public object RadioButtonDefaults {
 
     /**
      * Creates a [RadioButtonColors] that will animate between the provided colors according to the
      * Material specification.
      */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultRadioButtonColors
+    @Composable
+    public fun colors(): RadioButtonColors = MaterialTheme.colorScheme.defaultRadioButtonColors
 
     /**
      * Creates a [RadioButtonColors] that will animate between the provided colors according to the
@@ -147,17 +155,17 @@ object RadioButtonDefaults {
      * @return the resulting [RadioButtonColors] used for the RadioButton
      */
     @Composable
-    fun colors(
+    public fun colors(
         selectedColor: Color = Color.Unspecified,
         unselectedColor: Color = Color.Unspecified,
         disabledSelectedColor: Color = Color.Unspecified,
-        disabledUnselectedColor: Color = Color.Unspecified
+        disabledUnselectedColor: Color = Color.Unspecified,
     ): RadioButtonColors =
         MaterialTheme.colorScheme.defaultRadioButtonColors.copy(
             selectedColor,
             unselectedColor,
             disabledSelectedColor,
-            disabledUnselectedColor
+            disabledUnselectedColor,
         )
 
     internal val ColorScheme.defaultRadioButtonColors: RadioButtonColors
@@ -171,7 +179,7 @@ object RadioButtonDefaults {
                                 .copy(alpha = RadioButtonTokens.DisabledSelectedIconOpacity),
                         disabledUnselectedColor =
                             fromToken(RadioButtonTokens.DisabledUnselectedIconColor)
-                                .copy(alpha = RadioButtonTokens.DisabledUnselectedIconOpacity)
+                                .copy(alpha = RadioButtonTokens.DisabledUnselectedIconOpacity),
                     )
                     .also { defaultRadioButtonColorsCached = it }
         }
@@ -189,23 +197,23 @@ object RadioButtonDefaults {
  *   default implementation that follows Material specifications.
  */
 @Immutable
-class RadioButtonColors
-constructor(
-    val selectedColor: Color,
-    val unselectedColor: Color,
-    val disabledSelectedColor: Color,
-    val disabledUnselectedColor: Color
+public class RadioButtonColors
+public constructor(
+    public val selectedColor: Color,
+    public val unselectedColor: Color,
+    public val disabledSelectedColor: Color,
+    public val disabledUnselectedColor: Color,
 ) {
     /**
      * Returns a copy of this SelectableChipColors, optionally overriding some of the values. This
      * uses the Color.Unspecified to mean “use the value from the source”
      */
-    fun copy(
+    public fun copy(
         selectedColor: Color = this.selectedColor,
         unselectedColor: Color = this.unselectedColor,
         disabledSelectedColor: Color = this.disabledSelectedColor,
         disabledUnselectedColor: Color = this.disabledUnselectedColor,
-    ) =
+    ): RadioButtonColors =
         RadioButtonColors(
             selectedColor.takeOrElse { this.selectedColor },
             unselectedColor.takeOrElse { this.unselectedColor },
@@ -261,6 +269,9 @@ constructor(
     }
 }
 
-private val RadioButtonPadding = 2.dp
-private val RadioButtonDotSize = 12.dp
-private val RadioStrokeWidth = 2.dp
+private val RadioButtonPadding
+    get() = 2.dp
+private val RadioButtonDotSize
+    get() = 12.dp
+private val RadioStrokeWidth
+    get() = 2.dp

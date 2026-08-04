@@ -39,7 +39,7 @@ actual constructor(public actual open val isNullableAllowed: Boolean) {
         bundle: SavedState,
         key: String,
         value: String?,
-        previousValue: T
+        previousValue: T,
     ): T = navTypeParseAndPut(bundle, key, value, previousValue)
 
     public actual open fun serializeAsValue(value: T): String = value.toString()
@@ -47,6 +47,10 @@ actual constructor(public actual open val isNullableAllowed: Boolean) {
     public actual open val name: String = "nav_type"
 
     public actual open fun valueEquals(value: T, other: T): Boolean = value == other
+
+    public override fun toString(): String {
+        return name
+    }
 
     public actual companion object {
         @JvmStatic

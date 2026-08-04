@@ -17,6 +17,8 @@
 package androidx.xr.runtime.math
 
 import com.google.common.truth.Truth.assertThat
+import java.lang.IllegalArgumentException
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -91,6 +93,20 @@ class Vector2Test {
     }
 
     @Test
+    fun normalized_zeroVector_returnsZero() {
+        // A zero-length vector has no direction; it must return Zero rather than NaN components.
+        assertThat(Vector2.Zero.toNormalized()).isEqualTo(Vector2.Zero)
+    }
+
+    @Test
+    fun normalized_smallVector_returnsNormalizedVector() {
+        // A vector with length smaller than 1e-3f (e.g. 1e-4f) but larger than 1e-15f
+        // should be successfully normalized instead of returning Zero.
+        val smallVector = Vector2(0.0001f, 0f)
+        assertThat(smallVector.toNormalized()).isEqualTo(Vector2(1f, 0f))
+    }
+
+    @Test
     fun multiply_returnsVectorScaledByScalar() {
         assertThat(Vector2(3f, 4f) * 2f).isEqualTo(Vector2(6f, 8f))
         assertThat(Vector2(1f, 1f) * 0.5f).isEqualTo(Vector2(0.5f, 0.5f))
@@ -115,10 +131,10 @@ class Vector2Test {
     }
 
     @Test
-    fun multiply_returnsTwoVectorsMultiplied() {
+    fun scale_returnsTwoVectorsMultiplied() {
         val underTest = Vector2(1f, 2f)
         val underTest2 = Vector2(3f, 4f)
-        val underTestMultiply = underTest * underTest2
+        val underTestMultiply = underTest.scale(underTest2)
 
         assertThat(underTestMultiply).isEqualTo(Vector2(3f, 8f))
     }
@@ -176,12 +192,27 @@ class Vector2Test {
     }
 
     @Test
-    fun divide_returnsVectorDividedByVector() {
+    fun componentwiseDivision_returnsVectorDividedByVector() {
         val underTest = Vector2(1f, 2f)
         val underTest2 = Vector2(-2f, 4f)
-        val underTestDiv = underTest / underTest2
+        val underTestDiv = underTest.scale(underTest2.inverse())
 
         assertThat(underTestDiv).isEqualTo(Vector2(-0.5f, 0.5f))
+    }
+
+    @Test
+    fun inverse_nonZeroComponentVector_returnsInverseVector() {
+        val underTest = Vector2(2f, 3f)
+        val underTestInverse = underTest.inverse()
+
+        assertThat(underTestInverse).isEqualTo(Vector2(1 / 2f, 1 / 3f))
+    }
+
+    @Test
+    fun inverse_zeroComponent_returnsIllegalArgumentException() {
+        val underTest = Vector2(0f, 1f)
+
+        assertThrows(IllegalArgumentException::class.java) { underTest.inverse() }
     }
 
     @Test

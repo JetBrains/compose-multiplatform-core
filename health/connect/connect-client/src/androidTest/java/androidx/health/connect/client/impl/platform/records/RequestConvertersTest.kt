@@ -66,7 +66,7 @@ class RequestConvertersTest {
             ReadRecordsRequest(
                 StepsRecord::class,
                 TimeRangeFilter.between(Instant.ofEpochMilli(123L), Instant.ofEpochMilli(456L)),
-                setOf(DataOrigin("package1"), DataOrigin("package2"))
+                setOf(DataOrigin("package1"), DataOrigin("package2")),
             )
 
         with(sdkRequest.toPlatformRequest()) {
@@ -75,7 +75,7 @@ class RequestConvertersTest {
             assertThat(dataOrigins)
                 .containsExactly(
                     PlatformDataOrigin.Builder().setPackageName("package1").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package2").build()
+                    PlatformDataOrigin.Builder().setPackageName("package2").build(),
                 )
         }
     }
@@ -88,7 +88,7 @@ class RequestConvertersTest {
                 TimeRangeFilter.between(Instant.ofEpochMilli(123L), Instant.ofEpochMilli(456L)),
                 setOf(DataOrigin("package1"), DataOrigin("package2")),
                 ascendingOrder = false,
-                pageToken = "123"
+                pageToken = "123",
             )
 
         with(sdkRequest.toPlatformRequest()) {
@@ -97,7 +97,7 @@ class RequestConvertersTest {
             assertThat(dataOrigins)
                 .containsExactly(
                     PlatformDataOrigin.Builder().setPackageName("package1").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package2").build()
+                    PlatformDataOrigin.Builder().setPackageName("package2").build(),
                 )
         }
     }
@@ -126,19 +126,19 @@ class RequestConvertersTest {
         val sdkRequest =
             ChangesTokenRequest(
                 setOf(StepsRecord::class, HeartRateRecord::class),
-                setOf(DataOrigin("package1"), DataOrigin("package2"))
+                setOf(DataOrigin("package1"), DataOrigin("package2")),
             )
 
         with(sdkRequest.toPlatformRequest()) {
             assertThat(recordTypes)
                 .containsExactly(
                     PlatformStepsRecord::class.java,
-                    PlatformHeartRateRecord::class.java
+                    PlatformHeartRateRecord::class.java,
                 )
             assertThat(dataOriginFilters)
                 .containsExactly(
                     PlatformDataOrigin.Builder().setPackageName("package1").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package2").build()
+                    PlatformDataOrigin.Builder().setPackageName("package2").build(),
                 )
         }
     }
@@ -149,7 +149,7 @@ class RequestConvertersTest {
             AggregateRequest(
                 setOf(StepsRecord.COUNT_TOTAL, NutritionRecord.CAFFEINE_TOTAL),
                 TimeRangeFilter.between(Instant.ofEpochMilli(123L), Instant.ofEpochMilli(456L)),
-                setOf(DataOrigin("package1"))
+                setOf(DataOrigin("package1")),
             )
 
         with(sdkRequest.toPlatformRequest()) {
@@ -160,7 +160,7 @@ class RequestConvertersTest {
             assertThat(aggregationTypes)
                 .containsExactly(
                     PlatformStepsRecord.STEPS_COUNT_TOTAL,
-                    PlatformNutritionRecord.CAFFEINE_TOTAL
+                    PlatformNutritionRecord.CAFFEINE_TOTAL,
                 )
             assertThat(dataOriginsFilters)
                 .containsExactly(PlatformDataOrigin.Builder().setPackageName("package1").build())
@@ -174,7 +174,7 @@ class RequestConvertersTest {
                 setOf(NutritionRecord.ENERGY_TOTAL),
                 TimeRangeFilter.between(Instant.ofEpochMilli(123L), Instant.ofEpochMilli(456L)),
                 Duration.ofDays(1),
-                setOf(DataOrigin("package1"), DataOrigin("package2"))
+                setOf(DataOrigin("package1"), DataOrigin("package2")),
             )
 
         with(sdkRequest.toPlatformRequest()) {
@@ -186,7 +186,7 @@ class RequestConvertersTest {
             assertThat(dataOriginsFilters)
                 .containsExactly(
                     PlatformDataOrigin.Builder().setPackageName("package1").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package2").build()
+                    PlatformDataOrigin.Builder().setPackageName("package2").build(),
                 )
         }
     }
@@ -198,10 +198,10 @@ class RequestConvertersTest {
                 setOf(HeartRateRecord.BPM_MAX, HeartRateRecord.BPM_MIN, HeartRateRecord.BPM_AVG),
                 TimeRangeFilter.between(
                     LocalDateTime.parse("2023-09-19T08:30"),
-                    LocalDateTime.parse("2023-09-19T10:30")
+                    LocalDateTime.parse("2023-09-19T10:30"),
                 ),
                 Period.ofDays(1),
-                setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3"))
+                setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3")),
             )
 
         with(sdkRequest.toPlatformRequest()) {
@@ -213,13 +213,13 @@ class RequestConvertersTest {
                 .containsExactly(
                     PlatformHeartRateRecord.BPM_MAX,
                     PlatformHeartRateRecord.BPM_MIN,
-                    PlatformHeartRateRecord.BPM_AVG
+                    PlatformHeartRateRecord.BPM_AVG,
                 )
             assertThat(dataOriginsFilters)
                 .containsExactly(
                     PlatformDataOrigin.Builder().setPackageName("package1").build(),
                     PlatformDataOrigin.Builder().setPackageName("package2").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package3").build()
+                    PlatformDataOrigin.Builder().setPackageName("package3").build(),
                 )
         }
     }
@@ -231,7 +231,7 @@ class RequestConvertersTest {
                 setOf(HeartRateRecord.BPM_MAX, HeartRateRecord.BPM_MIN, HeartRateRecord.BPM_AVG),
                 TimeRangeFilter.after(LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)),
                 Period.ofDays(1),
-                setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3"))
+                setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3")),
             )
 
         with(sdkRequest.toPlatformRequest()) {
@@ -243,13 +243,13 @@ class RequestConvertersTest {
                 .containsExactly(
                     PlatformHeartRateRecord.BPM_MAX,
                     PlatformHeartRateRecord.BPM_MIN,
-                    PlatformHeartRateRecord.BPM_AVG
+                    PlatformHeartRateRecord.BPM_AVG,
                 )
             assertThat(dataOriginsFilters)
                 .containsExactly(
                     PlatformDataOrigin.Builder().setPackageName("package1").build(),
                     PlatformDataOrigin.Builder().setPackageName("package2").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package3").build()
+                    PlatformDataOrigin.Builder().setPackageName("package3").build(),
                 )
         }
     }

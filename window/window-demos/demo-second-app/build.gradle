@@ -17,15 +17,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
         applicationId = "androidx.window.demo2"
-        minSdk = 23
-        targetSdkVersion 35
     }
     buildFeatures {
         viewBinding = true

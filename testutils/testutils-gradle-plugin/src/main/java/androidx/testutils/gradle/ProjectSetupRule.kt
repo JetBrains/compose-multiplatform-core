@@ -21,6 +21,7 @@ import java.util.Properties
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
+import org.gradle.testkit.runner.GradleRunner
 import org.junit.rules.ExternalResource
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.Description
@@ -73,11 +74,11 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
         get() =
             """
             android {
-                compileSdk ${props.compileSdk}
-                buildToolsVersion "${props.buildToolsVersion}"
+                compileSdk = ${props.compileSdk}
+                buildToolsVersion = "${props.buildToolsVersion}"
 
                 defaultConfig {
-                    minSdkVersion ${props.minSdkVersion}
+                    minSdk = ${props.minSdkVersion}
                 }
 
                 signingConfigs {
@@ -140,10 +141,10 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
      * be done in test by adding :publish as a test dependency, for example:
      * ```
      * tasks.findByPath("test")
-     *   .dependsOn(tasks.findByPath(":room:room-compiler:publish")
+     *   .dependsOn(tasks.findByPath(":room3:room3-compiler:publish")
      * ```
      *
-     * @param path - The library m2 path e.g. "androidx/room/room-compiler"
+     * @param path - The library m2 path e.g. "androidx/room3/room3-compiler"
      */
     fun getLibraryLatestVersionInLocalRepo(path: String): String {
         val metadataFile =
@@ -165,6 +166,13 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
                 .trimIndent()
         }
         return latestVersionNode
+    }
+
+    fun setUpGradleVersion(runner: GradleRunner, version: String) {
+        runner.withGradleVersion(version)
+        props.gradlePrebuiltsPath?.let { path ->
+            runner.withGradleDistribution(File(path, "gradle-$version-bin.zip").toURI())
+        }
     }
 
     private fun copyLocalProperties() {
@@ -199,9 +207,11 @@ class ProjectSetupRule(parentFolder: File? = null) : ExternalResource() {
 
     private fun writeGradleProperties() {
         gradlePropertiesFile.writer().use {
-            val props = Properties()
-            props.setProperty("android.useAndroidX", "true")
-            props.store(it, null)
+            val properties = Properties()
+            properties.setProperty("android.useAndroidX", "true")
+            properties.setProperty("org.gradle.configuration-cache", "true")
+            properties.setProperty("androidx.ndkVersion", props.ndkVersion)
+            properties.store(it, null)
         }
     }
 }
@@ -216,12 +226,15 @@ data class ProjectProps(
     val kgpVersion: String,
     val kgpDependency: String,
     val kspVersion: String,
+    val ndkVersion: String,
     val rootProjectPath: String,
     val tipOfTreeMavenRepoPath: String,
     val agpDependency: String,
     val repositoryUrls: List<String>,
     // Not available in playground projects.
     val prebuiltsPath: String?,
+    // Not available in playground projects.
+    val gradlePrebuiltsPath: String?,
 ) {
     companion object {
         private fun Properties.getCanonicalPath(key: String): String {
@@ -269,8 +282,11 @@ data class ProjectProps(
                     "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
                         properties.getProperty("kgpVersion"),
                 kspVersion = properties.getProperty("kspVersion"),
+                ndkVersion = properties.getProperty("ndkVersion"),
                 agpDependency = properties.getProperty("agpDependency"),
                 prebuiltsPath = properties.getOptionalCanonicalPath("prebuiltsRelativePath"),
+                gradlePrebuiltsPath =
+                    properties.getOptionalCanonicalPath("gradlePrebuiltsRelativePath"),
             )
         }
     }

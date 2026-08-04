@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 // be used to get "typed character". By this simple function we are introducing common
 // denominator for both systems: if KeyEvent.isTypedEvent then it's safe to use
 // KeyEvent.utf16CodePoint
+@Suppress("KmpVisibilityMismatch") // public in commonStubs
 internal expect val KeyEvent.isTypedEvent: Boolean
 
 /**
@@ -217,6 +218,7 @@ internal class TextFieldKeyInput(
                 KeyCommand.CHARACTER_PALETTE -> {
                     showCharacterPalette()
                 }
+                KeyCommand.CENTER -> {} // No-op, this is handled by TextFieldFocusModifier.
             }
         }
         undoManager?.forceNextSnapshot()
@@ -229,7 +231,7 @@ internal class TextFieldKeyInput(
                 currentValue = value,
                 offsetMapping = offsetMapping,
                 layoutResultProxy = state.layoutResult,
-                state = preparedSelectionState
+                state = preparedSelectionState,
             )
         block(preparedSelection)
         if (

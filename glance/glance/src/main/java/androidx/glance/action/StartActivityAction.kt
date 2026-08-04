@@ -23,21 +23,21 @@ import androidx.annotation.RestrictTo
 import androidx.glance.ExperimentalGlanceApi
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface StartActivityAction : Action {
-    val parameters: ActionParameters
-    val activityOptions: Bundle?
+public interface StartActivityAction : Action {
+    public val parameters: ActionParameters
+    public val activityOptions: Bundle?
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class StartActivityComponentAction(
-    val componentName: ComponentName,
+public class StartActivityComponentAction(
+    public val componentName: ComponentName,
     override val parameters: ActionParameters,
     override val activityOptions: Bundle?,
 ) : StartActivityAction
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class StartActivityClassAction(
-    val activityClass: Class<out Activity>,
+public class StartActivityClassAction(
+    public val activityClass: Class<out Activity>,
     override val parameters: ActionParameters,
     override val activityOptions: Bundle?,
 ) : StartActivityAction
@@ -49,7 +49,7 @@ class StartActivityClassAction(
  * @param parameters the parameters associated with the action. Parameter values will be added to
  *   the activity intent, keyed by the parameter key name string.
  */
-fun actionStartActivity(
+public fun actionStartActivity(
     componentName: ComponentName,
     parameters: ActionParameters = actionParametersOf(),
 ): Action = StartActivityComponentAction(componentName, parameters, null)
@@ -64,7 +64,7 @@ fun actionStartActivity(
  *   an activity start.
  */
 @ExperimentalGlanceApi
-fun actionStartActivity(
+public fun actionStartActivity(
     componentName: ComponentName,
     parameters: ActionParameters = actionParametersOf(),
     activityOptions: Bundle? = null,
@@ -77,7 +77,7 @@ fun actionStartActivity(
  * @param parameters the parameters associated with the action. Parameter values will be added to
  *   the activity intent, keyed by the parameter key name string.
  */
-fun <T : Activity> actionStartActivity(
+public fun <T : Activity> actionStartActivity(
     activity: Class<T>,
     parameters: ActionParameters = actionParametersOf(),
 ): Action = StartActivityClassAction(activity, parameters, null)
@@ -92,13 +92,12 @@ fun <T : Activity> actionStartActivity(
  *   an activity start.
  */
 @ExperimentalGlanceApi
-fun <T : Activity> actionStartActivity(
+public fun <T : Activity> actionStartActivity(
     activity: Class<T>,
     parameters: ActionParameters = actionParametersOf(),
     activityOptions: Bundle? = null,
 ): Action = StartActivityClassAction(activity, parameters, activityOptions)
 
-@Suppress("MissingNullability")
 /* Shouldn't need to specify @NonNull. b/199284086 */
 /**
  * Creates an [Action] that launches the specified [Activity] when triggered.
@@ -106,11 +105,11 @@ fun <T : Activity> actionStartActivity(
  * @param parameters the parameters associated with the action. Parameter values will be added to
  *   the activity intent, keyed by the parameter key name string.
  */
-inline fun <reified T : Activity> actionStartActivity(
-    parameters: ActionParameters = actionParametersOf(),
+@Suppress("MissingNullability")
+public inline fun <reified T : Activity> actionStartActivity(
+    parameters: ActionParameters = actionParametersOf()
 ): Action = actionStartActivity(T::class.java, parameters)
 
-@Suppress("MissingNullability")
 /* Shouldn't need to specify @NonNull. b/199284086 */
 /**
  * Creates an [Action] that launches the specified [Activity] when triggered.
@@ -120,8 +119,9 @@ inline fun <reified T : Activity> actionStartActivity(
  * @param activityOptions Additional options built from an [android.app.ActivityOptions] to apply to
  *   an activity start.
  */
+@Suppress("MissingNullability")
 @ExperimentalGlanceApi
-inline fun <reified T : Activity> actionStartActivity(
+public inline fun <reified T : Activity> actionStartActivity(
     parameters: ActionParameters = actionParametersOf(),
     activityOptions: Bundle? = null,
 ): Action = actionStartActivity(T::class.java, parameters, activityOptions)

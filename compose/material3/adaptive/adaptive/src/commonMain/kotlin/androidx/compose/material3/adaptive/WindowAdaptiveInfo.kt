@@ -18,6 +18,11 @@ package androidx.compose.material3.adaptive
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.toSize
 import androidx.window.core.layout.WindowSizeClass
 
 /**
@@ -25,9 +30,78 @@ import androidx.window.core.layout.WindowSizeClass
  * that uses the default [WindowSizeClass] constructor and the default [Posture] calculation
  * functions to retrieve [WindowSizeClass] and [Posture].
  *
+ * Note that this function is meant to replace [currentWindowAdaptiveInfo] and support L and XL
+ * width size classes by default.
+ *
  * @return [WindowAdaptiveInfo] of the provided context
  */
-@Composable expect fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo
+@Composable
+@Suppress("DEPRECATION")
+public fun currentWindowAdaptiveInfoV2(): WindowAdaptiveInfo =
+    currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
+
+/**
+ * Calculates and returns [WindowAdaptiveInfo] of the provided context. It's a convenient function
+ * that uses the default [WindowSizeClass] constructor and the default [Posture] calculation
+ * functions to retrieve [WindowSizeClass] and [Posture].
+ *
+ * @param supportLargeAndXLargeWidth `true` to support the large and extra-large window width size
+ *   classes, which makes the returned [WindowSizeClass] be calculated based on the breakpoints that
+ *   include large and extra-large widths.
+ * @return [WindowAdaptiveInfo] of the provided context
+ */
+@Deprecated(
+    message = "Please use V2 version of this function to support L and XL width size classes.",
+    replaceWith = ReplaceWith("currentWindowAdaptiveInfoV2"),
+    DeprecationLevel.WARNING,
+)
+@Composable
+public fun currentWindowAdaptiveInfo(
+    supportLargeAndXLargeWidth: Boolean = false
+): WindowAdaptiveInfo {
+    // Workaround (b/358626778): Directly using WindowInfo.containerDpSize breaks tests based on
+    //   DeviceConfigurationOverride.ForcedSize. Those clients need to migrate to
+    //   DeviceConfigurationOverride.WindowSize when its available.
+    val windowSize =
+        with(LocalDensity.current) { LocalWindowInfo.current.containerSize.toSize().toDpSize() }
+    return WindowAdaptiveInfo(
+        windowSizeClass =
+            if (supportLargeAndXLargeWidth) {
+                WindowSizeClass.computeFromDpSizeV2(windowSize)
+            } else {
+                WindowSizeClass.computeFromDpSize(windowSize)
+            },
+        windowPosture = calculatePosture(),
+    )
+}
+
+/**
+ * Returns and automatically update the current window size in [DpSize].
+ *
+ * @return an [DpSize] that represents the current window size.
+ */
+@Deprecated(
+    message = "Going to be removed in the next version. Prefer LocalWindowInfo instead",
+    replaceWith = ReplaceWith("LocalWindowInfo.current.containerDpSize"),
+    DeprecationLevel.WARNING,
+)
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+public fun currentWindowDpSize(): DpSize = LocalWindowInfo.current.containerDpSize
+
+/**
+ * Returns and automatically update the current window size. It's a convenient function of getting
+ * [androidx.compose.ui.platform.WindowInfo.containerSize] from [LocalWindowInfo].
+ *
+ * @return an [IntSize] that represents the current window size.
+ */
+@Deprecated(
+    message = "Prefer LocalWindowInfo instead",
+    replaceWith = ReplaceWith("LocalWindowInfo.current.containerSize"),
+    DeprecationLevel.WARNING,
+)
+@Composable
+public fun currentWindowSize(): IntSize = LocalWindowInfo.current.containerSize
 
 /**
  * This class collects window info that affects adaptation decisions. An adaptive layout is supposed
@@ -38,7 +112,10 @@ import androidx.window.core.layout.WindowSizeClass
  * @constructor create an instance of [WindowAdaptiveInfo]
  */
 @Immutable
-class WindowAdaptiveInfo(val windowSizeClass: WindowSizeClass, val windowPosture: Posture) {
+public class WindowAdaptiveInfo(
+    public val windowSizeClass: WindowSizeClass,
+    public val windowPosture: Posture,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is WindowAdaptiveInfo) return false
@@ -57,3 +134,5 @@ class WindowAdaptiveInfo(val windowSizeClass: WindowSizeClass, val windowPosture
         return "WindowAdaptiveInfo(windowSizeClass=$windowSizeClass, windowPosture=$windowPosture)"
     }
 }
+
+@Composable internal expect fun calculatePosture(): Posture

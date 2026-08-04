@@ -54,7 +54,7 @@ class CredentialProviderEventsServiceTest {
             Intent().apply {
                 putExtra(
                     CredentialEventsProvider.EVENTS_SERVICE_PROVIDER_KEY,
-                    DummyCredentialEventsProvider::class.java.name
+                    DummyCredentialEventsProvider::class.java.name,
                 )
             }
         val binder = service.onBind(intent)

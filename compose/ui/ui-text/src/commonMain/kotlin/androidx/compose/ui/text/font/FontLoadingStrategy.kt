@@ -24,8 +24,8 @@ package androidx.compose.ui.text.font
  * For more information about font family resolution see [FontFamily].
  */
 @kotlin.jvm.JvmInline
-value class FontLoadingStrategy private constructor(val value: Int) {
-    override fun toString(): String {
+public value class FontLoadingStrategy private constructor(public val value: Int) {
+    public override fun toString(): String {
         return when (this) {
             Blocking -> "Blocking"
             OptionalLocal -> "Optional"
@@ -34,7 +34,7 @@ value class FontLoadingStrategy private constructor(val value: Int) {
         }
     }
 
-    companion object {
+    public companion object {
         /**
          * Resolving this font will always block until the font loads.
          *
@@ -47,7 +47,8 @@ value class FontLoadingStrategy private constructor(val value: Int) {
          * This should typically not be used for fonts that are fetched from a remote source such as
          * over http, as it will block all rendering until the font loads. Instead use [Async].
          */
-        val Blocking = FontLoadingStrategy(0)
+        public val Blocking: FontLoadingStrategy
+            get() = FontLoadingStrategy(0)
 
         /**
          * Resolving this font is best-effort and will attempt to load from a local resource that
@@ -70,7 +71,8 @@ value class FontLoadingStrategy private constructor(val value: Int) {
          * This should typically not be used for fonts that are fetched from a remote source such as
          * over http, as it will block all rendering until the font loads. Instead use [Async].
          */
-        val OptionalLocal = FontLoadingStrategy(1)
+        public val OptionalLocal: FontLoadingStrategy
+            get() = FontLoadingStrategy(1)
 
         /**
          * Loading this font will never block, and will load on a background thread.
@@ -91,6 +93,7 @@ value class FontLoadingStrategy private constructor(val value: Int) {
          * This should always be used for fonts that are fetched from a remote source such as over
          * http.
          */
-        val Async = FontLoadingStrategy(2)
+        public val Async: FontLoadingStrategy
+            get() = FontLoadingStrategy(2)
     }
 }

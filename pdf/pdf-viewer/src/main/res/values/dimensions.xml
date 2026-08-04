@@ -18,8 +18,9 @@
     <dimen name="viewer_fastscroll_edge_offset">24dp</dimen>
     <dimen name="viewer_doc_padding_y">4dp</dimen>
     <dimen name="viewer_doc_padding_x">0dp</dimen>
-    <dimen name="top_page_margin">3dp</dimen>
-    <dimen name="page_spacing">8dp</dimen>
+    <dimen name="pdf_vertical_page_spacing">8dp</dimen>
+    <!-- TODO(b/448583041): Fix the appropriate default horizontal spacing from UX. -->
+    <dimen name="pdf_horizontal_page_spacing">8dp</dimen>
 
     <!--Edit button FAB -->
     <dimen name="viewer_edit_fab_margin_bottom">16dp</dimen>
@@ -29,18 +30,54 @@
     <dimen name="find_in_file_button_size">48dp</dimen>
 
     <dimen name="text_select_handle_touch_size">48dp</dimen>
-    <dimen name="pdf_horizontal_padding">0dp</dimen>
 
     <!--Fast scroller -->
-    <dimen name="default_thumb_width">40dp</dimen>
-    <dimen name="default_thumb_height">40dp</dimen>
-    <dimen name="default_track_width">24dp</dimen>
-    <dimen name="default_track_height">24dp</dimen>
-    <dimen name="scrubber_edge_offset">11dp</dimen>
-    <dimen name="page_indicator_height">24dp</dimen>
-    <dimen name="page_indicator_right_margin">37dp</dimen>
+    <dimen name="scroll_thumb_margin_end">0dp</dimen>
+    <dimen name="page_indicator_right_margin">42dp</dimen>
     <dimen name="page_indicator_text_offset">12dp</dimen>
     <dimen name="page_indicator_text_size">12sp</dimen>
     <dimen name="scroller_top_margin">2dp</dimen>
     <dimen name="scroller_bottom_margin">2dp</dimen>
+
+    <!-- Form Filling -->
+    <dimen name="form_widget_edit_text_boundary_width">2dp</dimen>
+
+    <!-- Generic dimens -->
+    <dimen name="margin_8dp">8dp</dimen>
+    <dimen name="margin_4dp">4dp</dimen>
+    <dimen name="padding_4dp">4dp</dimen>
+    <dimen name="padding_8dp">8dp</dimen>
+    <dimen name="margin_12dp">12dp</dimen>
+    <dimen name="margin_16dp">16dp</dimen>
+    <dimen name="corner_radius_8dp">8dp</dimen>
+    <dimen name="color_palette_max_width">176dp</dimen>
+    <dimen name="color_palette_max_height">212dp</dimen>
+
+    <!-- Annotation Toolbar dimens - BEGIN -->
+    <dimen name="annotation_tool_width">48dp</dimen>
+    <dimen name="annotation_tool_height">56dp</dimen>
+    <dimen name="annotation_tool_cornerRadius">16dp</dimen>
+    <dimen name="annotation_toolbar_elevation">4dp</dimen>
+    <dimen name="color_palette_icon_corner_radius">24dp</dimen>
+
+    <dimen name="brush_preview_width">48dp</dimen>
+    <dimen name="brush_preview_height">48dp</dimen>
+    <dimen name="corner_radius_20dp">20dp</dimen>
+    <dimen name="default_brush_preview_size">16dp</dimen>
+
+    <dimen name="color_palette_item_size">48dp</dimen>
+    <dimen name="color_palette_content_size">32dp</dimen>
+    <dimen name="color_palette_expanded_content_width">40dp</dimen>
+    <dimen name="color_palette_item_stroke_width">1dp</dimen>
+    <dimen name="annotation_toolbar_corner_radius">28dp</dimen>
+
+    <dimen name="toolbar_anchor_length">388dp</dimen>
+    <dimen name="toolbar_anchor_width">72dp</dimen>
+    <!-- Annotation Toolbar dimens - END -->
+
+    <!-- Signature Handling -->
+    <dimen name="pdf_signature_handle_radius">10dp</dimen>
+    <dimen name="pdf_signature_border_width">4dp</dimen>
+    <dimen name="pdf_signature_vector_stroke_width">4dp</dimen>
+    <dimen name="pdf_signature_text_padding_x">10dp</dimen>
 </resources>

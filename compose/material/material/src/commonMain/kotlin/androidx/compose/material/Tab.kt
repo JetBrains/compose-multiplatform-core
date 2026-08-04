@@ -85,7 +85,7 @@ import kotlin.math.max
  * @see LeadingIconTab
  */
 @Composable
-fun Tab(
+public fun Tab(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -94,7 +94,7 @@ fun Tab(
     icon: @Composable (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
     selectedContentColor: Color = LocalContentColor.current,
-    unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium)
+    unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium),
 ) {
     val styledText: @Composable (() -> Unit)? =
         text?.let {
@@ -110,7 +110,7 @@ fun Tab(
         enabled,
         interactionSource,
         selectedContentColor,
-        unselectedContentColor
+        unselectedContentColor,
     ) {
         TabBaselineLayout(icon = icon, text = styledText)
     }
@@ -147,7 +147,7 @@ fun Tab(
  * @see Tab
  */
 @Composable
-fun LeadingIconTab(
+public fun LeadingIconTab(
     selected: Boolean,
     onClick: () -> Unit,
     text: @Composable (() -> Unit),
@@ -156,7 +156,7 @@ fun LeadingIconTab(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     selectedContentColor: Color = LocalContentColor.current,
-    unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium)
+    unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium),
 ) {
     // The color of the Ripple should always the be selected color, as we want to show the color
     // before the item is considered selected, and hence before the new contentColor is
@@ -174,12 +174,12 @@ fun LeadingIconTab(
                         enabled = enabled,
                         role = Role.Tab,
                         interactionSource = interactionSource,
-                        indication = ripple
+                        indication = ripple,
                     )
                     .padding(horizontal = HorizontalTextPadding)
                     .fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             icon()
             Spacer(Modifier.requiredWidth(TextDistanceFromLeadingIcon))
@@ -218,7 +218,7 @@ fun LeadingIconTab(
  * @param content the content of this tab
  */
 @Composable
-fun Tab(
+public fun Tab(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -226,7 +226,7 @@ fun Tab(
     interactionSource: MutableInteractionSource? = null,
     selectedContentColor: Color = LocalContentColor.current,
     unselectedContentColor: Color = selectedContentColor.copy(alpha = ContentAlpha.medium),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     // The color of the Ripple should always the selected color, as we want to show the color
     // before the item is considered selected, and hence before the new contentColor is
@@ -243,12 +243,12 @@ fun Tab(
                         enabled = enabled,
                         role = Role.Tab,
                         interactionSource = interactionSource,
-                        indication = ripple
+                        indication = ripple,
                     )
                     .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            content = content
+            content = content,
         )
     }
 }
@@ -263,7 +263,7 @@ private fun TabTransition(
     activeColor: Color,
     inactiveColor: Color,
     selected: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val transition = updateTransition(selected)
     val color by
@@ -273,7 +273,7 @@ private fun TabTransition(
                     tween(
                         durationMillis = TabFadeInAnimationDuration,
                         delayMillis = TabFadeInAnimationDelay,
-                        easing = LinearEasing
+                        easing = LinearEasing,
                     )
                 } else {
                     tween(durationMillis = TabFadeOutAnimationDuration, easing = LinearEasing)
@@ -285,7 +285,7 @@ private fun TabTransition(
     CompositionLocalProvider(
         LocalContentColor provides color.copy(alpha = 1f),
         LocalContentAlpha provides color.alpha,
-        content = content
+        content = content,
     )
 }
 
@@ -342,7 +342,7 @@ private fun TabBaselineLayout(text: @Composable (() -> Unit)?, icon: @Composable
                         tabWidth = tabWidth,
                         tabHeight = tabHeight,
                         firstBaseline = firstBaseline!!,
-                        lastBaseline = lastBaseline!!
+                        lastBaseline = lastBaseline!!,
                     )
                 textPlaceable != null -> placeTextOrIcon(textPlaceable, tabHeight)
                 iconPlaceable != null -> placeTextOrIcon(iconPlaceable, tabHeight)
@@ -355,7 +355,7 @@ private fun TabBaselineLayout(text: @Composable (() -> Unit)?, icon: @Composable
 /** Places the provided [textOrIconPlaceable] in the vertical center of the provided [tabHeight]. */
 private fun Placeable.PlacementScope.placeTextOrIcon(
     textOrIconPlaceable: Placeable,
-    tabHeight: Int
+    tabHeight: Int,
 ) {
     val contentY = (tabHeight - textOrIconPlaceable.height) / 2
     textOrIconPlaceable.placeRelative(0, contentY)
@@ -373,7 +373,7 @@ private fun Placeable.PlacementScope.placeTextAndIcon(
     tabWidth: Int,
     tabHeight: Int,
     firstBaseline: Int,
-    lastBaseline: Int
+    lastBaseline: Int,
 ) {
     val baselineOffset =
         if (firstBaseline == lastBaseline) {
@@ -403,8 +403,10 @@ private fun Placeable.PlacementScope.placeTextAndIcon(
 }
 
 // Tab specifications
-private val SmallTabHeight = 48.dp
-private val LargeTabHeight = 72.dp
+private val SmallTabHeight
+    get() = 48.dp
+private val LargeTabHeight
+    get() = 72.dp
 
 // Tab transition specifications
 private const val TabFadeInAnimationDuration = 150
@@ -412,15 +414,20 @@ private const val TabFadeInAnimationDelay = 100
 private const val TabFadeOutAnimationDuration = 100
 
 // The horizontal padding on the left and right of text
-private val HorizontalTextPadding = 16.dp
+private val HorizontalTextPadding
+    get() = 16.dp
 
 // Distance from the top of the indicator to the text baseline when there is one line of text and an
 // icon
-private val SingleLineTextBaselineWithIcon = 14.dp
+private val SingleLineTextBaselineWithIcon
+    get() = 14.dp
 // Distance from the top of the indicator to the last text baseline when there are two lines of text
 // and an icon
-private val DoubleLineTextBaselineWithIcon = 6.dp
+private val DoubleLineTextBaselineWithIcon
+    get() = 6.dp
 // Distance from the first text baseline to the bottom of the icon in a combined tab
-private val IconDistanceFromBaseline = 20.sp
+private val IconDistanceFromBaseline
+    get() = 20.sp
 // Distance from the end of the leading icon to the start of the text
-private val TextDistanceFromLeadingIcon = 8.dp
+private val TextDistanceFromLeadingIcon
+    get() = 8.dp

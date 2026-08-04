@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.material3.tokens.MotionTokens
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -46,16 +47,22 @@ import kotlinx.coroutines.launch
  * [ScreenScaffold] to provide the correct scroll away behavior by default):
  *
  * @sample androidx.wear.compose.material3.samples.ScrollAwaySample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ScrollAwaySample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param scrollInfoProvider Used as the basis for the scroll-away implementation, based on the
  *   state of the scrollable container. See [ScrollInfoProvider] methods for creating a
- *   ScrollInfoProvider from common lists such as [ScalingLazyListState].
+ *   ScrollInfoProvider from common lists such as [TransformingLazyColumnState] or
+ *   [ScalingLazyListState].
  * @param screenStage Function that returns the screen stage of the active screen. Scrolled away
  *   items are shown when the screen is new, then scrolled away or hidden when scrolling, and
  *   finally shown again when idle.
  */
 public fun Modifier.scrollAway(
     scrollInfoProvider: ScrollInfoProvider,
-    screenStage: () -> ScreenStage
+    screenStage: () -> ScreenStage,
 ): Modifier = this then ScrollAwayModifierElement(scrollInfoProvider, screenStage)
 
 /**
@@ -98,7 +105,7 @@ public value class ScreenStage internal constructor(internal val value: Int) {
 
 private class ScrollAwayModifierElement(
     val scrollInfoProvider: ScrollInfoProvider,
-    val screenStage: () -> ScreenStage
+    val screenStage: () -> ScreenStage,
 ) : ModifierNodeElement<ScrollAwayModifierNode>() {
     override fun create(): ScrollAwayModifierNode =
         ScrollAwayModifierNode(scrollInfoProvider, screenStage)
@@ -141,7 +148,7 @@ private class ScrollAwayModifierNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         return layout(placeable.width, placeable.height) {
@@ -213,7 +220,7 @@ private class ScrollAwayModifierNode(
     private fun animateProgress(
         targetValue: Float,
         coroutineScope: CoroutineScope,
-        animatable: Animatable<Float, AnimationVector1D>
+        animatable: Animatable<Float, AnimationVector1D>,
     ) {
         coroutineScope.launch {
             animatable.animateTo(
@@ -221,8 +228,8 @@ private class ScrollAwayModifierNode(
                 animationSpec =
                     tween(
                         durationMillis = MotionTokens.DurationShort4,
-                        easing = MotionTokens.EasingStandard
-                    )
+                        easing = MotionTokens.EasingStandard,
+                    ),
             )
         }
     }
@@ -246,7 +253,7 @@ private class ScrollAwayModifierNode(
                                 // Animation spec for hidding the TimeText
                                 MotionTokens.EasingStandardDecelerate
                             },
-                    )
+                    ),
             )
         }
     }

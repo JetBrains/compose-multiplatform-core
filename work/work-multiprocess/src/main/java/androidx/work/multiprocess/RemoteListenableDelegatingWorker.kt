@@ -40,9 +40,9 @@ import com.google.common.util.concurrent.ListenableFuture
  * A worker which can delegate to an instance of RemoteListenableWorker but importantly only
  * constructs an instance of the RemoteListenableWorker in the remote process.
  */
-class RemoteListenableDelegatingWorker(
+public class RemoteListenableDelegatingWorker(
     private val context: Context,
-    private val workerParameters: WorkerParameters
+    private val workerParameters: WorkerParameters,
 ) : ListenableWorker(context, workerParameters) {
 
     internal val client = ListenableWorkerImplClient(context, workerParameters.backgroundExecutor)
@@ -66,7 +66,7 @@ class RemoteListenableDelegatingWorker(
                 val parcelableResult =
                     ParcelConverters.unmarshall(response, ParcelableResult.CREATOR)
                 parcelableResult.result
-            }
+            },
         )
     }
 
@@ -86,7 +86,7 @@ class RemoteListenableDelegatingWorker(
                 val parcelableResult =
                     ParcelConverters.unmarshall(response, ParcelableForegroundInfo.CREATOR)
                 parcelableResult.foregroundInfo
-            }
+            },
         )
     }
 
@@ -95,10 +95,14 @@ class RemoteListenableDelegatingWorker(
         super.onStopped()
         if (componentName != null) {
             client.execute(componentName!!) { iListenableWorkerImpl, callback ->
-                val interruptRequest =
-                    ParcelableInterruptRequest(workerParameters.id.toString(), stopReason)
-                val request = ParcelConverters.marshall(interruptRequest)
-                iListenableWorkerImpl.interrupt(request, callback)
+                try {
+                    val interruptRequest =
+                        ParcelableInterruptRequest(workerParameters.id.toString(), stopReason)
+                    val request = ParcelConverters.marshall(interruptRequest)
+                    iListenableWorkerImpl.interrupt(request, callback)
+                } finally {
+                    client.unbindService()
+                }
             }
         }
     }
@@ -106,9 +110,9 @@ class RemoteListenableDelegatingWorker(
     private inline fun <T> executeRemote(
         crossinline block:
             (
-                iListenableWorkerImpl: IListenableWorkerImpl, callback: IWorkManagerImplCallback
+                iListenableWorkerImpl: IListenableWorkerImpl, callback: IWorkManagerImplCallback,
             ) -> Unit,
-        crossinline transformation: (input: ByteArray) -> T
+        crossinline transformation: (input: ByteArray) -> T,
     ): ListenableFuture<T> {
         val workManager = WorkManagerImpl.getInstance(context.applicationContext)
         val dispatcher = workManager.workTaskExecutor.taskCoroutineDispatcher
@@ -122,25 +126,27 @@ class RemoteListenableDelegatingWorker(
                 "Need to specify a class name for the Remote Service."
             }
             componentName = ComponentName(servicePackageName, serviceClassName)
-            val response =
-                client
-                    .execute(componentName!!) { iListenableWorkerImpl, callback ->
-                        block(iListenableWorkerImpl, callback)
-                    }
-                    .awaitWithin(this@RemoteListenableDelegatingWorker)
-            val result = transformation(response)
-            Logger.get().debug(TAG, "Cleaning up")
-            client.unbindService()
-            result
+            try {
+                val response =
+                    client
+                        .execute(componentName!!) { iListenableWorkerImpl, callback ->
+                            block(iListenableWorkerImpl, callback)
+                        }
+                        .awaitWithin(this@RemoteListenableDelegatingWorker)
+                transformation(response)
+            } finally {
+                Logger.get().debug(TAG, "Cleaning up")
+                client.unbindService()
+            }
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "RemoteListenableDelegatingWorker"
 
         // The RemoteListenableWorker class to delegate to.
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        const val ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME =
+        public const val ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME: String =
             "androidx.work.multiprocess.RemoteListenableDelegatingWorker.ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME"
     }
 }

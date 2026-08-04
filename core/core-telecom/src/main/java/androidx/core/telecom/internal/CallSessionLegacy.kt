@@ -26,7 +26,6 @@ import android.os.Bundle
 import android.os.ParcelUuid
 import android.telecom.Call
 import android.telecom.CallAudioState
-import android.telecom.CallEndpoint
 import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -39,13 +38,15 @@ import androidx.core.telecom.CallException
 import androidx.core.telecom.internal.utils.EndpointUtils
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getMaskedMacAddress
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getSpeakerEndpoint
-import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isBluetoothAvailable
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isEarpieceEndpoint
+import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isSpeakerEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isWiredHeadsetOrBtEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.maybeRemoveEarpieceIfWiredEndpointPresent
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.toCallEndpointCompat
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.toCallEndpointsCompat
 import androidx.core.telecom.internal.utils.Utils.Companion.isBuildAtLeastP
+import androidx.core.telecom.internal.utils.Utils.Companion.toCallTypeCompat
+import androidx.core.telecom.internal.utils.Utils.Companion.toVideoProfileState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -71,33 +72,56 @@ internal class CallSessionLegacy(
     val onEventCallback: suspend (event: String, extras: Bundle) -> Unit,
     val onStateChangedCallback: MutableSharedFlow<CallStateEvent>,
     private val preferredStartingCallEndpoint: CallEndpointCompat? = null,
-    private val blockingSessionExecution: CompletableDeferred<Unit>
+    private val blockingSessionExecution: CompletableDeferred<Unit>,
 ) : android.telecom.Connection(), AutoCloseable {
     // instance vars
     private val TAG: String = CallSessionLegacy::class.java.simpleName
     private var mCachedBluetoothDevices: ArrayList<BluetoothDevice> = ArrayList()
-    private var mAlreadyRequestedStartingEndpointSwitch: Boolean = false
+    @VisibleForTesting internal var mAlreadyRequestedStartingEndpointSwitch: Boolean = false
     private var mAlreadyRequestedSpeaker: Boolean = false
     private var mPreviousCallEndpoint: CallEndpointCompat? = null
     private var mCurrentCallEndpoint: CallEndpointCompat? = null
     private var mAvailableCallEndpoints: MutableList<CallEndpointCompat> = mutableListOf()
-    private var mLastClientRequestedEndpoint: CallEndpointCompat? = null
+    @VisibleForTesting internal var mLastClientRequestedEndpoint: CallEndpointCompat? = null
+    private var mIsMuted: Boolean? = null
     private val mCallSessionLegacyId: Int = CallEndpointUuidTracker.startSession()
     private var mGlobalMuteStateReceiver: MuteStateReceiver? = null
     private val mDialingOrRingingStateReached = CompletableDeferred<Unit>()
+    private val mBluetoothDeviceChecker = ProductionBluetoothDeviceChecker(mContext)
+    private val mVideoCallSpeakerManager = VideoCallSpeakerManager(mBluetoothDeviceChecker)
+    private var mCallType: Int = 0
+
+    /**
+     * Flag to ensure that the logic to {@link #avoidSpeakerOverrideOnCallStart} is only attempted
+     * once after the initial conditions are met (i.e., a previous endpoint is known). This prevents
+     * repeated attempts to correct the endpoint if other changes occur. It is set to `true` within
+     * {@link #avoidSpeakerOverrideOnCallStart} after the first invocation where `prevEndpoint` is
+     * not null, indicating the initial audio route stabilization phase (for this specific check)
+     * has been processed.
+     */
+    private var mWasPreferredOverrideChecked: Boolean = false
 
     init {
         if (isBuildAtLeastP()) {
             mGlobalMuteStateReceiver = MuteStateReceiver(::onGlobalMuteStateChanged)
             mContext.registerReceiver(
                 mGlobalMuteStateReceiver,
-                IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED)
+                IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED),
             )
         }
         CoroutineScope(coroutineContext).launch {
             val state =
                 if (attributes.isOutgoingCall()) CallStateEvent.DIALING else CallStateEvent.RINGING
             onStateChangedCallback.emit(state)
+
+            val initialCallType =
+                if (attributes.isVideoCall()) {
+                    CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+                } else {
+                    CallAttributesCompat.CALL_TYPE_AUDIO_CALL
+                }
+            mCallType = initialCallType
+            callChannels.callTypeChannel.trySend(initialCallType)
         }
     }
 
@@ -111,9 +135,6 @@ internal class CallSessionLegacy(
     }
 
     companion object {
-        private const val WAIT_FOR_BT_TO_CONNECT_TIMEOUT: Long = 1000L
-        // TODO:: b/369153472 , remove delay and instead wait until onCallEndpointChanged
-        //    provides the bluetooth endpoint before requesting the switch
         private const val DELAY_INITIAL_ENDPOINT_SWITCH: Long = 2000L
         private const val WAIT_FOR_RINGING_OR_DIALING: Long = 5000L
         // CallStates. All these states mirror the values in the platform.
@@ -157,6 +178,10 @@ internal class CallSessionLegacy(
      * =========================================================================================
      */
     fun onGlobalMuteStateChanged(isMuted: Boolean) {
+        if (mIsMuted == isMuted) {
+            return
+        }
+        mIsMuted = isMuted
         callChannels.isMutedChannel.trySend(isMuted).getOrThrow()
         CoroutineScope(coroutineContext).launch {
             if (isMuted) {
@@ -173,7 +198,7 @@ internal class CallSessionLegacy(
             CallEndpointUuidTracker.getUuid(
                 mCallSessionLegacyId,
                 endpoint.type,
-                endpoint.name.toString()
+                endpoint.name.toString(),
             )
         val jetpackEndpoint = CallEndpointCompat(endpoint.name, endpoint.type, jetpackUuid)
         Log.d(TAG, " n=[${endpoint.name}]  plat=[${endpoint}] --> jet=[$jetpackEndpoint]")
@@ -181,9 +206,13 @@ internal class CallSessionLegacy(
     }
 
     private fun setCurrentCallEndpoint(state: CallAudioState) {
-        mPreviousCallEndpoint = mCurrentCallEndpoint
-        mCurrentCallEndpoint =
+        val newEndpoint =
             toRemappedCallEndpointCompat(toCallEndpointCompat(state, mCallSessionLegacyId))
+        if (newEndpoint == mCurrentCallEndpoint) {
+            return
+        }
+        mPreviousCallEndpoint = mCurrentCallEndpoint
+        mCurrentCallEndpoint = newEndpoint
         callChannels.currentEndpointChannel.trySend(mCurrentCallEndpoint!!).getOrThrow()
     }
 
@@ -193,9 +222,15 @@ internal class CallSessionLegacy(
             toCallEndpointsCompat(state, mCallSessionLegacyId)
                 .map { toRemappedCallEndpointCompat(it) }
                 .sorted()
-        mAvailableCallEndpoints = availableEndpoints.toMutableList()
-        maybeRemoveEarpieceIfWiredEndpointPresent(mAvailableCallEndpoints)
-        callChannels.availableEndpointChannel.trySend(availableEndpoints).getOrThrow()
+        val finalAvailableEndpoints = availableEndpoints.toMutableList()
+        maybeRemoveEarpieceIfWiredEndpointPresent(finalAvailableEndpoints)
+
+        if (finalAvailableEndpoints == mAvailableCallEndpoints) {
+            return
+        }
+
+        mAvailableCallEndpoints = finalAvailableEndpoints
+        callChannels.availableEndpointChannel.trySend(mAvailableCallEndpoints).getOrThrow()
     }
 
     @Suppress("OVERRIDE_DEPRECATION") // b/407498327
@@ -211,6 +246,13 @@ internal class CallSessionLegacy(
             // On the first call audio state change, determine if the platform started on the
             // correct audio route.  Otherwise, request an endpoint switch.
             switchStartingCallEndpointOnCallStart(mAvailableCallEndpoints)
+            // On initial call start, if the user selected a preferred endpoint, do not override
+            // with speaker!
+            avoidSpeakerOverrideOnCallStart(mPreviousCallEndpoint, mCurrentCallEndpoint)
+
+            // Enforce the video call speaker fallback to catch Earpiece bugs
+            mCurrentCallEndpoint?.let { enforceVideoCallSpeakerFallback(it) }
+
             // In the event the users headset disconnects, they will likely want to continue the
             // call via the speakerphone
             if (mCurrentCallEndpoint != null) {
@@ -251,57 +293,164 @@ internal class CallSessionLegacy(
     }
 
     /**
-     * Due to the fact that OEMs may diverge from AOSP telecom platform behavior, Core-Telecom needs
-     * to ensure that video calls start with speaker phone if the earpiece is the initial audio
-     * route.
+     * A strict enforcer that ensures video calls never linger on the earpiece. If the platform
+     * routes to the earpiece unexpectedly, this immediately forces it to the speaker, UNLESS a
+     * Bluetooth headset is available or the user explicitly requested the earpiece.
      */
-    private fun maybeSwitchToSpeakerOnCallStart(
-        currentEndpoint: CallEndpointCompat,
-        availableEndpoints: List<CallEndpointCompat>
-    ) {
-        if (!mAlreadyRequestedSpeaker && attributes.isVideoCall()) {
-            try {
-                val speakerEndpoint = getSpeakerEndpoint(availableEndpoints)
-                if (isEarpieceEndpoint(currentEndpoint) && speakerEndpoint != null) {
-                    Log.i(
-                        TAG,
-                        "maybeSwitchToSpeaker: detected a video call that started" +
-                            " with the earpiece audio route. requesting switch to speaker."
-                    )
-                    CoroutineScope(coroutineContext).launch {
-                        // Users reported in b/345309071 that the call started on speakerphone
-                        // instead of bluetooth.  Upon inspection, the platform was echoing the
-                        // earpiece audio route first while BT was still connecting. Avoid
-                        // overriding the BT route by waiting a second. TODO:: b/351899854
-                        if (isBluetoothAvailable(availableEndpoints)) {
-                            delay(WAIT_FOR_BT_TO_CONNECT_TIMEOUT)
-                            if (!isBluetoothConnected()) {
-                                Log.i(TAG, "maybeSwitchToSpeaker: BT did not connect in time!")
-                                requestEndpointChange(speakerEndpoint)
-                            } else {
-                                Log.i(
-                                    TAG,
-                                    "maybeSwitchToSpeaker: BT connected! void speaker switch"
-                                )
-                            }
-                        } else {
-                            // otherwise, immediately change from earpiece to speaker because the
-                            // platform is
-                            // not in the process of connecting a BT device.
-                            requestEndpointChange(speakerEndpoint)
-                        }
-                    }
+    private fun enforceVideoCallSpeakerFallback(endpoint: CallEndpointCompat) {
+        // We only care about video calls
+        if (mCallType != CallAttributesCompat.CALL_TYPE_VIDEO_CALL) {
+            return
+        }
+
+        // If the client explicitly requested the earpiece, respect their choice
+        if (isEarpieceEndpoint(mLastClientRequestedEndpoint)) {
+            return
+        }
+
+        // Prevent duplicate requests: if we or the user just requested the speaker,
+        // and that request is still in flight, don't spam the platform.
+        if (isSpeakerEndpoint(mLastClientRequestedEndpoint)) {
+            Log.d(
+                TAG,
+                "enforceVideoCallSpeakerFallback: Switch to SPEAKER already in flight. Skipping.",
+            )
+            return
+        }
+
+        // Delegate to the manager. This safely checks if we are on the earpiece AND
+        // ensures no non-watch Bluetooth devices are available before overriding.
+        if (
+            mVideoCallSpeakerManager.shouldSwitchToSpeaker(
+                isVideoCall = true, // We already checked mCallType above
+                currentEndpoint = endpoint,
+                availableEndpoints = mAvailableCallEndpoints,
+            )
+        ) {
+            Log.i(
+                TAG,
+                "enforceVideoCallSpeakerFallback: Video call landed on EARPIECE " +
+                    "with no BT headset available. Forcing back to SPEAKER.",
+            )
+            CoroutineScope(coroutineContext).launch {
+                getSpeakerEndpoint(mAvailableCallEndpoints)?.let { speakerEndpoint ->
+                    requestEndpointChange(speakerEndpoint)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "maybeSwitchToSpeaker: hit exception=[$e]")
             }
-            mAlreadyRequestedSpeaker = true
         }
     }
 
-    private fun isBluetoothConnected(): Boolean {
-        return mCurrentCallEndpoint != null &&
-            mCurrentCallEndpoint!!.type == CallEndpoint.TYPE_BLUETOOTH
+    /**
+     * Addresses a specific issue where the Telecom platform might erroneously switch the audio
+     * route to SPEAKER immediately after the call starts, even if the user specified a
+     * {@link #mPreferredStartingCallEndpoint}.
+     *
+     * If conditions are met, this method attempts to switch the audio route back to the preferred
+     * audio endpoint. This logic is guarded by {@link #mWasPreferredOverrideChecked} to ensure it
+     * only runs once when the `prevEndpoint` first becomes available, targeting an early call setup
+     * phase.
+     *
+     * @param prevEndpoint The audio endpoint active before the current change.
+     * @param currentEndpoint The new audio endpoint that has just become active.
+     */
+    fun avoidSpeakerOverrideOnCallStart(
+        prevEndpoint: CallEndpointCompat?,
+        currentEndpoint: CallEndpointCompat?,
+    ) {
+        if (mWasPreferredOverrideChecked) {
+            Log.v(TAG, "avoidSpeakerOverrideOnCallStart: Already checked. Skipping.")
+            return
+        }
+
+        // Check 1: Did the user explicitly request the current 'currentEndpoint' if it's SPEAKER?
+        // This check is performed before the prevEndpoint == null check because if the user
+        // intentionally switched to SPEAKER, we should mark this stabilization check as
+        // completed even if it was the very first endpoint update. This value is cleared after
+        // the platform confirms the change in `onCallAudioStateChanged`.
+        if (
+            mLastClientRequestedEndpoint != null &&
+                isSpeakerEndpoint(mLastClientRequestedEndpoint) &&
+                isSpeakerEndpoint(currentEndpoint)
+        ) {
+            Log.i(
+                TAG,
+                "avoidSpeakerOverrideOnCallStart: User explicitly requested SPEAKER " +
+                    "($mLastClientRequestedEndpoint). Current endpoint is $currentEndpoint. " +
+                    "Assuming intentional. No override.",
+            )
+            mWasPreferredOverrideChecked = true
+            return
+        }
+
+        // We need a prevEndpoint to reliably determine the transition for the automatic override.
+        if (prevEndpoint == null) {
+            Log.d(
+                TAG,
+                "avoidSpeakerOverrideOnCallStart: prevEndpoint is null, waiting for" +
+                    " more context before checking.",
+            )
+            return
+        }
+
+        // Since prevEndpoint is now non-null, we are proceeding with the one-time check.
+        // Set the flag to true immediately to ensure this block of logic runs at most once
+        // under these stable conditions (prevEndpoint is known).
+        mWasPreferredOverrideChecked = true
+        Log.i(
+            TAG,
+            "avoidSpeakerOverrideOnCallStart: Evaluating. " +
+                "mPreferredStartingCallEndpoint=[$preferredStartingCallEndpoint], " +
+                "mLastClientRequestedEndpoint=[$mLastClientRequestedEndpoint], " +
+                "prevEndpoint=[$prevEndpoint], " +
+                "currentEndpoint=[$currentEndpoint]",
+        )
+
+        // Check 2: bug fix logic - an unexpected switch from PreferredStartingCallEndpoint
+        // to SPEAKER.
+        if (
+            preferredStartingCallEndpoint != null &&
+                preferredStartingCallEndpoint == prevEndpoint &&
+                preferredStartingCallEndpoint != currentEndpoint &&
+                isSpeakerEndpoint(currentEndpoint) // Current endpoint is SPEAKER
+        ) {
+            CoroutineScope(coroutineContext).launch {
+                Log.i(
+                    TAG,
+                    "avoidSpeakerOverrideOnCallStart: Unwanted switch from preferred" +
+                        "starting endpoint to SPEAKER detected. " +
+                        "Requesting switch back to preferred: $preferredStartingCallEndpoint",
+                )
+                // Request change back to the originally preferred endpoint
+                requestEndpointChange(preferredStartingCallEndpoint)
+            }
+        } else {
+            Log.d(TAG, "avoidSpeakerOverrideOnCallStart: Conditions for override not met.")
+        }
+    }
+
+    private fun maybeSwitchToSpeakerOnCallStart(
+        currentEndpoint: CallEndpointCompat,
+        availableEndpoints: List<CallEndpointCompat>,
+    ) {
+        if (mAlreadyRequestedSpeaker) return
+        mAlreadyRequestedSpeaker = true
+
+        try {
+            if (
+                mVideoCallSpeakerManager.shouldSwitchToSpeaker(
+                    isVideoCall = (mCallType == CallAttributesCompat.CALL_TYPE_VIDEO_CALL),
+                    currentEndpoint = currentEndpoint,
+                    availableEndpoints = availableEndpoints,
+                )
+            ) {
+                getSpeakerEndpoint(availableEndpoints)?.let { speaker ->
+                    Log.i(TAG, "maybeSwitchToSpeakerOnCallStart: Requesting switch to speaker.")
+                    CoroutineScope(coroutineContext).launch { requestEndpointChange(speaker) }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "maybeSwitchToSpeakerOnCallStart: hit exception=[$e]", e)
+        }
     }
 
     /**
@@ -313,11 +462,11 @@ internal class CallSessionLegacy(
     fun maybeSwitchToSpeakerOnHeadsetDisconnect(
         newEndpoint: CallEndpointCompat,
         previousEndpoint: CallEndpointCompat?,
-        availableEndpoints: List<CallEndpointCompat>
+        availableEndpoints: List<CallEndpointCompat>,
     ) {
         try {
             if (
-                attributes.isVideoCall() &&
+                (mCallType == CallAttributesCompat.CALL_TYPE_VIDEO_CALL) &&
                     /* Only switch if the users headset disconnects & earpiece is defaulted */
                     isEarpieceEndpoint(newEndpoint) &&
                     isWiredHeadsetOrBtEndpoint(previousEndpoint) &&
@@ -330,7 +479,7 @@ internal class CallSessionLegacy(
                     Log.i(
                         TAG,
                         "maybeSwitchToSpeakerOnHeadsetDisconnect: headset disconnected while" +
-                            " in a video call. requesting switch to speaker."
+                            " in a video call. requesting switch to speaker.",
                     )
                     requestEndpointChange(speakerCompat)
                 }
@@ -364,9 +513,34 @@ internal class CallSessionLegacy(
         CoroutineScope(coroutineContext).launch { onStateChangedCallback.emit(callState) }
     }
 
-    fun answer(videoState: Int): CallControlResult {
-        setVideoState(videoState)
+    fun answer(callType: Int): CallControlResult {
+        setVideoState(toVideoProfileState(callType))
         setConnectionActive()
+        mCallType = callType
+        callChannels.callTypeChannel.trySend(callType)
+        return CallControlResult.Success()
+    }
+
+    fun requestVideoState(androidxVideoState: Int): CallControlResult {
+        // Store the AndroidX video state internally
+        mCallType = androidxVideoState
+
+        // Ensure we don't linger on Earpiece if upgrading to a Video Call
+        mCurrentCallEndpoint?.let { enforceVideoCallSpeakerFallback(it) }
+
+        // **Translate the androidx state to the platform VideoProfile state**
+        val platformVideoState = toVideoProfileState(androidxVideoState)
+
+        // Notify your app's listeners with the original androidx state
+        callChannels.callTypeChannel.trySend(mCallType)
+        Log.d(
+            TAG,
+            "Requesting video state change to androidx=[$mCallType], " +
+                "platform=[$platformVideoState]",
+        )
+
+        // **Notify the platform with the translated state**
+        setVideoState(platformVideoState)
         return CallControlResult.Success()
     }
 
@@ -415,8 +589,10 @@ internal class CallSessionLegacy(
     // TODO:: verify the CallEndpoint change was successful. tracking bug: b/283324578
     @Suppress("deprecation")
     fun requestEndpointChange(callEndpoint: CallEndpointCompat): CallControlResult {
+        Log.d(TAG, "requestEndpointChange: endpoint=[$callEndpoint]")
         // cache the last CallEndpoint the user requested to reference in audio callbacks
         mLastClientRequestedEndpoint = callEndpoint
+        mAlreadyRequestedStartingEndpointSwitch = true
         return if (
             VERSION.SDK_INT <
                 VERSION_CODES.P || /* In the event the client hasn't accepted BLUETOOTH_CONNECT,
@@ -447,7 +623,7 @@ internal class CallSessionLegacy(
         fun setAudio(
             callEndpoint: CallEndpointCompat,
             connection: CallSessionLegacy,
-            btCache: ArrayList<BluetoothDevice>
+            btCache: ArrayList<BluetoothDevice>,
         ): CallControlResult {
             if (callEndpoint.type == CallEndpointCompat.TYPE_BLUETOOTH) {
                 val btDevice = getBluetoothDeviceFromEndpoint(btCache, callEndpoint)
@@ -465,7 +641,7 @@ internal class CallSessionLegacy(
         @JvmStatic
         fun refreshBluetoothDeviceCache(
             btCacheList: ArrayList<BluetoothDevice>,
-            state: CallAudioState
+            state: CallAudioState,
         ) {
             btCacheList.clear()
             btCacheList.addAll(state.supportedBluetoothDevices)
@@ -474,7 +650,7 @@ internal class CallSessionLegacy(
         @JvmStatic
         fun getBluetoothDeviceFromEndpoint(
             btCacheList: ArrayList<BluetoothDevice>,
-            endpoint: CallEndpointCompat
+            endpoint: CallEndpointCompat,
         ): BluetoothDevice? {
             for (btDevice in btCacheList) {
                 var btName = ""
@@ -494,12 +670,12 @@ internal class CallSessionLegacy(
         internal fun bluetoothDeviceMatchesEndpoint(
             btName: String?,
             btAddress: String?,
-            endpoint: CallEndpointCompat
+            endpoint: CallEndpointCompat,
         ): Boolean {
             Log.i(
                 "bDME",
                 "{btName=[$btName], btAddress=${getMaskedMacAddress(btAddress)}}," +
-                    "{eName=[${endpoint.name}], eAddress=${getMaskedMacAddress(endpoint.mMackAddress)}}"
+                    "{eName=[${endpoint.name}], eAddress=${getMaskedMacAddress(endpoint.mMackAddress)}}",
             )
             // If both endpoints have a populated mac address, we should match on that
             return if (
@@ -523,7 +699,10 @@ internal class CallSessionLegacy(
             // Note the slight deviation here where onAnswer does not put the call into an ACTIVE
             // state as it does in the platform. This behavior is intentional for this path.
             try {
-                onAnswerCallback(videoState)
+                val jetpackCallType = toCallTypeCompat(videoState)
+                mCallType = jetpackCallType
+                callChannels.callTypeChannel.trySend(jetpackCallType)
+                onAnswerCallback(jetpackCallType)
                 setConnectionActive()
                 setVideoState(videoState)
             } catch (e: Exception) {
@@ -630,7 +809,7 @@ internal class CallSessionLegacy(
         private val session: CallSessionLegacy,
         callChannels: CallChannels,
         private val blockingSessionExecution: CompletableDeferred<Unit>,
-        override val coroutineContext: CoroutineContext
+        override val coroutineContext: CoroutineContext,
     ) : CallControlScope {
         // handle requests that originate from the client and propagate into platform
         //  return the platforms response which indicates success of the request.
@@ -662,6 +841,12 @@ internal class CallSessionLegacy(
             return session.requestEndpointChange(endpoint)
         }
 
+        override suspend fun requestCallType(
+            callType: @CallAttributesCompat.Companion.CallType Int
+        ): CallControlResult {
+            return session.requestVideoState(callType)
+        }
+
         // Send these events out to the client to collect
         override val currentCallEndpoint: Flow<CallEndpointCompat> =
             callChannels.currentEndpointChannel.receiveAsFlow()
@@ -670,6 +855,10 @@ internal class CallSessionLegacy(
             callChannels.availableEndpointChannel.receiveAsFlow()
 
         override val isMuted: Flow<Boolean> = callChannels.isMutedChannel.receiveAsFlow()
+
+        override fun callTypeFlow(): Flow<Int> {
+            return session.callChannels.callTypeChannel.receiveAsFlow()
+        }
     }
 
     override fun close() {

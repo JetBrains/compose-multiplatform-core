@@ -22,21 +22,33 @@ import android.os.Parcelable
 import android.os.Parcelable.ClassLoaderCreator
 import androidx.core.os.ParcelCompat
 import androidx.customview.view.AbsSavedState
+import androidx.pdf.formfilling.FormFillingEditTextState
+import androidx.pdf.selection.SelectionModel
+import androidx.pdf.view.layout.LayoutStrategy
+import androidx.pdf.view.layout.PaginationModel
 
 /** [AbsSavedState] implementation for [PdfView] */
 internal class PdfViewSavedState : AbsSavedState {
     var contentCenterX: Float = 0F
     var contentCenterY: Float = 0F
     var zoom: Float = 1F
+    var isFormFillingEnabled: Boolean = false
+    var isImageSelectionEnabled: Boolean = false
+    var pagesPerRow: Int = PdfView.SINGLE_PAGE
+    var horizontalPageSpacing: Int = 20
+    var verticalPageSpacing: Int = 20
     var documentUri: Uri? = null
     var paginationModel: PaginationModel? = null
+    var layoutStrategy: LayoutStrategy? = null
+    var pdfFormFillingState: PdfFormFillingState? = null
+    var pdfFormFillingEditTextState: FormFillingEditTextState? = null
+
     /**
      * The width of the PdfView before the last layout change (e.g., before rotation). Used to
      * preserve the zoom level when the device is rotated.
      */
     var viewWidth: Int = 0
     var selectionModel: SelectionModel? = null
-    var isScrollReleased: Boolean = false
 
     /**
      * If we don't know what document this state belongs to, we cannot restore it. If we do not have
@@ -45,7 +57,7 @@ internal class PdfViewSavedState : AbsSavedState {
      */
     val hasEnoughStateToRestore: Boolean
         get() {
-            return documentUri != null && paginationModel != null
+            return documentUri != null && paginationModel != null && layoutStrategy != null
         }
 
     /**
@@ -60,10 +72,19 @@ internal class PdfViewSavedState : AbsSavedState {
         contentCenterY = parcel.readFloat()
         zoom = parcel.readFloat()
         viewWidth = parcel.readInt()
+        isFormFillingEnabled = parcel.readInt() == 1
+        isImageSelectionEnabled = parcel.readInt() == 1
+        pagesPerRow = parcel.readInt()
+        horizontalPageSpacing = parcel.readInt()
+        verticalPageSpacing = parcel.readInt()
         documentUri = ParcelCompat.readParcelable(parcel, loader, Uri::class.java)
         paginationModel = ParcelCompat.readParcelable(parcel, loader, PaginationModel::class.java)
+        layoutStrategy = ParcelCompat.readParcelable(parcel, loader, LayoutStrategy::class.java)
+        pdfFormFillingState =
+            ParcelCompat.readParcelable(parcel, loader, PdfFormFillingState::class.java)
         selectionModel = ParcelCompat.readParcelable(parcel, loader, SelectionModel::class.java)
-        isScrollReleased = parcel.readBoolean()
+        pdfFormFillingEditTextState =
+            ParcelCompat.readParcelable(parcel, loader, FormFillingEditTextState::class.java)
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -72,10 +93,17 @@ internal class PdfViewSavedState : AbsSavedState {
         dest.writeFloat(contentCenterY)
         dest.writeFloat(zoom)
         dest.writeInt(viewWidth)
+        dest.writeInt(if (isFormFillingEnabled) 1 else 0)
+        dest.writeInt(if (isImageSelectionEnabled) 1 else 0)
+        dest.writeInt(pagesPerRow)
+        dest.writeInt(horizontalPageSpacing)
+        dest.writeInt(verticalPageSpacing)
         dest.writeParcelable(documentUri, flags)
         dest.writeParcelable(paginationModel, flags)
+        dest.writeParcelable(layoutStrategy, flags)
+        dest.writeParcelable(pdfFormFillingState, flags)
         dest.writeParcelable(selectionModel, flags)
-        dest.writeBoolean(isScrollReleased)
+        dest.writeParcelable(pdfFormFillingEditTextState, flags)
     }
 
     companion object {
@@ -84,7 +112,7 @@ internal class PdfViewSavedState : AbsSavedState {
             object : ClassLoaderCreator<PdfViewSavedState> {
                 override fun createFromParcel(
                     source: Parcel,
-                    loader: ClassLoader?
+                    loader: ClassLoader?,
                 ): PdfViewSavedState {
                     return PdfViewSavedState(source, loader)
                 }

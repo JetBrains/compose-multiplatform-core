@@ -34,12 +34,11 @@ import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.builtintypes.Account;
 import androidx.appsearch.builtintypes.PotentialAction;
 import androidx.appsearch.builtintypes.Thing;
 import androidx.appsearch.exceptions.AppSearchException;
-import androidx.appsearch.flags.Flags;
 import androidx.appsearch.testutil.AppSearchEmail;
-import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 import androidx.appsearch.util.DocumentIdUtil;
 import androidx.test.core.app.ApplicationProvider;
 
@@ -2967,6 +2966,45 @@ public abstract class AnnotationProcessorTestBase {
         }
     }
 
+    @Document(name = "EmailWithAnnEmbedding")
+    static class EmailWithAnnEmbedding extends EmailWithEmbedding {
+        @Document.EmbeddingProperty(indexingType =
+                AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR)
+        EmbeddingVector mTitleAnnEmbedding;
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            EmailWithAnnEmbedding email = (EmailWithAnnEmbedding) o;
+            return Objects.equals(mTitleAnnEmbedding, email.mTitleAnnEmbedding);
+        }
+
+        public static EmailWithAnnEmbedding createSampleDoc() {
+            EmbeddingVector embedding1 =
+                    new EmbeddingVector(new float[]{1, 2, 3}, "model1");
+            EmbeddingVector embedding2 =
+                    new EmbeddingVector(new float[]{-1, -2, -3}, "model2");
+            EmbeddingVector embedding3 =
+                    new EmbeddingVector(new float[]{0.1f, 0.2f, 0.3f, 0.4f}, "model3");
+            EmbeddingVector embedding4 =
+                    new EmbeddingVector(new float[]{-0.1f, -0.2f, -0.3f, -0.4f}, "model3");
+            EmbeddingVector embedding5 =
+                    new EmbeddingVector(new float[]{1, 2}, "model4");
+            EmailWithAnnEmbedding email = new EmailWithAnnEmbedding();
+            email.mNamespace = "namespace";
+            email.mId = "id";
+            email.mCreationTimestampMillis = 1000;
+            email.mSender = "sender";
+            email.mSenderEmbedding = embedding1;
+            email.mTitleEmbedding = embedding2;
+            email.mReceiverEmbeddings = Collections.singletonList(embedding3);
+            email.mBodyEmbeddings = new EmbeddingVector[]{embedding3, embedding4};
+            email.mTitleAnnEmbedding = embedding5;
+            return email;
+        }
+    }
+
     @Test
     public void testEmbeddingGenericDocumentConversion() throws Exception {
         EmailWithEmbedding inEmail = EmailWithEmbedding.createSampleDoc();
@@ -3123,6 +3161,33 @@ public abstract class AnnotationProcessorTestBase {
         assertThat(outputDocument).isEqualTo(email);
     }
 
+    @Test
+    public void testEmbeddingAnnIndexing() throws Exception {
+        AppSearchSchema schema = AppSearchSchema.fromDocumentClass(EmailWithAnnEmbedding.class);
+        assertThat(schema.getSchemaType()).isEqualTo("EmailWithAnnEmbedding");
+        List<AppSearchSchema.PropertyConfig> properties = schema.getProperties();
+
+        AppSearchSchema.PropertyConfig titleAnnEmbeddingProp = null;
+        for (AppSearchSchema.PropertyConfig prop : properties) {
+            if (prop.getName().equals("titleAnnEmbedding")) {
+                titleAnnEmbeddingProp = prop;
+                break;
+            }
+        }
+        assertThat(titleAnnEmbeddingProp).isNotNull();
+        assertThat(
+                ((AppSearchSchema.EmbeddingPropertyConfig) titleAnnEmbeddingProp).getIndexingType())
+                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig
+                        .INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR);
+
+        // Also test document conversion
+        EmailWithAnnEmbedding inEmail = EmailWithAnnEmbedding.createSampleDoc();
+        GenericDocument genericDocument = GenericDocument.fromDocumentClass(inEmail);
+        EmailWithAnnEmbedding outEmail = genericDocument.toDocumentClass(
+                EmailWithAnnEmbedding.class);
+        assertThat(inEmail).isEqualTo(outEmail);
+    }
+
     @Document
     static class EmailWithBlobHandle {
         @Document.Namespace
@@ -3195,9 +3260,8 @@ public abstract class AnnotationProcessorTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
     public void testBlobHandleSearch() throws Exception {
-        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.BLOB_STORAGE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_BLOB_HANDLE));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addDocumentClasses(EmailWithBlobHandle.class)
@@ -3218,5 +3282,229 @@ public abstract class AnnotationProcessorTestBase {
         // Convert GenericDocument to EmailWithBlobHandle and check values.
         EmailWithBlobHandle outputDocument = results.get(0).getDocument(EmailWithBlobHandle.class);
         assertThat(outputDocument).isEqualTo(email);
+    }
+
+    @Document
+    static class EmailWithAccount {
+        @Document.Namespace
+        String mNamespace;
+
+        @Document.Id
+        String mId;
+
+        @Document.CreationTimestampMillis
+        long mCreationTimestampMillis;
+
+        @Document.StringProperty(indexingType = INDEXING_TYPE_PREFIXES)
+        String mSender;
+
+        @Document.DocumentProperty(indexNestedProperties = true)
+        Account mAccount;
+
+        @Document.DocumentProperty(indexNestedProperties = true)
+        Collection<Account> mAccountCollection;
+
+        @Document.DocumentProperty(indexNestedProperties = true)
+        Account[] mAccountArr;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EmailWithAccount email = (EmailWithAccount) o;
+            return Objects.equals(mNamespace, email.mNamespace)
+                    && Objects.equals(mId, email.mId)
+                    && Objects.equals(mSender, email.mSender)
+                    && Objects.equals(mCreationTimestampMillis, email.mCreationTimestampMillis)
+                    && Objects.equals(mAccount, email.mAccount)
+                    && Objects.equals(mAccountCollection, email.mAccountCollection)
+                    && Arrays.equals(mAccountArr, email.mAccountArr);
+        }
+
+        public static EmailWithAccount createSampleDoc() {
+
+            Account account1 = new Account.Builder("namespace", "id1")
+                    .setAccountType("com.google")
+                    .setAccountName("accountName1")
+                    .setAccountId("accountId1")
+                    .build();
+            Account account2 = new Account.Builder("namespace", "id2")
+                    .setAccountType("com.google")
+                    .setAccountName("accountName2")
+                    .setAccountId("accountId2")
+                    .build();
+            Account account3 = new Account.Builder("namespace", "id3")
+                    .setAccountType("com.google")
+                    .setAccountName("accountName3")
+                    .setAccountId("accountId3")
+                    .build();
+
+            EmailWithAccount email = new EmailWithAccount();
+            email.mNamespace = "namespace";
+            email.mId = "id";
+            email.mCreationTimestampMillis = 1000;
+            email.mSender = "sender";
+            email.mAccount = account1;
+            email.mAccountArr = new Account[] {account1, account2, account3};
+            email.mAccountCollection = Arrays.asList(email.mAccountArr);
+
+            return email;
+        }
+    }
+
+    @Test
+    public void testSearchAccountEmail() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.VERBATIM_SEARCH));
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithAccount.class)
+                .build()).get();
+
+        // Create and add a document
+        EmailWithAccount email = EmailWithAccount.createSampleDoc();
+
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email)
+                        .build()));
+
+        // An empty query should retrieve this document.
+        SearchResults searchResults = mSession.search("",
+                new SearchSpec.Builder().build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        // Convert GenericDocument to EmailWithAccount and check values.
+        EmailWithAccount outputDocument = results.get(0).getDocument(EmailWithAccount.class);
+        assertThat(outputDocument).isEqualTo(email);
+    }
+
+    @Test
+    public void testSearchAccountEmail_byAccountIdAndAccountNameSeparated() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.VERBATIM_SEARCH));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.LIST_FILTER_HAS_PROPERTY_FUNCTION));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.LIST_FILTER_QUERY_LANGUAGE));
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithAccount.class)
+                .build()).get();
+
+        // Create and add 2 documents with null accountName or accountId
+        Account account1 = new Account.Builder("namespace", "a1")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .build();
+        Account account2 = new Account.Builder("namespace", "a2")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .setAccountId("accountId")
+                .build();
+
+        EmailWithAccount email1 = new EmailWithAccount();
+        email1.mNamespace = "namespace";
+        email1.mId = "id1";
+        email1.mCreationTimestampMillis = 1000;
+        email1.mSender = "sender";
+        email1.mAccount = account1;
+
+        EmailWithAccount email2 = new EmailWithAccount();
+        email2.mNamespace = "namespace";
+        email2.mId = "id2";
+        email2.mCreationTimestampMillis = 1000;
+        email2.mSender = "sender";
+        email2.mAccount = account2;
+
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email1, email2)
+                        .build()));
+
+        // An empty query should retrieve this document.
+        SearchResults searchResults = mSession.search("account.accountId:\"accountId\" "
+                        + "OR (NOT hasProperty(\"account.accountId\") "
+                        + "AND account.accountName:\"accountName\")",
+                new SearchSpec.Builder()
+                        .setListFilterQueryLanguageEnabled(true)
+                        .setVerbatimSearchEnabled(true)
+                        .setListFilterHasPropertyFunctionEnabled(true).build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(2);
+
+        List<EmailWithAccount> outputDocuments = new ArrayList<>();
+        outputDocuments.add(results.get(0).getDocument(EmailWithAccount.class));
+        outputDocuments.add(results.get(1).getDocument(EmailWithAccount.class));
+        assertThat(outputDocuments).containsExactly(email1, email2);
+    }
+
+    @Test
+    public void testNestedAccount_emptyNamespaceId() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.VERBATIM_SEARCH));
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithAccount.class)
+                .build()).get();
+
+        // Create and add a document
+        EmailWithAccount email = new EmailWithAccount();
+        Account account = new Account.Builder(/*namespace=*/"", /*id=*/"")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .setAccountId("accountId")
+                .build();
+        email.mNamespace = "namespace";
+        email.mId = "id";
+        email.mCreationTimestampMillis = 1000;
+        email.mSender = "sender";
+        email.mAccount = account;
+
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email)
+                        .build()));
+
+        // An empty query should retrieve this document.
+        SearchResults searchResults = mSession.search("",
+                new SearchSpec.Builder().build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        // Convert GenericDocument to EmailWithAccount and check values.
+        EmailWithAccount outputDocument = results.get(0).getDocument(EmailWithAccount.class);
+        assertThat(outputDocument).isEqualTo(email);
+    }
+
+    @Test
+    public void testNestedAccount_propertyRestrictOnNullAccountId() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.VERBATIM_SEARCH));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.LIST_FILTER_HAS_PROPERTY_FUNCTION));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.LIST_FILTER_QUERY_LANGUAGE));
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithAccount.class)
+                .build()).get();
+
+        // Create and add a document
+        EmailWithAccount email = new EmailWithAccount();
+        Account account = new Account.Builder(/*namespace=*/"", /*id=*/"")
+                .setAccountType("com.google")
+                .setAccountName("accountName")
+                .build();
+        email.mNamespace = "namespace";
+        email.mId = "id";
+        email.mCreationTimestampMillis = 1000;
+        email.mSender = "sender";
+        email.mAccount = account;
+
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email)
+                        .build()));
+
+        // An empty query should retrieve this document.
+        SearchResults searchResults = mSession.search("hasProperty(\"account.accountId\")",
+                new SearchSpec.Builder()
+                        .setListFilterQueryLanguageEnabled(true)
+                        .setVerbatimSearchEnabled(true)
+                        .setListFilterHasPropertyFunctionEnabled(true).build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).isEmpty();
     }
 }

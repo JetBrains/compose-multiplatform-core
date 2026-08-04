@@ -56,7 +56,7 @@ class SwipeToRevealActivity : ComponentActivity() {
                             revealState = revealState,
                             icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
                             label = { Text("Delete") },
-                            onClick = {}
+                            onClick = {},
                         )
                     },
                     secondaryAction = {
@@ -64,14 +64,14 @@ class SwipeToRevealActivity : ComponentActivity() {
                             Icon(SwipeToRevealDefaults.MoreOptions, "More Options")
                         }
                     },
-                    onFullSwipe = {}
+                    onFullSwipe = {},
                 ) {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {},
                         colors = ChipDefaults.primaryChipColors(),
                         border = ChipDefaults.outlinedChipBorder(),
-                        label = { Text("SwipeToReveal Chip", maxLines = 3) }
+                        label = { Text("SwipeToReveal Chip", maxLines = 3) },
                     )
                 }
             }

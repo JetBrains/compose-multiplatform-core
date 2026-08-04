@@ -17,6 +17,7 @@
 package androidx.compose.ui.graphics
 
 import android.graphics.BitmapShader
+import android.graphics.ComposeShader
 import android.graphics.LinearGradient
 import android.graphics.RadialGradient
 import android.graphics.SweepGradient
@@ -25,26 +26,37 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.util.fastForEachIndexed
 
-actual typealias Shader = android.graphics.Shader
+@Suppress("TypealiasDefinition")
+public actual typealias Shader = android.graphics.Shader
 
 internal actual fun ActualLinearGradientShader(
     from: Offset,
     to: Offset,
     colors: List<Color>,
     colorStops: List<Float>?,
-    tileMode: TileMode
+    tileMode: TileMode,
 ): Shader {
     validateColorStops(colors, colorStops)
-    val numTransparentColors = countTransparentColors(colors)
-    return LinearGradient(
-        from.x,
-        from.y,
-        to.x,
-        to.y,
-        makeTransparentColors(colors, numTransparentColors),
-        makeTransparentStops(colorStops, colors, numTransparentColors),
-        tileMode.toAndroidTileMode()
-    )
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        GradientColorLongVerifier.createLinearGradientColorLong(
+            from,
+            to,
+            colors.toPlatformLongArray(),
+            colorStops?.toFloatArray(),
+            tileMode,
+        )
+    } else {
+        val numTransparentColors = countTransparentColors(colors)
+        LinearGradient(
+            from.x,
+            from.y,
+            to.x,
+            to.y,
+            makeTransparentColors(colors, numTransparentColors),
+            makeTransparentStops(colorStops, colors, numTransparentColors),
+            tileMode.toAndroidTileMode(),
+        )
+    }
 }
 
 internal actual fun ActualRadialGradientShader(
@@ -52,44 +64,92 @@ internal actual fun ActualRadialGradientShader(
     radius: Float,
     colors: List<Color>,
     colorStops: List<Float>?,
-    tileMode: TileMode
+    tileMode: TileMode,
 ): Shader {
     validateColorStops(colors, colorStops)
-    val numTransparentColors = countTransparentColors(colors)
-    return RadialGradient(
-        center.x,
-        center.y,
-        radius,
-        makeTransparentColors(colors, numTransparentColors),
-        makeTransparentStops(colorStops, colors, numTransparentColors),
-        tileMode.toAndroidTileMode()
-    )
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        GradientColorLongVerifier.createRadialGradientColorLong(
+            center,
+            radius,
+            colors.toPlatformLongArray(),
+            colorStops?.toFloatArray(),
+            tileMode,
+        )
+    } else {
+        val numTransparentColors = countTransparentColors(colors)
+        RadialGradient(
+            center.x,
+            center.y,
+            radius,
+            makeTransparentColors(colors, numTransparentColors),
+            makeTransparentStops(colorStops, colors, numTransparentColors),
+            tileMode.toAndroidTileMode(),
+        )
+    }
 }
 
 internal actual fun ActualSweepGradientShader(
     center: Offset,
     colors: List<Color>,
-    colorStops: List<Float>?
+    colorStops: List<Float>?,
 ): Shader {
     validateColorStops(colors, colorStops)
-    val numTransparentColors = countTransparentColors(colors)
-    return SweepGradient(
-        center.x,
-        center.y,
-        makeTransparentColors(colors, numTransparentColors),
-        makeTransparentStops(colorStops, colors, numTransparentColors),
-    )
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        GradientColorLongVerifier.createSweepGradientColorLong(
+            center,
+            colors.toPlatformLongArray(),
+            colorStops?.toFloatArray(),
+        )
+    } else {
+        val numTransparentColors = countTransparentColors(colors)
+        SweepGradient(
+            center.x,
+            center.y,
+            makeTransparentColors(colors, numTransparentColors),
+            makeTransparentStops(colorStops, colors, numTransparentColors),
+        )
+    }
+}
+
+@android.annotation.SuppressLint("PrimitiveInCollection")
+private fun List<Color>.toPlatformLongArray(): LongArray =
+    LongArray(size) { i -> this[i].toSupportedColorLong() }
+
+@androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
+private object GradientColorLongVerifier {
+
+    @androidx.annotation.DoNotInline
+    fun createRadialGradientColorLong(
+        center: Offset,
+        radius: Float,
+        colors: LongArray,
+        colorStops: FloatArray?,
+        tileMode: TileMode,
+    ) = RadialGradient(center.x, center.y, radius, colors, colorStops, tileMode.toAndroidTileMode())
+
+    @androidx.annotation.DoNotInline
+    fun createSweepGradientColorLong(center: Offset, colors: LongArray, colorStops: FloatArray?) =
+        SweepGradient(center.x, center.y, colors, colorStops)
+
+    @androidx.annotation.DoNotInline
+    fun createLinearGradientColorLong(
+        from: Offset,
+        to: Offset,
+        colors: LongArray,
+        colorStops: FloatArray?,
+        tileMode: TileMode,
+    ) = LinearGradient(from.x, from.y, to.x, to.y, colors, colorStops, tileMode.toAndroidTileMode())
 }
 
 internal actual fun ActualImageShader(
     image: ImageBitmap,
     tileModeX: TileMode,
-    tileModeY: TileMode
+    tileModeY: TileMode,
 ): Shader {
     return BitmapShader(
         image.asAndroidBitmap(),
         tileModeX.toAndroidTileMode(),
-        tileModeY.toAndroidTileMode()
+        tileModeY.toAndroidTileMode(),
     )
 }
 
@@ -163,7 +223,7 @@ internal fun makeTransparentColors(colors: List<Color>, numTransparentColors: In
 internal fun makeTransparentStops(
     stops: List<Float>?,
     colors: List<Color>,
-    numTransparentColors: Int
+    numTransparentColors: Int,
 ): FloatArray? {
     if (numTransparentColors == 0) {
         return stops?.toFloatArray()
@@ -196,3 +256,38 @@ private fun validateColorStops(colors: List<Color>, colorStops: List<Float>?) {
         )
     }
 }
+
+internal actual class TransformShader {
+    private var aMatrix: android.graphics.Matrix? = null
+
+    private fun obtainMatrix(): android.graphics.Matrix =
+        aMatrix ?: android.graphics.Matrix().also { aMatrix = it }
+
+    actual fun transform(matrix: Matrix?) {
+        val tmp: android.graphics.Matrix?
+        if (matrix == null) {
+            tmp = null
+            aMatrix = null
+        } else {
+            tmp = obtainMatrix().apply { setFrom(matrix) }
+        }
+        // TODO(b/419811019): Handle the chase where the shader already had a matrix set.
+        shader?.setLocalMatrix(tmp)
+    }
+
+    actual var shader: Shader? = null
+        set(value) {
+            if (aMatrix != null) {
+                // TODO(b/419811019): Handle the chase where the shader already had a matrix set.
+                value?.setLocalMatrix(aMatrix)
+            }
+            field = value
+        }
+}
+
+internal actual fun ActualCompositeShader(dst: Shader, src: Shader, blendMode: BlendMode): Shader =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        ComposeShader(dst, src, blendMode.toAndroidBlendMode())
+    } else {
+        ComposeShader(dst, src, blendMode.toPorterDuffMode())
+    }

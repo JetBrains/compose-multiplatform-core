@@ -41,7 +41,7 @@ package androidx.compose.runtime
     AnnotationTarget.CLASS,
     AnnotationTarget.FUNCTION,
     AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY
+    AnnotationTarget.PROPERTY,
 )
 @Retention(AnnotationRetention.BINARY)
 @StableMarker

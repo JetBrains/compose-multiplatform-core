@@ -27,8 +27,8 @@ import androidx.annotation.RestrictTo
 import androidx.wear.watchface.complications.data.ComplicationType
 import java.io.DataOutputStream
 
-const val NAMESPACE_APP = "http://schemas.android.com/apk/res-auto"
-const val NAMESPACE_ANDROID = "http://schemas.android.com/apk/res/android"
+public const val NAMESPACE_APP: String = "http://schemas.android.com/apk/res-auto"
+public const val NAMESPACE_ANDROID: String = "http://schemas.android.com/apk/res/android"
 
 /**
  * ComplicationSlotBounds are defined by fractional screen space coordinates in unit-square [0..1].
@@ -51,20 +51,20 @@ const val NAMESPACE_ANDROID = "http://schemas.android.com/apk/res/android"
  */
 public class ComplicationSlotBounds(
     public val perComplicationTypeBounds: Map<ComplicationType, RectF>,
-    public val perComplicationTypeMargins: Map<ComplicationType, RectF>
+    public val perComplicationTypeMargins: Map<ComplicationType, RectF>,
 ) {
     @Deprecated(
         "Use a constructor that specifies perComplicationTypeMargins",
         ReplaceWith(
             "ComplicationSlotBounds(Map<ComplicationType, RectF>, Map<ComplicationType, RectF>)"
-        )
+        ),
     )
-    constructor(
+    public constructor(
         perComplicationTypeBounds: Map<ComplicationType, RectF>
     ) : this(perComplicationTypeBounds, perComplicationTypeBounds.mapValues { RectF() })
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun write(dos: DataOutputStream) {
+    public fun write(dos: DataOutputStream) {
         perComplicationTypeBounds.keys.toSortedSet().forEach { type ->
             dos.writeInt(type.toWireComplicationType())
             perComplicationTypeBounds[type]!!.write(dos)
@@ -100,10 +100,10 @@ public class ComplicationSlotBounds(
     @JvmOverloads
     public constructor(
         bounds: RectF,
-        margins: RectF = RectF()
+        margins: RectF = RectF(),
     ) : this(
         ComplicationType.values().associateWith { bounds },
-        ComplicationType.values().associateWith { margins }
+        ComplicationType.values().associateWith { margins },
     )
 
     init {
@@ -119,7 +119,7 @@ public class ComplicationSlotBounds(
         }
     }
 
-    companion object {
+    public companion object {
         internal const val NODE_NAME = "ComplicationSlotBounds"
 
         /**
@@ -129,9 +129,9 @@ public class ComplicationSlotBounds(
          * otherwise be problematic if new complication types have been introduced.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun createFromPartialMap(
+        public fun createFromPartialMap(
             partialPerComplicationTypeBounds: Map<ComplicationType, RectF>,
-            partialPerComplicationTypeMargins: Map<ComplicationType, RectF>
+            partialPerComplicationTypeMargins: Map<ComplicationType, RectF>,
         ): ComplicationSlotBounds {
             val boundsMap = HashMap(partialPerComplicationTypeBounds)
             val marginsMap = HashMap(partialPerComplicationTypeMargins)
@@ -149,11 +149,11 @@ public class ComplicationSlotBounds(
          * nodes. No other child nodes are expected.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun inflate(
+        public fun inflate(
             resources: Resources,
             parser: XmlResourceParser,
             complicationScaleX: Float,
-            complicationScaleY: Float
+            complicationScaleY: Float,
         ): ComplicationSlotBounds? {
             val perComplicationTypeBounds by lazy { HashMap<ComplicationType, RectF>() }
             val perComplicationTypeMargins by lazy { HashMap<ComplicationType, RectF>() }
@@ -166,7 +166,7 @@ public class ComplicationSlotBounds(
                                     parser.requireAndGet("left", resources, complicationScaleX),
                                     parser.requireAndGet("top", resources, complicationScaleY),
                                     parser.requireAndGet("right", resources, complicationScaleX),
-                                    parser.requireAndGet("bottom", resources, complicationScaleY)
+                                    parser.requireAndGet("bottom", resources, complicationScaleY),
                                 )
                             else if (parser.hasValue("center_x")) {
                                 val halfWidth =
@@ -183,7 +183,7 @@ public class ComplicationSlotBounds(
                                     centerX - halfWidth,
                                     centerY - halfHeight,
                                     centerX + halfWidth,
-                                    centerY + halfHeight
+                                    centerY + halfHeight,
                                 )
                             } else {
                                 throw IllegalArgumentException(
@@ -197,7 +197,7 @@ public class ComplicationSlotBounds(
                                 parser.get("marginLeft", resources, complicationScaleX) ?: 0f,
                                 parser.get("marginTop", resources, complicationScaleY) ?: 0f,
                                 parser.get("marginRight", resources, complicationScaleX) ?: 0f,
-                                parser.get("marginBottom", resources, complicationScaleY) ?: 0f
+                                parser.get("marginBottom", resources, complicationScaleY) ?: 0f,
                             )
                         if (null != parser.getAttributeValue(NAMESPACE_APP, "complicationType")) {
                             val complicationType =
@@ -205,7 +205,7 @@ public class ComplicationSlotBounds(
                                     parser.getAttributeIntValue(
                                         NAMESPACE_APP,
                                         "complicationType",
-                                        0
+                                        0,
                                     )
                                 )
                             require(!perComplicationTypeBounds.contains(complicationType)) {
@@ -239,7 +239,7 @@ public class ComplicationSlotBounds(
 internal fun XmlResourceParser.requireAndGet(
     id: String,
     resources: Resources,
-    scale: Float
+    scale: Float,
 ): Float {
     val value = get(id, resources, scale)
     require(value != null) { "${ComplicationSlotBounds.NODE_NAME} must define '$id'" }
@@ -261,7 +261,7 @@ internal fun XmlResourceParser.get(id: String, resources: Resources, scale: Floa
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             dps,
-            resources.displayMetrics
+            resources.displayMetrics,
         ) / resources.displayMetrics.widthPixels
     } else {
         require(scale > 0) { "scale should be positive" }
@@ -269,7 +269,7 @@ internal fun XmlResourceParser.get(id: String, resources: Resources, scale: Floa
     }
 }
 
-fun XmlResourceParser.hasValue(id: String): Boolean {
+public fun XmlResourceParser.hasValue(id: String): Boolean {
     return null != getAttributeValue(NAMESPACE_APP, id)
 }
 

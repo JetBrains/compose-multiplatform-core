@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.IntDef
+import android.os.Build
 import androidx.annotation.MainThread
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.GltfEntity as RtGltfEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.runtime.GltfEntity as RtGltfEntity
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
+import java.util.Collections
+import java.util.concurrent.TimeUnit
 
 /**
  * GltfModelEntity is a concrete implementation of Entity that hosts a glTF model.
@@ -30,40 +35,140 @@ import androidx.xr.runtime.math.Pose
  * Note: The size property of this Entity is always reported as {0, 0, 0}, regardless of the actual
  * size of the model.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class GltfModelEntity
-private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
-    BaseEntity<RtGltfEntity>(rtEntity, entityManager) {
-    // TODO: b/362368652 - Add an OnAnimationEvent() Listener interface
+private constructor(rtGltfEntity: RtGltfEntity, entityRegistry: EntityRegistry) :
+    Entity(rtGltfEntity, entityRegistry) {
 
-    /** Specifies the current animation state of the GltfModelEntity. */
-    @IntDef(AnimationState.PLAYING, AnimationState.STOPPED)
-    @Retention(AnnotationRetention.SOURCE)
-    internal annotation class AnimationStateValue
+    internal val rtGltfEntity: RtGltfEntity
+        get() = rtEntity as RtGltfEntity
 
-    public object AnimationState {
-        public const val PLAYING: Int = 0
-        public const val STOPPED: Int = 1
+    private val _nodes: List<GltfModelNode> by lazy {
+        // The unique identifier of a node is their index so we first get the
+        // count of the nodes in the model from the native side.
+        val features = rtGltfEntity.nodes
+        val list = ArrayList<GltfModelNode>(features.size)
+
+        for (i in features.indices) {
+            // For each node index in the model, query its name from the native side
+            // and create a [GltfModelNode]. A node may have no name (`null`).
+            val feature = features[i]
+            list.add(GltfModelNode(this, feature, i, feature.name))
+        }
+        list.toList()
     }
+
+    /**
+     * A list of all [GltfModelNode]s defined in the [GltfModelEntity]. The list is lazily
+     * initialized on the first access.
+     *
+     * The returned list corresponds to the flattened array of nodes defined in the source glTF
+     * file. The order of elements in this list is guaranteed to match the order of nodes in the
+     * glTF file's `nodes` array.
+     */
+    public val nodes: List<GltfModelNode>
+        @MainThread
+        get() {
+            checkNotDisposed()
+            return _nodes
+        }
+
+    @delegate:RequiresApi(Build.VERSION_CODES.O)
+    @OptIn(ExperimentalGltfAnimationApi::class)
+    private val _animations: List<GltfAnimation> by lazy {
+        // The unique identifier of an animation is their index so we first get the
+        // count of the nodes in the model from the native side.
+        val features = rtGltfEntity.animations
+        val list = ArrayList<GltfAnimation>(features.size)
+
+        for (i in features.indices) {
+            // For each animation index in the model, query its name from the native side
+            // and create a [GltfAnimation]. An animation may have no name ("").
+            val feature = features[i]
+            list.add(
+                GltfAnimation(
+                    rtGltfEntity = rtGltfEntity,
+                    rtGltfAnimation = feature,
+                    index = feature.animationIndex,
+                    name = feature.animationName,
+                    // The animation duration is in seconds [Float]. We convert it to the [Duration]
+                    // datatype.
+                    duration =
+                        java.time.Duration.ofMillis(
+                            (feature.animationDuration * TimeUnit.SECONDS.toMillis(1)).toLong()
+                        ),
+                )
+            )
+        }
+        Collections.unmodifiableList(list)
+    }
+
+    /**
+     * A list of all [GltfAnimation]s defined in the [GltfModelEntity]. The list is lazily
+     * initialized on the first access.
+     *
+     * The returned list corresponds to the array of animations defined in the source glTF file. The
+     * order of elements in this list is guaranteed to match the order of animations in the glTF
+     * file's `animations` array.
+     */
+    @MainThread
+    @RequiresApi(Build.VERSION_CODES.O)
+    @ExperimentalGltfAnimationApi
+    public fun getAnimations(): List<GltfAnimation> {
+        checkNotDisposed()
+        return _animations
+    }
+
+    /**
+     * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
+     * model's local coordinate space.
+     *
+     * @return A [BoundingBox] object representing the model's bounding box. The
+     *   [BoundingBox.center] defines the geometric center of the box, and the
+     *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
+     *   of the box is twice the half-extent. All values are in meters.
+     */
+    internal val gltfModelBoundingBox: BoundingBox
+        @MainThread get() = rtGltfEntity.gltfModelBoundingBox
+
+    /**
+     * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
+     * model's local coordinate space.
+     *
+     * @return A [BoundingBox] object representing the model's bounding box. The
+     *   [BoundingBox.center] defines the geometric center of the box, and the
+     *   [BoundingBox.halfExtents] defines the distance from the center to each face. The total size
+     *   of the box is twice the half-extent. All values are in meters.
+     */
+    // TODO - b/501059605: Make the property public and remove this getter.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun getGltfModelBoundingBox(): BoundingBox = gltfModelBoundingBox
 
     public companion object {
         /**
          * Factory method for GltfModelEntity.
          *
-         * @param adapter Jetpack XR platform adapter.
+         * @param sceneRuntime SceneRuntime.
+         * @param renderingRuntime RenderingRuntime.
          * @param model [GltfModel] which this entity will display.
          * @param pose Pose for this [GltfModelEntity], relative to its parent.
+         * @param parent Parent entity. If `null`, the entity is created but not attached to the
+         *   scene graph and will not be visible until a parent is set. The default value is
+         *   [Scene]'s [ActivitySpace].
          */
+        @Suppress("RestrictedApiAndroidX")
         internal fun create(
-            adapter: JxrPlatformAdapter,
-            entityManager: EntityManager,
+            sceneRuntime: SceneRuntime,
+            renderingRuntime: RenderingRuntime,
+            entityRegistry: EntityRegistry,
             model: GltfModel,
             pose: Pose = Pose.Identity,
+            parent: Entity? = entityRegistry.getEntityForRtEntity(sceneRuntime.activitySpace),
         ): GltfModelEntity =
             GltfModelEntity(
-                adapter.createGltfEntity(pose, model.model, adapter.activitySpaceRootImpl),
-                entityManager,
-            )
+                    renderingRuntime.createGltfEntity(pose, model.model, parent?.rtEntity),
+                    entityRegistry,
+                )
+                .also { it.parent = parent }
 
         /**
          * Public factory function for a [GltfModelEntity].
@@ -71,78 +176,31 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
          * This method must be called from the main thread.
          * https://developer.android.com/guide/components/processes-and-threads
          *
-         * @param session Session to create the [GltfModel] in.
-         * @param model The [GltfModel] this Entity is referencing.
-         * @param pose The initial pose of the entity.
-         * @return a GltfModelEntity instance
+         * @param session [Session] to create the [GltfModel] in.
+         * @param model The [GltfModel] this [Entity] is referencing.
+         * @param pose The initial [Pose] of the [Entity]. The default value is [Pose.Identity].
+         * @param parent Parent entity. Defaults to `null`. If `null`, the entity is created but not
+         *   attached to the scene graph, meaning it will be invisible. If a parent entity (e.g.,
+         *   [ActivitySpace] or any other [Entity] already present in the scene) is assigned later,
+         *   the entity will become visible (provided it is enabled). This allows for [Entity]
+         *   pre-configuration before making it visible.
          */
         @MainThread
-        @JvmStatic
         @JvmOverloads
+        @JvmStatic
         public fun create(
             session: Session,
             model: GltfModel,
             pose: Pose = Pose.Identity,
+            parent: Entity? = null,
         ): GltfModelEntity =
-            GltfModelEntity.create(
-                session.platformAdapter,
-                session.scene.entityManager,
+            create(
+                session.sceneRuntime,
+                session.renderingRuntime,
+                session.scene.entityRegistry,
                 model,
-                pose
+                pose,
+                parent,
             )
-    }
-
-    /** Returns the current animation state of this glTF entity. */
-    @AnimationStateValue
-    public fun getAnimationState(): Int {
-        return when (rtEntity.animationState) {
-            RtGltfEntity.AnimationState.PLAYING -> return AnimationState.PLAYING
-            RtGltfEntity.AnimationState.STOPPED -> return AnimationState.STOPPED
-            else -> AnimationState.STOPPED
-        }
-    }
-
-    /**
-     * Starts the animation with the given name.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
-     * @param animationName The name of the animation to start. If null, the first animation found
-     *   in the glTF will be played.
-     * @param loop Whether the animation should loop.
-     */
-    @MainThread
-    @JvmOverloads
-    public fun startAnimation(loop: Boolean, animationName: String? = null) {
-        rtEntity.startAnimation(loop, animationName)
-    }
-
-    /**
-     * Stops the animation of the glTF entity.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     */
-    @MainThread
-    public fun stopAnimation() {
-        rtEntity.stopAnimation()
-    }
-
-    /**
-     * Sets a material override for a mesh in the glTF model.
-     *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
-     *
-     * If the material is not created or the mesh name is not found in the glTF model, this method
-     * will throw an IllegalStateException.
-     *
-     * @param material The material to use for the mesh.
-     * @param meshName The name of the mesh to use the material for.
-     */
-    @MainThread
-    public fun setMaterialOverride(material: Material, meshName: String) {
-        rtEntity.setMaterialOverride(material.material!!, meshName)
     }
 }

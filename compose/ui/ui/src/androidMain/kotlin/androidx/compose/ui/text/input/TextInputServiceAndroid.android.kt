@@ -51,15 +51,11 @@ private const val DEBUG_CLASS = "TextInputServiceAndroid"
  * @param inputCommandProcessorExecutor [Executor] used to schedule the [processInputCommands]
  *   function when a input command is first requested for a frame.
  */
-@Deprecated(
-    "Only exists to support the legacy TextInputService APIs. It is not used by any Compose " +
-        "code. A copy of this class in foundation is used by the legacy BasicTextField."
-)
 internal class TextInputServiceAndroid(
     val view: View,
     rootPositionCalculator: MatrixPositionCalculator,
     private val inputMethodManager: InputMethodManager,
-    private val inputCommandProcessorExecutor: Executor = Choreographer.getInstance().asExecutor(),
+    val inputCommandProcessorExecutor: Executor,
 ) : PlatformTextInputService {
 
     /**
@@ -70,7 +66,7 @@ internal class TextInputServiceAndroid(
         StartInput,
         StopInput,
         ShowKeyboard,
-        HideKeyboard
+        HideKeyboard,
     }
 
     /**
@@ -118,12 +114,9 @@ internal class TextInputServiceAndroid(
 
     constructor(
         view: View,
-        positionCalculator: MatrixPositionCalculator
-    ) : this(
-        view,
-        positionCalculator,
-        InputMethodManagerImpl(view),
-    )
+        positionCalculator: MatrixPositionCalculator,
+        executor: Executor,
+    ) : this(view, positionCalculator, InputMethodManagerImpl(view), executor)
 
     init {
         if (DEBUG) {
@@ -163,7 +156,7 @@ internal class TextInputServiceAndroid(
                             includeInsertionMarker: Boolean,
                             includeCharacterBounds: Boolean,
                             includeEditorBounds: Boolean,
-                            includeLineBounds: Boolean
+                            includeLineBounds: Boolean,
                         ) {
                             cursorAnchorInfoController.requestUpdate(
                                 immediate,
@@ -171,7 +164,7 @@ internal class TextInputServiceAndroid(
                                 includeInsertionMarker,
                                 includeCharacterBounds,
                                 includeEditorBounds,
-                                includeLineBounds
+                                includeLineBounds,
                             )
                         }
 
@@ -183,7 +176,7 @@ internal class TextInputServiceAndroid(
                                 }
                             }
                         }
-                    }
+                    },
             )
             .also {
                 ics.add(WeakReference(it))
@@ -200,7 +193,7 @@ internal class TextInputServiceAndroid(
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     ) {
         if (DEBUG) {
             Log.d(TAG, "$DEBUG_CLASS.startInput")
@@ -341,7 +334,7 @@ internal class TextInputServiceAndroid(
                 Log.d(
                     TAG,
                     "$DEBUG_CLASS.textInputCommandEventLoop.$command " +
-                        "(startInput=$startInput, showKeyboard=$showKeyboard)"
+                        "(startInput=$startInput, showKeyboard=$showKeyboard)",
                 )
             }
         }
@@ -392,7 +385,7 @@ internal class TextInputServiceAndroid(
                     selectionStart = newValue.selection.min,
                     selectionEnd = newValue.selection.max,
                     compositionStart = state.composition?.min ?: -1,
-                    compositionEnd = state.composition?.max ?: -1
+                    compositionEnd = state.composition?.max ?: -1,
                 )
             }
             return
@@ -426,7 +419,7 @@ internal class TextInputServiceAndroid(
                 rect.left.roundToInt(),
                 rect.top.roundToInt(),
                 rect.right.roundToInt(),
-                rect.bottom.roundToInt()
+                rect.bottom.roundToInt(),
             )
 
         // Requesting rectangle too early after obtaining focus may bring view into wrong place
@@ -450,7 +443,7 @@ internal class TextInputServiceAndroid(
         textLayoutResult: TextLayoutResult,
         textFieldToRootTransform: (Matrix) -> Unit,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) {
         cursorAnchorInfoController.updateTextLayoutResult(
             textFieldValue,
@@ -458,7 +451,7 @@ internal class TextInputServiceAndroid(
             textLayoutResult,
             textFieldToRootTransform,
             innerTextFieldBounds,
-            decorationBoxBounds
+            decorationBoxBounds,
         )
     }
 
@@ -535,11 +528,78 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
         KeyboardType.Decimal -> {
             this.inputType = InputType.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
         }
+        KeyboardType.PasswordVisible -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+        KeyboardType.PostalAddress -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_POSTAL_ADDRESS
+        }
+        KeyboardType.PersonName -> {
+            this.inputType = InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_PERSON_NAME
+        }
+        KeyboardType.EmailSubject -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_EMAIL_SUBJECT
+        }
+        KeyboardType.ShortMessage -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_SHORT_MESSAGE
+        }
+        KeyboardType.LongMessage -> {
+            this.inputType =
+                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_LONG_MESSAGE
+        }
+        KeyboardType.Filter -> {
+            this.inputType = InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_FILTER
+        }
+        KeyboardType.Phonetic -> {
+            this.inputType = InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_PHONETIC
+        }
+        KeyboardType.DateTime -> {
+            this.inputType =
+                InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_NORMAL
+        }
+        KeyboardType.Date -> {
+            this.inputType = InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_DATE
+        }
+        KeyboardType.Time -> {
+            this.inputType = InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_TIME
+        }
+        KeyboardType.NumberSigned -> {
+            this.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        KeyboardType.DecimalSigned -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL or
+                    InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        KeyboardType.DecimalPassword -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD or
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL
+        }
+        KeyboardType.NumberPasswordSigned -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD or
+                    InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        KeyboardType.DecimalPasswordSigned -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD or
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL or
+                    InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
         else -> error("Invalid Keyboard Type")
     }
 
     if (!imeOptions.singleLine) {
-        if (hasFlag(this.inputType, InputType.TYPE_CLASS_TEXT)) {
+        if ((this.inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT) {
             // TextView.java#setInputTypeSingleLine
             this.inputType = this.inputType or InputType.TYPE_TEXT_FLAG_MULTI_LINE
 
@@ -549,7 +609,7 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
         }
     }
 
-    if (hasFlag(this.inputType, InputType.TYPE_CLASS_TEXT)) {
+    if ((this.inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT) {
         when (imeOptions.capitalization) {
             KeyboardCapitalization.Characters -> {
                 this.inputType = this.inputType or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
@@ -581,5 +641,3 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
 internal fun Choreographer.asExecutor(): Executor = Executor { runnable ->
     postFrameCallback { runnable.run() }
 }
-
-private fun hasFlag(bits: Int, flag: Int): Boolean = (bits and flag) == flag

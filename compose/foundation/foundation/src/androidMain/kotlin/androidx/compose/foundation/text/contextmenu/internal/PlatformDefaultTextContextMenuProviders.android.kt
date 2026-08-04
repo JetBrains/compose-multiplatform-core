@@ -32,9 +32,9 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 
 @Composable
-internal fun ProvideDefaultPlatformTextContextMenuProviders(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+internal actual fun ProvideDefaultPlatformTextContextMenuProviders(
+    modifier: Modifier,
+    content: @Composable () -> Unit,
 ) {
     val dropdownDefined = LocalTextContextMenuDropdownProvider.current != null
     val toolbarDefined = LocalTextContextMenuToolbarProvider.current != null
@@ -76,7 +76,7 @@ private fun ProvideBothDefaultProviders(modifier: Modifier, content: @Composable
     ) {
         Box(
             propagateMinConstraints = true,
-            modifier = modifier.onGloballyPositioned { layoutCoordinates = it }
+            modifier = modifier.onGloballyPositioned { layoutCoordinates = it },
         ) {
             content()
             dropdownProvider.ContextMenu(layoutCoordinatesBlock)

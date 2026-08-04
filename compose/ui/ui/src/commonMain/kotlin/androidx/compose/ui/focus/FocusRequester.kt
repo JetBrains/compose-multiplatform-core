@@ -49,7 +49,7 @@ private const val InvalidFocusRequesterInvocation =
  * @see androidx.compose.ui.focus.focusRequester
  */
 @Stable
-class FocusRequester @RememberInComposition constructor() {
+public class FocusRequester @RememberInComposition public constructor() {
 
     internal val focusRequesterNodes: MutableVector<FocusRequesterModifierNode> = mutableVectorOf()
 
@@ -63,9 +63,9 @@ class FocusRequester @RememberInComposition constructor() {
     @Deprecated(
         message = "use the version the has a FocusDirection",
         replaceWith = ReplaceWith("this.requestFocus()"),
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun requestFocus() {
+    public fun requestFocus() {
         requestFocus(Enter)
     }
 
@@ -80,18 +80,8 @@ class FocusRequester @RememberInComposition constructor() {
      *   canceled.
      * @sample androidx.compose.ui.samples.RequestFocusSample
      */
-    fun requestFocus(focusDirection: FocusDirection = Enter): Boolean = findFocusTargetNode {
-        it.requestFocus(focusDirection)
-    }
-
-    internal fun findFocusTargetNode(onFound: (FocusTargetNode) -> Boolean): Boolean {
-        return findFocusTarget { focusTarget ->
-            if (focusTarget.fetchFocusProperties().canFocus) {
-                onFound(focusTarget)
-            } else {
-                focusTarget.findChildCorrespondingToFocusEnter(Enter, onFound)
-            }
-        }
+    public fun requestFocus(focusDirection: FocusDirection = Enter): Boolean {
+        return findFocusTarget { it.requestFocus(focusDirection) }
     }
 
     /**
@@ -108,7 +98,7 @@ class FocusRequester @RememberInComposition constructor() {
      *   modifiers associated with this [FocusRequester]. False otherwise.
      * @sample androidx.compose.ui.samples.CaptureFocusSample
      */
-    fun captureFocus(): Boolean {
+    public fun captureFocus(): Boolean {
         if (focusRequesterNodes.isEmpty()) {
             println("$FocusWarning: $FocusRequesterNotInitialized")
             return false
@@ -134,7 +124,7 @@ class FocusRequester @RememberInComposition constructor() {
      *   operation, one of the components associated with this [focusRequester] freed focus.
      * @sample androidx.compose.ui.samples.CaptureFocusSample
      */
-    fun freeFocus(): Boolean {
+    public fun freeFocus(): Boolean {
         if (focusRequesterNodes.isEmpty()) {
             println("$FocusWarning: $FocusRequesterNotInitialized")
             return false
@@ -156,7 +146,14 @@ class FocusRequester @RememberInComposition constructor() {
      *   and we successfully saved a reference to it.
      * @sample androidx.compose.ui.samples.RestoreFocusSample
      */
-    fun saveFocusedChild(): Boolean {
+    // TODO: Deprecate once focus restoration is enabled by default via flags.
+    // @Deprecated(
+    //    message =
+    //        "The focused child is now saved automatically whenever focus changes. Just call" +
+    //            " restoreFocusedChild to restore focus.",
+    //    level = DeprecationLevel.WARNING,
+    // )
+    public fun saveFocusedChild(): Boolean {
         if (focusRequesterNodes.isEmpty()) {
             println("$FocusWarning: $FocusRequesterNotInitialized")
             return false
@@ -174,7 +171,7 @@ class FocusRequester @RememberInComposition constructor() {
      *   associated with this [FocusRequester]
      * @sample androidx.compose.ui.samples.RestoreFocusSample
      */
-    fun restoreFocusedChild(): Boolean {
+    public fun restoreFocusedChild(): Boolean {
         if (focusRequesterNodes.isEmpty()) {
             println("$FocusWarning: $FocusRequesterNotInitialized")
             return false
@@ -184,13 +181,13 @@ class FocusRequester @RememberInComposition constructor() {
         return success
     }
 
-    companion object {
+    public companion object {
         /**
          * Default [focusRequester], which when used in [Modifier.focusProperties][focusProperties]
          * implies that we want to use the default system focus order, that is based on the position
          * of the items on the screen.
          */
-        val Default = FocusRequester()
+        public val Default: FocusRequester = FocusRequester()
 
         /**
          * Cancelled [focusRequester], which when used in
@@ -199,7 +196,7 @@ class FocusRequester @RememberInComposition constructor() {
          *
          * @sample androidx.compose.ui.samples.CancelFocusMoveSample
          */
-        val Cancel = FocusRequester()
+        public val Cancel: FocusRequester = FocusRequester()
 
         /** Used to indicate that the focus has been redirected during an enter/exit lambda. */
         internal val Redirect = FocusRequester()
@@ -209,38 +206,38 @@ class FocusRequester @RememberInComposition constructor() {
          *
          * @sample androidx.compose.ui.samples.CreateFocusRequesterRefsSample
          */
-        object FocusRequesterFactory {
-            operator fun component1() = FocusRequester()
+        public object FocusRequesterFactory {
+            public operator fun component1(): FocusRequester = FocusRequester()
 
-            operator fun component2() = FocusRequester()
+            public operator fun component2(): FocusRequester = FocusRequester()
 
-            operator fun component3() = FocusRequester()
+            public operator fun component3(): FocusRequester = FocusRequester()
 
-            operator fun component4() = FocusRequester()
+            public operator fun component4(): FocusRequester = FocusRequester()
 
-            operator fun component5() = FocusRequester()
+            public operator fun component5(): FocusRequester = FocusRequester()
 
-            operator fun component6() = FocusRequester()
+            public operator fun component6(): FocusRequester = FocusRequester()
 
-            operator fun component7() = FocusRequester()
+            public operator fun component7(): FocusRequester = FocusRequester()
 
-            operator fun component8() = FocusRequester()
+            public operator fun component8(): FocusRequester = FocusRequester()
 
-            operator fun component9() = FocusRequester()
+            public operator fun component9(): FocusRequester = FocusRequester()
 
-            operator fun component10() = FocusRequester()
+            public operator fun component10(): FocusRequester = FocusRequester()
 
-            operator fun component11() = FocusRequester()
+            public operator fun component11(): FocusRequester = FocusRequester()
 
-            operator fun component12() = FocusRequester()
+            public operator fun component12(): FocusRequester = FocusRequester()
 
-            operator fun component13() = FocusRequester()
+            public operator fun component13(): FocusRequester = FocusRequester()
 
-            operator fun component14() = FocusRequester()
+            public operator fun component14(): FocusRequester = FocusRequester()
 
-            operator fun component15() = FocusRequester()
+            public operator fun component15(): FocusRequester = FocusRequester()
 
-            operator fun component16() = FocusRequester()
+            public operator fun component16(): FocusRequester = FocusRequester()
         }
 
         /**
@@ -249,7 +246,7 @@ class FocusRequester @RememberInComposition constructor() {
          *
          * @sample androidx.compose.ui.samples.CreateFocusRequesterRefsSample
          */
-        fun createRefs(): FocusRequesterFactory = FocusRequesterFactory
+        public fun createRefs(): FocusRequesterFactory = FocusRequesterFactory
     }
 
     /**
@@ -258,11 +255,10 @@ class FocusRequester @RememberInComposition constructor() {
      *
      * @param onFound the callback that is run when the child is found.
      * @return false if no focus nodes were found or if the FocusRequester is
-     *   [FocusRequester.Cancel]. Returns null if the FocusRequester is [FocusRequester.Default].
-     *   Otherwise returns a logical or of the result of calling [onFound] for each focus node
-     *   associated with this [FocusRequester].
+     *   [FocusRequester.Cancel]. Returns a logical or of the result of calling [onFound] for each
+     *   focus node associated with this [FocusRequester].
      */
-    private inline fun findFocusTarget(onFound: (FocusTargetNode) -> Boolean): Boolean {
+    internal inline fun findFocusTarget(onFound: (FocusTargetNode) -> Boolean): Boolean {
         check(this !== Default) { InvalidFocusRequesterInvocation }
         check(this !== Cancel) { InvalidFocusRequesterInvocation }
         if (focusRequesterNodes.isEmpty()) {

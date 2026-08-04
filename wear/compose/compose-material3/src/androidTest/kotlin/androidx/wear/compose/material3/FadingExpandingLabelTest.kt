@@ -21,7 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -35,10 +35,7 @@ class FadingExpandingLabelTest {
     @Test
     fun fading_expanding_label_supports_testtag() {
         rule.setContentWithTheme {
-            FadingExpandingLabel(
-                text = "test",
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            FadingExpandingLabel(text = "test", modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -53,10 +50,7 @@ class FadingExpandingLabelTest {
 
         rule.mainClock.autoAdvance = false
         rule.setContentWithTheme(modifier = Modifier.size(SCREEN_SIZE_SMALL.dp)) {
-            FadingExpandingLabel(
-                text = text.value,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            FadingExpandingLabel(text = text.value, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot().let {
@@ -92,10 +86,7 @@ class FadingExpandingLabelTest {
 
         rule.mainClock.autoAdvance = false
         rule.setContentWithTheme(modifier = Modifier.size(SCREEN_SIZE_SMALL.dp)) {
-            FadingExpandingLabel(
-                text = text.value,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            FadingExpandingLabel(text = text.value, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot().let {

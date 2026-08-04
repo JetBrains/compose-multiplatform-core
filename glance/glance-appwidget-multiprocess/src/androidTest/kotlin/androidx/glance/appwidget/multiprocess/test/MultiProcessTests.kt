@@ -65,6 +65,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -107,7 +108,7 @@ class MultiProcessTests {
             val bound =
                 appWidgetManager.bindAppWidgetIdIfAllowed(
                     appWidgetId,
-                    ComponentName(activity, TestWidgetReceiver::class.java)
+                    ComponentName(activity, TestWidgetReceiver::class.java),
                 )
             assertWithMessage("Failed to bind").that(bound).isTrue()
             Log.v("MultiProcessTests", "Bound widget $appWidgetId")
@@ -116,7 +117,7 @@ class MultiProcessTests {
                 host.createView(
                     activity,
                     appWidgetId,
-                    appWidgetManager.getAppWidgetInfo(appWidgetId)
+                    appWidgetManager.getAppWidgetInfo(appWidgetId),
                 )
             activity.setContentView(hostView)
         }
@@ -133,6 +134,10 @@ class MultiProcessTests {
 
     @Test
     fun list() = runBlocking {
+        assumeFalse(
+            "Test fails on cuttlefish b/460513394",
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+        )
         setContent { LazyColumn { items(10, { it.toLong() }) { Text("$it") } } }
 
         val list = bindWidget().waitForChildren().findByType<ListView>()
@@ -166,6 +171,10 @@ class MultiProcessTests {
     @Test
     fun runAction() =
         runBlocking<Unit> {
+            assumeFalse(
+                "Test fails on cuttlefish b/460513394",
+                Build.MODEL.contains("Cuttlefish", ignoreCase = true),
+            )
             val state = app.actionFlow.apply { value = 0 }
             setContent {
                 Text(
@@ -194,7 +203,7 @@ class TestAction : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
-        parameters: ActionParameters
+        parameters: ActionParameters,
     ) {
         checkCustomProcess()
         (context.applicationContext as TestApplication).actionFlow.value = 1

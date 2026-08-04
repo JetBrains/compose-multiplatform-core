@@ -35,7 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 
 /**
  * High level element that displays text and provides semantics / accessibility information.
@@ -105,7 +107,7 @@ public fun Text(
     maxLines: Int = LocalTextConfiguration.current.maxLines,
     minLines: Int = 1,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         AnnotatedString(text),
@@ -125,7 +127,7 @@ public fun Text(
         minLines,
         emptyMap(),
         onTextLayout,
-        style
+        style,
     )
 }
 
@@ -200,7 +202,7 @@ public fun Text(
     minLines: Int = 1,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     val textColor = color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }
 
@@ -222,7 +224,7 @@ public fun Text(
         minLines = minLines,
         inlineContent = inlineContent,
         onTextLayout = onTextLayout,
-        style = style
+        style = style,
     )
 }
 
@@ -261,7 +263,7 @@ public val LocalTextConfiguration: ProvidableCompositionLocal<TextConfiguration>
         TextConfiguration(
             TextConfigurationDefaults.TextAlign,
             TextConfigurationDefaults.Overflow,
-            TextConfigurationDefaults.MaxLines
+            TextConfigurationDefaults.MaxLines,
         )
     }
 
@@ -306,4 +308,30 @@ public object TextConfigurationDefaults {
 
     /** Default max lines for [Text] */
     public val MaxLines: Int = Int.MAX_VALUE
+}
+
+/** Contains the default values used by [Text]. */
+public object TextDefaults {
+    /**
+     * The minimum top content padding for the list when a [Text] is placed at the top. Recommended
+     * for use with [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumTopListContentPadding: Dp
+        @Composable get() = screenHeightFraction(SMALL_VERTICAL_CONTENT_PADDING_FRACTION)
+
+    /**
+     * The minimum bottom content padding for the list when a [Text] is placed at the bottom.
+     * Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumBottomListContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 }

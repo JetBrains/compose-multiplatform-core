@@ -57,7 +57,7 @@ abstract class ListenableFutureRemoteMediator<Key : Any, Value : Any> :
     @Suppress("AsyncSuffixFuture")
     abstract fun loadFuture(
         loadType: LoadType,
-        state: PagingState<Key, Value>
+        state: PagingState<Key, Value>,
     ): ListenableFuture<MediatorResult>
 
     /**
@@ -68,8 +68,8 @@ abstract class ListenableFutureRemoteMediator<Key : Any, Value : Any> :
      * @return [InitializeAction] indicating the action to take after initialization:
      *     * [LAUNCH_INITIAL_REFRESH] to immediately dispatch a [load] asynchronously with load type
      *       [LoadType.REFRESH], to update paginated content when the stream is initialized. Note:
-     *       This also prevents [RemoteMediator] from triggering [PREPEND] or [APPEND] until
-     *       [REFRESH] succeeds.
+     *       This also prevents [RemoteMediator] from triggering [LoadType.PREPEND] or
+     *       [LoadType.APPEND] until [LoadType.REFRESH] succeeds.
      *     * [SKIP_INITIAL_REFRESH][InitializeAction.SKIP_INITIAL_REFRESH] to wait for a refresh
      *       request from the UI before dispatching a [load] with load type [LoadType.REFRESH].
      */
@@ -80,7 +80,7 @@ abstract class ListenableFutureRemoteMediator<Key : Any, Value : Any> :
 
     final override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Key, Value>
+        state: PagingState<Key, Value>,
     ): MediatorResult {
         return loadFuture(loadType, state).await()
     }

@@ -37,12 +37,14 @@ import static java.lang.Math.round;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.Resources.Theme;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Outline;
 import android.graphics.Paint.Cap;
@@ -100,6 +102,7 @@ import androidx.wear.protolayout.proto.ActionProto.AndroidActivity;
 import androidx.wear.protolayout.proto.ActionProto.AndroidExtra;
 import androidx.wear.protolayout.proto.ActionProto.LaunchAction;
 import androidx.wear.protolayout.proto.ActionProto.LoadAction;
+import androidx.wear.protolayout.proto.ActionProto.PendingIntentAction;
 import androidx.wear.protolayout.proto.AlignmentProto.AngularAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.ArcAnchorType;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignment;
@@ -250,14 +253,16 @@ public final class ProtoLayoutInflater {
             Trigger.newBuilder().setOnLoadTrigger(OnLoadTrigger.getDefaultInstance()).build();
 
     /** The default minimal click target size, for meeting the accessibility requirement */
-    @VisibleForTesting static final float DEFAULT_MIN_CLICKABLE_SIZE_DP = 48f;
+    @VisibleForTesting
+    static final float DEFAULT_MIN_CLICKABLE_SIZE_DP = 48f;
 
     /**
      * Default maximum raw byte size for a bitmap drawable.
      *
-     * @see <a
-     *     href="https://cs.android.com/android/_/android/platform/frameworks/base/+/d01036ee5893357db577c961119fb85825247f03:graphics/java/android/graphics/RecordingCanvas.java;l=44;bpv=1;bpt=0;drc=00af5271dabd578397176eda0cd7a66c55fac59a">
-     *     The framework enforced max size</a>
+     * @see <a href="https://cs.android.com/android/_/android/platform/frameworks/base
+     * /+/d01036ee5893357db577c961119fb85825247f03:graphics/java/android/graphics/RecordingCanvas
+     * .java;l=44;bpv=1;bpt=0;drc=00af5271dabd578397176eda0cd7a66c55fac59a"> The framework
+     * enforced max size</a>
      */
     private static final int DEFAULT_MAX_BITMAP_RAW_SIZE = 20 * 1024 * 1024;
 
@@ -283,7 +288,8 @@ public final class ProtoLayoutInflater {
 
     private static final int TEXT_COLOR_DEFAULT = 0xFFFFFFFF;
     private static final int TEXT_MAX_LINES_DEFAULT = 1;
-    @VisibleForTesting static final int TEXT_AUTOSIZES_LIMIT = 10;
+    @VisibleForTesting
+    static final int TEXT_AUTOSIZES_LIMIT = 10;
     private static final int TEXT_MIN_LINES = 1;
 
     private static final ContainerDimension CONTAINER_DIMENSION_DEFAULT =
@@ -291,7 +297,8 @@ public final class ProtoLayoutInflater {
                     .setWrappedDimension(WrappedDimensionProp.getDefaultInstance())
                     .build();
 
-    @ArcLayout.AnchorType private static final int ARC_ANCHOR_DEFAULT = ArcLayout.ANCHOR_CENTER;
+    @ArcLayout.AnchorType
+    private static final int ARC_ANCHOR_DEFAULT = ArcLayout.ANCHOR_CENTER;
 
     // White
     private static final int LINE_COLOR_DEFAULT = 0xFFFFFFFF;
@@ -313,21 +320,25 @@ public final class ProtoLayoutInflater {
 
     private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
 
-    private final boolean mAllowLayoutChangingBindsWithoutDefault;
     final String mClickableIdExtra;
 
     private final @Nullable LoggingUtils mLoggingUtils;
     private final @NonNull InflaterStatsLogger mInflaterStatsLogger;
     final @Nullable Executor mLoadActionExecutor;
     final LoadActionListener mLoadActionListener;
+    final PendingIntentActionListener mPendingIntentActionListener;
     final boolean mAnimationEnabled;
 
     private boolean mApplyFontVariantBodyAsDefault = false;
 
-    @VisibleForTesting static final String WEIGHT_AXIS_TAG = "wght";
-    @VisibleForTesting static final String WIDTH_AXIS_TAG = "wdth";
-    @VisibleForTesting static final String ROUNDNESS_AXIS_TAG = "ROND";
-    @VisibleForTesting static final String TABULAR_OPTION_TAG = "tnum";
+    @VisibleForTesting
+    static final String WEIGHT_AXIS_TAG = "wght";
+    @VisibleForTesting
+    static final String WIDTH_AXIS_TAG = "wdth";
+    @VisibleForTesting
+    static final String ROUNDNESS_AXIS_TAG = "ROND";
+    @VisibleForTesting
+    static final String TABULAR_OPTION_TAG = "tnum";
 
     private static final ImmutableSet<String> SUPPORTED_FONT_SETTING_TAGS =
             ImmutableSet.of(
@@ -345,6 +356,21 @@ public final class ProtoLayoutInflater {
          * @param nextState The state that the next layout should be in.
          */
         void onClick(@NonNull State nextState);
+    }
+
+    /**
+     * Listener for clicks on Clickable objects that have an action to perform the operation
+     * associated with a {@link PendingIntent}.
+     */
+    public interface PendingIntentActionListener {
+
+        /**
+         * Called when a Clickable that has a {@link PendingIntentAction} is clicked.
+         *
+         * @param source the {@link View} that received the click.
+         * @param id     the id for retrieving the associated {@link PendingIntent}.
+         */
+        void onClick(@NonNull View source, @NonNull String id);
     }
 
     /**
@@ -368,7 +394,7 @@ public final class ProtoLayoutInflater {
          * Update the DynamicDataPipeline with new nodes that were stored during the layout update.
          *
          * @param isReattaching if True, this layout is being reattached and will skip content
-         *     transition animations.
+         *                      transition animations.
          */
         @UiThread
         public void updateDynamicDataPipeline(boolean isReattaching) {
@@ -408,15 +434,17 @@ public final class ProtoLayoutInflater {
         private int mNumMissingChildren;
 
         /**
-         * @param view The {@link View} that has been inflated.
-         * @param layoutParams The {@link LayoutParams} that must be used when attaching the
-         *     inflated view to a parent.
-         * @param childLayoutParams The {@link LayoutParams} that must be applied to children
-         *     carried over from a previous layout.
+         * @param view               The {@link View} that has been inflated.
+         * @param layoutParams       The {@link LayoutParams} that must be used when attaching the
+         *                           inflated view to a parent.
+         * @param childLayoutParams  The {@link LayoutParams} that must be applied to children
+         *                           carried over from a previous layout.
          * @param numMissingChildren Non-zero if {@code view} is a {@link ViewGroup} whose children
-         *     have not been added. This means that before using this view in a layout, its children
-         *     must be copied from the {@link ViewGroup} that represents the previous version of
-         *     this layout element.
+         *                           have not been added. This means that before using this view
+         *                           in a layout, its children
+         *                           must be copied from the {@link ViewGroup} that represents
+         *                           the previous version of
+         *                           this layout element.
          */
         InflatedView(
                 View view,
@@ -558,6 +586,7 @@ public final class ProtoLayoutInflater {
         private final @NonNull ResourceResolvers mLayoutResourceResolvers;
         private final @Nullable Executor mLoadActionExecutor;
         private final @NonNull LoadActionListener mLoadActionListener;
+        private final @NonNull PendingIntentActionListener mPendingIntentActionListener;
         private final @NonNull Resources mRendererResources;
         private final @NonNull ProtoLayoutTheme mProtoLayoutTheme;
         private final @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline;
@@ -568,8 +597,6 @@ public final class ProtoLayoutInflater {
         private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
         private final boolean mAnimationEnabled;
 
-        private final boolean mAllowLayoutChangingBindsWithoutDefault;
-
         private final boolean mApplyFontVariantBodyAsDefault;
 
         Config(
@@ -578,6 +605,7 @@ public final class ProtoLayoutInflater {
                 @NonNull ResourceResolvers layoutResourceResolvers,
                 @Nullable Executor loadActionExecutor,
                 @NonNull LoadActionListener loadActionListener,
+                @NonNull PendingIntentActionListener mPendingIntentActionListener,
                 @NonNull Resources rendererResources,
                 @NonNull ProtoLayoutTheme protoLayoutTheme,
                 @Nullable ProtoLayoutDynamicDataPipeline dataPipeline,
@@ -586,18 +614,17 @@ public final class ProtoLayoutInflater {
                 @Nullable LoggingUtils loggingUtils,
                 @NonNull InflaterStatsLogger inflaterStatsLogger,
                 boolean animationEnabled,
-                boolean allowLayoutChangingBindsWithoutDefault,
                 boolean applyFontVariantBodyAsDefault) {
             this.mUiContext = uiContext;
             this.mLayout = layout;
             this.mLayoutResourceResolvers = layoutResourceResolvers;
             this.mLoadActionExecutor = loadActionExecutor;
             this.mLoadActionListener = loadActionListener;
+            this.mPendingIntentActionListener = mPendingIntentActionListener;
             this.mRendererResources = rendererResources;
             this.mProtoLayoutTheme = protoLayoutTheme;
             this.mDataPipeline = dataPipeline;
             this.mAnimationEnabled = animationEnabled;
-            this.mAllowLayoutChangingBindsWithoutDefault = allowLayoutChangingBindsWithoutDefault;
             this.mClickableIdExtra = clickableIdExtra;
             this.mLoggingUtils = loggingUtils;
             this.mInflaterStatsLogger = inflaterStatsLogger;
@@ -628,6 +655,14 @@ public final class ProtoLayoutInflater {
         /** Listener for clicks that will cause contents to be reloaded. */
         public @NonNull LoadActionListener getLoadActionListener() {
             return mLoadActionListener;
+        }
+
+        /**
+         * Gets the listener for clicks that will cause to perform operation associated with a
+         * {@link PendingIntent}.
+         */
+        public @NonNull PendingIntentActionListener getPendingIntentActionListener() {
+            return mPendingIntentActionListener;
         }
 
         /**
@@ -682,15 +717,6 @@ public final class ProtoLayoutInflater {
             return mAnimationEnabled;
         }
 
-        /**
-         * Whether a "layout changing" data bind can be applied without the "value_for_layout" field
-         * being filled in. This is to support legacy apps which use layout-changing data binds
-         * before the full support was built.
-         */
-        public boolean getAllowLayoutChangingBindsWithoutDefault() {
-            return mAllowLayoutChangingBindsWithoutDefault;
-        }
-
         /** Whether to apply FONT_VARIANT_BODY as default variant. */
         public boolean getApplyFontVariantBodyAsDefault() {
             return mApplyFontVariantBodyAsDefault;
@@ -703,11 +729,11 @@ public final class ProtoLayoutInflater {
             private final @NonNull ResourceResolvers mLayoutResourceResolvers;
             private @Nullable Executor mLoadActionExecutor;
             private @Nullable LoadActionListener mLoadActionListener;
+            private @Nullable PendingIntentActionListener mPendingIntentActionListener;
             private @NonNull Resources mRendererResources;
             private @Nullable ProtoLayoutTheme mProtoLayoutTheme;
             private @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline = null;
             private boolean mAnimationEnabled = true;
-            private boolean mAllowLayoutChangingBindsWithoutDefault = false;
             private @Nullable String mClickableIdExtra;
 
             private @Nullable LoggingUtils mLoggingUtils;
@@ -718,10 +744,11 @@ public final class ProtoLayoutInflater {
             private boolean mApplyFontVariantBodyAsDefault = false;
 
             /**
-             * @param uiContext A {@link Context} suitable for interacting with UI with.
-             * @param layout The layout to be rendered.
+             * @param uiContext               A {@link Context} suitable for interacting with UI
+             *                                with.
+             * @param layout                  The layout to be rendered.
              * @param layoutResourceResolvers Resolvers for the resources used for rendering this
-             *     layout.
+             *                                layout.
              */
             public Builder(
                     @NonNull Context uiContext,
@@ -750,6 +777,16 @@ public final class ProtoLayoutInflater {
             public @NonNull Builder setLoadActionListener(
                     @NonNull LoadActionListener loadActionListener) {
                 this.mLoadActionListener = loadActionListener;
+                return this;
+            }
+
+            /**
+             * Sets the listener for clicks that will cause to perform the operation associated with
+             * a {@link PendingIntent}.
+             */
+            public @NonNull Builder setPendingIntentActionListener(
+                    @Nullable PendingIntentActionListener pendingIntentActionListener) {
+                this.mPendingIntentActionListener = pendingIntentActionListener;
                 return this;
             }
 
@@ -822,21 +859,6 @@ public final class ProtoLayoutInflater {
                 return this;
             }
 
-            /**
-             * Sets whether a "layout changing" data bind can be applied without the
-             * "value_for_layout" field being filled in, or being set to zero / empty. Defaults to
-             * false.
-             *
-             * <p>This is to support legacy apps which use layout-changing data bind before the full
-             * support was built.
-             */
-            public @NonNull Builder setAllowLayoutChangingBindsWithoutDefault(
-                    boolean allowLayoutChangingBindsWithoutDefault) {
-                this.mAllowLayoutChangingBindsWithoutDefault =
-                        allowLayoutChangingBindsWithoutDefault;
-                return this;
-            }
-
             /** Apply FONT_VARIANT_BODY as default variant. */
             public @NonNull Builder setApplyFontVariantBodyAsDefault(
                     boolean applyFontVariantBodyAsDefault) {
@@ -857,7 +879,13 @@ public final class ProtoLayoutInflater {
                 }
 
                 if (mLoadActionListener == null) {
-                    mLoadActionListener = p -> {};
+                    mLoadActionListener = p -> {
+                    };
+                }
+
+                if (mPendingIntentActionListener == null) {
+                    mPendingIntentActionListener = (k, v) -> {
+                    };
                 }
 
                 if (mProtoLayoutTheme == null) {
@@ -880,6 +908,7 @@ public final class ProtoLayoutInflater {
                         mLayoutResourceResolvers,
                         mLoadActionExecutor,
                         checkNotNull(mLoadActionListener),
+                        checkNotNull(mPendingIntentActionListener),
                         mRendererResources,
                         checkNotNull(mProtoLayoutTheme),
                         mDataPipeline,
@@ -888,7 +917,6 @@ public final class ProtoLayoutInflater {
                         mLoggingUtils,
                         mInflaterStatsLogger,
                         mAnimationEnabled,
-                        mAllowLayoutChangingBindsWithoutDefault,
                         mApplyFontVariantBodyAsDefault);
             }
         }
@@ -907,10 +935,9 @@ public final class ProtoLayoutInflater {
         this.mLayoutResourceResolvers = config.getLayoutResourceResolvers();
         this.mLoadActionExecutor = config.getLoadActionExecutor();
         this.mLoadActionListener = config.getLoadActionListener();
+        this.mPendingIntentActionListener = config.getPendingIntentActionListener();
         this.mDataPipeline = Optional.ofNullable(config.getDynamicDataPipeline());
         this.mAnimationEnabled = config.getAnimationEnabled();
-        this.mAllowLayoutChangingBindsWithoutDefault =
-                config.getAllowLayoutChangingBindsWithoutDefault();
         this.mClickableIdExtra = config.getClickableIdExtra();
         this.mLoggingUtils = config.getLoggingUtils();
         this.mInflaterStatsLogger = config.getInflaterStatsLogger();
@@ -922,10 +949,16 @@ public final class ProtoLayoutInflater {
         return round(dp * mUiContext.getResources().getDisplayMetrics().density);
     }
 
+    private int dpToPx(DpProp dpProp) {
+        return dpToPx(dpProp.getValue());
+    }
+
+    /** Returns the given dp value, but clamped to [0, +inf]. */
     private int safeDpToPx(float dp) {
         return max(0, dpToPx(dp));
     }
 
+    /** Returns the given dp value, but clamped to [0, +inf]. */
     private int safeDpToPx(DpProp dpProp) {
         return safeDpToPx(dpProp.getValue());
     }
@@ -1070,7 +1103,7 @@ public final class ProtoLayoutInflater {
         }
     }
 
-    @VisibleForTesting()
+    @VisibleForTesting
     static int getFrameLayoutGravity(
             HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment) {
         return horizontalAlignmentToGravity(horizontalAlignment)
@@ -1289,10 +1322,10 @@ public final class ProtoLayoutInflater {
                 // value.
                 boolean atLeastOneCorrectSize =
                         sizes.stream()
-                                        .mapToInt(sp -> (int) sp.getValue())
-                                        .filter(sp -> sp > 0)
-                                        .distinct()
-                                        .count()
+                                .mapToInt(sp -> (int) sp.getValue())
+                                .filter(sp -> sp > 0)
+                                .distinct()
+                                .count()
                                 > 0;
 
                 if (atLeastOneCorrectSize) {
@@ -1349,44 +1382,65 @@ public final class ProtoLayoutInflater {
     }
 
     private void applyFontSetting(@NonNull FontStyle style, @NonNull TextView textView) {
-        StringJoiner variationSettings = new StringJoiner(",");
+        textView.setFontVariationSettings(getFontVariationSettingsString(style));
+        textView.setFontFeatureSettings(getFontFeatureSettingsString(style));
+    }
+
+    private void applyFontSetting(@NonNull FontStyle style, @NonNull CurvedTextView textView) {
+        textView.setFontVariationSettings(getFontVariationSettingsString(style));
+        textView.setFontFeatureSettings(getFontFeatureSettingsString(style));
+    }
+
+    /**
+     * Returns the string representation of the font feature settings for the given font style.
+     *
+     * <p>For example, if the font style has feature settings for 'ss01' and 'ss02', the string will
+     * be "'ss01','ss02'".
+     */
+    private static String getFontFeatureSettingsString(@NonNull FontStyle style) {
         StringJoiner featureSettings = new StringJoiner(",");
 
         for (FontSetting setting : style.getSettingsList()) {
-            String tag = "";
+            if (setting.getInnerCase() == FontSetting.InnerCase.FEATURE) {
+                FontFeatureSetting feature = setting.getFeature();
+                String tag = toTagString(feature.getTag());
 
-            switch (setting.getInnerCase()) {
-                case VARIATION:
-                    FontVariationSetting variation = setting.getVariation();
-                    tag = toTagString(variation.getAxisTag());
-
-                    if (SUPPORTED_FONT_SETTING_TAGS.contains(tag)) {
-                        variationSettings.add("'" + tag + "' " + variation.getValue());
-                    } else {
-                        // Skip not supported tags.
-                        Log.d(TAG, "FontVariation axes tag " + tag + " is not supported.");
-                    }
-
-                    break;
-                case FEATURE:
-                    FontFeatureSetting feature = setting.getFeature();
-                    tag = toTagString(feature.getTag());
-
-                    if (SUPPORTED_FONT_SETTING_TAGS.contains(tag)) {
-                        featureSettings.add("'" + tag + "'");
-                    } else {
-                        // Skip not supported tags.
-                        Log.d(TAG, "FontFeature tag " + tag + " is not supported.");
-                    }
-
-                    break;
-                case INNER_NOT_SET:
-                    break;
+                if (SUPPORTED_FONT_SETTING_TAGS.contains(tag)) {
+                    featureSettings.add("'" + tag + "'");
+                } else {
+                    // Skip not supported tags.
+                    Log.d(TAG, "FontFeature tag " + tag + " is not supported.");
+                }
             }
         }
 
-        textView.setFontVariationSettings(variationSettings.toString());
-        textView.setFontFeatureSettings(featureSettings.toString());
+        return featureSettings.toString();
+    }
+
+    /**
+     * Returns the string representation of the font variation settings for the given font style.
+     *
+     * <p>For example, if the font style has variation settings for 'wght' and 'ital' with values
+     * 400 and 1 respectively, the string will be "'wght' 400,'ital' 1".
+     */
+    private static String getFontVariationSettingsString(@NonNull FontStyle style) {
+        StringJoiner variationSettings = new StringJoiner(",");
+
+        for (FontSetting setting : style.getSettingsList()) {
+            if (setting.getInnerCase() == FontSetting.InnerCase.VARIATION) {
+                FontVariationSetting variation = setting.getVariation();
+                String tag = toTagString(variation.getAxisTag());
+
+                if (SUPPORTED_FONT_SETTING_TAGS.contains(tag)) {
+                    variationSettings.add("'" + tag + "' " + variation.getValue());
+                } else {
+                    // Skip not supported tags.
+                    Log.d(TAG, "FontVariation axes tag " + tag + " is not supported.");
+                }
+            }
+        }
+
+        return variationSettings.toString();
     }
 
     /** Given the integer representation of 4 characters ASCII code, returns the String of it. */
@@ -1410,6 +1464,10 @@ public final class ProtoLayoutInflater {
                                 + "all size except the first one.");
             }
             textView.setTextSize(toPx(style.getSize(style.getSizeCount() - 1)));
+        }
+
+        if (style.getSettingsCount() > 0) {
+            applyFontSetting(style, textView);
         }
     }
 
@@ -1468,6 +1526,13 @@ public final class ProtoLayoutInflater {
                                                                             .getLoadAction(),
                                                                     clickable.getId()));
                                                 }));
+                break;
+            case PENDING_INTENT_ACTION:
+                hasAction = true;
+                view.setOnClickListener(
+                        source -> {
+                            mPendingIntentActionListener.onClick(source, clickable.getId());
+                        });
                 break;
             case VALUE_NOT_SET:
                 break;
@@ -1609,16 +1674,16 @@ public final class ProtoLayoutInflater {
     private void applyPadding(View view, Padding padding) {
         if (padding.getRtlAware().getValue()) {
             view.setPaddingRelative(
-                    safeDpToPx(padding.getStart()),
-                    safeDpToPx(padding.getTop()),
-                    safeDpToPx(padding.getEnd()),
-                    safeDpToPx(padding.getBottom()));
+                    dpToPx(padding.getStart()),
+                    dpToPx(padding.getTop()),
+                    dpToPx(padding.getEnd()),
+                    dpToPx(padding.getBottom()));
         } else {
             view.setPadding(
-                    safeDpToPx(padding.getStart()),
-                    safeDpToPx(padding.getTop()),
-                    safeDpToPx(padding.getEnd()),
-                    safeDpToPx(padding.getBottom()));
+                    dpToPx(padding.getStart()),
+                    dpToPx(padding.getTop()),
+                    dpToPx(padding.getEnd()),
+                    dpToPx(padding.getBottom()));
         }
     }
 
@@ -1775,11 +1840,19 @@ public final class ProtoLayoutInflater {
         }
 
         if (transformation.hasScaleX()) {
-            handleProp(transformation.getScaleX(), view::setScaleX, posId, pipelineMaker);
+            handleProp(
+                    transformation.getScaleX(),
+                    scaleX -> view.setScaleX(Float.isFinite(scaleX) ? scaleX : 1f),
+                    posId,
+                    pipelineMaker);
         }
 
         if (transformation.hasScaleY()) {
-            handleProp(transformation.getScaleY(), view::setScaleY, posId, pipelineMaker);
+            handleProp(
+                    transformation.getScaleY(),
+                    scaleY -> view.setScaleY(Float.isFinite(scaleY) ? scaleY : 1f),
+                    posId,
+                    pipelineMaker);
         }
 
         if (transformation.hasRotation()) {
@@ -1883,6 +1956,11 @@ public final class ProtoLayoutInflater {
                     posId,
                     pipelineMaker,
                     hidden -> hidden ? INVISIBLE : VISIBLE);
+        }
+
+        if (modifiers.hasMetadata() && modifiers.getMetadata().getTagData().size() > 0) {
+            byte[] tagData = modifiers.getMetadata().getTagData().toByteArray();
+            view.setTag(R.id.element_metadata_tag, tagData);
         }
 
         if (modifiers.hasClickable()) {
@@ -2596,38 +2674,26 @@ public final class ProtoLayoutInflater {
                             spacerDimensionToContainerDimension(spacer.getHeight()));
 
             if (widthForLayoutDp != null) {
-                if (widthForLayoutDp <= 0f) {
-                    Log.w(
-                            TAG,
-                            "Spacer width's value_for_layout is not a positive value. Element won't"
-                                    + " be visible.");
-                }
-                spaceWrapperLayoutParams.width = safeDpToPx(widthForLayoutDp);
+                spaceWrapperLayoutParams.width = dpToPx(widthForLayoutDp);
             }
 
             if (heightForLayoutDp != null) {
-                if (heightForLayoutDp <= 0f) {
-                    Log.w(
-                            TAG,
-                            "Spacer height's value_for_layout is not a positive value. Element"
-                                    + " won't be visible.");
-                }
-                spaceWrapperLayoutParams.height = safeDpToPx(heightForLayoutDp);
+                spaceWrapperLayoutParams.height = dpToPx(heightForLayoutDp);
             }
 
             int gravity =
                     (spacer.getWidth().hasLinearDimension()
-                                    ? horizontalAlignmentToGravity(
-                                            spacer.getWidth()
-                                                    .getLinearDimension()
-                                                    .getHorizontalAlignmentForLayout())
-                                    : UNSET_MASK)
+                            ? horizontalAlignmentToGravity(
+                            spacer.getWidth()
+                            .getLinearDimension()
+                            .getHorizontalAlignmentForLayout())
+                            : UNSET_MASK)
                             | (spacer.getHeight().hasLinearDimension()
-                                    ? verticalAlignmentToGravity(
-                                            spacer.getHeight()
-                                                    .getLinearDimension()
-                                                    .getVerticalAlignmentForLayout())
-                                    : UNSET_MASK);
+                            ? verticalAlignmentToGravity(
+                            spacer.getHeight()
+                            .getLinearDimension()
+                            .getVerticalAlignmentForLayout())
+                            : UNSET_MASK);
 
             // This layoutParams will override what we initially had and will be used for Spacer
             // itself. This means that the wrapper's layout params should follow the rules for
@@ -2766,7 +2832,8 @@ public final class ProtoLayoutInflater {
                     }
 
                     @Override
-                    public void onViewDetachedFromWindow(@NonNull View v) {}
+                    public void onViewDetachedFromWindow(@NonNull View v) {
+                    }
                 });
     }
 
@@ -2789,31 +2856,30 @@ public final class ProtoLayoutInflater {
                     space.setSweepAngleDegrees(length);
                     break;
 
-                case EXPANDED_ANGULAR_DIMENSION:
-                    {
-                        float weight =
-                                angularLength
-                                        .getExpandedAngularDimension()
-                                        .getLayoutWeight()
-                                        .getValue();
-                        if (weight == 0 && thicknessPx == 0) {
-                            return null;
-                        }
-                        layoutParams.setWeight(weight);
-
-                        space.setThickness(thicknessPx);
-
-                        View wrappedView =
-                                applyModifiersToArcLayoutView(
-                                        space, spacer.getModifiers(), posId, pipelineMaker);
-                        parentViewWrapper.maybeAddView(wrappedView, layoutParams);
-
-                        return new InflatedView(
-                                wrappedView,
-                                parentViewWrapper
-                                        .getParentProperties()
-                                        .applyPendingChildLayoutParams(layoutParams));
+                case EXPANDED_ANGULAR_DIMENSION: {
+                    float weight =
+                            angularLength
+                                    .getExpandedAngularDimension()
+                                    .getLayoutWeight()
+                                    .getValue();
+                    if (weight == 0 && thicknessPx == 0) {
+                        return null;
                     }
+                    layoutParams.setWeight(weight);
+
+                    space.setThickness(thicknessPx);
+
+                    View wrappedView =
+                            applyModifiersToArcLayoutView(
+                                    space, spacer.getModifiers(), posId, pipelineMaker);
+                    parentViewWrapper.maybeAddView(wrappedView, layoutParams);
+
+                    return new InflatedView(
+                            wrappedView,
+                            parentViewWrapper
+                                    .getParentProperties()
+                                    .applyPendingChildLayoutParams(layoutParams));
+                }
 
                 case DP:
                     length = max(0, safeDpToPx(angularLength.getDp().getValue()));
@@ -2899,11 +2965,9 @@ public final class ProtoLayoutInflater {
 
         textView.setGravity(textAlignToAndroidGravity(text.getMultilineAlignment().getValue()));
 
-        String valueForLayout = resolveValueForLayoutIfNeeded(text.getText());
-
-        // Use valueForLayout as a proxy for "has a dynamic size". If there's a dynamic binding for
-        // the text element, then it can only have a single line of text.
-        if (text.hasMaxLines() && valueForLayout == null) {
+        // If there's a dynamic binding for the text element, then it can only have a single line of
+        // text.
+        if (text.hasMaxLines() && !text.getText().hasDynamicValue()) {
             textView.setMaxLines(max(TEXT_MIN_LINES, text.getMaxLines().getValue()));
         } else {
             textView.setMaxLines(TEXT_MAX_LINES_DEFAULT);
@@ -2954,11 +3018,9 @@ public final class ProtoLayoutInflater {
         // importantForAccessibility, so we don't want to override it after applying modifiers.
         textView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
 
-        if (valueForLayout != null) {
-            if (valueForLayout.isEmpty()) {
-                Log.w(TAG, "Text's value_for_layout is empty. Element won't be visible.");
-            }
+        @Nullable String valueForLayout = resolveValueForLayoutIfNeeded(text.getText());
 
+        if (valueForLayout != null) {
             // Now create a "container" element, with that size, to hold the text.
             FrameLayout sizeChangingTextWrapper = new FrameLayout(mUiContext);
             LayoutParams sizeChangingTextWrapperLayoutParams = generateDefaultLayoutParams();
@@ -3025,23 +3087,70 @@ public final class ProtoLayoutInflater {
             return;
         }
 
-        View parent = (View) maybeParent;
-        int availableHeight = parent.getHeight();
-        int oneLineHeight = textView.getLineHeight();
-        // This is what was set in proto, we shouldn't exceed it.
-        int maxMaxLines = textView.getMaxLines();
-        // Avoid having maxLines as 0 in case the space is really tight.
-        int availableLines = max(availableHeight / oneLineHeight, 1);
-
-        // Update only if maxLines are changed.
-        if (availableLines >= maxMaxLines) {
+        android.text.Layout textViewLayout = textView.getLayout();
+        if (textViewLayout == null) {
+            // We need Layout for calculations, skip if it's null
             return;
         }
 
-        textView.setMaxLines(availableLines);
+        View parent = (View) maybeParent;
+        // This is what was set in proto, we shouldn't exceed it.
+        int maxMaxLines = textView.getMaxLines();
+
+        // Android only respects the set lineHeight on all lines **except** the last one, where it
+        // would be set to accommodate all the glyphs. This means, that if the set lineHeight is
+        // smaller, the last line would have larger height. However, if the set lineHeight is
+        // larger, the last line would have the same number as in the first case, which will be
+        // smaller than the set lineHeight.
+        // Because of this, we can't simply do `availableHeight / oneLineHeight` (where
+        // oneLineHeight = textView.getLineHeight()) as in the second case, we would think there is
+        // less available space for lines then there is actually or in the
+        // first case, we would display more lines, that can lead into clipping of some glyphs.
+        // The most accurate way to calculate how many lines can and is displayed is to manually get
+        // the height of each line, subtract from the available height until we have no space left.
+        // For that, we will find what is the last line's lineHeight, set by Android, and for that
+        // we know there is a space, so we need to find how many additional lines can fit in the
+        // space.
+        int lineCntNum = textViewLayout.getLineCount();
+        int lastLineHeight =
+                textViewLayout.getLineBottom(lineCntNum - 1)
+                        - textViewLayout.getLineTop(lineCntNum - 1);
+
+        // Available height is total parent height with excluded vertical padding and last line.
+        int availableHeight =
+                parent.getHeight()
+                        - parent.getPaddingTop()
+                        - parent.getPaddingBottom()
+                        - lastLineHeight;
+
+        int visibleLinesCnt = 1; // Definitely we have space for 1 ("last") line
+        int currentLineIndex = 0;
+
+        while (visibleLinesCnt < maxMaxLines // don't exceed set max lines
+                && currentLineIndex
+                < lineCntNum - 1 // don't exceed line count and don't count last line
+                && availableHeight >= 0 // don't exceed available space
+        ) {
+            int currentLineHeight =
+                    textViewLayout.getLineBottom(currentLineIndex)
+                            - textViewLayout.getLineTop(currentLineIndex);
+
+            if (availableHeight < currentLineHeight) {
+                // Found number of lines we can display, there is not enough room for one more.
+                break;
+            }
+
+            // Include the current line in the visible lines and try one more in the next iteration.
+            availableHeight -= currentLineHeight;
+            currentLineIndex++;
+            visibleLinesCnt++;
+        }
+
+        textView.setMaxLines(visibleLinesCnt);
         // We need to trigger TextView to re-measure its content in order to place the ellipsis
         // correctly at the and of {@code availableLines}th line. Using only {@code requestLayout}
-        // or {@code invalidate} isn't enough as TextView wouldn't remeasure itself.
+        // or
+        // {@code invalidate} isn't enough as TextView wouldn't remeasure itself.
         textView.setText(textView.getText());
     }
 
@@ -3179,7 +3288,7 @@ public final class ProtoLayoutInflater {
         // Both dimensions can't be ratios.
         if (image.getWidth().getInnerCase() == ImageDimension.InnerCase.PROPORTIONAL_DIMENSION
                 && image.getHeight().getInnerCase()
-                        == ImageDimension.InnerCase.PROPORTIONAL_DIMENSION) {
+                == ImageDimension.InnerCase.PROPORTIONAL_DIMENSION) {
             Log.w(TAG, "Both width and height were proportional for image " + protoResId);
             return null;
         }
@@ -3260,7 +3369,7 @@ public final class ProtoLayoutInflater {
 
                     if (trigger != null
                             && trigger.getInnerCase()
-                                    == Trigger.InnerCase.ON_CONDITION_MET_TRIGGER) {
+                            == Trigger.InnerCase.ON_CONDITION_MET_TRIGGER) {
                         OnConditionMetTrigger conditionTrigger = trigger.getOnConditionMetTrigger();
                         pipelineMaker
                                 .get()
@@ -3296,10 +3405,10 @@ public final class ProtoLayoutInflater {
             try {
                 if (mLayoutResourceResolvers.hasPlaceholderDrawable(protoResId)) {
                     if (setImageDrawable(
-                                    imageView,
-                                    mLayoutResourceResolvers.getPlaceholderDrawableOrThrow(
-                                            protoResId),
-                                    protoResId)
+                            imageView,
+                            mLayoutResourceResolvers.getPlaceholderDrawableOrThrow(
+                                    protoResId),
+                            protoResId)
                             == null) {
                         Log.w(TAG, "Failed to set the placeholder for " + protoResId);
                     }
@@ -3350,13 +3459,13 @@ public final class ProtoLayoutInflater {
      * Set drawable to the image view.
      *
      * @return Returns the drawable if it is successfully retrieved from the drawable future and set
-     *     to the image view; otherwise returns null to indicate the failure of setting drawable.
+     * to the image view; otherwise returns null to indicate the failure of setting drawable.
      */
     private @Nullable Drawable setImageDrawable(
             ImageView imageView, Future<Drawable> drawableFuture, String protoResId) {
         try {
             return setImageDrawable(imageView, drawableFuture.get(), protoResId);
-        } catch (ExecutionException | InterruptedException | CancellationException e) {
+        } catch (ExecutionException | InterruptedException | RuntimeException e) {
             Log.w(TAG, "Could not get drawable for image " + protoResId, e);
         }
         return null;
@@ -3366,18 +3475,23 @@ public final class ProtoLayoutInflater {
      * Set drawable to the image view.
      *
      * @return Returns the drawable if it is successfully set to the image view; otherwise returns
-     *     null to indicate the failure of setting drawable.
+     * null to indicate the failure of setting drawable.
      */
     private @Nullable Drawable setImageDrawable(
             ImageView imageView, Drawable drawable, String protoResId) {
         if (drawable != null) {
             mInflaterStatsLogger.logDrawableUsage(drawable);
         }
-        if (drawable instanceof BitmapDrawable
-                && ((BitmapDrawable) drawable).getBitmap().getByteCount()
-                        > DEFAULT_MAX_BITMAP_RAW_SIZE) {
-            Log.w(TAG, "Ignoring image " + protoResId + " as it's too large.");
-            return null;
+        if (drawable instanceof BitmapDrawable) {
+            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+            if (bitmap == null) {
+                Log.w(TAG, "Ignoring image " + protoResId + " as its bitmap is null.");
+                return null;
+            }
+            if (bitmap.getByteCount() > DEFAULT_MAX_BITMAP_RAW_SIZE) {
+                Log.w(TAG, "Ignoring image " + protoResId + " as it's too large.");
+                return null;
+            }
         }
         imageView.setImageDrawable(drawable);
         return drawable;
@@ -3467,17 +3581,16 @@ public final class ProtoLayoutInflater {
                                 length, lineView::setLineSweepAngleDegrees, posId, pipelineMaker);
                         break;
 
-                    case EXPANDED_ANGULAR_DIMENSION:
-                        {
-                            ExpandedAngularDimensionProp expandedAngularDimension =
-                                    angularLength.getExpandedAngularDimension();
-                            arcLayoutWeight =
-                                    expandedAngularDimension.hasLayoutWeight()
-                                            ? expandedAngularDimension.getLayoutWeight().getValue()
-                                            : 1.0f;
-                            length = DegreesProp.getDefaultInstance();
-                            break;
-                        }
+                    case EXPANDED_ANGULAR_DIMENSION: {
+                        ExpandedAngularDimensionProp expandedAngularDimension =
+                                angularLength.getExpandedAngularDimension();
+                        arcLayoutWeight =
+                                expandedAngularDimension.hasLayoutWeight()
+                                        ? expandedAngularDimension.getLayoutWeight().getValue()
+                                        : 1.0f;
+                        length = DegreesProp.getDefaultInstance();
+                        break;
+                    }
                     case INNER_NOT_SET:
                         break;
                 }
@@ -3568,7 +3681,7 @@ public final class ProtoLayoutInflater {
                 angularAlignmentProtoToAngularAlignment(length.getAngularAlignmentForLayout()),
                 /* arcLayoutWeight= */ 0
                 // Zero weight in ArcLayout means the view should not be stretched.
-                );
+        );
     }
 
     private InflatedView addLineViewToParentArc(
@@ -3585,12 +3698,6 @@ public final class ProtoLayoutInflater {
         if (sizeForLayout != null) {
             sizeWrapper = new SizedArcContainer(mUiContext);
             sizeWrapper.setArcDirection(arcLineDirection);
-            if (sizeForLayout <= 0f) {
-                Log.w(
-                        TAG,
-                        "Arc Line length's value_for_layout is not a positive value. Element won't"
-                                + " be visible.");
-            }
             sizeWrapper.setSweepAngleDegrees(sizeForLayout);
             sizedLayoutParams.setAngularAlignment(angularAlignment);
         }
@@ -4325,7 +4432,7 @@ public final class ProtoLayoutInflater {
             return stringProp.getValueForLayout();
         }
 
-        return mAllowLayoutChangingBindsWithoutDefault ? null : "";
+        return null;
     }
 
     /**
@@ -4342,7 +4449,7 @@ public final class ProtoLayoutInflater {
             return dimension.getValueForLayout();
         }
 
-        return mAllowLayoutChangingBindsWithoutDefault ? null : 0f;
+        return null;
     }
 
     /**
@@ -4359,7 +4466,7 @@ public final class ProtoLayoutInflater {
             return degreesProp.getValueForLayout();
         }
 
-        return mAllowLayoutChangingBindsWithoutDefault ? null : 0f;
+        return null;
     }
 
     private boolean canMeasureContainer(
@@ -4534,10 +4641,10 @@ public final class ProtoLayoutInflater {
      *
      * @param inflateParent The view to attach the layout into.
      * @return The {@link InflateResult} class containing the first child that was inflated,
-     *     animations to be played, and new nodes for the dynamic data pipeline. Callers should use
-     *     {@link InflateResult#updateDynamicDataPipeline} to apply those changes using a UI Thread.
-     *     <p>This may be null if the proto is empty the top-level LayoutElement has no inner set,
-     *     or the top-level LayoutElement contains an unsupported inner type.
+     * animations to be played, and new nodes for the dynamic data pipeline. Callers should use
+     * {@link InflateResult#updateDynamicDataPipeline} to apply those changes using a UI Thread.
+     * <p>This may be null if the proto is empty the top-level LayoutElement has no inner set,
+     * or the top-level LayoutElement contains an unsupported inner type.
      */
     public @Nullable InflateResult inflate(@NonNull ViewGroup inflateParent) {
 
@@ -4585,9 +4692,10 @@ public final class ProtoLayoutInflater {
      * <p>Can be called from a background thread.
      *
      * @param prevRenderedMetadata The metadata for the previous rendering of this view, either
-     *     using {@code inflate} or {@code applyMutation}. This can be retrieved by calling {@link
-     *     #getRenderedMetadata} on the previous layout view parent.
-     * @param targetLayout The target layout that the mutation should result in.
+     *                             using {@code inflate} or {@code applyMutation}. This can be
+     *                             retrieved by calling {@link
+     *                             #getRenderedMetadata} on the previous layout view parent.
+     * @param targetLayout         The target layout that the mutation should result in.
      * @return The mutation that will produce the target layout.
      */
     public @Nullable ViewGroupMutation computeMutation(
@@ -4699,15 +4807,16 @@ public final class ProtoLayoutInflater {
         RenderedMetadata prevRenderedMetadata = getRenderedMetadata(prevInflatedParent);
         if (prevRenderedMetadata != null
                 && !ProtoLayoutDiffer.areNodesEquivalent(
-                        prevRenderedMetadata.getTreeFingerprint().getRoot(),
-                        groupMutation.mPreMutationRootNodeFingerprint)) {
+                prevRenderedMetadata.getTreeFingerprint().getRoot(),
+                groupMutation.mPreMutationRootNodeFingerprint)) {
 
             // be considered unequal. Log.e(TAG, "View has changed. Skipping mutation."); return
             // false;
         }
         if (groupMutation.isNoOp()) {
             // Nothing to do.
-            return immediateFuture(RenderingArtifact.create(mInflaterStatsLogger));
+            return immediateFuture(
+                    RenderingArtifact.create(mInflaterStatsLogger, prevInflatedParent));
         }
 
         if (groupMutation.mPipelineMaker.isPresent()) {
@@ -4721,7 +4830,9 @@ public final class ProtoLayoutInflater {
                             () -> {
                                 try {
                                     applyMutationInternal(prevInflatedParent, groupMutation);
-                                    result.set(RenderingArtifact.create(mInflaterStatsLogger));
+                                    result.set(
+                                            RenderingArtifact.create(
+                                                    mInflaterStatsLogger, prevInflatedParent));
                                 } catch (ViewMutationException ex) {
                                     result.setException(ex);
                                 }
@@ -4730,7 +4841,8 @@ public final class ProtoLayoutInflater {
         } else {
             try {
                 applyMutationInternal(prevInflatedParent, groupMutation);
-                return immediateFuture(RenderingArtifact.create(mInflaterStatsLogger));
+                return immediateFuture(
+                        RenderingArtifact.create(mInflaterStatsLogger, prevInflatedParent));
             } catch (ViewMutationException ex) {
                 return immediateFailedFuture(ex);
             }
@@ -4867,6 +4979,9 @@ public final class ProtoLayoutInflater {
             String posId,
             Optional<ProtoLayoutDynamicDataPipeline.PipelineMaker> pipelineMaker) {
         view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        if (semantics.getHeading()) {
+            ViewCompat.setAccessibilityHeading(view, semantics.getHeading());
+        }
         ViewCompat.setAccessibilityDelegate(
                 view,
                 new AccessibilityDelegateCompat() {
@@ -4987,6 +5102,9 @@ public final class ProtoLayoutInflater {
                                             buildState(
                                                     action.getLoadAction(), mClickable.getId())));
                     break;
+                case PENDING_INTENT_ACTION:
+                    mPendingIntentActionListener.onClick(widget, mClickable.getId());
+                    break;
                 case VALUE_NOT_SET:
                     break;
             }
@@ -5005,9 +5123,11 @@ public final class ProtoLayoutInflater {
         }
 
         @Override
-        public void startScroll(int startX, int startY, int dx, int dy) {}
+        public void startScroll(int startX, int startY, int dx, int dy) {
+        }
 
         @Override
-        public void startScroll(int startX, int startY, int dx, int dy, int duration) {}
+        public void startScroll(int startX, int startY, int dx, int dy, int duration) {
+        }
     }
 }

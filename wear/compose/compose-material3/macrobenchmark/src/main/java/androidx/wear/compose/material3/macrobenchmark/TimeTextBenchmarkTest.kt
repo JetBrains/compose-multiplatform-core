@@ -32,5 +32,5 @@ class TimeTextBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,
         macrobenchmarkScreen = TimeTextBenchmark,
-        actionSuffix = "TIME_TEXT_ACTIVITY"
+        actionSuffix = "TIME_TEXT_ACTIVITY",
     )

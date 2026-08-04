@@ -46,31 +46,31 @@ import androidx.compose.ui.text.intl.LocaleList
  *   [LocaleList.Empty] to express the intention that a specific hint should not be set.
  */
 @Immutable
-class ImeOptions(
-    val singleLine: Boolean = false,
-    val capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
-    val autoCorrect: Boolean = true,
-    val keyboardType: KeyboardType = KeyboardType.Text,
-    val imeAction: ImeAction = ImeAction.Default,
-    val platformImeOptions: PlatformImeOptions? = null,
-    val hintLocales: LocaleList = LocaleList.Empty
+public class ImeOptions(
+    public val singleLine: Boolean = false,
+    public val capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
+    public val autoCorrect: Boolean = true,
+    public val keyboardType: KeyboardType = KeyboardType.Text,
+    public val imeAction: ImeAction = ImeAction.Default,
+    public val platformImeOptions: PlatformImeOptions? = null,
+    public val hintLocales: LocaleList = LocaleList.Empty,
 ) {
-    companion object {
+    public companion object {
         /** Default [ImeOptions]. Please see parameter descriptions for default values. */
-        val Default = ImeOptions()
+        public val Default: ImeOptions = ImeOptions()
     }
 
     @Deprecated(
         "Please use the new constructor that takes optional hintLocales parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         singleLine: Boolean = false,
         capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
         autoCorrect: Boolean = true,
         keyboardType: KeyboardType = KeyboardType.Text,
         imeAction: ImeAction = ImeAction.Default,
-        platformImeOptions: PlatformImeOptions? = null
+        platformImeOptions: PlatformImeOptions? = null,
     ) : this(
         singleLine = singleLine,
         capitalization = capitalization,
@@ -78,14 +78,14 @@ class ImeOptions(
         keyboardType = keyboardType,
         imeAction = imeAction,
         platformImeOptions = platformImeOptions,
-        hintLocales = LocaleList.Empty
+        hintLocales = LocaleList.Empty,
     )
 
     @Deprecated(
         "Please use the new constructor that takes optional platformImeOptions parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         singleLine: Boolean = false,
         capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
         autoCorrect: Boolean = true,
@@ -97,17 +97,17 @@ class ImeOptions(
         autoCorrect = autoCorrect,
         keyboardType = keyboardType,
         imeAction = imeAction,
-        platformImeOptions = null
+        platformImeOptions = null,
     )
 
-    fun copy(
+    public fun copy(
         singleLine: Boolean = this.singleLine,
         capitalization: KeyboardCapitalization = this.capitalization,
         autoCorrect: Boolean = this.autoCorrect,
         keyboardType: KeyboardType = this.keyboardType,
         imeAction: ImeAction = this.imeAction,
         platformImeOptions: PlatformImeOptions? = this.platformImeOptions,
-        hintLocales: LocaleList = this.hintLocales
+        hintLocales: LocaleList = this.hintLocales,
     ): ImeOptions {
         return ImeOptions(
             singleLine = singleLine,
@@ -116,21 +116,21 @@ class ImeOptions(
             keyboardType = keyboardType,
             imeAction = imeAction,
             platformImeOptions = platformImeOptions,
-            hintLocales = hintLocales
+            hintLocales = hintLocales,
         )
     }
 
     @Deprecated(
         "Please use the new copy function that takes optional hintLocales parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         singleLine: Boolean = this.singleLine,
         capitalization: KeyboardCapitalization = this.capitalization,
         autoCorrect: Boolean = this.autoCorrect,
         keyboardType: KeyboardType = this.keyboardType,
         imeAction: ImeAction = this.imeAction,
-        platformImeOptions: PlatformImeOptions? = this.platformImeOptions
+        platformImeOptions: PlatformImeOptions? = this.platformImeOptions,
     ): ImeOptions {
         return ImeOptions(
             singleLine = singleLine,
@@ -139,20 +139,20 @@ class ImeOptions(
             keyboardType = keyboardType,
             imeAction = imeAction,
             platformImeOptions = platformImeOptions,
-            hintLocales = this.hintLocales
+            hintLocales = this.hintLocales,
         )
     }
 
     @Deprecated(
         "Please use the new copy function that takes optional platformImeOptions parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         singleLine: Boolean = this.singleLine,
         capitalization: KeyboardCapitalization = this.capitalization,
         autoCorrect: Boolean = this.autoCorrect,
         keyboardType: KeyboardType = this.keyboardType,
-        imeAction: ImeAction = this.imeAction
+        imeAction: ImeAction = this.imeAction,
     ): ImeOptions {
         return ImeOptions(
             singleLine = singleLine,
@@ -161,11 +161,11 @@ class ImeOptions(
             keyboardType = keyboardType,
             imeAction = imeAction,
             platformImeOptions = this.platformImeOptions,
-            hintLocales = this.hintLocales
+            hintLocales = this.hintLocales,
         )
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ImeOptions) return false
 
@@ -180,7 +180,7 @@ class ImeOptions(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = singleLine.hashCode()
         result = 31 * result + capitalization.hashCode()
         result = 31 * result + autoCorrect.hashCode()
@@ -191,7 +191,7 @@ class ImeOptions(
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "ImeOptions(singleLine=$singleLine, capitalization=$capitalization, " +
             "autoCorrect=$autoCorrect, keyboardType=$keyboardType, imeAction=$imeAction, " +
             "platformImeOptions=$platformImeOptions, hintLocales=$hintLocales)"

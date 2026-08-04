@@ -41,6 +41,7 @@ import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.fastMap
+import kotlin.math.ceil
 
 /**
  * Lays out and renders multiple paragraphs at once. Unlike [Paragraph], supports multiple
@@ -54,10 +55,10 @@ import androidx.compose.ui.util.fastMap
  * @param overflow configures how visual overflow is handled. Ellipsis is applied only when
  *   [maxLines] is set
  */
-class MultiParagraph(
-    val intrinsics: MultiParagraphIntrinsics,
+public class MultiParagraph(
+    public val intrinsics: MultiParagraphIntrinsics,
     constraints: Constraints,
-    val maxLines: Int = DefaultMaxLines,
+    public val maxLines: Int = DefaultMaxLines,
     overflow: TextOverflow = TextOverflow.Clip,
 ) {
 
@@ -75,9 +76,9 @@ class MultiParagraph(
      */
     @Deprecated(
         "Constructor with `ellipsis: Boolean` is deprecated, pass TextOverflow instead",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         intrinsics: MultiParagraphIntrinsics,
         constraints: Constraints,
         maxLines: Int = DefaultMaxLines,
@@ -86,7 +87,7 @@ class MultiParagraph(
         intrinsics = intrinsics,
         constraints = constraints,
         maxLines = maxLines,
-        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip
+        overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
     )
 
     /**
@@ -104,19 +105,19 @@ class MultiParagraph(
             "MultiParagraph(intrinsics, Constraints(maxWidth = ceil(width).toInt()), " +
                 "maxLines, ellipsis)",
             "kotlin.math.ceil",
-            "androidx.compose.ui.unit.Constraints"
-        )
+            "androidx.compose.ui.unit.Constraints",
+        ),
     )
-    constructor(
+    public constructor(
         intrinsics: MultiParagraphIntrinsics,
         maxLines: Int = DefaultMaxLines,
         ellipsis: Boolean = false,
-        width: Float
+        width: Float,
     ) : this(
         intrinsics,
         Constraints(maxWidth = width.ceilToInt()),
         maxLines,
-        if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip
+        if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
     )
 
     /**
@@ -145,9 +146,9 @@ class MultiParagraph(
             ReplaceWith(
                 "MultiParagraph(annotatedString, style, " +
                     "placeholders, maxLines, ellipsis, width, density, fontFamilyResolver)"
-            )
+            ),
     )
-    constructor(
+    public constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
@@ -155,7 +156,7 @@ class MultiParagraph(
         ellipsis: Boolean = false,
         width: Float,
         density: Density,
-        resourceLoader: Font.ResourceLoader
+        resourceLoader: Font.ResourceLoader,
     ) : this(
         intrinsics =
             MultiParagraphIntrinsics(
@@ -163,11 +164,12 @@ class MultiParagraph(
                 style = style,
                 placeholders = placeholders,
                 density = density,
-                fontFamilyResolver = createFontFamilyResolver(resourceLoader)
+                fontFamilyResolver = createFontFamilyResolver(resourceLoader),
+                softWrap = true,
             ),
         maxLines = maxLines,
         overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = Constraints(maxWidth = width.ceilToInt())
+        constraints = Constraints(maxWidth = width.ceilToInt()),
     )
 
     /**
@@ -195,10 +197,10 @@ class MultiParagraph(
             "MultiParagraph(annotatedString, style, Constraints(maxWidth = ceil(width).toInt()), " +
                 "density, fontFamilyResolver, placeholders, maxLines, ellipsis)",
             "kotlin.math.ceil",
-            "androidx.compose.ui.unit.Constraints"
-        )
+            "androidx.compose.ui.unit.Constraints",
+        ),
     )
-    constructor(
+    public constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         width: Float,
@@ -206,7 +208,7 @@ class MultiParagraph(
         fontFamilyResolver: FontFamily.Resolver,
         placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
         maxLines: Int = Int.MAX_VALUE,
-        ellipsis: Boolean = false
+        ellipsis: Boolean = false,
     ) : this(
         intrinsics =
             MultiParagraphIntrinsics(
@@ -214,11 +216,12 @@ class MultiParagraph(
                 style = style,
                 placeholders = placeholders,
                 density = density,
-                fontFamilyResolver = fontFamilyResolver
+                fontFamilyResolver = fontFamilyResolver,
+                softWrap = true,
             ),
         maxLines = maxLines,
         overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = Constraints(maxWidth = width.ceilToInt())
+        constraints = Constraints(maxWidth = width.ceilToInt()),
     )
 
     /**
@@ -245,9 +248,9 @@ class MultiParagraph(
      */
     @Deprecated(
         "Constructor with `ellipsis: Boolean` is deprecated, pass TextOverflow instead",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         constraints: Constraints,
@@ -255,7 +258,7 @@ class MultiParagraph(
         fontFamilyResolver: FontFamily.Resolver,
         placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
         maxLines: Int = Int.MAX_VALUE,
-        ellipsis: Boolean = false
+        ellipsis: Boolean = false,
     ) : this(
         intrinsics =
             MultiParagraphIntrinsics(
@@ -263,11 +266,12 @@ class MultiParagraph(
                 style = style,
                 placeholders = placeholders,
                 density = density,
-                fontFamilyResolver = fontFamilyResolver
+                fontFamilyResolver = fontFamilyResolver,
+                softWrap = true,
             ),
         maxLines = maxLines,
         overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
-        constraints = constraints
+        constraints = constraints,
     )
 
     /**
@@ -293,7 +297,7 @@ class MultiParagraph(
      *   [placeholders] crosses paragraph boundary.
      * @see Placeholder
      */
-    constructor(
+    public constructor(
         annotatedString: AnnotatedString,
         style: TextStyle,
         constraints: Constraints,
@@ -301,7 +305,7 @@ class MultiParagraph(
         fontFamilyResolver: FontFamily.Resolver,
         placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
         maxLines: Int = Int.MAX_VALUE,
-        overflow: TextOverflow = TextOverflow.Clip
+        overflow: TextOverflow = TextOverflow.Clip,
     ) : this(
         intrinsics =
             MultiParagraphIntrinsics(
@@ -309,22 +313,23 @@ class MultiParagraph(
                 style = style,
                 placeholders = placeholders,
                 density = density,
-                fontFamilyResolver = fontFamilyResolver
+                fontFamilyResolver = fontFamilyResolver,
+                softWrap = true,
             ),
         maxLines = maxLines,
         overflow = overflow,
-        constraints = constraints
+        constraints = constraints,
     )
 
     private val annotatedString
         get() = intrinsics.annotatedString
 
     /** The width for text if all soft wrap opportunities were taken. */
-    val minIntrinsicWidth: Float
+    public val minIntrinsicWidth: Float
         get() = intrinsics.minIntrinsicWidth
 
     /** Returns the smallest width beyond which increasing the width never decreases the height. */
-    val maxIntrinsicWidth: Float
+    public val maxIntrinsicWidth: Float
         get() = intrinsics.maxIntrinsicWidth
 
     /**
@@ -332,23 +337,23 @@ class MultiParagraph(
      * `maxLines` lines of text or because the `maxLines` was null, `ellipsis` was not null, and one
      * of the lines exceeded the width constraint.
      */
-    val didExceedMaxLines: Boolean
+    public val didExceedMaxLines: Boolean
 
     /** The amount of horizontal space this paragraph occupies. */
-    val width: Float
+    public val width: Float
 
     /**
      * The amount of vertical space this paragraph occupies.
      *
      * Valid only after layout has been called.
      */
-    val height: Float
+    public val height: Float
 
     /**
      * The distance from the top of the paragraph to the alphabetic baseline of the first line, in
      * logical pixels.
      */
-    val firstBaseline: Float
+    public val firstBaseline: Float
         get() {
             return if (paragraphInfoList.isEmpty()) {
                 0f
@@ -361,7 +366,7 @@ class MultiParagraph(
      * The distance from the top of the paragraph to the alphabetic baseline of the first line, in
      * logical pixels.
      */
-    val lastBaseline: Float
+    public val lastBaseline: Float
         get() {
             return if (paragraphInfoList.isEmpty()) {
                 0f
@@ -371,7 +376,7 @@ class MultiParagraph(
         }
 
     /** The total number of lines in the text. */
-    val lineCount: Int
+    public val lineCount: Int
 
     /**
      * The bounding boxes reserved for the input placeholders in this MultiParagraph. Their
@@ -380,7 +385,7 @@ class MultiParagraph(
      * nullable. When [Rect] is null, it indicates that the corresponding [Placeholder] is
      * ellipsized.
      */
-    val placeholderRects: List<Rect?>
+    public val placeholderRects: List<Rect?>
 
     /* This is internal for testing purpose. */
     internal val paragraphInfoList: List<ParagraphInfo>
@@ -410,7 +415,7 @@ class MultiParagraph(
                                 (constraints.maxHeight - currentHeight.ceilToInt()).coerceAtLeast(0)
                             } else {
                                 constraints.maxHeight
-                            }
+                            },
                     ),
                     maxLines - currentLineCount,
                     overflow,
@@ -432,7 +437,7 @@ class MultiParagraph(
                     startLineIndex = startLineIndex,
                     endLineIndex = endLineIndex,
                     top = paragraphTop,
-                    bottom = paragraphBottom
+                    bottom = paragraphBottom,
                 )
             )
 
@@ -471,13 +476,13 @@ class MultiParagraph(
     /** Paint the paragraphs to canvas. */
     @Deprecated(
         "Use the new paint function that takes canvas as the only required parameter.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun paint(
+    public fun paint(
         canvas: Canvas,
         color: Color = Color.Unspecified,
         shadow: Shadow? = null,
-        decoration: TextDecoration? = null
+        decoration: TextDecoration? = null,
     ) {
         canvas.save()
         paragraphInfoList.fastForEach {
@@ -488,13 +493,13 @@ class MultiParagraph(
     }
 
     /** Paint the paragraphs to canvas. */
-    fun paint(
+    public fun paint(
         canvas: Canvas,
         color: Color = Color.Unspecified,
         shadow: Shadow? = null,
         decoration: TextDecoration? = null,
         drawStyle: DrawStyle? = null,
-        blendMode: BlendMode = DrawScope.DefaultBlendMode
+        blendMode: BlendMode = DrawScope.DefaultBlendMode,
     ) {
         canvas.save()
         paragraphInfoList.fastForEach {
@@ -505,20 +510,20 @@ class MultiParagraph(
     }
 
     /** Paint the paragraphs to canvas. */
-    fun paint(
+    public fun paint(
         canvas: Canvas,
         brush: Brush,
         alpha: Float = Float.NaN,
         shadow: Shadow? = null,
         decoration: TextDecoration? = null,
         drawStyle: DrawStyle? = null,
-        blendMode: BlendMode = DrawScope.DefaultBlendMode
+        blendMode: BlendMode = DrawScope.DefaultBlendMode,
     ) {
         drawMultiParagraph(canvas, brush, alpha, shadow, decoration, drawStyle, blendMode)
     }
 
     /** Returns path that enclose the given text range. */
-    fun getPathForRange(start: Int, end: Int): Path {
+    public fun getPathForRange(start: Int, end: Int): Path {
         requirePrecondition(start in 0..end && end <= annotatedString.text.length) {
             "Start($start) or End($end) is out of range [0..${annotatedString.text.length})," +
                 " or start > end!"
@@ -546,7 +551,7 @@ class MultiParagraph(
      * vertical position before 0, you get 0; if you ask for a vertical position beyond the last
      * line, you get the last line.
      */
-    fun getLineForVerticalPosition(vertical: Float): Int {
+    public fun getLineForVerticalPosition(vertical: Float): Int {
         val paragraphIndex = findParagraphByY(paragraphInfoList, vertical)
         return with(paragraphInfoList[paragraphIndex]) {
             if (length == 0) {
@@ -560,7 +565,7 @@ class MultiParagraph(
     }
 
     /** Returns the character offset closest to the given graphical position. */
-    fun getOffsetForPosition(position: Offset): Int {
+    public fun getOffsetForPosition(position: Offset): Int {
         val paragraphIndex = findParagraphByY(paragraphInfoList, position.y)
         return with(paragraphInfoList[paragraphIndex]) {
             if (length == 0) {
@@ -589,10 +594,10 @@ class MultiParagraph(
      * @return the [TextRange] that is inside the given [rect], or [TextRange.Zero] if no text is
      *   found.
      */
-    fun getRangeForRect(
+    public fun getRangeForRect(
         rect: Rect,
         granularity: TextGranularity,
-        inclusionStrategy: TextInclusionStrategy
+        inclusionStrategy: TextInclusionStrategy,
     ): TextRange {
         var firstParagraph = findParagraphByY(paragraphInfoList, rect.top)
         // The first paragraph contains the entire rect, return early in this case.
@@ -641,7 +646,7 @@ class MultiParagraph(
      * Returns the bounding box as Rect of the character for given character offset. Rect includes
      * the top, bottom, left and right of a character.
      */
-    fun getBoundingBox(offset: Int): Rect {
+    public fun getBoundingBox(offset: Int): Rect {
         requireIndexInRange(offset)
 
         val paragraphIndex = findParagraphByIndex(paragraphInfoList, offset)
@@ -675,10 +680,10 @@ class MultiParagraph(
      * @param arrayStart the inclusive start index in the array where the function will start
      *   filling in the values from
      */
-    fun fillBoundingBoxes(
+    public fun fillBoundingBoxes(
         range: TextRange,
         array: FloatArray,
-        @IntRange(from = 0) arrayStart: Int
+        @IntRange(from = 0) arrayStart: Int,
     ): FloatArray {
         requireIndexInRange(range.min)
         requireIndexInRangeInclusiveEnd(range.max)
@@ -756,7 +761,7 @@ class MultiParagraph(
      *   to a BiDi transition point.
      * @return a float number representing the horizontal position in the unit of pixel.
      */
-    fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float {
+    public fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float {
         requireIndexInRangeInclusiveEnd(offset)
 
         val paragraphIndex =
@@ -772,7 +777,7 @@ class MultiParagraph(
     }
 
     /** Get the text direction of the paragraph containing the given offset. */
-    fun getParagraphDirection(offset: Int): ResolvedTextDirection {
+    public fun getParagraphDirection(offset: Int): ResolvedTextDirection {
         requireIndexInRangeInclusiveEnd(offset)
 
         val paragraphIndex =
@@ -788,7 +793,7 @@ class MultiParagraph(
     }
 
     /** Get the text direction of the character at the given offset. */
-    fun getBidiRunDirection(offset: Int): ResolvedTextDirection {
+    public fun getBidiRunDirection(offset: Int): ResolvedTextDirection {
         requireIndexInRangeInclusiveEnd(offset)
 
         val paragraphIndex =
@@ -809,7 +814,7 @@ class MultiParagraph(
      * cases, this method will return TextRange(offset, offset+1). Word boundaries are defined more
      * precisely in Unicode Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
      */
-    fun getWordBoundary(offset: Int): TextRange {
+    public fun getWordBoundary(offset: Int): TextRange {
         requireIndexInRangeInclusiveEnd(offset)
 
         val paragraphIndex =
@@ -825,7 +830,7 @@ class MultiParagraph(
     }
 
     /** Returns rectangle of the cursor area. */
-    fun getCursorRect(offset: Int): Rect {
+    public fun getCursorRect(offset: Int): Rect {
         requireIndexInRangeInclusiveEnd(offset)
 
         val paragraphIndex =
@@ -845,7 +850,7 @@ class MultiParagraph(
      * before 0, you get 0; if you ask for a position beyond the end of the text, you get the last
      * line.
      */
-    fun getLineForOffset(offset: Int): Int {
+    public fun getLineForOffset(offset: Int): Int {
         val paragraphIndex =
             if (offset >= annotatedString.length) {
                 paragraphInfoList.lastIndex
@@ -860,7 +865,7 @@ class MultiParagraph(
     }
 
     /** Returns the left x Coordinate of the given line. */
-    fun getLineLeft(lineIndex: Int): Float {
+    public fun getLineLeft(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -871,7 +876,7 @@ class MultiParagraph(
     }
 
     /** Returns the right x Coordinate of the given line. */
-    fun getLineRight(lineIndex: Int): Float {
+    public fun getLineRight(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -882,7 +887,7 @@ class MultiParagraph(
     }
 
     /** Returns the top y coordinate of the given line. */
-    fun getLineTop(lineIndex: Int): Float {
+    public fun getLineTop(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -896,7 +901,7 @@ class MultiParagraph(
      * Returns the distance from the top of the [MultiParagraph] to the alphabetic baseline of the
      * given line.
      */
-    fun getLineBaseline(lineIndex: Int): Float {
+    public fun getLineBaseline(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -907,7 +912,7 @@ class MultiParagraph(
     }
 
     /** Returns the bottom y coordinate of the given line. */
-    fun getLineBottom(lineIndex: Int): Float {
+    public fun getLineBottom(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -918,7 +923,7 @@ class MultiParagraph(
     }
 
     /** Returns the height of the given line. */
-    fun getLineHeight(lineIndex: Int): Float {
+    public fun getLineHeight(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -929,7 +934,7 @@ class MultiParagraph(
     }
 
     /** Returns the width of the given line. */
-    fun getLineWidth(lineIndex: Int): Float {
+    public fun getLineWidth(lineIndex: Int): Float {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -940,7 +945,7 @@ class MultiParagraph(
     }
 
     /** Returns the start offset of the given line, inclusive. */
-    fun getLineStart(lineIndex: Int): Int {
+    public fun getLineStart(lineIndex: Int): Int {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -962,7 +967,7 @@ class MultiParagraph(
      *   it's false.
      * @return an exclusive end offset of the line.
      */
-    fun getLineEnd(lineIndex: Int, visibleEnd: Boolean = false): Int {
+    public fun getLineEnd(lineIndex: Int, visibleEnd: Boolean = false): Int {
         requireLineIndexInRange(lineIndex)
 
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
@@ -978,10 +983,12 @@ class MultiParagraph(
      * @param lineIndex a 0 based line index
      * @return true if the given line is ellipsized, otherwise false
      */
-    fun isLineEllipsized(lineIndex: Int): Boolean {
+    public fun isLineEllipsized(lineIndex: Int): Boolean {
         requireLineIndexInRange(lineIndex)
         val paragraphIndex = findParagraphByLineIndex(paragraphInfoList, lineIndex)
-        return with(paragraphInfoList[paragraphIndex]) { paragraph.isLineEllipsized(lineIndex) }
+        return with(paragraphInfoList[paragraphIndex]) {
+            paragraph.isLineEllipsized(lineIndex.toLocalLineIndex())
+        }
     }
 
     private fun requireIndexInRange(offset: Int) {
@@ -1057,7 +1064,7 @@ internal fun findParagraphByY(paragraphInfoList: List<ParagraphInfo>, y: Float):
 internal fun findParagraphsByRange(
     paragraphInfoList: List<ParagraphInfo>,
     range: TextRange,
-    action: (ParagraphInfo) -> Unit
+    action: (ParagraphInfo) -> Unit,
 ) {
     val paragraphIndex = findParagraphByIndex(paragraphInfoList, range.min)
     for (i in paragraphIndex until paragraphInfoList.size) {
@@ -1124,7 +1131,7 @@ internal data class ParagraphInfo(
     var startLineIndex: Int = -1,
     var endLineIndex: Int = -1,
     var top: Float = -1.0f,
-    var bottom: Float = -1.0f
+    var bottom: Float = -1.0f,
 ) {
 
     /** The length of the text in the covered by this paragraph. */
@@ -1224,3 +1231,5 @@ internal data class ParagraphInfo(
         return TextRange(start = start.toGlobalIndex(), end = end.toGlobalIndex())
     }
 }
+
+internal fun Float.ceilToInt(): Int = ceil(this).toInt()

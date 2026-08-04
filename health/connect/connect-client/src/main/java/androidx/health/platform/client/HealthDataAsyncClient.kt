@@ -25,7 +25,8 @@ import com.google.common.util.concurrent.ListenableFuture
 /**
  * Interface to access health and fitness records.
  *
- * Like [HealthConnectClient] but expose ListenableFuture instead of kotlin coroutines.
+ * Like [androidx.health.connect.client.HealthConnectClient] but expose ListenableFuture instead of
+ * kotlin coroutines.
  */
 internal interface HealthDataAsyncClient {
     /**
@@ -53,7 +54,7 @@ internal interface HealthDataAsyncClient {
 
     fun deleteData(
         uidsCollection: List<RequestProto.DataTypeIdPair>,
-        clientIdsCollection: List<RequestProto.DataTypeIdPair>
+        clientIdsCollection: List<RequestProto.DataTypeIdPair>,
     ): ListenableFuture<Unit>
 
     fun deleteDataRange(dataCollection: RequestProto.DeleteDataRangeRequest): ListenableFuture<Unit>
@@ -79,10 +80,10 @@ internal interface HealthDataAsyncClient {
     ): ListenableFuture<ResponseProto.GetChangesResponse>
 
     fun registerForDataNotifications(
-        request: RequestProto.RegisterForDataNotificationsRequest,
+        request: RequestProto.RegisterForDataNotificationsRequest
     ): ListenableFuture<Void>
 
     fun unregisterFromDataNotifications(
-        request: RequestProto.UnregisterFromDataNotificationsRequest,
+        request: RequestProto.UnregisterFromDataNotificationsRequest
     ): ListenableFuture<Void>
 }

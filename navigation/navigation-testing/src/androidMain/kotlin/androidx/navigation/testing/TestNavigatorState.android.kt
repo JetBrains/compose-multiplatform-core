@@ -44,42 +44,52 @@ import kotlinx.coroutines.withContext
  * updated as they are added and removed from the state. This work is kicked off on the
  * [coroutineDispatcher].
  */
-public class TestNavigatorState
+public actual class TestNavigatorState
 @JvmOverloads
 constructor(
     private val context: Context? = null,
-    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
 ) : NavigatorState() {
+
+    public actual constructor(
+        coroutineDispatcher: CoroutineDispatcher
+    ) : this(null, coroutineDispatcher)
+
     internal val navContext = NavContext(context)
 
     private val viewModelStoreProvider =
         object : NavViewModelStoreProvider {
             private val viewModelStores = mutableMapOf<String, ViewModelStore>()
 
-            override fun getViewModelStore(backStackEntryId: String) =
-                viewModelStores.getOrPut(backStackEntryId) { ViewModelStore() }
+            override fun get(key: String) = viewModelStores.getOrPut(key) { ViewModelStore() }
+
+            override fun clear(key: String) {
+                viewModelStores.remove(key)
+            }
         }
 
     private val savedStates = mutableMapOf<String, SavedState>()
     private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
-    override fun createBackStackEntry(
+    public actual override fun createBackStackEntry(
         destination: NavDestination,
-        arguments: SavedState?
+        arguments: SavedState?,
     ): NavBackStackEntry =
         NavBackStackEntry.create(
             navContext,
             destination,
             arguments,
             Lifecycle.State.RESUMED,
-            viewModelStoreProvider
+            viewModelStoreProvider,
         )
 
     /**
      * Restore a previously saved [NavBackStackEntry]. You must have previously called [pop] with
      * [previouslySavedEntry] and `true`.
      */
-    public fun restoreBackStackEntry(previouslySavedEntry: NavBackStackEntry): NavBackStackEntry {
+    public actual fun restoreBackStackEntry(
+        previouslySavedEntry: NavBackStackEntry
+    ): NavBackStackEntry {
         val savedState =
             checkNotNull(savedStates[previouslySavedEntry.id]) {
                 "restoreBackStackEntry(previouslySavedEntry) must be passed a NavBackStackEntry " +
@@ -92,7 +102,7 @@ constructor(
             Lifecycle.State.RESUMED,
             viewModelStoreProvider,
             previouslySavedEntry.id,
-            savedState
+            savedState,
         )
     }
 
@@ -136,7 +146,7 @@ constructor(
 
     private fun updateMaxLifecycle(
         poppedList: List<NavBackStackEntry> = emptyList(),
-        saveState: Boolean = false
+        saveState: Boolean = false,
     ) {
         runBlocking(coroutineDispatcher) {
             // NavBackStackEntry Lifecycles must be updated on the main thread
@@ -159,7 +169,7 @@ constructor(
                         entry.maxLifecycle = Lifecycle.State.DESTROYED
                         if (!saveState) {
                             savedStates.remove(entry.id)
-                            viewModelStoreProvider.getViewModelStore(entry.id).clear()
+                            viewModelStoreProvider.get(entry.id).clear()
                         }
                     } else {
                         entry.maxLifecycle = Lifecycle.State.CREATED

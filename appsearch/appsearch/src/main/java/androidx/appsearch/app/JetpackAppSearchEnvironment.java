@@ -17,9 +17,12 @@
 package androidx.appsearch.app;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.UserHandle;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -33,9 +36,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Contains utility methods for Framework implementation of AppSearch.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class JetpackAppSearchEnvironment implements AppSearchEnvironment {
 
@@ -103,5 +105,18 @@ public class JetpackAppSearchEnvironment implements AppSearchEnvironment {
     @EnvironmentType
     public int getEnvironment() {
         return AppSearchEnvironment.JETPACK_ENVIRONMENT;
+    }
+
+    @Override
+    @NonNull
+    public File getFile(@NonNull File fileParentPath, @NonNull String fileName) {
+        return new File(fileParentPath, fileName);
+    }
+
+    @Override
+    public void populateSignatures(@NonNull Context context, @NonNull PackageInfo packageInfo)
+            throws PackageManager.NameNotFoundException {
+        throw new UnsupportedOperationException(
+                "populateSignatures is not supported in Jetpack backend.");
     }
 }

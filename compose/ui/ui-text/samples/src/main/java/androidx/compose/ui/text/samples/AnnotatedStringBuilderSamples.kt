@@ -19,6 +19,10 @@ package androidx.compose.ui.text.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
@@ -28,6 +32,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.AnnotatedString.Range
 import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -50,8 +55,8 @@ fun AnnotatedStringConstructorSample() {
         paragraphStyles =
             listOf(
                 AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 6),
-                AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent(5.sp)), 6, 11)
-            )
+                AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent(5.sp)), 6, 11),
+            ),
     )
 }
 
@@ -65,11 +70,11 @@ fun AnnotatedStringMainConstructorSample() {
                 AnnotatedString.Range(
                     LinkAnnotation.Url("https://developer.android.com/jetpack/compose"),
                     0,
-                    15
+                    15,
                 ),
                 AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 8),
-                AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 8, 15)
-            )
+                AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 8, 15),
+            ),
     )
 }
 
@@ -183,7 +188,7 @@ fun AnnotatedStringAddStringAnnotationSample() {
             tag = "URL",
             annotation = "https://developer.android.com/jetpack/compose",
             start = 6,
-            end = 21
+            end = 21,
         )
     }
 }
@@ -198,7 +203,7 @@ fun AnnotatedStringWithLinkSample() {
             withLink(
                 LinkAnnotation.Url(
                     "https://developer.android.com/jetpack/compose",
-                    TextLinkStyles(style = SpanStyle(color = Color.Blue))
+                    TextLinkStyles(style = SpanStyle(color = Color.Blue)),
                 )
             ) {
                 append("Jetpack Compose")
@@ -219,8 +224,8 @@ fun AnnotatedStringWithHoveredLinkStylingSample() {
                     "https://developer.android.com/jetpack/compose",
                     TextLinkStyles(
                         style = SpanStyle(color = Color.Blue),
-                        hoveredStyle = SpanStyle(textDecoration = TextDecoration.Underline)
-                    )
+                        hoveredStyle = SpanStyle(textDecoration = TextDecoration.Underline),
+                    ),
                 )
             withLink(link) { append("Jetpack Compose") }
         }
@@ -239,7 +244,7 @@ fun AnnotatedStringWithListenerSample() {
             val link =
                 LinkAnnotation.Url(
                     "https://developer.android.com/jetpack/compose",
-                    TextLinkStyles(SpanStyle(color = Color.Blue))
+                    TextLinkStyles(SpanStyle(color = Color.Blue)),
                 ) {
                     val url = (it as LinkAnnotation.Url).url
                     // log some metrics
@@ -304,4 +309,62 @@ fun AnnotatedStringWithBulletListCustomBulletSample() {
             }
         }
     )
+}
+
+@Composable
+@Sampled
+fun AnnotatedStringAnnotationSaverSample() {
+    // Demonstrates how to save and restore a single Annotation (such as a LinkAnnotation)
+    // using `AnnotatedString.Annotation.Saver`.
+    val annotation: AnnotatedString.Annotation =
+        LinkAnnotation.Url(
+            url = "https://developer.android.com",
+            styles = TextLinkStyles(SpanStyle(color = Color.Blue)),
+        )
+
+    val saverScope = SaverScope { true }
+
+    // Save the annotation
+    val saved = with(AnnotatedString.Annotation.Saver) { saverScope.save(annotation) }
+
+    // Restore the annotation
+    val restored = saved?.let { AnnotatedString.Annotation.Saver.restore(it) }
+}
+
+@Composable
+@Sampled
+fun LinkAnnotationSaverWithListenerSample() {
+    // Standard `AnnotatedString.Annotation.Saver` restores LinkAnnotation with
+    // `linkInteractionListener = null`
+    // because callbacks cannot be saved into a Bundle across process death.
+    // This sample demonstrates how to create a custom Saver for LinkAnnotation.Url that delegates
+    // saving to `AnnotatedString.Annotation.Saver` and re-attaches a listener upon restoration.
+    val myListener = LinkInteractionListener {
+        // Handle link click interaction
+    }
+
+    val customLinkSaver =
+        Saver<LinkAnnotation.Url, Any>(
+            save = { link ->
+                // Delegate saving of url and styles to Annotation.Saver
+                with(AnnotatedString.Annotation.Saver) { save(link) }
+            },
+            restore = { value ->
+                // Restore the base LinkAnnotation.Url and re-attach the listener
+                val baseLink =
+                    with(AnnotatedString.Annotation.Saver) { restore(value) } as? LinkAnnotation.Url
+                baseLink?.copy(linkInteractionListener = myListener)
+            },
+        )
+
+    val originalLink =
+        LinkAnnotation.Url(
+            url = "https://developer.android.com",
+            styles = TextLinkStyles(SpanStyle(color = Color.Blue)),
+            linkInteractionListener = myListener,
+        )
+
+    val saverScope = SaverScope { true }
+    val saved = with(customLinkSaver) { saverScope.save(originalLink) }
+    val restored = customLinkSaver.restore(saved!!)
 }

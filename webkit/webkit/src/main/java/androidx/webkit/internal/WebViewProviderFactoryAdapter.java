@@ -16,10 +16,15 @@
 
 package androidx.webkit.internal;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.WebView;
 
 import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewOutcomeReceiver;
 import androidx.webkit.WebViewStartUpConfig;
+import androidx.webkit.WebViewStartUpResult;
+import androidx.webkit.WebViewStartupException;
 
 import org.chromium.support_lib_boundary.DropDataContentProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
@@ -27,6 +32,7 @@ import org.chromium.support_lib_boundary.ProxyControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.ServiceWorkerControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.StaticsBoundaryInterface;
 import org.chromium.support_lib_boundary.TracingControllerBoundaryInterface;
+import org.chromium.support_lib_boundary.WebViewBuilderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderFactoryBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
@@ -35,7 +41,7 @@ import org.jspecify.annotations.NonNull;
 
 /**
  * Adapter for WebViewProviderFactoryBoundaryInterface providing static WebView functionality
- * similar to that provided by {@link android.webkit.WebViewFactoryProvider}.
+ * similar to that provided by {@code android.webkit.WebViewFactoryProvider}.
  */
 @SuppressWarnings("JavadocReference") // WebViewFactoryProvider and WebViewProvider are hidden.
 public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
@@ -46,9 +52,19 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for creating a new support library version of
-     * {@link android.webkit.WebViewProvider} - the class used to implement
-     * {@link androidx.webkit.WebViewCompat}.
+     * Adapter method for fetching the support library class representing the WebViewBuilder
+     * implementation details.
+     */
+    @Override
+    public @NonNull WebViewBuilderBoundaryInterface getWebViewBuilder() {
+        return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                WebViewBuilderBoundaryInterface.class, mImpl.getWebViewBuilder());
+    }
+
+    /**
+     * Adapter method for creating a new support library version of {@code
+     * android.webkit.WebViewProvider} - the class used to implement {@link
+     * androidx.webkit.WebViewCompat}.
      */
     @Override
     public @NonNull WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview) {
@@ -57,9 +73,9 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for creating a new support library version of
-     * {@link androidx.webkit.internal.WebkitToCompatConverter}, which converts android.webkit
-     * classes into their corresponding support library classes.
+     * Adapter method for creating a new support library version of {@link
+     * androidx.webkit.internal.WebkitToCompatConverter}, which converts android.webkit classes into
+     * their corresponding support library classes.
      */
     @Override
     public @NonNull WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter() {
@@ -68,8 +84,8 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.WebViewFactoryProvider#Statics}.
+     * Adapter method for fetching the support library class representing {@code
+     * android.webkit.WebViewFactoryProvider#Statics}.
      */
     @Override
     public @NonNull StaticsBoundaryInterface getStatics() {
@@ -77,17 +93,15 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
                 StaticsBoundaryInterface.class, mImpl.getStatics());
     }
 
-    /**
-     * Adapter method for fetching the features supported by the current WebView APK.
-     */
+    /** Adapter method for fetching the features supported by the current WebView APK. */
     @Override
     public String @NonNull [] getWebViewFeatures() {
         return mImpl.getSupportedFeatures();
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.ServiceWorkerController}.
+     * Adapter method for fetching the support library class representing {@link
+     * android.webkit.ServiceWorkerController}.
      */
     @Override
     public @NonNull ServiceWorkerControllerBoundaryInterface getServiceWorkerController() {
@@ -96,8 +110,8 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.TracingController}.
+     * Adapter method for fetching the support library class representing {@link
+     * android.webkit.TracingController}.
      */
     @Override
     public @NonNull TracingControllerBoundaryInterface getTracingController() {
@@ -106,8 +120,8 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.ProxyController}.
+     * Adapter method for fetching the support library class representing {@code
+     * android.webkit.ProxyController}.
      */
     @Override
     public @NonNull ProxyControllerBoundaryInterface getProxyController() {
@@ -116,8 +130,8 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for fetching the support library class representing Drag drop
-     * Image implementation.
+     * Adapter method for fetching the support library class representing Drag drop Image
+     * implementation.
      */
     @Override
     public @NonNull DropDataContentProviderBoundaryInterface getDropDataProvider() {
@@ -131,6 +145,12 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
                 ProfileStoreBoundaryInterface.class, mImpl.getProfileStore());
     }
 
+    /**
+     * @deprecated Use the {@link androidx.webkit.OutcomeReceiverCompat} version instead.
+     */
+    @SuppressWarnings("removal")
+    @WebViewCompat.ExperimentalAsyncStartUp
+    @Deprecated
     @Override
     public void startUpWebView(
             @NonNull WebViewStartUpConfig config,
@@ -139,6 +159,50 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
                 BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                         new WebViewStartUpConfigAdapter(config)),
                 BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
-                        new WebViewStartUpCallbackAdapter(callback)));
+                        new WebViewStartUpCallbackAdapter(result -> {
+                            // We want to ensure that the callback is run on the Android main
+                            // looper. The callee doesn't guarantee this. It's also desirable to
+                            // post it to make sure that we don't run the app's callback
+                            // synchronously from inside startChromiumLocked:
+                            // - This helps avoid making the blocking task longer.
+                            // - If the app's callback has a problem the stack trace will
+                            // hopefully make it clearer that it's not WebView's fault since
+                            // WebView code will not be in the stack trace.
+                            new Handler(Looper.getMainLooper()).post(
+                                    () -> callback.onSuccess(result));
+                        })));
+    }
+
+    @Override
+    public void startUpWebView(
+            @NonNull WebViewStartUpConfig config,
+            @NonNull WebViewOutcomeReceiver<WebViewStartUpResult,
+                    WebViewStartupException> callback) {
+        mImpl.startUpWebView(config::accept,
+                onSuccess -> {
+                    // We want to ensure that the callback is run on the Android main looper. The
+                    // callee doesn't guarantee this. It's also desirable to post it to make sure
+                    // that we don't run the app's callback synchronously from inside
+                    // startChromiumLocked:
+                    // - This helps avoid making the blocking task longer.
+                    // - If the app's callback has a problem the stack trace will hopefully make it
+                    // clearer that it's not WebView's fault since WebView code will not be in the
+                    // stack trace.
+                    WebViewStartupResultImpl result = new WebViewStartupResultImpl(onSuccess);
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onResult(result));
+                },
+                onFailure -> {
+                    // We want to ensure that the callback is run on the Android main looper. The
+                    // callee doesn't guarantee this. It's also desirable to post it to make sure
+                    // that we don't run the app's callback synchronously from inside
+                    // startChromiumLocked:
+                    // - This helps avoid making the blocking task longer.
+                    // - If the app's callback has a problem the stack trace will hopefully make it
+                    // clearer that it's not WebView's fault since WebView code will not be in the
+                    // stack trace.
+                    WebViewStartupException exception =
+                            WebViewStartupExceptionBuilder.buildException(onFailure);
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onError(exception));
+                });
     }
 }

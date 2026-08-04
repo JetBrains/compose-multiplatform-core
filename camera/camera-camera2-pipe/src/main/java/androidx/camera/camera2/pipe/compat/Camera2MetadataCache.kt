@@ -28,7 +28,6 @@ import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
 import androidx.camera.camera2.pipe.config.CameraPipeContext
 import androidx.camera.camera2.pipe.core.Debug
@@ -55,8 +54,7 @@ constructor(
     @CameraPipeContext private val cameraPipeContext: Context,
     private val threads: Threads,
     private val permissions: Permissions,
-    private val cameraMetadataConfig: CameraPipe.CameraMetadataConfig,
-    private val timeSource: TimeSource
+    private val timeSource: TimeSource,
 ) : Camera2MetadataProvider {
 
     @GuardedBy("cache") private val cache = ArrayMap<String, CameraMetadata>()
@@ -81,7 +79,7 @@ constructor(
 
     override suspend fun getCameraExtensionMetadata(
         cameraId: CameraId,
-        extension: Int
+        extension: Int,
     ): CameraExtensionMetadata {
         synchronized(extensionCache) {
             val existing = extensionCache[cameraId.value]
@@ -114,7 +112,7 @@ constructor(
 
     override fun awaitCameraExtensionMetadata(
         cameraId: CameraId,
-        extension: Int
+        extension: Int,
     ): CameraExtensionMetadata {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return Debug.trace("$cameraId#awaitExtensionMetadata") {
@@ -165,18 +163,11 @@ constructor(
 
                 // Merge the camera specific and global cache blocklists together.
                 // this will prevent these values from being cached after first access.
-                val cameraBlocklist =
-                    if (shouldBlockSensorOrientationCache(characteristics)) {
-                        (cameraMetadataConfig.cameraCacheBlocklist[cameraId] ?: emptySet()) +
-                            CameraCharacteristics.SENSOR_ORIENTATION
-                    } else {
-                        cameraMetadataConfig.cameraCacheBlocklist[cameraId]
-                    }
                 val cacheBlocklist =
-                    if (cameraBlocklist == null) {
-                        cameraMetadataConfig.cacheBlocklist
+                    if (shouldBlockSensorOrientationCache(characteristics)) {
+                        setOf(CameraCharacteristics.SENSOR_ORIENTATION)
                     } else {
-                        cameraMetadataConfig.cacheBlocklist + cameraBlocklist
+                        emptySet()
                     }
 
                 val cameraMetadata =
@@ -186,7 +177,7 @@ constructor(
                         characteristics,
                         this,
                         emptyMap(),
-                        cacheBlocklist
+                        cacheBlocklist,
                     )
 
                 Log.info {
@@ -215,7 +206,7 @@ constructor(
     private fun createCameraExtensionMetadata(
         cameraId: CameraId,
         redacted: Boolean,
-        extension: Int
+        extension: Int,
     ): Camera2CameraExtensionMetadata {
         val start = Timestamps.now(timeSource)
 
@@ -231,7 +222,7 @@ constructor(
                         redacted,
                         extension,
                         extensionCharacteristics,
-                        emptyMap()
+                        emptyMap(),
                     )
 
                 Log.info {
@@ -249,7 +240,7 @@ constructor(
             } catch (throwable: Throwable) {
                 throw IllegalStateException(
                     "Failed to load extension metadata for $cameraId!",
-                    throwable
+                    throwable,
                 )
             }
         }

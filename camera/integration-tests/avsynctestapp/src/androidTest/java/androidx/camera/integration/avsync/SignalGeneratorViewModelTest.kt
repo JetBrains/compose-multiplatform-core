@@ -36,7 +36,6 @@ import android.content.Context
 import android.os.Build
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
-import androidx.camera.integration.avsync.model.CameraHelper.Companion.CameraImplementation
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
@@ -88,7 +87,7 @@ class SignalGeneratorViewModelTest {
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         )
 
     @Before
@@ -97,7 +96,7 @@ class SignalGeneratorViewModelTest {
         Assume.assumeFalse(
             "Skip tests for Cuttlefish MediaCodec issues",
             Build.MODEL.contains("Cuttlefish") &&
-                (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33)
+                (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33),
         )
 
         val viewModelProvider = ViewModelProvider(fakeViewModelStoreOwner)
@@ -128,7 +127,7 @@ class SignalGeneratorViewModelTest {
     fun initialRecorder_canMakeRecorderReady(): Unit = runBlocking {
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
 
-        viewModel.initialRecorder(context, lifecycleOwner, CameraImplementation.CAMERA2)
+        viewModel.initialRecorder(context, lifecycleOwner)
 
         assertThat(viewModel.isRecorderReady).isTrue()
     }
@@ -177,7 +176,7 @@ class SignalGeneratorViewModelTest {
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
 
         // Arrange.
-        viewModel.initialRecorder(context, lifecycleOwner, CameraImplementation.CAMERA2)
+        viewModel.initialRecorder(context, lifecycleOwner)
 
         assertThat(viewModel.isRecorderReady).isTrue()
 

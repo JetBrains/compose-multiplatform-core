@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -11,34 +10,35 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    implementation(project(':wear:protolayout:protolayout'))
+    implementation(project(':wear:protolayout:protolayout-expression'))
     implementation(project(":wear:protolayout:protolayout-expression-pipeline"))
     implementation(project(":wear:tiles:tiles"))
     implementation(project(":wear:tiles:tiles-renderer"))
     implementation(project(":wear:tiles:tiles-tooling-preview"))
-
-    implementation(libs.kotlinStdlib)
-    implementation(libs.kotlinCoroutinesGuava)
-
     implementation("androidx.core:core:1.1.0")
+    implementation(libs.androidx.annotation)
+    implementation(libs.jspecify)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
 
+    androidTestImplementation(libs.guava)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.guava)
     androidTestImplementation(project(":wear:protolayout:protolayout-material"))
 }
 
 android {
+    compileSdk { version = release(35) }
+
     defaultConfig {
-        minSdk = 26
+        minSdk { version = release(26) }
     }
 
     namespace = "androidx.wear.tiles.tooling"
@@ -49,5 +49,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "A set of tools that are used to preview Tile components in Android Studio"
-    legacyDisableKotlinStrictApiMode = true
 }

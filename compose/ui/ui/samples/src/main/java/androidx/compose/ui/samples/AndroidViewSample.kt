@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -87,7 +88,7 @@ fun AndroidViewWithReleaseSample() {
         onRelease = { view ->
             // Need to release the lifecycle to prevent a memory leak
             view.lifecycle = null
-        }
+        },
     )
 }
 
@@ -120,7 +121,7 @@ fun ReusableAndroidViewInLazyColumnSample() {
                     webView.stopLoading()
                     webView.loadUrl("about:blank")
                     webView.clearHistory()
-                }
+                },
             )
         }
     }
@@ -129,7 +130,8 @@ fun ReusableAndroidViewInLazyColumnSample() {
 @Sampled
 @Composable
 fun AndroidDrawableInDrawScopeSample() {
-    val drawable = LocalContext.current.getDrawable(R.drawable.sample_drawable)
+    val drawable =
+        LocalResources.current.getDrawable(R.drawable.sample_drawable, LocalContext.current.theme)
     Box(
         modifier =
             Modifier.requiredSize(100.dp).drawBehind {

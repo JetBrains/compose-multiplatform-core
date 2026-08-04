@@ -62,7 +62,7 @@ internal abstract class BaseTextPreparedSelection<T : BaseTextPreparedSelection<
     val originalSelection: TextRange,
     val layoutResult: TextLayoutResult?,
     val offsetMapping: OffsetMapping,
-    val state: TextPreparedSelectionState
+    val state: TextPreparedSelectionState,
 ) {
     var selection = originalSelection
 
@@ -143,7 +143,7 @@ internal abstract class BaseTextPreparedSelection<T : BaseTextPreparedSelection<
     fun getPrecedingCodePointOrEmojiStartIndex() =
         annotatedString.text.findCodePointOrEmojiStartBefore(
             index = selection.end,
-            ifNotFound = NoCharacterFound
+            ifNotFound = NoCharacterFound,
         )
 
     /** Returns the index of the character break preceding the end of [selection]. */
@@ -354,28 +354,28 @@ internal class TextPreparedSelection(
     originalSelection: TextRange,
     layoutResult: TextLayoutResult? = null,
     offsetMapping: OffsetMapping = OffsetMapping.Identity,
-    state: TextPreparedSelectionState = TextPreparedSelectionState()
+    state: TextPreparedSelectionState = TextPreparedSelectionState(),
 ) :
     BaseTextPreparedSelection<TextPreparedSelection>(
         originalText = originalText,
         originalSelection = originalSelection,
         layoutResult = layoutResult,
         offsetMapping = offsetMapping,
-        state = state
+        state = state,
     )
 
 internal class TextFieldPreparedSelection(
     val currentValue: TextFieldValue,
     offsetMapping: OffsetMapping = OffsetMapping.Identity,
     val layoutResultProxy: TextLayoutResultProxy?,
-    state: TextPreparedSelectionState = TextPreparedSelectionState()
+    state: TextPreparedSelectionState = TextPreparedSelectionState(),
 ) :
     BaseTextPreparedSelection<TextFieldPreparedSelection>(
         originalText = currentValue.annotatedString,
         originalSelection = currentValue.selection,
         offsetMapping = offsetMapping,
         layoutResult = layoutResultProxy?.value,
-        state = state
+        state = state,
     ) {
     val value
         get() = currentValue.copy(annotatedString = annotatedString, selection = selection)

@@ -18,57 +18,68 @@ package androidx.biometric.samples
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import androidx.activity.ComponentActivity
 import androidx.annotation.Sampled
 import androidx.biometric.AuthenticationRequest
 import androidx.biometric.AuthenticationRequest.Biometric
 import androidx.biometric.AuthenticationRequest.Companion.biometricRequest
 import androidx.biometric.AuthenticationResult
+import androidx.biometric.AuthenticationResultCallback
 import androidx.biometric.PromptContentItemBulletedText
 import androidx.biometric.registerForAuthenticationResult
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 
 private const val TAG = "AuthenticationSamples"
 
 @Sampled
 fun activitySample() {
-    class MyActivityForBiometricAuth : FragmentActivity() {
+    class MyActivityForBiometricAuth : ComponentActivity() {
         val requestAuthentication =
             registerForAuthenticationResult(
-                // Handle intermediate authentication failure, this is optional.
-                onAuthFailedCallback = { Log.i(TAG, "onAuthenticationFailed, try again") }
-            ) { result: AuthenticationResult ->
-                when (result) {
-                    // Handle successful authentication
-                    is AuthenticationResult.Success -> {
-                        Log.i(TAG, "onAuthenticationSucceeded with type" + result.authType)
+                object : AuthenticationResultCallback {
+                    override fun onAuthResult(result: AuthenticationResult) {
+                        when (result) {
+                            // Handle successful authentication
+                            is AuthenticationResult.Success -> {
+                                Log.i(TAG, "onAuthenticationSucceeded with type ${result.authType}")
+                            }
+                            // Handle authentication error, e.g. user cancellation, lockout errors,
+                            // etc
+                            is AuthenticationResult.Error -> {
+                                Log.i(
+                                    TAG,
+                                    "onAuthenticationError " +
+                                        "with error code: ${result.errorCode} " +
+                                        "and error string: ${result.errString}",
+                                )
+                            }
+                            // Handle fallback option clicks
+                            is AuthenticationResult.CustomFallbackSelected -> {
+                                Log.i(TAG, "fallback is selected, text: ${result.fallback.text}")
+                            }
+                        }
                     }
-                    // Handle authentication error, e.g. negative button click, user cancellation,
-                    // etc
-                    is AuthenticationResult.Error -> {
-                        Log.i(
-                            TAG,
-                            "onAuthenticationError " + result.errorCode + " " + result.errString
-                        )
+
+                    // Handle intermediate authentication failure, this is optional and
+                    // not needed in most cases
+                    override fun onAuthAttemptFailed() {
+                        Log.i(TAG, "onAuthenticationFailed, try again")
                     }
                 }
-            }
+            )
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             val authRequest =
-                biometricRequest(
-                    title = "Title",
-                    authFallback = Biometric.Fallback.DeviceCredential,
-                ) {
+                biometricRequest(title = "Title", Biometric.Fallback.DeviceCredential) {
                     setSubtitle("Subtitle")
                     setContent(
                         AuthenticationRequest.BodyContent.VerticalList(
                             "Vertical list description",
                             listOf(
                                 PromptContentItemBulletedText("test item1"),
-                                PromptContentItemBulletedText("test item2")
-                            )
+                                PromptContentItemBulletedText("test item2"),
+                            ),
                         )
                     )
                     setMinStrength(Biometric.Strength.Class3(/*optional: cryptoObject*/ ))
@@ -84,22 +95,24 @@ fun activitySample() {
 fun fragmentSample() {
     class MyFragmentForCredentialOnlyAuth : Fragment() {
         val requestAuthentication =
-            registerForAuthenticationResult(
-                // Handle intermediate authentication failure, this is optional.
-                onAuthFailedCallback = { Log.i(TAG, "onAuthenticationFailed, try again") }
-            ) { result: AuthenticationResult ->
+            registerForAuthenticationResult { result: AuthenticationResult ->
                 when (result) {
                     // Handle successful authentication
                     is AuthenticationResult.Success -> {
-                        Log.i(TAG, "onAuthenticationSucceeded with type" + result.authType)
+                        Log.i(TAG, "onAuthenticationSucceeded with type ${result.authType}")
                     }
-                    // Handle authentication error, e.g. negative button click, user cancellation,
-                    // etc
+                    // Handle authentication error, e.g. user cancellation, lockout errors, etc
                     is AuthenticationResult.Error -> {
                         Log.i(
                             TAG,
-                            "onAuthenticationError " + result.errorCode + " " + result.errString
+                            "onAuthenticationError " +
+                                "with error code: ${result.errorCode} " +
+                                "and error string: ${result.errString}",
                         )
+                    }
+                    // Handle fallback option clicks
+                    is AuthenticationResult.CustomFallbackSelected -> {
+                        Log.i(TAG, "fallback is selected, text: ${result.fallback.text}")
                     }
                 }
             }
@@ -107,18 +120,15 @@ fun fragmentSample() {
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             val authRequest =
-                biometricRequest(
-                    title = "Title",
-                    authFallback = Biometric.Fallback.DeviceCredential,
-                ) {
+                biometricRequest(title = "Title", Biometric.Fallback.DeviceCredential) {
                     setSubtitle("Subtitle")
                     setContent(
                         AuthenticationRequest.BodyContent.VerticalList(
                             "Vertical list description",
                             listOf(
                                 PromptContentItemBulletedText("test item1"),
-                                PromptContentItemBulletedText("test item2")
-                            )
+                                PromptContentItemBulletedText("test item2"),
+                            ),
                         )
                     )
                     setMinStrength(Biometric.Strength.Class3(/*optional: cryptoObject*/ ))

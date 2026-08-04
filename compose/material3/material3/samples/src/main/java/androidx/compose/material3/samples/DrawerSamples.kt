@@ -58,11 +58,17 @@ import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -73,6 +79,7 @@ import kotlinx.coroutines.launch
 fun ModalNavigationDrawerSample() {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
     // icons to mimic drawer destinations
     val items =
         listOf(
@@ -95,23 +102,23 @@ fun ModalNavigationDrawerSample() {
             Icons.Default.QrCode,
             Icons.Default.Radio,
         )
-    val selectedItem = remember { mutableStateOf(items[0]) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(drawerState) {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Spacer(Modifier.height(12.dp))
-                    items.forEach { item ->
+                    items.forEachIndexed { index, item ->
                         NavigationDrawerItem(
                             icon = { Icon(item, contentDescription = null) },
                             label = { Text(item.name.substringAfterLast(".")) },
-                            selected = item == selectedItem.value,
+                            selected = index == selectedIndex,
                             onClick = {
                                 scope.launch { drawerState.close() }
-                                selectedItem.value = item
+                                selectedIndex = index
                             },
-                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                         )
                     }
                 }
@@ -120,14 +127,26 @@ fun ModalNavigationDrawerSample() {
         content = {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = if (drawerState.isClosed) ">>> Swipe >>>" else "<<< Swipe <<<")
                 Spacer(Modifier.height(20.dp))
-                Button(onClick = { scope.launch { drawerState.open() } }) { Text("Click to open") }
+                Button(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    onClick = { scope.launch { drawerState.open() } },
+                ) {
+                    Text("Click to open")
+                }
             }
-        }
+        },
     )
+
+    LaunchedEffect(drawerState.isClosed) {
+        if (drawerState.isClosed) {
+            // Keyboard focus should go back to button once drawer closes.
+            focusRequester.requestFocus()
+        }
+    }
 }
 
 @Preview
@@ -156,19 +175,19 @@ fun PermanentNavigationDrawerSample() {
             Icons.Default.QrCode,
             Icons.Default.Radio,
         )
-    val selectedItem = remember { mutableStateOf(items[0]) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     PermanentNavigationDrawer(
         drawerContent = {
             PermanentDrawerSheet(Modifier.width(240.dp)) {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Spacer(Modifier.height(12.dp))
-                    items.forEach { item ->
+                    items.forEachIndexed { index, item ->
                         NavigationDrawerItem(
                             icon = { Icon(item, contentDescription = null) },
                             label = { Text(item.name.substringAfterLast(".")) },
-                            selected = item == selectedItem.value,
-                            onClick = { selectedItem.value = item },
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            selected = index == selectedIndex,
+                            onClick = { selectedIndex = index },
+                            modifier = Modifier.padding(horizontal = 12.dp),
                         )
                     }
                 }
@@ -177,11 +196,11 @@ fun PermanentNavigationDrawerSample() {
         content = {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = "Application content")
             }
-        }
+        },
     )
 }
 
@@ -191,6 +210,7 @@ fun PermanentNavigationDrawerSample() {
 fun DismissibleNavigationDrawerSample() {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
     // icons to mimic drawer destinations
     val items =
         listOf(
@@ -213,7 +233,7 @@ fun DismissibleNavigationDrawerSample() {
             Icons.Default.QrCode,
             Icons.Default.Radio,
         )
-    val selectedItem = remember { mutableStateOf(items[0]) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     DismissibleNavigationDrawer(
         drawerState = drawerState,
@@ -221,16 +241,16 @@ fun DismissibleNavigationDrawerSample() {
             DismissibleDrawerSheet(drawerState) {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Spacer(Modifier.height(12.dp))
-                    items.forEach { item ->
+                    items.forEachIndexed { index, item ->
                         NavigationDrawerItem(
                             icon = { Icon(item, contentDescription = null) },
                             label = { Text(item.name.substringAfterLast(".")) },
-                            selected = item == selectedItem.value,
+                            selected = index == selectedIndex,
                             onClick = {
                                 scope.launch { drawerState.close() }
-                                selectedItem.value = item
+                                selectedIndex = index
                             },
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp),
                         )
                     }
                 }
@@ -239,12 +259,24 @@ fun DismissibleNavigationDrawerSample() {
         content = {
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(text = if (drawerState.isClosed) ">>> Swipe >>>" else "<<< Swipe <<<")
                 Spacer(Modifier.height(20.dp))
-                Button(onClick = { scope.launch { drawerState.open() } }) { Text("Click to open") }
+                Button(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    onClick = { scope.launch { drawerState.open() } },
+                ) {
+                    Text("Click to open")
+                }
             }
-        }
+        },
     )
+
+    LaunchedEffect(drawerState.isClosed) {
+        if (drawerState.isClosed) {
+            // Keyboard focus should go back to button once drawer closes.
+            focusRequester.requestFocus()
+        }
+    }
 }

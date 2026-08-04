@@ -17,7 +17,9 @@
 package androidx.compose.integration.demos
 
 import android.graphics.Matrix
+import android.graphics.Path as AndroidPath
 import android.graphics.Rect
+import android.graphics.Region
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -42,9 +44,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -79,16 +79,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toComposeIntRect
+import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.changedToUp
@@ -125,6 +132,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
@@ -159,6 +167,15 @@ private const val UsageMessage =
         "(tagged \"$LogTag\").\n\n" +
         "Go back to close inspector."
 
+private const val ShapeTypeKey = "androidx.compose.ui.semantics.shapeType"
+private const val ShapeRectKey = "androidx.compose.ui.semantics.shapeRect"
+private const val ShapeRectCornersKey = "androidx.compose.ui.semantics.shapeCorners"
+private const val ShapeRegionKey = "androidx.compose.ui.semantics.shapeRegion"
+
+private const val ShapeTypeRectangle = 0
+private const val ShapeTypeRounded = 1
+private const val ShapeTypeGeneric = 2
+
 /**
  * A composable that, when touched or dragged, will immediately show an overlay on the current
  * window that allows the user to interactively explore accessibility nodes and view their
@@ -167,7 +184,7 @@ private const val UsageMessage =
 @Composable
 fun AccessibilityNodeInspectorButton(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     var active by remember { mutableStateOf(false) }
     val state = rememberAccessibilityNodeInspectorState()
@@ -185,7 +202,7 @@ fun AccessibilityNodeInspectorButton(
                 .then(NodeSelectionGestureModifier(state, onDragStarted = { active = true }))
                 // Tag the button so the inspector can detect when the button itself is selected and
                 // show a help message.
-                .semantics(mergeDescendants = true) { testTag = InspectorButtonTestTag }
+                .semantics(mergeDescendants = true) { testTag = InspectorButtonTestTag },
     ) {
         content()
 
@@ -200,11 +217,11 @@ fun AccessibilityNodeInspectorButton(
                     buttons = {
                         Button(
                             onClick = { active = false },
-                            modifier = Modifier.padding(16.dp).fillMaxWidth()
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         ) {
                             Text("DISMISS")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -222,7 +239,7 @@ private val NodeInfo.isInspectorButton: Boolean
                 val testTag =
                     AccessibilityNodeInfoHelper.readExtraData(
                         it.nodeInfo.unwrap(),
-                        TestTagExtrasKey
+                        TestTagExtrasKey,
                     )
                 if (testTag == InspectorButtonTestTag) {
                     return true
@@ -243,18 +260,14 @@ private fun AccessibilityNodeInspector(
     if (state.isReady) {
         Popup(
             popupPositionProvider = state,
-            properties =
-                PopupProperties(
-                    focusable = true,
-                    excludeFromSystemGesture = false,
-                ),
-            onDismissRequest = onDismissRequest
+            properties = PopupProperties(focusable = true, excludeFromSystemGesture = false),
+            onDismissRequest = onDismissRequest,
         ) {
             Box(
                 propagateMinConstraints = true,
                 modifier =
                     Modifier.width { state.inspectorWindowSize.width }
-                        .height { state.inspectorWindowSize.height }
+                        .height { state.inspectorWindowSize.height },
             ) {
                 // Selection UI and input handling.
                 Box(
@@ -271,7 +284,7 @@ private fun AccessibilityNodeInspector(
                                 Modifier.wrapContentSize()
                                     .padding(16.dp)
                                     .background(MaterialTheme.colors.surface)
-                                    .padding(16.dp)
+                                    .padding(16.dp),
                         )
                     } else {
                         InspectorNodeDetailsDialog(
@@ -304,6 +317,18 @@ private data class DrawSelectionOverlayModifier(val state: AccessibilityNodeInsp
 
 private class DrawSelectionOverlayModifierNode(val state: AccessibilityNodeInspectorState) :
     Modifier.Node(), DrawModifierNode {
+    private var _path: Path? = null
+    private val lazyPath: Path
+        get() = _path ?: Path().also { _path = it }
+
+    private var _boundsPath: Path? = null
+    private val lazyBoundsPath: Path
+        get() = _boundsPath ?: Path().also { _boundsPath = it }
+
+    private var _androidPath: AndroidPath? = null
+    private val lazyAndroidPath: AndroidPath
+        get() = _androidPath ?: AndroidPath().also { _androidPath = it }
+
     override fun ContentDrawScope.draw() {
         val coords = requireLayoutCoordinates()
         state.nodesUnderCursor.let { nodes ->
@@ -311,27 +336,41 @@ private class DrawSelectionOverlayModifierNode(val state: AccessibilityNodeInspe
                 val layerAlpha = 0.8f / nodes.size
                 nodes.fastForEach { node ->
                     val bounds = coords.screenToLocal(node.boundsInScreen)
-                    clipRect(
-                        left = bounds.left.toFloat(),
-                        top = bounds.top.toFloat(),
-                        right = bounds.right.toFloat(),
-                        bottom = bounds.bottom.toFloat(),
-                        clipOp = ClipOp.Difference
-                    ) {
-                        drawRect(Color.Black.copy(alpha = layerAlpha))
+                    val path = node.toShapePath()
+                    if (path != null) {
+                        path.translate(bounds.topLeft.toOffset())
+                        clipPath(path, clipOp = ClipOp.Difference) {
+                            drawRect(Color.Black.copy(alpha = layerAlpha))
+                        }
+                    } else {
+                        clipRect(
+                            left = bounds.left.toFloat(),
+                            top = bounds.top.toFloat(),
+                            right = bounds.right.toFloat(),
+                            bottom = bounds.bottom.toFloat(),
+                            clipOp = ClipOp.Difference,
+                        ) {
+                            drawRect(Color.Black.copy(alpha = layerAlpha))
+                        }
                     }
                 }
             }
         }
 
         state.highlightedNode?.let { node ->
-            val lastBounds = coords.screenToLocal(node.boundsInScreen)
-            drawRect(
-                Color.Green,
-                style = Stroke(1.dp.toPx()),
-                topLeft = lastBounds.topLeft.toOffset(),
-                size = lastBounds.size.toSize()
-            )
+            val bounds = coords.screenToLocal(node.boundsInScreen)
+            val path = node.toShapePath()
+            if (path != null) {
+                path.translate(bounds.topLeft.toOffset())
+                drawPath(path, Color.Green, style = Stroke(1.dp.toPx()))
+            } else {
+                drawRect(
+                    Color.Green,
+                    style = Stroke(1.dp.toPx()),
+                    topLeft = bounds.topLeft.toOffset(),
+                    size = bounds.size.toSize(),
+                )
+            }
         }
 
         state.selectionOffset
@@ -341,14 +380,55 @@ private class DrawSelectionOverlayModifierNode(val state: AccessibilityNodeInspe
                 drawLine(
                     Color.Red,
                     start = Offset(0f, localOffset.y),
-                    end = Offset(size.width, localOffset.y)
+                    end = Offset(size.width, localOffset.y),
                 )
                 drawLine(
                     Color.Red,
                     start = Offset(localOffset.x, 0f),
-                    end = Offset(localOffset.x, size.height)
+                    end = Offset(localOffset.x, size.height),
                 )
             }
+    }
+
+    /**
+     * @return a [Path] that matches the shape or `null` if a path didn't exist. The resulting path
+     *   is reused on every invocation of this method.
+     */
+    private fun NodeInfo.toShapePath(): Path? {
+        // A11y extras not available until api 26.
+        if (Build.VERSION.SDK_INT < 26) return null
+
+        fun readExtra(key: String): Any? =
+            AccessibilityNodeInfoHelper.readExtraData(nodeInfo.unwrap(), key)
+
+        val shapeType = readExtra(ShapeTypeKey) as? Int? ?: return null
+        val path = lazyPath
+        path.rewind()
+        when (shapeType) {
+            ShapeTypeRectangle -> { // Rect
+                val rect = readExtra(ShapeRectKey) as Rect
+                path.addRect(rect.toComposeRect())
+            }
+            ShapeTypeRounded -> { // Rounded Rect
+                val rect = readExtra(ShapeRectKey) as Rect
+                val corners = readExtra(ShapeRectCornersKey) as FloatArray
+                path.addRoundRect(rect.toComposeRoundRect(corners))
+            }
+            ShapeTypeGeneric -> { // Generic
+                val region = readExtra(ShapeRegionKey) as Region
+                val androidPath = lazyAndroidPath
+                androidPath.rewind()
+                region.getBoundaryPath(androidPath)
+                path.addPath(androidPath.asComposePath())
+            }
+            else -> return null
+        }
+
+        val boundsPath = lazyBoundsPath
+        boundsPath.rewind()
+        val bounds = boundsInScreen.toRect().run { translate(-topLeft) }
+        boundsPath.addRect(bounds)
+        return path.apply { op(path, boundsPath, PathOperation.Intersect) }
     }
 
     private fun LayoutCoordinates.screenToLocal(rect: IntRect): IntRect {
@@ -357,6 +437,20 @@ private class DrawSelectionOverlayModifierNode(val state: AccessibilityNodeInspe
             bottomRight = screenToLocal(rect.bottomRight.toOffset()).round(),
         )
     }
+}
+
+private fun Rect.toComposeRoundRect(radii: FloatArray): RoundRect {
+    require(radii.size == 8) { "Corner radius array must have 8 elements" }
+    return RoundRect(
+        left = left.toFloat(),
+        top = top.toFloat(),
+        right = right.toFloat(),
+        bottom = bottom.toFloat(),
+        topLeftCornerRadius = CornerRadius(radii[0], radii[1]),
+        topRightCornerRadius = CornerRadius(radii[2], radii[3]),
+        bottomRightCornerRadius = CornerRadius(radii[4], radii[5]),
+        bottomLeftCornerRadius = CornerRadius(radii[6], radii[7]),
+    )
 }
 
 /**
@@ -450,7 +544,7 @@ private fun InspectorNodeDetailsDialog(
 ) {
     Dialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        onDismissRequest = onBack
+        onDismissRequest = onBack,
     ) {
         InspectorNodeDetails(leafNode = leafNode, onNodeClick = onNodeClick, onBack = onBack)
     }
@@ -460,14 +554,14 @@ private fun InspectorNodeDetailsDialog(
 private fun InspectorNodeDetails(
     leafNode: NodeInfo,
     onNodeClick: (NodeInfo) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     MaterialTheme(colors = if (isSystemInDarkTheme()) darkColors() else lightColors()) {
         val peekInteractionSource = remember { MutableInteractionSource() }
         val peeking by peekInteractionSource.collectIsPressedAsState()
         Surface(
             modifier = Modifier.padding(16.dp).alpha(if (peeking) 0f else 1f),
-            elevation = 4.dp
+            elevation = 4.dp,
         ) {
             Column {
                 TopAppBar(
@@ -481,13 +575,13 @@ private fun InspectorNodeDetails(
                         IconButton(onClick = {}, interactionSource = peekInteractionSource) {
                             Icon(Icons.Filled.Info, contentDescription = null)
                         }
-                    }
+                    },
                 )
 
                 NodeProperties(
                     node = leafNode,
                     onNodeClick = onNodeClick,
-                    modifier = Modifier.verticalScroll(rememberScrollState())
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
                 )
             }
         }
@@ -527,7 +621,7 @@ private fun NodeProperties(node: NodeInfo, onNodeClick: (NodeInfo) -> Unit, modi
                         if (v is AccessibilityNodeInfoCompat) {
                             nodeLinkRepresentation(
                                 node = v,
-                                onClick = { onNodeClick(v.toNodeInfo()) }
+                                onClick = { onNodeClick(v.toNodeInfo()) },
                             )
                         } else {
                             PropertyValueRepresentation(v)
@@ -605,7 +699,7 @@ private fun KeyValueRow(name: String, valueRepresentation: PropertyValueRepresen
                 name,
                 fontWeight = FontWeight.Medium,
                 style = MaterialTheme.typography.caption,
-                modifier = Modifier.alpha(0.5f)
+                modifier = Modifier.alpha(0.5f),
             )
         },
         valueContent = {
@@ -615,10 +709,10 @@ private fun KeyValueRow(name: String, valueRepresentation: PropertyValueRepresen
                 Text(
                     valueRepresentation.text,
                     fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
                 )
             }
-        }
+        },
     )
 }
 
@@ -680,7 +774,7 @@ private inline fun KeyValueRowLayout(
                 if (wrap && valuePlaceable.width == valueConstraints.maxWidth) {
                     Pair(
                         Offset(contentPaddingPx / 2f, keyPlaceable.height.toFloat()),
-                        Offset(contentPaddingPx / 2f, totalHeight.toFloat())
+                        Offset(contentPaddingPx / 2f, totalHeight.toFloat()),
                     )
                 } else {
                     null
@@ -697,19 +791,19 @@ private inline fun KeyValueRowLayout(
                     val keyY =
                         Alignment.CenterVertically.align(
                             size = keyPlaceable.height,
-                            space = totalHeight
+                            space = totalHeight,
                         )
                     keyPlaceable.placeRelative(0, keyY)
 
                     val valueY =
                         Alignment.CenterVertically.align(
                             size = valuePlaceable.height,
-                            space = totalHeight
+                            space = totalHeight,
                         )
                     valuePlaceable.placeRelative(valueX, valueY)
                 }
             }
-        }
+        },
     )
 }
 
@@ -720,7 +814,7 @@ private inline fun KeyValueRowLayout(
  */
 private data class PropertyValueRepresentation(
     val text: AnnotatedString,
-    val customRenderer: (@Composable () -> Unit)? = null
+    val customRenderer: (@Composable () -> Unit)? = null,
 )
 
 private val ValueTypeTextStyle = TextStyle(fontFamily = FontFamily.Monospace)
@@ -801,7 +895,7 @@ private fun Accordion(
     selectedIndex: Int,
     onSelectIndex: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    content: AccordionScope.() -> Unit
+    content: AccordionScope.() -> Unit,
 ) {
     Column(modifier) {
         // Don't rebuild the items every time the selection changes.
@@ -833,7 +927,7 @@ private fun AccordionItemView(
     headerHeight: Dp,
     isExpanded: Boolean,
     shrinkHeader: Boolean,
-    onHeaderClick: () -> Unit
+    onHeaderClick: () -> Unit,
 ) {
     // Shrink collapsed headers to give more space to the expanded body.
     val headerScale by animateFloatAsState(if (shrinkHeader) 0.8f else 1f, label = "headerScale")
@@ -854,7 +948,7 @@ private fun AccordionItemView(
         Icon(
             Icons.Filled.ArrowDropDown,
             contentDescription = null,
-            modifier = Modifier.graphicsLayer { rotationZ = iconRotation }
+            modifier = Modifier.graphicsLayer { rotationZ = iconRotation },
         )
         item.header()
     }
@@ -877,7 +971,7 @@ private interface AccordionScope {
 
 private data class AccordionItem(
     val header: @Composable () -> Unit,
-    val content: @Composable () -> Unit
+    val content: @Composable () -> Unit,
 )
 
 private fun buildAccordionItems(content: AccordionScope.() -> Unit): List<AccordionItem> {
@@ -896,7 +990,7 @@ private fun buildAccordionItems(content: AccordionScope.() -> Unit): List<Accord
 private fun MutableMap<String, Any?>.setIfSpecified(
     key: String,
     value: Any?,
-    unspecifiedValue: Any? = null
+    unspecifiedValue: Any? = null,
 ) {
     if (value != unspecifiedValue) {
         set(key, value)
@@ -907,7 +1001,7 @@ private fun MutableMap<String, Any?>.setIfSpecified(
 private fun MutableMap<String, Any?>.setIfSpecified(
     key: String,
     value: Boolean,
-    unspecifiedValue: Boolean = false
+    unspecifiedValue: Boolean = false,
 ) {
     if (value != unspecifiedValue) {
         set(key, value)
@@ -918,7 +1012,7 @@ private fun MutableMap<String, Any?>.setIfSpecified(
 private fun MutableMap<String, Any?>.setIfSpecified(
     key: String,
     value: Int,
-    unspecifiedValue: Int = 0
+    unspecifiedValue: Int = 0,
 ) {
     if (value != unspecifiedValue) {
         set(key, value)
@@ -932,11 +1026,7 @@ private fun MutableMap<String, Any?>.setIfSpecified(
  */
 private fun CharSequence.toFormattedDebugString(): AnnotatedString = buildAnnotatedString {
     val quoteStyle = SpanStyle(color = Color.Gray, fontWeight = FontWeight.Bold)
-    val specialStyle =
-        SpanStyle(
-            color = Color.Red,
-            fontWeight = FontWeight.Bold,
-        )
+    val specialStyle = SpanStyle(color = Color.Red, fontWeight = FontWeight.Bold)
 
     withStyle(quoteStyle) { append('"') }
 
@@ -1100,7 +1190,7 @@ private class AccessibilityNodeInspectorState(private val hostView: View) :
         oldLeft: Int,
         oldTop: Int,
         oldRight: Int,
-        oldBottom: Int
+        oldBottom: Int,
     ) {
         inspectorWindowSize = calculateInspectorWindowSize()
     }
@@ -1109,7 +1199,7 @@ private class AccessibilityNodeInspectorState(private val hostView: View) :
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset = IntOffset.Zero
 
     private fun calculateInspectorWindowSize(): IntSize {
@@ -1119,10 +1209,7 @@ private class AccessibilityNodeInspectorState(private val hostView: View) :
     }
 }
 
-private data class NodeInfo(
-    val nodeInfo: AccessibilityNodeInfoCompat,
-    val boundsInScreen: IntRect,
-)
+private data class NodeInfo(val nodeInfo: AccessibilityNodeInfoCompat, val boundsInScreen: IntRect)
 
 /** Returns a map with all the inspectable properties of this [NodeInfo]. */
 private fun NodeInfo.getProperties(): Map<String, Any?> = buildMap {
@@ -1172,7 +1259,8 @@ private fun NodeInfo.getProperties(): Map<String, Any?> = buildMap {
     setIfSpecified("isTextSelectable", node.isTextSelectable)
     setIfSpecified("isVisibleToUser", node.isVisibleToUser, unspecifiedValue = true)
     setIfSpecified("labelFor", node.labelFor)
-    setIfSpecified("labeledBy", node.labeledBy)
+    // TODO(b/406574577): Remove suppression once 1.17.0 stable is released.
+    @Suppress("DEPRECATION") setIfSpecified("labeledBy", node.labeledBy)
     setIfSpecified("liveRegion", node.liveRegion)
     setIfSpecified("maxTextLength", node.maxTextLength, unspecifiedValue = -1)
     setIfSpecified("movementGranularities", node.movementGranularities)
@@ -1186,7 +1274,7 @@ private fun NodeInfo.getProperties(): Map<String, Any?> = buildMap {
     setIfSpecified("canOpenPopup", node.canOpenPopup())
     setIfSpecified(
         "hasRequestInitialAccessibilityFocus",
-        node.hasRequestInitialAccessibilityFocus()
+        node.hasRequestInitialAccessibilityFocus(),
     )
     setIfSpecified("extras", node.extrasWithoutExtraData)
     setIfSpecified("extraRenderingInfo", node.extraRenderingInfo)
@@ -1219,7 +1307,8 @@ private val AccessibilityNodeInfoCompat.extrasWithoutExtraData: Bundle
 private object AccessibilityNodeInfoHelper {
     fun readExtraData(node: AccessibilityNodeInfo, key: String): Any? {
         if (key in node.availableExtraData && node.refreshWithExtraData(key, Bundle())) {
-            @Suppress("DEPRECATION") return node.extras.get(key)
+            @Suppress("DEPRECATION")
+            return node.extras.get(key)
         } else {
             return null
         }
@@ -1308,10 +1397,7 @@ private class AccessibilityTreeInspectorApi34(private val rootView: View) :
 }
 
 private fun AccessibilityNodeInfoCompat.toNodeInfo(): NodeInfo =
-    NodeInfo(
-        nodeInfo = this,
-        boundsInScreen = Rect().also(::getBoundsInScreen).toComposeIntRect(),
-    )
+    NodeInfo(nodeInfo = this, boundsInScreen = Rect().also(::getBoundsInScreen).toComposeIntRect())
 
 private fun NodeInfo.dumpToLog(tag: String) {
     val indent = "  "

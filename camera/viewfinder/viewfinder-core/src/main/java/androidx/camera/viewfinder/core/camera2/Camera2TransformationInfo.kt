@@ -39,7 +39,7 @@ object Camera2TransformationInfo {
                 OutputConfiguration.MIRROR_MODE_AUTO,
                 OutputConfiguration.MIRROR_MODE_NONE,
                 OutputConfiguration.MIRROR_MODE_H,
-                OutputConfiguration.MIRROR_MODE_V
+                OutputConfiguration.MIRROR_MODE_V,
             ]
     )
     @Retention(AnnotationRetention.SOURCE)
@@ -72,14 +72,14 @@ object Camera2TransformationInfo {
         cropRectLeft: Float = TransformationInfo.CROP_NONE,
         cropRectTop: Float = TransformationInfo.CROP_NONE,
         cropRectRight: Float = TransformationInfo.CROP_NONE,
-        cropRectBottom: Float = TransformationInfo.CROP_NONE
+        cropRectBottom: Float = TransformationInfo.CROP_NONE,
     ): TransformationInfo =
         createFromCharacteristicsInternal(
             cameraCharacteristics = cameraCharacteristics,
             cropRectLeft = cropRectLeft,
             cropRectTop = cropRectTop,
             cropRectRight = cropRectRight,
-            cropRectBottom = cropRectBottom
+            cropRectBottom = cropRectBottom,
         )
 
     /**
@@ -118,7 +118,7 @@ object Camera2TransformationInfo {
         cropRectLeft: Float = TransformationInfo.CROP_NONE,
         cropRectTop: Float = TransformationInfo.CROP_NONE,
         cropRectRight: Float = TransformationInfo.CROP_NONE,
-        cropRectBottom: Float = TransformationInfo.CROP_NONE
+        cropRectBottom: Float = TransformationInfo.CROP_NONE,
     ): TransformationInfo =
         createFromCharacteristicsInternal(
             cameraCharacteristics = cameraCharacteristics,
@@ -126,7 +126,7 @@ object Camera2TransformationInfo {
             cropRectTop = cropRectTop,
             cropRectRight = cropRectRight,
             cropRectBottom = cropRectBottom,
-            mirrorMode = mirrorMode
+            mirrorMode = mirrorMode,
         )
 
     @JvmStatic
@@ -136,7 +136,7 @@ object Camera2TransformationInfo {
         cropRectLeft: Float = TransformationInfo.CROP_NONE,
         cropRectTop: Float = TransformationInfo.CROP_NONE,
         cropRectRight: Float = TransformationInfo.CROP_NONE,
-        cropRectBottom: Float = TransformationInfo.CROP_NONE
+        cropRectBottom: Float = TransformationInfo.CROP_NONE,
     ): TransformationInfo {
         var mirrorHorz = false
         var mirrorVert = false
@@ -175,7 +175,7 @@ object Camera2TransformationInfo {
             cropRectLeft = cropRectLeft,
             cropRectTop = cropRectTop,
             cropRectRight = cropRectRight,
-            cropRectBottom = cropRectBottom
+            cropRectBottom = cropRectBottom,
         )
     }
 }

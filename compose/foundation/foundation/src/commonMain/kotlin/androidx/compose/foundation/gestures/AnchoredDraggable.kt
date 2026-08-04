@@ -27,6 +27,8 @@ import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ComposeFoundationFlags.isAnchoredDraggableTargetValueCalculationFixEnabled
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.OverscrollEffect
@@ -40,6 +42,7 @@ import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -52,7 +55,7 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireLayoutDirection
@@ -101,14 +104,14 @@ import kotlinx.coroutines.launch
  *   default (if passing in null), this will snap to the closest anchor considering the velocity
  *   thresholds and positional thresholds. See [AnchoredDraggableDefaults.flingBehavior].
  */
-fun <T> Modifier.anchoredDraggable(
+public fun <T> Modifier.anchoredDraggable(
     state: AnchoredDraggableState<T>,
     reverseDirection: Boolean,
     orientation: Orientation,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     overscrollEffect: OverscrollEffect? = null,
-    flingBehavior: FlingBehavior? = null
+    flingBehavior: FlingBehavior? = null,
 ): Modifier =
     this then
         AnchoredDraggableElement(
@@ -118,7 +121,7 @@ fun <T> Modifier.anchoredDraggable(
             reverseDirection = reverseDirection,
             interactionSource = interactionSource,
             overscrollEffect = overscrollEffect,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         )
 
 /**
@@ -153,7 +156,7 @@ fun <T> Modifier.anchoredDraggable(
  *   thresholds and positional thresholds. See [AnchoredDraggableDefaults.flingBehavior].
  */
 @Deprecated(StartDragImmediatelyDeprecated)
-fun <T> Modifier.anchoredDraggable(
+public fun <T> Modifier.anchoredDraggable(
     state: AnchoredDraggableState<T>,
     reverseDirection: Boolean,
     orientation: Orientation,
@@ -161,7 +164,7 @@ fun <T> Modifier.anchoredDraggable(
     interactionSource: MutableInteractionSource? = null,
     overscrollEffect: OverscrollEffect? = null,
     startDragImmediately: Boolean = state.isAnimationRunning,
-    flingBehavior: FlingBehavior? = null
+    flingBehavior: FlingBehavior? = null,
 ): Modifier =
     this then
         AnchoredDraggableElement(
@@ -172,7 +175,7 @@ fun <T> Modifier.anchoredDraggable(
             interactionSource = interactionSource,
             overscrollEffect = overscrollEffect,
             startDragImmediately = startDragImmediately,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         )
 
 /**
@@ -200,13 +203,13 @@ fun <T> Modifier.anchoredDraggable(
  *   default (if passing in null), this will snap to the closest anchor considering the velocity
  *   thresholds and positional thresholds. See [AnchoredDraggableDefaults.flingBehavior].
  */
-fun <T> Modifier.anchoredDraggable(
+public fun <T> Modifier.anchoredDraggable(
     state: AnchoredDraggableState<T>,
     orientation: Orientation,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     overscrollEffect: OverscrollEffect? = null,
-    flingBehavior: FlingBehavior? = null
+    flingBehavior: FlingBehavior? = null,
 ): Modifier =
     this then
         AnchoredDraggableElement(
@@ -216,7 +219,7 @@ fun <T> Modifier.anchoredDraggable(
             reverseDirection = null,
             interactionSource = interactionSource,
             overscrollEffect = overscrollEffect,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         )
 
 /**
@@ -248,14 +251,14 @@ fun <T> Modifier.anchoredDraggable(
  *   thresholds and positional thresholds. See [AnchoredDraggableDefaults.flingBehavior].
  */
 @Deprecated(StartDragImmediatelyDeprecated)
-fun <T> Modifier.anchoredDraggable(
+public fun <T> Modifier.anchoredDraggable(
     state: AnchoredDraggableState<T>,
     orientation: Orientation,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     overscrollEffect: OverscrollEffect? = null,
     startDragImmediately: Boolean = state.isAnimationRunning,
-    flingBehavior: FlingBehavior? = null
+    flingBehavior: FlingBehavior? = null,
 ): Modifier =
     this then
         AnchoredDraggableElement(
@@ -266,7 +269,7 @@ fun <T> Modifier.anchoredDraggable(
             interactionSource = interactionSource,
             overscrollEffect = overscrollEffect,
             startDragImmediately = startDragImmediately,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         )
 
 private class AnchoredDraggableElement<T>(
@@ -288,7 +291,7 @@ private class AnchoredDraggableElement<T>(
             interactionSource = interactionSource,
             overscrollEffect = overscrollEffect,
             startDragImmediately = startDragImmediately,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         )
 
     override fun update(node: AnchoredDraggableNode<T>) {
@@ -300,7 +303,7 @@ private class AnchoredDraggableElement<T>(
             interactionSource = interactionSource,
             overscrollEffect = overscrollEffect,
             startDragImmediately = startDragImmediately,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         )
     }
 
@@ -348,19 +351,19 @@ private class AnchoredDraggableElement<T>(
 
 private class AnchoredDraggableNode<T>(
     private var state: AnchoredDraggableState<T>,
-    private var orientation: Orientation,
+    orientation: Orientation,
     enabled: Boolean,
     private var reverseDirection: Boolean?,
     interactionSource: MutableInteractionSource?,
     private var overscrollEffect: OverscrollEffect?,
     private var startDragImmediately: Boolean?,
-    private var flingBehavior: FlingBehavior?
+    private var flingBehavior: FlingBehavior?,
 ) :
     DragGestureNode(
         canDrag = AlwaysDrag,
         enabled = enabled,
         interactionSource = interactionSource,
-        orientationLock = orientation
+        orientation = orientation,
     ) {
 
     lateinit var resolvedFlingBehavior: FlingBehavior
@@ -400,7 +403,7 @@ private class AnchoredDraggableNode<T>(
                     snapAnimationSpec = AnchoredDraggableDefaults.SnapAnimationSpec,
                     positionalThreshold = AnchoredDraggableDefaults.PositionalThreshold,
                     density = requireDensity().also { density = it },
-                    state = state
+                    state = state,
                 )
     }
 
@@ -413,7 +416,7 @@ private class AnchoredDraggableNode<T>(
                 } else {
                     overscrollEffect!!.applyToScroll(
                         delta = oneDirectionalDelta.toOffset(),
-                        source = NestedScrollSource.UserInput
+                        source = NestedScrollSource.UserInput,
                     ) { deltaForDrag ->
                         val dragOffset = state.newOffsetForDelta(deltaForDrag.toFloat())
                         val consumedDelta = (dragOffset - state.requireOffset()).toOffset()
@@ -427,10 +430,10 @@ private class AnchoredDraggableNode<T>(
 
     override fun onDragStarted(startedPosition: Offset) {}
 
-    override fun onDragStopped(velocity: Velocity) {
+    override fun onDragStopped(event: DragEvent.DragStopped) {
         if (!isAttached) return
         coroutineScope.launch {
-            val oneDirectionalVelocity = velocity.reverseIfNeeded().toFloat()
+            val oneDirectionalVelocity = event.velocity.reverseIfNeeded().toFloat()
             if (overscrollEffect == null) {
                 fling(oneDirectionalVelocity)
             } else {
@@ -510,7 +513,7 @@ private class AnchoredDraggableNode<T>(
             enabled = enabled,
             interactionSource = interactionSource,
             shouldResetPointerInputHandling = resetPointerInputHandling,
-            orientationLock = orientation
+            orientation = orientation,
         )
     }
 
@@ -535,7 +538,7 @@ private class AnchoredDraggableNode<T>(
     private fun Offset.reverseIfNeeded() = if (isReverseDirection) this * -1f else this * 1f
 }
 
-private val AlwaysDrag: (PointerInputChange) -> Boolean = { true }
+private val AlwaysDrag: (PointerType) -> Boolean = { true }
 
 /**
  * Structure that represents the anchors of a [AnchoredDraggableState].
@@ -543,10 +546,10 @@ private val AlwaysDrag: (PointerInputChange) -> Boolean = { true }
  * See the DraggableAnchors factory method to construct drag anchors using a default implementation.
  * This structure does not make any guarantees about ordering of the anchors.
  */
-interface DraggableAnchors<T> {
+public interface DraggableAnchors<T> {
 
     /** The number of anchors */
-    val size: Int
+    public val size: Int
 
     /**
      * Get the anchor position for an associated [anchor]
@@ -554,7 +557,7 @@ interface DraggableAnchors<T> {
      * @param anchor The value to look up
      * @return The position of the anchor, or [Float.NaN] if the anchor does not exist
      */
-    fun positionOf(anchor: T): Float
+    public fun positionOf(anchor: T): Float
 
     /**
      * Whether there is an anchor position associated with the [anchor]
@@ -562,15 +565,18 @@ interface DraggableAnchors<T> {
      * @param anchor The value to look up
      * @return true if there is an anchor for this value, false if there is no anchor for this value
      */
-    fun hasPositionFor(anchor: T): Boolean
+    public fun hasPositionFor(anchor: T): Boolean
 
     /**
-     * Find the closest anchor value to the [position].
+     * Find the closest anchor value to the [position]. If there are multiple anchors at the same
+     * offset, it is up to the implementation which will be returned. When using the
+     * [DraggableAnchors] factory function, this will be the last anchor of the candidates at this
+     * offset.
      *
      * @param position The position to start searching from
-     * @return The closest anchor or null if the anchors are empty
+     * @return The closest anchor or null if the anchors are empty.
      */
-    fun closestAnchor(position: Float): T?
+    public fun closestAnchor(position: Float): T?
 
     /**
      * Find the closest anchor value to the [position], in the specified direction.
@@ -579,21 +585,21 @@ interface DraggableAnchors<T> {
      * @param searchUpwards Whether to search upwards from the current position or downwards
      * @return The closest anchor or null if the anchors are empty
      */
-    fun closestAnchor(position: Float, searchUpwards: Boolean): T?
+    public fun closestAnchor(position: Float, searchUpwards: Boolean): T?
 
-    /** The smallest anchor position, or [Float.NEGATIVE_INFINITY] if the anchors are empty. */
-    fun minPosition(): Float
+    /** The smallest anchor position, or [Float.NaN] if the anchors are empty. */
+    public fun minPosition(): Float
 
-    /** The biggest anchor position, or [Float.POSITIVE_INFINITY] if the anchors are empty. */
-    fun maxPosition(): Float
+    /** The biggest anchor position, or [Float.NaN] if the anchors are empty. */
+    public fun maxPosition(): Float
 
     /** Get the anchor key at the specified index, or null if the index is out of bounds. */
-    fun anchorAt(index: Int): T?
+    public fun anchorAt(index: Int): T?
 
     /**
      * Get the anchor position at the specified index, or [Float.NaN] if the index is out of bounds.
      */
-    fun positionAt(index: Int): Float
+    public fun positionAt(index: Int): Float
 }
 
 /**
@@ -601,7 +607,7 @@ interface DraggableAnchors<T> {
  *
  * @param block The action to invoke with the key and position
  */
-inline fun <T> DraggableAnchors<T>.forEach(block: (key: T, position: Float) -> Unit) {
+public inline fun <T> DraggableAnchors<T>.forEach(block: (key: T, position: Float) -> Unit) {
     for (i in 0 until size) {
         val key =
             requireNotNull(anchorAt(i)) { "There was no key at index $i. Please report a bug." }
@@ -614,7 +620,7 @@ inline fun <T> DraggableAnchors<T>.forEach(block: (key: T, position: Float) -> U
  * corresponding [Float] positions. This [DraggableAnchorsConfig] is used to construct an immutable
  * [DraggableAnchors] instance later on.
  */
-class DraggableAnchorsConfig<T> {
+public class DraggableAnchorsConfig<T> {
 
     internal val keys = mutableListOf<T>()
     internal var positions = FloatArray(size = 5) { Float.NaN }
@@ -625,7 +631,7 @@ class DraggableAnchorsConfig<T> {
      * @param position The anchor position.
      */
     @Suppress("BuilderSetStyle")
-    infix fun T.at(position: Float) {
+    public infix fun T.at(position: Float) {
         keys.add(this)
         if (positions.size < keys.size) {
             expandPositions()
@@ -638,7 +644,7 @@ class DraggableAnchorsConfig<T> {
         return positions.copyOfRange(
             fromIndex = 0,
             // toIndex is exclusive, so we need to take the entire keys.size, not just - 1
-            toIndex = keys.size
+            toIndex = keys.size,
         )
     }
 
@@ -656,7 +662,9 @@ class DraggableAnchorsConfig<T> {
  * @return A new [DraggableAnchors] instance with the anchor positions set by the `builder`
  *   function.
  */
-fun <T : Any> DraggableAnchors(builder: DraggableAnchorsConfig<T>.() -> Unit): DraggableAnchors<T> {
+public fun <T : Any> DraggableAnchors(
+    builder: DraggableAnchorsConfig<T>.() -> Unit
+): DraggableAnchors<T> {
     val config = DraggableAnchorsConfig<T>().apply(builder)
     return DefaultDraggableAnchors(keys = config.buildKeys(), anchors = config.buildPositions())
 }
@@ -668,14 +676,14 @@ fun <T : Any> DraggableAnchors(builder: DraggableAnchorsConfig<T>.() -> Unit): D
  * @see [AnchoredDraggableState.anchoredDrag] to learn how to start the anchored drag and get the
  *   access to this scope.
  */
-interface AnchoredDragScope {
+public interface AnchoredDragScope {
     /**
      * Assign a new value for an offset value for [AnchoredDraggableState].
      *
      * @param newOffset new value for [AnchoredDraggableState.offset].
      * @param lastKnownVelocity last known velocity (if known)
      */
-    fun dragTo(newOffset: Float, lastKnownVelocity: Float = 0f)
+    public fun dragTo(newOffset: Float, lastKnownVelocity: Float = 0f)
 }
 
 /**
@@ -699,13 +707,13 @@ interface AnchoredDragScope {
  */
 @Deprecated(ConfigurationMovedToModifier, level = DeprecationLevel.WARNING)
 @Suppress("DEPRECATION") // confirmValueChange is deprecated
-fun <T> AnchoredDraggableState(
+public fun <T> AnchoredDraggableState(
     initialValue: T,
     positionalThreshold: (totalDistance: Float) -> Float,
     velocityThreshold: () -> Float,
     snapAnimationSpec: AnimationSpec<Float>,
     decayAnimationSpec: DecayAnimationSpec<Float>,
-    confirmValueChange: (newValue: T) -> Boolean = { true }
+    confirmValueChange: (newValue: T) -> Boolean = { true },
 ): AnchoredDraggableState<T> =
     AnchoredDraggableState(initialValue, confirmValueChange).apply {
         this.positionalThreshold = positionalThreshold
@@ -737,19 +745,19 @@ fun <T> AnchoredDraggableState(
  */
 @Deprecated(ConfigurationMovedToModifier, level = DeprecationLevel.WARNING)
 @Suppress("DEPRECATION") // confirmValueChange is deprecated
-fun <T> AnchoredDraggableState(
+public fun <T> AnchoredDraggableState(
     initialValue: T,
     anchors: DraggableAnchors<T>,
     positionalThreshold: (totalDistance: Float) -> Float,
     velocityThreshold: () -> Float,
     snapAnimationSpec: AnimationSpec<Float>,
     decayAnimationSpec: DecayAnimationSpec<Float>,
-    confirmValueChange: (newValue: T) -> Boolean = { true }
+    confirmValueChange: (newValue: T) -> Boolean = { true },
 ): AnchoredDraggableState<T> =
     AnchoredDraggableState(
             initialValue = initialValue,
             anchors = anchors,
-            confirmValueChange = confirmValueChange
+            confirmValueChange = confirmValueChange,
         )
         .apply {
             this.positionalThreshold = positionalThreshold
@@ -770,17 +778,14 @@ fun <T> AnchoredDraggableState(
  * @param initialValue The initial value of the state.
  */
 @Stable
-class AnchoredDraggableState<T>(initialValue: T) {
+public class AnchoredDraggableState<T>(initialValue: T) {
     /**
      * Construct an [AnchoredDraggableState] instance with anchors.
      *
      * @param initialValue The initial value of the state.
      * @param anchors The anchors of the state. Use [updateAnchors] to update the anchors later.
      */
-    constructor(
-        initialValue: T,
-        anchors: DraggableAnchors<T>,
-    ) : this(initialValue) {
+    public constructor(initialValue: T, anchors: DraggableAnchors<T>) : this(initialValue) {
         this.anchors = anchors
         trySnapTo(initialValue)
     }
@@ -795,9 +800,9 @@ class AnchoredDraggableState<T>(initialValue: T) {
      *   example of using dynamic anchors to replace confirmValueChange.
      */
     @Deprecated(ConfirmValueChangeDeprecated, level = DeprecationLevel.WARNING)
-    constructor(
+    public constructor(
         initialValue: T,
-        confirmValueChange: (newValue: T) -> Boolean
+        confirmValueChange: (newValue: T) -> Boolean,
     ) : this(initialValue) {
         this.confirmValueChange = confirmValueChange
     }
@@ -814,10 +819,10 @@ class AnchoredDraggableState<T>(initialValue: T) {
      */
     @Deprecated(ConfirmValueChangeDeprecated, level = DeprecationLevel.WARNING)
     @Suppress("DEPRECATION")
-    constructor(
+    public constructor(
         initialValue: T,
         anchors: DraggableAnchors<T>,
-        confirmValueChange: (newValue: T) -> Boolean = { true }
+        confirmValueChange: (newValue: T) -> Boolean = { true },
     ) : this(initialValue, confirmValueChange) {
         this.anchors = anchors
         trySnapTo(initialValue)
@@ -827,11 +832,11 @@ class AnchoredDraggableState<T>(initialValue: T) {
     internal lateinit var positionalThreshold: (totalDistance: Float) -> Float
     internal lateinit var velocityThreshold: () -> Float
     @Deprecated(ConfigurationMovedToModifier, level = DeprecationLevel.WARNING)
-    lateinit var snapAnimationSpec: AnimationSpec<Float>
+    public lateinit var snapAnimationSpec: AnimationSpec<Float>
         internal set
 
     @Deprecated(ConfigurationMovedToModifier, level = DeprecationLevel.WARNING)
-    lateinit var decayAnimationSpec: DecayAnimationSpec<Float>
+    public lateinit var decayAnimationSpec: DecayAnimationSpec<Float>
         internal set
 
     @Suppress("DEPRECATION")
@@ -849,7 +854,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      *
      * That is the closest anchor point that the state has passed through.
      */
-    var currentValue: T by mutableStateOf(initialValue)
+    public var currentValue: T by mutableStateOf(initialValue)
         private set
 
     /**
@@ -858,21 +863,47 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * When progressing through multiple anchors, e.g. `A -> B -> C`, [settledValue] will stay the
      * same until settled at an anchor, while [currentValue] will update to the closest anchor.
      */
-    var settledValue: T by mutableStateOf(initialValue)
+    public var settledValue: T by mutableStateOf(initialValue)
         private set
 
     /**
      * The target value. This is the closest value to the current offset. If no interactions like
      * animations or drags are in progress, this will be the current value.
      */
-    val targetValue: T by derivedStateOf {
-        dragTarget
-            ?: run {
-                val currentOffset = offset
-                if (!currentOffset.isNaN()) {
-                    anchors.closestAnchor(offset) ?: currentValue
-                } else currentValue
+    public val targetValue: T by derivedStateOf { dragTarget ?: calculateTargetValue(offset) }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private fun calculateTargetValue(currentOffset: Float): T =
+        if (isAnchoredDraggableTargetValueCalculationFixEnabled) {
+            calculateTargetValueWithFix(currentOffset)
+        } else {
+            if (!currentOffset.isNaN()) {
+                anchors.closestAnchor(currentOffset) ?: currentValue
+            } else currentValue
+        }
+
+    private fun calculateTargetValueWithFix(currentOffset: Float): T {
+        return if (!currentOffset.isNaN()) {
+            // DraggableAnchors allows multiple anchors with the same offsets. If the offset is
+            // already equal to the currentValue's offset, this anchor gets priority.
+            val currentValueOffset = anchors.positionOf(currentValue)
+            // But... there is a very disgusting special case. anchoredDrag allows mutation to
+            // non-existent anchors to allow mutation ahead of anticipated anchor updates.
+            // Consider this sequence:
+            // 1. anchors = { A at 0f; C at 100f }
+            // 2. anchoredDrag(targetValue = B) { ... } -> currentValue, settledValue = B
+            // 3. updateAnchors({ A at 0f; B at 50f; C at 100f }). newTarget = f(oldTarget)
+            // In this scenario, it is very important that currentValue, settledValue and
+            // targetValue allow being moved to a non-existent state as they are often used to
+            // derive the new target based on the new anchors.
+            // currentValueOffset would be NaN here as it doesn't exist in the anchors. If that's
+            // the case, we disgustingly allow the offset to be NaN and fall back to currentValue.
+            if (currentValueOffset.isNaN() || currentOffset == currentValueOffset) {
+                currentValue
+            } else {
+                anchors.closestAnchor(currentOffset) ?: currentValue
             }
+        } else currentValue
     }
 
     /**
@@ -883,7 +914,8 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * Strongly consider using [requireOffset] which will throw if the offset is read before it is
      * initialized. This helps catch issues early in your workflow.
      */
-    var offset: Float by mutableFloatStateOf(Float.NaN)
+    @get:FrequentlyChangingValue
+    public var offset: Float by mutableFloatStateOf(Float.NaN)
         private set
 
     /**
@@ -892,7 +924,8 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @throws IllegalStateException If the offset has not been initialized yet
      * @see offset
      */
-    fun requireOffset(): Float {
+    @FrequentlyChangingValue
+    public fun requireOffset(): Float {
         checkPrecondition(!offset.isNaN()) {
             "The offset was read before being initialized. Did you access the offset in a phase " +
                 "before layout, like effects or composition?"
@@ -901,7 +934,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
     }
 
     /** Whether an animation is currently in progress. */
-    val isAnimationRunning: Boolean
+    public val isAnimationRunning: Boolean
         get() = dragTarget != null
 
     /**
@@ -911,14 +944,15 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @param from The starting value used to calculate the distance
      * @param to The end value used to calculate the distance
      */
+    @FrequentlyChangingValue
     @FloatRange(from = 0.0, to = 1.0)
-    fun progress(from: T, to: T): Float {
+    public fun progress(from: T, to: T): Float {
         val fromOffset = anchors.positionOf(from)
         val toOffset = anchors.positionOf(to)
         val currentOffset =
             offset.coerceIn(
                 min(fromOffset, toOffset), // fromOffset might be > toOffset
-                max(fromOffset, toOffset)
+                max(fromOffset, toOffset),
             )
         val fraction = (currentOffset - fromOffset) / (toOffset - fromOffset)
         return if (!fraction.isNaN()) {
@@ -934,10 +968,11 @@ class AnchoredDraggableState<T>(initialValue: T) {
     @Deprecated(
         message =
             "Use the progress function to query the progress between two specified " + "anchors.",
-        replaceWith = ReplaceWith("progress(state.settledValue, state.targetValue)")
+        replaceWith = ReplaceWith("progress(state.settledValue, state.targetValue)"),
     )
+    @get:FrequentlyChangingValue
     @get:FloatRange(from = 0.0, to = 1.0)
-    val progress: Float by
+    public val progress: Float by
         derivedStateOf(structuralEqualityPolicy()) {
             val a = anchors.positionOf(settledValue)
             val b = anchors.positionOf(targetValue)
@@ -954,12 +989,12 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * successfully, but does not get reset when an animation gets interrupted. You can use this
      * value to provide smooth reconciliation behavior when re-targeting an animation.
      */
-    var lastVelocity: Float by mutableFloatStateOf(0f)
+    public var lastVelocity: Float by mutableFloatStateOf(0f)
         private set
 
     private var dragTarget: T? by mutableStateOf(null)
 
-    var anchors: DraggableAnchors<T> by mutableStateOf(emptyDraggableAnchors())
+    public var anchors: DraggableAnchors<T> by mutableStateOf(emptyDraggableAnchors())
         private set
 
     /**
@@ -976,12 +1011,12 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @param newTarget The new target, by default the closest anchor or the current target if there
      *   are no anchors.
      */
-    fun updateAnchors(
+    public fun updateAnchors(
         newAnchors: DraggableAnchors<T>,
         newTarget: T =
             if (!offset.isNaN()) {
                 newAnchors.closestAnchor(offset) ?: targetValue
-            } else targetValue
+            } else targetValue,
     ) {
         if (anchors != newAnchors) {
             anchors = newAnchors
@@ -1000,7 +1035,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      *
      * @param animationSpec The animation spec that will be used to animate to the closest anchor.
      */
-    suspend fun settle(animationSpec: AnimationSpec<Float>) {
+    public suspend fun settle(animationSpec: AnimationSpec<Float>) {
         val previousValue = this.currentValue
         val targetValue = anchors.closestAnchor(requireOffset())
         if (targetValue != null && confirmValueChange(targetValue)) {
@@ -1026,7 +1061,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @return The velocity consumed in the animation
      */
     @Deprecated(SettleWithVelocityDeprecated, level = DeprecationLevel.WARNING)
-    suspend fun settle(velocity: Float): Float {
+    public suspend fun settle(velocity: Float): Float {
         requirePrecondition(usePreModifierChangeBehavior) {
             "AnchoredDraggableState was configured through " +
                 "a constructor without providing positional and velocity threshold. This " +
@@ -1039,7 +1074,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
                 currentOffset = requireOffset(),
                 velocity = velocity,
                 positionalThreshold,
-                velocityThreshold
+                velocityThreshold,
             )
         return if (confirmValueChange(targetValue)) {
             animateToWithDecay(targetValue, velocity)
@@ -1118,9 +1153,9 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @param dragPriority of the drag operation
      * @param block perform anchored drag given the current anchor provided
      */
-    suspend fun anchoredDrag(
+    public suspend fun anchoredDrag(
         dragPriority: MutatePriority = MutatePriority.Default,
-        block: suspend AnchoredDragScope.(anchors: DraggableAnchors<T>) -> Unit
+        block: suspend AnchoredDragScope.(anchors: DraggableAnchors<T>) -> Unit,
     ) {
         dragMutex.mutate(dragPriority) {
             restartable(inputs = { anchors }) { latestAnchors ->
@@ -1161,10 +1196,10 @@ class AnchoredDraggableState<T>(initialValue: T) {
      * @param dragPriority of the drag operation
      * @param block perform anchored drag given the current anchor provided
      */
-    suspend fun anchoredDrag(
+    public suspend fun anchoredDrag(
         targetValue: T,
         dragPriority: MutatePriority = MutatePriority.Default,
-        block: suspend AnchoredDragScope.(anchor: DraggableAnchors<T>, targetValue: T) -> Unit
+        block: suspend AnchoredDragScope.(anchor: DraggableAnchors<T>, targetValue: T) -> Unit,
     ) {
         if (anchors.hasPositionFor(targetValue)) {
             try {
@@ -1201,7 +1236,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
     internal fun newOffsetForDelta(delta: Float) =
         ((if (offset.isNaN()) 0f else offset) + delta).coerceIn(
             anchors.minPosition(),
-            anchors.maxPosition()
+            anchors.maxPosition(),
         )
 
     /**
@@ -1209,7 +1244,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
      *
      * @return The delta the consumed by the [AnchoredDraggableState]
      */
-    fun dispatchRawDelta(delta: Float): Float {
+    public fun dispatchRawDelta(delta: Float): Float {
         val newOffset = newOffsetForDelta(delta)
         val consumedDelta = (newOffset - requireOffset())
         anchoredDragScope.dragTo(newOffset)
@@ -1236,18 +1271,20 @@ class AnchoredDraggableState<T>(initialValue: T) {
             }
         }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [AnchoredDraggableState]. */
-        fun <T : Any> Saver() =
+        public fun <T : Any> Saver(): Saver<AnchoredDraggableState<T>, T> =
             Saver<AnchoredDraggableState<T>, T>(
                 save = { it.currentValue },
-                restore = { AnchoredDraggableState(initialValue = it) }
+                restore = { AnchoredDraggableState(initialValue = it) },
             )
 
         /** The default [Saver] implementation for [AnchoredDraggableState]. */
         @Deprecated(ConfirmValueChangeDeprecated, level = DeprecationLevel.WARNING)
         @Suppress("DEPRECATION")
-        fun <T : Any> Saver(confirmValueChange: (T) -> Boolean = { true }) =
+        public fun <T : Any> Saver(
+            confirmValueChange: (T) -> Boolean = { true }
+        ): Saver<AnchoredDraggableState<T>, T> =
             Saver<AnchoredDraggableState<T>, T>(
                 save = { it.currentValue },
                 restore = {
@@ -1255,13 +1292,13 @@ class AnchoredDraggableState<T>(initialValue: T) {
                         initialValue = it,
                         confirmValueChange = confirmValueChange,
                     )
-                }
+                },
             )
 
         /** The default [Saver] implementation for [AnchoredDraggableState]. */
         @Deprecated(ConfigurationMovedToModifier, level = DeprecationLevel.WARNING)
         @Suppress("DEPRECATION")
-        fun <T : Any> Saver(
+        public fun <T : Any> Saver(
             snapAnimationSpec: AnimationSpec<Float>,
             decayAnimationSpec: DecayAnimationSpec<Float>,
             positionalThreshold: (distance: Float) -> Float,
@@ -1277,9 +1314,9 @@ class AnchoredDraggableState<T>(initialValue: T) {
                         positionalThreshold = positionalThreshold,
                         velocityThreshold = velocityThreshold,
                         snapAnimationSpec = snapAnimationSpec,
-                        decayAnimationSpec = decayAnimationSpec
+                        decayAnimationSpec = decayAnimationSpec,
                     )
-                }
+                },
             )
     }
 }
@@ -1293,7 +1330,7 @@ class AnchoredDraggableState<T>(initialValue: T) {
  * @throws CancellationException if the interaction interrupted by another interaction like a
  *   gesture interaction or another programmatic interaction like a [animateTo] or [snapTo] call.
  */
-suspend fun <T> AnchoredDraggableState<T>.snapTo(targetValue: T) {
+public suspend fun <T> AnchoredDraggableState<T>.snapTo(targetValue: T) {
     anchoredDrag(targetValue = targetValue) { anchors, latestTarget ->
         val targetOffset = anchors.positionOf(latestTarget)
         if (!targetOffset.isNaN()) dragTo(targetOffset)
@@ -1334,12 +1371,12 @@ private suspend fun <T> AnchoredDraggableState<T>.animateTo(
  * @throws CancellationException if the interaction interrupted by another interaction like a
  *   gesture interaction or another programmatic interaction like a [animateTo] or [snapTo] call.
  */
-suspend fun <T> AnchoredDraggableState<T>.animateTo(
+public suspend fun <T> AnchoredDraggableState<T>.animateTo(
     targetValue: T,
     animationSpec: AnimationSpec<Float> =
         if (usePreModifierChangeBehavior) {
             @Suppress("DEPRECATION") this.snapAnimationSpec
-        } else AnchoredDraggableDefaults.SnapAnimationSpec
+        } else AnchoredDraggableDefaults.SnapAnimationSpec,
 ) {
     anchoredDrag(targetValue = targetValue) { anchors, latestTarget ->
         animateTo(lastVelocity, this, anchors, latestTarget, animationSpec)
@@ -1365,7 +1402,7 @@ suspend fun <T> AnchoredDraggableState<T>.animateTo(
  * @throws CancellationException if the interaction interrupted bt another interaction like a
  *   gesture interaction or another programmatic interaction like [animateTo] or [snapTo] call.
  */
-suspend fun <T> AnchoredDraggableState<T>.animateToWithDecay(
+public suspend fun <T> AnchoredDraggableState<T>.animateToWithDecay(
     targetValue: T,
     velocity: Float,
     snapAnimationSpec: AnimationSpec<Float> =
@@ -1375,7 +1412,7 @@ suspend fun <T> AnchoredDraggableState<T>.animateToWithDecay(
     decayAnimationSpec: DecayAnimationSpec<Float> =
         if (usePreModifierChangeBehavior) {
             @Suppress("DEPRECATION") this.decayAnimationSpec
-        } else AnchoredDraggableDefaults.DecayAnimationSpec
+        } else AnchoredDraggableDefaults.DecayAnimationSpec,
 ): Float {
     var remainingVelocity = velocity
     anchoredDrag(targetValue = targetValue) { anchors, latestTarget ->
@@ -1451,7 +1488,7 @@ private fun <T> DraggableAnchors<T>.computeTarget(
     currentOffset: Float,
     velocity: Float,
     positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float
+    velocityThreshold: () -> Float,
 ): T {
     val currentAnchors = this
     require(!currentOffset.isNaN()) { "The offset provided to computeTarget must not be NaN." }
@@ -1482,16 +1519,16 @@ private fun <T> DraggableAnchors<T>.computeTarget(
 /**
  * Contains useful defaults for use with [AnchoredDraggableState] and [Modifier.anchoredDraggable]
  */
-object AnchoredDraggableDefaults {
+public object AnchoredDraggableDefaults {
 
     /** The default spec for snapping, a tween spec */
-    val SnapAnimationSpec: AnimationSpec<Float> = tween()
+    public val SnapAnimationSpec: AnimationSpec<Float> = tween()
 
     /** The default positional threshold, 50% of the distance */
-    val PositionalThreshold: (Float) -> Float = { distance -> distance / 2f }
+    public val PositionalThreshold: (Float) -> Float = { distance -> distance / 2f }
 
     /** The default spec for decaying, an exponential decay */
-    val DecayAnimationSpec: DecayAnimationSpec<Float> = exponentialDecay()
+    public val DecayAnimationSpec: DecayAnimationSpec<Float> = exponentialDecay()
 
     /**
      * Create and remember a [TargetedFlingBehavior] for use with [Modifier.anchoredDraggable] that
@@ -1515,10 +1552,10 @@ object AnchoredDraggableDefaults {
      * @param animationSpec The animation spec used to perform the settling
      */
     @Composable
-    fun <T> flingBehavior(
+    public fun <T> flingBehavior(
         state: AnchoredDraggableState<T>,
         positionalThreshold: (totalDistance: Float) -> Float = PositionalThreshold,
-        animationSpec: AnimationSpec<Float> = SnapAnimationSpec
+        animationSpec: AnimationSpec<Float> = SnapAnimationSpec,
     ): TargetedFlingBehavior {
         val density = LocalDensity.current
         return remember(density, state, positionalThreshold, animationSpec) {
@@ -1526,7 +1563,7 @@ object AnchoredDraggableDefaults {
                 state = state,
                 density = density,
                 positionalThreshold = positionalThreshold,
-                snapAnimationSpec = animationSpec
+                snapAnimationSpec = animationSpec,
             )
         }
     }
@@ -1567,7 +1604,7 @@ private val GetOrNan: (Int) -> Float = { Float.NaN }
 
 private class DefaultDraggableAnchors<T>(
     private val keys: List<T>,
-    private val anchors: FloatArray
+    private val anchors: FloatArray,
 ) : DraggableAnchors<T> {
 
     init {
@@ -1594,6 +1631,7 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
+        if (minAnchorIndex == -1) return null
         return keys[minAnchorIndex]
     }
 
@@ -1608,12 +1646,13 @@ private class DefaultDraggableAnchors<T>(
                 minDistance = distance
             }
         }
+        if (minAnchorIndex == -1) return null
         return keys[minAnchorIndex]
     }
 
-    override fun minPosition() = anchors.minOrNull() ?: Float.NaN
+    override fun minPosition() = anchors.minOrNaN()
 
-    override fun maxPosition() = anchors.maxOrNull() ?: Float.NaN
+    override fun maxPosition() = anchors.maxOrNaN()
 
     override val size = anchors.size
 
@@ -1650,9 +1689,34 @@ private class DefaultDraggableAnchors<T>(
         }
         append("})")
     }
+
+    // Kotlin stdlib's FloatArray#min/max implementations throw an exception when the array is empty
+    //  This would add more overhead than needed for us, so we use our own.
+    private fun FloatArray.minOrNaN(): Float {
+        if (isEmpty()) return Float.NaN
+        var min = this[0]
+        for (i in 1..lastIndex) {
+            val e = this[i]
+            min = minOf(min, e)
+        }
+        return min
+    }
+
+    // Kotlin stdlib's FloatArray#min/max implementations throw an exception when the array is empty
+    //  This would add more overhead than needed for us, so we use our own.
+    private fun FloatArray.maxOrNaN(): Float {
+        if (isEmpty()) return Float.NaN
+        var min = this[0]
+        for (i in 1..lastIndex) {
+            val e = this[i]
+            min = maxOf(min, e)
+        }
+        return min
+    }
 }
 
-internal val AnchoredDraggableMinFlingVelocity = 125.dp
+internal val AnchoredDraggableMinFlingVelocity
+    get() = 125.dp
 
 private const val ConfigurationMovedToModifier =
     "This constructor of " +
@@ -1686,7 +1750,7 @@ internal fun <T> anchoredDraggableFlingBehavior(
     state: AnchoredDraggableState<T>,
     density: Density,
     positionalThreshold: (totalDistance: Float) -> Float,
-    snapAnimationSpec: AnimationSpec<Float>
+    snapAnimationSpec: AnimationSpec<Float>,
 ): TargetedFlingBehavior =
     snapFlingBehavior(
         decayAnimationSpec = NoOpDecayAnimationSpec,
@@ -1695,14 +1759,14 @@ internal fun <T> anchoredDraggableFlingBehavior(
             AnchoredDraggableLayoutInfoProvider(
                 state = state,
                 positionalThreshold = positionalThreshold,
-                velocityThreshold = { with(density) { 125.dp.toPx() } }
-            )
+                velocityThreshold = { with(density) { AnchoredDraggableMinFlingVelocity.toPx() } },
+            ),
     )
 
 private fun <T> AnchoredDraggableLayoutInfoProvider(
     state: AnchoredDraggableState<T>,
     positionalThreshold: (totalDistance: Float) -> Float,
-    velocityThreshold: () -> Float
+    velocityThreshold: () -> Float,
 ): SnapLayoutInfoProvider =
     object : SnapLayoutInfoProvider {
 
@@ -1711,14 +1775,20 @@ private fun <T> AnchoredDraggableLayoutInfoProvider(
 
         override fun calculateSnapOffset(velocity: Float): Float {
             val currentOffset = state.requireOffset()
-            val target =
+            val proposedTargetValue =
                 state.anchors.computeTarget(
                     currentOffset = currentOffset,
                     velocity = velocity,
                     positionalThreshold = positionalThreshold,
-                    velocityThreshold = velocityThreshold
+                    velocityThreshold = velocityThreshold,
                 )
-            return state.anchors.positionOf(target) - currentOffset
+            val targetValue =
+                if (state.confirmValueChange(proposedTargetValue)) {
+                    proposedTargetValue
+                } else {
+                    state.settledValue
+                }
+            return state.anchors.positionOf(targetValue) - currentOffset
         }
     }
 
@@ -1729,7 +1799,7 @@ private val NoOpDecayAnimationSpec: DecayAnimationSpec<Float> =
             override fun getValueFromNanos(
                 playTimeNanos: Long,
                 initialValue: Float,
-                initialVelocity: Float
+                initialVelocity: Float,
             ) = 0f
 
             override fun getDurationNanos(initialValue: Float, initialVelocity: Float) = 0L
@@ -1737,7 +1807,7 @@ private val NoOpDecayAnimationSpec: DecayAnimationSpec<Float> =
             override fun getVelocityFromNanos(
                 playTimeNanos: Long,
                 initialValue: Float,
-                initialVelocity: Float
+                initialVelocity: Float,
             ) = 0f
 
             override fun getTargetValue(initialValue: Float, initialVelocity: Float) = 0f

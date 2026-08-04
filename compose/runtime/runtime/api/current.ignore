@@ -1,11 +1,7 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.runtime.Composer#getCompositeKeyHashCode():
-    Added method androidx.compose.runtime.Composer.getCompositeKeyHashCode()
-
-
-RemovedClass: androidx.compose.runtime.Immutable:
-    Removed class androidx.compose.runtime.Immutable
-RemovedClass: androidx.compose.runtime.Stable:
-    Removed class androidx.compose.runtime.Stable
-RemovedClass: androidx.compose.runtime.StableMarker:
-    Removed class androidx.compose.runtime.StableMarker
+ChangedAnnotationRetention: androidx.compose.runtime.internal.FunctionKeyMeta:
+    Class androidx.compose.runtime.internal.FunctionKeyMeta incompatibly changed its retention from RUNTIME to BINARY
+ChangedAnnotationRetention: androidx.compose.runtime.internal.FunctionKeyMeta.Container:
+    Class androidx.compose.runtime.internal.FunctionKeyMeta.Container incompatibly changed its retention from RUNTIME to BINARY
+AddedAbstractMethod: androidx.compose.runtime.RecomposerInfo#getErrorState():
+    Binary breaking change: Added method androidx.compose.runtime.RecomposerInfo.getErrorState()

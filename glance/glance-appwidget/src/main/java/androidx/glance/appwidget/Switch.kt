@@ -36,14 +36,14 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 
 /** Set of colors to apply to a Switch depending on the checked state. */
-sealed class SwitchColors {
+public sealed class SwitchColors {
     internal abstract val thumb: CheckableColorProvider
     internal abstract val track: CheckableColorProvider
 }
 
 internal data class SwitchColorsImpl(
     override val thumb: CheckableColorProvider,
-    override val track: CheckableColorProvider
+    override val track: CheckableColorProvider,
 ) : SwitchColors()
 
 /**
@@ -52,9 +52,10 @@ internal data class SwitchColorsImpl(
  * @param checked whether the switch is checked
  * @param onCheckedChange the action to be run when the switch is clicked. The current value of
  *   checked is provided to this action in its ActionParameters, and can be retrieved using the
- *   [ToggleableStateKey]. If this action launches an activity, the current value of checked will be
- *   passed as an intent extra with the name [RemoteViews.EXTRA_CHECKED]. In order to allow the
- *   Launcher to provide this extra on Android version S and later, we use a mutable PendingIntent
+ *   [androidx.glance.appwidget.action.ToggleableStateKey]. If this action launches an activity, the
+ *   current value of checked will be passed as an intent extra with the name
+ *   [android.widget.RemoteViews.EXTRA_CHECKED]. In order to allow the Launcher to provide this
+ *   extra on Android version S and later, we use a mutable PendingIntent
  *   ([android.app.PendingIntent.FLAG_MUTABLE]) when this action is not a lambda. Before S, and for
  *   lambda actions, this will be an immutable PendingIntent.
  * @param modifier the modifier to apply to the switch
@@ -65,7 +66,7 @@ internal data class SwitchColorsImpl(
  *   If the text exceeds the given number of lines, it will be truncated.
  */
 @Composable
-fun Switch(
+public fun Switch(
     checked: Boolean,
     onCheckedChange: Action?,
     modifier: GlanceModifier = GlanceModifier,
@@ -73,7 +74,7 @@ fun Switch(
     style: TextStyle? = null,
     colors: SwitchColors = SwitchDefaults.colors(),
     maxLines: Int = Int.MAX_VALUE,
-) = SwitchElement(checked, onCheckedChange, modifier, text, style, colors, maxLines)
+): Unit = SwitchElement(checked, onCheckedChange, modifier, text, style, colors, maxLines)
 
 /**
  * Adds a switch view to the glance view.
@@ -88,7 +89,7 @@ fun Switch(
  *   If the text exceeds the given number of lines, it will be truncated.
  */
 @Composable
-fun Switch(
+public fun Switch(
     checked: Boolean,
     onCheckedChange: () -> Unit,
     modifier: GlanceModifier = GlanceModifier,
@@ -96,7 +97,8 @@ fun Switch(
     style: TextStyle? = null,
     colors: SwitchColors = SwitchDefaults.colors(),
     maxLines: Int = Int.MAX_VALUE,
-) = SwitchElement(checked, action(block = onCheckedChange), modifier, text, style, colors, maxLines)
+): Unit =
+    SwitchElement(checked, action(block = onCheckedChange), modifier, text, style, colors, maxLines)
 
 /**
  * Adds a switch view to the glance view.
@@ -116,7 +118,7 @@ fun Switch(
  */
 @ExperimentalGlanceApi
 @Composable
-fun Switch(
+public fun Switch(
     checked: Boolean,
     onCheckedChange: () -> Unit,
     modifier: GlanceModifier = GlanceModifier,
@@ -125,10 +127,11 @@ fun Switch(
     colors: SwitchColors = SwitchDefaults.colors(),
     maxLines: Int = Int.MAX_VALUE,
     key: String? = null,
-) = SwitchElement(checked, action(key, onCheckedChange), modifier, text, style, colors, maxLines)
+): Unit =
+    SwitchElement(checked, action(key, onCheckedChange), modifier, text, style, colors, maxLines)
 
 /** Contains the default values used by [Switch]. */
-object SwitchDefaults {
+public object SwitchDefaults {
 
     /**
      * SwitchColors to tint the thumb and track of the [Switch] according to the checked state.
@@ -141,7 +144,7 @@ object SwitchDefaults {
      *   checked
      */
     @Composable
-    fun colors(
+    public fun colors(
         checkedThumbColor: ColorProvider,
         uncheckedThumbColor: ColorProvider,
         checkedTrackColor: ColorProvider,
@@ -151,11 +154,11 @@ object SwitchDefaults {
             checkedThumbColor = checkedThumbColor,
             uncheckedThumbColor = uncheckedThumbColor,
             checkedTrackColor = checkedTrackColor,
-            uncheckedTrackColor = uncheckedTrackColor
+            uncheckedTrackColor = uncheckedTrackColor,
         )
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun switchColors(
+    public fun switchColors(
         checkedThumbColor: ColorProvider,
         uncheckedThumbColor: ColorProvider,
         checkedTrackColor: ColorProvider,
@@ -173,7 +176,7 @@ object SwitchDefaults {
                     source = "SwitchColors",
                     checked = checkedTrackColor,
                     unchecked = uncheckedTrackColor,
-                )
+                ),
         )
     }
 
@@ -183,11 +186,11 @@ object SwitchDefaults {
      * @return a default set of [SwitchColors].
      */
     @Composable
-    fun colors(): SwitchColors {
+    public fun colors(): SwitchColors {
         return if (GlanceTheme.colors == DynamicThemeColorProviders) {
             SwitchColorsImpl(
                 thumb = ResourceCheckableColorProvider(R.color.glance_default_switch_thumb),
-                track = ResourceCheckableColorProvider(R.color.glance_default_switch_track)
+                track = ResourceCheckableColorProvider(R.color.glance_default_switch_track),
             )
         } else {
             colors(
@@ -225,12 +228,12 @@ private fun SwitchElement(
             this.set(style) { this.style = it }
             this.set(colors) { this.colors = it }
             this.set(maxLines) { this.maxLines = it }
-        }
+        },
     )
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class EmittableSwitch(var colors: SwitchColors) : EmittableCheckable() {
+public class EmittableSwitch(public var colors: SwitchColors) : EmittableCheckable() {
     override var modifier: GlanceModifier = GlanceModifier
 
     override fun copy(): Emittable =

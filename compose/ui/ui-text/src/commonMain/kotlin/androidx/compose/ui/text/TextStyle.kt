@@ -43,10 +43,11 @@ import androidx.compose.ui.unit.TextUnit
 import kotlin.jvm.JvmName
 
 /**
- * Styling configuration for a `Text`.
+ * Styling configuration for text.
  *
  * @sample androidx.compose.ui.text.samples.TextStyleSample
- * @param platformStyle Platform specific [TextStyle] parameters.
+ * @sample androidx.compose.ui.text.samples.TextStyleBrushSample
+ * @param platformStyle platform specific [TextStyle] parameters
  * @see AnnotatedString
  * @see SpanStyle
  * @see ParagraphStyle
@@ -54,11 +55,11 @@ import kotlin.jvm.JvmName
 // Maintainer note: When adding a new constructor or copy parameter, make sure to add a test case to
 // TextStyleInvalidationTest to ensure the correct phase(s) get invalidated.
 @Immutable
-class TextStyle
+public class TextStyle
 internal constructor(
     internal val spanStyle: SpanStyle,
     internal val paragraphStyle: ParagraphStyle,
-    val platformStyle: PlatformTextStyle? = null,
+    public val platformStyle: PlatformTextStyle? = null,
 ) {
     internal constructor(
         spanStyle: SpanStyle,
@@ -67,16 +68,16 @@ internal constructor(
         spanStyle = spanStyle,
         paragraphStyle = paragraphStyle,
         platformStyle =
-            createPlatformTextStyleInternal(spanStyle.platformStyle, paragraphStyle.platformStyle)
+            createPlatformTextStyleInternal(spanStyle.platformStyle, paragraphStyle.platformStyle),
     )
 
     @Deprecated(
         "TextStyle constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -94,7 +95,7 @@ internal constructor(
         textAlign: TextAlign? = null,
         textDirection: TextDirection? = null,
         lineHeight: TextUnit = TextUnit.Unspecified,
-        textIndent: TextIndent? = null
+        textIndent: TextIndent? = null,
     ) : this(
         SpanStyle(
             color = color,
@@ -112,7 +113,7 @@ internal constructor(
             textDecoration = textDecoration,
             shadow = shadow,
             platformStyle = null,
-            drawStyle = null
+            drawStyle = null,
         ),
         ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -123,18 +124,18 @@ internal constructor(
             lineHeightStyle = null,
             lineBreak = LineBreak.Unspecified,
             hyphens = Hyphens.Unspecified,
-            textMotion = null
+            textMotion = null,
         ),
-        platformStyle = null
+        platformStyle = null,
     )
 
     @Deprecated(
         "TextStyle constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -154,7 +155,7 @@ internal constructor(
         lineHeight: TextUnit = TextUnit.Unspecified,
         textIndent: TextIndent? = null,
         platformStyle: PlatformTextStyle? = null,
-        lineHeightStyle: LineHeightStyle? = null
+        lineHeightStyle: LineHeightStyle? = null,
     ) : this(
         SpanStyle(
             color = color,
@@ -172,7 +173,7 @@ internal constructor(
             textDecoration = textDecoration,
             shadow = shadow,
             platformStyle = platformStyle?.spanStyle,
-            drawStyle = null
+            drawStyle = null,
         ),
         ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -183,9 +184,9 @@ internal constructor(
             lineHeightStyle = lineHeightStyle,
             lineBreak = LineBreak.Unspecified,
             hyphens = Hyphens.Unspecified,
-            textMotion = null
+            textMotion = null,
         ),
-        platformStyle = platformStyle
+        platformStyle = platformStyle,
     )
 
     /**
@@ -228,9 +229,9 @@ internal constructor(
         "TextStyle constructors that do not take new stable parameters " +
             "like TextMotion are deprecated. Please use the new stable " +
             "constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -252,7 +253,7 @@ internal constructor(
         platformStyle: PlatformTextStyle? = null,
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak? = null,
-        hyphens: Hyphens? = null
+        hyphens: Hyphens? = null,
     ) : this(
         SpanStyle(
             color = color,
@@ -269,7 +270,7 @@ internal constructor(
             background = background,
             textDecoration = textDecoration,
             shadow = shadow,
-            platformStyle = platformStyle?.spanStyle
+            platformStyle = platformStyle?.spanStyle,
         ),
         ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -279,9 +280,9 @@ internal constructor(
             platformStyle = platformStyle?.paragraphStyle,
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak ?: LineBreak.Unspecified,
-            hyphens = hyphens ?: Hyphens.Unspecified
+            hyphens = hyphens ?: Hyphens.Unspecified,
         ),
-        platformStyle = platformStyle
+        platformStyle = platformStyle,
     )
 
     @Deprecated(
@@ -289,9 +290,9 @@ internal constructor(
             "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
             "where these parameters are non-nullable. Null value has been replaced by a special " +
             "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -333,7 +334,7 @@ internal constructor(
             textDecoration = textDecoration,
             shadow = shadow,
             platformStyle = platformStyle?.spanStyle,
-            drawStyle = drawStyle
+            drawStyle = drawStyle,
         ),
         ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -344,51 +345,46 @@ internal constructor(
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak ?: LineBreak.Unspecified,
             hyphens = hyphens ?: Hyphens.Unspecified,
-            textMotion = textMotion
+            textMotion = textMotion,
         ),
-        platformStyle = platformStyle
+        platformStyle = platformStyle,
     )
 
     /**
-     * Styling configuration for a `Text`.
+     * Styling configuration for text.
      *
      * @sample androidx.compose.ui.text.samples.TextStyleSample
-     * @param color The text color.
-     * @param fontSize The size of glyphs to use when painting the text. This may be
-     *   [TextUnit.Unspecified] for inheriting from another [TextStyle].
-     * @param fontWeight The typeface thickness to use when painting the text (e.g., bold).
-     * @param fontStyle The typeface variant to use when drawing the letters (e.g., italic).
-     * @param fontSynthesis Whether to synthesize font weight and/or style when the requested weight
-     *   or style cannot be found in the provided font family.
-     * @param fontFamily The font family to be used when rendering the text.
-     * @param fontFeatureSettings The advanced typography settings provided by font. The format is
-     *   the same as the CSS font-feature-settings attribute:
-     *   https://www.w3.org/TR/css-fonts-3/#font-feature-settings-prop
-     * @param letterSpacing The amount of space to add between each letter.
-     * @param baselineShift The amount by which the text is shifted up from the current baseline.
-     * @param textGeometricTransform The geometric transformation applied the text.
-     * @param localeList The locale list used to select region-specific glyphs.
-     * @param background The background color for the text.
-     * @param textDecoration The decorations to paint on the text (e.g., an underline).
-     * @param shadow The shadow effect applied on the text.
-     * @param drawStyle Drawing style of text, whether fill in the text while drawing or stroke
-     *   around the edges.
-     * @param textAlign The alignment of the text within the lines of the paragraph.
-     * @param textDirection The algorithm to be used to resolve the final text and paragraph
-     *   direction: Left To Right or Right To Left. If no value is provided the system will use the
-     *   [LayoutDirection] as the primary signal.
-     * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM.
-     * @param textIndent The indentation of the paragraph.
-     * @param platformStyle Platform specific [TextStyle] parameters.
-     * @param lineHeightStyle the configuration for line height such as vertical alignment of the
-     *   line, whether to apply additional space as a result of line height to top of first line top
-     *   and bottom of last line. The configuration is applied only when a [lineHeight] is defined.
-     *   When null, [LineHeightStyle.Default] is used.
-     * @param lineBreak The line breaking configuration for the text.
-     * @param hyphens The configuration of hyphenation.
-     * @param textMotion Text character placement, whether to optimize for animated or static text.
+     * @param color color to apply to the text
+     * @param fontSize glyph size. If [TextUnit.Unspecified], inherits size from parent or default
+     *   style.
+     * @param fontWeight typeface thickness (e.g., bold)
+     * @param fontStyle typeface variant (e.g., italic)
+     * @param fontSynthesis font synthesis rules to fallback to bold/italic if the requested style
+     *   is missing in [fontFamily]
+     * @param fontFamily font family for rendering
+     * @param fontFeatureSettings advanced font features in CSS format (e.g., "smcp" for small caps)
+     * @param letterSpacing amount of space (in SP or EM) to add between letters. If
+     *   [TextUnit.Unspecified], inherits from parent.
+     * @param baselineShift vertical shift amount from the baseline (e.g., for superscript or
+     *   subscript)
+     * @param textGeometricTransform geometric transformation to apply
+     * @param localeList locale list for region-specific glyphs
+     * @param background color of background rectangle covering entire line height from start to end
+     * @param textDecoration decorations (e.g., underline)
+     * @param shadow shadow effect
+     * @param drawStyle drawing style (fill or stroke)
+     * @param textAlign alignment of the text within the lines of the paragraph.
+     * @param textDirection [TextDirection] direction resolution algorithm, defaults to
+     *   [LayoutDirection] signal
+     * @param lineHeight line height
+     * @param textIndent paragraph indentation
+     * @param platformStyle platform-specific parameters
+     * @param lineHeightStyle line height distribution configuration
+     * @param lineBreak line breaking rules
+     * @param hyphens hyphenation configuration.
+     * @param textMotion [TextMotion] character placement optimization
      */
-    constructor(
+    public constructor(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -430,7 +426,7 @@ internal constructor(
             textDecoration = textDecoration,
             shadow = shadow,
             platformStyle = platformStyle?.spanStyle,
-            drawStyle = drawStyle
+            drawStyle = drawStyle,
         ),
         ParagraphStyle(
             textAlign = textAlign,
@@ -441,54 +437,47 @@ internal constructor(
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak,
             hyphens = hyphens,
-            textMotion = textMotion
+            textMotion = textMotion,
         ),
-        platformStyle = platformStyle
+        platformStyle = platformStyle,
     )
 
     /**
-     * Styling configuration for a `Text`.
+     * Styling configuration for text.
      *
      * @sample androidx.compose.ui.text.samples.TextStyleBrushSample
-     * @param brush The brush to use when painting the text. If brush is given as null, it will be
-     *   treated as unspecified. It is equivalent to calling the alternative color constructor with
-     *   [Color.Unspecified]
-     * @param alpha Opacity to be applied to [brush] from 0.0f to 1.0f representing fully
-     *   transparent to fully opaque respectively.
-     * @param fontSize The size of glyphs to use when painting the text. This may be
-     *   [TextUnit.Unspecified] for inheriting from another [TextStyle].
-     * @param fontWeight The typeface thickness to use when painting the text (e.g., bold).
-     * @param fontStyle The typeface variant to use when drawing the letters (e.g., italic).
-     * @param fontSynthesis Whether to synthesize font weight and/or style when the requested weight
-     *   or style cannot be found in the provided font family.
-     * @param fontFamily The font family to be used when rendering the text.
-     * @param fontFeatureSettings The advanced typography settings provided by font. The format is
-     *   the same as the CSS font-feature-settings attribute:
-     *   https://www.w3.org/TR/css-fonts-3/#font-feature-settings-prop
-     * @param letterSpacing The amount of space to add between each letter.
-     * @param baselineShift The amount by which the text is shifted up from the current baseline.
-     * @param textGeometricTransform The geometric transformation applied the text.
-     * @param localeList The locale list used to select region-specific glyphs.
-     * @param background The background color for the text.
-     * @param textDecoration The decorations to paint on the text (e.g., an underline).
-     * @param shadow The shadow effect applied on the text.
-     * @param drawStyle Drawing style of text, whether fill in the text while drawing or stroke
-     *   around the edges.
-     * @param textAlign The alignment of the text within the lines of the paragraph.
-     * @param textDirection The algorithm to be used to resolve the final text and paragraph
-     *   direction: Left To Right or Right To Left. If no value is provided the system will use the
-     *   [LayoutDirection] as the primary signal.
-     * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM.
-     * @param textIndent The indentation of the paragraph.
-     * @param platformStyle Platform specific [TextStyle] parameters.
-     * @param lineHeightStyle the configuration for line height such as vertical alignment of the
-     *   line, whether to apply additional space as a result of line height to top of first line top
-     *   and bottom of last line. The configuration is applied only when a [lineHeight] is defined.
-     * @param lineBreak The line breaking configuration for the text.
-     * @param hyphens The configuration of hyphenation.
-     * @param textMotion Text character placement, whether to optimize for animated or static text.
+     * @param brush [Brush] for painting text, null for unspecified
+     * @param alpha opacity applied to [brush] (0.0 to 1.0)
+     * @param fontSize glyph size. If [TextUnit.Unspecified], inherits size from parent or default
+     *   style.
+     * @param fontWeight typeface thickness (e.g., bold)
+     * @param fontStyle typeface variant (e.g., italic)
+     * @param fontSynthesis font synthesis rules to fallback to bold/italic if the requested style
+     *   is missing in [fontFamily]
+     * @param fontFamily font family for rendering
+     * @param fontFeatureSettings advanced font features in CSS format (e.g., "smcp" for small caps)
+     * @param letterSpacing amount of space (in SP or EM) to add between letters. If
+     *   [TextUnit.Unspecified], inherits from parent.
+     * @param baselineShift vertical shift amount from the baseline (e.g., for superscript or
+     *   subscript)
+     * @param textGeometricTransform geometric transformation to apply
+     * @param localeList locale list for region-specific glyphs
+     * @param background color of background rectangle covering entire line height from start to end
+     * @param textDecoration decorations (e.g., underline)
+     * @param shadow shadow effect
+     * @param drawStyle drawing style (fill or stroke)
+     * @param textAlign alignment of the text within the lines of the paragraph.
+     * @param textDirection [TextDirection] direction resolution algorithm, defaults to
+     *   [LayoutDirection] signal
+     * @param lineHeight line height
+     * @param textIndent paragraph indentation
+     * @param platformStyle platform-specific parameters
+     * @param lineHeightStyle line height distribution configuration
+     * @param lineBreak line breaking rules
+     * @param hyphens hyphenation configuration.
+     * @param textMotion [TextMotion] character placement optimization
      */
-    constructor(
+    public constructor(
         brush: Brush?,
         alpha: Float = Float.NaN,
         fontSize: TextUnit = TextUnit.Unspecified,
@@ -513,7 +502,7 @@ internal constructor(
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak = LineBreak.Unspecified,
         hyphens: Hyphens = Hyphens.Unspecified,
-        textMotion: TextMotion? = null
+        textMotion: TextMotion? = null,
     ) : this(
         SpanStyle(
             brush = brush,
@@ -532,7 +521,7 @@ internal constructor(
             textDecoration = textDecoration,
             shadow = shadow,
             platformStyle = platformStyle?.spanStyle,
-            drawStyle = drawStyle
+            drawStyle = drawStyle,
         ),
         ParagraphStyle(
             textAlign = textAlign,
@@ -543,9 +532,9 @@ internal constructor(
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak,
             hyphens = hyphens,
-            textMotion = textMotion
+            textMotion = textMotion,
         ),
-        platformStyle = platformStyle
+        platformStyle = platformStyle,
     )
 
     @Deprecated(
@@ -553,9 +542,9 @@ internal constructor(
             "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
             "where these parameters are non-nullable. Null value has been replaced by a special " +
             "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    constructor(
+    public constructor(
         brush: Brush?,
         alpha: Float = Float.NaN,
         fontSize: TextUnit = TextUnit.Unspecified,
@@ -580,7 +569,7 @@ internal constructor(
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak? = null,
         hyphens: Hyphens? = null,
-        textMotion: TextMotion? = null
+        textMotion: TextMotion? = null,
     ) : this(
         SpanStyle(
             brush = brush,
@@ -599,7 +588,7 @@ internal constructor(
             textDecoration = textDecoration,
             shadow = shadow,
             platformStyle = platformStyle?.spanStyle,
-            drawStyle = drawStyle
+            drawStyle = drawStyle,
         ),
         ParagraphStyle(
             textAlign = textAlign ?: TextAlign.Unspecified,
@@ -610,69 +599,50 @@ internal constructor(
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak ?: LineBreak.Unspecified,
             hyphens = hyphens ?: Hyphens.Unspecified,
-            textMotion = textMotion
+            textMotion = textMotion,
         ),
-        platformStyle = platformStyle
+        platformStyle = platformStyle,
     )
 
-    @Stable fun toSpanStyle(): SpanStyle = spanStyle
+    @Stable public fun toSpanStyle(): SpanStyle = spanStyle
 
-    @Stable fun toParagraphStyle(): ParagraphStyle = paragraphStyle
+    @Stable public fun toParagraphStyle(): ParagraphStyle = paragraphStyle
 
     /**
-     * Returns a new text style that is a combination of this style and the given [other] style.
+     * Merges this style with [other].
      *
-     * [other] text style's null or inherit properties are replaced with the non-null properties of
-     * this text style. Another way to think of it is that the "missing" properties of the [other]
-     * style are _filled_ by the properties of this style.
+     * Properties of [other] take precedence when they are not unspecified (e.g.
+     * [Color.Unspecified]). Returns this if [other] is null or [TextStyle.Default].
      *
-     * If the given text style is null, returns this text style.
+     * @param other style to merge
      */
     @Stable
-    fun merge(other: TextStyle? = null): TextStyle {
+    public fun merge(other: TextStyle? = null): TextStyle {
         if (other == null || other == Default) return this
         return TextStyle(
             spanStyle = toSpanStyle().merge(other.toSpanStyle()),
-            paragraphStyle = toParagraphStyle().merge(other.toParagraphStyle())
+            paragraphStyle = toParagraphStyle().merge(other.toParagraphStyle()),
         )
     }
 
     /**
-     * Fast merge non-default values and parameters.
+     * Merges this style with individual styling parameters.
      *
-     * This is the same algorithm as [merge] but does not require allocating it's parameter and may
-     * return this instead of allocating a result when all values are default.
+     * Similar to [merge] but avoids allocation if parameters are default.
      *
-     * This is a similar algorithm to [copy] but when either this or a parameter are set to a
-     * default value, the other value will take precedent.
+     * Always use this method over the [merge] (taking [TextStyle]) overload when you do not already
+     * have a [TextStyle] allocated. Prefer this over [copy] when building a theming system and
+     * applying styling information to a specific usage.
      *
-     * To explain better, consider the following examples:
+     * Example:
+     * - `this.color` = [Color.Unspecified], param `color` = [Color.Red] -> result [Color.Red]
+     * - `this.color` = [Color.Red], param `color` = [Color.Unspecified] -> result [Color.Red]
+     * - `this.color` = [Color.Red], param `color` = [Color.Blue] -> result [Color.Blue]
      *
-     * Example 1:
-     * - this.color = [Color.Unspecified]
-     * - [color] = [Color.Red]
-     * - result => [Color.Red]
-     *
-     * Example 2:
-     * - this.color = [Color.Red]
-     * - [color] = [Color.Unspecified]
-     * - result => [Color.Red]
-     *
-     * Example 3:
-     * - this.color = [Color.Red]
-     * - [color] = [Color.Blue]
-     * - result => [Color.Blue]
-     *
-     * You should _always_ use this method over the [merge]([TextStyle]) overload when you do not
-     * already have a TextStyle allocated. You should chose this over [copy] when building a theming
-     * system and applying styling information to a specific usage.
-     *
-     * @return this or a new TextLayoutResult with all parameters chosen to the non-default option
-     *   provided.
      * @see merge
      */
     @Stable
-    fun merge(
+    public fun merge(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -696,7 +666,7 @@ internal constructor(
         lineBreak: LineBreak = LineBreak.Unspecified,
         hyphens: Hyphens = Hyphens.Unspecified,
         platformStyle: PlatformTextStyle? = null,
-        textMotion: TextMotion? = null
+        textMotion: TextMotion? = null,
     ): TextStyle {
         val mergedSpanStyle: SpanStyle =
             spanStyle.fastMerge(
@@ -717,7 +687,7 @@ internal constructor(
                 textDecoration = textDecoration,
                 shadow = shadow,
                 platformStyle = platformStyle?.spanStyle,
-                drawStyle = drawStyle
+                drawStyle = drawStyle,
             )
         val mergedParagraphStyle: ParagraphStyle =
             paragraphStyle.fastMerge(
@@ -729,7 +699,7 @@ internal constructor(
                 lineHeightStyle = lineHeightStyle,
                 lineBreak = lineBreak,
                 hyphens = hyphens,
-                textMotion = textMotion
+                textMotion = textMotion,
             )
         if (spanStyle === mergedSpanStyle && paragraphStyle === mergedParagraphStyle) return this
         return TextStyle(mergedSpanStyle, mergedParagraphStyle)
@@ -740,10 +710,10 @@ internal constructor(
             "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
             "where these parameters are non-nullable. Null value has been replaced by a special " +
             "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     @Stable
-    fun merge(
+    public fun merge(
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
         fontWeight: FontWeight? = null,
@@ -767,7 +737,7 @@ internal constructor(
         lineBreak: LineBreak? = null,
         hyphens: Hyphens? = null,
         platformStyle: PlatformTextStyle? = null,
-        textMotion: TextMotion? = null
+        textMotion: TextMotion? = null,
     ): TextStyle {
         val mergedSpanStyle: SpanStyle =
             spanStyle.fastMerge(
@@ -788,7 +758,7 @@ internal constructor(
                 textDecoration = textDecoration,
                 shadow = shadow,
                 platformStyle = platformStyle?.spanStyle,
-                drawStyle = drawStyle
+                drawStyle = drawStyle,
             )
         val mergedParagraphStyle: ParagraphStyle =
             paragraphStyle.fastMerge(
@@ -800,7 +770,7 @@ internal constructor(
                 lineHeightStyle = lineHeightStyle,
                 lineBreak = lineBreak ?: LineBreak.Unspecified,
                 hyphens = hyphens ?: Hyphens.Unspecified,
-                textMotion = textMotion
+                textMotion = textMotion,
             )
         if (spanStyle === mergedSpanStyle && paragraphStyle === mergedParagraphStyle) return this
         return TextStyle(mergedSpanStyle, mergedParagraphStyle)
@@ -812,10 +782,10 @@ internal constructor(
      * @see merge
      */
     @Stable
-    fun merge(other: SpanStyle): TextStyle {
+    public fun merge(other: SpanStyle): TextStyle {
         return TextStyle(
             spanStyle = toSpanStyle().merge(other),
-            paragraphStyle = toParagraphStyle()
+            paragraphStyle = toParagraphStyle(),
         )
     }
 
@@ -825,29 +795,29 @@ internal constructor(
      * @see merge
      */
     @Stable
-    fun merge(other: ParagraphStyle): TextStyle {
+    public fun merge(other: ParagraphStyle): TextStyle {
         return TextStyle(
             spanStyle = toSpanStyle(),
-            paragraphStyle = toParagraphStyle().merge(other)
+            paragraphStyle = toParagraphStyle().merge(other),
         )
     }
 
     /** Plus operator overload that applies a [merge]. */
-    @Stable operator fun plus(other: TextStyle): TextStyle = this.merge(other)
+    @Stable public operator fun plus(other: TextStyle): TextStyle = this.merge(other)
 
     /** Plus operator overload that applies a [merge]. */
-    @Stable operator fun plus(other: ParagraphStyle): TextStyle = this.merge(other)
+    @Stable public operator fun plus(other: ParagraphStyle): TextStyle = this.merge(other)
 
     /** Plus operator overload that applies a [merge]. */
-    @Stable operator fun plus(other: SpanStyle): TextStyle = this.merge(other)
+    @Stable public operator fun plus(other: SpanStyle): TextStyle = this.merge(other)
 
     @Deprecated(
         "TextStyle copy constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "copy constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         color: Color = this.spanStyle.color,
         fontSize: TextUnit = this.spanStyle.fontSize,
         fontWeight: FontWeight? = this.spanStyle.fontWeight,
@@ -865,7 +835,7 @@ internal constructor(
         textAlign: TextAlign? = this.paragraphStyle.textAlign,
         textDirection: TextDirection? = this.paragraphStyle.textDirection,
         lineHeight: TextUnit = this.paragraphStyle.lineHeight,
-        textIndent: TextIndent? = this.paragraphStyle.textIndent
+        textIndent: TextIndent? = this.paragraphStyle.textIndent,
     ): TextStyle {
         return TextStyle(
             spanStyle =
@@ -890,7 +860,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = this.spanStyle.platformStyle,
-                    drawStyle = this.spanStyle.drawStyle
+                    drawStyle = this.spanStyle.drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -902,9 +872,9 @@ internal constructor(
                     lineHeightStyle = this.lineHeightStyle,
                     lineBreak = this.lineBreak,
                     hyphens = this.hyphens,
-                    textMotion = this.textMotion
+                    textMotion = this.textMotion,
                 ),
-            platformStyle = this.platformStyle
+            platformStyle = this.platformStyle,
         )
     }
 
@@ -912,9 +882,9 @@ internal constructor(
         "TextStyle copy constructors that do not take new stable parameters " +
             "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
             "copy constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         color: Color = this.spanStyle.color,
         fontSize: TextUnit = this.spanStyle.fontSize,
         fontWeight: FontWeight? = this.spanStyle.fontWeight,
@@ -934,7 +904,7 @@ internal constructor(
         lineHeight: TextUnit = this.paragraphStyle.lineHeight,
         textIndent: TextIndent? = this.paragraphStyle.textIndent,
         platformStyle: PlatformTextStyle? = this.platformStyle,
-        lineHeightStyle: LineHeightStyle? = this.paragraphStyle.lineHeightStyle
+        lineHeightStyle: LineHeightStyle? = this.paragraphStyle.lineHeightStyle,
     ): TextStyle {
         return TextStyle(
             spanStyle =
@@ -959,7 +929,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = platformStyle?.spanStyle,
-                    drawStyle = this.spanStyle.drawStyle
+                    drawStyle = this.spanStyle.drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -971,9 +941,9 @@ internal constructor(
                     lineHeightStyle = lineHeightStyle,
                     lineBreak = this.lineBreak,
                     hyphens = this.hyphens,
-                    textMotion = this.textMotion
+                    textMotion = this.textMotion,
                 ),
-            platformStyle = platformStyle
+            platformStyle = platformStyle,
         )
     }
 
@@ -981,9 +951,9 @@ internal constructor(
         "TextStyle copy constructors that do not take new stable parameters " +
             "like LineBreak, Hyphens, and TextMotion are deprecated. Please use the new stable " +
             "copy constructor.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         color: Color = this.spanStyle.color,
         fontSize: TextUnit = this.spanStyle.fontSize,
         fontWeight: FontWeight? = this.spanStyle.fontWeight,
@@ -1005,7 +975,7 @@ internal constructor(
         platformStyle: PlatformTextStyle? = this.platformStyle,
         lineHeightStyle: LineHeightStyle? = this.paragraphStyle.lineHeightStyle,
         lineBreak: LineBreak? = this.paragraphStyle.lineBreak,
-        hyphens: Hyphens? = this.paragraphStyle.hyphens
+        hyphens: Hyphens? = this.paragraphStyle.hyphens,
     ): TextStyle {
         return TextStyle(
             spanStyle =
@@ -1030,7 +1000,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = platformStyle?.spanStyle,
-                    drawStyle = this.drawStyle
+                    drawStyle = this.drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -1042,9 +1012,9 @@ internal constructor(
                     lineHeightStyle = lineHeightStyle,
                     lineBreak = lineBreak ?: LineBreak.Unspecified,
                     hyphens = hyphens ?: Hyphens.Unspecified,
-                    textMotion = this.textMotion
+                    textMotion = this.textMotion,
                 ),
-            platformStyle = platformStyle
+            platformStyle = platformStyle,
         )
     }
 
@@ -1053,9 +1023,9 @@ internal constructor(
             "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
             "where these parameters are non-nullable. Null value has been replaced by a special " +
             "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         color: Color = this.spanStyle.color,
         fontSize: TextUnit = this.spanStyle.fontSize,
         fontWeight: FontWeight? = this.spanStyle.fontWeight,
@@ -1104,7 +1074,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = platformStyle?.spanStyle,
-                    drawStyle = drawStyle
+                    drawStyle = drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -1116,13 +1086,13 @@ internal constructor(
                     lineHeightStyle = lineHeightStyle,
                     lineBreak = lineBreak ?: LineBreak.Unspecified,
                     hyphens = hyphens ?: Hyphens.Unspecified,
-                    textMotion = textMotion
+                    textMotion = textMotion,
                 ),
-            platformStyle = platformStyle
+            platformStyle = platformStyle,
         )
     }
 
-    fun copy(
+    public fun copy(
         color: Color = this.spanStyle.color,
         fontSize: TextUnit = this.spanStyle.fontSize,
         fontWeight: FontWeight? = this.spanStyle.fontWeight,
@@ -1171,7 +1141,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = platformStyle?.spanStyle,
-                    drawStyle = drawStyle
+                    drawStyle = drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -1183,9 +1153,9 @@ internal constructor(
                     lineHeightStyle = lineHeightStyle,
                     lineBreak = lineBreak,
                     hyphens = hyphens,
-                    textMotion = textMotion
+                    textMotion = textMotion,
                 ),
-            platformStyle = platformStyle
+            platformStyle = platformStyle,
         )
     }
 
@@ -1194,9 +1164,9 @@ internal constructor(
             "TextDirection, LineBreak, and Hyphens are deprecated. Please use a new constructor " +
             "where these parameters are non-nullable. Null value has been replaced by a special " +
             "Unspecified object for performance reason.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
-    fun copy(
+    public fun copy(
         brush: Brush?,
         alpha: Float = this.spanStyle.alpha,
         fontSize: TextUnit = this.spanStyle.fontSize,
@@ -1242,7 +1212,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = platformStyle?.spanStyle,
-                    drawStyle = drawStyle
+                    drawStyle = drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -1254,13 +1224,13 @@ internal constructor(
                     lineHeightStyle = lineHeightStyle,
                     lineBreak = lineBreak ?: LineBreak.Unspecified,
                     hyphens = hyphens ?: Hyphens.Unspecified,
-                    textMotion = textMotion
+                    textMotion = textMotion,
                 ),
-            platformStyle = platformStyle
+            platformStyle = platformStyle,
         )
     }
 
-    fun copy(
+    public fun copy(
         brush: Brush?,
         alpha: Float = this.spanStyle.alpha,
         fontSize: TextUnit = this.spanStyle.fontSize,
@@ -1306,7 +1276,7 @@ internal constructor(
                     textDecoration = textDecoration,
                     shadow = shadow,
                     platformStyle = platformStyle?.spanStyle,
-                    drawStyle = drawStyle
+                    drawStyle = drawStyle,
                 ),
             paragraphStyle =
                 ParagraphStyle(
@@ -1318,51 +1288,51 @@ internal constructor(
                     lineHeightStyle = lineHeightStyle,
                     lineBreak = lineBreak,
                     hyphens = hyphens,
-                    textMotion = textMotion
+                    textMotion = textMotion,
                 ),
-            platformStyle = platformStyle
+            platformStyle = platformStyle,
         )
     }
 
     /** The brush to use when drawing text. If not null, overrides [color]. */
-    val brush: Brush?
+    public val brush: Brush?
         get() = this.spanStyle.brush
 
     /** The text color. */
-    val color: Color
+    public val color: Color
         get() = this.spanStyle.color
 
     /**
      * Opacity of text. This value is either provided along side Brush, or via alpha channel in
      * color.
      */
-    val alpha: Float
+    public val alpha: Float
         get() = this.spanStyle.alpha
 
     /**
      * The size of glyphs to use when painting the text. This may be [TextUnit.Unspecified] for
      * inheriting from another [TextStyle].
      */
-    val fontSize: TextUnit
+    public val fontSize: TextUnit
         get() = this.spanStyle.fontSize
 
     /** The typeface thickness to use when painting the text (e.g., bold). */
-    val fontWeight: FontWeight?
+    public val fontWeight: FontWeight?
         get() = this.spanStyle.fontWeight
 
     /** The typeface variant to use when drawing the letters (e.g., italic). */
-    val fontStyle: FontStyle?
+    public val fontStyle: FontStyle?
         get() = this.spanStyle.fontStyle
 
     /**
      * Whether to synthesize font weight and/or style when the requested weight or style cannot be
      * found in the provided font family.
      */
-    val fontSynthesis: FontSynthesis?
+    public val fontSynthesis: FontSynthesis?
         get() = this.spanStyle.fontSynthesis
 
     /** The font family to be used when rendering the text. */
-    val fontFamily: FontFamily?
+    public val fontFamily: FontFamily?
         get() = this.spanStyle.fontFamily
 
     /**
@@ -1370,49 +1340,49 @@ internal constructor(
      * font-feature-settings attribute:
      * https://www.w3.org/TR/css-fonts-3/#font-feature-settings-prop
      */
-    val fontFeatureSettings: String?
+    public val fontFeatureSettings: String?
         get() = this.spanStyle.fontFeatureSettings
 
     /** The amount of space to add between each letter. */
-    val letterSpacing: TextUnit
+    public val letterSpacing: TextUnit
         get() = this.spanStyle.letterSpacing
 
     /** The amount by which the text is shifted up from the current baseline. */
-    val baselineShift: BaselineShift?
+    public val baselineShift: BaselineShift?
         get() = this.spanStyle.baselineShift
 
     /** The geometric transformation applied the text. */
-    val textGeometricTransform: TextGeometricTransform?
+    public val textGeometricTransform: TextGeometricTransform?
         get() = this.spanStyle.textGeometricTransform
 
     /** The locale list used to select region-specific glyphs. */
-    val localeList: LocaleList?
+    public val localeList: LocaleList?
         get() = this.spanStyle.localeList
 
     /** The background color for the text. */
-    val background: Color
+    public val background: Color
         get() = this.spanStyle.background
 
     /** The decorations to paint on the text (e.g., an underline). */
-    val textDecoration: TextDecoration?
+    public val textDecoration: TextDecoration?
         get() = this.spanStyle.textDecoration
 
     /** The shadow effect applied on the text. */
-    val shadow: Shadow?
+    public val shadow: Shadow?
         get() = this.spanStyle.shadow
 
     /** Drawing style of text, whether fill in the text while drawing or stroke around the edges. */
-    val drawStyle: DrawStyle?
+    public val drawStyle: DrawStyle?
         get() = this.spanStyle.drawStyle
 
     /** The alignment of the text within the lines of the paragraph. */
-    val textAlign: TextAlign
+    public val textAlign: TextAlign
         get() = this.paragraphStyle.textAlign
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getTextAlign-buA522U") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_textAlign: TextAlign?
+    public val deprecated_boxing_textAlign: TextAlign?
         get() = this.textAlign
 
     /**
@@ -1420,21 +1390,21 @@ internal constructor(
      * Right To Left. If no value is provided the system will use the [LayoutDirection] as the
      * primary signal.
      */
-    val textDirection: TextDirection
+    public val textDirection: TextDirection
         get() = this.paragraphStyle.textDirection
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getTextDirection-mmuk1to") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_textDirection: TextDirection?
+    public val deprecated_boxing_textDirection: TextDirection?
         get() = this.textDirection
 
     /** Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM. */
-    val lineHeight: TextUnit
+    public val lineHeight: TextUnit
         get() = this.paragraphStyle.lineHeight
 
     /** The indentation of the paragraph. */
-    val textIndent: TextIndent?
+    public val textIndent: TextIndent?
         get() = this.paragraphStyle.textIndent
 
     /**
@@ -1445,31 +1415,31 @@ internal constructor(
      *
      * When null, [LineHeightStyle.Default] is used.
      */
-    val lineHeightStyle: LineHeightStyle?
+    public val lineHeightStyle: LineHeightStyle?
         get() = this.paragraphStyle.lineHeightStyle
 
     /** The hyphens configuration of the paragraph. */
-    val hyphens: Hyphens
+    public val hyphens: Hyphens
         get() = this.paragraphStyle.hyphens
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getHyphens-EaSxIns") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_hyphens: Hyphens?
+    public val deprecated_boxing_hyphens: Hyphens?
         get() = this.hyphens
 
     /** The line breaking configuration of the paragraph. */
-    val lineBreak: LineBreak
+    public val lineBreak: LineBreak
         get() = this.paragraphStyle.lineBreak
 
     @Deprecated("Kept for backwards compatibility.", level = DeprecationLevel.WARNING)
     @get:JvmName("getLineBreak-LgCVezo") // b/320819734
     @Suppress("unused", "RedundantNullableReturnType", "PropertyName")
-    val deprecated_boxing_lineBreak: LineBreak?
+    public val deprecated_boxing_lineBreak: LineBreak?
         get() = this.lineBreak
 
     /** Text character placement configuration, whether to optimize for animated or static text. */
-    val textMotion: TextMotion?
+    public val textMotion: TextMotion?
         get() = this.paragraphStyle.textMotion
 
     override fun equals(other: Any?): Boolean {
@@ -1496,13 +1466,13 @@ internal constructor(
      *
      * @param other The TextStyle to compare to.
      */
-    fun hasSameLayoutAffectingAttributes(other: TextStyle): Boolean {
+    public fun hasSameLayoutAffectingAttributes(other: TextStyle): Boolean {
         return (this === other) ||
             (paragraphStyle == other.paragraphStyle &&
                 spanStyle.hasSameLayoutAffectingAttributes(other.spanStyle))
     }
 
-    fun hasSameDrawAffectingAttributes(other: TextStyle): Boolean {
+    public fun hasSameDrawAffectingAttributes(other: TextStyle): Boolean {
         return (this === other) || (spanStyle.hasSameNonLayoutAttributes(other.spanStyle))
     }
 
@@ -1551,9 +1521,9 @@ internal constructor(
             ")"
     }
 
-    companion object {
+    public companion object {
         /** Constant for default text style. */
-        @Stable val Default = TextStyle()
+        @Stable public val Default: TextStyle = TextStyle()
     }
 }
 
@@ -1569,10 +1539,10 @@ internal constructor(
  * timeline between [start] and [stop]. The interpolation can be extrapolated beyond 0.0 and 1.0, so
  * negative values and values greater than 1.0 are valid.
  */
-fun lerp(start: TextStyle, stop: TextStyle, fraction: Float): TextStyle {
+public fun lerp(start: TextStyle, stop: TextStyle, fraction: Float): TextStyle {
     return TextStyle(
         spanStyle = lerp(start.toSpanStyle(), stop.toSpanStyle(), fraction),
-        paragraphStyle = lerp(start.toParagraphStyle(), stop.toParagraphStyle(), fraction)
+        paragraphStyle = lerp(start.toParagraphStyle(), stop.toParagraphStyle(), fraction),
     )
 }
 
@@ -1585,17 +1555,17 @@ fun lerp(start: TextStyle, stop: TextStyle, fraction: Float): TextStyle {
  * @param direction a layout direction to be used for resolving text layout direction algorithm
  * @return resolved text style.
  */
-fun resolveDefaults(style: TextStyle, direction: LayoutDirection) =
+public fun resolveDefaults(style: TextStyle, direction: LayoutDirection): TextStyle =
     TextStyle(
         spanStyle = resolveSpanStyleDefaults(style.spanStyle),
         paragraphStyle = resolveParagraphStyleDefaults(style.paragraphStyle, direction),
-        platformStyle = style.platformStyle
+        platformStyle = style.platformStyle,
     )
 
 /** If [textDirection] is null returns a [TextDirection] based on [layoutDirection]. */
 internal fun resolveTextDirection(
     layoutDirection: LayoutDirection,
-    textDirection: TextDirection
+    textDirection: TextDirection,
 ): TextDirection {
     return when (textDirection) {
         TextDirection.Content ->
@@ -1614,7 +1584,7 @@ internal fun resolveTextDirection(
 
 private fun createPlatformTextStyleInternal(
     platformSpanStyle: PlatformSpanStyle?,
-    platformParagraphStyle: PlatformParagraphStyle?
+    platformParagraphStyle: PlatformParagraphStyle?,
 ): PlatformTextStyle? {
     return if (platformSpanStyle == null && platformParagraphStyle == null) {
         null

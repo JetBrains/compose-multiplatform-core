@@ -41,7 +41,7 @@ fun callStableAidlProcessor(
     packagedOutputDir: File? = null,
     dependencyFileProcessor: DependencyFileProcessor? = null,
     startDir: Path? = null,
-    inputFilePath: Path? = null
+    inputFilePath: Path? = null,
 ) {
     val builder = ProcessInfoBuilder()
     builder.setExecutable(aidlExecutable)

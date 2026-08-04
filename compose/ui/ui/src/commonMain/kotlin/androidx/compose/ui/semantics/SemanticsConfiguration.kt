@@ -17,7 +17,10 @@
 package androidx.compose.ui.semantics
 
 import androidx.collection.MutableScatterMap
+import androidx.collection.MutableScatterSet
+import androidx.collection.ScatterSet
 import androidx.collection.mutableScatterMapOf
+import androidx.collection.mutableScatterSetOf
 import androidx.compose.ui.platform.simpleIdentityToString
 
 /**
@@ -25,11 +28,15 @@ import androidx.compose.ui.platform.simpleIdentityToString
  *
  * The information provided in the configuration is used to to generate the semantics tree.
  */
-class SemanticsConfiguration :
+public class SemanticsConfiguration :
     SemanticsPropertyReceiver, Iterable<Map.Entry<SemanticsPropertyKey<*>, Any?>> {
 
     internal val props: MutableScatterMap<SemanticsPropertyKey<*>, Any?> = mutableScatterMapOf()
     private var mapWrapper: Map<SemanticsPropertyKey<*>, Any?>? = null
+
+    private var _accessibilityExtraKeys: MutableScatterSet<SemanticsPropertyKey<*>>? = null
+    internal val accessibilityExtraKeys: ScatterSet<SemanticsPropertyKey<*>>?
+        get() = _accessibilityExtraKeys
 
     /**
      * Retrieves the value for the given property, if one has been set. If a value has not been set,
@@ -37,7 +44,7 @@ class SemanticsConfiguration :
      */
     // Unavoidable, guaranteed by [set]
     @Suppress("UNCHECKED_CAST")
-    operator fun <T> get(key: SemanticsPropertyKey<T>): T {
+    public operator fun <T> get(key: SemanticsPropertyKey<T>): T {
         return props.getOrElse(key) {
             throw IllegalStateException("Key not present: $key - consider getOrElse or getOrNull")
         } as T
@@ -45,32 +52,37 @@ class SemanticsConfiguration :
 
     // Unavoidable, guaranteed by [set]
     @Suppress("UNCHECKED_CAST")
-    fun <T> getOrElse(key: SemanticsPropertyKey<T>, defaultValue: () -> T): T {
+    public fun <T> getOrElse(key: SemanticsPropertyKey<T>, defaultValue: () -> T): T {
         return props.getOrElse(key, defaultValue) as T
     }
 
     // Unavoidable, guaranteed by [set]
     @Suppress("UNCHECKED_CAST")
-    fun <T> getOrElseNullable(key: SemanticsPropertyKey<T>, defaultValue: () -> T?): T? {
+    public fun <T> getOrElseNullable(key: SemanticsPropertyKey<T>, defaultValue: () -> T?): T? {
         return props.getOrElse(key, defaultValue) as T?
     }
 
-    override fun iterator(): Iterator<Map.Entry<SemanticsPropertyKey<*>, Any?>> {
+    public override fun iterator(): Iterator<Map.Entry<SemanticsPropertyKey<*>, Any?>> {
         @Suppress("AsCollectionCall")
         val mapWrapper = mapWrapper ?: props.asMap().apply { mapWrapper = this }
         return mapWrapper.iterator()
     }
 
-    override fun <T> set(key: SemanticsPropertyKey<T>, value: T) {
+    public override fun <T> set(key: SemanticsPropertyKey<T>, value: T) {
         if (value is AccessibilityAction<*> && contains(key)) {
             val prev = props[key] as AccessibilityAction<*>
             props[key] = AccessibilityAction(value.label ?: prev.label, value.action ?: prev.action)
         } else {
             props[key] = value
         }
+
+        if (key.accessibilityExtraKey != null) {
+            if (_accessibilityExtraKeys == null) _accessibilityExtraKeys = mutableScatterSetOf()
+            _accessibilityExtraKeys?.add(key)
+        }
     }
 
-    operator fun <T> contains(key: SemanticsPropertyKey<T>): Boolean {
+    public operator fun <T> contains(key: SemanticsPropertyKey<T>): Boolean {
         return props.containsKey(key)
     }
 
@@ -84,8 +96,8 @@ class SemanticsConfiguration :
      * If set to true, the descendants of the owning component's [SemanticsNode] will merge their
      * semantic information into the [SemanticsNode] representing the owning component.
      */
-    var isMergingSemanticsOfDescendants: Boolean = false
-    var isClearingSemantics: Boolean = false
+    public var isMergingSemanticsOfDescendants: Boolean = false
+    public var isClearingSemantics: Boolean = false
 
     // CONFIGURATION COMBINATION LOGIC
 
@@ -132,14 +144,14 @@ class SemanticsConfiguration :
                 props[key] =
                     AccessibilityAction(
                         value.label ?: nextValue.label,
-                        value.action ?: nextValue.action
+                        value.action ?: nextValue.action,
                     )
             }
         }
     }
 
     /** Returns an exact copy of this configuration. */
-    fun copy(): SemanticsConfiguration {
+    public fun copy(): SemanticsConfiguration {
         val copy = SemanticsConfiguration()
         copy.isMergingSemanticsOfDescendants = isMergingSemanticsOfDescendants
         copy.isClearingSemantics = isClearingSemantics
@@ -192,6 +204,6 @@ class SemanticsConfiguration :
     }
 }
 
-fun <T> SemanticsConfiguration.getOrNull(key: SemanticsPropertyKey<T>): T? {
+public fun <T> SemanticsConfiguration.getOrNull(key: SemanticsPropertyKey<T>): T? {
     return getOrElseNullable(key) { null }
 }

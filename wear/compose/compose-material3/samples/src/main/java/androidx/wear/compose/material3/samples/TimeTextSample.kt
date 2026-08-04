@@ -39,8 +39,7 @@ fun TimeTextClockOnly() {
 @Composable
 fun TimeTextWithStatus() {
     val style = TimeTextDefaults.timeTextStyle()
-    val primaryStyle =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colorScheme.primaryContainer)
+    val primaryStyle = TimeTextDefaults.timeTextStyle(color = MaterialTheme.colorScheme.primary)
     TimeText { time ->
         timeTextCurvedText("ETA 12:48", style = primaryStyle)
         timeTextSeparator(style)
@@ -56,7 +55,7 @@ fun TimeTextWithStatusEllipsized() {
         curvedText(
             "Long status that should be ellipsized.",
             CurvedModifier.weight(1f),
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
         )
         timeTextSeparator(style)
         timeTextCurvedText(time)

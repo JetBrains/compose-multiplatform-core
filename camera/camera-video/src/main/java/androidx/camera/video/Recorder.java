@@ -16,8 +16,24 @@
 
 package androidx.camera.video;
 
+import static android.media.MediaFormat.MIMETYPE_AUDIO_AAC;
+import static android.media.MediaFormat.MIMETYPE_AUDIO_AMR_NB;
+import static android.media.MediaFormat.MIMETYPE_AUDIO_AMR_WB;
+import static android.media.MediaFormat.MIMETYPE_AUDIO_OPUS;
+import static android.media.MediaFormat.MIMETYPE_AUDIO_VORBIS;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_APV;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_AV1;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_AVC;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_H263;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_HEVC;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_MPEG4;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_VP8;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_VP9;
+
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static androidx.camera.video.AudioStats.AUDIO_AMPLITUDE_NONE;
+import static androidx.camera.video.MediaConstants.MIME_TYPE_UNSPECIFIED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED;
@@ -31,10 +47,9 @@ import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_UNKNOWN;
 import static androidx.camera.video.VideoRecordEvent.Finalize.VideoRecordError;
 import static androidx.camera.video.internal.DebugUtils.readableUs;
 import static androidx.camera.video.internal.config.AudioConfigUtil.resolveAudioEncoderConfig;
-import static androidx.camera.video.internal.config.AudioConfigUtil.resolveAudioMimeInfo;
 import static androidx.camera.video.internal.config.AudioConfigUtil.resolveAudioSettings;
+import static androidx.camera.video.internal.config.MediaConfigUtil.outputFormatToMuxerFormat;
 import static androidx.camera.video.internal.config.VideoConfigUtil.resolveVideoEncoderConfig;
-import static androidx.camera.video.internal.config.VideoConfigUtil.resolveVideoMimeInfo;
 import static androidx.camera.video.internal.config.VideoConfigUtil.workaroundDataSpaceIfRequired;
 import static androidx.camera.video.internal.utils.StorageUtil.formatSize;
 import static androidx.camera.video.internal.utils.StorageUtil.isStorageFullException;
@@ -42,6 +57,7 @@ import static androidx.core.util.Preconditions.checkArgument;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.util.Arrays.asList;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -49,14 +65,12 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.location.Location;
 import android.media.CamcorderProfile;
-import android.media.MediaMuxer;
-import android.media.MediaRecorder;
+import android.media.MediaFormat;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.util.Pair;
 import android.util.Range;
 import android.util.Rational;
 import android.util.Size;
@@ -65,6 +79,7 @@ import android.view.Surface;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
@@ -89,15 +104,14 @@ import androidx.camera.core.internal.utils.RingBuffer;
 import androidx.camera.video.StreamInfo.StreamState;
 import androidx.camera.video.internal.OutputStorage;
 import androidx.camera.video.internal.OutputStorageImpl;
+import androidx.camera.video.internal.PauseResumeDataProcessor;
 import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
 import androidx.camera.video.internal.audio.AudioSettings;
 import androidx.camera.video.internal.audio.AudioSource;
 import androidx.camera.video.internal.audio.AudioSourceAccessException;
-import androidx.camera.video.internal.compat.Api26Impl;
-import androidx.camera.video.internal.compat.quirk.DeactivateEncoderSurfaceBeforeStopEncoderQuirk;
-import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
-import androidx.camera.video.internal.compat.quirk.EncoderNotUsePersistentInputSurfaceQuirk;
 import androidx.camera.video.internal.config.AudioMimeInfo;
+import androidx.camera.video.internal.config.MediaConfigUtil;
+import androidx.camera.video.internal.config.MediaInfo;
 import androidx.camera.video.internal.config.VideoMimeInfo;
 import androidx.camera.video.internal.encoder.AudioEncoderConfig;
 import androidx.camera.video.internal.encoder.BufferCopiedEncodedData;
@@ -109,11 +123,18 @@ import androidx.camera.video.internal.encoder.EncoderFactory;
 import androidx.camera.video.internal.encoder.EncoderImpl;
 import androidx.camera.video.internal.encoder.InvalidConfigException;
 import androidx.camera.video.internal.encoder.OutputConfig;
+import androidx.camera.video.internal.encoder.SystemTimeProvider;
+import androidx.camera.video.internal.encoder.TimeProvider;
 import androidx.camera.video.internal.encoder.VideoEncoderConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
 import androidx.camera.video.internal.encoder.VideoEncoderInfoImpl;
+import androidx.camera.video.internal.muxer.Media3MuxerImpl;
+import androidx.camera.video.internal.muxer.MediaMuxerImpl;
+import androidx.camera.video.internal.muxer.Muxer;
+import androidx.camera.video.internal.muxer.MuxerException;
+import androidx.camera.video.internal.muxer.MuxerFactory;
+import androidx.camera.video.internal.utils.CodecUtil;
 import androidx.camera.video.internal.utils.OutputUtil;
-import androidx.camera.video.internal.workaround.CorrectNegativeLatLongForMediaMuxer;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
@@ -330,6 +351,34 @@ public final class Recorder implements VideoOutput {
                     State.ERROR // Waiting for re-initialization before starting.
             ));
 
+    // Refer to https://developer.android.com/reference/androidx/media3/muxer/Mp4Muxer + VP8
+    // Note: All MIME types in this list must be lowercase to ensure case-sensitive lookups in
+    // getSupportedVideoFormats()/getSupportedAudioFormats() function correctly.
+    //
+    // IMPORTANT: When adding or removing MIME types here, please also update the Javadoc for
+    // setVideoMimeType() and setAudioMimeType() to keep the public documentation in sync with
+    // the internal allowlist.
+    @VisibleForTesting
+    static final List<String> SUPPORTED_VIDEO_MIME_TYPES = Arrays.asList(
+            MIMETYPE_VIDEO_AV1,
+            MIMETYPE_VIDEO_MPEG4,
+            MIMETYPE_VIDEO_H263,
+            MIMETYPE_VIDEO_AVC,
+            MIMETYPE_VIDEO_HEVC,
+            MIMETYPE_VIDEO_VP8,
+            MIMETYPE_VIDEO_VP9,
+            MIMETYPE_VIDEO_APV,
+            MIMETYPE_VIDEO_DOLBY_VISION
+    );
+    @VisibleForTesting
+    static final List<String> SUPPORTED_AUDIO_MIME_TYPES = Arrays.asList(
+            MIMETYPE_AUDIO_AAC,
+            MIMETYPE_AUDIO_AMR_NB,
+            MIMETYPE_AUDIO_AMR_WB,
+            MIMETYPE_AUDIO_OPUS,
+            MIMETYPE_AUDIO_VORBIS
+    );
+
     /**
      * Default quality selector for recordings.
      *
@@ -343,8 +392,10 @@ public final class Recorder implements VideoOutput {
      * @see QualitySelector
      */
     public static final QualitySelector DEFAULT_QUALITY_SELECTOR =
-            QualitySelector.fromOrderedList(Arrays.asList(Quality.FHD, Quality.HD, Quality.SD),
-                    FallbackStrategy.higherQualityOrLowerThan(Quality.FHD));
+            QualitySelector.fromOrderedList(
+                    asList(Quality.FHD, Quality.HD, Quality.SD),
+                    FallbackStrategy.higherQualityOrLowerThan(Quality.FHD)
+            );
 
     private static final VideoSpec VIDEO_SPEC_DEFAULT =
             VideoSpec.builder()
@@ -353,10 +404,10 @@ public final class Recorder implements VideoOutput {
                     .build();
     private static final MediaSpec MEDIA_SPEC_DEFAULT =
             MediaSpec.builder()
-                    .setOutputFormat(MediaSpec.OUTPUT_FORMAT_AUTO)
+                    .setOutputFormat(MediaSpec.OUTPUT_FORMAT_UNSPECIFIED)
                     .setVideoSpec(VIDEO_SPEC_DEFAULT)
                     .build();
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "RedundantSuppression"})
     private static final String MEDIA_COLUMN = MediaStore.Video.Media.DATA;
     private static final Exception PENDING_RECORDING_ERROR_CAUSE_SOURCE_INACTIVE =
             new RuntimeException("The video frame producer became inactive before any "
@@ -371,6 +422,21 @@ public final class Recorder implements VideoOutput {
     private static final long RETRY_SETUP_VIDEO_DELAY_MS = 1000L;
     @VisibleForTesting
     static final EncoderFactory DEFAULT_ENCODER_FACTORY = EncoderImpl::new;
+    private static final VideoEncoderInfo.Finder DEFAULT_VIDEO_ENCODER_INFO_FINDER =
+            VideoEncoderInfoImpl.FINDER;
+    private static final MuxerFactory DEFAULT_MUXER_FACTORY = outputFormat -> {
+        switch (outputFormat) {
+            case Muxer.MUXER_FORMAT_MPEG_4:
+            case Muxer.MUXER_FORMAT_3GPP:
+                // Media3 muxer doesn't support WebM.
+                Logger.d(TAG, "Create Media3MuxerImpl");
+                return new Media3MuxerImpl();
+            case Muxer.MUXER_FORMAT_WEBM:
+            default:
+                Logger.d(TAG, "Create MediaMuxerImpl");
+                return new MediaMuxerImpl();
+        }
+    };
     private static final OutputStorage.Factory OUTPUT_STORAGE_FACTORY_DEFAULT =
             OutputStorageImpl::new;
     private static final Executor AUDIO_EXECUTOR =
@@ -400,14 +466,14 @@ public final class Recorder implements VideoOutput {
     final Executor mSequentialExecutor;
     private final EncoderFactory mVideoEncoderFactory;
     private final EncoderFactory mAudioEncoderFactory;
+    private final MuxerFactory mMuxerFactory;
     private final OutputStorage.Factory mOutputStorageFactory;
     private final Object mLock = new Object();
-    private final boolean mEncoderNotUsePersistentInputSurface = DeviceQuirks.get(
-            EncoderNotUsePersistentInputSurfaceQuirk.class) != null;
     private final @VideoCapabilitiesSource int mVideoCapabilitiesSource;
     private final long mRequiredFreeStorageBytes;
     private final MutableStateObservable<Range<Integer>> mVideoEncoderBitrateRange =
             MutableStateObservable.withInitialState(null);
+    private final TimeProvider mTimeProvider = new SystemTimeProvider();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                          Members only accessed when holding mLock                          //
@@ -442,7 +508,7 @@ public final class Recorder implements VideoOutput {
     boolean mInProgressRecordingStopping = false;
     private SurfaceRequest.@Nullable TransformationInfo mInProgressTransformationInfo = null;
     private SurfaceRequest.@Nullable TransformationInfo mSourceTransformationInfo = null;
-    private VideoValidatedEncoderProfilesProxy mResolvedEncoderProfiles = null;
+    private @Nullable MediaInfo mResolvedMediaInfo = null;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final List<ListenableFuture<Void>> mEncodingFutures = new ArrayList<>();
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -458,7 +524,7 @@ public final class Recorder implements VideoOutput {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     Surface mActiveSurface = null;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    MediaMuxer mMediaMuxer = null;
+    Muxer mMuxer = null;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final MutableStateObservable<MediaSpec> mMediaSpec;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -479,7 +545,7 @@ public final class Recorder implements VideoOutput {
     long mRecordingBytes = 0L;
     long mRecordingAudioBytes = 0L;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    long mRecordingDurationNs = 0L;
+    long mRecordingDurationUs = 0L;
     @VisibleForTesting
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     long mFirstRecordingVideoDataTimeUs = Long.MAX_VALUE;
@@ -496,7 +562,7 @@ public final class Recorder implements VideoOutput {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     long mFileSizeLimitInBytes = OutputOptions.FILE_SIZE_UNLIMITED;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    long mDurationLimitNs = OutputOptions.DURATION_UNLIMITED;
+    long mDurationLimitUs = OutputOptions.DURATION_UNLIMITED;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @VideoRecordError
     int mRecordingStopError = ERROR_UNKNOWN;
@@ -519,6 +585,7 @@ public final class Recorder implements VideoOutput {
     ScheduledFuture<?> mSourceNonStreamingTimeout = null;
     // The Recorder has to be reset first before being configured again.
     private boolean mNeedsResetBeforeNextStart = false;
+    private boolean mRetainRecordingOnReconfiguring = false;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @NonNull VideoEncoderSession mVideoEncoderSession;
     private @Nullable VideoEncoderConfig mVideoEncoderConfig = null;
@@ -536,26 +603,60 @@ public final class Recorder implements VideoOutput {
             @VideoCapabilitiesSource int videoCapabilitiesSource,
             @NonNull EncoderFactory videoEncoderFactory,
             @NonNull EncoderFactory audioEncoderFactory,
+            @NonNull MuxerFactory muxerFactory,
             OutputStorage.@NonNull Factory outputStorageFactory,
             long requiredFreeStorageBytes) {
         mUserProvidedExecutor = executor;
         mExecutor = executor != null ? executor : CameraXExecutors.ioExecutor();
         mSequentialExecutor = CameraXExecutors.newSequentialExecutor(mExecutor);
 
-        mMediaSpec = MutableStateObservable.withInitialState(composeRecorderMediaSpec(mediaSpec));
+        mMediaSpec = MutableStateObservable.withInitialState(mediaSpec);
         mVideoCapabilitiesSource = videoCapabilitiesSource;
         mStreamInfo = MutableStateObservable.withInitialState(
                 StreamInfo.of(mStreamId, internalStateToStreamState(mState)));
         mIsRecording = MutableStateObservable.withInitialState(false);
         mVideoEncoderFactory = videoEncoderFactory;
         mAudioEncoderFactory = audioEncoderFactory;
+        mMuxerFactory = muxerFactory;
         mOutputStorageFactory = outputStorageFactory;
         mVideoEncoderSession =
                 new VideoEncoderSession(mVideoEncoderFactory, mSequentialExecutor, mExecutor);
         mRequiredFreeStorageBytes =
                 requiredFreeStorageBytes != REQUIRED_FREE_STORAGE_UNSET
                         ? requiredFreeStorageBytes : REQUIRED_FREE_STORAGE_DEFAULT_BYTES;
+
+        Logger.d(TAG, "mediaSpec = " + mediaSpec);
         Logger.d(TAG, "mRequiredFreeStorageBytes = " + formatSize(mRequiredFreeStorageBytes));
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Override
+    public void onValidateConfig() throws IllegalArgumentException {
+        MediaSpec mediaSpec = getObservableData(mMediaSpec);
+
+        checkMimeTypeSupportOrThrow(mediaSpec);
+    }
+
+    @OptIn(markerClass = ExperimentalMimeTypeApi.class)
+    private void checkMimeTypeSupportOrThrow(@NonNull MediaSpec mediaSpec)
+            throws IllegalArgumentException {
+        // Validate Video MIME Type
+        String videoMime = mediaSpec.getVideoSpec().getMimeType();
+        if (!Objects.equals(videoMime, MIME_TYPE_UNSPECIFIED)) {
+            List<String> supportedVideoMimes = getSupportedVideoMimeTypes();
+            checkArgument(supportedVideoMimes.contains(videoMime),
+                    "The requested video MIME type " + videoMime
+                            + " is not supported by this device.");
+        }
+
+        // Validate Audio MIME Type
+        String audioMime = mediaSpec.getAudioSpec().getMimeType();
+        if (!Objects.equals(audioMime, MIME_TYPE_UNSPECIFIED)) {
+            List<String> supportedAudioMimes = getSupportedAudioMimeTypes();
+            checkArgument(supportedAudioMimes.contains(audioMime),
+                    "The requested audio MIME type " + audioMime
+                            + " is not supported by this device.");
+        }
     }
 
     @Override
@@ -608,7 +709,10 @@ public final class Recorder implements VideoOutput {
             int sessionType) {
         int videoCaptureType = sessionType == SESSION_TYPE_HIGH_SPEED
                 ? VIDEO_RECORDING_TYPE_HIGH_SPEED : VIDEO_RECORDING_TYPE_REGULAR;
-        return getVideoCapabilitiesInternal(videoCaptureType, cameraInfo, mVideoCapabilitiesSource);
+        String videoMimeType = getObservableData(mMediaSpec).getVideoSpec().getMimeType();
+
+        return getVideoCapabilitiesInternal(videoCaptureType, cameraInfo, mVideoCapabilitiesSource,
+                videoMimeType);
     }
 
     /**
@@ -663,6 +767,7 @@ public final class Recorder implements VideoOutput {
      * devices.
      * @see FileDescriptorOutputOptions
      */
+    @SuppressLint("ObsoleteSdkInt")
     @RequiresApi(26)
     public @NonNull PendingRecording prepareRecording(@NonNull Context context,
             @NonNull FileDescriptorOutputOptions fileDescriptorOutputOptions) {
@@ -706,6 +811,32 @@ public final class Recorder implements VideoOutput {
         return new PendingRecording(context, this, options);
     }
 
+    /** Gets the output format. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public @MediaSpec.OutputFormat int getOutputFormat() {
+        return getObservableData(mMediaSpec).getOutputFormat();
+    }
+
+    /**
+     * Gets the video MIME type of this Recorder.
+     *
+     * @return the video MIME type provided to {@link Builder#setVideoMimeType(String)}.
+     * @see Builder#setVideoMimeType(String)
+     */
+    public @NonNull String getVideoMimeType() {
+        return getObservableData(mMediaSpec).getVideoSpec().getMimeType();
+    }
+
+    /**
+     * Gets the audio MIME type of this Recorder.
+     *
+     * @return the audio MIME type provided to {@link Builder#setAudioMimeType(String)}.
+     * @see Builder#setAudioMimeType(String)
+     */
+    public @NonNull String getAudioMimeType() {
+        return getObservableData(mMediaSpec).getAudioSpec().getMimeType();
+    }
+
     /**
      * Gets the quality selector of this Recorder.
      *
@@ -716,6 +847,20 @@ public final class Recorder implements VideoOutput {
      */
     public @NonNull QualitySelector getQualitySelector() {
         return getObservableData(mMediaSpec).getVideoSpec().getQualitySelector();
+    }
+
+    /**
+     * Gets the muxer factory of this Recorder.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull MuxerFactory getMuxerFactory() {
+        return mMuxerFactory;
+    }
+
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public boolean isQualitySelectorDefault() {
+        return getQualitySelector() == DEFAULT_QUALITY_SELECTOR;
     }
 
     /**
@@ -734,8 +879,8 @@ public final class Recorder implements VideoOutput {
      * Gets the audio source of this Recorder.
      *
      * @return the value provided to {@link Builder#setAudioSource(int)} on the builder used to
-     * create this recorder, or the default value of {@link AudioSpec#SOURCE_AUTO} if no source was
-     * set.
+     * create this recorder, or the default value of {@link AudioSpec#SOURCE_UNSPECIFIED} if no
+     * source was set.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @AudioSpec.Source
@@ -760,8 +905,34 @@ public final class Recorder implements VideoOutput {
      * builder used to create this recorder. Returns 0, if
      * {@link Builder#setTargetVideoEncodingBitRate(int)} is not called.
      */
+    @IntRange(from = 0)
     public int getTargetVideoEncodingBitRate() {
-        return getObservableData(mMediaSpec).getVideoSpec().getBitrate().getLower();
+        return getObservableData(mMediaSpec).getVideoSpec().getBitrate();
+    }
+
+    /**
+     * Gets the target audio encoding bitrate of this Recorder.
+     *
+     * @return the value provided to {@link Builder#setTargetAudioEncodingBitRate(int)} on the
+     * builder used to create this recorder. Returns 0, if
+     * {@link Builder#setTargetAudioEncodingBitRate(int)} is not called.
+     */
+    @IntRange(from = 0)
+    public int getTargetAudioEncodingBitRate() {
+        return getObservableData(mMediaSpec).getAudioSpec().getBitrate();
+    }
+
+    /**
+     * Returns the target audio channel count of this Recorder.
+     *
+     * @return the value provided to {@link Builder#setTargetAudioChannelCount(int)} on the
+     * builder used to create this recorder. Returns 0 if
+     * {@link Builder#setTargetAudioChannelCount(int)} is not called.
+     */
+    @IntRange(from = 0)
+    public int getTargetAudioChannelCount() {
+        int channelCount = getObservableData(mMediaSpec).getAudioSpec().getChannelCount();
+        return channelCount == AudioSpec.CHANNEL_COUNT_UNSPECIFIED ? 0 : channelCount;
     }
 
     /** Gets an {@link Observable} of the video encoder's supported bitrate range. */
@@ -769,6 +940,46 @@ public final class Recorder implements VideoOutput {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public @NonNull Observable<Range<Integer>> getVideoEncoderBitrateRange() {
         return mVideoEncoderBitrateRange;
+    }
+
+    /**
+     * Gets the video encoding frame rate of the Recorder.
+     *
+     * @return the value provided to {@link Builder#setVideoEncodingFrameRate(int)} on the builder
+     * used to create this recorder. Returns 0, if {@link Builder#setVideoEncodingFrameRate(int)}
+     * is not called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public int getVideoEncodingFrameRate() {
+        return getObservableData(mMediaSpec).getVideoSpec().getEncodeFrameRate();
+    }
+
+    /**
+     * Sets the intended video encoding frame rate for recording, enabling video speed
+     * adjustment.
+     *
+     * <p>This method is primarily intended for creating slow-motion video effects. It allows
+     * you to specify a different frame rate for the encoded video than the actual capture
+     * frame rate. Timestamps of the captured frames will be adjusted to achieve the desired
+     * encoding frame rate, resulting in a speed adjustment.
+     *
+     * <p>For example, to create a 1/4 slow-motion effect, you could configure the capture
+     * frame rate to 120fps and set the encoding frame rate to 30fps using this method.
+     *
+     * <p>If you only need to configure the capture frame rate without any speed adjustment,
+     * use {@link VideoCapture.Builder#setTargetFrameRate(Range)} instead.
+     *
+     * <p>By default, if this method is not called, the incoming frame rate from the camera
+     * will be used for encoding, resulting in no speed adjustment.
+     *
+     * @param frameRate the video encoding frame rate in frames per second.
+     * @throws IllegalArgumentException if frame rate is 0 or less.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public void setVideoEncodingFrameRate(@IntRange(from = 1) int frameRate) {
+        checkArgument(frameRate >= 1, "frameRate must be greater than 0.");
+        mMediaSpec.setState(getObservableData(mMediaSpec).toBuilder().configureVideo(
+                builder -> builder.setEncodeFrameRate(frameRate)).build());
     }
 
     /**
@@ -845,7 +1056,7 @@ public final class Recorder implements VideoOutput {
                         RecordingRecord recordingRecord = RecordingRecord.from(pendingRecording,
                                 recordingId);
                         recordingRecord.initializeRecording(
-                                pendingRecording.getApplicationContext());
+                                pendingRecording.getApplicationContext(), mMuxerFactory);
                         mPendingRecordingRecord = recordingRecord;
                         if (mState == State.IDLING) {
                             setState(State.PENDING_RECORDING);
@@ -1024,7 +1235,7 @@ public final class Recorder implements VideoOutput {
                     // Fall-through
                 case RECORDING:
                     setState(State.STOPPING);
-                    long explicitlyStopTimeUs = TimeUnit.NANOSECONDS.toMicros(System.nanoTime());
+                    long explicitlyStopTimeUs = mTimeProvider.uptimeUs();
                     RecordingRecord finalActiveRecordingRecord = mActiveRecordingRecord;
                     mSequentialExecutor.execute(() -> stopInternal(finalActiveRecordingRecord,
                             explicitlyStopTimeUs, error, errorCause));
@@ -1101,7 +1312,14 @@ public final class Recorder implements VideoOutput {
             return;
         }
 
-        if (newState == SourceState.INACTIVE) {
+        if (newState == SourceState.CONFIGURING) {
+            if (mInProgressRecording != null) {
+                mRetainRecordingOnReconfiguring = true;
+            }
+        } else if (newState == SourceState.INACTIVE) {
+            // Reset the retain recording flag. If INACTIVE is triggered (e.g. by unbind) during
+            // an active reconfiguration, we must stop retaining the recording to avoid hanging.
+            mRetainRecordingOnReconfiguring = false;
             if (mActiveSurface == null) {
                 if (mSetupVideoTask != null) {
                     mSetupVideoTask.cancelFailedRetry();
@@ -1116,9 +1334,7 @@ public final class Recorder implements VideoOutput {
                 // and be serviced after the Recorder is reset when receiving the previous
                 // surface request complete callback.
                 mNeedsResetBeforeNextStart = true;
-                if (mInProgressRecording != null && !mInProgressRecording.isPersistent()) {
-                    // Stop the in progress recording with "source inactive" error if it's not a
-                    // persistent recording.
+                if (mInProgressRecording != null && !shouldRetainRecording()) {
                     onInProgressRecordingInternalError(mInProgressRecording, ERROR_SOURCE_INACTIVE,
                             null);
                 }
@@ -1141,6 +1357,7 @@ public final class Recorder implements VideoOutput {
      * <p>The Recorder is expected to be reset when there's no active surface. Otherwise, wait for
      * the surface request complete callback first.
      */
+    @SuppressWarnings("SameParameterValue")
     @ExecutedBy("mSequentialExecutor")
     void requestReset(@VideoRecordError int errorCode, @Nullable Throwable errorCause,
             boolean videoOnly) {
@@ -1171,10 +1388,10 @@ public final class Recorder implements VideoOutput {
                         throw new AssertionError("In-progress recording does not match the active"
                                 + " recording. Unable to reset encoder.");
                     }
-                    // If there's an active persistent recording, reset the Recorder directly.
+                    // If the active recording should be retained, reset the Recorder directly.
                     // Otherwise, stop the recording first then release the Recorder at
                     // onRecordingFinalized().
-                    if (isPersistentRecordingInProgress()) {
+                    if (shouldRetainRecording()) {
                         shouldReset = true;
                     } else {
                         shouldStop = true;
@@ -1217,27 +1434,25 @@ public final class Recorder implements VideoOutput {
         Size surfaceSize = surfaceRequest.getResolution();
         // Fetch and cache nearest encoder profiles, if one exists.
         DynamicRange dynamicRange = surfaceRequest.getDynamicRange();
-        VideoCapabilities capabilities = getMediaCapabilities(
+        EncoderProfilesResolver profilesResolver = getEncoderProfilesResolver(
                 surfaceRequest.getCamera().getCameraInfo(),
                 surfaceRequest.getSessionType());
-        Quality highestSupportedQuality = capabilities.findNearestHigherSupportedQualityFor(
-                surfaceSize, dynamicRange);
-        Logger.d(TAG, "Using supported quality of " + highestSupportedQuality
-                + " for surface size " + surfaceSize);
-        if (highestSupportedQuality != Quality.NONE) {
-            mResolvedEncoderProfiles = capabilities.getProfiles(highestSupportedQuality,
-                    dynamicRange);
-            if (mResolvedEncoderProfiles == null) {
-                throw new AssertionError("Camera advertised available quality but did not "
-                        + "produce EncoderProfiles  for advertised quality.");
-            }
-        }
-        Logger.d(TAG, "mResolvedEncoderProfiles = " + mResolvedEncoderProfiles);
+        VideoValidatedEncoderProfilesProxy resolvedEncoderProfiles =
+                profilesResolver.findNearestHigherSupportedEncoderProfilesFor(surfaceSize,
+                        dynamicRange);
+        Logger.d(TAG, "resolvedEncoderProfiles = " + resolvedEncoderProfiles);
+
+        MediaSpec mediaSpec = getObservableData(mMediaSpec);
+        MediaInfo resolvedMediaInfo = MediaConfigUtil.resolveMediaInfo(mediaSpec, dynamicRange,
+                resolvedEncoderProfiles);
+        Logger.d(TAG, "resolvedMediaInfo = " + resolvedMediaInfo);
+        mResolvedMediaInfo = resolvedMediaInfo;
 
         if (mSetupVideoTask != null) {
             mSetupVideoTask.cancelFailedRetry();
         }
-        mSetupVideoTask = new SetupVideoTask(surfaceRequest, videoSourceTimebase, mHasGlProcessing,
+        mSetupVideoTask = new SetupVideoTask(surfaceRequest, videoSourceTimebase,
+                resolvedMediaInfo, mHasGlProcessing,
                 enableRetrySetupVideo ? sRetrySetupVideoMaxCount : 0);
         mSetupVideoTask.start();
     }
@@ -1246,6 +1461,7 @@ public final class Recorder implements VideoOutput {
     private class SetupVideoTask {
         private final SurfaceRequest mSurfaceRequest;
         private final Timebase mTimebase;
+        private final MediaInfo mMediaInfo;
         private final int mMaxRetryCount;
 
         private boolean mIsFailedRetryCanceled = false;
@@ -1253,16 +1469,17 @@ public final class Recorder implements VideoOutput {
         private @Nullable ScheduledFuture<?> mRetryFuture = null;
 
         SetupVideoTask(@NonNull SurfaceRequest surfaceRequest, @NonNull Timebase timebase,
-                boolean hasGlProcessing, int maxRetryCount) {
+                @NonNull MediaInfo mediaInfo, boolean hasGlProcessing, int maxRetryCount) {
             mSurfaceRequest = surfaceRequest;
             mTimebase = timebase;
+            mMediaInfo = mediaInfo;
             mHasGlProcessing = hasGlProcessing;
             mMaxRetryCount = maxRetryCount;
         }
 
         @ExecutedBy("mSequentialExecutor")
         void start() {
-            setupVideo(mSurfaceRequest, mTimebase);
+            setupVideo(mSurfaceRequest, mTimebase, mMediaInfo);
         }
 
         @ExecutedBy("mSequentialExecutor")
@@ -1279,17 +1496,16 @@ public final class Recorder implements VideoOutput {
 
         @SuppressWarnings("ObjectToString")
         @ExecutedBy("mSequentialExecutor")
-        private void setupVideo(@NonNull SurfaceRequest request, @NonNull Timebase timebase) {
+        private void setupVideo(@NonNull SurfaceRequest request, @NonNull Timebase timebase,
+                @NonNull MediaInfo mediaInfo) {
             safeToCloseVideoEncoder().addListener(() -> {
                 if (request.isServiced()
                         || (mVideoEncoderSession.isConfiguredSurfaceRequest(request)
-                        && !isPersistentRecordingInProgress())) {
-                    // Ignore the surface request if it's already serviced. Or the video encoder
-                    // session is already configured, unless there's a persistent recording is
-                    // running. Or the task has been completed.
+                        && !shouldRetainRecording())) {
                     Logger.w(TAG, "Ignore the SurfaceRequest " + request + " isServiced: "
                             + request.isServiced() + " VideoEncoderSession: " + mVideoEncoderSession
-                            + " has been configured with a persistent in-progress recording.");
+                            + " is already configured and the active recording does not need to "
+                            + "be retained.");
                     return;
                 }
                 VideoEncoderSession videoEncoderSession =
@@ -1297,8 +1513,7 @@ public final class Recorder implements VideoOutput {
                                 mExecutor);
                 MediaSpec mediaSpec = getObservableData(mMediaSpec);
                 DynamicRange dynamicRange = request.getDynamicRange();
-                VideoMimeInfo videoMimeInfo = resolveVideoMimeInfo(mediaSpec, dynamicRange,
-                        mResolvedEncoderProfiles);
+                VideoMimeInfo videoMimeInfo = mediaInfo.getVideoMimeInfo();
                 // The VideoSpec from mediaSpec only contains settings requested by the recorder,
                 // but the actual settings may need to differ depending on the FPS chosen by the
                 // camera. The expected frame rate from the camera is passed on here from the
@@ -1337,7 +1552,7 @@ public final class Recorder implements VideoOutput {
                             mRetryFuture = scheduleTask(() -> {
                                 if (!mIsFailedRetryCanceled) {
                                     Logger.d(TAG, "Retry setupVideo #" + mRetryCount);
-                                    setupVideo(mSurfaceRequest, mTimebase);
+                                    setupVideo(mSurfaceRequest, mTimebase, mediaInfo);
                                 }
                             }, mSequentialExecutor, sRetrySetupVideoDelayMs, TimeUnit.MILLISECONDS);
                         } else {
@@ -1351,8 +1566,9 @@ public final class Recorder implements VideoOutput {
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mSequentialExecutor")
-    boolean isPersistentRecordingInProgress() {
-        return mInProgressRecording != null && mInProgressRecording.isPersistent();
+    boolean shouldRetainRecording() {
+        return mInProgressRecording != null
+                && (mInProgressRecording.isPersistent() || mRetainRecordingOnReconfiguring);
     }
 
     @ExecutedBy("mSequentialExecutor")
@@ -1371,8 +1587,6 @@ public final class Recorder implements VideoOutput {
         mActiveSurface = videoEncoderSession.getActiveSurface();
         setLatestSurface(mActiveSurface);
 
-        videoEncoderSession.setOnSurfaceUpdateListener(mSequentialExecutor, this::setLatestSurface);
-
         Futures.addCallback(videoEncoderSession.getReadyToReleaseFuture(),
                 new FutureCallback<Encoder>() {
                     @Override
@@ -1389,9 +1603,7 @@ public final class Recorder implements VideoOutput {
 
                         mVideoEncoderSessionToRelease = videoEncoderSession;
                         setLatestSurface(null);
-                        // Only reset video if the in-progress recording is persistent.
-                        requestReset(ERROR_SOURCE_INACTIVE, null,
-                                isPersistentRecordingInProgress());
+                        requestReset(ERROR_SOURCE_INACTIVE, null, shouldRetainRecording());
                     }
 
                     @Override
@@ -1406,7 +1618,7 @@ public final class Recorder implements VideoOutput {
     void onConfigured() {
         RecordingRecord recordingToStart = null;
         RecordingRecord pendingRecordingToFinalize = null;
-        boolean continuePersistentRecording = false;
+        boolean continueRecording = false;
         @VideoRecordError int error = ERROR_NONE;
         Throwable errorCause = null;
         boolean recordingPaused = false;
@@ -1418,19 +1630,16 @@ public final class Recorder implements VideoOutput {
                     throw new AssertionError(
                             "Incorrectly invoke onConfigured() in state " + mState);
                 case STOPPING:
-                    if (!mEncoderNotUsePersistentInputSurface) {
-                        throw new AssertionError("Unexpectedly invoke onConfigured() in a "
-                                + "STOPPING state when it's not waiting for a new surface.");
-                    }
-                    break;
+                    throw new AssertionError("Unexpectedly invoke onConfigured() in a "
+                            + "STOPPING state when it's not waiting for a new surface.");
                 case PAUSED:
                     recordingPaused = true;
                     // Fall-through
                 case RECORDING:
-                    Preconditions.checkState(isPersistentRecordingInProgress(),
-                            "Unexpectedly invoke onConfigured() when there's a non-persistent "
-                                    + "in-progress recording");
-                    continuePersistentRecording = true;
+                    Preconditions.checkState(shouldRetainRecording(),
+                            "Unexpectedly invoke onConfigured() when the active recording "
+                                    + "should not be retained");
+                    continueRecording = true;
                     break;
                 case CONFIGURING:
                     setState(State.IDLING);
@@ -1461,9 +1670,10 @@ public final class Recorder implements VideoOutput {
             }
         }
 
-        if (continuePersistentRecording) {
+        if (continueRecording) {
             updateEncoderCallbacks(mInProgressRecording, true);
-            mVideoEncoder.start();
+            long continueTimeUs = mTimeProvider.uptimeUs();
+            mVideoEncoder.start(continueTimeUs);
             if (mShouldSendResumeEvent) {
                 mInProgressRecording.updateVideoRecordEvent(VideoRecordEvent.resume(
                         mInProgressRecording.getOutputOptions(),
@@ -1471,7 +1681,7 @@ public final class Recorder implements VideoOutput {
                 mShouldSendResumeEvent = false;
             }
             if (recordingPaused) {
-                mVideoEncoder.pause();
+                mVideoEncoder.pause(continueTimeUs);
             }
         } else if (recordingToStart != null) {
             // Start new active recording inline on sequential executor (but unlocked).
@@ -1479,19 +1689,7 @@ public final class Recorder implements VideoOutput {
         } else if (pendingRecordingToFinalize != null) {
             finalizePendingRecording(pendingRecordingToFinalize, error, errorCause);
         }
-    }
-
-    private @NonNull MediaSpec composeRecorderMediaSpec(@NonNull MediaSpec mediaSpec) {
-        MediaSpec.Builder mediaSpecBuilder = mediaSpec.toBuilder();
-
-        // Append default video configurations
-        VideoSpec videoSpec = mediaSpec.getVideoSpec();
-        if (videoSpec.getAspectRatio() == AspectRatio.RATIO_DEFAULT) {
-            mediaSpecBuilder.configureVideo(
-                    builder -> builder.setAspectRatio(VIDEO_SPEC_DEFAULT.getAspectRatio()));
-        }
-
-        return mediaSpecBuilder.build();
+        mRetainRecordingOnReconfiguring = false;
     }
 
     private static boolean isSameRecording(@NonNull Recording activeRecording,
@@ -1515,13 +1713,17 @@ public final class Recorder implements VideoOutput {
             throws AudioSourceAccessException, InvalidConfigException {
         MediaSpec mediaSpec = getObservableData(mMediaSpec);
         // Resolve the audio mime info
-        AudioMimeInfo audioMimeInfo = resolveAudioMimeInfo(mediaSpec, mResolvedEncoderProfiles);
+        AudioMimeInfo audioMimeInfo = checkNotNull(mResolvedMediaInfo).getAudioMimeInfo();
+        if (audioMimeInfo == null) {
+            throw new InvalidConfigException("Audio is required but no audio mime info was found");
+        }
+
         Timebase audioSourceTimebase = Timebase.UPTIME;
 
         // Gets the expected sample rate ratio for slow-motion effect.
         VideoEncoderConfig videoEncoderConfig = checkNotNull(mVideoEncoderConfig);
         Rational expectedSampleRateRatio;
-        if (videoEncoderConfig.getCaptureFrameRate() != videoEncoderConfig.getEncodeFrameRate()) {
+        if (videoEncoderConfig.isSlowMotion()) {
             expectedSampleRateRatio = new Rational(videoEncoderConfig.getCaptureFrameRate(),
                     videoEncoderConfig.getEncodeFrameRate());
         } else {
@@ -1529,9 +1731,8 @@ public final class Recorder implements VideoOutput {
         }
 
         // Select and create the audio source
-        AudioSettings audioSettings =
-                resolveAudioSettings(audioMimeInfo, mediaSpec.getAudioSpec(),
-                expectedSampleRateRatio);
+        AudioSettings audioSettings = resolveAudioSettings(mediaSpec.getAudioSpec(),
+                audioMimeInfo.getCompatibleAudioProfile(), expectedSampleRateRatio);
         if (mAudioSource != null) {
             releaseCurrentAudioSource();
         }
@@ -1558,7 +1759,7 @@ public final class Recorder implements VideoOutput {
     private @NonNull AudioSource setupAudioSource(@NonNull RecordingRecord recordingToStart,
             @NonNull AudioSettings audioSettings)
             throws AudioSourceAccessException {
-        return recordingToStart.performOneTimeAudioSourceCreation(audioSettings, AUDIO_EXECUTOR);
+        return recordingToStart.performOneTimeAudioSourceCreation(audioSettings);
     }
 
     private void releaseCurrentAudioSource() {
@@ -1624,19 +1825,18 @@ public final class Recorder implements VideoOutput {
 
     @ExecutedBy("mSequentialExecutor")
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    void setupAndStartMediaMuxer(@NonNull RecordingRecord recordingToStart) {
-        if (mMediaMuxer != null) {
-            throw new AssertionError("Unable to set up media muxer when one already exists.");
+    void setupAndStartMuxer(@NonNull RecordingRecord recordingToStart) {
+        if (mMuxer != null) {
+            throw new AssertionError("Unable to set up muxer when one already exists.");
         }
 
         if (isAudioEnabled() && mPendingAudioRingBuffer.isEmpty()) {
             throw new AssertionError("Audio is enabled but no audio sample is ready. Cannot start"
-                    + " media muxer.");
+                    + " muxer.");
         }
 
         if (mPendingFirstVideoData == null) {
-            throw new AssertionError("Media muxer cannot be started without an encoded video "
-                    + "frame.");
+            throw new AssertionError("Muxer cannot be started without an encoded video frame.");
         }
 
         try (EncodedData videoDataToWrite = mPendingFirstVideoData) {
@@ -1660,19 +1860,14 @@ public final class Recorder implements VideoOutput {
                 return;
             }
 
-            MediaMuxer mediaMuxer;
+            Muxer muxer;
             try {
-                MediaSpec mediaSpec = getObservableData(mMediaSpec);
-                int muxerOutputFormat =
-                        mediaSpec.getOutputFormat() == MediaSpec.OUTPUT_FORMAT_AUTO
-                                ? supportedMuxerFormatOrDefaultFrom(mResolvedEncoderProfiles,
-                                MediaSpec.outputFormatToMuxerFormat(
-                                        MEDIA_SPEC_DEFAULT.getOutputFormat()))
-                                : MediaSpec.outputFormatToMuxerFormat(mediaSpec.getOutputFormat());
-                mediaMuxer = recordingToStart.performOneTimeMediaMuxerCreation(muxerOutputFormat,
+                int muxerOutputFormat = outputFormatToMuxerFormat(
+                        checkNotNull(mResolvedMediaInfo).getContainerInfo().getOutputFormat());
+                muxer = recordingToStart.performOneTimeMuxerCreation(muxerOutputFormat,
                         uri -> mOutputUri = uri);
             } catch (IOException e) {
-                int error = isStorageFullException(e) ? ERROR_INSUFFICIENT_STORAGE
+                int error = hasInsufficientStorageOrException(e) ? ERROR_INSUFFICIENT_STORAGE
                         : ERROR_INVALID_OUTPUT_OPTIONS;
                 onInProgressRecordingInternalError(recordingToStart, error, e);
                 return;
@@ -1681,40 +1876,61 @@ public final class Recorder implements VideoOutput {
             SurfaceRequest.TransformationInfo transformationInfo = mSourceTransformationInfo;
             if (transformationInfo != null) {
                 setInProgressTransformationInfo(transformationInfo);
-                mediaMuxer.setOrientationHint(transformationInfo.getRotationDegrees());
+                try {
+                    muxer.setOrientationDegrees(transformationInfo.getRotationDegrees());
+                } catch (IllegalArgumentException e) {
+                    muxer.release();
+                    onInProgressRecordingInternalError(recordingToStart,
+                            ERROR_INVALID_OUTPUT_OPTIONS, e);
+                    return;
+                }
             }
             Location location = recordingToStart.getOutputOptions().getLocation();
             if (location != null) {
                 try {
-                    Pair<Double, Double> geoLocation =
-                            CorrectNegativeLatLongForMediaMuxer.adjustGeoLocation(
-                                    location.getLatitude(), location.getLongitude());
-                    mediaMuxer.setLocation((float) geoLocation.first.doubleValue(),
-                            (float) geoLocation.second.doubleValue());
+                    muxer.setLocation(location.getLatitude(), location.getLongitude());
                 } catch (IllegalArgumentException e) {
-                    mediaMuxer.release();
+                    muxer.release();
+                    onInProgressRecordingInternalError(recordingToStart,
+                            ERROR_INVALID_OUTPUT_OPTIONS, e);
+                    return;
+                }
+            }
+            VideoEncoderConfig videoEncoderConfig = checkNotNull(mVideoEncoderConfig);
+            if (videoEncoderConfig.isSlowMotion()) {
+                try {
+                    muxer.setCaptureFps(videoEncoderConfig.getCaptureFrameRate());
+                } catch (IllegalArgumentException e) {
+                    muxer.release();
                     onInProgressRecordingInternalError(recordingToStart,
                             ERROR_INVALID_OUTPUT_OPTIONS, e);
                     return;
                 }
             }
 
-            mVideoTrackIndex = mediaMuxer.addTrack(mVideoOutputConfig.getMediaFormat());
-            if (isAudioEnabled()) {
-                mAudioTrackIndex = mediaMuxer.addTrack(mAudioOutputConfig.getMediaFormat());
-            }
             try {
-                mediaMuxer.start();
-            } catch (IllegalStateException e) {
-                long availableBytes = checkNotNull(mOutputStorage).getAvailableBytes();
-                int error = availableBytes < mRequiredFreeStorageBytes
-                        ? ERROR_INSUFFICIENT_STORAGE : ERROR_UNKNOWN;
+                Logger.d(TAG, "Muxer.addTrack() for video " + mVideoOutputConfig.getMediaFormat());
+                mVideoTrackIndex = muxer.addTrack(
+                        checkNotNull(mVideoOutputConfig.getMediaFormat()));
+                if (isAudioEnabled()) {
+                    Logger.d(TAG,
+                            "Muxer.addTrack() for audio " + mAudioOutputConfig.getMediaFormat());
+                    mAudioTrackIndex = muxer.addTrack(
+                            checkNotNull(mAudioOutputConfig.getMediaFormat()));
+                }
+                Logger.d(TAG, "Muxer.start()");
+                muxer.start();
+            } catch (MuxerException e) {
+                Logger.w(TAG, "Failed to setup and start muxer", e);
+                muxer.release();
+                int error = hasInsufficientStorageOrException(e) ? ERROR_INSUFFICIENT_STORAGE
+                        : ERROR_UNKNOWN;
                 onInProgressRecordingInternalError(recordingToStart, error, e);
                 return;
             }
 
-            // MediaMuxer is successfully initialized, transfer the ownership to Recorder.
-            mMediaMuxer = mediaMuxer;
+            // Muxer is successfully initialized, transfer the ownership to Recorder.
+            mMuxer = muxer;
 
             // Write first data to ensure tracks are not empty
             writeVideoData(videoDataToWrite, recordingToStart);
@@ -1753,7 +1969,7 @@ public final class Recorder implements VideoOutput {
         mOutputStorage = mOutputStorageFactory.create(recordingToStart.getOutputOptions());
         long availableBytes = mOutputStorage.getAvailableBytes();
         Logger.d(TAG, "availableBytes = " + formatSize(availableBytes));
-        if (availableBytes < mRequiredFreeStorageBytes) {
+        if (hasInsufficientStorage(availableBytes)) {
             finalizeInProgressRecording(ERROR_INSUFFICIENT_STORAGE,
                     new IOException(String.format(INSUFFICIENT_STORAGE_ERROR_MSG, availableBytes,
                             mRequiredFreeStorageBytes)));
@@ -1772,11 +1988,11 @@ public final class Recorder implements VideoOutput {
         }
 
         if (recordingToStart.getOutputOptions().getDurationLimitMillis() > 0) {
-            mDurationLimitNs = TimeUnit.MILLISECONDS.toNanos(
+            mDurationLimitUs = TimeUnit.MILLISECONDS.toMicros(
                     recordingToStart.getOutputOptions().getDurationLimitMillis());
-            Logger.d(TAG, "Duration limit in nanoseconds: " + mDurationLimitNs);
+            Logger.d(TAG, "Duration limit in microseconds: " + mDurationLimitUs);
         } else {
-            mDurationLimitNs = OutputOptions.DURATION_UNLIMITED;
+            mDurationLimitUs = OutputOptions.DURATION_UNLIMITED;
         }
 
         // Configure audio based on the current audio state.
@@ -1801,7 +2017,7 @@ public final class Recorder implements VideoOutput {
                                 "The Recorder doesn't support recording with audio");
                     }
                     try {
-                        if (!mInProgressRecording.isPersistent() || mAudioEncoder == null) {
+                        if (!shouldRetainRecording() || mAudioEncoder == null) {
                             setupAudio(recordingToStart);
                         }
                         setAudioState(AudioState.ENABLED);
@@ -1821,11 +2037,12 @@ public final class Recorder implements VideoOutput {
         }
 
         updateEncoderCallbacks(recordingToStart, false);
+        long startTimeUs = mTimeProvider.uptimeUs();
         if (isAudioEnabled()) {
             mAudioSource.start(recordingToStart.isMuted());
-            mAudioEncoder.start();
+            mAudioEncoder.start(startTimeUs);
         }
-        mVideoEncoder.start();
+        mVideoEncoder.start(startTimeUs);
 
         mInProgressRecording.updateVideoRecordEvent(VideoRecordEvent.start(
                 mInProgressRecording.getOutputOptions(),
@@ -1868,9 +2085,15 @@ public final class Recorder implements VideoOutput {
                         @ExecutedBy("mSequentialExecutor")
                         @Override
                         public void onEncodedData(@NonNull EncodedData encodedData) {
-                            // If the media muxer doesn't yet exist, we may need to create and
+                            if (!recordingToStart.getPauseResumeDataProcessor()
+                                    .processEncodedData(encodedData, true)) {
+                                encodedData.close();
+                                return;
+                            }
+
+                            // If the muxer doesn't yet exist, we may need to create and
                             // start it. Otherwise we can write the data.
-                            if (mMediaMuxer == null) {
+                            if (mMuxer == null) {
                                 if (!mInProgressRecordingStopping) {
                                     // Clear any previously pending video data since we now
                                     // have newer data.
@@ -1891,7 +2114,7 @@ public final class Recorder implements VideoOutput {
                                                 || !mPendingAudioRingBuffer.isEmpty()) {
                                             Logger.d(TAG, "Received video keyframe. Starting "
                                                     + "muxer...");
-                                            setupAndStartMediaMuxer(recordingToStart);
+                                            setupAndStartMuxer(recordingToStart);
                                         } else {
                                             if (cachedDataDropped) {
                                                 Logger.d(TAG, "Replaced cached video keyframe "
@@ -1903,10 +2126,8 @@ public final class Recorder implements VideoOutput {
                                             }
                                         }
                                     } else {
-                                        // If the video data is not a key frame,
-                                        // MediaMuxer#writeSampleData will drop it. It will
-                                        // cause incorrect estimated record bytes and should
-                                        // be dropped.
+                                        // The first video frame must be key frame, otherwise
+                                        // drop it.
                                         if (cachedDataDropped) {
                                             Logger.d(TAG, "Dropped cached keyframe since we have "
                                                     + "new video data and have not yet received "
@@ -1923,7 +2144,7 @@ public final class Recorder implements VideoOutput {
                                     encodedData.close();
                                 }
                             } else {
-                                // MediaMuxer is already started, write the data.
+                                // Muxer is already started, write the data.
                                 try (EncodedData videoDataToWrite = encodedData) {
                                     writeVideoData(videoDataToWrite, recordingToStart);
                                 }
@@ -2016,9 +2237,15 @@ public final class Recorder implements VideoOutput {
                                             + "encoded data is being produced.");
                                 }
 
-                                // If the media muxer doesn't yet exist, we may need to create and
+                                if (!recordingToStart.getPauseResumeDataProcessor()
+                                        .processEncodedData(encodedData, false)) {
+                                    encodedData.close();
+                                    return;
+                                }
+
+                                // If the muxer doesn't yet exist, we may need to create and
                                 // start it. Otherwise we can write the data.
-                                if (mMediaMuxer == null) {
+                                if (mMuxer == null) {
                                     if (!mInProgressRecordingStopping) {
                                         // BufferCopiedEncodedData is used to copy the content of
                                         // the encoded data, preventing byte buffers of the media
@@ -2032,7 +2259,7 @@ public final class Recorder implements VideoOutput {
                                         if (mPendingFirstVideoData != null) {
                                             // Both audio and data are ready. Start the muxer.
                                             Logger.d(TAG, "Received audio data. Starting muxer...");
-                                            setupAndStartMediaMuxer(recordingToStart);
+                                            setupAndStartMuxer(recordingToStart);
                                         } else {
                                             Logger.d(TAG, "Cached audio data while we wait"
                                                     + " for video keyframe before starting muxer.");
@@ -2072,12 +2299,11 @@ public final class Recorder implements VideoOutput {
                     public void onFailure(@NonNull Throwable t) {
                         Preconditions.checkState(mInProgressRecording != null,
                                 "In-progress recording shouldn't be null");
-                        // If a persistent recording requires reconfiguring the video encoder,
-                        // the previous encoder future has to be canceled without finalizing the
-                        // in-progress recording.
-                        if (!mInProgressRecording.isPersistent()) {
+                        // If the active recording should be retained, the previous encoder future
+                        // has to be canceled without finalizing the recording.
+                        if (!shouldRetainRecording()) {
                             Logger.d(TAG, "Encodings end with error: " + t);
-                            finalizeInProgressRecording(mMediaMuxer == null ? ERROR_NO_VALID_DATA
+                            finalizeInProgressRecording(mMuxer == null ? ERROR_NO_VALID_DATA
                                     : ERROR_ENCODING_FAILED, t);
                         }
                     }
@@ -2091,10 +2317,17 @@ public final class Recorder implements VideoOutput {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     void writeVideoData(@NonNull EncodedData encodedData,
             @NonNull RecordingRecord recording) {
+        // If the video encoder has been released, we should stop writing data to the muxer.
+        // This prevents MuxerExceptions and prevents triggering stopInternal() which would
+        // incorrectly stop a recording that should be kept. See b/480772922.
+        if (mVideoEncoder == null) {
+            Logger.d(TAG, "Ignore the video data since the video encoder has been released.");
+            return;
+        }
+
         if (mVideoTrackIndex == null) {
             // Throw an exception if the data comes before the track is added.
-            throw new AssertionError(
-                    "Video data comes before the track is added to MediaMuxer.");
+            throw new AssertionError("Video data comes before the track is added to Muxer.");
         }
 
         long newRecordingBytes = mRecordingBytes + encodedData.size();
@@ -2107,48 +2340,51 @@ public final class Recorder implements VideoOutput {
             return;
         }
 
-        long newRecordingDurationNs = 0L;
+        long newRecordingDurationUs = 0L;
         long currentPresentationTimeUs = encodedData.getPresentationTimeUs();
-
         if (mFirstRecordingVideoDataTimeUs == Long.MAX_VALUE) {
             mFirstRecordingVideoDataTimeUs = currentPresentationTimeUs;
             Logger.d(TAG, String.format("First video time: %d (%s)", mFirstRecordingVideoDataTimeUs,
                     readableUs(mFirstRecordingVideoDataTimeUs)));
         } else {
-            newRecordingDurationNs = TimeUnit.MICROSECONDS.toNanos(
-                    currentPresentationTimeUs - Math.min(mFirstRecordingVideoDataTimeUs,
-                            mFirstRecordingAudioDataTimeUs));
-            Preconditions.checkState(mPreviousRecordingVideoDataTimeUs != Long.MAX_VALUE, "There "
-                    + "should be a previous data for adjusting the duration.");
-            // We currently don't send an additional empty buffer (bufferInfo.size = 0) with
-            // MediaCodec.BUFFER_FLAG_END_OF_STREAM to let the muxer know the duration of the
-            // last data, so it will be assumed to have the same duration as the data before it. So
-            // add the estimated value to the duration to ensure the final duration will not
-            // exceed the limit.
-            long adjustedDurationNs = newRecordingDurationNs + TimeUnit.MICROSECONDS.toNanos(
-                    currentPresentationTimeUs - mPreviousRecordingVideoDataTimeUs);
-            if (mDurationLimitNs != OutputOptions.DURATION_UNLIMITED
-                    && adjustedDurationNs > mDurationLimitNs) {
-                Logger.d(TAG, String.format("Video data reaches duration limit %d > %d",
-                        adjustedDurationNs, mDurationLimitNs));
-                onInProgressRecordingInternalError(recording, ERROR_DURATION_LIMIT_REACHED, null);
-                return;
+            newRecordingDurationUs = currentPresentationTimeUs - mFirstRecordingVideoDataTimeUs;
+
+            if (mDurationLimitUs != OutputOptions.DURATION_UNLIMITED) {
+                Preconditions.checkState(mPreviousRecordingVideoDataTimeUs != Long.MAX_VALUE,
+                        "There should be a previous data for adjusting the duration.");
+                // We currently don't send an additional empty buffer (bufferInfo.size = 0) with
+                // MediaCodec.BUFFER_FLAG_END_OF_STREAM to let the muxer know the duration of the
+                // last data, so it will be assumed to have the same duration as the data before
+                // add the estimated value to the duration to ensure the final duration will not
+                // exceed the limit.
+                long estimatedVideoDataDurationUs =
+                        currentPresentationTimeUs - mPreviousRecordingVideoDataTimeUs;
+                long estimatedRecordingDurationUs =
+                        newRecordingDurationUs + estimatedVideoDataDurationUs;
+                if (estimatedRecordingDurationUs > mDurationLimitUs) {
+                    Logger.d(TAG, String.format("Video data reaches duration limit %d > %d",
+                            estimatedRecordingDurationUs, mDurationLimitUs));
+                    onInProgressRecordingInternalError(recording, ERROR_DURATION_LIMIT_REACHED,
+                            null);
+                    return;
+                }
             }
         }
 
+        encodedData.getBufferInfo().presentationTimeUs = newRecordingDurationUs;
         try {
-            mMediaMuxer.writeSampleData(mVideoTrackIndex, encodedData.getByteBuffer(),
+            mMuxer.writeSampleData(mVideoTrackIndex, encodedData.getByteBuffer(),
                     encodedData.getBufferInfo());
-        } catch (IllegalStateException e) {
-            long availableBytes = checkNotNull(mOutputStorage).getAvailableBytes();
-            int error = availableBytes < mRequiredFreeStorageBytes
-                    ? ERROR_INSUFFICIENT_STORAGE : ERROR_UNKNOWN;
+        } catch (MuxerException e) {
+            Logger.w(TAG, "writeVideoData failed", e);
+            int error = hasInsufficientStorageOrException(e) ? ERROR_INSUFFICIENT_STORAGE
+                    : ERROR_UNKNOWN;
             onInProgressRecordingInternalError(recording, error, e);
             return;
         }
 
         mRecordingBytes = newRecordingBytes;
-        mRecordingDurationNs = newRecordingDurationNs;
+        mRecordingDurationUs = newRecordingDurationUs;
         mPreviousRecordingVideoDataTimeUs = currentPresentationTimeUs;
 
         updateInProgressStatusEvent(encodedData.isKeyFrame());
@@ -2156,7 +2392,7 @@ public final class Recorder implements VideoOutput {
         if (newRecordingBytes > mAvailableBytesAboveRequired) {
             long availableBytes = checkNotNull(mOutputStorage).getAvailableBytes();
             Logger.d(TAG, "availableBytes = " + formatSize(availableBytes));
-            if (availableBytes < mRequiredFreeStorageBytes) {
+            if (hasInsufficientStorage(availableBytes)) {
                 onInProgressRecordingInternalError(recording, ERROR_INSUFFICIENT_STORAGE,
                         new IOException(
                                 String.format(INSUFFICIENT_STORAGE_ERROR_MSG, availableBytes,
@@ -2171,6 +2407,22 @@ public final class Recorder implements VideoOutput {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     void writeAudioData(@NonNull EncodedData encodedData,
             @NonNull RecordingRecord recording) {
+        // If the audio encoder has been released, we should stop writing data to the muxer.
+        // This prevents MuxerExceptions and prevents triggering stopInternal() which would
+        // incorrectly stop a recording that should be kept. See b/480772922.
+        if (mAudioEncoder == null) {
+            Logger.d(TAG, "Ignore the audio data since the audio encoder has been released.");
+            return;
+        }
+
+        // Ensure audio starts after the first video frame. This aligns with the logic in
+        // #getAudioDataToWriteAndClearCache() and prevents negative duration values when writing
+        // to the muxer.
+        if (encodedData.getPresentationTimeUs() < mFirstRecordingVideoDataTimeUs) {
+            Logger.d(TAG, "Skipping audio data: timestamp precedes first video frame.");
+            return;
+        }
+
         long newRecordingBytes = mRecordingBytes + encodedData.size();
         if (mFileSizeLimitInBytes != OutputOptions.FILE_SIZE_UNLIMITED
                 && newRecordingBytes > mFileSizeLimitInBytes) {
@@ -2182,42 +2434,44 @@ public final class Recorder implements VideoOutput {
             return;
         }
 
-        long newRecordingDurationNs = 0L;
         long currentPresentationTimeUs = encodedData.getPresentationTimeUs();
+        long newRecordingDurationUs = currentPresentationTimeUs - mFirstRecordingVideoDataTimeUs;
         if (mFirstRecordingAudioDataTimeUs == Long.MAX_VALUE) {
             mFirstRecordingAudioDataTimeUs = currentPresentationTimeUs;
             Logger.d(TAG, String.format("First audio time: %d (%s)", mFirstRecordingAudioDataTimeUs,
                     readableUs(mFirstRecordingAudioDataTimeUs)));
         } else {
-            newRecordingDurationNs = TimeUnit.MICROSECONDS.toNanos(
-                    currentPresentationTimeUs - Math.min(mFirstRecordingVideoDataTimeUs,
-                            mFirstRecordingAudioDataTimeUs));
-            Preconditions.checkState(mPreviousRecordingAudioDataTimeUs != Long.MAX_VALUE, "There "
-                    + "should be a previous data for adjusting the duration.");
-            // We currently don't send an additional empty buffer (bufferInfo.size = 0) with
-            // MediaCodec.BUFFER_FLAG_END_OF_STREAM to let the muxer know the duration of the
-            // last data, so it will be assumed to have the same duration as the data before it. So
-            // add the estimated value to the duration to ensure the final duration will not
-            // exceed the limit.
-            long adjustedDurationNs = newRecordingDurationNs + TimeUnit.MICROSECONDS.toNanos(
-                    currentPresentationTimeUs - mPreviousRecordingAudioDataTimeUs);
-            if (mDurationLimitNs != OutputOptions.DURATION_UNLIMITED
-                    && adjustedDurationNs > mDurationLimitNs) {
-                Logger.d(TAG, String.format("Audio data reaches duration limit %d > %d",
-                        adjustedDurationNs, mDurationLimitNs));
-                onInProgressRecordingInternalError(recording, ERROR_DURATION_LIMIT_REACHED, null);
-                return;
+            if (mDurationLimitUs != OutputOptions.DURATION_UNLIMITED) {
+                Preconditions.checkState(mPreviousRecordingAudioDataTimeUs != Long.MAX_VALUE,
+                        "There should be a previous data for adjusting the duration.");
+                // We currently don't send an additional empty buffer (bufferInfo.size = 0) with
+                // MediaCodec.BUFFER_FLAG_END_OF_STREAM to let the muxer know the duration of the
+                // last data, so it will be assumed to have the same duration as the data before
+                // it. So add the estimated value to the duration to ensure the final duration
+                // will not exceed the limit.
+                long estimatedAudioDataDurationUs =
+                        currentPresentationTimeUs - mPreviousRecordingAudioDataTimeUs;
+                long estimatedRecordingDurationUs =
+                        newRecordingDurationUs + estimatedAudioDataDurationUs;
+                if (estimatedRecordingDurationUs > mDurationLimitUs) {
+                    Logger.d(TAG, String.format("Audio data reaches duration limit %d > %d",
+                            estimatedRecordingDurationUs, mDurationLimitUs));
+                    onInProgressRecordingInternalError(recording, ERROR_DURATION_LIMIT_REACHED,
+                            null);
+                    return;
+                }
             }
         }
 
+        encodedData.getBufferInfo().presentationTimeUs = newRecordingDurationUs;
         try {
-            mMediaMuxer.writeSampleData(mAudioTrackIndex,
+            mMuxer.writeSampleData(mAudioTrackIndex,
                     encodedData.getByteBuffer(),
                     encodedData.getBufferInfo());
-        } catch (IllegalStateException e) {
-            long availableBytes = checkNotNull(mOutputStorage).getAvailableBytes();
-            int error = availableBytes < mRequiredFreeStorageBytes
-                    ? ERROR_INSUFFICIENT_STORAGE : ERROR_UNKNOWN;
+        } catch (MuxerException e) {
+            Logger.w(TAG, "writeAudioData failed", e);
+            int error = hasInsufficientStorageOrException(e) ? ERROR_INSUFFICIENT_STORAGE
+                    : ERROR_UNKNOWN;
             onInProgressRecordingInternalError(recording, error, e);
             return;
         }
@@ -2231,10 +2485,12 @@ public final class Recorder implements VideoOutput {
     private void pauseInternal(@NonNull RecordingRecord recordingToPause) {
         // Only pause recording if recording is in-progress and it is not stopping.
         if (mInProgressRecording == recordingToPause && !mInProgressRecordingStopping) {
+            long pauseUptimeUs = mTimeProvider.uptimeUs();
+            recordingToPause.getPauseResumeDataProcessor().pause(pauseUptimeUs);
             if (isAudioEnabled()) {
-                mAudioEncoder.pause();
+                mAudioEncoder.pause(pauseUptimeUs);
             }
-            mVideoEncoder.pause();
+            mVideoEncoder.pause(pauseUptimeUs);
 
             mInProgressRecording.updateVideoRecordEvent(VideoRecordEvent.pause(
                     mInProgressRecording.getOutputOptions(),
@@ -2246,15 +2502,16 @@ public final class Recorder implements VideoOutput {
     private void resumeInternal(@NonNull RecordingRecord recordingToResume) {
         // Only resume recording if recording is in-progress and it is not stopping.
         if (mInProgressRecording == recordingToResume && !mInProgressRecordingStopping) {
+            long resumeUptimeUs = mTimeProvider.uptimeUs();
+            recordingToResume.getPauseResumeDataProcessor().resume(resumeUptimeUs);
             if (isAudioEnabled()) {
-                mAudioEncoder.start();
+                mAudioEncoder.start(resumeUptimeUs);
             }
-            // If a persistent recording is resumed immediately after the VideoCapture is rebound
-            // to a camera, it's possible that the encoder hasn't been created yet. Then the
-            // encoder will be started once it's initialized. So only start the encoder when it's
-            // not null.
+            // If the recording is resumed while the video encoder is being reconfigured,
+            // it's possible that the encoder hasn't been created yet. Then the encoder will
+            // be started once it's initialized. So only start the encoder when it's not null.
             if (mVideoEncoder != null) {
-                mVideoEncoder.start();
+                mVideoEncoder.start(resumeUptimeUs);
                 mInProgressRecording.updateVideoRecordEvent(VideoRecordEvent.resume(
                         mInProgressRecording.getOutputOptions(),
                         getInProgressRecordingStats()));
@@ -2293,20 +2550,12 @@ public final class Recorder implements VideoOutput {
                 // In both cases, we set a timeout to ensure the source is always signalled on
                 // devices that require it and to act as a flag that we need to signal the source
                 // stopped.
-                Encoder finalVideoEncoder = mVideoEncoder;
-                mSourceNonStreamingTimeout = scheduleTask(() -> {
+                mSourceNonStreamingTimeout = scheduleTask(() ->
                     Logger.d(TAG, "The source didn't become non-streaming "
                             + "before timeout. Waited " + SOURCE_NON_STREAMING_TIMEOUT_MS
-                            + "ms");
-                    if (DeviceQuirks.get(
-                            DeactivateEncoderSurfaceBeforeStopEncoderQuirk.class)
-                            != null) {
-                        // Even in the case of timeout, we tell the encoder the source has
-                        // stopped because devices with this quirk require that the codec
-                        // produce a new surface.
-                        notifyEncoderSourceStopped(finalVideoEncoder);
-                    }
-                }, mSequentialExecutor, SOURCE_NON_STREAMING_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                            + "ms"),
+                        mSequentialExecutor, SOURCE_NON_STREAMING_TIMEOUT_MS,
+                        TimeUnit.MILLISECONDS);
             } else {
                 // Source is already non-streaming. Signal source is stopped right away.
                 notifyEncoderSourceStopped(mVideoEncoder);
@@ -2316,7 +2565,9 @@ public final class Recorder implements VideoOutput {
             // the encoder when the source has actually stopped in the FutureCallback.
             // If the recording is explicitly stopped by the user, pass the stop timestamp to the
             // encoder so that the encoding can be stop as close as to the actual stop time.
-            mVideoEncoder.stop(explicitlyStopTime);
+            if (mVideoEncoder != null) {
+                mVideoEncoder.stop(explicitlyStopTime);
+            }
         }
     }
 
@@ -2343,12 +2594,13 @@ public final class Recorder implements VideoOutput {
     @ExecutedBy("mSequentialExecutor")
     private void clearPendingAudioRingBuffer() {
         while (!mPendingAudioRingBuffer.isEmpty()) {
-            mPendingAudioRingBuffer.dequeue();
+            mPendingAudioRingBuffer.dequeue().close();
         }
     }
 
     @ExecutedBy("mSequentialExecutor")
     private void reset() {
+        mRetainRecordingOnReconfiguring = false;
         if (mAudioEncoder != null) {
             Logger.d(TAG, "Releasing audio encoder.");
             mAudioEncoder.release();
@@ -2396,7 +2648,7 @@ public final class Recorder implements VideoOutput {
                 case PAUSED:
                     // Fall-through
                 case RECORDING:
-                    if (isPersistentRecordingInProgress()) {
+                    if (shouldRetainRecording()) {
                         shouldConfigure = false;
                         break;
                     }
@@ -2437,6 +2689,11 @@ public final class Recorder implements VideoOutput {
         switch (audioState) {
             case DISABLED:
                 // Fall-through
+            case IDLING:
+                // Audio state will be transitioning to IDLING after the recording is stopped. If
+                // the next recording is stopped immediately such as encounter insufficient storage,
+                // consider the audio is disabled.
+                // Fall-through
             case INITIALIZING:
                 // Audio will not be initialized until the first recording with audio enabled is
                 // started. So if the audio state is INITIALIZING, consider the audio is disabled.
@@ -2453,19 +2710,13 @@ public final class Recorder implements VideoOutput {
                 return AudioStats.AUDIO_STATE_ENCODER_ERROR;
             case ERROR_SOURCE:
                 return AudioStats.AUDIO_STATE_SOURCE_ERROR;
-            case IDLING:
-                // AudioStats should not be produced when audio is in IDLING state.
-                break;
         }
         // Should not reach.
         throw new AssertionError("Invalid internal audio state: " + audioState);
     }
 
     private @NonNull StreamState internalStateToStreamState(@NonNull State state) {
-        // Stopping state should be treated as inactive on certain chipsets. See b/196039619.
-        DeactivateEncoderSurfaceBeforeStopEncoderQuirk quirk =
-                DeviceQuirks.get(DeactivateEncoderSurfaceBeforeStopEncoderQuirk.class);
-        return state == State.RECORDING || (state == State.STOPPING && quirk == null)
+        return state == State.RECORDING || state == State.STOPPING
                 ? StreamState.ACTIVE : StreamState.INACTIVE;
     }
 
@@ -2473,6 +2724,24 @@ public final class Recorder implements VideoOutput {
     @ExecutedBy("mSequentialExecutor")
     boolean isAudioEnabled() {
         return mAudioState == AudioState.ENABLED;
+    }
+
+    @ExecutedBy("mSequentialExecutor")
+    private boolean hasInsufficientStorage(long availableStorageBytes) {
+        return availableStorageBytes < mRequiredFreeStorageBytes;
+    }
+
+    @ExecutedBy("mSequentialExecutor")
+    private boolean hasInsufficientStorageOrException(@Nullable Throwable throwable) {
+        if (isStorageFullException(throwable)) {
+            return true;
+        }
+        return hasInsufficientStorage(checkNotNull(mOutputStorage).getAvailableBytes());
+    }
+
+    @ExecutedBy("mSequentialExecutor")
+    private boolean hasInvalidRecordData() {
+        return mRecordingBytes <= 0 || (isAudioEnabled() && mRecordingAudioBytes <= 0);
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -2484,25 +2753,28 @@ public final class Recorder implements VideoOutput {
         }
 
         @VideoRecordError int errorToSend = error;
-        if (mMediaMuxer != null) {
+        Throwable throwableToSend = throwable;
+        if (mMuxer != null) {
             try {
-                mMediaMuxer.stop();
-                mMediaMuxer.release();
-            } catch (IllegalStateException e) {
-                Logger.e(TAG, "MediaMuxer failed to stop or release with error: " + e.getMessage(),
-                        e);
+                Logger.d(TAG, "Muxer.stop()");
+                mMuxer.stop();
+            } catch (MuxerException e) {
+                Logger.w(TAG, "Muxer failed to stop with error: " + e, e);
                 if (errorToSend == ERROR_NONE) {
-                    long availableBytes = checkNotNull(mOutputStorage).getAvailableBytes();
-                    if (availableBytes < mRequiredFreeStorageBytes) {
+                    if (hasInsufficientStorageOrException(e)) {
                         errorToSend = ERROR_INSUFFICIENT_STORAGE;
-                    } else if (mRecordingAudioBytes == 0L) {
+                    } else if (hasInvalidRecordData()) {
                         errorToSend = ERROR_NO_VALID_DATA;
                     } else {
                         errorToSend = ERROR_UNKNOWN;
                     }
+                    throwableToSend = e;
                 }
+            } finally {
+                Logger.d(TAG, "Muxer.release()");
+                mMuxer.release();
+                mMuxer = null;
             }
-            mMediaMuxer = null;
         } else if (errorToSend == ERROR_NONE) {
             // Muxer was never started, so recording has no data.
             errorToSend = ERROR_NO_VALID_DATA;
@@ -2523,7 +2795,7 @@ public final class Recorder implements VideoOutput {
                         stats,
                         outputResults,
                         errorToSend,
-                        throwable));
+                        throwableToSend));
 
         RecordingRecord finalizedRecording = mInProgressRecording;
         mInProgressRecording = null;
@@ -2534,7 +2806,7 @@ public final class Recorder implements VideoOutput {
         mOutputUri = Uri.EMPTY;
         mRecordingBytes = 0L;
         mRecordingAudioBytes = 0L;
-        mRecordingDurationNs = 0L;
+        mRecordingDurationUs = 0L;
         mFirstRecordingVideoDataTimeUs = Long.MAX_VALUE;
         mFirstRecordingAudioDataTimeUs = Long.MAX_VALUE;
         mPreviousRecordingVideoDataTimeUs = Long.MAX_VALUE;
@@ -2550,8 +2822,8 @@ public final class Recorder implements VideoOutput {
 
         switch (mAudioState) {
             case IDLING:
-                throw new AssertionError(
-                        "Incorrectly finalize recording when audio state is IDLING");
+                // No-op, the audio is not started, Keep it in IDLING state.
+                break;
             case INITIALIZING:
                 // No-op, the audio hasn't been initialized. Keep it in INITIALIZING state.
                 break;
@@ -2575,9 +2847,9 @@ public final class Recorder implements VideoOutput {
 
     @ExecutedBy("mSequentialExecutor")
     private void onRecordingFinalized(@NonNull RecordingRecord finalizedRecording) {
+        mRetainRecordingOnReconfiguring = false;
         boolean needsReset = false;
         boolean startRecordingPaused = false;
-        boolean needsConfigure = false;
         RecordingRecord recordingToStart = null;
         RecordingRecord pendingRecordingToFinalize = null;
         @VideoRecordError int error = ERROR_NONE;
@@ -2601,19 +2873,7 @@ public final class Recorder implements VideoOutput {
                     // likely finalized due to an error.
                     // Fall-through
                 case STOPPING:
-                    if (mEncoderNotUsePersistentInputSurface) {
-                        // If the encoder doesn't use persistent input surface, the active
-                        // surface will become invalid after a recording is finalized. If there's
-                        // an unserviced surface request, configure with it directly, otherwise
-                        // wait for a new surface update.
-                        mActiveSurface = null;
-                        if (mLatestSurfaceRequest != null && !mLatestSurfaceRequest.isServiced()) {
-                            needsConfigure = true;
-                        }
-                        setState(State.CONFIGURING);
-                    } else {
-                        setState(State.IDLING);
-                    }
+                    setState(State.IDLING);
                     break;
                 case PENDING_PAUSED:
                     startRecordingPaused = true;
@@ -2625,16 +2885,6 @@ public final class Recorder implements VideoOutput {
                         setState(State.CONFIGURING);
                         error = ERROR_SOURCE_INACTIVE;
                         errorCause = PENDING_RECORDING_ERROR_CAUSE_SOURCE_INACTIVE;
-                    } else if (mEncoderNotUsePersistentInputSurface) {
-                        // If the encoder doesn't use persistent input surface, the active
-                        // surface will become invalid after a recording is finalized. If there's
-                        // an unserviced surface request, configure with it directly, otherwise
-                        // wait for a new surface update.
-                        mActiveSurface = null;
-                        if (mLatestSurfaceRequest != null && !mLatestSurfaceRequest.isServiced()) {
-                            needsConfigure = true;
-                        }
-                        updateNonPendingState(State.CONFIGURING);
                     } else if (mVideoEncoder != null) {
                         // If there's no VideoEncoder, it may need to wait for the new
                         // VideoEncoder to be configured.
@@ -2655,17 +2905,9 @@ public final class Recorder implements VideoOutput {
         }
 
         // Perform required actions from state changes inline on sequential executor but unlocked.
-        if (needsConfigure) {
-            configureInternal(mLatestSurfaceRequest, mVideoSourceTimebase, false);
-        } else if (needsReset) {
+        if (needsReset) {
             reset();
         } else if (recordingToStart != null) {
-            // A pending recording will only be started if we're not waiting for a new surface.
-            // Otherwise the recording will be started after receiving a new surface request.
-            if (mEncoderNotUsePersistentInputSurface) {
-                throw new AssertionError("Attempt to start a pending recording while the Recorder"
-                        + " is waiting for a new surface request.");
-            }
             startRecording(recordingToStart, startRecordingPaused);
         } else if (pendingRecordingToFinalize != null) {
             finalizePendingRecording(pendingRecordingToFinalize, error, errorCause);
@@ -2857,7 +3099,8 @@ public final class Recorder implements VideoOutput {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mSequentialExecutor")
     @NonNull RecordingStats getInProgressRecordingStats() {
-        return RecordingStats.of(mRecordingDurationNs, mRecordingBytes,
+        return RecordingStats.of(TimeUnit.MICROSECONDS.toNanos(mRecordingDurationUs),
+                mRecordingBytes,
                 AudioStats.of(internalAudioStateToAudioStatsState(mAudioState), mAudioErrorCause,
                         mAudioAmplitude, mRecordingAudioBytes));
     }
@@ -2999,31 +3242,57 @@ public final class Recorder implements VideoOutput {
     }
 
     private static @NonNull ScheduledFuture<?> scheduleTask(@NonNull Runnable task,
-            @NonNull Executor executor, long delay, TimeUnit timeUnit) {
+            @NonNull Executor executor, long delay,
+            @SuppressWarnings("SameParameterValue") TimeUnit timeUnit) {
         return CameraXExecutors.mainThreadExecutor().schedule(() -> executor.execute(task), delay,
                 timeUnit);
     }
 
-    private static int supportedMuxerFormatOrDefaultFrom(
-            @Nullable VideoValidatedEncoderProfilesProxy profilesProxy, int defaultMuxerFormat) {
-        if (profilesProxy != null) {
-            switch (profilesProxy.getRecommendedFileFormat()) {
-                case MediaRecorder.OutputFormat.MPEG_4:
-                    return MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
-                case MediaRecorder.OutputFormat.WEBM:
-                    return MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM;
-                case MediaRecorder.OutputFormat.THREE_GPP:
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                        // MediaMuxer does not support 3GPP on pre-Android O(API 26) devices.
-                        return MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
-                    } else {
-                        return MediaMuxer.OutputFormat.MUXER_OUTPUT_3GPP;
-                    }
-                default:
-                    break;
-            }
-        }
-        return defaultMuxerFormat;
+    /**
+     * Returns the video MIME types supported by the device that are compatible with Recorder.
+     *
+     * <p>The returned list contains only those MIME types that are supported by the device's
+     * encoders and are compatible with Recorder. This list is a subset of the formats accepted
+     * by {@link Builder#setVideoMimeType(String)}.
+     *
+     * <p>This method should be used to discover available formats at runtime. Once a MIME type is
+     * selected from this list, it can be passed to {@link Builder#setVideoMimeType(String)} to
+     * configure the recorder. To query specific camera-dependent capabilities for a chosen MIME
+     * type, such as supported qualities or dynamic ranges, use
+     * {@link #getVideoCapabilities(CameraInfo, String)}.
+     *
+     * @return A list of strings representing the supported video MIME types.
+     * @see Builder#setVideoMimeType(String)
+     * @see #getVideoCapabilities(CameraInfo, String)
+     */
+    @ExperimentalMimeTypeApi
+    public static @NonNull List<String> getSupportedVideoMimeTypes() {
+        List<String> encoderMimes = CodecUtil.getVideoEncoderMimeTypes();
+        List<String> filteredMimes = new ArrayList<>(encoderMimes);
+        filteredMimes.retainAll(SUPPORTED_VIDEO_MIME_TYPES);
+        return filteredMimes;
+    }
+
+    /**
+     * Returns the audio MIME types supported by the device that are compatible with Recorder.
+     *
+     * <p>The returned list contains only those MIME types that are supported by the device's
+     * encoders and are compatible with Recorder. This list is a subset of the formats accepted
+     * by {@link Builder#setAudioMimeType(String)}.
+     *
+     * <p>This method should be used to discover available formats at runtime. Once a MIME type is
+     * selected from this list, it can be passed to {@link Builder#setAudioMimeType(String)} to
+     * configure the recorder.
+     *
+     * @return A list of strings representing the supported audio MIME types.
+     * @see Builder#setAudioMimeType(String)
+     */
+    @ExperimentalMimeTypeApi
+    public static @NonNull List<String> getSupportedAudioMimeTypes() {
+        List<String> encoderMimes = CodecUtil.getAudioEncoderMimeTypes();
+        List<String> filteredMimes = new ArrayList<>(encoderMimes);
+        filteredMimes.retainAll(SUPPORTED_AUDIO_MIME_TYPES);
+        return filteredMimes;
     }
 
     /**
@@ -3042,7 +3311,36 @@ public final class Recorder implements VideoOutput {
      */
     public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo) {
         return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
-                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE);
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, MIME_TYPE_UNSPECIFIED);
+    }
+
+    /**
+     * Returns the {@link VideoCapabilities} of Recorder with respect to input camera information
+     * and video MIME type.
+     *
+     * <p>{@link VideoCapabilities} provides methods to query supported dynamic ranges and
+     * qualities. This information can be used for things like checking if HDR is supported for
+     * configuring VideoCapture to record HDR video.
+     *
+     * <p>This method provides an aggregated view of the combined capabilities of the
+     * selected camera and the device's video encoder for the specified format. It allows
+     * discovery of supported qualities, dynamic ranges, and other constraints associated
+     * with a specific encoding format without the need to manually cross-reference
+     * camera and encoder capabilities.
+     *
+     * @param cameraInfo info about the camera.
+     * @param mimeType the video MIME type to query capabilities for (e.g., "video/hevc").
+     * @return VideoCapabilities with respect to the input camera info and video MIME type, or
+     * {@code null} if no capabilities are found for the given MIME type.
+     * @see #getSupportedVideoMimeTypes()
+     * @see Builder#setVideoMimeType(String)
+     */
+    public static @Nullable VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
+            @NonNull String mimeType) {
+        VideoCapabilities videoCapabilities = getVideoCapabilitiesInternal(
+                VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, mimeType);
+        return videoCapabilities == VideoCapabilities.EMPTY ? null : videoCapabilities;
     }
 
     /**
@@ -3065,18 +3363,22 @@ public final class Recorder implements VideoOutput {
     public static @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
         return getVideoCapabilitiesInternal(VIDEO_RECORDING_TYPE_REGULAR, cameraInfo,
-                videoCapabilitiesSource);
+                videoCapabilitiesSource, MIME_TYPE_UNSPECIFIED);
     }
 
     /**
      * Returns the high-speed {@link VideoCapabilities} of Recorder with respect to input camera
      * information.
      *
+     * <p>The returned {@link VideoCapabilities} provides methods to query supported dynamic
+     * ranges, qualities for high-speed video. For recording high-speed and slow-motion
+     * videos, refer to {@link HighSpeedVideoSessionConfig}.
+     *
      * @param cameraInfo info about the camera.
      * @return high-speed VideoCapabilities with respect to the input camera info, or null if
-     * high-speed recording is not supported.
+     * high-speed video is not supported.
+     * @see HighSpeedVideoSessionConfig
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
     public static @Nullable VideoCapabilities getHighSpeedVideoCapabilities(
             @NonNull CameraInfo cameraInfo) {
         return getHighSpeedVideoCapabilities(cameraInfo,
@@ -3087,26 +3389,65 @@ public final class Recorder implements VideoOutput {
      * Returns the high-speed {@link VideoCapabilities} of Recorder with respect to input camera
      * information and video capabilities source.
      *
+     * <p>The returned {@link VideoCapabilities} provides methods to query supported dynamic
+     * ranges, qualities for high-speed video. For recording high-speed and slow-motion
+     * videos, refer to {@link HighSpeedVideoSessionConfig}.
+     *
+     * <p>The possible video capabilities sources include
+     * {@link #VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE} and
+     * {@link #VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES}.
+     *
      * @param cameraInfo              info about the camera.
      * @param videoCapabilitiesSource the video capabilities source.
      * @return high-speed VideoCapabilities with respect to the input camera info and video
-     * capabilities source, or null if high-speed recording is not supported.
+     * capabilities source, or null if high-speed video is not supported.
+     * @see HighSpeedVideoSessionConfig
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // Don't expose this API for the initial version.
     public static @Nullable VideoCapabilities getHighSpeedVideoCapabilities(
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
         VideoCapabilities videoCapabilities = getVideoCapabilitiesInternal(
-                VIDEO_RECORDING_TYPE_HIGH_SPEED, cameraInfo, videoCapabilitiesSource);
+                VIDEO_RECORDING_TYPE_HIGH_SPEED, cameraInfo, videoCapabilitiesSource,
+                MIME_TYPE_UNSPECIFIED);
         return videoCapabilities.getSupportedDynamicRanges().isEmpty() ? null : videoCapabilities;
     }
 
+    @OptIn(markerClass = ExperimentalMimeTypeApi.class)
     private static @NonNull VideoCapabilities getVideoCapabilitiesInternal(
+            @VideoRecordingType int videoRecordingType, @NonNull CameraInfo cameraInfo,
+            @VideoCapabilitiesSource int videoCapabilitiesSource, @NonNull String mimeType) {
+
+        CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) cameraInfo;
+        if (MIME_TYPE_UNSPECIFIED.equals(mimeType)) {
+            EncoderProfilesResolver profilesResolver = getEncoderProfilesResolverInternal(
+                    videoRecordingType, cameraInfo, videoCapabilitiesSource);
+            return new RecorderVideoCapabilities(profilesResolver, cameraInfoInternal);
+        } else {
+            return getSupportedVideoMimeTypes().contains(mimeType)
+                    ? new MimeMatchedVideoCapabilities(mimeType, cameraInfoInternal,
+                    DEFAULT_VIDEO_ENCODER_INFO_FINDER) : VideoCapabilities.EMPTY;
+        }
+    }
+
+    /** Gets the {@link EncoderProfilesResolver} for the given camera info. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Override
+    public @NonNull EncoderProfilesResolver getEncoderProfilesResolver(
+            @NonNull CameraInfo cameraInfo, int sessionType) {
+        int videoCaptureType = sessionType == SESSION_TYPE_HIGH_SPEED
+                ? VIDEO_RECORDING_TYPE_HIGH_SPEED : VIDEO_RECORDING_TYPE_REGULAR;
+
+        return getEncoderProfilesResolverInternal(videoCaptureType, cameraInfo,
+                mVideoCapabilitiesSource);
+    }
+
+    private static @NonNull EncoderProfilesResolver getEncoderProfilesResolverInternal(
             @VideoRecordingType int videoRecordingType,
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {
-        return new RecorderVideoCapabilities(videoCapabilitiesSource,
-                (CameraInfoInternal) cameraInfo, videoRecordingType, VideoEncoderInfoImpl.FINDER);
+        return EncoderProfilesResolverFactory.getResolver(cameraInfo, videoRecordingType,
+                videoCapabilitiesSource, DEFAULT_VIDEO_ENCODER_INFO_FINDER);
     }
 
     @AutoValue
@@ -3116,8 +3457,10 @@ public final class Recorder implements VideoOutput {
 
         private final AtomicBoolean mInitialized = new AtomicBoolean(false);
 
-        private final AtomicReference<MediaMuxerSupplier> mMediaMuxerSupplier =
-                new AtomicReference<>(null);
+        private final PauseResumeDataProcessor mPauseResumeDataProcessor =
+                new PauseResumeDataProcessor();
+
+        private final AtomicReference<MuxerSupplier> mMuxerSupplier = new AtomicReference<>(null);
 
         private final AtomicReference<AudioSourceSupplier> mAudioSourceSupplier =
                 new AtomicReference<>(null);
@@ -3165,7 +3508,8 @@ public final class Recorder implements VideoOutput {
          * @throws IOException if it fails to duplicate the file descriptor when the
          * {@link #getOutputOptions() OutputOptions} is {@link FileDescriptorOutputOptions}.
          */
-        void initializeRecording(@NonNull Context context) throws IOException {
+        void initializeRecording(@NonNull Context context, @NonNull MuxerFactory muxerFactory)
+                throws IOException {
             if (mInitialized.getAndSet(true)) {
                 throw new AssertionError("Recording " + this + " has already been initialized");
             }
@@ -3175,6 +3519,7 @@ public final class Recorder implements VideoOutput {
             if (outputOptions instanceof FileDescriptorOutputOptions) {
                 // Duplicate ParcelFileDescriptor to make input descriptor can be safely closed,
                 // or throw an IOException if it fails.
+                //noinspection resource
                 dupedParcelFileDescriptor =
                         ((FileDescriptorOutputOptions) outputOptions)
                                 .getParcelFileDescriptor().dup();
@@ -3184,9 +3529,9 @@ public final class Recorder implements VideoOutput {
 
             mCloseGuard.open("finalizeRecording");
 
-            MediaMuxerSupplier mediaMuxerSupplier =
+            MuxerSupplier muxerSupplier =
                     (muxerOutputFormat, outputUriCreatedCallback) -> {
-                        MediaMuxer mediaMuxer;
+                        Muxer muxer = muxerFactory.create(muxerOutputFormat);
                         Uri outputUri = Uri.EMPTY;
                         if (outputOptions instanceof FileOutputOptions) {
                             FileOutputOptions fileOutputOptions = (FileOutputOptions) outputOptions;
@@ -3195,30 +3540,20 @@ public final class Recorder implements VideoOutput {
                                 Logger.w(TAG,
                                         "Failed to create folder for " + file.getAbsolutePath());
                             }
-                            mediaMuxer = new MediaMuxer(file.getAbsolutePath(), muxerOutputFormat);
+                            Logger.d(TAG, "Muxer.setOutput by path = " + file.getAbsolutePath());
+                            muxer.setOutput(file.getAbsolutePath(), muxerOutputFormat);
                             outputUri = Uri.fromFile(file);
                         } else if (outputOptions instanceof FileDescriptorOutputOptions) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                // Use dup'd ParcelFileDescriptor to prevent the descriptor in
-                                // OutputOptions from being closed.
-                                mediaMuxer = Api26Impl.createMediaMuxer(
-                                        dupedParcelFileDescriptor.getFileDescriptor(),
-                                        muxerOutputFormat);
-                            } else {
-                                throw new IOException(
-                                        "MediaMuxer doesn't accept FileDescriptor as output "
-                                                + "destination.");
-                            }
+                            // Use dup'd ParcelFileDescriptor to prevent the descriptor in
+                            // OutputOptions from being closed.
+                            Logger.d(TAG, "Muxer.setOutput by ParcelFileDescriptor");
+                            muxer.setOutput(dupedParcelFileDescriptor, muxerOutputFormat);
                         } else if (outputOptions instanceof MediaStoreOutputOptions) {
                             MediaStoreOutputOptions mediaStoreOutputOptions =
                                     (MediaStoreOutputOptions) outputOptions;
 
-                            ContentValues contentValues =
-                                    new ContentValues(mediaStoreOutputOptions.getContentValues());
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                // Toggle on pending status for the video file.
-                                contentValues.put(MediaStore.Video.Media.IS_PENDING, PENDING);
-                            }
+                            ContentValues contentValues = resolveContentValues(
+                                    mediaStoreOutputOptions, muxer);
                             try {
                                 outputUri = mediaStoreOutputOptions.getContentResolver().insert(
                                         mediaStoreOutputOptions.getCollectionUri(), contentValues);
@@ -3241,15 +3576,23 @@ public final class Recorder implements VideoOutput {
                                 if (!OutputUtil.createParentFolder(new File(path))) {
                                     Logger.w(TAG, "Failed to create folder for " + path);
                                 }
-                                mediaMuxer = new MediaMuxer(path, muxerOutputFormat);
+                                Logger.d(TAG, "Muxer.setOutput by path = " + path);
+                                muxer.setOutput(path, muxerOutputFormat);
                             } else {
-                                ParcelFileDescriptor fileDescriptor =
+                                ParcelFileDescriptor parcelFileDescriptor =
                                         mediaStoreOutputOptions.getContentResolver()
                                                 .openFileDescriptor(outputUri, "rw");
-                                mediaMuxer = Api26Impl.createMediaMuxer(
-                                        fileDescriptor.getFileDescriptor(),
-                                        muxerOutputFormat);
-                                fileDescriptor.close();
+                                if (parcelFileDescriptor == null) {
+                                    throw new IOException(
+                                            "Unable to open file descriptor from uri " + outputUri);
+                                }
+                                try {
+                                    Logger.d(TAG, "Muxer.setOutput by ParcelFileDescriptor");
+                                    muxer.setOutput(parcelFileDescriptor, muxerOutputFormat);
+                                } catch (IOException e) {
+                                    parcelFileDescriptor.close();
+                                    throw e;
+                                }
                             }
                         } else {
                             throw new AssertionError(
@@ -3257,44 +3600,13 @@ public final class Recorder implements VideoOutput {
                                             + outputOptions.getClass().getSimpleName());
                         }
                         outputUriCreatedCallback.accept(outputUri);
-                        return mediaMuxer;
+                        return muxer;
                     };
-            mMediaMuxerSupplier.set(mediaMuxerSupplier);
+            mMuxerSupplier.set(muxerSupplier);
 
             Consumer<Uri> recordingFinalizer = null;
             if (hasAudioEnabled()) {
-                if (Build.VERSION.SDK_INT >= 31) {
-                    // Use anonymous inner class instead of lambda since we need to propagate
-                    // permission requirements
-                    @SuppressWarnings("Convert2Lambda")
-                    AudioSourceSupplier audioSourceSupplier = new AudioSourceSupplier() {
-                        @Override
-                        @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-                        public @NonNull AudioSource get(@NonNull AudioSettings settings,
-                                @NonNull Executor executor)
-                                throws AudioSourceAccessException {
-                            // Context will only be held in local scope of the supplier so it will
-                            // not be retained after performOneTimeAudioSourceCreation() is called.
-                            return new AudioSource(settings, executor, context);
-                        }
-                    };
-                    mAudioSourceSupplier.set(audioSourceSupplier);
-                } else {
-                    // Use anonymous inner class instead of lambda since we need to propagate
-                    // permission requirements
-                    @SuppressWarnings("Convert2Lambda")
-                    AudioSourceSupplier audioSourceSupplier = new AudioSourceSupplier() {
-                        @Override
-                        @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-                        public @NonNull AudioSource get(@NonNull AudioSettings settings,
-                                @NonNull Executor executor)
-                                throws AudioSourceAccessException {
-                            // Do not set (or retain) context on other API levels
-                            return new AudioSource(settings, executor, null);
-                        }
-                    };
-                    mAudioSourceSupplier.set(audioSourceSupplier);
-                }
+                mAudioSourceSupplier.set(getAudioSourceSupplier(context));
             }
 
             if (outputOptions instanceof MediaStoreOutputOptions) {
@@ -3307,6 +3619,8 @@ public final class Recorder implements VideoOutput {
                         if (outputUri.equals(Uri.EMPTY)) {
                             return;
                         }
+                        // Workaround: Explicitly update to NOT_PENDING even if it wasn't set.
+                        // This helps display the video duration on the Google Photos thumbnails.
                         ContentValues contentValues = new ContentValues();
                         contentValues.put(MediaStore.Video.Media.IS_PENDING, NOT_PENDING);
                         mediaStoreOutputOptions.getContentResolver().update(outputUri,
@@ -3343,22 +3657,57 @@ public final class Recorder implements VideoOutput {
                         }
                     };
                 }
-            } else if (outputOptions instanceof FileDescriptorOutputOptions) {
-                recordingFinalizer = ignored -> {
-                    try {
-                        // dupedParcelFileDescriptor should be non-null.
-                        dupedParcelFileDescriptor.close();
-                    } catch (IOException e) {
-                        // IOException is not expected to be thrown while closing
-                        // ParcelFileDescriptor.
-                        Logger.e(TAG, "Failed to close dup'd ParcelFileDescriptor", e);
-                    }
-                };
             }
 
             if (recordingFinalizer != null) {
                 mRecordingFinalizer.set(recordingFinalizer);
             }
+        }
+
+        @NonNull
+        private ContentValues resolveContentValues(
+                @NonNull MediaStoreOutputOptions mediaStoreOutputOptions, @NonNull Muxer muxer) {
+            ContentValues contentValues =
+                    new ContentValues(mediaStoreOutputOptions.getContentValues());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    && !muxer.isInterruptionResilient()) {
+                // Toggle on pending status for the video file. The saved file
+                // will be hidden until the pending flag is changed to NOT_PENDING.
+                contentValues.put(MediaStore.Video.Media.IS_PENDING, PENDING);
+            }
+            return contentValues;
+        }
+
+        @NonNull
+        private static AudioSourceSupplier getAudioSourceSupplier(@NonNull Context context) {
+            Context attributionContext;
+            if (Build.VERSION.SDK_INT >= 31) {
+                // Context will only be held in local scope of the supplier so it will
+                // not be retained after performOneTimeAudioSourceCreation() is called.
+                attributionContext = context;
+            } else {
+                // Do not set (or retain) context on other API levels
+                attributionContext = null;
+            }
+
+            // Use anonymous inner class instead of lambda since we need to propagate
+            // permission requirements
+            @SuppressWarnings("Convert2Lambda")
+            AudioSourceSupplier audioSourceSupplier = new AudioSourceSupplier() {
+                @Override
+                @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+                public @NonNull AudioSource get(@NonNull AudioSettings settings,
+                        @NonNull Executor executor)
+                        throws AudioSourceAccessException {
+                    return new AudioSource(settings, executor, attributionContext);
+                }
+            };
+
+            return audioSourceSupplier;
+        }
+
+        @NonNull PauseResumeDataProcessor getPauseResumeDataProcessor() {
+            return mPauseResumeDataProcessor;
         }
 
         /** Updates the recording status and callback to users. */
@@ -3423,8 +3772,7 @@ public final class Recorder implements VideoOutput {
          * {@link AssertionError}.
          */
         @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-        @NonNull AudioSource performOneTimeAudioSourceCreation(
-                @NonNull AudioSettings settings, @NonNull Executor audioSourceExecutor)
+        @NonNull AudioSource performOneTimeAudioSourceCreation(@NonNull AudioSettings settings)
                 throws AudioSourceAccessException {
             if (!hasAudioEnabled()) {
                 throw new AssertionError("Recording does not have audio enabled. Unable to create"
@@ -3437,41 +3785,41 @@ public final class Recorder implements VideoOutput {
                         + " recording " + this);
             }
 
-            return audioSourceSupplier.get(settings, audioSourceExecutor);
+            return audioSourceSupplier.get(settings, AUDIO_EXECUTOR);
         }
 
         /**
-         * Creates a {@link MediaMuxer} for this recording.
+         * Creates a {@link Muxer} for this recording.
          *
-         * <p>A media muxer can only be created once per recording, so subsequent calls to this
-         * method will throw an {@link AssertionError}.
+         * <p>A muxer can only be created once per recording, so subsequent calls to this method
+         * will throw an {@link AssertionError}.
          *
          * @param muxerOutputFormat the output file format.
-         * @param outputUriCreatedCallback A callback that will send the returned media muxer's
+         * @param outputUriCreatedCallback A callback that will send the returned muxer's
          *                                 output {@link Uri}. It will be {@link Uri#EMPTY} if the
          *                                 {@link #getOutputOptions() OutputOptions} is
          *                                 {@link FileDescriptorOutputOptions}.
          *                                 Note: This callback will be called inline.
-         * @return the media muxer.
-         * @throws IOException if the creation of the media mixer fails.
+         * @return the muxer.
+         * @throws IOException if the creation of the muxer fails.
          * @throws AssertionError if the recording is not initialized or subsequent calls to this
          * method.
          */
-        @NonNull MediaMuxer performOneTimeMediaMuxerCreation(int muxerOutputFormat,
+        @NonNull Muxer performOneTimeMuxerCreation(@Muxer.Format int muxerOutputFormat,
                 @NonNull Consumer<Uri> outputUriCreatedCallback) throws IOException {
             if (!mInitialized.get()) {
                 throw new AssertionError("Recording " + this + " has not been initialized");
             }
-            MediaMuxerSupplier mediaMuxerSupplier = mMediaMuxerSupplier.getAndSet(null);
-            if (mediaMuxerSupplier == null) {
-                throw new AssertionError("One-time media muxer creation has already occurred for"
+            MuxerSupplier muxerSupplier = mMuxerSupplier.getAndSet(null);
+            if (muxerSupplier == null) {
+                throw new AssertionError("One-time muxer creation has already occurred for"
                         + " recording " + this);
             }
 
             try {
-                return mediaMuxerSupplier.get(muxerOutputFormat, outputUriCreatedCallback);
+                return muxerSupplier.get(muxerOutputFormat, outputUriCreatedCallback);
             } catch (RuntimeException e) {
-                throw new IOException("Failed to create MediaMuxer by " + e, e);
+                throw new IOException("Failed to create Muxer by " + e, e);
             }
         }
 
@@ -3518,7 +3866,7 @@ public final class Recorder implements VideoOutput {
         }
 
         @Override
-        @SuppressWarnings("GenericException") // super.finalize() throws Throwable
+        @SuppressWarnings({"GenericException", "removal"}) // super.finalize() throws Throwable
         protected void finalize() throws Throwable {
             try {
                 mCloseGuard.warnIfOpen();
@@ -3541,8 +3889,8 @@ public final class Recorder implements VideoOutput {
             finalizer.accept(uri);
         }
 
-        private interface MediaMuxerSupplier {
-            @NonNull MediaMuxer get(int muxerOutputFormat,
+        private interface MuxerSupplier {
+            @NonNull Muxer get(@Muxer.Format int muxerOutputFormat,
                     @NonNull Consumer<Uri> outputUriCreatedCallback) throws IOException;
         }
 
@@ -3564,6 +3912,7 @@ public final class Recorder implements VideoOutput {
         private Executor mExecutor = null;
         private EncoderFactory mVideoEncoderFactory = DEFAULT_ENCODER_FACTORY;
         private EncoderFactory mAudioEncoderFactory = DEFAULT_ENCODER_FACTORY;
+        private MuxerFactory mMuxerFactory = DEFAULT_MUXER_FACTORY;
         private OutputStorage.Factory mOutputStorageFactory = OUTPUT_STORAGE_FACTORY_DEFAULT;
         private long mRequiredFreeStorageBytes = REQUIRED_FREE_STORAGE_UNSET;
 
@@ -3574,7 +3923,99 @@ public final class Recorder implements VideoOutput {
          * options.
          */
         public Builder() {
-            mMediaSpecBuilder = MediaSpec.builder();
+            mMediaSpecBuilder = MEDIA_SPEC_DEFAULT.toBuilder();
+        }
+
+        /** Sets the output format. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public @NonNull Builder setOutputFormat(@MediaSpec.OutputFormat int outputFormat) {
+            mMediaSpecBuilder.setOutputFormat(outputFormat);
+            return this;
+        }
+
+        /**
+         * Sets the desired video MIME type for the recording.
+         *
+         * <p>If not set, CameraX automatically chooses an appropriate video codec based on
+         * device capabilities. Only call this method if a specific override is required.
+         *
+         * <p>The supported formats will depend on the device capability and can be queried by
+         * {@link Recorder#getSupportedVideoMimeTypes()} at runtime. The Recorder is designed to
+         * support the following MIME types:
+         * <ul>
+         * <li>AV1 ({@link MediaFormat#MIMETYPE_VIDEO_AV1})</li>
+         * <li>MPEG-4 ({@link MediaFormat#MIMETYPE_VIDEO_MPEG4})</li>
+         * <li>H.263 ({@link MediaFormat#MIMETYPE_VIDEO_H263})</li>
+         * <li>H.264 ({@link MediaFormat#MIMETYPE_VIDEO_AVC})</li>
+         * <li>H.265 ({@link MediaFormat#MIMETYPE_VIDEO_HEVC})</li>
+         * <li>VP8 ({@link MediaFormat#MIMETYPE_VIDEO_VP8})</li>
+         * <li>VP9 ({@link MediaFormat#MIMETYPE_VIDEO_VP9})</li>
+         * <li>APV ({@link MediaFormat#MIMETYPE_VIDEO_APV})</li>
+         * <li>Dolby Vision ({@link MediaFormat#MIMETYPE_VIDEO_DOLBY_VISION})</li>
+         * </ul>
+         *
+         * If a MIME type supported by Recorder is provided, but that MIME type is not supported
+         * by the device, an {@link IllegalArgumentException} will be thrown when binding the
+         * {@link VideoCapture} use case that uses this recorder.
+         *
+         * <p>If a custom video MIME type is set but an audio MIME type is left as unspecified,
+         * CameraX will automatically select a compatible audio codec and container format based
+         * on the chosen video format.
+         *
+         * <p>MIME type specific capabilities for a given camera, such as supported qualities and
+         * dynamic ranges, can be queried using
+         * {@link Recorder#getVideoCapabilities(CameraInfo, String)}.
+         *
+         * @param mimeType The desired video MIME type.
+         * @return This {@link Builder} instance.
+         * @throws IllegalArgumentException if {@code mimeType} is not a video format supported
+         * by the Recorder (listed above).
+         * @see Recorder#getSupportedVideoMimeTypes()
+         * @see Recorder#getVideoCapabilities(CameraInfo, String)
+         */
+        public @NonNull Builder setVideoMimeType(@NonNull String mimeType) {
+            checkArgument(SUPPORTED_VIDEO_MIME_TYPES.contains(mimeType),
+                    "Unsupported video MIME type: " + mimeType);
+            mMediaSpecBuilder.configureVideo(builder -> builder.setMimeType(mimeType));
+            return this;
+        }
+
+        /**
+         * Sets the desired audio MIME type for the recording.
+         *
+         * <p>If not set, CameraX automatically chooses an appropriate audio codec based on
+         * device capabilities. Only call this method if a specific override is required.
+         *
+         * <p>The supported formats will depend on the device capability and can be queried by
+         * {@link Recorder#getSupportedAudioMimeTypes()} at runtime. The Recorder is designed to
+         * support the following MIME types:
+         * <ul>
+         * <li>AAC ({@link MediaFormat#MIMETYPE_AUDIO_AAC})</li>
+         * <li>AMR-NB ({@link MediaFormat#MIMETYPE_AUDIO_AMR_NB})</li>
+         * <li>AMR-WB ({@link MediaFormat#MIMETYPE_AUDIO_AMR_WB})</li>
+         * <li>Opus ({@link MediaFormat#MIMETYPE_AUDIO_OPUS})</li>
+         * <li>Vorbis ({@link MediaFormat#MIMETYPE_AUDIO_VORBIS})</li>
+         * </ul>
+         *
+         * If a MIME type supported by Recorder is provided, but that MIME type is not supported
+         * by the device, an {@link IllegalArgumentException} will be thrown when binding the
+         * {@link VideoCapture} use case that uses this recorder.
+         *
+         * <p>If a custom audio MIME type is set but a video MIME type is left as unspecified,
+         * CameraX will automatically select a compatible video codec and container format based
+         * on the chosen audio format.
+         *
+         * @param mimeType The desired audio MIME type.
+         * @return This {@link Builder} instance.
+         * @throws IllegalArgumentException if {@code mimeType} is not an audio format supported
+         * by the Recorder (listed above).
+         * @see Recorder#getSupportedAudioMimeTypes()
+         */
+        public @NonNull Builder setAudioMimeType(@NonNull String mimeType) {
+            checkArgument(SUPPORTED_AUDIO_MIME_TYPES.contains(mimeType),
+                    "Unsupported audio MIME type: " + mimeType);
+            mMediaSpecBuilder.configureAudio(builder -> builder.setMimeType(mimeType));
+            return this;
         }
 
         /**
@@ -3616,6 +4057,13 @@ public final class Recorder implements VideoOutput {
                     "The specified quality selector can't be null.");
             mMediaSpecBuilder.configureVideo(
                     builder -> builder.setQualitySelector(qualitySelector));
+            return this;
+        }
+
+        /** Sets the {@link MuxerFactory} of this Recorder. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public @NonNull Builder setMuxerFactory(@NonNull MuxerFactory muxerFactory) {
+            mMuxerFactory = muxerFactory;
             return this;
         }
 
@@ -3671,8 +4119,55 @@ public final class Recorder implements VideoOutput {
                         + " is not supported. Target bitrate must be greater than 0.");
             }
 
-            mMediaSpecBuilder.configureVideo(
-                    builder -> builder.setBitrate(new Range<>(bitrate, bitrate)));
+            mMediaSpecBuilder.configureVideo(builder -> builder.setBitrate(bitrate));
+            return this;
+        }
+
+        /**
+         * Sets the target audio encoding bitrate of this Recorder.
+         *
+         * <p>Additional checks will be performed on the requested {@code bitrate} to make sure the
+         * specified bitrate is applicable, and sometimes the passed bitrate will be changed
+         * internally to ensure the audio recording can proceed smoothly based on the
+         * capabilities of the platform.
+         *
+         * <p>This API only affects the audio stream and should not be considered the
+         * target for the entire recording. The video stream's bitrate is not affected by this API.
+         *
+         * <p>If this method isn't called, an appropriate bitrate for normal audio
+         * recording is selected by default. Only call this method if a custom bitrate is desired.
+         *
+         * @param bitrate the target audio encoding bitrate in bits per second.
+         * @throws IllegalArgumentException if bitrate is 0 or less.
+         */
+        public @NonNull Builder setTargetAudioEncodingBitRate(@IntRange(from = 1) int bitrate) {
+            if (bitrate <= 0) {
+                throw new IllegalArgumentException("The requested target bitrate " + bitrate
+                        + " is not supported. Target bitrate must be greater than 0.");
+            }
+
+            mMediaSpecBuilder.configureAudio(builder -> builder.setBitrate(bitrate));
+            return this;
+        }
+
+        /**
+         * Sets the intended audio channel count for recording.
+         *
+         * <p>Common values are 1 for mono and 2 for stereo. If the requested channel count is
+         * not supported by the device, CameraX will fall back to a supported channel count. If
+         * this method is not called, an appropriate default channel count will be selected.
+         *
+         * @param channelCount the target audio channel count.
+         * @return the builder instance.
+         * @throws IllegalArgumentException if {@code channelCount} is less than 1.
+         */
+        public @NonNull Builder setTargetAudioChannelCount(@IntRange(from = 1) int channelCount) {
+            if (channelCount < 1) {
+                throw new IllegalArgumentException("Target channel count must be greater than 0, "
+                        + "but was " + channelCount);
+            }
+
+            mMediaSpecBuilder.configureAudio(builder -> builder.setChannelCount(channelCount));
             return this;
         }
 
@@ -3735,9 +4230,9 @@ public final class Recorder implements VideoOutput {
          * enabled on a per-recording basis with {@link PendingRecording#withAudioEnabled()}
          * before starting the recording.
          *
-         * @param source The audio source to use. One of {@link AudioSpec#SOURCE_AUTO} or
+         * @param source The audio source to use. One of {@link AudioSpec#SOURCE_UNSPECIFIED} or
          *               {@link AudioSpec#SOURCE_CAMCORDER}. Default is
-         *               {@link AudioSpec#SOURCE_AUTO}.
+         *               {@link AudioSpec#SOURCE_UNSPECIFIED}.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         public @NonNull Builder setAudioSource(@AudioSpec.Source int source) {
@@ -3772,8 +4267,8 @@ public final class Recorder implements VideoOutput {
          */
         public @NonNull Recorder build() {
             return new Recorder(mExecutor, mMediaSpecBuilder.build(), mVideoCapabilitiesSource,
-                    mVideoEncoderFactory, mAudioEncoderFactory, mOutputStorageFactory,
-                    mRequiredFreeStorageBytes);
+                    mVideoEncoderFactory, mAudioEncoderFactory, mMuxerFactory,
+                    mOutputStorageFactory, mRequiredFreeStorageBytes);
         }
     }
 }

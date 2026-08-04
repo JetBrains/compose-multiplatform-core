@@ -16,7 +16,10 @@
 
 package androidx.benchmark.macro
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.perfetto.PerfettoHelper
+import androidx.benchmark.runSingleSessionServer
 import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.MediumTest
 import org.junit.Assume.assumeTrue
@@ -35,7 +38,7 @@ class TraceMetricTest {
     class ActivityResumeMetric : TraceMetric() {
         override fun getMeasurements(
             captureInfo: CaptureInfo,
-            traceSession: TraceProcessor.Session
+            traceSession: TraceProcessor.Session,
         ): List<Measurement> {
             val rowSequence =
                 traceSession.query(
@@ -71,14 +74,16 @@ class TraceMetricTest {
                 targetPackageName = Packages.TARGET,
                 testPackageName = Packages.TEST,
                 startupMode = StartupMode.HOT,
-                apiLevel = 31
+                apiLevel = 31,
             )
 
         private fun verifyActivityResume(
             tracePath: String,
-            @Suppress("SameParameterValue") expectedMs: Double
+            @Suppress("SameParameterValue") expectedMs: Double,
         ) {
             assumeTrue(PerfettoHelper.isAbiSupported())
+            // Our API 23 emulators seem to be misconfigured b/438214932
+            assumeTrue(!isEmulator || SDK_INT != 23)
             val metric = ActivityResumeMetric()
             metric.configure(captureInfo)
 
@@ -90,7 +95,7 @@ class TraceMetricTest {
             assertEqualMeasurements(
                 expected = listOf(Metric.Measurement("activityResumeMs", expectedMs)),
                 observed = result,
-                threshold = 0.001
+                threshold = 0.001,
             )
         }
     }

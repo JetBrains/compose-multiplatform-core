@@ -27,13 +27,11 @@ import androidx.camera.video.internal.BufferProvider.State
 import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -59,7 +57,6 @@ import org.mockito.invocation.InvocationOnMock
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioEncoderTest {
 
     companion object {
@@ -80,7 +77,7 @@ class AudioEncoderTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         encoderCallback = Mockito.mock(EncoderCallback::class.java)
@@ -104,7 +101,7 @@ class AudioEncoderTest {
                     .setEncodeSampleRate(SAMPLE_RATE)
                     .setChannelCount(CHANNEL_COUNT)
                     .build(),
-                SESSION_TYPE_REGULAR
+                SESSION_TYPE_REGULAR,
             )
         encoder.setEncoderCallback(encoderCallback, CameraXExecutors.directExecutor())
 
@@ -146,7 +143,7 @@ class AudioEncoderTest {
         // Skip for b/269129619
         assumeFalse(
             "Skip test for Cuttlefish API 30 flaky native crash",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30,
         )
 
         // Arrange.
@@ -267,54 +264,6 @@ class AudioEncoderTest {
     }
 
     @Test
-    fun pauseEncoder_presentationTimeShouldExcludePausedDuration() {
-        // Arrange.
-        // The test step is "start and wait data" -> "pause for a while" -> "resume and wait
-        // data", then make sure the timestamp of resume data doesn't include the pause duration.
-        // Make the pause duration = wait data timeout, then even the worst case, the difference
-        // between 2 data should be always smaller than pause duration if the pause duration is
-        // not included.
-        val timeoutWaitDataMs = 1500L
-        val pauseDurationMs = timeoutWaitDataMs
-
-        val presentationTimeUs = AtomicLong()
-        val encoderCallback = Mockito.mock(EncoderCallback::class.java)
-        Mockito.doAnswer { args: InvocationOnMock ->
-                val encodedData: EncodedData = args.getArgument(0)
-                presentationTimeUs.set(encodedData.presentationTimeUs)
-                encodedData.close()
-                null
-            }
-            .`when`(encoderCallback)
-            .onEncodedData(any())
-        encoder.setEncoderCallback(encoderCallback, CameraXExecutors.directExecutor())
-
-        // Act.
-        fakeAudioLoop.start()
-        encoder.start()
-
-        // Get presentation time of encoded data before pause.
-        verify(encoderCallback, timeout(timeoutWaitDataMs).atLeastOnce()).onEncodedData(any())
-        val presentationTimeBeforePause = presentationTimeUs.get()
-
-        encoder.pause()
-        Thread.sleep(pauseDurationMs)
-        encoder.start()
-
-        // Get presentation time of encoded data after resume.
-        verify(encoderCallback, timeout(timeoutWaitDataMs).atLeastOnce()).onEncodedData(any())
-        val presentationTimeAfterResume = presentationTimeUs.get()
-
-        // Assert.
-        assertThat(presentationTimeAfterResume > presentationTimeBeforePause)
-        val timeDiffMs =
-            TimeUnit.MICROSECONDS.toMillis(
-                presentationTimeAfterResume - presentationTimeBeforePause
-            )
-        assertThat(timeDiffMs < pauseDurationMs)
-    }
-
-    @Test
     fun pauseResumeEncoder_getChronologicalData() {
         // Arrange.
         fakeAudioLoop.start()
@@ -395,7 +344,7 @@ class AudioEncoderTest {
                     stateRef.set(null)
                     lock.release()
                 }
-            }
+            },
         )
 
         // Assert.

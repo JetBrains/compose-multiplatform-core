@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.datastore.core
 
 /** Datastore common version of java.io.Closeable */
@@ -55,6 +57,6 @@ inline fun <T : Closeable, R> T.use(block: (T) -> R): R {
     // We either returned in the try block, or thrown must be not null, so this code is unreachable.
     error(
         """Unreachable code. If this occurs, please file a bug here:
-        https://b.corp.google.com/issues/new?component=907884&template=1466542"""
+        https://issuetracker.google.com/issues/new?component=907884&template=1466542"""
     )
 }

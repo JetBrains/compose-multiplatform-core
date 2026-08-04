@@ -17,13 +17,11 @@
 package androidx.health.services.client.impl.request
 
 import android.os.Parcelable
-import androidx.annotation.RestrictTo
 import androidx.health.services.client.data.PassiveListenerConfig
 import androidx.health.services.client.data.ProtoParcelable
 import androidx.health.services.client.proto.RequestsProto
 
 /** Request for background registration. */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PassiveListenerCallbackRegistrationRequest(
     public val packageName: String,
     public val passiveListenerConfig: PassiveListenerConfig,
@@ -43,7 +41,7 @@ internal class PassiveListenerCallbackRegistrationRequest(
                     RequestsProto.PassiveListenerCallbackRegistrationRequest.parseFrom(bytes)
                 PassiveListenerCallbackRegistrationRequest(
                     proto.packageName,
-                    PassiveListenerConfig(proto.config)
+                    PassiveListenerConfig(proto.config),
                 )
             }
     }

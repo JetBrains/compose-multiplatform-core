@@ -51,11 +51,11 @@ fun SizeTransformComposable() {
                             durationMillis = 500
                             IntSize(
                                 initialSize.width,
-                                (initialSize.height + targetSize.height) / 2
+                                (initialSize.height + targetSize.height) / 2,
                             ) at 150
                         }
                     }
-                }
+                },
             ) {
                 CollapsedScreen { navController.navigate(Expanded) }
             }
@@ -69,7 +69,7 @@ fun SizeTransformComposable() {
                             IntSize(targetSize.width, initialSize.height + 400) at 150
                         }
                     }
-                }
+                },
             ) {
                 ExpandedScreen { navController.popBackStack() }
             }

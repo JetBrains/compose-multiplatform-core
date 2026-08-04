@@ -20,8 +20,8 @@ package androidx.car.app.model;
 import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
+import androidx.car.app.annotations.RequiresCarApi;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
@@ -36,16 +36,17 @@ import java.util.Objects;
  * A section within the {@code SectionedItemTemplate} that contains {@link GridItem}s - good for
  * showcase large artwork or images for every entry.
  */
-@ExperimentalCarApi
 @CarProtocol
 @KeepFields
+@RequiresCarApi(8)
 public final class GridSection extends Section<GridItem> {
     /** Defines possible sizes of the grid items within a grid section. */
     @IntDef(
             value = {
                     ITEM_SIZE_SMALL,
                     ITEM_SIZE_MEDIUM,
-                    ITEM_SIZE_LARGE
+                    ITEM_SIZE_LARGE,
+                    ITEM_SIZE_EXTRA_LARGE,
             })
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -63,6 +64,10 @@ public final class GridSection extends Section<GridItem> {
     /** Renders the items within the section in a large format. */
     @ItemSize
     public static final int ITEM_SIZE_LARGE = 3;
+
+    /** Renders the items within the section in an extra large sized format. */
+    @ItemSize
+    public static final int ITEM_SIZE_EXTRA_LARGE = 4;
 
     /** Defines the possible shapes of the images shown on the grid items within a grid section. */
     @IntDef(
@@ -147,7 +152,6 @@ public final class GridSection extends Section<GridItem> {
     }
 
     /** A builder that constructs {@link GridSection} instances. */
-    @ExperimentalCarApi
     public static final class Builder extends BaseBuilder<GridItem, Builder> {
         @ItemSize
         private int mItemSize = ITEM_SIZE_SMALL;

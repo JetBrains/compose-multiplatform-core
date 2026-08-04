@@ -20,16 +20,16 @@ import androidx.graphics.path.PathIterator as PlatformPathIterator
 import androidx.graphics.path.PathIterator.ConicEvaluation as PlatformConicEvaluation
 import androidx.graphics.path.PathSegment.Type as PlatformPathSegmentType
 
-actual fun PathIterator(
+public actual fun PathIterator(
     path: Path,
     conicEvaluation: PathIterator.ConicEvaluation,
-    tolerance: Float
+    tolerance: Float,
 ): PathIterator = AndroidPathIterator(path, conicEvaluation, tolerance)
 
 private class AndroidPathIterator(
     override val path: Path,
     override val conicEvaluation: PathIterator.ConicEvaluation,
-    override val tolerance: Float
+    override val tolerance: Float,
 ) : PathIterator {
     private val segmentPoints = FloatArray(8)
 
@@ -40,7 +40,7 @@ private class AndroidPathIterator(
                 PathIterator.ConicEvaluation.AsConic -> PlatformConicEvaluation.AsConic
                 PathIterator.ConicEvaluation.AsQuadratics -> PlatformConicEvaluation.AsQuadratics
             },
-            tolerance
+            tolerance,
         )
 
     override fun calculateSize(includeConvertedConics: Boolean): Int =

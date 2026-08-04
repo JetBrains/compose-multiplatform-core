@@ -36,8 +36,14 @@ import kotlin.collections.removeLast as removeLastKt
 internal class UndoManager<T>(
     initialUndoStack: List<T> = emptyList(),
     initialRedoStack: List<T> = emptyList(),
-    private val capacity: Int = 100
+    private val capacity: Int = 100,
 ) {
+    init {
+        requirePrecondition(capacity >= 0) { "Capacity must be a positive integer" }
+        requirePrecondition(initialRedoStack.size + initialUndoStack.size <= capacity) {
+            "Initial list of undo and redo operations have a size greater than the given capacity."
+        }
+    }
 
     private var undoStack = SnapshotStateList<T>().apply { addAll(initialUndoStack) }
     private var redoStack = SnapshotStateList<T>().apply { addAll(initialRedoStack) }
@@ -50,13 +56,6 @@ internal class UndoManager<T>(
 
     val size: Int
         get() = undoStack.size + redoStack.size
-
-    init {
-        requirePrecondition(capacity >= 0) { "Capacity must be a positive integer" }
-        requirePrecondition(size <= capacity) {
-            "Initial list of undo and redo operations have a size greater than the given capacity."
-        }
-    }
 
     fun record(undoableAction: T) {
         // First clear the redo stack.
@@ -137,10 +136,11 @@ internal class UndoManager<T>(
                     value.redoStack.fastForEach { with(itemSaver) { add(save(it)) } }
                 }
 
-                @Suppress("UNCHECKED_CAST")
                 override fun restore(value: Any): UndoManager<T> {
-                    val list = value as List<Any>
-                    val (capacity, undoSize, redoSize) = (list as List<Int>)
+                    @Suppress("UNCHECKED_CAST") val list = value as List<Any>
+                    val capacity = list[0] as Int
+                    val undoSize = list[1] as Int
+                    val redoSize = list[2] as Int
                     var i = 3
                     val undoStackItems = buildList {
                         while (i < undoSize + 3) {

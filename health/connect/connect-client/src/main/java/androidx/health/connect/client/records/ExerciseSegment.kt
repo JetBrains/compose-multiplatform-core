@@ -16,29 +16,87 @@
 
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.impl.platform.records.toPlatformExerciseSegment
+import androidx.health.connect.client.records.ExerciseSessionRecord.ExerciseTypes
+import androidx.health.connect.client.units.Mass
 import java.time.Instant
 
 /**
  * Represents particular exercise within an exercise session.
  *
- * <p>Each segment contains start and end time of the exercise, exercise type and optional number of
- * repetitions.
+ * <p>Each segment contains start and end time of the exercise, exercise type and optional metrics
+ * such as number of repetitions, weight used, set index, and rate of perceived exertion.
  *
  * @see ExerciseSessionRecord
  */
-public class ExerciseSegment(
+public class ExerciseSegment
+@JvmOverloads
+constructor(
     public val startTime: Instant,
     public val endTime: Instant,
     /** Type of segment (e.g. biking, plank). */
     @property:ExerciseSegmentTypes public val segmentType: Int,
     /** Number of repetitions in the segment. Must be non-negative. */
     public val repetitions: Int = 0,
+    /** Weight used in the segment. Must be non-negative. */
+    public val weight: Mass? = null,
+    @Suppress("AutoBoxing")
+    @get:Suppress("AutoBoxing")
+    /**
+     * Index of the set in the session.
+     *
+     * A set is a group of consecutive repetitions (reps) of a specific exercise performed without a
+     * break, e.g. 10 push-ups in a row without stopping.
+     *
+     * A set index represents the position of this set relative to other sets in the session. For
+     * instance, if an exercise has three sets, they will have setIndex values of 0, 1, and 2
+     * respectively.
+     *
+     * Multiple segments may be part of a single set, for example if a collection of activities are
+     * considered to be a single set, in which case those segments would have the same set index.
+     *
+     * The set index may also go back to zero in a single [ExerciseSessionRecord]. For example, if
+     * three sets of one activity are completed followed by three sets of another, setIndex values
+     * of 0, 1, 2, 0, 1, 2 would be expected for those segments.
+     *
+     * Must be non-negative.
+     */
+    public val setIndex: Int? = null,
+    @Suppress("AutoBoxing")
+    @get:Suppress("AutoBoxing")
+    /**
+     * Rate of perceived exertion (RPE) for the segment.
+     *
+     * Values correspond to the Borg CR10 RPE scale and must be in the range 0 to 10 inclusive.
+     * - 0: No exertion (at rest)
+     * - 1: Very light
+     * - 2-3: Light
+     * - 4-5: Moderate
+     * - 6-7: Hard
+     * - 8-9: Very hard
+     * - 10: Maximum effort
+     */
+    public val rateOfPerceivedExertion: Float? = null,
 ) {
+
     init {
-        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
-        require(repetitions >= 0) { "repetitions can not be negative." }
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                isAtLeastSdkExtension21()
+        ) {
+            val unused = this.toPlatformExerciseSegment()
+        } else {
+            require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+            require(repetitions >= 0) { "repetitions can not be negative." }
+            weight?.let { require(it.inGrams >= 0) { "weight must be non-negative." } }
+            setIndex?.let { require(it >= 0) { "setIndex must be non-negative." } }
+            rateOfPerceivedExertion?.let {
+                require(it in 0.0..10.0) { "rateOfPerceivedExertion must be in range [0.0, 10.0]." }
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -49,6 +107,9 @@ public class ExerciseSegment(
         if (endTime != other.endTime) return false
         if (segmentType != other.segmentType) return false
         if (repetitions != other.repetitions) return false
+        if (weight != other.weight) return false
+        if (setIndex != other.setIndex) return false
+        if (rateOfPerceivedExertion != other.rateOfPerceivedExertion) return false
 
         return true
     }
@@ -59,24 +120,41 @@ public class ExerciseSegment(
         result = 31 * result + endTime.hashCode()
         result = 31 * result + segmentType.hashCode()
         result = 31 * result + repetitions.hashCode()
+        result = 31 * result + weight.hashCode()
+        result = 31 * result + setIndex.hashCode()
+        result = 31 * result + rateOfPerceivedExertion.hashCode()
         return result
     }
 
-    internal fun isCompatibleWith(sessionType: Int): Boolean {
-        if (UNIVERSAL_SESSION_TYPES.contains(sessionType)) {
-            return true
-        }
-        if (UNIVERSAL_SEGMENTS.contains(segmentType)) {
-            return true
-        }
-        return SESSION_TO_SEGMENTS_MAPPING[sessionType]?.contains(segmentType) ?: false
-    }
-
     override fun toString(): String {
-        return "ExerciseSegment(startTime=$startTime, endTime=$endTime, segmentType=$segmentType, repetitions=$repetitions)"
+        return "ExerciseSegment(startTime=$startTime, endTime=$endTime, segmentType=$segmentType, repetitions=$repetitions, weight=$weight, setIndex=$setIndex, rateOfPerceivedExertion=$rateOfPerceivedExertion)"
     }
 
     companion object {
+        /**
+         * Is a segment type compatible with a session type.
+         *
+         * <p>For example, a swimming session can contain [EXERCISE_SEGMENT_TYPE_SWIMMING_FREESTYLE]
+         * segments, but can't contain [EXERCISE_SEGMENT_TYPE_YOGA] segments.
+         *
+         * @param segmentType the segment type to be contained within [sessionType].
+         * @param sessionType the session type that should contain [segmentType].
+         * @return True, if [sessionType] can contain the provided segment, otherwise false.
+         */
+        @JvmStatic
+        fun isSegmentTypeCompatibleWithSessionType(
+            @ExerciseSegmentTypes segmentType: Int,
+            @ExerciseTypes sessionType: Int,
+        ): Boolean {
+            if (UNIVERSAL_SESSION_TYPES.contains(sessionType)) {
+                return true
+            }
+            if (UNIVERSAL_SEGMENTS.contains(segmentType)) {
+                return true
+            }
+            return SESSION_TO_SEGMENTS_MAPPING[sessionType]?.contains(segmentType) ?: false
+        }
+
         /** Next Id: 68. */
 
         /** Use this type if the type of the exercise segment is not known. */
@@ -339,7 +417,7 @@ public class ExerciseSegment(
                 EXERCISE_SEGMENT_TYPE_SIT_UP,
                 EXERCISE_SEGMENT_TYPE_SQUAT,
                 EXERCISE_SEGMENT_TYPE_UPPER_TWIST,
-                EXERCISE_SEGMENT_TYPE_WEIGHTLIFTING
+                EXERCISE_SEGMENT_TYPE_WEIGHTLIFTING,
             )
         internal val SWIMMING_SEGMENTS =
             setOf(
@@ -348,7 +426,7 @@ public class ExerciseSegment(
                 EXERCISE_SEGMENT_TYPE_SWIMMING_FREESTYLE,
                 EXERCISE_SEGMENT_TYPE_SWIMMING_BUTTERFLY,
                 EXERCISE_SEGMENT_TYPE_SWIMMING_MIXED,
-                EXERCISE_SEGMENT_TYPE_SWIMMING_OTHER
+                EXERCISE_SEGMENT_TYPE_SWIMMING_OTHER,
             )
 
         private val SESSION_TO_SEGMENTS_MAPPING =
@@ -364,7 +442,7 @@ public class ExerciseSegment(
                         EXERCISE_SEGMENT_TYPE_YOGA,
                         EXERCISE_SEGMENT_TYPE_BIKING_STATIONARY,
                         EXERCISE_SEGMENT_TYPE_PILATES,
-                        EXERCISE_SEGMENT_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
+                        EXERCISE_SEGMENT_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING,
                     ),
                 ExerciseSessionRecord.EXERCISE_TYPE_GYMNASTICS to EXERCISE_SEGMENTS,
                 ExerciseSessionRecord.EXERCISE_TYPE_HIKING to

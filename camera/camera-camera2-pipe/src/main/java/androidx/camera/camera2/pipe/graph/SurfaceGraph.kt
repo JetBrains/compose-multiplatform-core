@@ -37,7 +37,7 @@ internal class SurfaceGraph(
     private val streamGraphImpl: StreamGraphImpl,
     private val cameraController: Provider<CameraController>,
     private val surfaceManager: CameraSurfaceManager,
-    private val imageSources: Map<StreamId, ImageSource>
+    private val imageSources: Map<StreamId, ImageSource>,
 ) : SurfaceTracker, AutoCloseable {
     private val lock = Any()
 
@@ -150,7 +150,7 @@ internal class SurfaceGraph(
         }
     }
 
-    private fun maybeUpdateSurfaces() {
+    internal fun maybeUpdateSurfaces() {
         // Rules:
         // 1. There must be at least one non-null surface.
         // 2. All non-deferrable streams must have a non-null surface.

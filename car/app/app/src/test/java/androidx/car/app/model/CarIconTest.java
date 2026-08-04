@@ -20,8 +20,10 @@ import static androidx.car.app.model.CarColor.BLUE;
 import static androidx.car.app.model.CarColor.DEFAULT;
 import static androidx.car.app.model.CarColor.GREEN;
 import static androidx.car.app.model.CarIcon.BACK;
+import static androidx.car.app.model.CarIcon.MEDIA_PLAYBACK;
 import static androidx.car.app.model.CarIcon.TYPE_BACK;
 import static androidx.car.app.model.CarIcon.TYPE_CUSTOM;
+import static androidx.car.app.model.CarIcon.TYPE_MEDIA_PLAYBACK;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -45,7 +47,9 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 import java.io.File;
 
 /** Tests for {@link CarIcon}. */
+@SuppressWarnings("deprecation")
 @RunWith(RobolectricTestRunner.class)
+@org.robolectric.annotation.Config(sdk = {org.robolectric.annotation.Config.TARGET_SDK})
 @DoNotInstrument
 public class CarIconTest {
     private IconCompat mIcon;
@@ -63,6 +67,7 @@ public class CarIconTest {
 
         assertThat(carIcon.getType()).isEqualTo(TYPE_CUSTOM);
         assertThat(carIcon.getTint()).isEqualTo(BLUE);
+        assertThat(carIcon.getStyle().getTint()).isEqualTo(BLUE);
         assertThat(carIcon.getIcon()).isEqualTo(mIcon);
     }
 
@@ -72,7 +77,42 @@ public class CarIconTest {
 
         assertThat(carIcon.getType()).isEqualTo(TYPE_CUSTOM);
         assertThat(carIcon.getTint()).isNull();
+        assertThat(carIcon.getStyle()).isNull();
         assertThat(mIcon).isEqualTo(carIcon.getIcon());
+    }
+
+    @Test
+    public void build_withStyle_noTint() {
+        CarIconStyle style = new CarIconStyle.Builder().setShape(Shape.CORNER_FULL).build();
+        CarIcon carIcon = new CarIcon.Builder(mIcon).setStyle(style).build();
+
+        assertThat(carIcon.getType()).isEqualTo(TYPE_CUSTOM);
+        assertThat(carIcon.getTint()).isNull();
+        assertThat(carIcon.getStyle()).isEqualTo(style);
+        assertThat(carIcon.getIcon()).isEqualTo(mIcon);
+    }
+
+    @Test
+    public void build_withStyle_withTint() {
+        CarColor tint = BLUE;
+        CarIconStyle style = new CarIconStyle.Builder().setTint(tint).setShape(
+                Shape.CORNER_FULL).build();
+        CarIcon carIcon = new CarIcon.Builder(mIcon).setStyle(style).build();
+
+        assertThat(carIcon.getType()).isEqualTo(TYPE_CUSTOM);
+        assertThat(carIcon.getTint()).isEqualTo(tint);
+        assertThat(carIcon.getStyle()).isEqualTo(style);
+        assertThat(carIcon.getIcon()).isEqualTo(mIcon);
+    }
+
+    @Test
+    public void build_noStyle() {
+        CarIcon carIcon = new CarIcon.Builder(mIcon).build();
+
+        assertThat(carIcon.getType()).isEqualTo(TYPE_CUSTOM);
+        assertThat(carIcon.getTint()).isNull();
+        assertThat(carIcon.getStyle()).isNull();
+        assertThat(carIcon.getIcon()).isEqualTo(mIcon);
     }
 
     @Test
@@ -81,12 +121,21 @@ public class CarIconTest {
 
         assertThat(carIcon.getType()).isEqualTo(TYPE_BACK);
         assertThat(carIcon.getTint()).isEqualTo(GREEN);
+        assertThat(carIcon.getStyle().getTint()).isEqualTo(GREEN);
         assertThat(carIcon.getIcon()).isEqualTo(BACK.getIcon());
+    }
+
+    @Test
+    public void buildMediaPlaybackAction() {
+        CarIcon carIcon = new CarIcon.Builder(MEDIA_PLAYBACK).build();
+
+        assertThat(carIcon.getType()).isEqualTo(TYPE_MEDIA_PLAYBACK);
     }
 
     @Test
     public void standard_defaultTint() {
         assertThat(BACK.getTint()).isEqualTo(DEFAULT);
+        assertThat(BACK.getStyle().getTint()).isEqualTo(DEFAULT);
     }
 
     // TODO(shiufai): Add content uri equality test once we support content URI.
@@ -101,6 +150,7 @@ public class CarIconTest {
 
         assertThat(carIcon.getType()).isEqualTo(TYPE_CUSTOM);
         assertThat(carIcon.getTint()).isNull();
+        assertThat(carIcon.getStyle()).isNull();
         assertThat(carIcon.getIcon().getType()).isEqualTo(IconCompat.TYPE_URI);
     }
 
