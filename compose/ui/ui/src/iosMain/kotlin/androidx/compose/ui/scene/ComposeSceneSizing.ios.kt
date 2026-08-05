@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
