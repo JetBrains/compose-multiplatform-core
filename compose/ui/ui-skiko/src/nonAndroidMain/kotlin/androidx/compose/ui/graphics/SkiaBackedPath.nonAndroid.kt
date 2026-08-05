@@ -447,4 +447,4 @@ private fun Path.Direction.toSkiaPathDirection() = when (this) {
     Path.Direction.Clockwise -> PathDirection.CLOCKWISE
 }
 
-private fun Float.toDegrees(): Float = this * (180 / PI).toFloat()
+private fun Float.toDegrees(): Float = this * (180f / PI.toFloat())
