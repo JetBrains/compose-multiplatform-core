@@ -77,6 +77,7 @@ private struct IntrinsicFixedHeightFittedWidthExample: View {
                     composeView: composeView,
                     fittingProposal: CGSize(width: UIView.noIntrinsicMetric, height: height)
                 )
+                .fixedSize(horizontal: true, vertical: false)
                 .frame(height: height)
                 .border(.orange, width: 2)
 
@@ -105,6 +106,7 @@ private struct IntrinsicNaturalSizeContentChangesExample: View {
                     composeView: composeView,
                     fittingProposal: CGSize(width: UIView.noIntrinsicMetric, height: UIView.noIntrinsicMetric)
                 )
+                .fixedSize(horizontal: true, vertical: false)
                 .border(.orange, width: 2)
 
                 Text("Expected: Open Compose Controls to toggle width, height, or both. The orange host should follow the animated Compose box size.")
