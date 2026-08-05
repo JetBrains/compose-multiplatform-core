@@ -47,11 +47,17 @@ private val redirectionCache = mutableMapOf<Project, ArtifactRedirection?>()
 fun Project.artifactRedirection(): ArtifactRedirection? =
     redirectionCache.getOrPut(project) { project.readArtifactRedirection() }
 
-private fun Project.replacedGroupId(replacement: String) =
-    group.toString().replace(
-        replacement.substringBefore("->"),
-        replacement.substringAfter("->")
-    )
+/**
+ * Null when this project's group has nothing to replace — an unpublished module keeps the
+ * Gradle default group derived from the root project's name, and redirecting that would ask
+ * for a version of an artifact nobody publishes.
+ */
+private fun Project.replacedGroupId(replacement: String): String? {
+    val from = replacement.substringBefore("->")
+    val group = group.toString()
+    if (!group.startsWith(from)) return null
+    return group.replaceFirst(from, replacement.substringAfter("->"))
+}
 
 fun Project.readArtifactRedirection(): ArtifactRedirection? {
     val targetNames = strProperty("artifactRedirection.targetNames")
@@ -61,11 +67,15 @@ fun Project.readArtifactRedirection(): ArtifactRedirection? {
         ?.toSet()
         ?: return null
 
-    val groupId = strProperty("artifactRedirection.groupId")
-        ?: strProperty("artifactRedirection.groupIdReplacement")?.let(::replacedGroupId)
-        ?: error("Please add `artifactRedirection.groupId` or " +
+    val explicitGroupId = strProperty("artifactRedirection.groupId")
+    val groupIdReplacement = strProperty("artifactRedirection.groupIdReplacement")
+    val groupId = when {
+        explicitGroupId != null -> explicitGroupId
+        groupIdReplacement != null -> replacedGroupId(groupIdReplacement) ?: return null
+        else -> error("Please add `artifactRedirection.groupId` or " +
             "`artifactRedirection.groupIdReplacement` to " +
             "`${projectDir.resolve("gradle.properties")}` or any parent project")
+    }
 
     // Example - for library "androidx.annotation:annotation" possible properties:
     // artifactRedirection.version.androidx.annotation.annotation,
