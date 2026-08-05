@@ -72,6 +72,17 @@ sealed class ComposeContainerConfiguration {
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * Specifies how the Compose view reports its preferred size to UIKit.
+     *
+     * Compose calculates the preferred size from a UIKit `sizeThatFits` proposal with either
+     * strategy. [SizeReportingStrategy.SizeThatFits] reports that result directly and is the
+     * default. [SizeReportingStrategy.IntrinsicContentSize] additionally exposes the latest
+     * fitting result through UIKit's `intrinsicContentSize` API for SwiftUI on iOS < 16.
+     */
+    @ExperimentalComposeUiApi
+    var sizeReportingStrategy: SizeReportingStrategy = SizeReportingStrategy.SizeThatFits
 }
 
 /**
@@ -112,4 +123,26 @@ sealed interface EndEdgePanGestureBehavior {
      * Forward navigation events will be sent on the end edge.
      */
     data object Forward : EndEdgePanGestureBehavior
+}
+
+/**
+ * Specifies how a Compose view reports its preferred size to UIKit.
+ */
+@ExperimentalComposeUiApi
+sealed interface SizeReportingStrategy {
+    /**
+     * Reports the preferred size directly from `sizeThatFits`.
+     *
+     * This is the default and recommended strategy for UIKit and for SwiftUI on iOS 16 and later.
+     */
+    data object SizeThatFits : SizeReportingStrategy
+
+    /**
+     * Exposes the latest explicit `sizeThatFits` result through `intrinsicContentSize`.
+     *
+     * This API is intended for SwiftUI on iOS < 16, where
+     * `UIViewRepresentable.sizeThatFits` is unavailable. It requires a fitting proposal
+     * to be supplied through `sizeThatFits` before an intrinsic size can be reported.
+     */
+    data object IntrinsicContentSize : SizeReportingStrategy
 }
