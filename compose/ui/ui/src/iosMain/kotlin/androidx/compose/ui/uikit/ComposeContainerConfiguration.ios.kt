@@ -76,7 +76,7 @@ sealed class ComposeContainerConfiguration {
     /**
      * Specifies how the Compose view reports its preferred size to UIKit.
      *
-     * Compose calculates the preferred size from a UIKit `sizeThatFits` proposal with either
+     * Compose calculates the preferred size for a UIKit `sizeThatFits` proposal with either
      * strategy. [SizeReportingStrategy.SizeThatFits] reports that result directly and is the
      * default. [SizeReportingStrategy.IntrinsicContentSize] additionally exposes the latest
      * fitting result through UIKit's `intrinsicContentSize` API for SwiftUI on iOS < 16.
