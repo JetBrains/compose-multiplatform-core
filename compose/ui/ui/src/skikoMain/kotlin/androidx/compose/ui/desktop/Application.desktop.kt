@@ -250,7 +250,7 @@ suspend fun Application.runSession(
             coroutineScope = this,
             dataSourceContext = dataSourceContext,
         )
-        GlobalSnapshotManager.ensureStarted()
+        val globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
 
         // The application composition's frame domain: read tracking over the launch-time
         // context, per-slice isolation (flag off) or a standing rotated cycle unit (flag on).
@@ -293,6 +293,7 @@ suspend fun Application.runSession(
             domain.close()
             recomposer.close()
             recomposer.join()
+            globalSnapshotRegistration?.close()
         }
     }
 }

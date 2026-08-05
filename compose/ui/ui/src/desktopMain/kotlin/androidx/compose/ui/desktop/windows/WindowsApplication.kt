@@ -25,8 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeSchedulingDispatcher
-import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.Application
 import androidx.compose.ui.desktop.ApplicationSession
@@ -90,9 +88,6 @@ object WindowsApplication : Application, Clipboard by WindowsClipboard() {
         uriHandler: UriHandler,
         customQuit: (() -> Boolean)?,
     ) {
-        // Compose's internal scheduling must run on this backend's UI thread, the same one that mutates
-        // LayoutNode state. ComposeUIDispatcher already resolves the correct per-platform KDT dispatcher.
-        ComposeSchedulingDispatcher = ComposeUIDispatcher
         synchronized(lock) {
             check(!shutdown) {
                 "WindowsApplication has already been shut down and cannot be reinitialized in the same process"

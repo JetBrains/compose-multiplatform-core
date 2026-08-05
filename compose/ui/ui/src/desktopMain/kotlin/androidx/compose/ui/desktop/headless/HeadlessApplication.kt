@@ -21,7 +21,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeSchedulingDispatcher
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.ComposeUIDispatcherOverride
 import androidx.compose.ui.SystemTheme
@@ -100,8 +99,8 @@ object HeadlessApplication : Application {
             // Validate/activate BEFORE touching any dispatcher globals. activateApplication rejects
             // (throws IllegalStateException) when another backend already owns this JVM, and it has
             // no side effect that installEventLoop/configure depend on, so running it first means a
-            // rejected activation leaves ComposeUIDispatcherOverride/ComposeSchedulingDispatcher (and
-            // the live backend that owns them) untouched. Idempotent on reuse: activateApplication
+            // rejected activation leaves ComposeUIDispatcherOverride (and the live backend that owns
+            // it) untouched. Idempotent on reuse: activateApplication
             // accepts re-activating the same, already-active instance.
             activateApplication(this)
             if (!initialized) {
@@ -392,7 +391,6 @@ object HeadlessApplication : Application {
         val currentEventLoop = eventLoopOrNull
             ?: createHeadlessEventLoop(libraryFolderPath).also { eventLoopOrNull = it }
         ComposeUIDispatcherOverride = HeadlessMainDispatcher(currentEventLoop)
-        ComposeSchedulingDispatcher = ComposeUIDispatcherOverride
         initialized = true
         lastClosedEventLoopPendingTasksCount = 0
     }
@@ -403,7 +401,6 @@ object HeadlessApplication : Application {
                 return@synchronized
             }
             ComposeUIDispatcherOverride = null
-            ComposeSchedulingDispatcher = null
             initialized = false
         }
     }
@@ -414,7 +411,6 @@ object HeadlessApplication : Application {
             lastClosedEventLoopPendingTasksCount = currentEventLoop.pendingTasksCount
             eventLoopOrNull = null
             ComposeUIDispatcherOverride = null
-            ComposeSchedulingDispatcher = null
             initialized = false
             currentEventLoop
         }
