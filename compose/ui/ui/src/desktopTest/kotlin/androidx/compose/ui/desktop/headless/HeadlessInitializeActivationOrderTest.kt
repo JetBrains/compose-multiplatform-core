@@ -17,7 +17,6 @@
 package androidx.compose.ui.desktop.headless
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ComposeSchedulingDispatcher
 import androidx.compose.ui.ComposeUIDispatcherOverride
 import androidx.compose.ui.HeadlessTest
 import androidx.compose.ui.SystemTheme
@@ -32,7 +31,6 @@ import androidx.compose.ui.desktop.deactivateApplication
 import androidx.compose.ui.platform.ClipEntry
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -106,24 +104,21 @@ class HeadlessInitializeActivationOrderTest {
     @Test
     fun initializeDoesNotClobberDispatchersWhenAnotherApplicationIsActive() {
         val overrideBefore = ComposeUIDispatcherOverride
-        val schedulingBefore = ComposeSchedulingDispatcher
         activateApplication(StubApplication)
         try {
             assertFailsWith<IllegalStateException> {
                 HeadlessApplication.initialize(System.getProperty("java.io.tmpdir"))
             }
             // The rejected activation must run before any dispatcher install, so the live backend's
-            // dispatcher globals stay exactly as they were.
+            // dispatcher override stays exactly as it was.
             assertNull(
                 ComposeUIDispatcherOverride,
                 "initialize() clobbered ComposeUIDispatcherOverride despite the activation being rejected",
             )
-            assertSame(schedulingBefore, ComposeSchedulingDispatcher)
         } finally {
             deactivateApplication(StubApplication)
-            // Full global-state restore (defensive; both are null in a fresh forkEvery=1 JVM).
+            // Full global-state restore (defensive; null in a fresh forkEvery=1 JVM).
             ComposeUIDispatcherOverride = overrideBefore
-            ComposeSchedulingDispatcher = schedulingBefore
         }
     }
 }

@@ -16,8 +16,35 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.requiredSchedulingDispatcher
+import androidx.compose.ui.ComposeUIDispatcher
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Runnable
 
+/**
+ * The dispatcher [GlobalSnapshotManager] posts its apply-notification coalescing to. Unlike every
+ * other consumer of [ComposeUIDispatcher], the manager captures this value exactly ONCE per JVM —
+ * its start is guarded by an atomic that never resets — into a `CoroutineScope` that outlives every
+ * individual application. Returning [ComposeUIDispatcher] directly would pin whatever it resolved to
+ * at that first call: fine when it is the KDT main dispatcher (a stable object that re-resolves the
+ * active application per dispatch), but stale when it is a concrete override — a headless event loop
+ * or the AWT EDT. A JVM that switches active application (a test runner alternating headless and
+ * real-UI apps) would then keep posting apply notifications to the app that first started Compose,
+ * dead or not.
+ *
+ * So this is a stable indirection that re-resolves [ComposeUIDispatcher] on every dispatch: the
+ * once-captured scope always targets the currently active application's UI thread, regardless of
+ * which application first triggered [GlobalSnapshotManager.ensureStarted].
+ */
 internal actual val GlobalSnapshotManagerDispatcher: CoroutineDispatcher
-    get() = requiredSchedulingDispatcher
+    get() = CurrentComposeUiDispatcher
+
+private object CurrentComposeUiDispatcher : CoroutineDispatcher() {
+    override fun isDispatchNeeded(context: CoroutineContext): Boolean =
+        ComposeUIDispatcher.isDispatchNeeded(context)
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) =
+        ComposeUIDispatcher.dispatch(context, block)
+
+    override fun toString(): String = "GlobalSnapshotManagerDispatcher(-> ComposeUIDispatcher)"
+}

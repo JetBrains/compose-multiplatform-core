@@ -20,54 +20,78 @@ import androidx.compose.ui.desktop.KdtMainDispatcher
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Delay
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.Runnable
 
 /**
- * Test/headless override for [ComposeUIDispatcher]. When non-null, it takes precedence over the
- * per-platform KDT main dispatcher below. Set by [androidx.compose.ui.desktop.headless.HeadlessApplication]
- * while it is active (its event-loop thread becomes the Compose UI thread) and cleared on
- * resetForReuse/stopAndJoin. `Dispatchers.Main` follows automatically: the kdt-dispatcher module's
- * MainDispatcherFactory resolves through this getter on every dispatch.
+ * Override for [ComposeUIDispatcher]. When non-null it takes precedence over the KDT main
+ * dispatcher below. Set by [androidx.compose.ui.desktop.headless.HeadlessApplication] while it is
+ * active (its event-loop thread becomes the Compose UI thread) and cleared on
+ * resetForReuse/stopAndJoin; by the Swing/AWT `awaitApplication` entry point and by
+ * `ComposeContainer` (reference-counted) while an AWT `ComposeWindow`/`ComposePanel` is attached,
+ * both pointing it at the AWT event dispatch thread; and by test fixtures. `Dispatchers.Main`
+ * follows automatically: the kdt-dispatcher module's MainDispatcherFactory resolves through the
+ * getter on every dispatch.
  */
 @Volatile internal var ComposeUIDispatcherOverride: MainCoroutineDispatcher? = null
 
-actual val ComposeUIDispatcher: MainCoroutineDispatcher
-    get() =
-        // Single dispatcher for every backend; it resolves the active Application and delegates
-        // to its UI-thread primitives, so no per-platform switch is needed here.
-        ComposeUIDispatcherOverride ?: KdtMainDispatcher.INSTANCE
-
 /**
- * The dispatcher Compose's internal scheduling posts to: the global snapshot manager's
- * apply-notification coalescing and RectManager's relayout debounce.
+ * The single Compose desktop dispatcher. It is both the UI thread and the thread Compose's internal
+ * scheduling posts to — the global snapshot manager's apply-notification coalescing and
+ * RectManager's relayout debounce (via [PostDelayedDispatcher]). These are the same thread by
+ * construction, the one that mutates `LayoutNode` state, so there is one seam, not two: backends do
+ * not wire scheduling separately.
  *
- * Set once by whichever windowing backend owns the process — each platform's
- * `Application.initialize()` — or by a test fixture. Deliberately NOT defaulted: this work must run
- * on the same thread that mutates `LayoutNode` state, and the AWT EDT and the KDT main thread are
- * different threads, so guessing a default is a silent correctness bug. An unconfigured seam fails
- * loudly instead.
- *
- * Known gap: the KDT `Application` path (macOS/Linux/GTK) sets this from its `initialize()`. The
- * Swing/AWT embedding path in `ComposeContainer.desktop.kt` — reached via the public
- * `CanvasLayersComposeScene`/`PlatformLayersComposeScene` factories that back
- * `androidx.compose.ui.awt`'s `ComposeWindow`/`ComposePanel` — never calls any platform's
- * `initialize()`, so a scene built that way hits the `error` below as soon as it is constructed or
- * attaches its first node. This is pre-existing, not introduced by this seam: that embedding path
- * already unconditionally depended on the KDT dispatcher before this seam named it, and would have
- * failed the same way at the same point — a native GCD linkage failure on macOS, or an
- * `IllegalStateException` from the not-yet-initialized KDT application on Linux/GTK — the first
- * time scheduling actually dispatched. The fix, when someone gets to it, is for that embedding path
- * to set this seam to its own UI-thread dispatcher instead of leaving it unset.
+ * Resolution: the [ComposeUIDispatcherOverride] when set (headless / AWT / tests), otherwise the KDT
+ * main dispatcher, which resolves the active [androidx.compose.ui.desktop.Application] and delegates
+ * to its UI-thread primitives — so no per-platform switch is needed here. On the KDT path the
+ * override stays null. Both Swing/AWT paths set it to the event dispatch thread: `awaitApplication`
+ * for the application entry point, and `ComposeContainer` (reference-counted over attached
+ * containers) for the bare `ComposeWindow`/`ComposePanel` embedding that never goes through
+ * `awaitApplication`.
  */
-@Volatile internal var ComposeSchedulingDispatcher: CoroutineDispatcher? = null
-
-internal val requiredSchedulingDispatcher: CoroutineDispatcher
-    get() =
-        ComposeSchedulingDispatcher
-            ?: error(
-                "No Compose scheduling dispatcher configured. A windowing backend sets this from " +
-                    "its Application.initialize(); tests install one via SchedulingDispatcherFixture."
-            )
+actual val ComposeUIDispatcher: MainCoroutineDispatcher
+    get() = ComposeUIDispatcherOverride ?: KdtMainDispatcher.INSTANCE
 
 internal actual val PostDelayedDispatcher: CoroutineContext
-    get() = requiredSchedulingDispatcher
+    get() = ComposeUIDispatcher
+
+/**
+ * Views [this] plain dispatcher as a [MainCoroutineDispatcher] so it can back
+ * [ComposeUIDispatcherOverride] — which must be main-typed, since [ComposeUIDispatcher] exposes
+ * `.immediate` and backs `Dispatchers.Main`. Needed for the AWT event dispatch thread (skiko's
+ * `MainUIDispatcher` is a plain `CoroutineDispatcher`) and for test dispatchers. A dispatcher that
+ * already is a [MainCoroutineDispatcher] is returned unchanged. A delegate that provides [Delay]
+ * (e.g. a `StandardTestDispatcher`) keeps it, so virtual-time control of RectManager's `delay`-based
+ * debounce survives the wrapping.
+ */
+@OptIn(InternalCoroutinesApi::class)
+internal fun CoroutineDispatcher.asComposeUiMainDispatcher(): MainCoroutineDispatcher =
+    when {
+        this is MainCoroutineDispatcher -> this
+        this is Delay -> DelegatedMainDispatcherWithDelay(this, this)
+        else -> DelegatedMainDispatcher(this)
+    }
+
+private open class DelegatedMainDispatcher(
+    protected val delegate: CoroutineDispatcher,
+) : MainCoroutineDispatcher() {
+    override val immediate: MainCoroutineDispatcher
+        get() = this
+
+    override fun isDispatchNeeded(context: CoroutineContext): Boolean =
+        delegate.isDispatchNeeded(context)
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) =
+        delegate.dispatch(context, block)
+
+    override fun toString(): String = "ComposeUIDispatcher($delegate)"
+}
+
+@OptIn(InternalCoroutinesApi::class)
+private class DelegatedMainDispatcherWithDelay(
+    delegate: CoroutineDispatcher,
+    delay: Delay,
+) : DelegatedMainDispatcher(delegate), Delay by delay

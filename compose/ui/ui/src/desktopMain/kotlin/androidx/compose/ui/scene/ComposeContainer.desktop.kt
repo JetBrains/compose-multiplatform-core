@@ -20,7 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DataSourceContext
 import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.ComposeUIDispatcherOverride
 import androidx.compose.ui.LayerType
+import androidx.compose.ui.asComposeUiMainDispatcher
 import androidx.compose.ui.awt.AwtEventFilter
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
@@ -59,10 +61,52 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.MainCoroutineDispatcher
 import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.MainUIDispatcher
 import org.jetbrains.skiko.SkiaLayerAnalytics
+
+// Process-global bracket for the AWT/Swing hosting model's UI dispatcher. Compose's single
+// UI-plus-scheduling dispatcher (ComposeUIDispatcher) defaults to the KDT main dispatcher, which has
+// no active application on the bare ComposePanel/ComposeWindow path (Swing embedding without
+// awaitApplication) and would throw the first time scheduling dispatches. While any AWT compose
+// container is attached, point ComposeUIDispatcherOverride at the Swing EDT — the thread this path
+// already runs its recomposer on (see the mediator's coroutineContext + MainUIDispatcher) — so
+// GlobalSnapshotManager and RectManager schedule there too; restore it when the last container
+// detaches, so a later headless/KDT application in the same JVM is unaffected. Reference-counted
+// because multiple panels/windows can be live at once and all share the one EDT. This assumes one
+// hosting model per process at a time: the bracket either owns the process or nests within
+// awaitApplication (both save/restore LIFO, and both wrap the same EDT, so nesting is harmless). A
+// bare panel whose attached lifetime overlaps a separately-active KDT/headless app — non-nested —
+// would clobber that app's override while attached; concurrently mixing hosting models in one
+// process is unsupported. Test scenes (ImageComposeScene, SkikoComposeUiTest) build their
+// ComposeScene directly, not through ComposeContainer, so they never take this bracket and keep
+// failing loudly if they forget to install a dispatcher via SchedulingDispatcherFixture.
+private val awtUiDispatcherLock = Any()
+private var attachedAwtContainerCount = 0
+private var savedUiDispatcherOverride: MainCoroutineDispatcher? = null
+
+private fun retainAwtUiDispatcher() {
+    synchronized(awtUiDispatcherLock) {
+        if (attachedAwtContainerCount == 0) {
+            savedUiDispatcherOverride = ComposeUIDispatcherOverride
+            ComposeUIDispatcherOverride = MainUIDispatcher.asComposeUiMainDispatcher()
+        }
+        attachedAwtContainerCount++
+    }
+}
+
+private fun releaseAwtUiDispatcher() {
+    synchronized(awtUiDispatcherLock) {
+        if (attachedAwtContainerCount == 0) return
+        attachedAwtContainerCount--
+        if (attachedAwtContainerCount == 0) {
+            ComposeUIDispatcherOverride = savedUiDispatcherOverride
+            savedUiDispatcherOverride = null
+        }
+    }
+}
 
 /**
  * Internal entry point to Compose.
@@ -222,6 +266,12 @@ internal class ComposeContainer(
         _windowContainer?.removeComponentListener(windowContainerComponentListener)
         mediator.dispose()
         layers.fastForEach(DesktopComposeSceneLayer::close)
+
+        // Release the AWT UI dispatcher bracket if disposed while still attached (no removeNotify).
+        if (!isDetached) {
+            releaseAwtUiDispatcher()
+            isDetached = true
+        }
     }
 
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
@@ -309,6 +359,11 @@ internal class ComposeContainer(
     }
 
     fun addNotify() {
+        // Set the AWT UI dispatcher before onComponentAttached, which can create the scene and
+        // dispatch scheduling work.
+        if (isDetached) {
+            retainAwtUiDispatcher()
+        }
         mediator.onComponentAttached()
         setWindow(SwingUtilities.getWindowAncestor(container))
 
@@ -322,6 +377,9 @@ internal class ComposeContainer(
 
     fun removeNotify() {
         mediator.onComponentDetached()
+        if (!isDetached) {
+            releaseAwtUiDispatcher()
+        }
         isDetached = true
         updateLifecycleState()
         setWindow(null)

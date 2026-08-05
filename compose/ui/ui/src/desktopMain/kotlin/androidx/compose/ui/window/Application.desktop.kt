@@ -31,7 +31,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.ComposeUIDispatcherOverride
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.asComposeUiMainDispatcher
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.platform.GlobalSnapshotManager
@@ -195,46 +197,64 @@ suspend fun awaitApplication(
     if (System.getProperty("compose.application.configure.swing.globals") == "true") {
         configureSwingGlobalsForCompose()
     }
-    withContext(MainUIDispatcher) {
-        withContext(YieldFrameClock) {
-            GlobalSnapshotManager.ensureStarted()
+    // This is the Swing/AWT (KDT-less) path, whose UI thread is the event dispatch thread. Point
+    // Compose's single UI-plus-scheduling dispatcher at it, and restore afterward so a later
+    // KDT/headless application in the same JVM sees the original value. (The bare
+    // ComposeWindow/ComposePanel path that skips awaitApplication does the same, reference-counted,
+    // in ComposeContainer.)
+    //
+    // The save/restore is not reentrant across two concurrent awaitApplication calls, but a process
+    // hosts one application, so that is out of scope. GlobalSnapshotManager.ensureStarted() below no
+    // longer needs this bracket for correctness across app switches — its dispatcher re-resolves
+    // ComposeUIDispatcher per dispatch (see GlobalSnapshotManager.desktop.kt) — but the bracket is
+    // still what makes ComposeUIDispatcher resolve to the EDT for this KDT-less path in the first
+    // place.
+    val previousUiDispatcherOverride = ComposeUIDispatcherOverride
+    ComposeUIDispatcherOverride = MainUIDispatcher.asComposeUiMainDispatcher()
+    try {
+        withContext(MainUIDispatcher) {
+            withContext(YieldFrameClock) {
+                GlobalSnapshotManager.ensureStarted()
 
-            val recomposer = Recomposer(coroutineContext)
-            var isOpen by mutableStateOf(true)
+                val recomposer = Recomposer(coroutineContext)
+                var isOpen by mutableStateOf(true)
 
-            val applicationScope = object : ApplicationScope {
-                override fun exitApplication() {
-                    isOpen = false
+                val applicationScope = object : ApplicationScope {
+                    override fun exitApplication() {
+                        isOpen = false
+                    }
                 }
-            }
 
-            launch {
-                recomposer.runRecomposeAndApplyChanges()
-            }
+                launch {
+                    recomposer.runRecomposeAndApplyChanges()
+                }
 
-            launch {
-                val applier = ApplicationApplier()
-                val composition = Composition(applier, recomposer)
-                try {
-                    composition.setContent {
-                        if (isOpen) {
-                            CompositionLocalProvider(
-                                // Resources which are defined at the application level can use
-                                // density to calculate intrinsicSize
-                                LocalDensity provides GlobalDensity,
-                                LocalLayoutDirection provides GlobalLayoutDirection,
-                            ) {
-                                applicationScope.content()
+                launch {
+                    val applier = ApplicationApplier()
+                    val composition = Composition(applier, recomposer)
+                    try {
+                        composition.setContent {
+                            if (isOpen) {
+                                CompositionLocalProvider(
+                                    // Resources which are defined at the application level can use
+                                    // density to calculate intrinsicSize
+                                    LocalDensity provides GlobalDensity,
+                                    LocalLayoutDirection provides GlobalLayoutDirection,
+                                ) {
+                                    applicationScope.content()
+                                }
                             }
                         }
+                        recomposer.close()
+                        recomposer.join()
+                    } finally {
+                        composition.dispose()
                     }
-                    recomposer.close()
-                    recomposer.join()
-                } finally {
-                    composition.dispose()
                 }
             }
         }
+    } finally {
+        ComposeUIDispatcherOverride = previousUiDispatcherOverride
     }
 }
 

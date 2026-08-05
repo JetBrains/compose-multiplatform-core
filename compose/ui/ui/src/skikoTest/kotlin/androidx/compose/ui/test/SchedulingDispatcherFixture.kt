@@ -16,20 +16,22 @@
 
 package androidx.compose.ui.test
 
-import androidx.compose.ui.ComposeSchedulingDispatcher
-import kotlinx.coroutines.CoroutineDispatcher
+import androidx.compose.ui.ComposeUIDispatcherOverride
+import androidx.compose.ui.asComposeUiMainDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 
 /**
- * The one explicit way a test configures Compose's internal scheduling dispatcher.
+ * The one explicit way a test points Compose's single UI/scheduling dispatcher at a dispatcher it
+ * controls, by setting [ComposeUIDispatcherOverride].
  *
- * Nothing installs this implicitly: a test that constructs a `LayoutNode` or a `ComposeScene` must
- * call [install] (or [installControlled]) and [uninstall], and one that forgets gets the error
- * message from `requiredSchedulingDispatcher` naming exactly that. That is deliberate — an
- * automatic fallback would silently run snapshot apply notifications and RectManager debounces on
- * the wrong thread.
+ * Nothing installs this implicitly: a test that constructs a `LayoutNode` or a `ComposeScene` and
+ * wants deterministic scheduling calls [install] (or [installControlled]) and [uninstall]. A test
+ * that forgets gets no override, so `ComposeUIDispatcher` resolves to the KDT main dispatcher and
+ * fails off the KDT event loop — deliberately loud, rather than silently running snapshot apply
+ * notifications and RectManager debounces on the wrong thread.
  *
  * [install] installs [Dispatchers.Unconfined]: work posted to it runs inline, synchronously, on
  * whichever thread posts it. This must be the default: scene construction
@@ -47,9 +49,14 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
  * set by `FrameCycleSnapshotSceneTest`). Do not call it from inside a blocking
  * `runOnUiThread`/`invokeAndWait` call: nothing else can be advancing [scheduler] while that
  * thread is blocked, so the same deadlock applies.
+ *
+ * Both dispatchers are wrapped via [asComposeUiMainDispatcher] into the [MainCoroutineDispatcher]
+ * that [ComposeUIDispatcherOverride] requires. The wrapper preserves the test dispatcher's
+ * virtual-time [kotlinx.coroutines.Delay], so [installControlled]'s [scheduler] still drives
+ * RectManager's `delay`-based relayout debounce.
  */
 class SchedulingDispatcherFixture {
-    private var previous: CoroutineDispatcher? = null
+    private var previous: MainCoroutineDispatcher? = null
     private var installed = false
     private var controlledScheduler: TestCoroutineScheduler? = null
 
@@ -73,7 +80,7 @@ class SchedulingDispatcherFixture {
     fun install() {
         saveOriginalIfFirstInstall()
         controlledScheduler = null
-        ComposeSchedulingDispatcher = Dispatchers.Unconfined
+        ComposeUIDispatcherOverride = Dispatchers.Unconfined.asComposeUiMainDispatcher()
     }
 
     /**
@@ -85,13 +92,13 @@ class SchedulingDispatcherFixture {
         saveOriginalIfFirstInstall()
         val newScheduler = TestCoroutineScheduler()
         controlledScheduler = newScheduler
-        ComposeSchedulingDispatcher = StandardTestDispatcher(newScheduler)
+        ComposeUIDispatcherOverride = StandardTestDispatcher(newScheduler).asComposeUiMainDispatcher()
         return newScheduler
     }
 
     fun uninstall() {
         if (installed) {
-            ComposeSchedulingDispatcher = previous
+            ComposeUIDispatcherOverride = previous
             installed = false
             controlledScheduler = null
         }
@@ -99,7 +106,7 @@ class SchedulingDispatcherFixture {
 
     private fun saveOriginalIfFirstInstall() {
         if (!installed) {
-            previous = ComposeSchedulingDispatcher
+            previous = ComposeUIDispatcherOverride
             installed = true
         }
     }
