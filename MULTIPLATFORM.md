@@ -119,7 +119,7 @@ Compose Multiplatform core libraries can be published to local Maven with the fo
 
 3. (Optional) Publish Components from https://github.com/JetBrains/compose-multiplatform/tree/master/components using the published Compose:
    ```
-   ./gradlew publishToMavenLocal -Pcompose.version="9999.0.0-SNAPSHOT" -Pdeploy.version="9999.0.0-SNAPSHOT"
+   ./gradlew publishToMavenLocal -Pcompose.version="9999.0.0-SNAPSHOT" -Pdeploy.version="9999.0.0-SNAPSHOT" -Pcompose.useMavenLocal=true
    ```
 
 ### Run samples
