@@ -117,6 +117,7 @@ internal abstract class ComposeSizeThatFitsTest(
         runTest: UIKitInstrumentedTest.(UIView) -> Unit
     ) = runUIKitInstrumentedTest {
         val rootViewController = UIViewController()
+
         val composeView = if (useHostingView) {
             createComposeHostingView(content = content).also {
                 rootViewController.view.addSubview(it)

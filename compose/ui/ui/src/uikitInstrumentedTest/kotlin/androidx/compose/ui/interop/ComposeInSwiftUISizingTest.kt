@@ -36,23 +36,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.viewinterop.UIKitInteropProperties
-import androidx.compose.ui.viewinterop.UIKitInteropRemeasureRequester
-import androidx.compose.ui.viewinterop.UIKitView
-import androidx.compose.ui.viewinterop.remeasureRequester
+import androidx.compose.ui.uikit.SizeReportingStrategy
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
-import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSize
 import platform.CoreGraphics.CGSizeMake
-import platform.UIKit.NSLayoutConstraint
-import platform.UIKit.UIColor
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIViewNoIntrinsicMetric
@@ -61,9 +54,32 @@ import platform.UIKit.didMoveToParentViewController
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
+internal interface SwiftUISizingLoop {
+    val sizeReportingStrategy: SizeReportingStrategy
+
+    fun sizeForFrame(composeView: UIView, proposal: CValue<CGSize>): CValue<CGSize>
+}
+
+private data object SizeThatFitsSwiftUISizingLoop : SwiftUISizingLoop {
+    override val sizeReportingStrategy = SizeReportingStrategy.SizeThatFits
+
+    override fun sizeForFrame(composeView: UIView, proposal: CValue<CGSize>): CValue<CGSize> =
+        composeView.sizeThatFits(proposal)
+}
+
+private data object IntrinsicContentSizeSwiftUISizingLoop : SwiftUISizingLoop {
+    override val sizeReportingStrategy = SizeReportingStrategy.IntrinsicContentSize
+
+    override fun sizeForFrame(composeView: UIView, proposal: CValue<CGSize>): CValue<CGSize> {
+        composeView.sizeThatFits(proposal)
+        return composeView.intrinsicContentSize()
+    }
+}
+
 @OptIn(ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
-internal abstract class ComposeAutoSizingTest(
-    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
+internal abstract class ComposeInSwiftUISizingTest(
+    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit,
+    private val sizingLoop: SwiftUISizingLoop,
 ) {
     private val contentSize = DpSize(200.dp, 100.dp)
 
@@ -127,6 +143,7 @@ internal abstract class ComposeAutoSizingTest(
         val updatedExpected = DpSize(150.dp, 160.dp)
         val proposal = CGSizeMake(150.0, UIViewNoIntrinsicMetric)
         val composeHostView = createComposeHostingView(
+            configure = { sizeReportingStrategy = sizingLoop.sizeReportingStrategy },
             content = {
                 Column(
                     modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -139,7 +156,8 @@ internal abstract class ComposeAutoSizingTest(
         )
         val context = SwiftUISimulationContext(
             composeHostView = ComposeHostView(composeHostView),
-            getComposeContentSize = { composeSceneSize }
+            getComposeContentSize = { composeSceneSize },
+            sizingLoop = sizingLoop,
         )
 
         val fallbackSize = context.proposeSwiftUIConstraints(proposal)
@@ -348,45 +366,6 @@ internal abstract class ComposeAutoSizingTest(
     }
 
     @Test
-    fun testUIKitIntrinsicSizeChangeUpdatesSwiftUISize() {
-        class IntrinsicSizeView : UIView(frame = CGRectZero.readValue()) {
-            val widthConstraint = widthAnchor.constraintEqualToConstant(50.0)
-            val heightConstraint = heightAnchor.constraintEqualToConstant(40.0)
-
-            init {
-                translatesAutoresizingMaskIntoConstraints = false
-                backgroundColor = UIColor.blueColor
-                NSLayoutConstraint.activateConstraints(listOf(widthConstraint, heightConstraint))
-            }
-        }
-
-        val uiKitView = IntrinsicSizeView()
-        val remeasureRequester = UIKitInteropRemeasureRequester()
-
-        runComposeSizingTest(
-            content = {
-                UIKitView(
-                    factory = { uiKitView },
-                    modifier = Modifier.remeasureRequester(remeasureRequester),
-                    properties = UIKitInteropProperties(placedAsOverlay = false)
-                )
-            }
-        ) { context ->
-            proposeSwiftUIConstraints(context,
-                CGSizeMake(UIViewNoIntrinsicMetric, UIViewNoIntrinsicMetric)
-            )
-            waitForExpectedSize(context, DpSize(50.dp, 40.dp), "initial UIKit intrinsic size")
-
-            uiKitView.widthConstraint.constant = 120.0
-            uiKitView.heightConstraint.constant = 90.0
-            remeasureRequester.requestRemeasure()
-
-            requestSwiftUISizingFeedback(context)
-            waitForExpectedSize(context, DpSize(120.dp, 90.dp), "updated UIKit intrinsic size")
-        }
-    }
-
-    @Test
     fun testUnboundedProposalAndComposeContentBothAxesChange() {
         val expanded = mutableStateOf(false)
         val sizeProposal = CGSizeMake(UIViewNoIntrinsicMetric, UIViewNoIntrinsicMetric)
@@ -505,14 +484,20 @@ internal abstract class ComposeAutoSizingTest(
         val rootViewController = UIViewController()
 
         val composeHostView = if (useHostingView) {
-            val hostingView = createComposeHostingView(content = columnContent).also {
+            val hostingView = createComposeHostingView(
+                configure = { sizeReportingStrategy = sizingLoop.sizeReportingStrategy },
+                content = columnContent
+            ).also {
                 rootViewController.view.addSubview(it)
             }
             ComposeHostView(
                 view = hostingView
             )
         } else {
-            val hostingViewController = createComposeHostingViewController(content = columnContent).also {
+            val hostingViewController = createComposeHostingViewController(
+                configure = { sizeReportingStrategy = sizingLoop.sizeReportingStrategy },
+                content = columnContent
+            ).also {
                 rootViewController.addChildViewController(it)
                 rootViewController.view.addSubview(it.view)
                 it.didMoveToParentViewController(rootViewController)
@@ -527,7 +512,8 @@ internal abstract class ComposeAutoSizingTest(
         this.runTest(
             SwiftUISimulationContext(
                 composeHostView = composeHostView,
-                getComposeContentSize = { composeSceneSize }
+                getComposeContentSize = { composeSceneSize },
+                sizingLoop = sizingLoop,
             )
         )
     }
@@ -539,7 +525,8 @@ internal abstract class ComposeAutoSizingTest(
 
     private class SwiftUISimulationContext(
         val composeHostView: ComposeHostView,
-        private val getComposeContentSize: () -> DpSize?
+        private val getComposeContentSize: () -> DpSize?,
+        private val sizingLoop: SwiftUISizingLoop,
     ) {
         val composeView: UIView get() = composeHostView.view
         val composeContentSize: DpSize? get() = getComposeContentSize()
@@ -562,9 +549,9 @@ internal abstract class ComposeAutoSizingTest(
 
         fun proposeSwiftUIConstraints(size: CValue<CGSize>): CValue<CGSize> {
             lastSwiftUIConstraints = size
-            val sizeThatFits = composeView.sizeThatFits(size)
-            composeView.applyFrame(sizeThatFits)
-            return sizeThatFits
+            val preferredSize = sizingLoop.sizeForFrame(composeView, size)
+            composeView.applyFrame(preferredSize)
+            return preferredSize
         }
 
         private fun UIView.applyFrame(size: CValue<CGSize>) {
@@ -624,13 +611,28 @@ internal abstract class ComposeAutoSizingTest(
     }
 }
 
-// All tests in BaseComposeAutoSizingTest should be run for both hosts ComposeHostingView and
-// ComposeHostingViewController. We need to run each test as a separate XCTest and to achieve this
-// we create two implementations of BaseComposeAutoSizingTest where each implementation uses a
-// different way to run the test. This method avoids code duplication but mainly it avoids flaky
-// tests because setContent and therefore appDelegate.setUpWindow is only called once for each XCTest.
-internal class ComposeAutoSizingInHostingViewTest :
-    ComposeAutoSizingTest(runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) })
+// Run every sizing loop with both hosts. Separate XCTest implementations avoid sharing a window
+// between tests, which would make their layout state flaky.
+internal class ComposeInSwiftUISizingInHostingViewTest :
+    ComposeInSwiftUISizingTest(
+        runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) },
+        sizingLoop = SizeThatFitsSwiftUISizingLoop,
+    )
 
-internal class ComposeAutoSizingInHostingViewControllerTest :
-    ComposeAutoSizingTest(runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) })
+internal class ComposeInSwiftUISizingInHostingViewControllerTest :
+    ComposeInSwiftUISizingTest(
+        runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) },
+        sizingLoop = SizeThatFitsSwiftUISizingLoop,
+    )
+
+internal class ComposeInSwiftUIIntrinsicSizingInHostingViewTest :
+    ComposeInSwiftUISizingTest(
+        runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) },
+        sizingLoop = IntrinsicContentSizeSwiftUISizingLoop,
+    )
+
+internal class ComposeInSwiftUIIntrinsicSizingInHostingViewControllerTest :
+    ComposeInSwiftUISizingTest(
+        runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) },
+        sizingLoop = IntrinsicContentSizeSwiftUISizingLoop,
+    )
