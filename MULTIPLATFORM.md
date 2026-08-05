@@ -91,7 +91,7 @@ To fix this error:
 
 Compose Multiplatform core libraries can be published to local Maven with the following steps:
 
-1. Publish Androidx libraries
+1. Publish libraries
    ```bash
    ./gradlew :mpp:publishComposeJbToMavenLocal -Pcompose.platforms=all
    ```
