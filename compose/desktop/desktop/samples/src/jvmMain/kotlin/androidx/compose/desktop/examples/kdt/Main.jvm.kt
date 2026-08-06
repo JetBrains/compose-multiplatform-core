@@ -38,7 +38,7 @@ fun main() {
 private fun AppWindow() {
     var isWindowShown by remember { mutableStateOf(true) }
     if (isWindowShown) {
-        Window(onCloseRequested = { _ ->
+        Window(onCloseRequest = { _ ->
             isWindowShown = false
         }) {
             WindowContent(windowSize = window.contentSize, refreshRate = 120)

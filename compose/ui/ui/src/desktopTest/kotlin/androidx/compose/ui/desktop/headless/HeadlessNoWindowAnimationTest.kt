@@ -72,7 +72,7 @@ class HeadlessNoWindowAnimationTest {
                     withInfiniteAnimationFrameNanos { }   // must NOT run while windowless
                     infiniteBodyRan.complete(Unit)
                 }
-                if (showWindow) Window(onCloseRequested = { }) { }
+                if (showWindow) Window(onCloseRequest = { }) { }
             }
         }
         withTimeout(10_000) {
@@ -103,7 +103,7 @@ class HeadlessNoWindowAnimationTest {
                     snapshotFlow { scale.scaleFactor }.first { it == 1f }
                     windowedScale.complete(scale.scaleFactor)
                 }
-                if (showWindow) Window(onCloseRequested = { }) { }
+                if (showWindow) Window(onCloseRequest = { }) { }
             }
         }
         withTimeout(10_000) {
