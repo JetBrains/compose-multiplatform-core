@@ -219,6 +219,9 @@ androidXMultiplatform {
 
         desktopMain {
             dependsOn(skikoMain)
+            dependencies {
+                implementation(libs.jnaPlatform)
+            }
         }
 
         desktopTest {

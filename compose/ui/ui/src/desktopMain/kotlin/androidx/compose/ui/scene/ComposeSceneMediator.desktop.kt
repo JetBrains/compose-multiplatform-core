@@ -44,6 +44,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
@@ -113,6 +114,7 @@ import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
+import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.jetbrains.skiko.hostOs
 import org.jetbrains.skiko.swing.SkiaSwingLayer
@@ -422,6 +424,14 @@ internal class ComposeSceneMediator(
 
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
+    private var windowsTouchBridge: WindowsTouchBridge? = null
+
+    /**
+     * The currently active touch pointers. Required to send the complete list of pointers
+     * with each touch event.
+     */
+    private val touchPointers = linkedMapOf<PointerId, ComposeScenePointer>()
+
     init {
         // Transparency is used during redrawer creation that triggered by [addNotify], so
         // it must be set to correct value before adding to the hierarchy to handle cases
@@ -588,6 +598,77 @@ internal class ComposeSceneMediator(
         }
     }
 
+    /**
+     * Enables receiving raw touch input instead of the mouse events synthesized by Windows.
+     *
+     * @see ComposeFeatureFlags.useWindowsNativeTouch
+     */
+    private fun initializeWindowsTouchBridge() {
+        if (windowsTouchBridge != null || windowHandle == 0L) {
+            return
+        }
+        windowsTouchBridge = try {
+            WindowsTouchBridge(windowHandle, ::onTouchEvent, ::onTouchCancel)
+        } catch (e: IllegalStateException) {
+            // The window procedure cannot be subclassed. Mouse events synthesized from
+            // touch input are still received in this case.
+            null
+        }
+    }
+
+    private fun onTouchEvent(
+        id: Long,
+        screenPosition: Offset,
+        state: TouchState,
+        type: PointerType,
+        pressure: Float
+    ) = catchExceptions {
+        // The bridge can send events after the window is disposed or hidden
+        if (isDisposed || !contentComponent.isShowing) {
+            return@catchExceptions
+        }
+        processMouseEvent {
+            // [screenPosition] is in physical pixels, while [locationOnScreen] is in
+            // density-independent AWT coordinates
+            val density = contentComponent.density.density
+            val locationOnScreen = contentComponent.locationOnScreen
+            val sceneOffset = sceneBoundsInPx?.topLeft ?: Offset.Zero
+            val position = Offset(
+                screenPosition.x - locationOnScreen.x * density,
+                screenPosition.y - locationOnScreen.y * density
+            ) - sceneOffset
+
+            val pointerId = PointerId(id)
+            touchPointers[pointerId] = ComposeScenePointer(
+                id = pointerId,
+                position = position,
+                pressed = state != TouchState.Up,
+                type = type,
+                pressure = pressure,
+            )
+            val pointers = touchPointers.values.toList()
+            if (state == TouchState.Up) {
+                touchPointers.remove(pointerId)
+            }
+            scene.sendPointerEvent(
+                eventType = when (state) {
+                    TouchState.Down -> PointerEventType.Press
+                    TouchState.Move -> PointerEventType.Move
+                    TouchState.Up -> PointerEventType.Release
+                },
+                pointers = pointers,
+            )
+        }
+    }
+
+    private fun onTouchCancel() = catchExceptions {
+        if (isDisposed || touchPointers.isEmpty()) {
+            return@catchExceptions
+        }
+        touchPointers.clear()
+        scene.cancelPointerInput()
+    }
+
     private fun onKeyEvent(event: KeyEvent) = catchExceptions {
         // AWT can send events after the window is disposed
         if (isDisposed) {
@@ -614,6 +695,8 @@ internal class ComposeSceneMediator(
         isDisposed = true
 
         unsubscribeFromInputEvents()
+        windowsTouchBridge?.dispose()
+        windowsTouchBridge = null
 
         container.remove(contentComponent)
         container.remove(invisibleComponent)
@@ -638,6 +721,10 @@ internal class ComposeSceneMediator(
 
         architectureComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.addInput(navigationEventInput)
+
+        if (ComposeFeatureFlags.useWindowsNativeTouch.value && hostOs == OS.Windows) {
+            initializeWindowsTouchBridge()
+        }
 
         _onComponentAttached?.invoke()
         _onComponentAttached = null

@@ -48,6 +48,7 @@ incap = "0.2"
 javaxInject = "1"
 jbrApi = "1.9.0"
 jcodec = "0.2.5"
+jna = "5.19.1"
 kotlin18 = "1.8.22"
 kotlin19 = "1.9.24"
 # Use the most up-to-date patch
@@ -179,6 +180,7 @@ javaxInject = { module = "javax.inject:javax.inject", version.ref = "javaxInject
 jbrApi = { module = "org.jetbrains.runtime:jbr-api", version.ref = "jbrApi" }
 jcodec = { module = "org.jcodec:jcodec", version.ref = "jcodec" }
 jcodecJavaSe = { module = "org.jcodec:jcodec-javase", version.ref = "jcodec" }
+jnaPlatform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jsoup = { module = "org.jsoup:jsoup", version = "1.16.2" }
 jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
 jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version = "3.1" }
