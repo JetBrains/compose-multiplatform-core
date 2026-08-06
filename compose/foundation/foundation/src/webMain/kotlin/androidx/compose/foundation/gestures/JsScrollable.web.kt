@@ -38,6 +38,8 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.WheelEvent
 
+internal actual val defaultScrollConfig: ScrollConfig get() = JsConfig
+
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = JsConfig
 
 private object JsConfig : ScrollConfig {

@@ -17,7 +17,6 @@
 package androidx.compose.foundation.gestures
 
 import androidx.compose.foundation.DesktopPlatform
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.awt.awtEventOrNull
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -32,17 +31,15 @@ import java.awt.event.MouseWheelEvent
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-// TODO(demin): Chrome on Windows/Linux uses different scroll strategy
-//  (always the same scroll offset, bounds-independent).
-//  Figure out why and decide if we can use this strategy instead of the current one.
-val LocalScrollConfig = compositionLocalOf<ScrollConfig> {
-    when (DesktopPlatform.Current) {
+// Read through a getter so that the platform is only queried when the CompositionLocal
+// is first read, as it was when the default lived in the CompositionLocal's own factory.
+internal actual val defaultScrollConfig: ScrollConfig
+    get() = when (DesktopPlatform.Current) {
         DesktopPlatform.Linux -> LinuxGnomeConfig
         DesktopPlatform.Windows -> WindowsWinUIConfig
         DesktopPlatform.MacOS -> MacOSCocoaConfig
         DesktopPlatform.Unknown -> WindowsWinUIConfig
     }
-}
 
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = currentValueOf(LocalScrollConfig)
 
