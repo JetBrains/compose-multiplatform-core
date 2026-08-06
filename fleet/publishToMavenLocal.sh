@@ -15,8 +15,16 @@
 # limitations under the License.
 #
 
-../gradlew \
-  -Pcompose.platforms=desktop \
+# Resolve the repository from the script's own location so the recipe works from
+# any working directory.
+readonly REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# wasmjs is here because Fleet's wasm Bazel modules link against the klibs. A
+# desktop-only publish leaves them behind at whatever revision last published
+# them, and the staleness only shows up much later as an unresolved reference to
+# a symbol that plainly exists in the source.
+"$REPO_ROOT/gradlew" --project-dir "$REPO_ROOT" \
+  -Pcompose.platforms=desktop,wasmjs \
   -Pjetbrains.publication.libraries=COMPOSE,LIFECYCLE,SAVEDSTATE,NAVIGATION_EVENT \
   -Pjetbrains.publication.version.COMPOSE=1.11.0-0-fleet-SNAPSHOT \
   -Pjetbrains.publication.version.LIFECYCLE=2.11.0-0-fleet-SNAPSHOT \
