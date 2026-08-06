@@ -77,12 +77,12 @@ sealed class ComposeContainerConfiguration {
      * Specifies how the Compose view reports its preferred size to UIKit.
      *
      * Compose calculates the preferred size for a UIKit `sizeThatFits` proposal with either
-     * strategy. [SizeReportingStrategy.SizeThatFits] reports that result directly and is the
-     * default. [SizeReportingStrategy.IntrinsicContentSize] additionally exposes the latest
+     * strategy. [PreferredSizeReportingStrategy.SizeThatFits] reports that result directly and is the
+     * default. [PreferredSizeReportingStrategy.IntrinsicContentSize] additionally exposes the latest
      * fitting result through UIKit's `intrinsicContentSize` API for SwiftUI on iOS < 16.
      */
     @ExperimentalComposeUiApi
-    var sizeReportingStrategy: SizeReportingStrategy = SizeReportingStrategy.SizeThatFits
+    var preferredSizeReportingStrategy: PreferredSizeReportingStrategy = PreferredSizeReportingStrategy.SizeThatFits
 }
 
 /**
@@ -129,13 +129,13 @@ sealed interface EndEdgePanGestureBehavior {
  * Specifies how a Compose view reports its preferred size to UIKit.
  */
 @ExperimentalComposeUiApi
-sealed interface SizeReportingStrategy {
+sealed interface PreferredSizeReportingStrategy {
     /**
      * Reports the preferred size directly from `sizeThatFits`.
      *
      * This is the default and recommended strategy for UIKit and for SwiftUI on iOS 16 and later.
      */
-    data object SizeThatFits : SizeReportingStrategy
+    data object SizeThatFits : PreferredSizeReportingStrategy
 
     /**
      * Exposes the latest explicit `sizeThatFits` result through `intrinsicContentSize`.
@@ -144,5 +144,5 @@ sealed interface SizeReportingStrategy {
      * `UIViewRepresentable.sizeThatFits` is unavailable. It requires a fitting proposal
      * to be supplied through `sizeThatFits` before an intrinsic size can be reported.
      */
-    data object IntrinsicContentSize : SizeReportingStrategy
+    data object IntrinsicContentSize : PreferredSizeReportingStrategy
 }

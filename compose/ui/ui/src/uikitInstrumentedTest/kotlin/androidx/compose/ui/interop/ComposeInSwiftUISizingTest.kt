@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
-import androidx.compose.ui.uikit.SizeReportingStrategy
+import androidx.compose.ui.uikit.PreferredSizeReportingStrategy
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -55,20 +55,20 @@ import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
 internal interface SwiftUISizingLoop {
-    val sizeReportingStrategy: SizeReportingStrategy
+    val preferredSizeReportingStrategy: PreferredSizeReportingStrategy
 
     fun sizeForFrame(composeView: UIView, proposal: CValue<CGSize>): CValue<CGSize>
 }
 
 private data object SizeThatFitsSwiftUISizingLoop : SwiftUISizingLoop {
-    override val sizeReportingStrategy = SizeReportingStrategy.SizeThatFits
+    override val preferredSizeReportingStrategy = PreferredSizeReportingStrategy.SizeThatFits
 
     override fun sizeForFrame(composeView: UIView, proposal: CValue<CGSize>): CValue<CGSize> =
         composeView.sizeThatFits(proposal)
 }
 
 private data object IntrinsicContentSizeSwiftUISizingLoop : SwiftUISizingLoop {
-    override val sizeReportingStrategy = SizeReportingStrategy.IntrinsicContentSize
+    override val preferredSizeReportingStrategy = PreferredSizeReportingStrategy.IntrinsicContentSize
 
     override fun sizeForFrame(composeView: UIView, proposal: CValue<CGSize>): CValue<CGSize> {
         composeView.sizeThatFits(proposal)
@@ -143,7 +143,7 @@ internal abstract class ComposeInSwiftUISizingTest(
         val updatedExpected = DpSize(150.dp, 160.dp)
         val proposal = CGSizeMake(150.0, UIViewNoIntrinsicMetric)
         val composeHostView = createComposeHostingView(
-            configure = { sizeReportingStrategy = sizingLoop.sizeReportingStrategy },
+            configure = { preferredSizeReportingStrategy = sizingLoop.preferredSizeReportingStrategy },
             content = {
                 Column(
                     modifier = Modifier.onGloballyPositioned { coordinates ->
@@ -485,7 +485,7 @@ internal abstract class ComposeInSwiftUISizingTest(
 
         val composeHostView = if (useHostingView) {
             val hostingView = createComposeHostingView(
-                configure = { sizeReportingStrategy = sizingLoop.sizeReportingStrategy },
+                configure = { preferredSizeReportingStrategy = sizingLoop.preferredSizeReportingStrategy },
                 content = columnContent
             ).also {
                 rootViewController.view.addSubview(it)
@@ -495,7 +495,7 @@ internal abstract class ComposeInSwiftUISizingTest(
             )
         } else {
             val hostingViewController = createComposeHostingViewController(
-                configure = { sizeReportingStrategy = sizingLoop.sizeReportingStrategy },
+                configure = { preferredSizeReportingStrategy = sizingLoop.preferredSizeReportingStrategy },
                 content = columnContent
             ).also {
                 rootViewController.addChildViewController(it)
