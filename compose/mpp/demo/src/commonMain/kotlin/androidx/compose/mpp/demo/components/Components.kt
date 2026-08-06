@@ -67,4 +67,5 @@ val Components = Screen.Selection(
     Screen.Example("WindowAdaptiveInfo") { AdaptiveExample() },
     Screen.Example("Drag and Drop") { DragAndDropExample() },
     Screen.Example("Pen Input") { PenInputExample() },
+    Screen.Example("PointerIcon") { PointerIconExample() },
 )

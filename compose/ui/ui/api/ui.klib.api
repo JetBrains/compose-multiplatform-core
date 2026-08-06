@@ -4950,6 +4950,9 @@ final val androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus
 final val androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop|#static{}androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop[0]
 
 // Targets: [js, wasmJs]
+final fun androidx.compose.ui.input.pointer/PointerIcon(kotlin/String): androidx.compose.ui.input.pointer/PointerIcon // androidx.compose.ui.input.pointer/PointerIcon|PointerIcon(kotlin.String){}[0]
+
+// Targets: [js, wasmJs]
 final fun androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter|androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
