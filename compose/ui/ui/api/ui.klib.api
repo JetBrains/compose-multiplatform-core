@@ -4802,6 +4802,12 @@ final val androidx.compose.ui.uikit/androidx_compose_ui_uikit_OnFocusBehavior_Do
 final val androidx.compose.ui.uikit/androidx_compose_ui_uikit_OnFocusBehavior_FocusableAboveKeyboard$stableprop // androidx.compose.ui.uikit/androidx_compose_ui_uikit_OnFocusBehavior_FocusableAboveKeyboard$stableprop|#static{}androidx_compose_ui_uikit_OnFocusBehavior_FocusableAboveKeyboard$stableprop[0]
 
 // Targets: [ios]
+final val androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_IntrinsicContentSize$stableprop // androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_IntrinsicContentSize$stableprop|#static{}androidx_compose_ui_uikit_PreferredSizeReportingStrategy_IntrinsicContentSize$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_SizeThatFits$stableprop // androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_SizeThatFits$stableprop|#static{}androidx_compose_ui_uikit_PreferredSizeReportingStrategy_SizeThatFits$stableprop[0]
+
+// Targets: [ios]
 final val androidx.compose.ui.uikit/uikitEventOrNull // androidx.compose.ui.uikit/uikitEventOrNull|@androidx.compose.ui.input.key.KeyEvent{}uikitEventOrNull[0]
     final fun (androidx.compose.ui.input.key/KeyEvent).<get-uikitEventOrNull>(): platform.UIKit/UIPress? // androidx.compose.ui.uikit/uikitEventOrNull.<get-uikitEventOrNull>|<get-uikitEventOrNull>@androidx.compose.ui.input.key.KeyEvent(){}[0]
 
@@ -4889,6 +4895,12 @@ final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_OnFocusBehavior_Do
 
 // Targets: [ios]
 final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_OnFocusBehavior_FocusableAboveKeyboard$stableprop_getter(): kotlin/Int // androidx.compose.ui.uikit/androidx_compose_ui_uikit_OnFocusBehavior_FocusableAboveKeyboard$stableprop_getter|androidx_compose_ui_uikit_OnFocusBehavior_FocusableAboveKeyboard$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_IntrinsicContentSize$stableprop_getter(): kotlin/Int // androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_IntrinsicContentSize$stableprop_getter|androidx_compose_ui_uikit_PreferredSizeReportingStrategy_IntrinsicContentSize$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_SizeThatFits$stableprop_getter(): kotlin/Int // androidx.compose.ui.uikit/androidx_compose_ui_uikit_PreferredSizeReportingStrategy_SizeThatFits$stableprop_getter|androidx_compose_ui_uikit_PreferredSizeReportingStrategy_SizeThatFits$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropInteractionMode_Cooperative$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropInteractionMode_Cooperative$stableprop_getter|androidx_compose_ui_viewinterop_UIKitInteropInteractionMode_Cooperative$stableprop_getter(){}[0]
