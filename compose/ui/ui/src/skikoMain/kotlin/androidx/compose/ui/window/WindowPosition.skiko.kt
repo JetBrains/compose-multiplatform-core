@@ -33,6 +33,12 @@ fun WindowPosition(alignment: Alignment) = WindowPosition.Aligned(alignment)
 
 /**
  * Position of the window or dialog on the screen in [Dp].
+ *
+ * TEMPORARY: this lives in `skikoMain` rather than `desktopMain` only so that Fleet's
+ * common code, which reaches for it unconditionally, still links on web and native.
+ * Nothing outside desktop can act on a window position, so on those platforms it is
+ * inert data. Move it back to `desktopMain` once Air no longer depends on desktop stubs
+ * in Web and mobile.
  */
 @Immutable
 sealed class WindowPosition {
@@ -95,9 +101,7 @@ sealed class WindowPosition {
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Aligned
+            if (other !is Aligned) return false
 
             if (alignment != other.alignment) return false
 
@@ -133,9 +137,7 @@ sealed class WindowPosition {
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Absolute
+            if (other !is Absolute) return false
 
             if (x != other.x) return false
             if (y != other.y) return false

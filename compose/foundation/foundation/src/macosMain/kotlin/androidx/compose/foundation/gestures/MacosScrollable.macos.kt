@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
+internal actual val defaultScrollConfig: ScrollConfig get() = MacOsScrollConfig
+
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig =
     MacOsScrollConfig
 
