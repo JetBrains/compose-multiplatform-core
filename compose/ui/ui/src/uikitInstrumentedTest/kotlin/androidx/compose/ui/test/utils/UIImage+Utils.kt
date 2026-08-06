@@ -29,8 +29,38 @@ import platform.CoreGraphics.CGImageGetWidth
 import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UIImage
 
-@OptIn(ExperimentalForeignApi::class)
 internal fun UIImage.forEachPixel(step: Int = 1, onPixel: (x: Int, y: Int, color: Color) -> Unit) {
+    forEachPixelWhile(step) { x, y, color ->
+        onPixel(x, y, color)
+        true
+    }
+}
+
+/**
+ * Counts sampled pixels matching [color], stopping once [maxCount] matching pixels are found.
+ */
+internal fun UIImage.countPixels(
+    color: Color,
+    step: Int = 1,
+    maxCount: Int = Int.MAX_VALUE,
+): Int {
+    if (maxCount <= 0) return 0
+
+    var count = 0
+    forEachPixelWhile(step) { _, _, pixelColor ->
+        if (pixelColor == color) {
+            count++
+        }
+        count < maxCount
+    }
+    return count
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun UIImage.forEachPixelWhile(
+    step: Int,
+    onPixel: (x: Int, y: Int, color: Color) -> Boolean,
+) {
     val cgImage = this.CGImage
     val width = CGImageGetWidth(cgImage).toInt()
     val height = CGImageGetHeight(cgImage).toInt()
@@ -60,7 +90,9 @@ internal fun UIImage.forEachPixel(step: Int = 1, onPixel: (x: Int, y: Int, color
                 val b = pinned.get()[offset + 2].toUByte().toInt()
                 val a = pinned.get()[offset + 3].toUByte().toInt()
 
-                onPixel(x, y, Color(r, g, b, a))
+                if (!onPixel(x, y, Color(r, g, b, a))) {
+                    return@usePinned
+                }
             }
         }
     }
