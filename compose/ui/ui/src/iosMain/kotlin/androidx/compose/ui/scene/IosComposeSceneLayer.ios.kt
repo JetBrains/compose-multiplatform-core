@@ -112,7 +112,8 @@ internal class IosComposeSceneLayer(
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
-        interfaceOrientationState = interfaceOrientationState
+        interfaceOrientationState = interfaceOrientationState,
+        invalidateDraw = invalidateDraw,
     ).also {
         interactionView.embedSubview(it.backgroundView)
         it.isInterceptingOutsideEvents = consumePointerInputOutside

@@ -280,6 +280,8 @@ internal class ComposeContainer(
         architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
 
+        val invalidateDraw = { view.setNeedsDisplay() }
+
         mediator = ComposeSceneMediator(
             frameChoreographer = frameChoreographer,
             onFocusBehavior = configuration.onFocusBehavior,
@@ -302,11 +304,10 @@ internal class ComposeContainer(
                     invalidateLayout = {
                         layoutInvalidationHandler.invalidateLayoutIfNeeded()
                     },
-                    invalidateDraw = {
-                        view.setNeedsDisplay()
-                    },
+                    invalidateDraw = invalidateDraw,
                 )
             },
+            invalidateDraw = invalidateDraw,
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
