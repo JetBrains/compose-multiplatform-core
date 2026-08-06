@@ -183,7 +183,7 @@ fun main() {
             ?: "compose-livelock-repro",
     ) {
         Window(
-            onCloseRequested = { _ -> exitProcess(0) },
+            onCloseRequest = { _ -> exitProcess(0) },
             configure = {
                 title = "Intrinsic Remeasure Livelock"
                 requestSize(DpSize(600.dp, 700.dp))

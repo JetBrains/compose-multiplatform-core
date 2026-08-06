@@ -271,14 +271,14 @@ interface CaptionButtonsHostWindow : Window {
 @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun Window(
-    onCloseRequested: (WindowCloseRequestReason) -> Unit,
+    onCloseRequest: (WindowCloseRequestReason) -> Unit,
     configure: Window.() -> Unit = {},
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
     onLayout: (WindowData) -> Unit = {},
     content: @Composable WindowScope.() -> Unit,
 ) {
-    val currentOnCloseRequest by rememberUpdatedState(onCloseRequested)
+    val currentOnCloseRequest by rememberUpdatedState(onCloseRequest)
     val application = Application.current
     val session = LocalApplicationSession.current
     val window = remember {

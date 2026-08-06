@@ -67,7 +67,7 @@ private fun AppWindow(
     val appLevelLeft = mapSource.read("left") ?: 0L
     if (isWindowShown) {
         Window(
-            onCloseRequested = { _ ->
+            onCloseRequest = { _ ->
                 isWindowShown = false
             },
             configure = {
