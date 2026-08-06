@@ -1,0 +1,162 @@
+[console.log] Reproducer variant: reattach
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #1 done, forcing GC
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #2 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #3 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #4 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #5 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #6 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #7 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #8 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #9 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #10 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #11 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #12 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #13 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #14 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #15 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #16 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #17 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #18 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #19 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #20 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #21 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #22 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #23 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #24 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #25 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #26 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #27 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #28 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #29 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #30 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #31 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #32 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #33 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #34 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #35 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #36 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #37 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #38 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] re-attach #39 done, forcing GC
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+
+=== RESULT ===
+variant=reattach consoleMessages=158 glErrors=38
+REPRODUCED: [console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use

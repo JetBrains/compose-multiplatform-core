@@ -1,0 +1,264 @@
+[console.log] Reproducer variant: close
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] frame 60: creating and closing an intruder DirectContext on the same WebGL context
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.warn] WebGL: INVALID_ENUM: getParameter: invalid parameter name, WEBGL_debug_renderer_info not enabled
+[console.log] intruder closed; expect 'no valid shader program in use' from now on
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: bufferSubData: no buffer
+[console.warn] WebGL: INVALID_OPERATION: drawElements: no valid shader program in use
+[console.warn] WebGL: too many errors, no more errors will be reported to the console for this context.
+
+=== RESULT ===
+variant=close consoleMessages=260 glErrors=253
+REPRODUCED: [console.log] intruder closed; expect 'no valid shader program in use' from now on

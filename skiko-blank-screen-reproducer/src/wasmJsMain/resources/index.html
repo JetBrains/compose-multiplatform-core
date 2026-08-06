@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CMP-8615 pure-skiko reproducer</title>
+    <script type="application/javascript" src="app.js"></script>
+</head>
+<body>
+<h3 id="desc"></h3>
+<p>Variants: <a href="#close" onclick="location.reload()">#close</a> (deterministic),
+   <a href="#reattach" onclick="location.reload()">#reattach</a> (mirrors Compose resize; needs GC)</p>
+<canvas id="c" width="800" height="600" style="border: 1px solid black"></canvas>
+</body>
+</html>
