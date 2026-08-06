@@ -71,7 +71,7 @@ class HeadlessSessionTest(private val frameIsolation: Boolean) {
         val sessionJob = launch {
             app.runSession(awaitShutdown = { sessionDone.await() }) {
                 if (showWindow) {
-                    Window(onCloseRequested = { }) { }
+                    Window(onCloseRequest = { }) { }
                     LaunchedEffect(Unit) { windowSeen.complete(Unit) }
                 }
             }
@@ -97,7 +97,7 @@ class HeadlessSessionTest(private val frameIsolation: Boolean) {
         val sessionDone = CompletableDeferred<Unit>()
         val sessionJob = launch {
             app.runSession(awaitShutdown = { sessionDone.await() }) {
-                Window(onCloseRequested = { }) {
+                Window(onCloseRequest = { }) {
                     @Suppress("UNUSED_EXPRESSION") color
                     LaunchedEffect(Unit) {
                         ready.complete(app.windows.values.single())
