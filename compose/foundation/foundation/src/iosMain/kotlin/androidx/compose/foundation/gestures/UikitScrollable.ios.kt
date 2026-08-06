@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 
+internal actual val defaultScrollConfig: ScrollConfig get() = UiKitScrollConfig
+
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig = UiKitScrollConfig
 
 internal object UiKitScrollConfig : ScrollConfig {
