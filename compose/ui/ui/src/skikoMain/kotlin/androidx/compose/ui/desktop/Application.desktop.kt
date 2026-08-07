@@ -38,6 +38,8 @@ import kotlinx.coroutines.yield
 import kotlinx.io.files.Path
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.ProvidedValue
+import androidx.compose.runtime.disableHotReloadMode
+import androidx.compose.runtime.simulateHotReload
 import kotlinx.coroutines.withContext
 
 suspend fun awaitApplication(
@@ -217,6 +219,11 @@ interface Application : Clipboard, UriHandler, AutoCloseable {
     }
 
     suspend fun stopAndJoin()
+
+    fun triggerFullRecomposition() {
+        simulateHotReload(Unit)
+        disableHotReloadMode()
+    }
 }
 
 interface IconDecoratedApplication : Application {
