@@ -160,15 +160,10 @@ private object JvmApplicationRegistry {
     private val lock = Any()
     private val retainedApplications = LinkedHashSet<Application>()
     private var activeApplication: Application? = null
-    private var hookInstalled = false
     private var shutdownInProgress = false
 
     fun activate(application: Application) {
         synchronized(lock) {
-            if (!hookInstalled) {
-                installHook()
-                hookInstalled = true
-            }
             val currentActiveApplication = activeApplication
             check(currentActiveApplication == null || currentActiveApplication === application) {
                 "Another Application is already active in this JVM process: ${currentActiveApplication?.javaClass?.name}"
@@ -199,25 +194,4 @@ private object JvmApplicationRegistry {
         synchronized(lock) {
             checkNotNull(activeApplication) { "No active Application has been initialized for this JVM process" }
         }
-
-    private fun installHook() {
-        Runtime.getRuntime().addShutdownHook(
-            thread(start = false, name = "KDT application shutdown") {
-                val applications =
-                    synchronized(lock) {
-                        if (shutdownInProgress) {
-                            emptyList()
-                        } else {
-                            shutdownInProgress = true
-                            retainedApplications.toList().asReversed()
-                        }
-                    }
-                runBlocking {
-                    applications.forEach { application ->
-                        runCatching { application.stopAndJoin() }
-                    }
-                }
-            },
-        )
-    }
 }
