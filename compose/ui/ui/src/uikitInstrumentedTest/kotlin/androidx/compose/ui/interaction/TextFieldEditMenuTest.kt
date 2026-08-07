@@ -54,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
@@ -74,8 +75,6 @@ import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.height
-import androidx.compose.ui.unit.width
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
@@ -892,23 +891,17 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.findContextMenuItemsFrame(): DpRect {
-        val pasteFrame = findNodeWithLabel("Paste").frame.requireContextMenuItemFrame("Paste")
+        val pasteFrame = findNodeWithLabel("Paste").requireContextMenuItemFrame("Paste")
         val itemFrames = listOf("Cut", "Copy", "Select", "Select All").mapNotNull { label ->
-            findNodeWithLabelOrNull(label)?.let { item ->
-                item.frame.requireContextMenuItemFrame(label)
-            }
+            findNodeWithLabelOrNull(label)?.requireContextMenuItemFrame(label)
         }
 
         return pasteFrame.union(itemFrames)
     }
 
-    private fun DpRect?.requireContextMenuItemFrame(label: String): DpRect {
-        val frame = this ?: error("Context menu item frame is missing: $label")
-        assertTrue(
-            frame.width >= 1.dp && frame.height >= 1.dp,
-            "Context menu item frame is too small: $label, frame: $frame"
-        )
-        return frame
+    private fun AccessibilityTestNode.requireContextMenuItemFrame(label: String): DpRect {
+        assertVisibleInContainer()
+        return frame ?: error("Context menu item frame is missing: $label")
     }
 
     private fun TextLayoutResult.cursorFrameInWindow(
