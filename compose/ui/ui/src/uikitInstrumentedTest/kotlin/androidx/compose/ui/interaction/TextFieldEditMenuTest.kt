@@ -886,7 +886,8 @@ class TextFieldEditMenuTest {
 
         assertTrue(
             horizontalDistance <= maxDistance && verticalDistance <= maxDistance,
-            "Context menu is more than $maxDistance from caret ($textFieldKind, $contextMenu): " +
+            "Context menu is more than $maxDistance from caret. " +
+                "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
                 "vertical distance: $verticalDistance, horizontal distance: $horizontalDistance."
         )
     }
