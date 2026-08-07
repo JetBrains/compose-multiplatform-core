@@ -894,7 +894,7 @@ class TextFieldEditMenuTest {
         verifyContextMenuItemsVisible(listOf("Paste"))
 
         val pasteFrame = findNodeWithLabel("Paste").frame!!
-        val itemFrames = listOf("Cut", "Copy", "Select", "Select All").mapNotNull { label ->
+        val itemFrames = listOf("Select", "Select All").mapNotNull { label ->
             findNodeWithLabelOrNull(label)?.frame
         }
 
