@@ -890,15 +890,27 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.findContextMenuItemsFrame(): DpRect {
-        val itemFrames = listOf("Cut", "Copy", "Paste", "Select", "Select All")
-            .mapNotNull { findNodeWithLabelOrNull(it)?.frame }
-        if (itemFrames.isEmpty()) {
-            error("Context menu item frames are missing")
+        val pasteFrame = findNodeWithLabel("Paste").frame.requireContextMenuItemFrame("Paste")
+        val itemFrames = listOf("Cut", "Copy", "Select", "Select All").mapNotNull { label ->
+            findNodeWithLabelOrNull(label)?.let { item ->
+                item.frame.requireContextMenuItemFrame(label)
+            }
         }
 
-        return itemFrames.drop(1).fold(itemFrames.first()) { bounds, frame ->
+        return itemFrames.fold(pasteFrame) { bounds, frame ->
             bounds.union(frame)
         }
+    }
+
+    private fun DpRect?.requireContextMenuItemFrame(label: String): DpRect {
+        val frame = this ?: error("Context menu item frame is missing: $label")
+        val width = frame.right - frame.left
+        val height = frame.bottom - frame.top
+        assertTrue(
+            width >= 1.dp && height >= 1.dp,
+            "Context menu item frame is too small: $label, frame: $frame"
+        )
+        return frame
     }
 
     private fun TextLayoutResult.cursorFrameInWindow(
