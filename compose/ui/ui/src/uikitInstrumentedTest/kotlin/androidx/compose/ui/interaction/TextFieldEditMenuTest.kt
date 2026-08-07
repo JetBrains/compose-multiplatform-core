@@ -314,56 +314,44 @@ class TextFieldEditMenuTest {
                 }
                 .then(textFieldModifier(focusRequester))
 
+        val textFieldValue = mutableStateOf(
+            TextFieldValue(text, TextRange(text.length, text.length))
+        )
+        val textFieldState = TextFieldState(text, TextRange(text.length, text.length))
+
         val layoutInfo = when (textFieldKind) {
-            EditableTextFieldKind.BasicTextField -> {
-                val textFieldValue = mutableStateOf(
-                    TextFieldValue(text, TextRange(text.length, text.length))
-                )
-                TextFieldLayoutInfo(
-                    selectionOffset = { textFieldValue.value.selection.start }
-                ).also { layoutInfo ->
-                    setContent {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.White)
-                                .safeDrawingPadding()
-                                .padding(start = 80.dp, top = 48.dp)
-                        ) {
-                            BasicTextField(
-                                value = textFieldValue.value,
-                                onValueChange = { textFieldValue.value = it },
-                                modifier = offsetTextFieldModifier(layoutInfo),
-                                keyboardOptions = keyboardOptions,
-                                onTextLayout = { layoutInfo.textLayoutResult = it }
-                            )
+            EditableTextFieldKind.BasicTextField -> TextFieldLayoutInfo(
+                selectionOffset = { textFieldValue.value.selection.start }
+            )
+            EditableTextFieldKind.BasicTextField2 -> TextFieldLayoutInfo(
+                selectionOffset = { textFieldState.selection.start }
+            )
+        }
+
+        setContent {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+                    .safeDrawingPadding()
+                    .padding(start = 80.dp, top = 48.dp)
+            ) {
+                when (textFieldKind) {
+                    EditableTextFieldKind.BasicTextField -> BasicTextField(
+                        value = textFieldValue.value,
+                        onValueChange = { textFieldValue.value = it },
+                        modifier = offsetTextFieldModifier(layoutInfo),
+                        keyboardOptions = keyboardOptions,
+                        onTextLayout = { layoutInfo.textLayoutResult = it }
+                    )
+                    EditableTextFieldKind.BasicTextField2 -> BasicTextField(
+                        state = textFieldState,
+                        modifier = offsetTextFieldModifier(layoutInfo),
+                        keyboardOptions = keyboardOptions,
+                        onTextLayout = { getResult ->
+                            layoutInfo.textLayoutResult = getResult()
                         }
-                    }
-                }
-            }
-            EditableTextFieldKind.BasicTextField2 -> {
-                val textFieldState = TextFieldState(text, TextRange(text.length, text.length))
-                TextFieldLayoutInfo(
-                    selectionOffset = { textFieldState.selection.start }
-                ).also { layoutInfo ->
-                    setContent {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.White)
-                                .safeDrawingPadding()
-                                .padding(start = 80.dp, top = 48.dp)
-                        ) {
-                            BasicTextField(
-                                state = textFieldState,
-                                modifier = offsetTextFieldModifier(layoutInfo),
-                                keyboardOptions = keyboardOptions,
-                                onTextLayout = { getResult ->
-                                    layoutInfo.textLayoutResult = getResult()
-                                }
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
