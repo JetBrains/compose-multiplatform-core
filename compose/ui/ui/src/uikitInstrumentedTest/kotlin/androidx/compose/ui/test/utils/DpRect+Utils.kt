@@ -67,15 +67,17 @@ internal fun DpRect.intersect(other: DpRect): DpRect {
 }
 
 /**
- * Returns the smallest rectangle containing both this rectangle and [other].
+ * Returns the smallest rectangle containing this rectangle and all of [others].
  */
-internal fun DpRect.union(other: DpRect): DpRect =
-    DpRect(
-        left = min(left, other.left),
-        top = min(top, other.top),
-        right = max(right, other.right),
-        bottom = max(bottom, other.bottom)
-    )
+internal fun DpRect.union(others: Iterable<DpRect>): DpRect =
+    others.fold(this) { bounds, other ->
+        DpRect(
+            left = min(bounds.left, other.left),
+            top = min(bounds.top, other.top),
+            right = max(bounds.right, other.right),
+            bottom = max(bounds.bottom, other.bottom)
+        )
+    }
 
 /**
  * Returns the horizontal gap between this rectangle and [other],

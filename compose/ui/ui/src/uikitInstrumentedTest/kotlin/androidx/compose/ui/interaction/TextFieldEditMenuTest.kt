@@ -74,6 +74,8 @@ import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
@@ -897,17 +899,13 @@ class TextFieldEditMenuTest {
             }
         }
 
-        return itemFrames.fold(pasteFrame) { bounds, frame ->
-            bounds.union(frame)
-        }
+        return pasteFrame.union(itemFrames)
     }
 
     private fun DpRect?.requireContextMenuItemFrame(label: String): DpRect {
         val frame = this ?: error("Context menu item frame is missing: $label")
-        val width = frame.right - frame.left
-        val height = frame.bottom - frame.top
         assertTrue(
-            width >= 1.dp && height >= 1.dp,
+            frame.width >= 1.dp && frame.height >= 1.dp,
             "Context menu item frame is too small: $label, frame: $frame"
         )
         return frame
