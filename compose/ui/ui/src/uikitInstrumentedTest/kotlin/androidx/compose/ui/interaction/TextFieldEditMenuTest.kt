@@ -64,15 +64,17 @@ import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.findFirstDescendant
+import androidx.compose.ui.test.utils.horizontalDistanceTo
 import androidx.compose.ui.test.utils.isLoupeView
+import androidx.compose.ui.test.utils.union
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.test.utils.verticalDistanceTo
 import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
@@ -890,8 +892,8 @@ class TextFieldEditMenuTest {
         newContextMenuEnabled: Boolean,
     ) {
         val menuFrame = findContextMenuItemsFrame()
-        val horizontalDistance = horizontalDistanceBetween(menuFrame, caretFrame)
-        val verticalDistance = verticalDistanceBetween(menuFrame, caretFrame)
+        val horizontalDistance = menuFrame.horizontalDistanceTo(caretFrame)
+        val verticalDistance = menuFrame.verticalDistanceTo(caretFrame)
         val contextMenu = if (newContextMenuEnabled) "new menu" else "old menu"
         val maxDistance = 16.dp
 
@@ -938,28 +940,6 @@ class TextFieldEditMenuTest {
             density = density
         )
     }
-
-    private fun DpRect.union(other: DpRect): DpRect =
-        DpRect(
-            left = minOf(left, other.left),
-            top = minOf(top, other.top),
-            right = maxOf(right, other.right),
-            bottom = maxOf(bottom, other.bottom)
-        )
-
-    private fun horizontalDistanceBetween(first: DpRect, second: DpRect): Dp =
-        when {
-            first.right < second.left -> second.left - first.right
-            first.left > second.right -> first.left - second.right
-            else -> 0.dp
-        }
-
-    private fun verticalDistanceBetween(first: DpRect, second: DpRect): Dp =
-        when {
-            first.bottom < second.top -> second.top - first.bottom
-            first.top > second.bottom -> first.top - second.bottom
-            else -> 0.dp
-        }
 
     private fun UIKitInstrumentedTest.setTextFieldContent(
         textFieldKind: EditableTextFieldKind,
