@@ -19,7 +19,6 @@ package androidx.compose.ui.interaction
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.contextmenu.builder.item
@@ -279,11 +277,7 @@ class TextFieldEditMenuTest {
         for (newContextMenuEnabled in arrayOf(false, true)) {
             runContextMenuTest(newContextMenuEnabled) {
                 UIPasteboard.generalPasteboard().string = "Paste text"
-                val layoutInfo = TextFieldLayoutInfo()
-                setOffsetTextFieldContent(
-                    textFieldKind = textFieldKind,
-                    layoutInfo = layoutInfo
-                )
+                val layoutInfo = setOffsetTextFieldContent(textFieldKind)
 
                 waitUntil("Text field should be laid out") {
                     layoutInfo.textFieldFrame != null && layoutInfo.textLayoutResult != null
@@ -302,10 +296,8 @@ class TextFieldEditMenuTest {
 
     private fun UIKitInstrumentedTest.setOffsetTextFieldContent(
         textFieldKind: EditableTextFieldKind,
-        layoutInfo: TextFieldLayoutInfo,
-    ) {
+    ): TextFieldLayoutInfo {
         val text = "I am a TextField"
-        layoutInfo.selectionOffset = { text.length }
         val keyboardOptions = KeyboardOptions(
             platformImeOptions = PlatformImeOptions {
                 usingNativeTextInput(false)
@@ -313,54 +305,58 @@ class TextFieldEditMenuTest {
         )
         val focusRequester = FocusRequester()
 
-        setContent {
-            val defaultModifier = Modifier
+        fun offsetTextFieldModifier(layoutInfo: TextFieldLayoutInfo): Modifier =
+            Modifier
                 .width(160.dp)
                 .height(24.dp)
-                .border(
-                    width = 1.dp,
-                    color = Color.LightGray,
-                    shape = RoundedCornerShape(4.dp)
-                )
                 .onGloballyPositioned { coordinates ->
                     layoutInfo.textFieldFrame = coordinates.boundsInWindow().toDpRect(density)
                 }
                 .then(textFieldModifier(focusRequester))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .safeDrawingPadding()
-                        .padding(start = 80.dp, top = 48.dp)
-                ) {
-                    when (textFieldKind) {
-                        EditableTextFieldKind.BasicTextField -> {
-                            val textFieldValue = remember {
-                                mutableStateOf(
-                                    TextFieldValue(text, TextRange(text.length, text.length))
-                                )
-                            }
-                            layoutInfo.selectionOffset = { textFieldValue.value.selection.start }
+        val layoutInfo = when (textFieldKind) {
+            EditableTextFieldKind.BasicTextField -> {
+                val textFieldValue = mutableStateOf(
+                    TextFieldValue(text, TextRange(text.length, text.length))
+                )
+                TextFieldLayoutInfo(
+                    selectionOffset = { textFieldValue.value.selection.start }
+                ).also { layoutInfo ->
+                    setContent {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.White)
+                                .safeDrawingPadding()
+                                .padding(start = 80.dp, top = 48.dp)
+                        ) {
                             BasicTextField(
                                 value = textFieldValue.value,
                                 onValueChange = { textFieldValue.value = it },
-                                modifier = defaultModifier,
+                                modifier = offsetTextFieldModifier(layoutInfo),
                                 keyboardOptions = keyboardOptions,
                                 onTextLayout = { layoutInfo.textLayoutResult = it }
                             )
                         }
-                        EditableTextFieldKind.BasicTextField2 -> {
-                            val textFieldState = remember {
-                                TextFieldState(text, TextRange(text.length, text.length))
-                            }
-                            layoutInfo.selectionOffset = { textFieldState.selection.start }
+                    }
+                }
+            }
+            EditableTextFieldKind.BasicTextField2 -> {
+                val textFieldState = TextFieldState(text, TextRange(text.length, text.length))
+                TextFieldLayoutInfo(
+                    selectionOffset = { textFieldState.selection.start }
+                ).also { layoutInfo ->
+                    setContent {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.White)
+                                .safeDrawingPadding()
+                                .padding(start = 80.dp, top = 48.dp)
+                        ) {
                             BasicTextField(
                                 state = textFieldState,
-                                modifier = defaultModifier,
+                                modifier = offsetTextFieldModifier(layoutInfo),
                                 keyboardOptions = keyboardOptions,
                                 onTextLayout = { getResult ->
                                     layoutInfo.textLayoutResult = getResult()
@@ -374,6 +370,7 @@ class TextFieldEditMenuTest {
 
         focusRequester.requestFocus()
         waitForIdle()
+        return layoutInfo
     }
 
     @Test
@@ -984,10 +981,11 @@ class TextFieldEditMenuTest {
         BasicTextField2
     }
 
-    private class TextFieldLayoutInfo {
+    private class TextFieldLayoutInfo(
+        val selectionOffset: () -> Int,
+    ) {
         var textFieldFrame: DpRect? = null
         var textLayoutResult: TextLayoutResult? = null
-        var selectionOffset: () -> Int = { 0 }
     }
 
     private companion object {
