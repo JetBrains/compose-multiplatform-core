@@ -265,27 +265,38 @@ class TextFieldEditMenuTest {
     }
 
     @Test
+    @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
     fun testBasicTextFieldContextMenuIsPositionedNearCaret() =
-        runComplexTextFieldTest { textFieldKind, newContextMenuEnabled ->
-            UIPasteboard.generalPasteboard().string = "Paste text"
-            val layoutInfo = TextFieldLayoutInfo()
-            setOffsetTextFieldContent(
-                textFieldKind = textFieldKind,
-                layoutInfo = layoutInfo
-            )
+        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField)
 
-            waitUntil("Text field should be laid out") {
-                layoutInfo.textFieldFrame != null && layoutInfo.textLayoutResult != null
+    @Test
+    fun testBasicTextField2ContextMenuIsPositionedNearCaret() =
+        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField2)
+
+    private fun runTextFieldContextMenuPositionTest(textFieldKind: EditableTextFieldKind) {
+        for (newContextMenuEnabled in arrayOf(false, true)) {
+            runContextMenuTest(newContextMenuEnabled) {
+                UIPasteboard.generalPasteboard().string = "Paste text"
+                val layoutInfo = TextFieldLayoutInfo()
+                setOffsetTextFieldContent(
+                    textFieldKind = textFieldKind,
+                    layoutInfo = layoutInfo
+                )
+
+                waitUntil("Text field should be laid out") {
+                    layoutInfo.textFieldFrame != null && layoutInfo.textLayoutResult != null
+                }
+
+                longPressNodeWithTagAndAwaitContextMenu("TextField")
+
+                assertContextMenuNearCaret(
+                    caretFrame = layoutInfo.caretFrameInWindow(density),
+                    textFieldKind = textFieldKind,
+                    newContextMenuEnabled = newContextMenuEnabled
+                )
             }
-
-            longPressNodeWithTagAndAwaitContextMenu("TextField")
-
-            assertContextMenuNearCaret(
-                caretFrame = layoutInfo.caretFrameInWindow(density),
-                textFieldKind = textFieldKind,
-                newContextMenuEnabled = newContextMenuEnabled
-            )
         }
+    }
 
     private fun UIKitInstrumentedTest.setOffsetTextFieldContent(
         textFieldKind: EditableTextFieldKind,
