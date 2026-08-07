@@ -216,9 +216,9 @@ Wait while Xcode is opening, and press run button.
   ./cleanTempFiles.sh
   ```
 ### AOSP mode
-The project can be opened in AOSP mode, which uses largely unmodified buildSrc and build.gradle files from the upstream androidx-main branch. This mode support building and running standard upstream AndroidX targets, but does not support Compose Multiplatform targets (which require buildSrc-fork). AOSP mode is available only on the `integration` branch.
+The project can be opened in AOSP mode, which uses largely unmodified `buildSrc` and `build.gradle` files from the upstream `androidx-main` branch. This mode supports building and running standard upstream AndroidX targets, but does not support Compose Multiplatform targets (which require `buildSrc-fork`). AOSP mode is available only on the `integration` branch.
 
-Call this to open project in this mode:
+Run this script to open the project in this mode:
 ```bash
 ./aospComposeProject.sh
 ```
