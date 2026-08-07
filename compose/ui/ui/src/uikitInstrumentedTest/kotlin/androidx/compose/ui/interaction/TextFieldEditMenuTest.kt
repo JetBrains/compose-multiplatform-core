@@ -314,10 +314,9 @@ class TextFieldEditMenuTest {
                 }
                 .then(textFieldModifier(focusRequester))
 
-        val textFieldValue = mutableStateOf(
-            TextFieldValue(text, TextRange(text.length, text.length))
-        )
-        val textFieldState = TextFieldState(text, TextRange(text.length, text.length))
+        val initialSelection = TextRange(text.length, text.length)
+        val textFieldValue = mutableStateOf(TextFieldValue(text, initialSelection))
+        val textFieldState = TextFieldState(text, initialSelection)
 
         val layoutInfo = when (textFieldKind) {
             EditableTextFieldKind.BasicTextField -> TextFieldLayoutInfo(
