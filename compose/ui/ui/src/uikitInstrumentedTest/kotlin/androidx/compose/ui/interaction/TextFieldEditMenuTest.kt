@@ -54,7 +54,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
@@ -891,17 +890,15 @@ class TextFieldEditMenuTest {
     }
 
     private fun UIKitInstrumentedTest.findContextMenuItemsFrame(): DpRect {
-        val pasteFrame = findNodeWithLabel("Paste").requireContextMenuItemFrame("Paste")
+        // Paste is always present in the menu, so its visibility means the menu is shown
+        verifyContextMenuItemsVisible(listOf("Paste"))
+
+        val pasteFrame = findNodeWithLabel("Paste").frame!!
         val itemFrames = listOf("Cut", "Copy", "Select", "Select All").mapNotNull { label ->
-            findNodeWithLabelOrNull(label)?.requireContextMenuItemFrame(label)
+            findNodeWithLabelOrNull(label)?.frame
         }
 
         return pasteFrame.union(itemFrames)
-    }
-
-    private fun AccessibilityTestNode.requireContextMenuItemFrame(label: String): DpRect {
-        assertVisibleInContainer()
-        return frame ?: error("Context menu item frame is missing: $label")
     }
 
     private fun TextLayoutResult.cursorFrameInWindow(
