@@ -739,6 +739,7 @@ internal class ComposeSceneMediator(
         interopContainer.postponingExecutingScheduledUpdates {
             canvas.withSceneOffset {
                 with(sceneRenderingScope) {
+                    scene.size = IntSize(width, height)
                     scene.render(frameRecomposer, asComposeCanvas(), nanoTime)
                 }
             }
