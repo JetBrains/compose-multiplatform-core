@@ -882,7 +882,7 @@ class TextFieldEditMenuTest {
         val horizontalDistance = horizontalDistanceBetween(menuFrame, caretFrame)
         val verticalDistance = verticalDistanceBetween(menuFrame, caretFrame)
         val contextMenu = if (newContextMenuEnabled) "new menu" else "old menu"
-        val maxDistance = 25.dp
+        val maxDistance = 16.dp
 
         assertTrue(
             horizontalDistance <= maxDistance && verticalDistance <= maxDistance,
