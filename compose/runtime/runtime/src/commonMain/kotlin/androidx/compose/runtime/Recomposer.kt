@@ -813,8 +813,32 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                                 // the pending measure pass; the rest recompose and apply
                                 // now, within the same frame.
                                 if (skippedParentDriven.isNotEmpty()) {
-                                    skippedParentDriven.forEach { composition ->
-                                        if (!shouldSkipParentDrivenComposition(composition)) {
+                                    // Recompose the deferred parent-driven compositions in ANCESTRY
+                                    // (creation) order. An outer composition's recompose+apply can
+                                    // DISPOSE a nested parent-driven composition - e.g. a gate
+                                    // scope that drops an overlay/dialog whose content
+                                    // subcomposition is itself pending - and that removal must run
+                                    // BEFORE the nested composition is recomposed. In an unordered
+                                    // pass the nested subcomposition could recompose against
+                                    // just-deleted state ahead of its remover. _knownCompositions
+                                    // is in creation order and a subcomposition is always created
+                                    // after its parent, so filtering it yields outer-before-inner;
+                                    // the isDisposed guard below then skips any nested composition
+                                    // an earlier apply already removed.
+                                    val orderedParentDriven = synchronized(stateLock) {
+                                        val out = mutableListOf<ControlledComposition>()
+                                        knownCompositionsLocked().fastForEach {
+                                            if (it in skippedParentDriven) out += it
+                                        }
+                                        // Defensive: include any pending one not in the known list.
+                                        skippedParentDriven.forEach { if (it !in out) out += it }
+                                        out
+                                    }
+                                    orderedParentDriven.fastForEach { composition ->
+                                        if (
+                                            !composition.isDisposed &&
+                                            !shouldSkipParentDrivenComposition(composition)
+                                        ) {
                                             val needsApply =
                                                 try {
                                                     performRecompose(composition, modifiedValues)
