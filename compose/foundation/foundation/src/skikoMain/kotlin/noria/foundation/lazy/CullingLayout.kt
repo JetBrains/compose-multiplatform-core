@@ -28,9 +28,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
@@ -48,7 +48,7 @@ fun CullingLayout(
         modifier.extractLayoutCoordinates { visibleBounds = it.recursivelyClippedBounds().roundToIntRect() }
     ) { constraints ->
         //if (DEBUG) println("[CullingLayout] Evaluating subcomposition measurePolicy with $constraints")
-        val cullingLayoutMeasureScope = object : CullingLayoutMeasureScope, MeasureScope by this {
+        val cullingLayoutMeasureScope = object : CullingLayoutMeasureScope, IntrinsicMeasureScope by this {
             override fun layout(
                 width: Int,
                 height: Int,
@@ -72,7 +72,7 @@ fun CullingLayout(
     }
 }
 
-interface CullingLayoutMeasureScope : MeasureScope {
+interface CullingLayoutMeasureScope : IntrinsicMeasureScope {
     fun layout(
         width: Int,
         height: Int,
