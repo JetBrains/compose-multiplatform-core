@@ -415,7 +415,7 @@ class HeadlessWindow internal constructor(
         onLayout(WindowData(id, semanticsOwners))
     }
 
-    override fun simulateHotReload() {
+    override fun triggerFullWindowRecomposition() {
         composeScene.simulateHotReload()
     }
 

@@ -661,7 +661,7 @@ class WasmJsWindow internal constructor(
         // ComposeScene drives its own composition; nothing to host here.
     }
 
-    override fun simulateHotReload() {
+    override fun triggerFullWindowRecomposition() {
         scene.simulateHotReload()
     }
 }

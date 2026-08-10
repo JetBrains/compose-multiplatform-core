@@ -1140,7 +1140,7 @@ class WindowsWindow internal constructor(
         }
     }
 
-    override fun simulateHotReload() {
+    override fun triggerFullWindowRecomposition() {
         composeScene.simulateHotReload()
     }
 
