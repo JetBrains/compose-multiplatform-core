@@ -1140,6 +1140,10 @@ class WindowsWindow internal constructor(
         }
     }
 
+    override fun simulateHotReload() {
+        composeScene.simulateHotReload()
+    }
+
     init {
         // Registered here so that `inputStateTracker` and the compose scene are guaranteed to be
         // initialized before any event dispatched by the application event loop can reach

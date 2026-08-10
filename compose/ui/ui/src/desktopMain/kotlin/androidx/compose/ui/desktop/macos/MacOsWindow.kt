@@ -1021,6 +1021,10 @@ class MacOsWindow internal constructor(
         isFrameRequested = true
     }
 
+    override fun simulateHotReload() {
+        composeScene.simulateHotReload()
+    }
+
     override fun startInteractiveMove(pointerEvent: PointerEvent) {
         nativeWindow.startDragWindow()
     }

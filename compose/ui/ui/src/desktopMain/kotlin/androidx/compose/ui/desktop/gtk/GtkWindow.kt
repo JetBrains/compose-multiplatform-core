@@ -885,6 +885,10 @@ class GtkWindow private constructor(
         isFrameRequested = true
     }
 
+    override fun simulateHotReload() {
+        composeScene.simulateHotReload()
+    }
+
     private fun installSceneContentIfNeeded() {
         if (sceneContentInstalled) return
         sceneContentInstalled = true

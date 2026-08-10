@@ -660,6 +660,10 @@ class WasmJsWindow internal constructor(
     override fun Content(onLayout: (androidx.compose.ui.desktop.WindowData) -> Unit) {
         // ComposeScene drives its own composition; nothing to host here.
     }
+
+    override fun simulateHotReload() {
+        scene.simulateHotReload()
+    }
 }
 
 private fun isFullscreenElement(element: HTMLElement): Boolean =

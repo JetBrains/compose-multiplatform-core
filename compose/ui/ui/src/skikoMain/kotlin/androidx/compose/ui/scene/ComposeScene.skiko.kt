@@ -287,6 +287,16 @@ sealed interface ComposeScene : AutoCloseable {
     ): Boolean
 
     /**
+     * Does the same work as [androidx.compose.runtime.simulateHotReload], but affects only the
+     * [androidx.compose.runtime.Recomposer] associated with this scene: the content of this scene
+     * is disposed and composed again from the same content lambda, so all remembered state is
+     * discarded and all effects are re-launched. Other scenes are not affected.
+     *
+     * Must be called on the UI thread, outside of a frame (rendering, input handling or an effect).
+     */
+    fun simulateHotReload()
+
+    /**
      * Perform hit test and return the [InteropView] associated with the resulting node
      * in case it has a [Modifier.pointerInteropFilter], otherwise return null.
      * @param position The position of the hit test.

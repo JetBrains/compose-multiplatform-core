@@ -277,6 +277,23 @@ internal abstract class BaseComposeScene(
             recomposer.performScheduledRecomposerTasks()
         }
 
+    override fun simulateHotReload() =
+        postponeInvalidation("BaseComposeScene:simulateHotReload") {
+            // The whole content is disposed and composed again, so the previously reported
+            // pointer state doesn't apply to the new node tree anymore.
+            inputHandler.onChangeContent()
+
+            /*
+             * It's required before the reload to apply changed parameters
+             * before it composes the content again. Otherwise, it can lead to double recomposition.
+             */
+            recomposer.performScheduledRecomposerTasks()
+
+            recomposer.simulateHotReload()
+
+            recomposer.performScheduledRecomposerTasks()
+        }
+
     override fun render(canvas: Canvas, nanoTime: Long) {
         // This is a no-op if the scene is closed, this situation can happen if the scene is
         // in the list for rendering, but recomposition in another scene from the same list

@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.withTransaction
@@ -109,6 +110,16 @@ internal class ComposeSceneRecomposer(
      */
     fun performScheduledEffects() = trace("ComposeSceneRecomposer:performScheduledEffects") {
         effectDispatcher.flush()
+    }
+
+    /**
+     * Simulate hot reload of the compositions of this [Recomposer], discarding their state.
+     *
+     * @see Recomposer.simulateHotReload
+     */
+    @OptIn(InternalComposeApi::class)
+    fun simulateHotReload() = trace("ComposeSceneRecomposer:simulateHotReload") {
+        recomposer.simulateHotReload()
     }
 
     /**
