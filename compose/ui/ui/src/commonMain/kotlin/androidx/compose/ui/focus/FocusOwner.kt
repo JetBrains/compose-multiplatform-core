@@ -199,4 +199,16 @@ internal interface FocusOwner : FocusManager {
 
     /** Whether the active focus target node has requested focus capture. */
     var isFocusCaptured: Boolean
+
+    /**
+     * Incremented every time a focus request is granted, including when the granted node was
+     * already the active one.
+     *
+     * A custom [enter][FocusProperties.onEnter] or [exit][FocusProperties.onExit] callback signals
+     * that it has taken over a focus change by requesting focus itself, and comparing the active
+     * focus target node before and after the callback cannot see that when the callback requests
+     * focus for the node that already holds it. Comparing this count instead does, because a
+     * request that resolves to the current node still counts as resolved.
+     */
+    var resolvedFocusRequestCount: Int
 }
