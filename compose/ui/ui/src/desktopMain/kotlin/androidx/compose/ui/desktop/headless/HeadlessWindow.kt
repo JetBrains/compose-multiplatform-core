@@ -199,7 +199,16 @@ class HeadlessWindow internal constructor(
         IntSize(contentSize.width.roundToPx(), contentSize.height.roundToPx())
     }
 
-    private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
+    private val semanticsOwnersState = mutableStateSetOf<SemanticsOwner>()
+
+    /**
+     * The layers this window currently hosts, one semantics owner each.
+     *
+     * The set is maintained by the platform context's listener, so it is complete whether or not
+     * anything composes [Content]. A test that reads the tree therefore does not have to host the
+     * window in a composition of its own just to be handed the same collection back.
+     */
+    val semanticsOwners: Collection<SemanticsOwner> get() = semanticsOwnersState
 
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
         PlatformContext.SemanticsOwnerListener {
@@ -216,11 +225,11 @@ class HeadlessWindow internal constructor(
             get() = if (TestDataMode.isEnabled) this else null
 
         override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-            semanticsOwners.add(semanticsOwner)
+            semanticsOwnersState.add(semanticsOwner)
         }
 
         override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-            semanticsOwners.remove(semanticsOwner)
+            semanticsOwnersState.remove(semanticsOwner)
         }
 
         override fun onSemanticsChange(semanticsOwner: SemanticsOwner) = Unit
