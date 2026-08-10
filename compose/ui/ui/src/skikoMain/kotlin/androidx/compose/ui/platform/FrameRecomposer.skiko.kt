@@ -25,6 +25,7 @@ import androidx.compose.runtime.enter
 import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.pumpScenelessDomainRotations
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.internal.getCurrentThreadId
 import androidx.compose.ui.util.fastForEach
@@ -37,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -142,11 +144,21 @@ class FrameRecomposer(
         requireNotNull(coroutineContext[ContinuationInterceptor]) {
             "FrameRecomposer requires a ContinuationInterceptor in its coroutineContext"
         }
+        recomposer.setResilientModeEnabled(true)
         coroutineScope.launch(
             frameDispatcher + frameClock,
             start = CoroutineStart.UNDISPATCHED
         ) {
             recomposer.runRecomposeAndApplyChanges()
+        }
+        // Resilient mode captures a composition failure in errorState instead of tearing the
+        // recomposer down; recover by reloading this host's compositions from their content
+        // lambdas, so one bad frame doesn't leave a permanently dead window.
+        coroutineScope.launch(frameDispatcher + frameClock) {
+            @OptIn(ComposeToolingApi::class)
+            recomposer.asRecomposerInfo().errorState.collect {
+                simulateHotReload()
+            }
         }
     }
 

@@ -35,7 +35,6 @@ import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.snapshots.SnapshotDataSource
 import androidx.compose.runtime.internal.logError
 import androidx.compose.runtime.internal.trace
-import androidx.compose.runtime.withTransaction
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
@@ -66,6 +65,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
 import kotlin.native.concurrent.ThreadLocal
+import kotlin.text.set
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -274,6 +274,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private var concurrentCompositionsOutstanding = 0
     private var isClosed: Boolean = false
     private var errorState = MutableStateFlow<RecomposerErrorState?>(null)
+    private val resilientModeEnabled = AtomicReference(false)
 
     private var frameClockPaused: Boolean = false
     // End properties guarded by stateLock
@@ -929,7 +930,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         failedInitialComposition: ControlledComposition? = null,
         recoverable: Boolean = false,
     ) {
-        if (_hotReloadEnabled.get() && e !is ComposeRuntimeError) {
+        if (_hotReloadEnabled.get() || resilientModeEnabled.get() && e !is ComposeRuntimeError) {
             synchronized(stateLock) {
                 logError("Error was captured in composition while live edit was enabled.", e)
 
@@ -1671,6 +1672,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     hasNextFrameEndAwaitersLocked ||
                     movableContentRemoved.isNotEmpty()
             }
+
+    fun setResilientModeEnabled(value: Boolean) {
+        resilientModeEnabled.set(value)
+    }
 
     private val hasFrameWorkLocked: Boolean
         get() =
