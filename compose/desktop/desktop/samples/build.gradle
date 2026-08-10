@@ -44,6 +44,12 @@ kotlin {
                 }
             }
         }
+
+        jvmTest {
+            dependencies {
+                implementation(libs.kotlinTest)
+            }
+        }
     }
 }
 
