@@ -86,6 +86,7 @@ internal class ComposeSceneRecomposer(
         get() = recomposer
 
     init {
+        @OptIn(InternalComposeApi::class)
         recomposer.setResilientModeEnabled(true)
         var context: CoroutineContext = recomposeDispatcher
         for (element in elements) {
@@ -99,7 +100,10 @@ internal class ComposeSceneRecomposer(
         coroutineScope.launch(context) {
             @OptIn(ComposeToolingApi::class)
             recomposer.asRecomposerInfo().errorState.collect { error ->
-                simulateHotReload()
+                if (error != null) {
+                    // Not sure that it's correct, maybe we need to wait until the frame finishes
+                    simulateHotReload()
+                }
             }
         }
     }
