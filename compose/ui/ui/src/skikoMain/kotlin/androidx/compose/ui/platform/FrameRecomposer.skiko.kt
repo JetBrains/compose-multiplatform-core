@@ -144,6 +144,7 @@ class FrameRecomposer(
         requireNotNull(coroutineContext[ContinuationInterceptor]) {
             "FrameRecomposer requires a ContinuationInterceptor in its coroutineContext"
         }
+        @OptIn(InternalComposeApi::class)
         recomposer.setResilientModeEnabled(true)
         coroutineScope.launch(
             frameDispatcher + frameClock,
@@ -156,8 +157,14 @@ class FrameRecomposer(
         // lambdas, so one bad frame doesn't leave a permanently dead window.
         coroutineScope.launch(frameDispatcher + frameClock) {
             @OptIn(ComposeToolingApi::class)
-            recomposer.asRecomposerInfo().errorState.collect {
-                simulateHotReload()
+            recomposer.asRecomposerInfo().errorState.collect { error ->
+                // The StateFlow replays its current value, so reacting to every emission would
+                // fire a gratuitous full reload at construction (initial null) and a second,
+                // state-destroying one after each error (the null written back by resetErrorState).
+                if (error != null) {
+                    // Not sure that it's correct, maybe we need to wait until the frame finishes
+                    simulateHotReload()
+                }
             }
         }
     }

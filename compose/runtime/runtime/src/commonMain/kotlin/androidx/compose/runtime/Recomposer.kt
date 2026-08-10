@@ -65,7 +65,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
 import kotlin.native.concurrent.ThreadLocal
-import kotlin.text.set
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -930,9 +929,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         failedInitialComposition: ControlledComposition? = null,
         recoverable: Boolean = false,
     ) {
-        if (_hotReloadEnabled.get() || resilientModeEnabled.get() && e !is ComposeRuntimeError) {
+        if ((_hotReloadEnabled.get() || resilientModeEnabled.get()) && e !is ComposeRuntimeError) {
             synchronized(stateLock) {
-                logError("Error was captured in composition while live edit was enabled.", e)
+                logError("Error was captured in composition while error recovery was enabled.", e)
 
                 compositionsAwaitingApply.clear()
                 compositionInvalidations.clear()
@@ -1673,7 +1672,15 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                     movableContentRemoved.isNotEmpty()
             }
 
-    fun setResilientModeEnabled(value: Boolean) {
+    /**
+     * Enables resilient mode for this [Recomposer]: an error thrown during composition is captured
+     * in [RecomposerInfo.errorState] instead of being rethrown out of
+     * [runRecomposeAndApplyChanges], letting the caller recover (for example via
+     * [simulateHotReload]) instead of crashing. [ComposeRuntimeError]s are still rethrown, as they
+     * indicate that internal runtime invariants were violated.
+     */
+    @InternalComposeApi
+    public fun setResilientModeEnabled(value: Boolean) {
         resilientModeEnabled.set(value)
     }
 
