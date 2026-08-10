@@ -506,6 +506,34 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     public fun asRecomposerInfo(): RecomposerInfo = recomposerInfo
 
     /**
+     * Simulates hot reload of the compositions known to this [Recomposer] only: their content is
+     * disposed and composed again from the same content lambdas, so all remembered state is
+     * discarded and all effects are re-launched.
+     *
+     * Unlike the global [androidx.compose.runtime.simulateHotReload], other recomposers of the
+     * process are left untouched, and hot reload mode is only enabled for the duration of the
+     * reload, so there is no need to call [disableHotReloadMode] afterwards.
+     *
+     * Must be called on the thread that drives the compositions of this [Recomposer].
+     */
+    @InternalComposeApi
+    public fun simulateHotReload() {
+        val wasHotReloadEnabled = _hotReloadEnabled.get()
+        // Enabled for the duration of the reload so that a failure of the reload composition is
+        // captured in `errorState` instead of being thrown, as it is during a real hot reload.
+        _hotReloadEnabled.set(true)
+        try {
+            val holders = recomposerInfo.saveStateAndDisposeForHotReload()
+            recomposerInfo.resetErrorState()
+            holders.fastForEach { it.resetContent() }
+            holders.fastForEach { it.recompose() }
+            recomposerInfo.retryFailedCompositions()
+        } finally {
+            _hotReloadEnabled.set(wasHotReloadEnabled)
+        }
+    }
+
+    /**
      * Propagate all invalidations from `snapshotInvalidations` to all the known compositions.
      *
      * @return `true` if the frame has work to do (e.g. [hasFrameWorkLocked])

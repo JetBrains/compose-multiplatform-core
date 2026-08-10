@@ -18,6 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.enter
@@ -206,6 +207,16 @@ class FrameRecomposer(
         if (frameClock.hasAwaiters) {
             invalidate()
         }
+    }
+
+    /**
+     * Simulates hot reload of the compositions of this host's [Recomposer], discarding their state.
+     *
+     * @see Recomposer.simulateHotReload
+     */
+    @OptIn(InternalComposeApi::class)
+    internal fun simulateHotReload() = trace("FrameRecomposer:simulateHotReload") {
+        recomposer.simulateHotReload()
     }
 
     /**

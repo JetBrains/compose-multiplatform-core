@@ -760,6 +760,10 @@ class LinuxWindow private constructor(
         onLayout(WindowData(id, semanticsOwners))
     }
 
+    override fun simulateHotReload() {
+        composeScene.simulateHotReload()
+    }
+
     private val inputStateTracker = InputStateTracker(
         inputModeManager = inputModeManager,
         sendPointerInputEvent = { pointerInputEvent ->

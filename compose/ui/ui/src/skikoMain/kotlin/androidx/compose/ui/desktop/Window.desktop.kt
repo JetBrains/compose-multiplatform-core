@@ -210,6 +210,8 @@ interface Window {
 
     @Composable
     fun Content(onLayout: (WindowData) -> Unit)
+
+    fun simulateHotReload()
 }
 
 interface PositionAwareWindow : Window {

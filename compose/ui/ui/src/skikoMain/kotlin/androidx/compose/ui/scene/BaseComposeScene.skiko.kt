@@ -266,6 +266,23 @@ internal abstract class BaseComposeScene(
             frameRecomposer.performFrameDispatch()
         }
 
+    override fun simulateHotReload() =
+        postponeInvalidation("BaseComposeScene:simulateHotReload") {
+            // The whole content is disposed and composed again, so the previously reported
+            // pointer state doesn't apply to the new node tree anymore.
+            inputHandler.onChangeContent()
+
+            /*
+             * It's required before the reload to apply changed parameters
+             * before it composes the content again. Otherwise, it can lead to double recomposition.
+             */
+            frameRecomposer.performFrameDispatch()
+
+            frameRecomposer.simulateHotReload()
+
+            frameRecomposer.performFrameDispatch()
+        }
+
     override fun measureAndLayout() {
         if (isClosed) return
         hasForcedLayout = false
