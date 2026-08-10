@@ -310,6 +310,7 @@ internal class FocusOwnerImpl(
 
         // To wrap focus around, we clear focus and request initial focus.
         if (focusDirection.is1dFocusSearch() && wrapAroundForOneDimensionalFocus) {
+            val resolvedRequestsBeforeClear = resolvedFocusRequestCount
             val clearFocus =
                 clearFocus(
                     force = false,
@@ -318,7 +319,15 @@ internal class FocusOwnerImpl(
                     focusDirection = focusDirection,
                     isAutomatic = false,
                 )
-            return clearFocus && takeFocus(focusDirection, previouslyFocusedRect = null)
+            if (!clearFocus) {
+                // The clear was refused. A boundary that refused it by requesting focus itself has
+                // taken over the traversal - it may even have wrapped focus around within itself -
+                // so the move was handled, and reporting otherwise would let the key event travel
+                // on as if nothing had happened. A boundary that refused by cancelling asked for
+                // nothing to happen, and that is a move that did not happen.
+                return resolvedFocusRequestCount != resolvedRequestsBeforeClear
+            }
+            return takeFocus(focusDirection, previouslyFocusedRect = null)
         }
 
         @OptIn(ExperimentalComposeUiApi::class)
@@ -578,6 +587,8 @@ internal class FocusOwnerImpl(
             if (value == null || previousValue !== value) isFocusCaptured = false
             listeners.forEach { it.onFocusChanged(previousValue, value) }
         }
+
+    override var resolvedFocusRequestCount: Int = 0
 
     override var isFocusCaptured: Boolean = false
         set(value) {

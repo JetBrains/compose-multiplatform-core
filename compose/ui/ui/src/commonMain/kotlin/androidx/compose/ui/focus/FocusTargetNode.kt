@@ -104,10 +104,19 @@ internal class FocusTargetNode(
         trace("FocusTransactions:requestFocus") {
             if (fetchFocusProperties().canFocus) {
                 return assignFocus(focusDirection)
-            } else {
-                return findChildCorrespondingToFocusEnter(focusDirection) {
-                    it.assignFocus(focusDirection)
-                }
+            }
+            // This node cannot hold focus itself, so the destination below it is chosen by the
+            // focus system rather than by the caller. Offer this node's custom enter the choice
+            // before searching, and tell it that the choice is automatic - that is the whole
+            // distinction a custom enter needs in order to only steer focus it was not handed.
+            when (performCustomEnter(focusDirection, isAutomatic = true)) {
+                Redirected -> return true
+                Cancelled,
+                RedirectCancelled -> return false
+                None -> {}
+            }
+            return findChildCorrespondingToFocusEnter(focusDirection) {
+                it.assignFocus(focusDirection)
             }
         }
     }
@@ -287,11 +296,20 @@ internal class FocusTargetNode(
         val scope = CancelIndicatingFocusBoundaryScope(focusDirection, isAutomatic)
         val focusOwner = requireOwner().focusOwner
         val activeNodeBefore = focusOwner.activeFocusTargetNode
+        val resolvedRequestsBefore = focusOwner.resolvedFocusRequestCount
         focusProperties.enterOrExit(scope)
         val activeNodeAfter = focusOwner.activeFocusTargetNode
+        // A callback that requested focus itself has taken over the focus change, whether or not
+        // that moved the active node: requesting focus for the node that already holds it is how a
+        // boundary keeps focus inside itself when it has a single focusable child, and it is a
+        // resolved request just like any other. Reading it this way means a callback does not have
+        // to cancel in order to be heard.
         if (scope.isCanceled) {
             block(Cancel)
-        } else if (activeNodeBefore !== activeNodeAfter && activeNodeAfter != null) {
+        } else if (
+            (activeNodeBefore !== activeNodeAfter && activeNodeAfter != null) ||
+            focusOwner.resolvedFocusRequestCount != resolvedRequestsBefore
+        ) {
             block(Redirect)
         }
     }

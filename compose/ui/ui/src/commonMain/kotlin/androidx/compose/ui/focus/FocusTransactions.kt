@@ -54,6 +54,7 @@ internal fun FocusTargetNode.performRequestFocus(): Boolean {
     if (previousActiveNode === this) {
         // Focus events should be sent again if focus is requested for an already focused node
         dispatchFocusCallbacks(previousFocusState, previousFocusState)
+        focusOwner.resolvedFocusRequestCount++
         return true
     }
 
@@ -173,6 +174,7 @@ internal fun FocusTargetNode.performRequestFocus(): Boolean {
         requestOwnerFocus(FocusDirection.Next, null)
     }
 
+    focusOwner.resolvedFocusRequestCount++
     return true
 }
 
@@ -350,7 +352,7 @@ internal fun FocusTargetNode.performCustomClearFocus(
                 ?: performCustomExit(focusDirection, isAutomatic)
     }
 
-private fun FocusTargetNode.performCustomEnter(
+internal fun FocusTargetNode.performCustomEnter(
     focusDirection: FocusDirection,
     isAutomatic: Boolean,
 ): CustomDestinationResult {
