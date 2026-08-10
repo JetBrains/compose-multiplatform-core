@@ -1029,8 +1029,8 @@ private fun PointerEvent.toScenePointerEvent(
     val event = this
     val type = event.getPointerEventType()
     val position = Offset(
-        x = (event.clientX - containerOffset.x) * density.density,
-        y = (event.clientY - containerOffset.y) * density.density
+        x = (clientXOf(event).toFloat() - containerOffset.x) * density.density,
+        y = (clientYOf(event).toFloat() - containerOffset.y) * density.density
     )
     return ComposeScenePointer(
         id = PointerId(event.pointerId.toLong()),
@@ -1088,6 +1088,19 @@ private fun checkViewportFitCover(): Unit = js(
         }
     })()"""
 )
+
+// `MouseEvent.clientX`/`clientY` are declared as `Int` in the Kotlin DOM bindings, while the CSSOM
+// View spec defines them as `double`. Going through the typed accessors truncates the coordinates to
+// whole CSS pixels, which on a high-DPI screen quantizes every pointer position to `devicePixelRatio`
+// Compose pixels and turns slow, sub-pixel movement into a stream of zero-delta moves. Compose reads
+// a move with a zero position delta as "no one is handling this gesture", so an outer scrollable can
+// take an ongoing drag away from an inner one - see https://youtrack.jetbrains.com/issue/CMP-10575.
+// Read the raw values instead to keep the fractional part.
+// language=js
+private fun clientXOf(event: PointerEvent): Double = js("event.clientX")
+
+// language=js
+private fun clientYOf(event: PointerEvent): Double = js("event.clientY")
 
 // strings checks are faster on a JS side
 // language=js
