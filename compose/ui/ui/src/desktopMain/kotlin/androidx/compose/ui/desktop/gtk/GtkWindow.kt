@@ -885,7 +885,7 @@ class GtkWindow private constructor(
         isFrameRequested = true
     }
 
-    override fun simulateHotReload() {
+    override fun triggerFullWindowRecomposition() {
         composeScene.simulateHotReload()
     }
 
