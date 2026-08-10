@@ -57,10 +57,18 @@ fun CullingLayout(
             ): MeasureResult {
                 return this@SubcomposeLayout.layout(width, height, alignmentLines) {
                     //if (DEBUG) println("[CullingLayout] Placing inside subcomposition")
-                    if (visibleBounds?.isEmpty == false) {
+                    // Empty bounds are passed on, not withheld. Culling is the content's job - it
+                    // is handed the visible region precisely so it can decide what to materialize,
+                    // and it materializes nothing for an empty one. Skipping the subcomposition
+                    // instead would cull the content's own structure along with its items, so a
+                    // focus target, a state holder or a bound requester inside a layout that
+                    // happens to be zero-sized or scrolled out of view would not merely be
+                    // invisible, it would not exist.
+                    val bounds = visibleBounds
+                    if (bounds != null) {
                         this@SubcomposeLayout.subcompose(Unit) {
                             //if (DEBUG) println("[CullingLayout] Composing content with visibleBounds $visibleBounds")
-                            content(visibleBounds!!)
+                            content(bounds)
                         }.forEach {
                             it.measure(constraints).place(0, 0)
                         }
