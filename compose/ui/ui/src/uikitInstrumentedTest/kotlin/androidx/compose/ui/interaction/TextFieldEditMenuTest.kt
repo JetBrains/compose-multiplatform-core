@@ -882,10 +882,16 @@ class TextFieldEditMenuTest {
         val maxDistance = 16.dp
 
         assertTrue(
-            horizontalDistance <= maxDistance && verticalDistance <= maxDistance,
-            "Context menu is more than $maxDistance from caret. " +
+            horizontalDistance <= maxDistance,
+            "Context menu is horizontally more than $maxDistance from caret. " +
                 "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
-                "vertical distance: $verticalDistance, horizontal distance: $horizontalDistance."
+                "horizontal distance: $horizontalDistance."
+        )
+        assertTrue(
+            verticalDistance <= maxDistance,
+            "Context menu is vertically more than $maxDistance from caret. " +
+                "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
+                "vertical distance: $verticalDistance."
         )
     }
 
