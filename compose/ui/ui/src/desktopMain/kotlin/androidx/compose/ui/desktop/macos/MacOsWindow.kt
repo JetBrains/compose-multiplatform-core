@@ -298,13 +298,21 @@ class MacOsWindow internal constructor(
 
     override fun requestBringToFront() {
         if (!isDisposed) {
+            activateApplicationIfNeeded()
             nativeWindow.orderFront()
         }
     }
 
     override fun requestFocusAndBringToFront() {
         if (!isDisposed) {
+            activateApplicationIfNeeded()
             nativeWindow.makeKeyAndOrderFront()
+        }
+    }
+
+    private fun activateApplicationIfNeeded() {
+        if (!application.isActive) {
+            application.requestActivation()
         }
     }
 
