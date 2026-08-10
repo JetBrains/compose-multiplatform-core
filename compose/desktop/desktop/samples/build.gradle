@@ -216,6 +216,27 @@ tasks.register('runVsyncKdt', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
+// Recovery from an exception thrown out of a composable, see
+// androidx.compose.desktop.examples.errorrecovery.Main.jvm.kt.
+tasks.register('runErrorRecovery', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jvmJar", "downloadAndUnpackKdt")
+    mainClass = "androidx.compose.desktop.examples.errorrecovery.Main_jvmKt"
+    def logFolder = layout.buildDirectory.file("test-logs")
+    def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+    jvmArgs("-ea",
+            "--add-opens",
+            "java.desktop/sun.font=ALL-UNNAMED",
+            "--enable-preview",
+            "--enable-native-access=ALL-UNNAMED",
+            "-Dkdt.native.log.path=${logFolder.get().asFile.absolutePath}",
+            "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+            "-Dkdt.debug=false")
+    def compilation = kotlin.jvm().compilations["main"]
+    classpath =
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
+}
+
 // The frame-consistency sample: the same app with frame isolation off and on. Off, the
 // tear counters climb continuously; on ("Isolated"), every counter must stay at zero.
 // Pass -Pframeconsistency.windows=2 for two windows with scene-local sources each.
