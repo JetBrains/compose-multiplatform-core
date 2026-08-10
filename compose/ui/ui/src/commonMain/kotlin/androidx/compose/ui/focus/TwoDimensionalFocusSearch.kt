@@ -20,6 +20,8 @@ import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.focus.FocusDirection.Companion.Left
+import androidx.compose.ui.focus.FocusDirection.Companion.Next
+import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusDirection.Companion.Up
 import androidx.compose.ui.focus.FocusStateImpl.Active
@@ -110,8 +112,10 @@ internal fun FocusTargetNode.twoDimensionalFocusSearch(
 
 /**
  * Search through the children and find a child that corresponds to a moveFocus(Enter). An enter can
- * be triggered explicitly by using the DPadCenter or can be triggered implicitly when we encounter
- * a focus group during focus search.
+ * be triggered explicitly by using the DPadCenter, can be triggered implicitly when we encounter a
+ * focus group during focus search, or can be triggered by a [FocusRequester] that points at a node
+ * which cannot hold focus itself, in which case the direction is whichever one the requester was
+ * given.
  *
  * @param direction The [direction][FocusDirection] that triggered Focus Enter.
  * @param onFound the callback that is run when the child is found.
@@ -130,28 +134,28 @@ internal fun FocusTargetNode.findChildCorrespondingToFocusEnter(
         return focusableChildren.firstOrNull()?.let { onFound.invoke(it) } ?: false
     }
 
-    // For the purpose of choosing an appropriate child, we convert moveFocus(Enter)
-    // to Left or Right based on LayoutDirection. If this was an implicit enter, we use the
-    // direction that triggered the implicit enter.
-    val requestedDirection =
-        when (direction) {
-            // TODO(b/244528858) choose different items for moveFocus(Enter) based on
-            // LayoutDirection.
-            Enter -> Right
-            else -> direction
-        }
+    // These directions carry no geometry to search with. They reach us when a focus request is
+    // delegated into this subtree, so the destination was never a point on screen: the requester
+    // either said nothing about where it is going (Enter) or said only whether it is going forwards
+    // or backwards. Pick the child a 1-D search would have reached first, which is the first or the
+    // last one in traversal order.
+    when (direction) {
+        Enter,
+        Next -> return onFound.invoke(focusableChildren.first())
+        Previous -> return onFound.invoke(focusableChildren.last())
+    }
 
-    // To start the search, we pick one of the four corners of this node as the initially
-    // focused rectangle.
+    // Everything that is left is a 2-D search. To start it, we pick one of the four corners of this
+    // node as the initially focused rectangle.
     val initialFocusRect =
-        when (requestedDirection) {
+        when (direction) {
             Right,
             Down -> focusRect().topLeft()
             Left,
             Up -> focusRect().bottomRight()
             else -> error(InvalidFocusDirection)
         }
-    val nextCandidate = focusableChildren.findBestCandidate(initialFocusRect, requestedDirection)
+    val nextCandidate = focusableChildren.findBestCandidate(initialFocusRect, direction)
     return nextCandidate?.let { onFound.invoke(it) } ?: false
 }
 
