@@ -22,6 +22,7 @@ import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.internal.SnapshotHolder
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.withTransaction
 import androidx.compose.ui.desktop.logging.logger
 import androidx.compose.ui.platform.FlushCoroutineDispatcher
@@ -85,6 +86,7 @@ internal class ComposeSceneRecomposer(
         get() = recomposer
 
     init {
+        recomposer.setResilientModeEnabled(true)
         var context: CoroutineContext = recomposeDispatcher
         for (element in elements) {
             context += element
@@ -93,6 +95,12 @@ internal class ComposeSceneRecomposer(
             start = CoroutineStart.UNDISPATCHED
         ) {
             recomposer.runRecomposeAndApplyChanges()
+        }
+        coroutineScope.launch(context) {
+            @OptIn(ComposeToolingApi::class)
+            recomposer.asRecomposerInfo().errorState.collect { error ->
+                simulateHotReload()
+            }
         }
     }
 
