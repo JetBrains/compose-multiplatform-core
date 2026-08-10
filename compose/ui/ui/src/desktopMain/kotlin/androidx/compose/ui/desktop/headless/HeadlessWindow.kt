@@ -415,6 +415,10 @@ class HeadlessWindow internal constructor(
         onLayout(WindowData(id, semanticsOwners))
     }
 
+    override fun simulateHotReload() {
+        composeScene.simulateHotReload()
+    }
+
     // ----- Input -----
 
     private val inputStateTracker = InputStateTracker(
