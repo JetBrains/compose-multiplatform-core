@@ -1021,7 +1021,7 @@ class MacOsWindow internal constructor(
         isFrameRequested = true
     }
 
-    override fun simulateHotReload() {
+    override fun triggerFullWindowRecomposition() {
         composeScene.simulateHotReload()
     }
 
