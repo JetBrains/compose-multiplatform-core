@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.enter
 import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.withTransaction
@@ -68,7 +69,15 @@ internal class ComposeSceneRecomposer(
         // RootNodeOwner's init synchronously launches a snapshotFlow collector). In that
         // pre-activation window `current` is null and the task runs bare, exactly as on the
         // flag-off path; once activated it runs isolated in the standing pin.
-        frameSnapshotHolder.current?.withTransaction(task) ?: task()
+        //
+        // Enter as well as transact, and in that order — the same pairing `withFrameTransaction`
+        // uses. A transaction on its own is not a read scope: a source that binds its view in
+        // `makeCurrent` (as RhizomeDB does) sees nothing from a bare transaction, so an effect that
+        // reads an entity would fail even though it is nominally inside the frame cycle. This
+        // dispatcher is not a rare path — it carries every `LaunchedEffect` body and every
+        // `DisposableEffect`, which is where a composition reconciles itself with the world.
+        val frame = frameSnapshotHolder.current
+        if (frame != null) frame.enter { frame.withTransaction(task) } else task()
     }
     private val recomposeDispatcher = FlushCoroutineDispatcher(coroutineScope)
     private val recomposer =

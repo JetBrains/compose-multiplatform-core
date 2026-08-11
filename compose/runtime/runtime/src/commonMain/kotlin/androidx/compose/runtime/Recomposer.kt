@@ -1598,12 +1598,18 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // Frame isolation on: compose in a nested transaction of the cycle unit,
             // observing through the scene's context.
             frameSnapshot != null ->
-                frameSnapshot.withTransaction {
-                    holder.context.observe(
-                        recordDependency = readObserverOf(composition),
-                        recordChange = writeObserverOf(composition, modifiedValues),
-                        block = block,
-                    )
+                // Enter as well as transact. A scene's render path has already entered the unit by
+                // the time it flushes the recompose dispatcher, but that dispatcher also runs tasks
+                // from its own coroutine scope, outside any frame - and composing without a bound
+                // read view is not merely slower, it is blind to every source that binds one.
+                frameSnapshot.enter {
+                    frameSnapshot.withTransaction {
+                        holder.context.observe(
+                            recordDependency = readObserverOf(composition),
+                            recordChange = writeObserverOf(composition, modifiedValues),
+                            block = block,
+                        )
+                    }
                 }
             // Frame isolation off but a scene context exists: the per-pass pinning path,
             // fanning out over the scene's sources.
@@ -1632,7 +1638,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         // scene closed runs on the stock path instead of failing.
         val frameSnapshot = frameSnapshotHolder?.checkedCurrent
         if (frameSnapshot != null) {
-            frameSnapshot.withTransaction(block)
+            // See composing(): the read view has to be bound, not just a transaction opened.
+            frameSnapshot.enter { frameSnapshot.withTransaction(block) }
         } else {
             block()
             // Ensure any global changes are observed
@@ -1644,7 +1651,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         // See withTransactionOrApplyNotifications for the null-after-close semantics.
         val frameSnapshot = frameSnapshotHolder?.checkedCurrent
         if (frameSnapshot != null) {
-            frameSnapshot.withTransaction(block)
+            // See composing(): the read view has to be bound, not just a transaction opened.
+            frameSnapshot.enter { frameSnapshot.withTransaction(block) }
         } else {
             block()
             // Ensure any state objects that were written during apply changes, e.g.
