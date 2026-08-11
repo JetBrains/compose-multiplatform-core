@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.js.js
 import kotlin.time.Duration.Companion.milliseconds
@@ -60,6 +61,11 @@ internal class ComposeWebSemanticsListener(
      * typically the composition scope so the listener follows the composition lifecycle.
      */
     internal fun start(coroutineScope: CoroutineScope) {
+        // The scene appends its main owner from its own constructor, long before this point, so an
+        // invalidation may already be buffered. Drop it to keep the "start after the initial
+        // composition" contract that the caller relies on.
+        invalidationChannel.tryReceive()
+
         // Here we do the following:
         // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the changes have settled (debounce 100ms).
         // - We track the time spent in "debounce", so eventually it must sync the a11y tree despite no pause in invalidation events (the changes couldn't settle).
@@ -124,15 +130,38 @@ internal class ComposeWebSemanticsListener(
         }
     }
 
-    private var semanticsOwner: SemanticsOwner? = null
+    /**
+     * All tracked [SemanticsOwner]s, in z-order: the scene's main owner first, then one owner per
+     * [androidx.compose.ui.scene.ComposeSceneLayer] (Popup/Dialog) in the order they appeared.
+     * [PlatformContext.SemanticsOwnerListener.onSemanticsOwnerAppended] guarantees that a new owner
+     * is always created above the existing ones, so append order is stacking order.
+     */
+    private val semanticsOwners = mutableListOf<SemanticsOwner>()
+
+    /**
+     * Owners that have been observed to be modal, i.e. that contain a node marked with
+     * `Modifier.semantics { dialog() }`.
+     *
+     * Modality is remembered for the owner's whole lifetime rather than recomputed from the current
+     * semantics on every sync, because a Dialog drops that marker while it animates away: with
+     * [androidx.compose.ui.window.DialogProperties.animateTransition] enabled (the default),
+     * `hideDialogWithAnimation` replaces the layer content with a bare `Layout`. Recomputing would
+     * un-inert the content below for the duration of the fade-out, while the scrim is still up.
+     */
+    private val modalOwners = mutableSetOf<SemanticsOwner>()
 
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-        this.semanticsOwner = semanticsOwner
+        if (semanticsOwners.contains(semanticsOwner)) return
+        semanticsOwners.add(semanticsOwner)
+        invalidationChannel.trySend(Unit)
     }
 
     override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-        if (semanticsOwner == this.semanticsOwner) {
-            this.semanticsOwner = null
+        modalOwners.remove(semanticsOwner)
+        // A sync is required here, otherwise the removed owner's HTML nodes would leak into the
+        // mirror DOM forever - a screen reader would keep reading a dismissed popup.
+        if (semanticsOwners.remove(semanticsOwner)) {
+            invalidationChannel.trySend(Unit)
         }
     }
 
@@ -156,59 +185,98 @@ internal class ComposeWebSemanticsListener(
     private fun syncSemanticsWithWebA11Y() {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
 
-        val root = semanticsOwner?.rootSemanticsNode ?: return
-
-        if (root.isValid()) {
-            dfsDeque.addLast(root)
-        }
-
-
         val allIds = mutableSetOf<Int>()
 
         val rootPosition = webSemanticsRoot.getBoundingClientRect().let {
             Offset(it.left.toFloat(), it.top.toFloat())
         }
 
-        while (!dfsDeque.isEmpty()) {
-            val node = dfsDeque.removeLast()
-            val currentId = node.id
-            allIds.add(currentId)
+        // The root HTML element of every synced owner, in z-order, and the index of the topmost
+        // modal one. Everything below that index becomes inert once the walk is done.
+        val ownerRootElements = ArrayList<HTMLElement>(semanticsOwners.size)
+        var topmostModalIndex = -1
 
-            val children = node.replacedChildren.asReversed()
-            dfsDeque.addAll(children)
-            children.fastForEach { it -> nodeToParent[it.id] = currentId }
+        // Snapshot: the callbacks above mutate `semanticsOwners`, and syncNode invokes app code.
+        semanticsOwners.toList().fastForEach { owner ->
+            val root = owner.rootSemanticsNode
+            if (!root.isValid()) return@fastForEach
 
-            val htmlNode = if (nodes[currentId] != null) {
-                nodes[currentId] = node
-                val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
+            // A layer containing `Modifier.semantics { dialog() }` is modal: it takes over the a11y
+            // tree and the layers below it become inert.
+            // A layer marked `popup()` is treated as non-modal. That is correct for the default
+            // `PopupProperties(focusable = false)` but under-approximates a focusable Popup, whose
+            // modality is not observable from this source set - `ComposeSceneLayer.focusable` is
+            // not carried by the semantics tree.
+            var isModal = owner in modalOwners
 
-                if (children.isNotEmpty()) {
-                    // To ensure the correct order of nested nodes, we remove all of them.
-                    // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
-                    // Also, the code is more simple with this approach.
-                    // They are added below.
-                    removeAllChildrenOf(htmlNode)
+            // Defensive: a previous walk that threw would leave foreign nodes behind, which would
+            // then be attributed to this owner.
+            dfsDeque.clear()
+            dfsDeque.addLast(root)
+
+            while (!dfsDeque.isEmpty()) {
+                val node = dfsDeque.removeLast()
+                val currentId = node.id
+                allIds.add(currentId)
+
+                // `config` recreates the merged subtree on every call, so read it exactly once per
+                // node and pass it down to syncNode.
+                val config = node.config
+                if (config.contains(SemanticsProperties.IsDialog)) {
+                    isModal = true
                 }
 
-                syncNode(node, htmlNode, rootPosition)
-                htmlNode
-            } else {
-                nodes[currentId] = node
-                val htmlNode = document.createElement("div") as HTMLElement
-                htmlNode.style.apply {
-                    position = "fixed"
-                    whiteSpace = "pre"
+                val children = node.replacedChildren.asReversed()
+                dfsDeque.addAll(children)
+                children.fastForEach { it -> nodeToParent[it.id] = currentId }
+
+                val htmlNode = if (nodes[currentId] != null) {
+                    nodes[currentId] = node
+                    val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
+
+                    if (children.isNotEmpty()) {
+                        // To ensure the correct order of nested nodes, we remove all of them.
+                        // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
+                        // Also, the code is more simple with this approach.
+                        // They are added below.
+                        removeAllChildrenOf(htmlNode)
+                    }
+
+                    syncNode(node, config, htmlNode, rootPosition)
+                    htmlNode
+                } else {
+                    nodes[currentId] = node
+                    val htmlNode = document.createElement("div") as HTMLElement
+                    htmlNode.style.apply {
+                        position = "fixed"
+                        whiteSpace = "pre"
+                    }
+
+                    webNodes[currentId] = htmlNode
+                    syncNode(node, config, htmlNode, rootPosition, true)
+                    htmlNode
                 }
 
-                webNodes[currentId] = htmlNode
-                syncNode(node, htmlNode, rootPosition, true)
-                htmlNode
+                // find the parent node and attach to it.
+                // An owner's root node has no parent, so it is appended directly to
+                // [webSemanticsRoot]. Because owners are walked in z-order and `appendChild` moves
+                // an existing element to the end, DOM order ends up matching z-order - which is
+                // also the reading order for a screen reader's virtual cursor.
+                val parentId = nodeToParent[currentId]
+                val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
+                htmlParent.appendChild(htmlNode)
             }
 
-            // find the parent node and attach to it
-            val parentId = nodeToParent[currentId]
-            val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
-            htmlParent.appendChild(htmlNode)
+            if (isModal) {
+                modalOwners.add(owner)
+            }
+
+            webNodes[root.id]?.let { rootElement ->
+                if (isModal) {
+                    topmostModalIndex = ownerRootElements.size
+                }
+                ownerRootElements.add(rootElement)
+            }
         }
 
         val removedIds = mutableSetOf<Int>()
@@ -225,16 +293,26 @@ internal class ComposeWebSemanticsListener(
             nodes.remove(it)
             nodeToParent.remove(it)
         }
+
+        // Marks every layer below the topmost modal one as `inert`, so that assistive technologies
+        // stop exposing content covered by a modal Dialog, while non-modal Popups (tooltips,
+        // dropdowns that don't take focus) leave the content underneath readable.
+        //
+        // `inert` is preferred over detaching the subtree: the elements stay cached in [webNodes],
+        // so opening and closing a dialog doesn't churn the mirror DOM, and nesting composes
+        // naturally. Applied after the removal pass so it only ever touches surviving elements.
+        ownerRootElements.fastForEachIndexed { index, element ->
+            element.setInert(index < topmostModalIndex)
+        }
     }
 
     private fun syncNode(
         sn: SemanticsNode,
+        config: SemanticsConfiguration,
         htmlNode: HTMLElement,
         rootOffset: Offset,
         justCreated: Boolean = false,
     ) {
-        val config = sn.config
-
         if (config.contains(SemanticsProperties.Text)) {
             val text = config[SemanticsProperties.Text]
             htmlNode.innerText = text.fastJoinToString("\n") { it.text }
@@ -272,6 +350,17 @@ internal class ComposeWebSemanticsListener(
         }
 
         setA11YAriaRole(element = htmlNode, config.getRoleId())
+
+        // Marking the layers below as `inert` is what actually enforces modality; `aria-modal` is
+        // only advisory, but it is what makes a screen reader announce the dialog and scope itself
+        // to it.
+        if (config.contains(SemanticsProperties.IsDialog)) {
+            htmlNode.setAttribute("aria-modal", "true")
+        } else {
+            // HTML elements are cached and reused across syncs, so the negative case must be
+            // handled too - otherwise a node that stops being a dialog keeps the attribute.
+            htmlNode.removeAttribute("aria-modal")
+        }
 
         val density = sn.layoutNode.density
         sn.boundsInRoot.let { rect ->
@@ -318,6 +407,7 @@ internal object AriaRoleId {
     const val TextBox = 8
     const val List = 9
     const val Grid = 10
+    const val Dialog = 11
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -364,6 +454,11 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
         }
     }
 
+    // Checked last: a layer's structural role outranks whatever its content looks like.
+    if (this.contains(SemanticsProperties.IsDialog)) {
+        roleId = AriaRoleId.Dialog
+    }
+
     return roleId
 }
 
@@ -408,6 +503,9 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
             case 10: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/grid_role
                 roleValue = "grid";
                 break;
+            case 11: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role
+                roleValue = "dialog";
+                break;
             default:
                 break;
         }
@@ -423,4 +521,19 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
 private fun removeAllChildrenOf(element: HTMLElement) {
     // language=javascript
     js("element.replaceChildren()")
+}
+
+/**
+ * Adds or removes the `inert` attribute, which removes the whole subtree from the accessibility
+ * tree. The write is skipped when the state already matches, because `setAttribute` queues a
+ * mutation record even when the value is unchanged, and this runs on every a11y sync.
+ */
+private fun HTMLElement.setInert(inert: Boolean) {
+    if (inert == hasAttribute("inert")) return
+
+    if (inert) {
+        setAttribute("inert", "")
+    } else {
+        removeAttribute("inert")
+    }
 }
