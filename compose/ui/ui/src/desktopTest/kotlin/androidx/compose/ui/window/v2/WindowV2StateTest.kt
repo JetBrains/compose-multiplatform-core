@@ -250,7 +250,7 @@ class WindowV2StateTest {
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.CenteredOnScreen
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds
             )
         )
         lateinit var window: ComposeWindow
@@ -551,7 +551,7 @@ class WindowV2StateTest {
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.CenteredOnScreen,
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds,
             ),
             initialPlacement = WindowPlacement.Maximized,
         )
@@ -575,7 +575,7 @@ class WindowV2StateTest {
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.CenteredOnScreen,
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds,
             ),
             initiallyMinimized = true
         )
@@ -599,7 +599,7 @@ class WindowV2StateTest {
         val state = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.CenteredOnScreen,
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds,
             ),
             initialPlacement = WindowPlacement.Fullscreen,
         )

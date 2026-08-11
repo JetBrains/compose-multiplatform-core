@@ -339,7 +339,7 @@ fun interface WindowPositionProvider {
         /**
          * Centers the window on the screen.
          */
-        val CenteredOnScreen = CenteredOnScreen()
+        val CenteredInScreenBounds = CenteredInScreenBounds()
 
         /**
          * Centers the window within its parent window.
@@ -376,7 +376,7 @@ fun interface WindowPositionProvider {
          *
          * @param offset An additional absolute offset added after aligning.
          */
-        fun CenteredOnScreen(
+        fun CenteredInScreenBounds(
             offset: DpOffset = DpOffset.Zero,
         ): WindowPositionProvider = WindowPositionProvider { size ->
             val bounds = windowMetrics.screen.bounds
