@@ -49,8 +49,10 @@ class HeadlessNoWindowAnimationTest {
 
     @Before fun setUp() {
         flagBefore = ComposeSceneFeatureFlags.isFrameIsolationEnabled
-        ComposeSceneFeatureFlags.isFrameIsolationEnabled = false
-        app = HeadlessApplication.initialize(System.getProperty("java.io.tmpdir"))
+        app = HeadlessApplication.initialize(
+            System.getProperty("java.io.tmpdir"),
+            frameIsolation = false,
+        )
     }
 
     @After fun tearDown() = runBlocking {

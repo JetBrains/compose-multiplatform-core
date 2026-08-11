@@ -51,8 +51,10 @@ class HeadlessSessionTest(private val frameIsolation: Boolean) {
 
     @Before fun setUp() {
         flagBefore = ComposeSceneFeatureFlags.isFrameIsolationEnabled
-        ComposeSceneFeatureFlags.isFrameIsolationEnabled = frameIsolation
-        app = HeadlessApplication.initialize(System.getProperty("java.io.tmpdir"))
+        app = HeadlessApplication.initialize(
+            System.getProperty("java.io.tmpdir"),
+            frameIsolation = frameIsolation,
+        )
     }
 
     @After fun tearDown() = runBlocking {
