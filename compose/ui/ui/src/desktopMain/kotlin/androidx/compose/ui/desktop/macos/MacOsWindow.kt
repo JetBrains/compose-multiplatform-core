@@ -829,17 +829,23 @@ class MacOsWindow internal constructor(
     private val inputStateTracker = InputStateTracker(
         inputModeManager = application.inputModeManager,
         sendPointerEvent = { eventType, position, scrollDelta, timeMillis, type, buttons, modifiers, nativeEvent, button ->
-            composeScene.sendPointerEvent(
-                eventType = eventType,
-                position = position,
-                scrollDelta = scrollDelta,
-                timeMillis = timeMillis,
-                type = type,
-                buttons = buttons,
-                keyboardModifiers = modifiers,
-                nativeEvent = nativeEvent,
-                button = button,
-            )
+            // Joins the frame slice for the same reason the key dispatch below does, and with more
+            // at stake: a pointer press runs click handlers, and those are where an application
+            // reads and writes its own state. Without the wrap they would run against whatever view
+            // happened to be current on the event-loop thread — under isolation, none.
+            composeScene.withFrameTransaction {
+                composeScene.sendPointerEvent(
+                    eventType = eventType,
+                    position = position,
+                    scrollDelta = scrollDelta,
+                    timeMillis = timeMillis,
+                    type = type,
+                    buttons = buttons,
+                    keyboardModifiers = modifiers,
+                    nativeEvent = nativeEvent,
+                    button = button,
+                )
+            }
         },
         sendKeyEvent =
             { keyEvent ->
@@ -860,40 +866,59 @@ class MacOsWindow internal constructor(
 
     @OptIn(ExperimentalComposeUiApi::class, InternalCoreApi::class)
     internal fun handleEvent(event: WindowEvent): EventHandlerResult {
+        // Every branch below that assigns one of this window's observable properties does so inside
+        // composeScene.withFrameTransaction. These are snapshot state the composition reads (an
+        // application's window model mirrors isFocused, size, placement, ...), and AppKit delivers
+        // these events re-entrantly on the main thread, outside any frame slice. Written bare they
+        // land in whatever view is current there — under isolation, none — so the frame that
+        // publishes them is not the frame that observed them. Branches that only touch plain fields
+        // or native handles (the display link, the occlusion toggles) stay outside the wrap.
         return when (event) {
             is Event.WindowScreenChange -> {
                 setupDisplayLink()
-                screen = MacOsScreen(Screen.allScreens().findById(nativeWindow.screenId()))
-                density = density()
-                composeScene.density = density
-                composeScene.size = contentSizeInPx()
+                composeScene.withFrameTransaction {
+                    screen = MacOsScreen(Screen.allScreens().findById(nativeWindow.screenId()))
+                    density = density()
+                    composeScene.density = density
+                    composeScene.size = contentSizeInPx()
+                }
                 EventHandlerResult.Stop
             }
             is Event.WindowMove -> {
-                position = nativeWindow.origin.toDpOffset()
+                composeScene.withFrameTransaction {
+                    position = nativeWindow.origin.toDpOffset()
+                }
                 EventHandlerResult.Stop
             }
             is Event.WindowResize -> {
-                // Resizing from the top/left edges also shifts the native origin.
-                position = nativeWindow.origin.toDpOffset()
-                size = nativeWindow.size.toDpSize()
-                contentSize = nativeWindow.contentSize.toDpSize()
-                composeScene.size = contentSizeInPx()
+                composeScene.withFrameTransaction {
+                    // Resizing from the top/left edges also shifts the native origin.
+                    position = nativeWindow.origin.toDpOffset()
+                    size = nativeWindow.size.toDpSize()
+                    contentSize = nativeWindow.contentSize.toDpSize()
+                    composeScene.size = contentSizeInPx()
+                }
                 isFrameRequested = true
                 EventHandlerResult.Stop
             }
             is Event.WindowFocusChange -> {
-                isFocused = event.isKeyWindow
-                inputStateTracker.updateStateAndSendEvents(event, density)
+                composeScene.withFrameTransaction {
+                    isFocused = event.isKeyWindow
+                    inputStateTracker.updateStateAndSendEvents(event, density)
+                }
                 EventHandlerResult.Stop
             }
             is Event.WindowFullScreenToggle -> {
-                placement = placement()
+                composeScene.withFrameTransaction {
+                    placement = placement()
+                }
                 EventHandlerResult.Stop
             }
             is Event.WindowChangedOcclusionState -> {
                 if (event.isVisible) {
-                    position = nativeWindow.origin.toDpOffset()
+                    composeScene.withFrameTransaction {
+                        position = nativeWindow.origin.toDpOffset()
+                    }
                 }
                 when {
                     event.isVisible && displayLink == null -> {

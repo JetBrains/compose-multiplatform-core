@@ -917,40 +917,48 @@ class WindowsWindow internal constructor(
 
                 is Win32Event.WindowMove -> {
                     val scale = event.scale
-                    position = DpOffset(
-                        (event.origin.x / scale).dp,
-                        (event.origin.y / scale).dp,
-                    )
+                    composeScene.withFrameTransaction {
+                        position = DpOffset(
+                            (event.origin.x / scale).dp,
+                            (event.origin.y / scale).dp,
+                        )
+                    }
                     Win32EventHandlerResult.Continue
                 }
 
                 is Win32Event.WindowScaleChanged -> {
                     val scale = event.scale
-                    density = Density(scale)
-                    screen = WindowsScreen(nativeWindow.getScreen())
-                    position = DpOffset(
-                        (event.origin.x / scale).dp,
-                        (event.origin.y / scale).dp,
-                    )
-                    // Propagate to the scene; the accompanying WM_NCCALCSIZE delivers the new
-                    // client size and renders synchronously at it.
-                    composeScene.density = density
+                    composeScene.withFrameTransaction {
+                        density = Density(scale)
+                        screen = WindowsScreen(nativeWindow.getScreen())
+                        position = DpOffset(
+                            (event.origin.x / scale).dp,
+                            (event.origin.y / scale).dp,
+                        )
+                        // Propagate to the scene; the accompanying WM_NCCALCSIZE delivers the new
+                        // client size and renders synchronously at it.
+                        composeScene.density = density
+                    }
                     Win32EventHandlerResult.Continue
                 }
 
                 is Win32Event.WindowTitleChanged -> {
-                    titleField = event.title
+                    composeScene.withFrameTransaction {
+                        titleField = event.title
+                    }
                     Win32EventHandlerResult.Continue
                 }
 
                 is Win32Event.WindowActivated -> {
-                    isFocused = event.active
                     if (event.active) {
                         // Restore-time recovery independent of NCCALCSIZE/WM_PAINT delivery: a
                         // fully-parked scene (minimized with pending invalidations) re-arms here.
                         frameDispatcher.scheduleFrame()
                     }
-                    inputStateTracker.updateStateAndSendEvents(event, density)
+                    composeScene.withFrameTransaction {
+                        isFocused = event.active
+                        inputStateTracker.updateStateAndSendEvents(event, density)
+                    }
                     Win32EventHandlerResult.Continue
                 }
 
@@ -1042,17 +1050,22 @@ class WindowsWindow internal constructor(
     private val inputStateTracker = InputStateTracker(
         inputModeManager = inputModeManager,
         sendPointerEvent = { eventType, position, scrollDelta, timeMillis, type, buttons, modifiers, nativeEvent, button ->
-            composeScene.sendPointerEvent(
-                eventType = eventType,
-                position = position,
-                scrollDelta = scrollDelta,
-                timeMillis = timeMillis,
-                type = type,
-                buttons = buttons,
-                keyboardModifiers = modifiers,
-                nativeEvent = nativeEvent,
-                button = button,
-            )
+            // Joins the frame slice for the same reason the key dispatch below does, and with more
+            // at stake: a pointer press runs click handlers, and those are where an application
+            // reads and writes its own state.
+            composeScene.withFrameTransaction {
+                composeScene.sendPointerEvent(
+                    eventType = eventType,
+                    position = position,
+                    scrollDelta = scrollDelta,
+                    timeMillis = timeMillis,
+                    type = type,
+                    buttons = buttons,
+                    keyboardModifiers = modifiers,
+                    nativeEvent = nativeEvent,
+                    button = button,
+                )
+            }
         },
         sendKeyEvent = { keyEvent ->
             // Give the active IME session first refusal (the win32 analogue of macOS's
