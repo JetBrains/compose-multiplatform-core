@@ -526,10 +526,6 @@ private fun removeAllChildrenOf(element: HTMLElement) {
 /**
  * Adds or removes the `inert` attribute, which removes the whole subtree from the accessibility
  * tree.
- *
- * The write is skipped when the state already matches. `inert` affects rendering and focus (a
- * focused element inside a subtree that becomes inert gets blurred), so re-asserting it would make
- * the browser redo that work for every layer on every sync.
  */
 private fun HTMLElement.setInert(inert: Boolean) {
     if (inert == hasAttribute("inert")) return
