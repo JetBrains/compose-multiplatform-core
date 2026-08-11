@@ -181,8 +181,8 @@ internal fun createMacOsDefaultKeyMapping(): KeyMapping {
 
                 KeyModifiers.Ctrl -> {
                     when (event.key) {
-                        Key.F -> KeyCommand.LEFT_CHAR
-                        Key.B -> KeyCommand.RIGHT_CHAR
+                        Key.F -> KeyCommand.RIGHT_CHAR
+                        Key.B -> KeyCommand.LEFT_CHAR
                         Key.P -> KeyCommand.UP
                         Key.N -> KeyCommand.DOWN
                         Key.A -> KeyCommand.LINE_START
