@@ -26,6 +26,7 @@ import androidx.compose.runtime.internal.SnapshotHolder
 import androidx.compose.runtime.pumpScenelessDomainRotations
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.runtime.withTransaction
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.internal.getCurrentThreadId
 import androidx.compose.ui.util.fastForEach
@@ -72,13 +73,74 @@ class FrameRecomposer(
     private val coroutineScope = CoroutineScope(coroutineContext + job)
 
     /**
+     * The frame domains of the scenes this host drives. Their pins are swapped once per frame, at
+     * the start of [performFrame] - the non-Android analog of the point in
+     * `Choreographer.doFrame` where a new frame's state becomes visible. A scene registers on
+     * construction and releases on close; an empty registry makes every frame-domain step below a
+     * no-op, which is what keeps the frame-isolation-off path identical to stock.
+     */
+    private val frameDomains = mutableListOf<SnapshotHolder>()
+
+    internal fun registerFrameDomain(holder: SnapshotHolder): AutoCloseable {
+        frameDomains.add(holder)
+        return AutoCloseable { frameDomains.remove(holder) }
+    }
+
+    /**
+     * Runs a task dispatched on the **effect** queue ([trampolineDispatcher]) as one slice of the
+     * frame cycle of every registered domain. Deliberately not applied to [frameDispatcher]:
+     * wrapping recomposition tasks would merge the recomposer's own sequential child slices into
+     * one and defer their per-slice delivery past the frame.
+     *
+     * Enter as well as transact, and in that order — the same pairing `withFrameTransaction` uses.
+     * A transaction on its own is not a read scope: a source that binds its view in `makeCurrent`
+     * (as RhizomeDB does) sees nothing from a bare transaction, so an effect that reads an entity
+     * would fail even though it is nominally inside the frame cycle. These queues are not a rare
+     * path — they carry every `LaunchedEffect` body and every `DisposableEffect`, which is where a
+     * composition reconciles itself with the world outside it.
+     *
+     * Uses [SnapshotHolder.current] rather than `checkedCurrent`: a task can be dispatched before
+     * the domain is activated (e.g. `RootNodeOwner`'s init synchronously launches a `snapshotFlow`
+     * collector). In that pre-activation window `current` is null and the task runs bare, exactly
+     * as on the frame-isolation-off path.
+     */
+    private fun runInFrameDomains(task: () -> Unit) = runInFrameDomains(0, task)
+
+    private fun runInFrameDomains(index: Int, task: () -> Unit) {
+        if (index == frameDomains.size) return task()
+        val frame = frameDomains[index].current
+        if (frame == null) {
+            runInFrameDomains(index + 1, task)
+        } else {
+            frame.enter { frame.withTransaction { runInFrameDomains(index + 1, task) } }
+        }
+    }
+
+    /**
+     * Binds every registered domain's read view around [block], nesting one [enter] per domain.
+     * Binds views only: no transaction is opened, so the recomposer keeps slicing its own pipeline
+     * into sequential child slices that each publish before the next is taken (the same-frame
+     * animation contract).
+     */
+    private fun enterFrameDomains(index: Int, block: () -> Unit) {
+        if (index == frameDomains.size) return block()
+        val unit = frameDomains[index].checkedCurrent
+        if (unit == null) {
+            enterFrameDomains(index + 1, block)
+        } else {
+            unit.enter { enterFrameDomains(index + 1, block) }
+        }
+    }
+
+    /**
      * Trampoline queue (Android's `toRunTrampolined`):
      *   - Coroutine dispatch
      *   - Composition effects
      *   - Scheduled apply notifications
      * Rolled synchronously by [performTrampolineDispatch].
      */
-    private val trampolineDispatcher = FlushCoroutineDispatcher(coroutineScope)
+    private val trampolineDispatcher =
+        FlushCoroutineDispatcher(coroutineScope, ::runInFrameDomains)
 
     /**
      * Frame queue (Android's `toRunOnFrame`): `withFrameNanos` awaiters and recomposition tasks.
@@ -106,36 +168,6 @@ class FrameRecomposer(
      * synchronously by [performTrampolineDispatch].
      */
     private val globalSnapshotRegistration = GlobalSnapshotManager.register(trampolineDispatcher)
-
-    /**
-     * The frame domains of the scenes this host drives. Their pins are swapped once per frame, at
-     * the start of [performFrame] - the non-Android analog of the point in
-     * `Choreographer.doFrame` where a new frame's state becomes visible. A scene registers on
-     * construction and releases on close; an empty registry makes every frame-domain step below a
-     * no-op, which is what keeps the frame-isolation-off path identical to stock.
-     */
-    private val frameDomains = mutableListOf<SnapshotHolder>()
-
-    internal fun registerFrameDomain(holder: SnapshotHolder): AutoCloseable {
-        frameDomains.add(holder)
-        return AutoCloseable { frameDomains.remove(holder) }
-    }
-
-    /**
-     * Binds every registered domain's read view around [block], nesting one [enter] per domain.
-     * Binds views only: no transaction is opened, so the recomposer keeps slicing its own pipeline
-     * into sequential child slices that each publish before the next is taken (the same-frame
-     * animation contract).
-     */
-    private fun enterFrameDomains(index: Int, block: () -> Unit) {
-        if (index == frameDomains.size) return block()
-        val unit = frameDomains[index].checkedCurrent
-        if (unit == null) {
-            enterFrameDomains(index + 1, block)
-        } else {
-            unit.enter { enterFrameDomains(index + 1, block) }
-        }
-    }
 
     init {
         // The host must carry a (single-thread) continuation interceptor that work is dispatched

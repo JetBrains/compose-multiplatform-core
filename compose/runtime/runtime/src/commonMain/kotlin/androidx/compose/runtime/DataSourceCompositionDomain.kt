@@ -165,7 +165,10 @@ class DataSourceCompositionDomain(
                 Runnable {
                     val unit = holder.checkedCurrent
                     when {
-                        unit != null -> unit.withTransaction { block.run() }
+                        // Enter before transacting: a transaction opens a write scope, it does not
+                        // bind a read view. A source that binds in `makeCurrent` is blind inside a
+                        // bare transaction, and a slice that cannot read is not a slice.
+                        unit != null -> unit.enter { unit.withTransaction { block.run() } }
                         isolating -> block.run() // closed: stock fallback
                         else -> dataSourceContext.withTransaction { block.run() }
                     }
