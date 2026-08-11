@@ -19,6 +19,8 @@ package androidx.compose.runtime.snapshots
 import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.DataSourceContext
 import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.enter
 import androidx.compose.runtime.withTransaction
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot.Companion.openSnapshotCount
@@ -234,5 +236,53 @@ class DataSourceSnapshotTests {
         unit.withTransaction { /* no-op */ }
         unit.dispose()
         unit.dispose() // a second dispose call must stay legal
+    }
+
+    @Test
+    fun aReEnterInsideATransactionDoesNotEscapeIt() {
+        // Entering a unit that the calling thread is already inside must be a no-op for currency.
+        // The composition path enters before it transacts (a transaction alone binds no read view),
+        // so an enter routinely happens with a transaction of the same unit already current - the
+        // measure pass, for instance, subcomposes, and subcomposition enters and transacts again.
+        // If that inner enter rebinds the thread to the unit's backing pin, the inner transaction
+        // nests on the BACKING rather than on the transaction it ran inside, and publishes there.
+        val unit = DataSourceContext().takeSnapshot()
+        try {
+            unit.enter {
+                unit.withTransaction {
+                    val outer = mutableStateOf(0)
+                    unit.enter { unit.withTransaction { outer.value = 1 } }
+                    // Still inside the outer transaction: it must see what the inner one wrote.
+                    assertEquals(1, outer.value)
+                }
+            }
+        } finally {
+            unit.dispose()
+        }
+    }
+
+    @Test
+    fun aStateCreatedInsideAReEnteredTransactionIsReadableByTheEnclosingOne() {
+        // The other half of the same ingress, and the reason the escape above is so hard to see
+        // from a symptom: a state object CREATED by the inner block reads back fine either way.
+        // Its record is stamped with the snapshot that allocated it and then re-stamped when that
+        // transaction publishes, so it lands at or below the enclosing transaction's id whichever
+        // base the inner transaction nested on. Only pre-existing state - the state the enclosing
+        // transaction already holds a record for - goes stale. So a frame that escapes its
+        // transaction does not fail on first touch; it fails later, selectively, on the state it
+        // carried in. Pinned so a future change to the fold cannot turn this half into a read
+        // error while the diagnosis is still pointing at the other half.
+        val unit = DataSourceContext().takeSnapshot()
+        try {
+            unit.enter {
+                unit.withTransaction {
+                    var created: MutableState<Int>? = null
+                    unit.enter { unit.withTransaction { created = mutableStateOf(7) } }
+                    assertEquals(7, created!!.value)
+                }
+            }
+        } finally {
+            unit.dispose()
+        }
     }
 }
