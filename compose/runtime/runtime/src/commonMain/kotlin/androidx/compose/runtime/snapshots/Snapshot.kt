@@ -2247,14 +2247,43 @@ private data class SnapshotDataSourceSnapshot(private val mutableSnapshot: Mutab
 
     private class TransactionFrame(val nested: MutableSnapshot, val previous: Snapshot?)
 
+    /** What [makeCurrent] hands back when it bound nothing, so [restoreCurrent] unbinds nothing. */
+    private object AlreadyEntered
+
     // The read scope binds the backing pin itself - no new snapshot, no transaction. Because
     // ApplyThroughSnapshot is read-only, reads see the frame's view and writes are rejected;
     // and because it is a MutableSnapshot, transactionBase() still resolves it as the base for
     // a transaction opened inside the scope, so depth-1 delivery is unaffected.
-    override fun makeCurrent(): Any? = mutableSnapshot.makeCurrent()
+    //
+    // Re-entering a unit the thread is already inside binds nothing at all. The scope is already
+    // there, so there is nothing to establish; rebinding would instead TEAR DOWN what is there,
+    // because the thread's current snapshot inside the scope is generally not the backing but a
+    // transaction taken from it. Callers re-enter constantly and legitimately - entry is cheap,
+    // idempotent by contract, and every ingress does it defensively rather than reason about who
+    // called it - so this is the common path, not a corner: layout enters and transacts, measure
+    // subcomposes, and composition enters and transacts again.
+    //
+    // Discarding the enclosing transaction there is silent and it is not recoverable. The inner
+    // transaction would nest on the BACKING (transactionBase() resolves from the thread) and
+    // publish there, so its writes would never fold into the transaction it ran inside; the
+    // enclosing transaction, older and holding its own records, would go on reading pre-block
+    // values for the rest of the frame. Nothing throws - the frame simply computes on stale state.
+    override fun makeCurrent(): Any? =
+        if (isEnteredOnThisThread()) AlreadyEntered else mutableSnapshot.makeCurrent()
 
     override fun restoreCurrent(previous: Any?) {
+        if (previous === AlreadyEntered) return
         mutableSnapshot.restoreCurrent(previous as Snapshot?)
+    }
+
+    /** Whether this unit's backing is on the calling thread's snapshot stack. */
+    private fun isEnteredOnThisThread(): Boolean {
+        var current: Snapshot? = Snapshot.currentThreadSnapshot
+        while (current != null) {
+            if (current === mutableSnapshot) return true
+            current = current.enclosingSnapshot()
+        }
+        return false
     }
 
     override fun beginTransaction(): Any? {
