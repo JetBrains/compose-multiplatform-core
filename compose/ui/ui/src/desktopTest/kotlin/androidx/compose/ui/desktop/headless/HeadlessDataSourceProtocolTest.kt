@@ -23,12 +23,17 @@ import androidx.compose.runtime.DataSourceContext
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.HeadlessTest
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.desktop.ApplicationSession
+import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.scene.ComposeSceneFeatureFlags
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowPlacement
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -248,6 +253,127 @@ class HeadlessDataSourceProtocolTest {
             source.protocol.count { it == "end" },
             "unbalanced transactions: ${source.protocol}",
         )
+    }
+
+    /**
+     * Scroll is the third input ingress and reaches application code the same way a press does,
+     * through the scene's pointer path rather than through `render`.
+     */
+    @Test
+    fun theScrollIngressEntersTheReadScopeToo() = runBlocking {
+        val source = ReadScopeStrictSource()
+        val window = newStrictWindow(source)
+        withContext(ComposeUIDispatcher) { window.render(nanoTime = 16_000_000L) }
+        app.awaitIdle()
+        val afterFirstFrame = source.protocol.size
+
+        app.sendMouseEnter(window.id, DpOffset(5.dp, 5.dp))
+        app.sendScrollWheel(window.id, DpOffset(5.dp, 5.dp), DpOffset(0.dp, (-12).dp))
+        app.awaitIdle()
+        withContext(ComposeUIDispatcher) { window.dispose() }
+
+        val fromInput = source.protocol.drop(afterFirstFrame)
+        assertTrue(fromInput.contains("enter"), "scroll delivery bound no read view: $fromInput")
+    }
+
+    /**
+     * The window and platform events, which are property writes rather than scene events.
+     *
+     * Asserting the protocol alone would pass on a backend that swallowed the event, so each
+     * property is also read back: the point is that the write happened AND happened inside a bound
+     * read scope, not that some transaction was opened near it.
+     */
+    @Test
+    fun windowAndPlatformEventsWriteTheirPropertiesFromInsideTheReadScope() = runBlocking {
+        val source = ReadScopeStrictSource()
+        val window = newStrictWindow(source)
+        withContext(ComposeUIDispatcher) { window.render(nanoTime = 16_000_000L) }
+        app.awaitIdle()
+        val afterFirstFrame = source.protocol.size
+
+        val undecorated = WindowDecoration.Undecorated()
+        val secondScreen = HeadlessScreen(
+            name = "Second",
+            size = DpSize(2560.dp, 1440.dp),
+            devicePixelRatio = 1.5f,
+        )
+        // On the UI dispatcher because that is where a platform delivers them, and because the
+        // screen change writes through to the scene's own density and size.
+        withContext(ComposeUIDispatcher) {
+            app.sendWindowResize(window.id, DpSize(640.dp, 480.dp), DpSize(640.dp, 460.dp))
+            app.sendWindowMove(window.id, DpOffset(30.dp, 40.dp))
+            app.sendWindowFocusChange(window.id, isFocused = false)
+            app.sendWindowPlacementChange(window.id, WindowPlacement.Maximized)
+            app.sendDensityChange(window.id, devicePixelRatio = 2.0f)
+            app.sendScreenChange(window.id, secondScreen)
+            app.sendWindowDecorationChange(window.id, undecorated, 12.dp to 4.dp)
+            app.sendThemeChange(window.id, SystemTheme.Dark)
+        }
+        app.awaitIdle()
+
+        assertEquals(DpSize(640.dp, 480.dp), window.size, "resize did not apply")
+        assertEquals(DpSize(640.dp, 460.dp), window.contentSize, "content resize did not apply")
+        assertEquals(DpOffset(30.dp, 40.dp), window.position, "move did not apply")
+        assertEquals(false, window.isFocused, "focus change did not apply")
+        assertEquals(WindowPlacement.Maximized, window.placement, "placement did not apply")
+        assertEquals("Second", window.screen.name, "screen change did not apply")
+        assertEquals(1.5f, window.density.density, "density did not follow the screen")
+        assertEquals(undecorated, window.decoration, "decoration did not apply")
+        assertEquals(12.dp to 4.dp, window.customTitleBarInsets, "title bar insets did not apply")
+        assertEquals(SystemTheme.Dark, window.systemTheme, "theme change did not apply")
+
+        val fromWindowEvents = source.protocol.drop(afterFirstFrame)
+        assertTrue(
+            fromWindowEvents.contains("enter"),
+            "window events bound no read view: $fromWindowEvents",
+        )
+        withContext(ComposeUIDispatcher) {
+            assertTrue(!source.isViewBound, "a read view outlived the window events")
+        }
+
+        withContext(ComposeUIDispatcher) { window.dispose() }
+        assertEquals(
+            source.protocol.count { it == "enter" },
+            source.protocol.count { it == "exit" },
+            "unbalanced read scopes: ${source.protocol}",
+        )
+        assertEquals(
+            source.protocol.count { it == "begin" },
+            source.protocol.count { it == "end" },
+            "unbalanced transactions: ${source.protocol}",
+        )
+    }
+
+    /**
+     * A close request runs application code - the handler decides whether to close - so it has the
+     * same exposure a click handler does. The assertion is made from inside the callback, which is
+     * the only place that can tell whether the view was bound while the application ran, rather
+     * than merely bound at some point during the ingress.
+     */
+    @Test
+    fun aCloseRequestRunsItsHandlerInsideTheReadScope() = runBlocking {
+        val source = ReadScopeStrictSource()
+        var boundInsideHandler: Boolean? = null
+        var seenReason: WindowCloseRequestReason? = null
+        val window = app.createWindow(ApplicationSession(scope, DataSourceContext(source))) { reason ->
+            boundInsideHandler = source.isViewBound
+            seenReason = reason
+        }
+        window.setContent(onPreviewKeyEvent = { false }, onKeyEvent = { false }) {
+            Box(Modifier.fillMaxSize())
+        }
+        source.strict = true
+        withContext(ComposeUIDispatcher) { window.render(nanoTime = 16_000_000L) }
+        app.awaitIdle()
+
+        withContext(ComposeUIDispatcher) {
+            app.sendCloseRequest(window.id, WindowCloseRequestReason.UserRequest)
+        }
+        app.awaitIdle()
+        withContext(ComposeUIDispatcher) { window.dispose() }
+
+        assertEquals(WindowCloseRequestReason.UserRequest, seenReason, "the handler did not run")
+        assertEquals(true, boundInsideHandler, "the close handler ran with no read view bound")
     }
 
     /**

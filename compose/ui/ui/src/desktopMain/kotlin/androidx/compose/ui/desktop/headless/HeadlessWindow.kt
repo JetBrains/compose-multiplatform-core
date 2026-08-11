@@ -61,6 +61,7 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.TestDataMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -115,11 +116,26 @@ class HeadlessWindow internal constructor(
 
     private var sizeState: DpSize by mutableStateOf(DpSize(800.dp, 600.dp))
     override val size: DpSize get() = sizeState
-    override val contentSize: DpSize get() = sizeState
+
+    // Tracked separately from [sizeState] so an injected resize can pull them apart the way a real
+    // window does, where the frame and its content differ by the decoration.
+    private var contentSizeState: DpSize by mutableStateOf(DpSize(800.dp, 600.dp))
+    override val contentSize: DpSize get() = contentSizeState
 
     override fun requestSize(size: DpSize) {
         sizeState = size
+        contentSizeState = size
     }
+
+    /**
+     * Where the window sits in screen space.
+     *
+     * Not a [Window] member — the interface has no position — but the native backends all keep one
+     * and write it from their move and resize events, so headless keeps one too. Without it there
+     * is nothing for an injected move to change.
+     */
+    var position: DpOffset by mutableStateOf(DpOffset.Zero)
+        private set
 
     private var minSizeState: DpSize by mutableStateOf(DpSize.Zero)
     override val minSize: DpSize get() = minSizeState
@@ -139,8 +155,14 @@ class HeadlessWindow internal constructor(
         isUserResizableState = userResizable
     }
 
-    override val screen: Screen = HeadlessScreen(devicePixelRatio = devicePixelRatio)
-    override val density: Density = screen.density
+    // Observable, and density is derived from the screen rather than held independently, because
+    // that is the relationship a display-scale change has on a real backend: the platform reports a
+    // new screen and the window re-reads density off it.
+    override var screen: Screen by mutableStateOf(HeadlessScreen(devicePixelRatio = devicePixelRatio))
+        private set
+
+    override var density: Density by mutableStateOf(screen.density)
+        private set
 
     private var isFocusedState: Boolean by mutableStateOf(true)
     override val isFocused: Boolean get() = isFocusedState
@@ -164,12 +186,15 @@ class HeadlessWindow internal constructor(
         decorations.firstOrNull()?.let { decoration = it }
     }
 
-    override val customTitleBarInsets: Pair<Dp, Dp>? = null
+    override var customTitleBarInsets: Pair<Dp, Dp>? by mutableStateOf(null)
+        private set
 
-    override val systemTheme: SystemTheme get() = SystemTheme.Light
+    override var systemTheme: SystemTheme by mutableStateOf(SystemTheme.Light)
+        private set
 
     override fun requestSystemTheme(systemTheme: SystemTheme?) {
-        // No-op for headless
+        // A real backend asks the platform, which answers with an event; there is no platform here,
+        // so a test states the outcome with HeadlessApplication.sendThemeChange instead.
     }
 
     override fun requestMinimized(minimized: Boolean) {
@@ -465,8 +490,56 @@ class HeadlessWindow internal constructor(
         },
     )
 
+    /**
+     * Applies one injected event, mirroring the native backends' `handleEvent`.
+     *
+     * Every branch that assigns one of this window's observable properties does so inside
+     * [ComposeScene.withFrameTransaction]. These are snapshot state the composition reads, and a
+     * platform delivers the events that change them outside any frame slice — written bare they
+     * land in whatever view is current there, which under isolation is none, so the frame that
+     * publishes them is not the frame that observed them. Input events reach the same wrap one
+     * level down, inside [inputStateTracker]'s send callbacks.
+     */
     internal fun handleEvent(event: WindowEvent) {
-        inputStateTracker.updateStateAndSendEvents(event as Event, density)
+        when (event) {
+            is Event.WindowResize -> {
+                composeScene.withFrameTransaction {
+                    sizeState = event.size
+                    contentSizeState = event.contentSize
+                    composeScene.size = contentSizeInPx()
+                }
+                isFrameRequestedState = true
+            }
+            is Event.WindowMove -> composeScene.withFrameTransaction {
+                position = event.origin
+            }
+            is Event.WindowFocusChange -> composeScene.withFrameTransaction {
+                isFocusedState = event.isFocused
+            }
+            is Event.WindowPlacementChange -> composeScene.withFrameTransaction {
+                placementState = event.placement
+            }
+            is Event.WindowScreenChange -> {
+                composeScene.withFrameTransaction {
+                    screen = event.screen
+                    density = event.screen.density
+                    composeScene.density = density
+                    composeScene.size = contentSizeInPx()
+                }
+                isFrameRequestedState = true
+            }
+            is Event.WindowDecorationChange -> composeScene.withFrameTransaction {
+                decoration = event.decoration
+                customTitleBarInsets = event.customTitleBarInsets
+            }
+            is Event.WindowThemeChange -> composeScene.withFrameTransaction {
+                systemTheme = event.systemTheme
+            }
+            is Event.WindowCloseRequest -> composeScene.withFrameTransaction {
+                onCloseRequest(event.reason)
+            }
+            else -> inputStateTracker.updateStateAndSendEvents(event as Event, density)
+        }
     }
 
     // ----- TextInputSessionOwner (headless windows have no IME) -----
