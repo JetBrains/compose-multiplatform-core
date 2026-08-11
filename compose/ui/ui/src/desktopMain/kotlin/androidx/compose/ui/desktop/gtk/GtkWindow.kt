@@ -602,63 +602,80 @@ class GtkWindow private constructor(
     }
 
     internal fun handleEvent(event: Event): EventHandlerResult {
+        // Every branch below that assigns one of this window's observable properties does so inside
+        // composeScene.withFrameTransaction. These are snapshot state the composition reads (an
+        // application's window model mirrors isFocused, size, placement, ...), and GTK delivers
+        // these events on the event-loop thread, outside any frame slice. Written bare they land in
+        // whatever view is current there — under isolation, none — so the frame that publishes them
+        // is not the frame that observed them. Branches that only touch plain fields
+        // (isFrameRequested, the draw path) or the native IME context stay outside the wrap.
         return when (event) {
             is Event.WindowConfigure -> {
-                size = event.size.toDpSize()
-                contentSize = size
-                isFocused = event.active
-                placement = when {
-                    event.fullscreen -> WindowPlacement.Fullscreen
-                    event.maximized -> WindowPlacement.Maximized
-                    else -> WindowPlacement.Floating
+                composeScene.withFrameTransaction {
+                    size = event.size.toDpSize()
+                    contentSize = size
+                    isFocused = event.active
+                    placement = when {
+                        event.fullscreen -> WindowPlacement.Fullscreen
+                        event.maximized -> WindowPlacement.Maximized
+                        else -> WindowPlacement.Floating
+                    }
+                    customTitleBarInsets = if (
+                        event.insetStart.width == 0 && event.insetEnd.width == 0
+                    ) {
+                        null
+                    } else {
+                        event.insetStart.width.dp to event.insetEnd.width.dp
+                    }
+                    decoration = when (val nativeDecoration = event.decorationMode) {
+                        WindowDecorationMode.Server -> WindowDecoration.Decorated
+                        is WindowDecorationMode.CustomTitlebar ->
+                            WindowDecoration.CustomTitleBar(nativeDecoration.height.dp)
+                    }
+                    composeScene.size = contentSizeInPx()
                 }
-                customTitleBarInsets = if (
-                    event.insetStart.width == 0 && event.insetEnd.width == 0
-                ) {
-                    null
-                } else {
-                    event.insetStart.width.dp to event.insetEnd.width.dp
-                }
-                decoration = when (val nativeDecoration = event.decorationMode) {
-                    WindowDecorationMode.Server -> WindowDecoration.Decorated
-                    is WindowDecorationMode.CustomTitlebar ->
-                        WindowDecoration.CustomTitleBar(nativeDecoration.height.dp)
-                }
-                composeScene.size = contentSizeInPx()
                 isFrameRequested = true
                 EventHandlerResult.Stop
             }
 
             is Event.WindowScaleChanged -> {
-                density = Density(event.newScale.toFloat())
-                composeScene.density = density
+                composeScene.withFrameTransaction {
+                    density = Density(event.newScale.toFloat())
+                    composeScene.density = density
+                }
                 EventHandlerResult.Stop
             }
 
             is Event.WindowScreenChange -> {
-                screen =
-                    application.screens.values.firstOrNull { it.nativeScreen.screenId == event.newScreenId }
-                        ?: screen
+                composeScene.withFrameTransaction {
+                    screen =
+                        application.screens.values.firstOrNull { it.nativeScreen.screenId == event.newScreenId }
+                            ?: screen
+                }
                 EventHandlerResult.Stop
             }
 
             is Event.WindowKeyboardEnter -> {
-                isFocused = true
                 // GTK text input is window-level; re-arm it when keyboard focus returns.
                 if (gtkTextInputSessionOwner.isTextInputSessionActive()) {
                     gtkTextInputSessionOwner.currentContext?.let { nativeWindow.textInputEnable(it) }
                 }
-                inputStateTracker.updateStateAndSendEvents(event, density)
+                composeScene.withFrameTransaction {
+                    isFocused = true
+                    inputStateTracker.updateStateAndSendEvents(event, density)
+                }
             }
 
             is Event.WindowKeyboardLeave -> {
-                isFocused = false
                 if (gtkTextInputSessionOwner.isTextInputSessionActive() &&
                     gtkTextInputSessionOwner.hasPreeditString
                 ) {
                     nativeWindow.textInputDisable()
                 }
-                inputStateTracker.updateStateAndSendEvents(event, density)
+                composeScene.withFrameTransaction {
+                    isFocused = false
+                    inputStateTracker.updateStateAndSendEvents(event, density)
+                }
             }
 
             is Event.MouseDown -> {
@@ -765,17 +782,22 @@ class GtkWindow private constructor(
             if (pointer == null) {
                 PointerEventResult()
             } else {
-                composeScene.sendPointerEvent(
-                    eventType = pointerInputEvent.eventType,
-                    position = pointer.position,
-                    scrollDelta = pointer.scrollDelta,
-                    timeMillis = pointerInputEvent.uptime,
-                    type = pointer.type,
-                    buttons = pointerInputEvent.buttons,
-                    keyboardModifiers = pointerInputEvent.keyboardModifiers,
-                    nativeEvent = pointerInputEvent.nativeEvent,
-                    button = pointerInputEvent.button,
-                )
+                // Joins the frame slice for the same reason the key dispatch below does, and with
+                // more at stake: a pointer press runs click handlers, and those are where an
+                // application reads and writes its own state.
+                composeScene.withFrameTransaction {
+                    composeScene.sendPointerEvent(
+                        eventType = pointerInputEvent.eventType,
+                        position = pointer.position,
+                        scrollDelta = pointer.scrollDelta,
+                        timeMillis = pointerInputEvent.uptime,
+                        type = pointer.type,
+                        buttons = pointerInputEvent.buttons,
+                        keyboardModifiers = pointerInputEvent.keyboardModifiers,
+                        nativeEvent = pointerInputEvent.nativeEvent,
+                        button = pointerInputEvent.button,
+                    )
+                }
             }
         },
         sendKeyEvent = { keyEvent ->

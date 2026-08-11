@@ -635,47 +635,64 @@ class LinuxWindow private constructor(
     }
 
     internal fun handleEvent(event: Event): EventHandlerResult {
+        // Every branch below that assigns one of this window's observable properties does so inside
+        // composeScene.withFrameTransaction. These are snapshot state the composition reads (an
+        // application's window model mirrors isFocused, size, placement, ...), and the compositor
+        // delivers these events on the event-loop thread, outside any frame slice. Written bare they
+        // land in whatever view is current there — under isolation, none — so the frame that
+        // publishes them is not the frame that observed them. Branches that only touch plain fields
+        // (isFrameRequested, the draw path) stay outside the wrap.
         return when (event) {
             is Event.WindowConfigure -> {
-                size = event.size.toDpSize()
-                contentSize = size
-                isFocused = event.active
-                placement = when {
-                    event.fullscreen -> WindowPlacement.Fullscreen
-                    event.maximized -> WindowPlacement.Maximized
-                    else -> WindowPlacement.Floating
+                composeScene.withFrameTransaction {
+                    size = event.size.toDpSize()
+                    contentSize = size
+                    isFocused = event.active
+                    placement = when {
+                        event.fullscreen -> WindowPlacement.Fullscreen
+                        event.maximized -> WindowPlacement.Maximized
+                        else -> WindowPlacement.Floating
+                    }
+                    windowCapabilities = event.capabilities
+                    decoration = when (event.decorationMode) {
+                        WindowDecorationMode.Server -> WindowDecoration.Decorated
+                        WindowDecorationMode.Client -> WindowDecoration.Undecorated()
+                    }
+                    composeScene.size = contentSizeInPx()
                 }
-                windowCapabilities = event.capabilities
-                decoration = when (event.decorationMode) {
-                    WindowDecorationMode.Server -> WindowDecoration.Decorated
-                    WindowDecorationMode.Client -> WindowDecoration.Undecorated()
-                }
-                composeScene.size = contentSizeInPx()
                 isFrameRequested = true
                 EventHandlerResult.Stop
             }
 
             is Event.WindowScaleChanged -> {
-                density = Density(event.newScale.toFloat())
-                composeScene.density = density
+                composeScene.withFrameTransaction {
+                    density = Density(event.newScale.toFloat())
+                    composeScene.density = density
+                }
                 EventHandlerResult.Stop
             }
 
             is Event.WindowScreenChange -> {
-                screen =
-                    application.screens.values.firstOrNull { it.nativeScreen.screenId == event.newScreenId }
-                        ?: screen
+                composeScene.withFrameTransaction {
+                    screen =
+                        application.screens.values.firstOrNull { it.nativeScreen.screenId == event.newScreenId }
+                            ?: screen
+                }
                 EventHandlerResult.Stop
             }
 
             is Event.WindowKeyboardEnter -> {
-                isFocused = true
-                inputStateTracker.updateStateAndSendEvents(event, density)
+                composeScene.withFrameTransaction {
+                    isFocused = true
+                    inputStateTracker.updateStateAndSendEvents(event, density)
+                }
             }
 
             is Event.WindowKeyboardLeave -> {
-                isFocused = false
-                inputStateTracker.updateStateAndSendEvents(event, density)
+                composeScene.withFrameTransaction {
+                    isFocused = false
+                    inputStateTracker.updateStateAndSendEvents(event, density)
+                }
             }
 
             is Event.MouseDown,
@@ -771,17 +788,22 @@ class LinuxWindow private constructor(
             if (pointer == null) {
                 PointerEventResult()
             } else {
-                composeScene.sendPointerEvent(
-                    eventType = pointerInputEvent.eventType,
-                    position = pointer.position,
-                    scrollDelta = pointer.scrollDelta,
-                    timeMillis = pointerInputEvent.uptime,
-                    type = pointer.type,
-                    buttons = pointerInputEvent.buttons,
-                    keyboardModifiers = pointerInputEvent.keyboardModifiers,
-                    nativeEvent = pointerInputEvent.nativeEvent,
-                    button = pointerInputEvent.button,
-                )
+                // Joins the frame slice for the same reason the key dispatch below does, and with
+                // more at stake: a pointer press runs click handlers, and those are where an
+                // application reads and writes its own state.
+                composeScene.withFrameTransaction {
+                    composeScene.sendPointerEvent(
+                        eventType = pointerInputEvent.eventType,
+                        position = pointer.position,
+                        scrollDelta = pointer.scrollDelta,
+                        timeMillis = pointerInputEvent.uptime,
+                        type = pointer.type,
+                        buttons = pointerInputEvent.buttons,
+                        keyboardModifiers = pointerInputEvent.keyboardModifiers,
+                        nativeEvent = pointerInputEvent.nativeEvent,
+                        button = pointerInputEvent.button,
+                    )
+                }
             }
         },
         sendKeyEvent = { keyEvent ->
