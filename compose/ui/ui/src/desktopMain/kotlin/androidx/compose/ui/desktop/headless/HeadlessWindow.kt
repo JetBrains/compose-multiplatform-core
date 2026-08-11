@@ -102,8 +102,14 @@ class HeadlessWindow internal constructor(
     @Volatile
     private var isDisposed = false
 
-    private var isFrameRequestedState = mutableStateOf(false)
-    internal val isFrameRequested: Boolean get() = isFrameRequestedState.value
+    // A plain field, not snapshot state, like every other backend's `isFrameRequested`. The
+    // runtime calls `invalidate` from inside an apply (deliverInvalidations ->
+    // SnapshotHolder.pushPendingDelivery -> the scene's delivery wake), where the current snapshot
+    // is read-only and a state write throws. A frame request is scheduling, not composition input:
+    // nothing observes it, so it has no business being observable.
+    @Volatile
+    private var isFrameRequestedState = false
+    internal val isFrameRequested: Boolean get() = isFrameRequestedState
 
     override var title: String = "Headless Window"
 
@@ -255,7 +261,7 @@ class HeadlessWindow internal constructor(
             HeadlessMainDispatcher(application.eventLoop), // NON-immediate, like every backend
         platformContext = platformContext,
         dataSourceContext = session.dataSourceContext,
-        invalidate = { isFrameRequestedState.value = true },
+        invalidate = { isFrameRequestedState = true },
     )
 
     // ----- Rendering into an in-memory raster surface -----
@@ -291,7 +297,7 @@ class HeadlessWindow internal constructor(
      */
     fun render(nanoTime: Long = lastRenderNanoTime) {
         lastRenderNanoTime = nanoTime
-        isFrameRequestedState.value = false
+        isFrameRequestedState = false
         val target = surfaceForCurrentSize()
         target.canvas.clear(Color.TRANSPARENT)
         composeScene.render(target.canvas.asComposeCanvas(), nanoTime)
@@ -395,7 +401,7 @@ class HeadlessWindow internal constructor(
         this.onKeyEvent = onKeyEvent
         contentState.value = content
         installSceneContentIfNeeded()
-        isFrameRequestedState.value = true
+        isFrameRequestedState = true
         scheduleContentCatchUpFrameIfIsolated()
     }
 
@@ -433,17 +439,22 @@ class HeadlessWindow internal constructor(
     private val inputStateTracker = InputStateTracker(
         inputModeManager = application.inputModeManager,
         sendPointerEvent = { eventType, position, scrollDelta, timeMillis, type, buttons, modifiers, nativeEvent, button ->
-            composeScene.sendPointerEvent(
-                eventType = eventType,
-                position = position,
-                scrollDelta = scrollDelta,
-                timeMillis = timeMillis,
-                type = type,
-                buttons = buttons,
-                keyboardModifiers = modifiers,
-                nativeEvent = nativeEvent,
-                button = button,
-            )
+            // Joins the frame slice for the same reason the key dispatch below does, and with more
+            // at stake: a pointer press runs click handlers, and those are where an application
+            // reads and writes its own state.
+            composeScene.withFrameTransaction {
+                composeScene.sendPointerEvent(
+                    eventType = eventType,
+                    position = position,
+                    scrollDelta = scrollDelta,
+                    timeMillis = timeMillis,
+                    type = type,
+                    buttons = buttons,
+                    keyboardModifiers = modifiers,
+                    nativeEvent = nativeEvent,
+                    button = button,
+                )
+            }
         },
         sendKeyEvent = { keyEvent ->
             composeScene.withFrameTransaction {
