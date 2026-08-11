@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.ComposeUIDispatcherOverride
 import androidx.compose.ui.SystemTheme
@@ -52,6 +53,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.scene.ComposeSceneFeatureFlags
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.DpOffset
@@ -87,15 +89,27 @@ object HeadlessApplication : Application {
     private var devicePixelRatio: Double = 1.0
     private var uriHandler: UriHandler = HeadlessUriHandler()
 
+    /**
+     * [frameIsolation] is a parameter rather than something a caller sets on
+     * [ComposeSceneFeatureFlags] beforehand because a scene reads that flag once, at construction:
+     * whoever initializes the backend is the last one who can still decide it for every window that
+     * follows. Its default is the same one every other backend entry point applies
+     * (`initializeApplication` for KDT, `ComposeContainer`'s init for Swing) — without it, a headless
+     * scene would be built un-isolated no matter what the process was launched with, its frame domain
+     * would never be activated, and `withFrameTransaction` would silently degrade to a bare call, so
+     * every window callback that reads an entity would run with no read scope bound.
+     */
     fun initialize(
         libraryFolderPath: String,
         devicePixelRatio: Double = 1.0,
         uriHandler: UriHandler = HeadlessUriHandler(),
+        frameIsolation: Boolean = ComposeFeatureFlags.isFrameIsolationEnabled.value,
     ): HeadlessApplication =
         synchronized(lock) {
             check(!shutdown) {
                 "HeadlessApplication has already been shut down and cannot be reinitialized in the same process"
             }
+            ComposeSceneFeatureFlags.isFrameIsolationEnabled = frameIsolation
             // Validate/activate BEFORE touching any dispatcher globals. activateApplication rejects
             // (throws IllegalStateException) when another backend already owns this JVM, and it has
             // no side effect that installEventLoop/configure depend on, so running it first means a
