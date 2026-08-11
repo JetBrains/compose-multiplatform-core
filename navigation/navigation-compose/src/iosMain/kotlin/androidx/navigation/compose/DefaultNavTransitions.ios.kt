@@ -107,6 +107,10 @@ public actual object DefaultNavTransitions {
         (AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null
 
+    // ios specific: by default the enter and the popEnter transitions are different.
+    // BUT when user overrides only the default enter transition in NavHost function
+    // then return the new enter transition as default popEnterTransition.
+    // This is a NavHost API expectation
     public actual fun popEnterTransition(
         enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
     ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition {
@@ -130,6 +134,10 @@ public actual object DefaultNavTransitions {
         }
     }
 
+    // ios specific: by default the exit and the popExit transitions are different.
+    // BUT when user overrides only the default exit transition in NavHost function
+    // then return the new exit transition as default popExitTransition.
+    // This is a NavHost API expectation
     public actual fun popExitTransition(
         exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
     ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition {
