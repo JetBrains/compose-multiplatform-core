@@ -208,6 +208,32 @@ internal class InputStateTracker(
                     )
                 }
             }
+            is Event.ScrollWheel -> {
+                val uptime = event.timestamp.seconds.inWholeMilliseconds
+                lastNativeEventUptimeMillis = uptime
+                if (inputModeManager.inputMode != InputMode.Touch) {
+                    inputModeManager.requestInputMode(InputMode.Touch)
+                }
+                density.run {
+                    updatePointerPosition(
+                        event.locationInWindow,
+                        PointerEventType.Move,
+                        uptime,
+                        event,
+                    )
+                }
+                sendPointerEvent.invoke(
+                    eventType = PointerEventType.Scroll,
+                    position = event.locationInWindow.toOffset(density),
+                    scrollDelta = event.delta.toOffset(density),
+                    timeMillis = uptime,
+                    type = PointerType.Mouse,
+                    buttons = pointerButtons,
+                    keyboardModifiers = keyboardModifiers,
+                    nativeEvent = event,
+                    button = null,
+                )
+            }
             is Event.KeyDown -> {
                 updateModifierState(event)
                 sendKeyEvent(event.toKeyEvent(keyboardModifiers))
@@ -215,6 +241,19 @@ internal class InputStateTracker(
             is Event.KeyUp -> {
                 updateModifierState(event)
                 sendKeyEvent(event.toKeyEvent(keyboardModifiers))
+            }
+            // Window and platform events carry no pointer or keyboard state. HeadlessWindow applies
+            // them itself, for the same reason the native backends do: they change the window's own
+            // observable properties rather than producing an event for the scene.
+            is Event.WindowResize,
+            is Event.WindowMove,
+            is Event.WindowFocusChange,
+            is Event.WindowPlacementChange,
+            is Event.WindowScreenChange,
+            is Event.WindowDecorationChange,
+            is Event.WindowThemeChange,
+            is Event.WindowCloseRequest,
+                -> {
             }
         }
     }

@@ -56,7 +56,11 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.scene.ComposeSceneFeatureFlags
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowPlacement
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -487,6 +491,85 @@ object HeadlessApplication : Application {
         timestamp: Double = nowEpochSeconds(),
     ) {
         sendWindowEvent(Event.MouseExited(windowId, location, timestamp))
+    }
+
+    fun sendScrollWheel(
+        windowId: LightweightWindowId,
+        location: DpOffset,
+        delta: DpOffset,
+        timestamp: Double = nowEpochSeconds(),
+    ) {
+        sendWindowEvent(Event.ScrollWheel(windowId, location, delta, timestamp))
+    }
+
+    // ----- Window and platform events -----
+    //
+    // A real backend learns these from the platform and reads the new values back off its native
+    // window. Headless has no platform, so the caller supplies the outcome. What that buys is the
+    // wrap, not the platform's behaviour: these prove the window binds a read view before it
+    // applies the change and leaves the thread as it found it. Whether the platform delivers such
+    // an event in this shape is only answerable on a real backend.
+
+    fun sendWindowResize(
+        windowId: LightweightWindowId,
+        size: DpSize,
+        contentSize: DpSize = size,
+    ) {
+        sendWindowEvent(Event.WindowResize(windowId, size, contentSize))
+    }
+
+    fun sendWindowMove(windowId: LightweightWindowId, origin: DpOffset) {
+        sendWindowEvent(Event.WindowMove(windowId, origin))
+    }
+
+    fun sendWindowFocusChange(windowId: LightweightWindowId, isFocused: Boolean) {
+        sendWindowEvent(Event.WindowFocusChange(windowId, isFocused))
+    }
+
+    fun sendWindowPlacementChange(windowId: LightweightWindowId, placement: WindowPlacement) {
+        sendWindowEvent(Event.WindowPlacementChange(windowId, placement))
+    }
+
+    fun sendScreenChange(windowId: LightweightWindowId, screen: Screen) {
+        sendWindowEvent(Event.WindowScreenChange(windowId, screen))
+    }
+
+    /**
+     * A display-scale change: the window's screen is replaced by one that differs only in its
+     * device pixel ratio, which is how a real backend sees it — density is read off the screen.
+     */
+    fun sendDensityChange(windowId: LightweightWindowId, devicePixelRatio: Float) {
+        val current = windows[windowId]?.screen
+        val replacement = if (current is HeadlessScreen) {
+            HeadlessScreen(
+                name = current.name,
+                size = current.size,
+                devicePixelRatio = devicePixelRatio,
+                refreshRate = current.refreshRate,
+            )
+        } else {
+            HeadlessScreen(devicePixelRatio = devicePixelRatio)
+        }
+        sendScreenChange(windowId, replacement)
+    }
+
+    fun sendWindowDecorationChange(
+        windowId: LightweightWindowId,
+        decoration: WindowDecoration,
+        customTitleBarInsets: Pair<Dp, Dp>? = null,
+    ) {
+        sendWindowEvent(Event.WindowDecorationChange(windowId, decoration, customTitleBarInsets))
+    }
+
+    fun sendThemeChange(windowId: LightweightWindowId, systemTheme: SystemTheme) {
+        sendWindowEvent(Event.WindowThemeChange(windowId, systemTheme))
+    }
+
+    fun sendCloseRequest(
+        windowId: LightweightWindowId,
+        reason: WindowCloseRequestReason = WindowCloseRequestReason.UserRequest,
+    ) {
+        sendWindowEvent(Event.WindowCloseRequest(windowId, reason))
     }
 
     private fun sendWindowEvent(windowEvent: WindowEvent) {
