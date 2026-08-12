@@ -17,13 +17,11 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 
 /**
  * Configuration of [ComposeViewport] behavior.
  */
-@ExperimentalComposeUiApi
 class ComposeViewportConfiguration internal constructor() {
 
     /**
@@ -35,14 +33,12 @@ class ComposeViewportConfiguration internal constructor() {
      *
      * Note: This API is experimental and subject to change in the future.
      */
-    @ExperimentalComposeUiApi
     var isA11YEnabled: Boolean = true
 
     /**
      * Controls whether a mouse clicks on an unfocused element clears focus.
      * It's clearing focus on mouse down by default.
      */
-    @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
     /**
@@ -71,6 +67,5 @@ class ComposeViewportConfiguration internal constructor() {
      *
      * Note: This API is experimental and subject to change in the future.
      */
-    @ExperimentalComposeUiApi
     var enableBrowserWindowInsets: Boolean = false
 }
