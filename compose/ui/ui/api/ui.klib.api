@@ -4950,6 +4950,12 @@ final val androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus
 final val androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop|#static{}androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop[0]
 
 // Targets: [js, wasmJs]
+final fun <#A: org.w3c.dom/HTMLElement> androidx.compose.ui.viewinterop/HtmlElementView(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/HtmlElementView|HtmlElementView(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<org.w3c.dom.HTMLElement>}[0]
+
+// Targets: [js, wasmJs]
+final fun <#A: org.w3c.dom/HTMLElement> androidx.compose.ui.viewinterop/WebElementView(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/WebElementView|WebElementView(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<org.w3c.dom.HTMLElement>}[0]
+
+// Targets: [js, wasmJs]
 final fun androidx.compose.ui.input.pointer/PointerIcon(kotlin/String): androidx.compose.ui.input.pointer/PointerIcon // androidx.compose.ui.input.pointer/PointerIcon|PointerIcon(kotlin.String){}[0]
 
 // Targets: [js, wasmJs]
@@ -4963,6 +4969,12 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolb
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter|androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.window/ComposeViewport(kotlin/String? = ..., kotlin/Function1<androidx.compose.ui.window/ComposeViewportConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/ComposeViewport|ComposeViewport(kotlin.String?;kotlin.Function1<androidx.compose.ui.window.ComposeViewportConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.window/ComposeViewport(org.w3c.dom/Element, kotlin/Function1<androidx.compose.ui.window/ComposeViewportConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/ComposeViewport|ComposeViewport(org.w3c.dom.Element;kotlin.Function1<androidx.compose.ui.window.ComposeViewportConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter|androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter(){}[0]
