@@ -18,7 +18,6 @@ package androidx.compose.ui.interaction
 
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +28,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
@@ -48,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
@@ -58,6 +55,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
+import androidx.compose.ui.test.findContextMenu
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
@@ -74,7 +72,6 @@ import androidx.compose.ui.test.utils.verticalDistanceTo
 import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
@@ -269,7 +266,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
-    @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
+ //   @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
     fun testBasicTextFieldContextMenuIsPositionedNearCaret() =
         runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField)
 
@@ -302,11 +299,6 @@ class TextFieldEditMenuTest {
         textFieldKind: EditableTextFieldKind,
     ): TextFieldLayoutInfo {
         val text = "I am a TextField"
-        val keyboardOptions = KeyboardOptions(
-            platformImeOptions = PlatformImeOptions {
-                usingNativeTextInput(false)
-            }
-        )
         val focusRequester = FocusRequester()
 
         fun offsetTextFieldModifier(layoutInfo: TextFieldLayoutInfo): Modifier =
@@ -335,7 +327,6 @@ class TextFieldEditMenuTest {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
                     .safeDrawingPadding()
                     .padding(start = 80.dp, top = 48.dp)
             ) {
@@ -344,13 +335,11 @@ class TextFieldEditMenuTest {
                         value = textFieldValue.value,
                         onValueChange = { textFieldValue.value = it },
                         modifier = offsetTextFieldModifier(layoutInfo),
-                        keyboardOptions = keyboardOptions,
                         onTextLayout = { layoutInfo.textLayoutResult = it }
                     )
                     EditableTextFieldKind.BasicTextField2 -> BasicTextField(
                         state = textFieldState,
                         modifier = offsetTextFieldModifier(layoutInfo),
-                        keyboardOptions = keyboardOptions,
                         onTextLayout = { getResult ->
                             layoutInfo.textLayoutResult = getResult()
                         }
@@ -922,32 +911,24 @@ class TextFieldEditMenuTest {
         val horizontalDistance = menuFrame.horizontalDistanceTo(caretFrame)
         val verticalDistance = menuFrame.verticalDistanceTo(caretFrame)
         val contextMenu = if (newContextMenuEnabled) "new menu" else "old menu"
-        val maxDistance = 16.dp
 
         assertTrue(
-            horizontalDistance <= maxDistance,
-            "Context menu is horizontally more than $maxDistance from caret. " +
+            horizontalDistance <= CARET_N_CONTEXT_MENU_MAX_DIST,
+            "Context menu is horizontally more than $CARET_N_CONTEXT_MENU_MAX_DIST from caret. " +
                 "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
                 "horizontal distance: $horizontalDistance."
         )
         assertTrue(
-            verticalDistance <= maxDistance,
-            "Context menu is vertically more than $maxDistance from caret. " +
+            verticalDistance <= CARET_N_CONTEXT_MENU_MAX_DIST,
+            "Context menu is vertically more than $CARET_N_CONTEXT_MENU_MAX_DIST from caret. " +
                 "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
                 "vertical distance: $verticalDistance."
         )
     }
 
     private fun UIKitInstrumentedTest.findContextMenuItemsFrame(): DpRect {
-        // Paste is always present in the menu, so its visibility means the menu is shown
-        verifyContextMenuItemsVisible(listOf("Paste"))
-
-        val pasteFrame = findNodeWithLabel("Paste").frame!!
-        val itemFrames = listOf("Select", "Select All").mapNotNull { label ->
-            findNodeWithLabelOrNull(label)?.frame
-        }
-
-        return pasteFrame.union(itemFrames)
+        val contextMenu = findContextMenu()!!
+        return contextMenu.frame!!
     }
 
     private fun TextLayoutResult.cursorFrameInWindow(
@@ -1028,6 +1009,8 @@ class TextFieldEditMenuTest {
         private const val SELECTION_CONTAINER_MIDDLE_WORD = "LongLongLongLongLongLong"
         private const val SELECTION_CONTAINER_TEXT = "Hello-$SELECTION_CONTAINER_MIDDLE_WORD-text"
         private const val PARTIAL_SELECTION_TEXT = "accomplishment extraordinary magnificent establishment"
+
+        private val CARET_N_CONTEXT_MENU_MAX_DIST = 16.dp;
     }
 
     @OptIn(ExperimentalFoundationApi::class)
