@@ -88,6 +88,36 @@ class LayersA11YTest : OnCanvasTests {
         }
 
         awaitUntil { ownerCount() == 2 }
+
+        assertTrue(
+            ownerRoot(0).innerText.contains("Root"),
+            "main content root must be present"
+        )
+        assertTrue(
+            ownerRoot(1).innerText.contains("Dialog"),
+            "dialog root must be present"
+        )
+    }
+
+    @Test
+    fun popupAddsAdditionalOwnerRootInHtml() = runApplicationTest {
+        createComposeWindow {
+            Text("Root")
+            Popup {
+                Text("Popup")
+            }
+        }
+
+        awaitUntil { ownerCount() == 2 }
+
+        assertTrue(
+            ownerRoot(0).innerText.contains("Root"),
+            "main content root must be present"
+        )
+        assertTrue(
+            ownerRoot(1).innerText.contains("Popup"),
+            "popup root must be present"
+        )
     }
 
     @Test
