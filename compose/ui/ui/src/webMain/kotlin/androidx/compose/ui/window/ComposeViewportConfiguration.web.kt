@@ -30,8 +30,6 @@ class ComposeViewportConfiguration internal constructor() {
      * That DOM tree is visibly hidden, but reachable by the accessibility tools.
      * It can be disabled to avoid the overhead of maintaining the DOM tree.
      * By default, it is set to `true`.
-     *
-     * Note: This API is experimental and subject to change in the future.
      */
     var isA11YEnabled: Boolean = true
 
@@ -64,8 +62,6 @@ class ComposeViewportConfiguration internal constructor() {
      * changes as the user scrolls, so the insets may become invalid. In that case
      * it is recommended to disable inset handling entirely (`enableBrowserWindowInsets = false`) and
      * manage padding manually.
-     *
-     * Note: This API is experimental and subject to change in the future.
      */
     var enableBrowserWindowInsets: Boolean = false
 }
