@@ -117,6 +117,7 @@ import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
+import org.w3c.dom.get
 import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
@@ -427,15 +428,31 @@ internal class ComposeWindow(
             actualActivePointerButtons = null
         }
 
-        addTypedEvent<TouchEvent>("touchstart", passive = true) { _ ->
-            // We deliberately never preventDefault() touchstart, even though Compose consumes
+        val webTextInputService = platformContext.textInputService as WebTextInputService
+
+        addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
+            // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
+            // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
+            // and this is the only chance (the only event we have) to prevent that behavior,
+            // since we want the focus to remain in the active text input.
+            // Cons: the browser's gestures (e.g., pull-to-refresh) become suppressed while
+            // the pointer is in the active text input.
+            val isTextFieldActive = webTextInputService.getBackingInput()?.isFocused() ?: false
+            if (isTextFieldActive) {
+                val position = activeTouchPointers[lastPointerDownId]?.composePointer?.position
+                if (webTextInputService.hitTest(position ?: Offset.Unspecified)) {
+                    evt.preventDefault()
+                }
+            }
+            lastPointerDownId = -1
+
+            // In other cases, we never preventDefault() touchstart, even though Compose consumes
             // the corresponding pointerdown on interactive areas. Per the Touch Events spec,
             // canceling touchstart suppresses the browser's default actions for the entire
-            // touch sequence: scrolling, back gesture, pull-to-refresh, AND the compatibility
-            // mouse events - and at touchstart time we can't yet know whether Compose will
+            // touch sequence: scrolling, back gesture, pull-to-refresh, and the compatibility
+            // mouse events. At touchstart time we can't yet know whether Compose will
             // actually handle the gesture. The decision is deferred to where it can be made
             // correctly: touchmove (move-based gestures) and touchend (tap-based defaults).
-            // The listener is passive and empty; it exists to document this decision.
         }
 
         addTypedEvent<TouchEvent>("touchend", passive = false) { evt ->
@@ -654,6 +671,9 @@ internal class ComposeWindow(
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
 
+
+    private var lastPointerDownId: Int = -1
+
     // Whether Compose consumed the most recent touch pointerup. Read (and then reset) by the
     // touchend handler, which the browser dispatches right after pointerup, to decide whether
     // to suppress the compatibility mouse events. A single flag suffices because every
@@ -823,6 +843,8 @@ internal class ComposeWindow(
                 event.preventDefault()
                 if (eventType == PointerEventType.Move) {
                     activeTouchPointersConsumedMoves.add(event.pointerId)
+                } else if (eventType == PointerEventType.Press) {
+                    lastPointerDownId = event.pointerId
                 }
             }
         }

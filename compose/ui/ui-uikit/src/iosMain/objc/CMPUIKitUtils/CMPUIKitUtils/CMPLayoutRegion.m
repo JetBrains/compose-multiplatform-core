@@ -17,6 +17,25 @@
 #import "CMPLayoutRegion.h"
 #import <UIKit/UIKit.h>
 
+// Referencing the `UIViewLayoutRegion` class directly emits an `_OBJC_CLASS_$_UIViewLayoutRegion`
+// link-time symbol into the prebuilt static library shipped inside the klib. The class only exists
+// in the iOS 26 SDK, so applications linking against older SDKs fail to link (CMP-10200,
+// CMP-10417). Declaring the API locally and resolving the class with `NSClassFromString` leaves
+// only selector references, which the Objective-C runtime resolves. Enum constants and types are
+// resolved at compile time and don't contribute any symbols, so they are used as is.
+@protocol CMPUIViewLayoutRegionFactory <NSObject>
++ (id)marginsLayoutRegionWithCornerAdaptation:(UIViewLayoutRegionAdaptivityAxis)axis
+    API_AVAILABLE(ios(26.0));
++ (id)readableContentLayoutRegionWithCornerAdaptation:(UIViewLayoutRegionAdaptivityAxis)axis
+    API_AVAILABLE(ios(26.0));
++ (id)safeAreaLayoutRegionWithCornerAdaptation:(UIViewLayoutRegionAdaptivityAxis)axis
+    API_AVAILABLE(ios(26.0));
+@end
+
+@interface UIView (CMPLayoutRegion)
+- (UIEdgeInsets)edgeInsetsForLayoutRegion:(id)region;
+@end
+
 typedef NS_ENUM(NSInteger, CMPLayoutRegionKind) {
     CMPLayoutRegionKindMargins = 0,
     CMPLayoutRegionKindReadableContent = 1,
@@ -55,7 +74,6 @@ typedef NS_ENUM(NSInteger, CMPLayoutRegionKind) {
 }
 
 - (UIEdgeInsets)edgeInsetsInView:(UIView *)view {
-#if defined(__IPHONE_26_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_26_0
     // Starting iOS 26, UIKit exposes `UIViewLayoutRegion`s (e.g. safe area / margins with corner
     // adaptation) which are needed to properly adopt iOS 26 macOS-like system controls.
     //
@@ -75,13 +93,18 @@ typedef NS_ENUM(NSInteger, CMPLayoutRegionKind) {
             return [self edgeInsetsForLayoutRegionInView: view];
         }
     }
-#endif
 
     return [self edgeInsetsFallbackInView: view];
 }
 
-#if defined(__IPHONE_26_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_26_0
 - (UIEdgeInsets)edgeInsetsForLayoutRegionInView:(UIView *)view API_AVAILABLE(ios(26.0)) {
+    Class<CMPUIViewLayoutRegionFactory> layoutRegionClass =
+        (Class<CMPUIViewLayoutRegionFactory>)NSClassFromString(@"UIViewLayoutRegion");
+
+    if (layoutRegionClass == nil) {
+        return [self edgeInsetsFallbackInView: view];
+    }
+
     UIViewLayoutRegionAdaptivityAxis axis;
     switch (_axis) {
         case CMPLayoutRegionAdaptivityAxisNone:
@@ -95,22 +118,25 @@ typedef NS_ENUM(NSInteger, CMPLayoutRegionKind) {
             break;
     }
 
-    UIViewLayoutRegion *layoutRegion;
+    id layoutRegion;
     switch (_kind) {
         case CMPLayoutRegionKindMargins:
-            layoutRegion = [UIViewLayoutRegion marginsLayoutRegionWithCornerAdaptation:axis];
+            layoutRegion = [layoutRegionClass marginsLayoutRegionWithCornerAdaptation:axis];
             break;
         case CMPLayoutRegionKindReadableContent:
-            layoutRegion = [UIViewLayoutRegion readableContentLayoutRegionWithCornerAdaptation:axis];
+            layoutRegion = [layoutRegionClass readableContentLayoutRegionWithCornerAdaptation:axis];
             break;
         case CMPLayoutRegionKindSafeArea:
-            layoutRegion = [UIViewLayoutRegion safeAreaLayoutRegionWithCornerAdaptation:axis];
+            layoutRegion = [layoutRegionClass safeAreaLayoutRegionWithCornerAdaptation:axis];
             break;
+    }
+
+    if (layoutRegion == nil) {
+        return [self edgeInsetsFallbackInView: view];
     }
 
     return [view edgeInsetsForLayoutRegion:layoutRegion];
 }
-#endif
 
 - (UIEdgeInsets)edgeInsetsFallbackInView:(UIView *)view {
     switch (_kind) {
