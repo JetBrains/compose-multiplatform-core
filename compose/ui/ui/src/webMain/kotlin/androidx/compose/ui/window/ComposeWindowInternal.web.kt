@@ -271,7 +271,7 @@ internal class ComposeWindow(
             override val windowInsets get() = insetsManager?.windowInsets ?: EmptyPlatformWindowInsets
 
             override val dragAndDropManager: PlatformDragAndDropManager = object :
-                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
+                WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, { density }) {
                 override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                     get() = scene.rootDragAndDropNode
             }
@@ -402,7 +402,7 @@ internal class ComposeWindow(
     private val scene = CanvasLayersComposeScene(
         frameRecomposer = frameRecomposer,
         platformContext = platformContext,
-        density = density,
+        density = density, // initial density
         // TODO: Split layout invalidation from draw invalidation once the web host has distinct
         //  scheduling paths for relayout vs redraw.
         invalidateLayout = sceneRenderingScope::onSceneInvalidation,
@@ -594,14 +594,14 @@ internal class ComposeWindow(
     init {
         if (configuration.enableBrowserWindowInsets) {
             checkViewportFitCover()
-            insetsManager = WebWindowInsetsManager(density, canvas)
+            insetsManager = WebWindowInsetsManager({ density }, canvas)
         }
 
         initEvents(canvas)
         state.init()
 
 
-        scene.density = density
+        scene.density = density // initial density
         archComponentsOwner.enableSavedStateHandles()
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
@@ -659,7 +659,7 @@ internal class ComposeWindow(
     private fun resizeAndScale(boxSize: DpSize, viewportScale: Float) = Snapshot.withMutableSnapshot {
         // Coerce the original value so it doesn't exceed 2.0 to avoid unlimited canvas growth and memory consumption.
         // Otherwise, the browser might clip the canvas content (tested in Chrome) making some UI parts unreachable.
-        // We accept some blur might be still noticeable and higher than 2.0 scale.
+        // We accept some blur might be still noticeable on higher than 2.0 scale.
         val coercedViewportScale = viewportScale.coerceIn(1f, 2f)
 
         val newDensity = Density(
@@ -669,8 +669,6 @@ internal class ComposeWindow(
             density = actualDensity.toFloat() * coercedViewportScale,
             fontScale = density.fontScale
         )
-
-        println("newDensity = $newDensity, vs = $coercedViewportScale")
 
         if (newDensity != density) {
             density = newDensity
