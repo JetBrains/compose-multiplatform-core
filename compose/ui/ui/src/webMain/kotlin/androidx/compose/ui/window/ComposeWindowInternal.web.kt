@@ -159,12 +159,16 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     private var viewportTargetListener: EventTargetListener? = null
 
     override fun init() {
+        val resizeListener: (Event) -> Unit = {
+            resizeAndScaleEventsChannel.trySend(getParentContainerBox())
+        }
+
+        globalEvents.addDisposableEvent("resize", resizeListener)
+
         viewportTargetListener = getVisualViewport()?.let { EventTargetListener(it) }
         // Unlike resize on window, this one is also trigerred when visualViewport.scale is changed,
         // so on pinch-to-zoom too:
-        viewportTargetListener?.addDisposableEvent("resize") {
-            resizeAndScaleEventsChannel.trySend(getParentContainerBox())
-        }
+        viewportTargetListener?.addDisposableEvent("resize", resizeListener)
 
         recreateMediaQueryListener()
 
