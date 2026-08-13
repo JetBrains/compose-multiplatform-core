@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
+import androidx.compose.ui.scene.FontScale
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
@@ -42,6 +43,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import platform.CoreGraphics.CGRectMake
+import platform.UIKit.UIView
 import platform.UIKit.UIWindowScene
 
 class ComposeSceneMediatorTest {
@@ -58,7 +60,6 @@ class ComposeSceneMediatorTest {
         ) {}
         context.cancel()
 
-        mediator.composeSceneDensity = Density(2f)
         mediator.layoutDirection = LayoutDirection.Rtl
         mediator.interactionBounds = IntRect.Zero
         mediator.isFocusEnabled = true
@@ -96,12 +97,14 @@ class ComposeSceneMediatorTest {
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer
     ): ComposeSceneMediator {
+        val fontScale = FontScale(UIView())
         val mediator = ComposeSceneMediator(
             frameChoreographer = frameChoreographer,
             onFocusBehavior = OnFocusBehavior.DoNothing,
             isClearFocusOnMouseDownEnabled = false,
             focusedViewsList = null,
             windowContext = WindowContext(),
+            fontScale = fontScale,
             architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
             coroutineContext = coroutineContext,
             navigationEventInput = IosBackNavigationEventInput(

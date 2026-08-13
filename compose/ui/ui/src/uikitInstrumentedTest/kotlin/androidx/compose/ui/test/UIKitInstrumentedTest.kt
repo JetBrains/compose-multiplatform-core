@@ -80,6 +80,7 @@ import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
+import platform.UIKit.UIContentSizeCategory
 import platform.UIKit.UIDevice
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
@@ -106,6 +107,7 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
+import platform.UIKit.UITraitPreferredContentSizeCategory
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -926,6 +928,21 @@ internal fun UIViewController.setLayoutDirection(
         setOverrideTraitCollection(
             collection = UITraitCollection.traitCollectionWithLayoutDirection(layoutDirection),
             forChildViewController = this
+        )
+    }
+}
+
+internal fun UIViewController.setPreferredContentSizeCategory(
+    preferredContentSizeCategory: UIContentSizeCategory
+) {
+    if (available(OS.Ios to OSVersion(17))) {
+        traitOverrides.setPreferredContentSizeCategory(preferredContentSizeCategory)
+    } else {
+        setOverrideTraitCollection(
+            collection = UITraitCollection.traitCollectionWithPreferredContentSizeCategory(
+                preferredContentSizeCategory
+            ),
+            forChildViewController = this,
         )
     }
 }
