@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntSet
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
@@ -161,7 +162,7 @@ internal class ComposeWebSemanticsListener(
     private val webNodes = MutableScatterMap<Int, HTMLElement>()
 
     // A reusable set of node ids for sync purposes
-    private val allNodesIds = mutableSetOf<Int>()
+    private val allNodesIds = MutableIntSet()
 
     /**
      * Event delegation: Single shared click listener for all a11y nodes
@@ -230,7 +231,7 @@ internal class ComposeWebSemanticsListener(
      */
     private fun syncSemanticsWithWebA11Y(
         semanticsOwner: SemanticsOwner,
-        allNodesIds: MutableSet<Int>
+        allNodesIds: MutableIntSet
     ) {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
 
