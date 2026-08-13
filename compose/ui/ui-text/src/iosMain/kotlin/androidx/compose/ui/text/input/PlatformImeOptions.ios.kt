@@ -25,6 +25,7 @@ import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
 import platform.UIKit.UITextContentType
+import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.UIWritingToolsBehaviorDefault
@@ -39,6 +40,7 @@ private data class PlatformImeOptionsImpl(
     val enablesReturnKeyAutomatically: Boolean,
     val autocapitalizationType: UITextAutocapitalizationType?,
     val autocorrectionType: UITextAutocorrectionType?,
+    val spellCheckingType: UITextSpellCheckingType?,
     val hasExplicitTextContentType: Boolean,
     val inputView: UIView?,
     val inputAccessoryView: UIView?,
@@ -59,6 +61,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
     private var enablesReturnKeyAutomatically: Boolean = false
     private var autocapitalizationType: UITextAutocapitalizationType? = null
     private var autocorrectionType: UITextAutocorrectionType? = null
+    private var spellCheckingType: UITextSpellCheckingType? = null
     private var hasExplicitTextContentType: Boolean = false
     private var inputView: UIView? = null
     private var inputAccessoryView: UIView? = null
@@ -151,6 +154,17 @@ class PlatformImeOptionsConfiguration internal constructor() {
     }
 
     /**
+     * Sets the spell checking behavior to apply.
+     * If not set, the value will be derived from [ImeOptions].
+     *
+     * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/spellcheckingtype).
+     */
+    @ExperimentalComposeUiApi
+    fun spellCheckingType(value: UITextSpellCheckingType?): PlatformImeOptionsConfiguration = apply {
+        spellCheckingType = value
+    }
+
+    /**
      * Sets a custom input view to be presented instead of the system keyboard when IME becomes first responder.
      * Default value is `null`.
      *
@@ -204,6 +218,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
             enablesReturnKeyAutomatically = enablesReturnKeyAutomatically,
             autocapitalizationType = autocapitalizationType,
             autocorrectionType = autocorrectionType,
+            spellCheckingType = spellCheckingType,
             hasExplicitTextContentType = hasExplicitTextContentType,
             inputView = inputView,
             inputAccessoryView = inputAccessoryView,
@@ -258,6 +273,10 @@ val PlatformImeOptions.autocapitalizationType: UITextAutocapitalizationType?
 @ExperimentalComposeUiApi
 val PlatformImeOptions.autocorrectionType: UITextAutocorrectionType?
     get() = (this as? PlatformImeOptionsImpl)?.autocorrectionType
+
+@ExperimentalComposeUiApi
+val PlatformImeOptions.spellCheckingType: UITextSpellCheckingType?
+    get() = (this as? PlatformImeOptionsImpl)?.spellCheckingType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.hasExplicitTextContentType: Boolean
