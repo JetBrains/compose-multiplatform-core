@@ -17,7 +17,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.js.js
 import kotlinx.browser.document
 import org.w3c.dom.Element
@@ -29,8 +28,6 @@ import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainerId] id.
  * This size of canvas is adjusted with the size of the container
  *
@@ -40,7 +37,6 @@ import org.w3c.dom.ShadowRootMode
  * See [ComposeViewportConfiguration] for available options.
  * @param content - The Composable content to be rendered on the `<canvas>` element.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainerId: String? = null,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -58,8 +54,6 @@ fun ComposeViewport(
 }
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainer] Element.
  * This size of canvas is adjusted with the size of the container
  *
@@ -78,7 +72,6 @@ fun ComposeViewport(
  *
  * Note: The viewportContainer will be cleared on composition creation.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainer: Element,
     configure: ComposeViewportConfiguration.() -> Unit = {},
