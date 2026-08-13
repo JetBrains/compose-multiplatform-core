@@ -26,6 +26,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
@@ -127,7 +128,6 @@ import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
-import org.w3c.dom.get
 import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
@@ -150,21 +150,25 @@ private sealed interface KeyboardModeState {
 }
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private val channel = Channel<IntSize>(CONFLATED)
+    private val resizeAndScaleEventsChannel = Channel<IntSize>(CONFLATED)
 
     override val globalEvents = EventTargetListener(window)
 
     private var mediaQueryListener: MediaQueryListener? = null
 
-    override fun init() {
+    private var viewportTargetListener: EventTargetListener? = null
 
-        globalEvents.addDisposableEvent("resize") {
-            channel.trySend(getParentContainerBox())
+    override fun init() {
+        viewportTargetListener = getVisualViewport()?.let { EventTargetListener(it) }
+        // Unlike resize on window, this one is also trigerred when visualViewport.scale is changed,
+        // so on pinch-to-zoom too:
+        viewportTargetListener?.addDisposableEvent("resize") {
+            resizeAndScaleEventsChannel.trySend(getParentContainerBox())
         }
 
         recreateMediaQueryListener()
 
-        channel.trySend(getParentContainerBox())
+        resizeAndScaleEventsChannel.trySend(getParentContainerBox())
     }
 
     private fun getParentContainerBox(): IntSize {
@@ -177,7 +181,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
         mediaQueryListener = object : MediaQueryListener("(resolution: ${contentScale}dppx)") {
             override fun onChange(matches: Boolean) {
                 if (!matches) {
-                    channel.trySend(getParentContainerBox())
+                    resizeAndScaleEventsChannel.trySend(getParentContainerBox())
                 }
                 recreateMediaQueryListener()
             }
@@ -185,11 +189,13 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
     }
 
     override fun dispose() {
+        resizeAndScaleEventsChannel.close()
+        viewportTargetListener?.dispose()
         mediaQueryListener?.dispose()
         super.dispose()
     }
 
-    override fun sizeFlow() = channel.receiveAsFlow()
+    override fun sizeFlow() = resizeAndScaleEventsChannel.receiveAsFlow()
 }
 
 @VisibleForTesting
@@ -214,7 +220,7 @@ internal class ComposeWindow(
 
     private var actualActivePointerButtons: PointerButtons = PointerButtons()
 
-    private val density: Density = Density(
+    private var density: Density = Density(
         density = actualDensity.toFloat(),
         fontScale = 1f
     )
@@ -622,7 +628,8 @@ internal class ComposeWindow(
                         state.sizeFlow().collect { size ->
                             // Convert to proper type: IntSize was exposed to public API with meaning of DPs.
                             val boxSize = DpSize(size.width.dp, size.height.dp)
-                            this@ComposeWindow.resize(boxSize)
+                            val viewportScale = getVisualViewportScale()
+                            this@ComposeWindow.resizeAndScale(boxSize, viewportScale)
                         }
                     }
 
@@ -649,7 +656,27 @@ internal class ComposeWindow(
             .navigationEventDispatcher.addInput(navigationEventInput)
     }
 
-    private fun resize(boxSize: DpSize) {
+    private fun resizeAndScale(boxSize: DpSize, viewportScale: Float) = Snapshot.withMutableSnapshot {
+        // Coerce the original value so it doesn't exceed 2.0 to avoid unlimited canvas growth and memory consumption.
+        // Otherwise, the browser might clip the canvas content (tested in Chrome) making some UI parts unreachable.
+        // We accept some blur might be still noticeable and higher than 2.0 scale.
+        val coercedViewportScale = viewportScale.coerceIn(1f, 2f)
+
+        val newDensity = Density(
+            // actualDensity accounts for browser zoom (via Cmd/Ctrl+-),
+            // but it doesn't account for viewport scale.
+            // So account for viewport scale to avoid blurred UI after pinch-to-zoom:
+            density = actualDensity.toFloat() * coercedViewportScale,
+            fontScale = density.fontScale
+        )
+
+        println("newDensity = $newDensity, vs = $coercedViewportScale")
+
+        if (newDensity != density) {
+            density = newDensity
+            scene.density = newDensity
+        }
+
         val sizeInPx = boxSize.toSize(density).toIntSize()
 
         // we need to scale canvas both via CSS styling and HTML attributes
@@ -1193,3 +1220,12 @@ private external interface CustomElementRegistry : JsAny {
 }
 
 private external val customElements: CustomElementRegistry
+
+//language=js
+private fun getVisualViewportScale(): Float =
+    js("window.visualViewport.scale")
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Window/visualViewport
+// Widely available
+private fun getVisualViewport(): EventTarget =
+    js("window.visualViewport")
