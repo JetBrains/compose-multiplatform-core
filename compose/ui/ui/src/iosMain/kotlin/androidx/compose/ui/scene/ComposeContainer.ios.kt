@@ -104,6 +104,7 @@ internal class ComposeContainer(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
+    private val fontScale = FontScale(view)
 
     private val frameChoreographer: FrameChoreographer?
         get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
@@ -195,10 +196,12 @@ internal class ComposeContainer(
     }
 
     private fun onTraitCollectionDidChange() {
+        fontScale.onTraitCollectionDidChange()
         layoutDirection = view.effectiveUserInterfaceLayoutDirection.asLayoutDirection()
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
+        windowContext.window = window
         navigationEventInput.onDidMoveToWindow(window, view)
         interfaceOrientationObserver.windowScene = window?.windowScene
 
@@ -207,7 +210,6 @@ internal class ComposeContainer(
         updateInterfaceOrientationState()
 
         layersHolder?.layersViewController?.containerWindow = view.window
-        windowContext.window = window
         updateMotionSpeed()
         lifecycleDelegate.windowScene = window.windowScene
     }
@@ -286,12 +288,13 @@ internal class ComposeContainer(
             isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
+            fontScale = fontScale,
             architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = containerCoroutineContext,
             composeSceneFactory = { context ->
                 PlatformLayersComposeScene(
                     frameRecomposer = frameChoreographer.frameRecomposer,
-                    density = view.density,
+                    density = Density(windowContext.screenScale, fontScale.value),
                     layoutDirection = layoutDirection,
                     composeSceneContext = createComposeSceneContext(
                         frameChoreographer = frameChoreographer,
@@ -392,6 +395,7 @@ internal class ComposeContainer(
                         )
                     },
                     layersViewController = layersHolder.getLayersViewController(),
+                    fontScale = fontScale,
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
                     onFocusConditionsChanged = ::onFocusConditionsChanged,

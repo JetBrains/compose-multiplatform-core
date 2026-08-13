@@ -18,7 +18,7 @@ package androidx.compose.ui.platform
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
-import androidx.compose.ui.uikit.density
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.toCGPoint
 import androidx.compose.ui.unit.toDpOffset
@@ -32,18 +32,22 @@ import androidx.compose.ui.window.SceneActiveStateListener
 import kotlinx.cinterop.useContents
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
+import platform.UIKit.UIScreen
 
 /**
  * Tracking a state of window.
  */
 internal class WindowContext {
     private val _windowInfo = WindowInfoImpl()
+    private var _screenScale = UIScreen.mainScreen.scale.toFloat()
 
     private val sceneFocusObserver = SceneActiveStateListener(getScene = { window?.windowScene }) {
         _windowInfo.isWindowFocused = it
     }
 
     val windowInfo: WindowInfo get() = _windowInfo
+    val screenScale: Float get() = _screenScale
+    val screenDensity: Density get() = Density(screenScale)
 
     /**
      * A window used to calculate the coordinate space and track the active state of the window
@@ -52,6 +56,7 @@ internal class WindowContext {
     var window: UIWindow? = null
         set(value) {
             field = value
+            value?.let { _screenScale = it.screen.scale.toFloat() }
             _windowInfo.isWindowFocused = sceneFocusObserver.isSceneActive
             updateWindowContainerSize()
         }
@@ -64,7 +69,7 @@ internal class WindowContext {
         val windowContainer = window ?: return {}
 
         isAnimating = true
-        val initialSize = initialDpSize.toSize(windowContainer.density).roundToIntSize()
+        val initialSize = initialDpSize.toSize(screenDensity).roundToIntSize()
 
         return Animation@{
             try {
@@ -72,7 +77,7 @@ internal class WindowContext {
                     val windowContainer = window
                     if (windowContainer != null) {
                         val currentSize = windowContainer.bounds.toDpRect().size
-                        val currentSizeInPx = currentSize.toSize(windowContainer.density).roundToIntSize()
+                        val currentSizeInPx = currentSize.toSize(screenDensity).roundToIntSize()
                         _windowInfo.containerSize = lerp(
                             initialSize.toSize(),
                             currentSizeInPx.toSize(),
@@ -96,7 +101,7 @@ internal class WindowContext {
 
         val windowContainer = window ?: return
         val size = windowContainer.bounds.toDpRect().size
-        val sizeInPx = size.toSize(windowContainer.density).roundToIntSize()
+        val sizeInPx = size.toSize(screenDensity).roundToIntSize()
         _windowInfo.containerSize = sizeInPx
         _windowInfo.containerDpSize = size
     }
@@ -122,7 +127,7 @@ internal class WindowContext {
     fun convertLocalToScreenPosition(container: UIView, localPosition: Offset): Offset {
         val nativeWindow =
             container.window ?: return convertLocalToWindowPosition(container, localPosition)
-        val density = container.density
+        val density = screenDensity
         val positionInNativeWindow = container.convertPoint(
             point = localPosition.toDpOffset(density).toCGPoint(),
             toView = nativeWindow,
@@ -139,7 +144,7 @@ internal class WindowContext {
     fun convertScreenToLocalPosition(container: UIView, positionOnScreen: Offset): Offset {
         val nativeWindow =
             container.window ?: return convertWindowToLocalPosition(container, positionOnScreen)
-        val density = container.density
+        val density = screenDensity
         val positionInNativeWindow = nativeWindow.convertPoint(
             point = positionOnScreen.toDpOffset(density).toCGPoint(),
             fromWindow = null
@@ -155,7 +160,7 @@ internal class WindowContext {
 
     private fun convertPoint(point: Offset, fromView: UIView, toView: UIView): Offset {
         return if (fromView != toView) {
-            val density = fromView.density
+            val density = screenDensity
             fromView.convertPoint(
                 point = point.toDpOffset(density).toCGPoint(),
                 toView = toView,

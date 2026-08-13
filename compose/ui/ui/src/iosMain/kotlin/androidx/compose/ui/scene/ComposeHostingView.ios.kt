@@ -27,12 +27,10 @@ import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.lifecycle.Lifecycle
-import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

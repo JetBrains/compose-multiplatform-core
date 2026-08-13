@@ -192,6 +192,7 @@ internal class ComposeSceneMediator(
     private val isClearFocusOnMouseDownEnabled: Boolean,
     focusedViewsList: FocusedViewsList?,
     private val windowContext: WindowContext,
+    private val fontScale: FontScale,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
@@ -248,6 +249,16 @@ internal class ComposeSceneMediator(
         }
     }
 
+    private val fontScaleListener = object : FontScale.Listener {
+        override fun onChanged(value: Float) {
+            composeSceneDensity = Density(composeSceneDensity.density, value)
+        }
+    }
+
+    init {
+        fontScale.addListener(fontScaleListener)
+    }
+
     private val viewConfiguration: ViewConfiguration =
         object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
             override val touchSlop: Float
@@ -293,7 +304,7 @@ internal class ComposeSceneMediator(
      * This value is intentionally separate from [composeSceneDensity] so we can support setting
      * composeSceneDensity without regressions.
      */
-    val screenDensity: Density get() = _overlayView.density
+    private val screenDensity: Density get() = windowContext.screenDensity
 
     var layoutDirection: LayoutDirection
         get() = scene.layoutDirection
@@ -721,6 +732,7 @@ internal class ComposeSceneMediator(
         onKeyEvent = { false }
 
         frameChoreographer.removeListener(frameChoreographerListener)
+        fontScale.removeListener(fontScaleListener)
         prefetchScheduler.dispose()
         activitiesHandler.dispose()
 
