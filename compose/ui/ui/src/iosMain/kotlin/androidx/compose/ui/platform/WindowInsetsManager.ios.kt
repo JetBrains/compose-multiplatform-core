@@ -31,7 +31,7 @@ import platform.UIKit.UIUserInterfaceIdiom
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 
-internal class UIKitWindowInsetsManager(
+internal class WindowInsetsManager(
     val windowInsetsViews: List<() -> UIView?>,
     val interfaceOrientation: State<InterfaceOrientation>,
     userInterfaceIdiom: UIUserInterfaceIdiom = UIDevice.currentDevice.userInterfaceIdiom
@@ -41,7 +41,7 @@ internal class UIKitWindowInsetsManager(
     val keyboardOverlapHeight = mutableStateOf(0)
     val sceneSize = mutableStateOf(IntSize.Zero)
 
-    val windowInsets: PlatformWindowInsets = UIKitWindowInsets(
+    val windowInsets: PlatformWindowInsets = WindowInsets(
         { layoutMargins.value },
         { safeAreaInsets.value },
         { keyboardOverlapHeight.value },
@@ -68,7 +68,7 @@ internal class UIKitWindowInsetsManager(
     }
 
     fun updateInsetsForAnimation(
-        initialWindowInsets: UIKitWindowInsetsSnapshot,
+        initialWindowInsets: WindowInsetsSnapshot,
         progress: Float
     ) {
         layoutMargins.value = lerp(
@@ -88,17 +88,17 @@ internal class UIKitWindowInsetsManager(
         .map { edgeInsetsInView(it).toPlatformInsets(it.density) }
         .union()
 
-    internal class UIKitWindowInsetsSnapshot(
+    internal class WindowInsetsSnapshot(
         val layoutMargins: PlatformInsets,
         val safeAreaInsets: PlatformInsets
     )
 
-    fun windowInsetsSnapshot(): UIKitWindowInsetsSnapshot = UIKitWindowInsetsSnapshot(
+    fun windowInsetsSnapshot(): WindowInsetsSnapshot = WindowInsetsSnapshot(
         layoutMargins.value,
         safeAreaInsets.value
     )
 
-    private inner class UIKitWindowInsets(
+    private inner class WindowInsets(
         private val layoutMargins: () -> PlatformInsets,
         private val safeAreaInsets: () -> PlatformInsets,
         private val keyboardOverlapHeight: () -> Int,

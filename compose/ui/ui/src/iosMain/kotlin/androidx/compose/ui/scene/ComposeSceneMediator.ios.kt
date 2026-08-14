@@ -65,7 +65,7 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.ApplicationIdleTimer
 import androidx.compose.ui.platform.UIKitTextInputService
-import androidx.compose.ui.platform.UIKitWindowInsetsManager
+import androidx.compose.ui.platform.WindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -373,7 +373,7 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
-    private val windowInsetsManager = UIKitWindowInsetsManager(
+    private val windowInsetsManager = WindowInsetsManager(
         windowInsetsViews = listOf(
             { _overlayView },
             { windowContext.window?.rootViewController?.view },
