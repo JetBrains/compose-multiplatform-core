@@ -23,7 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.UIKitTextInputService
+import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.CommitTextCommand
@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
  */
 @Suppress("DEPRECATION")
 internal class IosTextInputServiceAdapter(
-    private val textInputService: UIKitTextInputService,
+    private val textInputService: TextInputService,
     private val coroutineScope: CoroutineScope,
 ): androidx.compose.ui.text.input.PlatformTextInputService {
 

@@ -49,7 +49,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.UIKit.UIView
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal class UIKitTextInputService(
+internal class TextInputService(
     private var updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,

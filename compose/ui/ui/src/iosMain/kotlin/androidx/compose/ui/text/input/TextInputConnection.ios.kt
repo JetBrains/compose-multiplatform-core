@@ -156,7 +156,7 @@ internal abstract class TextInputConnection(
     /**
      * Workaround to prevent IME action from being called multiple times with hardware keyboards.
      * When the hardware return key is held down, iOS sends multiple newline characters to the application,
-     * which makes UIKitTextInputService call the current IME action multiple times without an additional
+     * which makes TextInputService call the current IME action multiple times without an additional
      * debouncing logic.
      *
      * @see _tempHardwareReturnKeyPressed is set to true when the return key is pressed with a

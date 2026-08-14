@@ -64,7 +64,7 @@ import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.ApplicationIdleTimer
-import androidx.compose.ui.platform.UIKitTextInputService
+import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.platform.WindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -428,8 +428,8 @@ internal class ComposeSceneMediator(
         )
     }
 
-    private val textInputService: UIKitTextInputService by lazy {
-        UIKitTextInputService(
+    private val textInputService: TextInputService by lazy {
+        TextInputService(
             updateView = {
                 frameChoreographer.performFrameIfNeeded()
                 scene.measureAndLayout()
@@ -438,7 +438,7 @@ internal class ComposeSceneMediator(
             view = _overlayView,
             viewConfiguration = viewConfiguration,
             focusedViewsList = focusedViewsList,
-            listener = object : UIKitTextInputService.Listener {
+            listener = object : TextInputService.Listener {
                 override fun onInputWillStart() {
                     keyboardManager.awaitKeyboardFrameIfNeeded()
                 }
