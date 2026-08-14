@@ -19,7 +19,7 @@ package androidx.compose.ui.platform
 import platform.Foundation.NSURL.Companion.URLWithString
 import platform.UIKit.UIApplication
 
-private class UIKitUriHandler : UriHandler {
+private class IosUriHandler : UriHandler {
     override fun openUri(uri: String) {
         val nsUrl = URLWithString(uri) ?: return
         UIApplication.sharedApplication.openURL(
@@ -30,4 +30,4 @@ private class UIKitUriHandler : UriHandler {
     }
 }
 
-internal actual fun createPlatformUriHandler(): UriHandler = UIKitUriHandler()
+internal actual fun createPlatformUriHandler(): UriHandler = IosUriHandler()
