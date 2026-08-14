@@ -90,7 +90,7 @@ import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
-import androidx.compose.ui.viewinterop.UIKitInteropContainer
+import androidx.compose.ui.viewinterop.IosInteropContainer
 import androidx.compose.ui.viewinterop.InteropTransaction
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.KeyboardInsetsManager
@@ -362,7 +362,7 @@ internal class ComposeSceneMediator(
     /**
      * Container for managing UIKitView and UIKitViewController
      */
-    private val interopContainer = UIKitInteropContainer(
+    private val interopContainer = IosInteropContainer(
         overlayContainer = _overlayView,
         backgroundContainer = _backgroundView,
         requestRedraw = frameChoreographer::requestFrame

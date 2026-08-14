@@ -24,7 +24,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
  * elements and contains a logic for syncing changes to UIKit objects driven by Compose state
  * changes with Compose rendering.
  */
-internal class UIKitInteropContainer(
+internal class IosInteropContainer(
     val overlayContainer: InteropViewGroup,
     val backgroundContainer: InteropViewGroup,
     private var requestRedraw: () -> Unit

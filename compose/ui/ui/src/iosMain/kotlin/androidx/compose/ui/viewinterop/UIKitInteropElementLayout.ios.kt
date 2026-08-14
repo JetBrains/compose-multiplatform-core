@@ -128,7 +128,7 @@ internal class UIKitInteropElementLayout(
     }
 
     /**
-     * Sets the frame of the clipping viewport ([group]) in its superview coordinate space (managed by [UIKitInteropContainer]).
+     * Sets the frame of the clipping viewport ([group]) in its superview coordinate space (managed by [IosInteropContainer]).
      * This rect corresponds to the clipped visible bounds of the element in Compose.
      */
     fun updateGroupFrame(rect: CValue<CGRect>) {

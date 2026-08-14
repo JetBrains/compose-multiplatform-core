@@ -57,10 +57,10 @@ internal interface InteropTransaction {
 }
 
 /**
- * A mutable transaction managed by [UIKitInteropContainer] to collect changes
+ * A mutable transaction managed by [IosInteropContainer] to collect changes
  * to UIKit objects to be executed later.
  *
- * @see UIKitInteropContainer.scheduleUpdate
+ * @see IosInteropContainer.scheduleUpdate
  */
 internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
