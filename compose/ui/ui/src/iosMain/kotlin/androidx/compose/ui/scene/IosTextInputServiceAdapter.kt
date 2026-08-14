@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
  * compatibility for the [androidx.compose.ui.text.input.PlatformTextInputService].
  */
 @Suppress("DEPRECATION")
-internal class UIKitTextInputServiceAdapter(
+internal class IosTextInputServiceAdapter(
     private val textInputService: UIKitTextInputService,
     private val coroutineScope: CoroutineScope,
 ): androidx.compose.ui.text.input.PlatformTextInputService {
@@ -135,15 +135,15 @@ internal class UIKitTextInputServiceAdapter(
             override val onEditCommand: (List<EditCommand>) -> Unit get() = onEditCommand
             override val onImeAction: (ImeAction) -> Unit get() = onImeActionPerformed
             override val textLayoutResult: () -> TextLayoutResult?
-                get() = { this@UIKitTextInputServiceAdapter.textLayoutResult }
+                get() = { this@IosTextInputServiceAdapter.textLayoutResult }
             override val focusedRectInRoot: () -> Rect?
-                get() = { this@UIKitTextInputServiceAdapter.focusedRectInRoot }
+                get() = { this@IosTextInputServiceAdapter.focusedRectInRoot }
             override val textFieldRectInRoot: () -> Rect?
-                get() = { this@UIKitTextInputServiceAdapter.textFieldRectInRoot }
+                get() = { this@IosTextInputServiceAdapter.textFieldRectInRoot }
             override val textClippingRectInRoot: () -> Rect?
-                get() = { this@UIKitTextInputServiceAdapter.textClippingRectInRoot }
+                get() = { this@IosTextInputServiceAdapter.textClippingRectInRoot }
             override val unclippedTextOffsetInRoot: () -> Offset?
-                get() = { this@UIKitTextInputServiceAdapter.unclippedTextOffsetInRoot }
+                get() = { this@IosTextInputServiceAdapter.unclippedTextOffsetInRoot }
             override val editText: (block: TextEditingScope.() -> Unit) -> Unit
                 get() = { block ->
                     val commands = mutableListOf<EditCommand>()
