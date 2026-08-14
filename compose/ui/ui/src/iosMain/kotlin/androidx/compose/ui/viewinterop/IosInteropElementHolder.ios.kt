@@ -48,7 +48,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
         group = interopWrappingView,
         compositeKeyHashCode = compositeKeyHashCode,
     ),
-    InteropLayoutNodeHolder {
+    UIKitInteropLayoutNodeHolder {
     constructor(
         factory: () -> T,
         interopContainer: InteropContainer,

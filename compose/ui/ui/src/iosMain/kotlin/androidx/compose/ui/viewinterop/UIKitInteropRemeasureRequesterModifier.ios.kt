@@ -28,22 +28,22 @@ import androidx.compose.ui.platform.InspectorInfo
  * remeasurement of the underlying interop view.
  *
  * A single requester can be used with multiple [UIKitView] or [UIKitViewController] nodes.
- * Calling [InteropRemeasureRequester.requestRemeasure] will remeasure all currently
+ * Calling [UIKitInteropRemeasureRequester.requestRemeasure] will remeasure all currently
  * registered targets.
  *
  * Applying this modifier to nodes other than [UIKitView] or [UIKitViewController] is a no-op.
  */
 @ExperimentalComposeUiApi
-fun Modifier.remeasureRequester(remeasureRequester: InteropRemeasureRequester): Modifier =
-    this then InteropRemeasureRequesterModifierElement(remeasureRequester)
+fun Modifier.remeasureRequester(remeasureRequester: UIKitInteropRemeasureRequester): Modifier =
+    this then UIKitInteropRemeasureRequesterModifierElement(remeasureRequester)
 
-private data class InteropRemeasureRequesterModifierElement(
-    val remeasureRequester: InteropRemeasureRequester
-): ModifierNodeElement<InteropRemeasureRequesterNode>() {
-    override fun create(): InteropRemeasureRequesterNode =
-        InteropRemeasureRequesterNode(remeasureRequester)
+private data class UIKitInteropRemeasureRequesterModifierElement(
+    val remeasureRequester: UIKitInteropRemeasureRequester
+): ModifierNodeElement<UIKitInteropRemeasureRequesterNode>() {
+    override fun create(): UIKitInteropRemeasureRequesterNode =
+        UIKitInteropRemeasureRequesterNode(remeasureRequester)
 
-    override fun update(node: InteropRemeasureRequesterNode) {
+    override fun update(node: UIKitInteropRemeasureRequesterNode) {
         if (node.remeasureRequester === remeasureRequester) return
         node.unregisterIfNeeded()
         node.remeasureRequester = remeasureRequester
@@ -56,11 +56,11 @@ private data class InteropRemeasureRequesterModifierElement(
     }
 }
 
-internal interface InteropRemeasureRequesterModifierNode: DelegatableNode
+internal interface UIKitInteropRemeasureRequesterModifierNode: DelegatableNode
 
-private class InteropRemeasureRequesterNode(
-    var remeasureRequester: InteropRemeasureRequester
-): InteropRemeasureRequesterModifierNode, Modifier.Node() {
+private class UIKitInteropRemeasureRequesterNode(
+    var remeasureRequester: UIKitInteropRemeasureRequester
+): UIKitInteropRemeasureRequesterModifierNode, Modifier.Node() {
 
     private var registered: Boolean = false
 
@@ -76,7 +76,7 @@ private class InteropRemeasureRequesterNode(
 
     fun registerIfNeeded() {
         if (registered) return
-        if (!isAttachedToInteropLayoutNode()) return
+        if (!isAttachedToUIKitInteropLayoutNode()) return
         remeasureRequester.remeasureRequesterNodes += this
         registered = true
     }
@@ -87,8 +87,8 @@ private class InteropRemeasureRequesterNode(
         registered = false
     }
 
-    private fun DelegatableNode.isAttachedToInteropLayoutNode(): Boolean =
-        requireLayoutNode().interopViewFactoryHolder is InteropLayoutNodeHolder
+    private fun DelegatableNode.isAttachedToUIKitInteropLayoutNode(): Boolean =
+        requireLayoutNode().interopViewFactoryHolder is UIKitInteropLayoutNodeHolder
 }
 
 /**
@@ -97,4 +97,4 @@ private class InteropRemeasureRequesterNode(
  * Used to ensure that [Modifier.remeasureRequester] only registers targets that correspond to
  * UIKit interop elements, and does not accidentally remeasure arbitrary Compose nodes.
  */
-internal interface InteropLayoutNodeHolder
+internal interface UIKitInteropLayoutNodeHolder

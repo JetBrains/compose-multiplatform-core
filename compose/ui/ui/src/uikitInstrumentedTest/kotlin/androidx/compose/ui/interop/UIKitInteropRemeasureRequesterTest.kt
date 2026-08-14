@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
-import androidx.compose.ui.viewinterop.InteropRemeasureRequester
+import androidx.compose.ui.viewinterop.UIKitInteropRemeasureRequester
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.measureFittingSize
 import androidx.compose.ui.viewinterop.remeasureRequester
@@ -55,7 +55,7 @@ class UIKitInteropRemeasureRequesterTest {
     fun testInternalConstraintChangeTriggersRemeasure() = runUIKitInstrumentedTestWithInterop { overlay ->
         var composeSize = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
-        val remeasureRequester = InteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
 
         // A view whose intrinsic size depends on an internal width/height constraint.
         class BoxUIView : UIView(frame = CGRectZero.readValue()) {
@@ -105,7 +105,7 @@ class UIKitInteropRemeasureRequesterTest {
         var composeSize = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
         val fixedWidth = 120.dp
-        val remeasureRequester = InteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
         val initialText = "TEXT"
         val changedText = "TEXT 2"
 
@@ -176,7 +176,7 @@ class UIKitInteropRemeasureRequesterTest {
 
     @Test
     fun testRemeasureRequesterRemeasureNotRequested() = runUIKitInstrumentedTestWithInterop { overlay ->
-        val remeasureRequester = InteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
 
         setContent {
             UIKitView(
@@ -190,7 +190,7 @@ class UIKitInteropRemeasureRequesterTest {
 
     @Test
     fun testRemeasureRequesterRemeasureNotRequestedAfterInteropRemoved() = runUIKitInstrumentedTestWithInterop { overlay ->
-        val remeasureRequester = InteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
         val showUIKitView = mutableStateOf(true)
 
         setContent {
@@ -215,7 +215,7 @@ class UIKitInteropRemeasureRequesterTest {
 
     @Test
     fun testRemeasureRequesterRemeasureRequestedAfterInteropAdded() = runUIKitInstrumentedTestWithInterop { overlay ->
-        val measureRequester = InteropRemeasureRequester()
+        val measureRequester = UIKitInteropRemeasureRequester()
         val showUIKitView = mutableStateOf(false)
 
         setContent {
@@ -243,7 +243,7 @@ class UIKitInteropRemeasureRequesterTest {
     fun testRemeasureRequesterNotAttachedToInteropNode() = runUIKitInstrumentedTestWithInterop { overlay ->
         var size = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
-        val remeasureRequester = InteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
 
         class BoxUIView(width: Double, height: Double) : UIView(frame = CGRectZero.readValue()) {
             val w = widthAnchor.constraintEqualToConstant(width)
@@ -289,7 +289,7 @@ class UIKitInteropRemeasureRequesterTest {
         var firstSize = DpSize.Zero
         var secondSize = DpSize.Zero
         val boxSize = DpSize(300.dp, 300.dp)
-        val remeasureRequester = InteropRemeasureRequester()
+        val remeasureRequester = UIKitInteropRemeasureRequester()
 
         class BoxUIView(width: Double, height: Double) : UIView(frame = CGRectZero.readValue()) {
             val w = widthAnchor.constraintEqualToConstant(width)
