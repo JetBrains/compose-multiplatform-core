@@ -15,6 +15,11 @@ dependencyResolutionManagement {
     }
 }
 
+// Reuse the shared skiko setup so that the SKIKO_VERSION env var override is
+// respected in JetBrains fork mode (same behavior as in AOSP mode).
+apply(from: "buildSrc/settingsScripts/skiko-setup.groovy")
+skikoSetup.defineSkikoInVersionCatalog(settings)
+
 def supportRootFolder = buildscript.sourceFile.getParentFile()
 
 /* In JetBrains Fork we don't force Android Studio usage.
