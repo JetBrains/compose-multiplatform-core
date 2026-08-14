@@ -17,7 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.uikit.utils.CMPMetalLayer
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropTransaction
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -43,7 +43,7 @@ import platform.UIKit.UIViewMeta
 // Copy of the class LegacyMetalView with a different layer.
 // All changes made here must also be implemented in the `LegacyMetalView`.
 internal class SurfaceMetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
+    retrieveInteropTransaction: () -> InteropTransaction,
     draw: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {

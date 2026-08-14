@@ -37,7 +37,7 @@ internal class UIKitInteropContainer(
     override val root: InteropViewGroup get() = backgroundContainer
 
     private val interopViews = mutableMapOf<InteropView, InteropViewHolder>()
-    private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
+    private var transaction = InteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
 
@@ -82,9 +82,9 @@ internal class UIKitInteropContainer(
     /**
      * Return an object containing pending changes and reset internal storage
      */
-    fun retrieveTransaction(): UIKitInteropTransaction {
+    fun retrieveTransaction(): InteropTransaction {
         val result = transaction
-        transaction = UIKitInteropMutableTransaction(
+        transaction = InteropMutableTransaction(
             isInteropActive = interopViews.isNotEmpty()
         )
         return result

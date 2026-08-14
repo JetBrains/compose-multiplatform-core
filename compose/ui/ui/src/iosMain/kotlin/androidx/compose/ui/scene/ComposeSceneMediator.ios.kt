@@ -91,7 +91,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.UIKitInteropContainer
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropTransaction
 import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.KeyboardInsetsManager
 import androidx.compose.ui.window.FocusedViewsList
@@ -681,7 +681,7 @@ internal class ComposeSceneMediator(
         scene.draw(canvas)
     }
 
-    fun retrieveInteropTransaction(): UIKitInteropTransaction =
+    fun retrieveInteropTransaction(): InteropTransaction =
         interopContainer.retrieveTransaction()
 
     @OptIn(InternalComposeUiApi::class)
