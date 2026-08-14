@@ -73,7 +73,7 @@ internal abstract class IosInteropElementHolder<T : InteropView>(
     private var currentUnclippedRect: IntRect? = null
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
-    private val layout = UIKitInteropElementLayout(group = group, userComponent = userComponentView)
+    private val layout = InteropElementLayout(group = group, userComponent = userComponentView)
     override val measurePolicy: MeasurePolicy get() = layout.measurePolicy
 
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay

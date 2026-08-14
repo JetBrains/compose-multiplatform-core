@@ -56,7 +56,7 @@ import platform.UIKit.UIView
  * @param group clipping viewport that wraps the [userComponent]
  * @param userComponent actual UIKit interop view being embedded
  */
-internal class UIKitInteropElementLayout(
+internal class InteropElementLayout(
     private val group: InteropViewGroup,
     private val userComponent: UIView,
 ) {
