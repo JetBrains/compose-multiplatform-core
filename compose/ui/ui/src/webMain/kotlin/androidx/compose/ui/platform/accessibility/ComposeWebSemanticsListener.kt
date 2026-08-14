@@ -258,9 +258,11 @@ internal class ComposeWebSemanticsListener(
         rootOffset: Offset,
         justCreated: Boolean = false,
     ) {
-        // Mark the element with the semantics node ID for click event delegation lookup.
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes
-        htmlNode.setAttribute(DATA_SEMANTICS_ID_KEY, sn.id.toString())
+        if (justCreated) {
+            // Mark the element with the semantics node ID for click event delegation lookup.
+            // https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes
+            htmlNode.setAttribute(DATA_SEMANTICS_ID_KEY, sn.id.toString())
+        }
 
         val config = sn.config
 
