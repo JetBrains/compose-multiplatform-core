@@ -36,12 +36,12 @@ import androidx.compose.ui.node.requireLayoutNode
  * `UILabel.text`/`attributedText`/`font`, updating constraint constants, or adding/removing subviews).
  *
  * @see Modifier.remeasureRequester
- * @see rememberUIKitInteropRemeasureRequester
+ * @see rememberInteropRemeasureRequester
  */
 @Stable
 @ExperimentalComposeUiApi
-class UIKitInteropRemeasureRequester @RememberInComposition constructor() {
-    internal val remeasureRequesterNodes: MutableVector<UIKitInteropRemeasureRequesterModifierNode> =
+class InteropRemeasureRequester @RememberInComposition constructor() {
+    internal val remeasureRequesterNodes: MutableVector<InteropRemeasureRequesterModifierNode> =
         mutableVectorOf()
 
     /**
@@ -58,13 +58,12 @@ class UIKitInteropRemeasureRequester @RememberInComposition constructor() {
 
 
 /**
- * Creates and remembers a [UIKitInteropRemeasureRequester] to allow explicitly requesting
+ * Creates and remembers a [InteropRemeasureRequester] to allow explicitly requesting
  * remeasurement of [UIKitView] or [UIKitViewController].
  */
 @Composable
 @ExperimentalComposeUiApi
-fun rememberUIKitInteropRemeasureRequester(): UIKitInteropRemeasureRequester =
-    remember { UIKitInteropRemeasureRequester() }
-
+fun rememberInteropRemeasureRequester(): InteropRemeasureRequester =
+    remember { InteropRemeasureRequester() }
 
 
