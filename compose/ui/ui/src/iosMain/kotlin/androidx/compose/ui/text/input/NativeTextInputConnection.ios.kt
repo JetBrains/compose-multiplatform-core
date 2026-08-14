@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.TextInputSelectionRect
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.scene.ComposeSceneFocusManager
@@ -370,7 +370,7 @@ internal class NativeTextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     ) {
         textInputView.updateMenuActions(
             copy,

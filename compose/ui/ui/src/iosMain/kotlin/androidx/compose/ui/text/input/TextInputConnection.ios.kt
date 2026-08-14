@@ -26,7 +26,7 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
@@ -150,7 +150,7 @@ internal abstract class TextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     )
 
     /**

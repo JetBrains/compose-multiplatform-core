@@ -18,7 +18,7 @@ package androidx.compose.ui.text.input
 
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.TextToolbarStatus
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.uikit.density
@@ -118,7 +118,7 @@ internal open class ComposeTextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     ) {
         textInputView.updateAvailableSystemActions(
             copyBlock = copy,

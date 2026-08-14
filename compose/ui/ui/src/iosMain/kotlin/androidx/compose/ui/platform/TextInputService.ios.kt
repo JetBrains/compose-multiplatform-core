@@ -220,7 +220,7 @@ internal class TextInputService(
         }
     }
 
-    val nativeTextInputContext = object : UIKitNativeTextInputContext {
+    val nativeTextInputContext = object : NativeTextInputContext {
         override fun usingNativeTextInput(): Boolean =
             currentInputConnection is NativeTextInputConnection
 
@@ -229,7 +229,7 @@ internal class TextInputService(
             paste: (() -> Unit)?,
             cut: (() -> Unit)?,
             selectAll: (() -> Unit)?,
-            customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+            customActions: List<NativeTextInputContextMenuCustomAction>?
         ) {
             fun update() {
                 currentInputConnection?.setAvailableEditMenuActions(
