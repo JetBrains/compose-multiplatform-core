@@ -39,15 +39,15 @@ import platform.UIKit.UIScreen
  */
 internal class WindowContext {
     private val _windowInfo = WindowInfoImpl()
-    private var _screenScale = UIScreen.mainScreen.scale.toFloat()
+    private var _screenDensity = Density(UIScreen.mainScreen.scale.toFloat())
 
     private val sceneFocusObserver = SceneActiveStateListener(getScene = { window?.windowScene }) {
         _windowInfo.isWindowFocused = it
     }
 
     val windowInfo: WindowInfo get() = _windowInfo
-    val screenScale: Float get() = _screenScale
-    val screenDensity: Density get() = Density(screenScale)
+    val screenScale: Float get() = _screenDensity.density
+    val screenDensity: Density get() = _screenDensity
 
     /**
      * A window used to calculate the coordinate space and track the active state of the window
@@ -56,7 +56,7 @@ internal class WindowContext {
     var window: UIWindow? = null
         set(value) {
             field = value
-            value?.let { _screenScale = it.screen.scale.toFloat() }
+            value?.let { _screenDensity = Density(it.screen.scale.toFloat()) }
             _windowInfo.isWindowFocused = sceneFocusObserver.isSceneActive
             updateWindowContainerSize()
         }
