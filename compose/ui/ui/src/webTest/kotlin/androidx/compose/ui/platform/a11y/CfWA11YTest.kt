@@ -527,6 +527,49 @@ class CfWA11YTest : OnCanvasTests {
         assertTrue(a11yContainer.innerHTML.contains("ChildText"))
     }
 
+    @Test // https://youtrack.jetbrains.com/issue/CMP-8614
+    fun disabledButtonAriaDisabledAndClickBehavior() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var buttonEnabled by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(
+                onClick = { clickCounter++ },
+                enabled = buttonEnabled,
+                modifier = Modifier.testTag("disabledButtonTestTag")
+            ) {
+                Text("Button")
+            }
+        }
+
+        awaitA11YChanges()
+
+        val button = getShadowRoot().getElementById("disabledButtonTestTag") as? HTMLElement
+        assertNotNull(button)
+        assertEquals("button", button.getAttribute("role"))
+        assertNull(button.getAttribute("aria-disabled"), "Button should not have aria-disabled when enabled")
+
+        button.click()
+        assertEquals(1, clickCounter, "Enabled button must fire click action")
+
+        // Disable the button
+        buttonEnabled = false
+        awaitA11YChanges()
+
+        assertEquals("true", button.getAttribute("aria-disabled"), "Button must have aria-disabled=\"true\" when disabled")
+        button.click()
+        assertEquals(1, clickCounter, "Disabled button must not fire click action")
+
+        // Re-enable the button
+        buttonEnabled = true
+        awaitA11YChanges()
+
+        assertNull(button.getAttribute("aria-disabled"), "Button must not have aria-disabled when re-enabled")
+        button.click()
+        assertEquals(2, clickCounter, "Re-enabled button must fire click action")
+    }
+
     @Test // Reproduces the user-reported scenario from CMP-10226
     fun spacerReappearsAfterGraphicsLayerClipToggle() = runApplicationTest {
         // graphicsLayer sets Shape semantics ONLY when clip=true
