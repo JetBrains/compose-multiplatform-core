@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
  * and behavior itself.
  */
 @InternalComposeUiApi
-interface UIKitNativeTextInputContext {
+interface NativeTextInputContext {
     fun usingNativeTextInput(): Boolean
 
     fun updateNativeTextInputEditMenuState(
@@ -36,14 +36,14 @@ interface UIKitNativeTextInputContext {
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     )
 
     fun updateNativeTextInputTintColor(color: Color?)
 }
 
 @InternalComposeUiApi
-class UIKitNativeTextInputContextMenuCustomAction(
+class NativeTextInputContextMenuCustomAction(
     val title: String,
     val action: () -> Unit
 )
