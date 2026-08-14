@@ -590,7 +590,7 @@ internal class OverlayInputView(
     }
 
     /**
-     * See [androidx.compose.ui.draganddrop.UIKitDragAndDropManager] for more context
+     * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
