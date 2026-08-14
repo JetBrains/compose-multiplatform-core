@@ -17,18 +17,17 @@
 package androidx.compose.ui.layout
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateMeasurement
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toOffset
@@ -40,6 +39,8 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.Duration
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun OffsetToFocusedRect(
@@ -49,74 +50,31 @@ internal fun OffsetToFocusedRect(
     animationDuration: Duration,
     animationCompletion: () -> Unit,
     content: @Composable () -> Unit,
-) {
-    var currentOffset by remember { mutableStateOf(IntOffset.Zero) }
-    var startOffset by remember { mutableStateOf(IntOffset.Zero) }
-    var offsetProgress by remember { mutableStateOf(1f) }
-    val density = LocalDensity.current
-
-    fun translatedFocusedRect(): Rect? {
-        // The current implementation of OffsetToFocusedRect assumes that the focus rectangle is
-        // either static or only changes during the animation.
-        // The [Snapshot.withoutReadObservation] function is used here to avoid side effects caused
-        // by the internal implementation of the [getFocusedRect] function.
-        val rect = Snapshot.withoutReadObservation { getFocusedRect() }
-        return rect?.translate(-currentOffset.toOffset())
-    }
-
-    LaunchedEffect(insets, animationDuration) {
-        startOffset = currentOffset
-        if (animationDuration.isPositive()) {
-            if (startOffset == density.adjustedToFocusedRectOffset(
-                    insets = insets,
-                    focusedRect = translatedFocusedRect(),
-                    size = size
-                )
-            ) {
-                offsetProgress = 1f
-            } else {
-                withAnimationProgress(animationDuration) {
-                    offsetProgress = it
-                }
-            }
-            animationCompletion()
-        } else {
-            offsetProgress = 1f
-        }
-    }
-
-    Layout(
-        content = content,
-        measurePolicy = { measurables, constraints ->
-            val endOffset = density.adjustedToFocusedRectOffset(
-                insets = insets,
-                focusedRect = translatedFocusedRect(),
-                size = size
-            )
-
-            // Intentionally update state within composition to trigger second measure and
-            // layout because focus rect may be miscalculated due to simultaneous offset and
-            // window insets changes.
-            //
-            // FIXME: this "second measure" only settles in-frame because BaseComposeScene.draw()
-            //  currently calls Snapshot.sendApplyNotifications() between the measure and draw phases -
-            //  a temporary, un-Android workaround kept solely for this code path.
-            currentOffset = startOffset + (endOffset - startOffset) * offsetProgress
-
-            val placeables = measurables.fastMap { it.measure(constraints) }
-            layout(
-                placeables.fastMaxOfOrDefault(constraints.minWidth) { it.width },
-                placeables.fastMaxOfOrDefault(constraints.minHeight) { it.height }
-            ) {
-                placeables.fastForEach {
-                    it.place(currentOffset)
-                }
+) = Layout(
+    modifier = Modifier.then(
+        OffsetToFocusedRectElement(
+            insets = insets,
+            getFocusedRect = getFocusedRect,
+            size = size,
+            animationDuration = animationDuration,
+            animationCompletion = animationCompletion,
+        )
+    ),
+    content = content,
+    measurePolicy = { measurables, constraints ->
+        val placeables = measurables.fastMap { it.measure(constraints) }
+        layout(
+            placeables.fastMaxOfOrDefault(constraints.minWidth) { it.width },
+            placeables.fastMaxOfOrDefault(constraints.minHeight) { it.height }
+        ) {
+            placeables.fastForEach {
+                it.place(IntOffset.Zero)
             }
         }
-    )
-}
+    }
+)
 
-internal fun Density.adjustedToFocusedRectOffset(
+internal fun adjustedToFocusedRectOffset(
     insets: PlatformInsets,
     focusedRect: Rect?,
     size: IntSize?
@@ -170,5 +128,146 @@ private fun directionalFocusOffset(
         max(0f, min(hiddenFromPart, -hiddenToPart)).roundToInt()
     } else {
         min(0f, max(hiddenFromPart, -hiddenToPart)).roundToInt()
+    }
+}
+
+private data class OffsetToFocusedRectElement(
+    val insets: PlatformInsets,
+    val getFocusedRect: () -> Rect?,
+    val size: IntSize?,
+    val animationDuration: Duration,
+    val animationCompletion: () -> Unit,
+) : ModifierNodeElement<OffsetToFocusedRectNode>() {
+    override fun create() = OffsetToFocusedRectNode(
+        insets = insets,
+        getFocusedRect = getFocusedRect,
+        size = size,
+        animationDuration = animationDuration,
+        animationCompletion = animationCompletion,
+    )
+
+    override fun update(node: OffsetToFocusedRectNode) {
+        node.update(
+            insets = insets,
+            getFocusedRect = getFocusedRect,
+            size = size,
+            animationDuration = animationDuration,
+            animationCompletion = animationCompletion,
+        )
+    }
+}
+
+private class OffsetToFocusedRectNode(
+    private var insets: PlatformInsets,
+    private var getFocusedRect: () -> Rect?,
+    private var size: IntSize?,
+    private var animationDuration: Duration,
+    private var animationCompletion: () -> Unit,
+) : Modifier.Node(), GlobalPositionAwareModifierNode, LayoutModifierNode {
+    private var currentOffset = IntOffset.Zero
+    private var startOffset = IntOffset.Zero
+    private var offsetProgress = 1f
+    private var animationJob: Job? = null
+
+    override val shouldAutoInvalidate: Boolean = false
+
+    fun update(
+        insets: PlatformInsets,
+        getFocusedRect: () -> Rect?,
+        size: IntSize?,
+        animationDuration: Duration,
+        animationCompletion: () -> Unit,
+    ) {
+        val animationInputsChanged =
+            this.insets != insets || this.animationDuration != animationDuration
+        val needsRemeasure =
+            animationInputsChanged || this.getFocusedRect !== getFocusedRect || this.size != size
+
+        this.insets = insets
+        this.getFocusedRect = getFocusedRect
+        this.size = size
+        this.animationDuration = animationDuration
+        this.animationCompletion = animationCompletion
+
+        if (!isAttached) return
+        if (animationInputsChanged) {
+            restartAnimation()
+        } else if (needsRemeasure) {
+            invalidateMeasurement()
+        }
+    }
+
+    override fun onAttach() {
+        restartAnimation()
+    }
+
+    override fun onDetach() {
+        animationJob?.cancel()
+        animationJob = null
+    }
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        currentOffset = calculatedOffset()
+        return layout(placeable.width, placeable.height) {
+            placeable.place(currentOffset)
+        }
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        // The first point at which the focus rect contains both the new offset and a  simultaneous
+        // child-layout change (e.g. imePadding). Settle only when that changes the offset.
+        val settledOffset = calculatedOffset()
+        if (settledOffset != currentOffset) {
+            currentOffset = settledOffset
+            invalidateMeasurement()
+        }
+    }
+
+    private fun restartAnimation() {
+        animationJob?.cancel()
+        startOffset = currentOffset
+
+        if (!animationDuration.isPositive()) {
+            offsetProgress = 1f
+            invalidateMeasurement()
+            return
+        }
+
+        if (startOffset == targetOffset()) {
+            offsetProgress = 1f
+            animationCompletion()
+            invalidateMeasurement()
+            return
+        }
+
+        animationJob = coroutineScope.launch {
+            withAnimationProgress(animationDuration) { progress ->
+                offsetProgress = progress
+                invalidateMeasurement()
+            }
+            animationCompletion()
+        }
+    }
+
+    private fun calculatedOffset(): IntOffset =
+        startOffset + (targetOffset() - startOffset) * offsetProgress
+
+    private fun targetOffset(): IntOffset {
+        // The current implementation of OffsetToFocusedRect assumes that the focus rectangle is
+        // either static or only changes during the animation.
+        // The [Snapshot.withoutReadObservation] function is used here to avoid side effects caused
+        // by the internal implementation of the [getFocusedRect] function.
+        val focusedRect = Snapshot.withoutReadObservation { getFocusedRect() }
+            ?.translate(-currentOffset.toOffset())
+
+        return adjustedToFocusedRectOffset(
+            insets = insets,
+            focusedRect = focusedRect,
+            size = size,
+        )
     }
 }

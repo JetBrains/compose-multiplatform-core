@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -581,6 +582,57 @@ internal abstract class KeyboardInsetsTest(
             bottom = screenSize.height - keyboardHeight
         )
         assertEquals(expectedTextField, lastTextFieldFrame)
+    }
+
+    @Test
+    fun testFocusableAboveKeyboardWithIMEInsetsStaysAboveKeyboardDuringAnimation() = runUIKitInstrumentedTest {
+        var textFieldBottom = Int.MIN_VALUE
+        val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
+        val focusRequester = FocusRequester()
+
+        setContent({
+            onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
+        }) {
+            val imeInsets = WindowInsets.ime
+            BasicTextField(
+                value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
+                onValueChange = {},
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .fillMaxSize()
+                    .imePadding()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldBottom = coordinates.boundsInWindow().roundToIntRect().bottom
+                    }
+                    .drawWithContent {
+                        val visibleBottom = screenSize.height.roundToPx() - imeInsets.getBottom(Density(density))
+                        drawnTextFieldFrames += textFieldBottom to visibleBottom
+                        drawContent()
+                    }
+            )
+        }
+
+        drawnTextFieldFrames.clear()
+        focusRequester.requestFocus()
+        waitForIdle()
+
+        assertTrue(
+            drawnTextFieldFrames.size > 5,
+            "Animation should produce large number of frames"
+        )
+
+        assertEquals(
+            expected = with(density) { (screenSize.height - keyboardHeight).roundToPx() },
+            actual = drawnTextFieldFrames.last().second
+        )
+
+        drawnTextFieldFrames.forEach { frame ->
+            assertTrue(
+                actual = frame.first <= frame.second,
+                "Focused field must be settled above the keyboard in every drawn frame: " +
+                    "fieldBottom=${frame.first}, visibleBottom=${frame.second}",
+            )
+        }
     }
 
     @Test

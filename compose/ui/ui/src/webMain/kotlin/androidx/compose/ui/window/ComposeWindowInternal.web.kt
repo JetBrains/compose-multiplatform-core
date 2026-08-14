@@ -127,6 +127,7 @@ import org.w3c.dom.events.FocusEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
+import org.w3c.dom.get
 import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
@@ -202,6 +203,7 @@ internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val rootNode: Node,
     private val layerRoot: HTMLElement,
+    private val viewportContainer: Element,
     private val interopContainerElement: HTMLDivElement,
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
@@ -471,15 +473,31 @@ internal class ComposeWindow(
             actualActivePointerButtons = PointerButtons()
         }
 
-        addTypedEvent<TouchEvent>("touchstart", passive = true) { _ ->
-            // We deliberately never preventDefault() touchstart, even though Compose consumes
+        val webTextInputService = platformContext.textInputService as WebTextInputService
+
+        addTypedEvent<TouchEvent>("touchstart", passive = false) { evt ->
+            // preventDefault the touchstart if the corresponding pointerdown hits the active text input.
+            // Pros: a long press (touchstart + ~500ms delay after it) triggers focus changes in iOS Safari,
+            // and this is the only chance (the only event we have) to prevent that behavior,
+            // since we want the focus to remain in the active text input.
+            // Cons: the browser's gestures (e.g., pull-to-refresh) become suppressed while
+            // the pointer is in the active text input.
+            val isTextFieldActive = webTextInputService.getBackingInput()?.isFocused() ?: false
+            if (isTextFieldActive) {
+                val position = activeTouchPointers[lastPointerDownId]?.composePointer?.position
+                if (webTextInputService.hitTest(position ?: Offset.Unspecified)) {
+                    evt.preventDefault()
+                }
+            }
+            lastPointerDownId = -1
+
+            // In other cases, we never preventDefault() touchstart, even though Compose consumes
             // the corresponding pointerdown on interactive areas. Per the Touch Events spec,
             // canceling touchstart suppresses the browser's default actions for the entire
-            // touch sequence: scrolling, back gesture, pull-to-refresh, AND the compatibility
-            // mouse events - and at touchstart time we can't yet know whether Compose will
+            // touch sequence: scrolling, back gesture, pull-to-refresh, and the compatibility
+            // mouse events. At touchstart time we can't yet know whether Compose will
             // actually handle the gesture. The decision is deferred to where it can be made
             // correctly: touchmove (move-based gestures) and touchend (tap-based defaults).
-            // The listener is passive and empty; it exists to document this decision.
         }
 
         addTypedEvent<TouchEvent>("touchend", passive = false) { evt ->
@@ -707,6 +725,9 @@ internal class ComposeWindow(
 
     private val activeTouchPointers = mutableIntObjectMapOf<TouchEventWithContainerOffset>()
 
+
+    private var lastPointerDownId: Int = -1
+
     // Whether Compose consumed the most recent touch pointerup. Read (and then reset) by the
     // touchend handler, which the browser dispatches right after pointerup, to decide whether
     // to suppress the compatibility mouse events. A single flag suffices because every
@@ -876,6 +897,8 @@ internal class ComposeWindow(
                 event.preventDefault()
                 if (eventType == PointerEventType.Move) {
                     activeTouchPointersConsumedMoves.add(event.pointerId)
+                } else if (eventType == PointerEventType.Press) {
+                    lastPointerDownId = event.pointerId
                 }
             }
         }
@@ -933,6 +956,15 @@ internal class ComposeWindow(
             x = offsetX.toFloat() * density.density,
             y = offsetY.toFloat() * density.density
         )
+
+    internal fun focusCanvas() {
+        canvas.focus()
+    }
+
+    internal fun isFocusInComposeContainer(): Boolean {
+        return document.activeElement != null && viewportContainer.contains(document.activeElement)
+            || (rootNode as ShadowRootExt).activeElement != null
+    }
 
     companion object {
         private val DomDisposableRegistry = WeakMap<JsAny>()
@@ -997,8 +1029,8 @@ private fun PointerEvent.toScenePointerEvent(
     val event = this
     val type = event.getPointerEventType()
     val position = Offset(
-        x = (event.clientX - containerOffset.x) * density.density,
-        y = (event.clientY - containerOffset.y) * density.density
+        x = (clientXOf(event).toFloat() - containerOffset.x) * density.density,
+        y = (clientYOf(event).toFloat() - containerOffset.y) * density.density
     )
     return ComposeScenePointer(
         id = PointerId(event.pointerId.toLong()),
@@ -1056,6 +1088,19 @@ private fun checkViewportFitCover(): Unit = js(
         }
     })()"""
 )
+
+// `MouseEvent.clientX`/`clientY` are declared as `Int` in the Kotlin DOM bindings, while the CSSOM
+// View spec defines them as `double`. Going through the typed accessors truncates the coordinates to
+// whole CSS pixels, which on a high-DPI screen quantizes every pointer position to `devicePixelRatio`
+// Compose pixels and turns slow, sub-pixel movement into a stream of zero-delta moves. Compose reads
+// a move with a zero position delta as "no one is handling this gesture", so an outer scrollable can
+// take an ongoing drag away from an inner one - see https://youtrack.jetbrains.com/issue/CMP-10575.
+// Read the raw values instead to keep the fractional part.
+// language=js
+private fun clientXOf(event: PointerEvent): Double = js("event.clientX")
+
+// language=js
+private fun clientYOf(event: PointerEvent): Double = js("event.clientY")
 
 // strings checks are faster on a JS side
 // language=js

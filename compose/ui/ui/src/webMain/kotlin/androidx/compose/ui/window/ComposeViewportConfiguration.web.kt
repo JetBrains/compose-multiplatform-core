@@ -17,13 +17,11 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 
 /**
  * Configuration of [ComposeViewport] behavior.
  */
-@ExperimentalComposeUiApi
 class ComposeViewportConfiguration internal constructor() {
 
     /**
@@ -32,17 +30,13 @@ class ComposeViewportConfiguration internal constructor() {
      * That DOM tree is visibly hidden, but reachable by the accessibility tools.
      * It can be disabled to avoid the overhead of maintaining the DOM tree.
      * By default, it is set to `true`.
-     *
-     * Note: This API is experimental and subject to change in the future.
      */
-    @ExperimentalComposeUiApi
     var isA11YEnabled: Boolean = true
 
     /**
      * Controls whether a mouse clicks on an unfocused element clears focus.
      * It's clearing focus on mouse down by default.
      */
-    @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
     /**
@@ -68,9 +62,6 @@ class ComposeViewportConfiguration internal constructor() {
      * changes as the user scrolls, so the insets may become invalid. In that case
      * it is recommended to disable inset handling entirely (`enableBrowserWindowInsets = false`) and
      * manage padding manually.
-     *
-     * Note: This API is experimental and subject to change in the future.
      */
-    @ExperimentalComposeUiApi
     var enableBrowserWindowInsets: Boolean = false
 }

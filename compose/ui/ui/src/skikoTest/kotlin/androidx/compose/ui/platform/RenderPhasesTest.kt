@@ -35,12 +35,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateMeasurement
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -288,8 +297,9 @@ class RenderPhasesTest {
     }
 
     @Test
-    fun measureAndLayoutRunsAgainBeforeDraw() = runSkikoComposeUiTest {
-        // Android runs measureAndLayout again right before drawing; validate this behavior.
+    fun stateWriteDuringLayoutDoesNotRemeasureBeforeDraw() = runSkikoComposeUiTest {
+        // A write made during layout updates this draw, but its measure invalidation is handled by
+        // a subsequent frame.
         val state = mutableStateOf(0)
         val events = mutableListOf<String>()
         setContent {
@@ -311,8 +321,62 @@ class RenderPhasesTest {
         }
 
         assertContentEquals(
-            expected = listOf("measure.0", "layout.0", "measure.1", "layout.1", "draw.1"),
-            actual = events
+            expected = listOf("measure.0", "layout.0", "draw.1", "measure.1", "layout.1"),
+            actual = events,
         )
+    }
+
+    @Test
+    fun measurementInvalidatedSettlesBeforeDraw() = runSkikoComposeUiTest {
+        val events = mutableListOf<String>()
+
+        setContent {
+            Layout(
+                modifier = Modifier
+                    .then(InvalidateMeasurementOnPositionedElement)
+                    .drawBehind { events += "draw" },
+                measurePolicy = { _, _ ->
+                    events += "measure"
+                    layout(100, 100) {
+                        events += "layout"
+                    }
+                },
+            )
+        }
+
+        // Positioning is dispatched after the layout pass, and this
+        // node's direct measurement invalidation must be settled before draw.
+        assertContentEquals(
+            expected = listOf("measure", "layout", "measure", "layout", "draw"),
+            actual = events,
+        )
+    }
+}
+
+private data object InvalidateMeasurementOnPositionedElement :
+    ModifierNodeElement<InvalidateMeasurementOnPositionedNode>() {
+    override fun create() = InvalidateMeasurementOnPositionedNode()
+    override fun update(node: InvalidateMeasurementOnPositionedNode) = Unit
+}
+
+private class InvalidateMeasurementOnPositionedNode :
+    Modifier.Node(), GlobalPositionAwareModifierNode, LayoutModifierNode {
+    private var shouldInvalidateMeasurement = true
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) {
+            placeable.place(0, 0)
+        }
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        if (shouldInvalidateMeasurement) {
+            shouldInvalidateMeasurement = false
+            invalidateMeasurement()
+        }
     }
 }
