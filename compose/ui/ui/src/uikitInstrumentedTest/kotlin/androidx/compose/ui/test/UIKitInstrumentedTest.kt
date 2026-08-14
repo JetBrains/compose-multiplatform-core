@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.window.KeyboardVisibilityListener
-import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertNotNull
 import kotlin.time.Duration
@@ -256,15 +255,21 @@ internal class UIKitInstrumentedTest(
     private var hostingViewController: ComposeHostingViewController? = null
     private var hostingView: ComposeHostingView? = null
 
-    val viewController: UIViewController get() {
-        val rootViewController = appDelegate.window?.rootViewController
-        if (rootViewController != null) { return rootViewController }
-        waitUntil { appDelegate.window?.rootViewController != null }
-        return appDelegate.window?.rootViewController ?: error("Cannot find active UIViewController")
-    }
+    val viewController: UIViewController get() = awaitViewController()
 
-    val rootRedrawer: MetalRedrawer? get() =
-        hostingView?.rootRedrawer ?: hostingViewController?.rootRedrawer
+    private val attachedViewController: UIViewController?
+        get() = appDelegate.window?.rootViewController
+
+    private fun awaitViewController(): UIViewController {
+        val rootViewController = attachedViewController
+        if (rootViewController != null) { return rootViewController }
+
+        waitUntil(
+            conditionDescription = "viewController: timeout waiting for the root view controller.",
+        ) { attachedViewController != null }
+
+        return checkNotNull(attachedViewController)
+    }
 
     val frameChoreographer: FrameChoreographer? get() =
         appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
@@ -367,7 +372,7 @@ internal class UIKitInstrumentedTest(
         clearComposeContainerReferencesIfDetached()
 
         // Stop text editing and hide keyboard if any
-        viewController.view.endEditing(force = true)
+        attachedViewController?.view?.endEditing(force = true)
         waitForIdle()
 
         AccessibilityNotification.onNotificationPostedForTests = null

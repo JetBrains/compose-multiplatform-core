@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.integrations
 
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.test.MockAppDelegate
@@ -24,7 +25,6 @@ import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.embedSubview
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
@@ -35,6 +35,7 @@ class ComposeHostingViewIntegrationTest {
         val controller = UIViewController()
         appDelegate.setUpWindow(controller)
         var launchesCount = 0
+        var disposalsCount = 0
 
         val composeView = ComposeHostingView(
             configuration = ComposeUIViewConfiguration().also {
@@ -43,6 +44,9 @@ class ComposeHostingViewIntegrationTest {
             content = {
                 LaunchedEffect(Unit) {
                     launchesCount += 1
+                }
+                DisposableEffect(Unit) {
+                    onDispose { disposalsCount += 1 }
                 }
             }
         )
@@ -57,8 +61,8 @@ class ComposeHostingViewIntegrationTest {
         composeView.removeFromSuperview()
 
         assertEquals(launchesCount, 1)
-        UIKitInstrumentedTest.waitUntil("Wait until compose view being disposed") {
-            composeView.rootRedrawer == null
+        UIKitInstrumentedTest.waitUntil("Wait until compose view is disposed") {
+            disposalsCount == 1
         }
 
         appDelegate.cleanUp()
@@ -71,6 +75,7 @@ class ComposeHostingViewIntegrationTest {
         val anotherSubview = UIView()
         appDelegate.setUpWindow(controller)
         var compositionsCount = 0
+        var disposalsCount = 0
 
         val composeView = ComposeHostingView(
             configuration = ComposeUIViewConfiguration().also {
@@ -78,6 +83,9 @@ class ComposeHostingViewIntegrationTest {
             },
             content = {
                 compositionsCount += 1
+                DisposableEffect(Unit) {
+                    onDispose { disposalsCount += 1 }
+                }
             }
         )
 
@@ -94,7 +102,7 @@ class ComposeHostingViewIntegrationTest {
         // Long delay to be sure that the Compose scene is not disposed
         UIKitInstrumentedTest.delay(1000)
 
-        assertNotNull(composeView.rootRedrawer, "ComposeView should be alive")
+        assertEquals(0, disposalsCount, "Compose view should not be disposed")
         assertEquals(1, compositionsCount, "Compose view should not have extra recompositions")
 
         appDelegate.cleanUp()
