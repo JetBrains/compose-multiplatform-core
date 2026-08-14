@@ -15,8 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-// Apply the fork's skiko setup so that the SKIKO_VERSION env var override is
-// respected in JetBrains fork mode (same behavior as in AOSP mode).
+// Apply the fork's skiko setup so that the SKIKO_VERSION env var override is repsected
 apply(from: "buildSrc-fork/settingsScripts/skiko-setup.groovy")
 skikoSetup.defineSkikoInVersionCatalog(settings)
 
