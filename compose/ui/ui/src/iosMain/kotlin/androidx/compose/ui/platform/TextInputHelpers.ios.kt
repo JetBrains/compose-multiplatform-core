@@ -215,7 +215,7 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * @param farthestInDirection A direction constant (left, right, up, or down).
      * @return The farthest position within the range in the given direction, or `null` if none.
      */
-    fun positionWithinRange(range: TextRange, farthestInDirection: PlatformTextLayoutDirection): Int?
+    fun positionWithinRange(range: TextRange, farthestInDirection: TextLayoutDirection): Int?
 }
 
 internal fun TextEditingDelegate.selectTextNearCursor() {
@@ -463,15 +463,15 @@ internal class TextInputStringTokenizer(
 }
 
 // Kotlin wrapper for UITextLayoutDirection
-internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirection) {
+internal enum class TextLayoutDirection(val platform: UITextLayoutDirection) {
     Left(UITextLayoutDirectionLeft),
     Right(UITextLayoutDirectionRight),
     Up(UITextLayoutDirectionUp),
     Down(UITextLayoutDirectionDown);
 
     companion object {
-        operator fun invoke(platform: UITextLayoutDirection): PlatformTextLayoutDirection? {
-            return entries.find { it.platform == platform }
+        operator fun invoke(uiTextLayoutDirection: UITextLayoutDirection): TextLayoutDirection? {
+            return entries.find { it.platform == uiTextLayoutDirection }
         }
     }
 }
