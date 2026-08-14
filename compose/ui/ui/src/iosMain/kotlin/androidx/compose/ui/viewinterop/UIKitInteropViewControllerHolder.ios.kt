@@ -32,7 +32,7 @@ internal class UIKitInteropViewControllerHolder<T : UIViewController>(
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
     compositionContext: CompositionContext,
-) : UIKitInteropElementHolder<T>(
+) : IosInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,

@@ -91,7 +91,7 @@ internal class IosInteropContainer(
     }
 
     override fun place(holder: InteropViewHolder) {
-        holder as UIKitInteropElementHolder<*>
+        holder as IosInteropElementHolder<*>
         val interopView = checkNotNull(holder.interopView)
 
         if (interopViews.isEmpty()) {
@@ -101,7 +101,7 @@ internal class IosInteropContainer(
 
         val isAdded = interopViews.put(interopView, holder) == null
         val countBelow = countInteropComponentsBelow(holder) {
-            contains(it) && (it as UIKitInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
+            contains(it) && (it as IosInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
         }
         val container = if (holder.placedAsOverlay) overlayContainer else backgroundContainer
 
@@ -117,7 +117,7 @@ internal class IosInteropContainer(
     }
 
     override fun unplace(holder: InteropViewHolder) {
-        holder as UIKitInteropElementHolder<*>
+        holder as IosInteropElementHolder<*>
         val interopView = requireNotNull(holder.interopView)
 
         interopViews.remove(interopView)

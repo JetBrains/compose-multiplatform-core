@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.toRect
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityFrame
 
-internal abstract class UIKitInteropElementHolder<T : InteropView>(
+internal abstract class IosInteropElementHolder<T : InteropView>(
     factory: () -> T,
     interopContainer: InteropContainer,
     private val interopWrappingView: InteropWrappingView,

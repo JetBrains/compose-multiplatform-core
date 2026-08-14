@@ -26,7 +26,7 @@ internal class UIKitInteropViewHolder<T : UIView>(
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
     compositionContext: CompositionContext
-) : UIKitInteropElementHolder<T>(
+) : IosInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,
