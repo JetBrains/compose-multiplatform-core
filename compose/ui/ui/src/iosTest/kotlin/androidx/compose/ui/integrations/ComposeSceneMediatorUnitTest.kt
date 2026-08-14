@@ -47,7 +47,7 @@ import platform.UIKit.UIContentSizeCategoryLarge
 import platform.UIKit.UIContentSizeCategoryUnspecified
 import platform.UIKit.UIWindowScene
 
-class ComposeSceneMediatorTest {
+class ComposeSceneMediatorUnitTest {
     @Test
     fun testDisposedMediatorShouldNotCrash() {
         runBlocking {

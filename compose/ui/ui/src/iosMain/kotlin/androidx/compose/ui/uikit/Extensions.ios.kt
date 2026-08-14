@@ -28,6 +28,9 @@ import platform.UIKit.UIWindow
 
 internal val UIView.density: Density
     get() {
+        // TODO: It's a code smell that we have to retrive a default UIScreen here.
+        //   We probably should reorder the code so that density is either injected from outside
+        //   or view is attached to a window before this is called.
         val screen = if (this is UIWindow) screen else window?.screen ?: UIScreen.mainScreen
         return Density(screen.scale.toFloat())
     }
