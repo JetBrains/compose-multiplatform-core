@@ -26,7 +26,7 @@ import platform.Foundation.NSThread
 import platform.Foundation.NSTimeInterval
 import platform.QuartzCore.CACurrentMediaTime
 
-internal class PlatformPrefetchSchedulerImpl(
+internal class IosPrefetchScheduler(
     private val currentTime: () -> NSTimeInterval = { CACurrentMediaTime() },
     private var onHasWorkScheduled: (Boolean) -> Unit,
 ) : PlatformPrefetchScheduler {
@@ -65,7 +65,7 @@ internal class PlatformPrefetchSchedulerImpl(
 
     override fun scheduleHighPriorityPrefetch(request: PlatformPrefetchRequest) {
         check(NSThread.isMainThread) {
-            "PlatformPrefetchSchedulerImpl.scheduleHighPriorityPrefetch() must be called on main thread"
+            "IosPrefetchScheduler.scheduleHighPriorityPrefetch() must be called on main thread"
         }
 
         if (isDisposed) {
@@ -78,7 +78,7 @@ internal class PlatformPrefetchSchedulerImpl(
 
     override fun scheduleLowPriorityPrefetch(request: PlatformPrefetchRequest) {
         check(NSThread.isMainThread) {
-            "PlatformPrefetchSchedulerImpl.scheduleLowPriorityPrefetch() must be called on main thread"
+            "IosPrefetchScheduler.scheduleLowPriorityPrefetch() must be called on main thread"
         }
 
         if (isDisposed) {
@@ -103,7 +103,7 @@ internal class PlatformPrefetchSchedulerImpl(
         didDraw: Boolean,
     ) {
         check(NSThread.isMainThread) {
-            "PlatformPrefetchSchedulerImpl.execute() must be called on main thread"
+            "IosPrefetchScheduler.execute() must be called on main thread"
         }
         if (isDisposed) {
             onHasWorkScheduled(false)
@@ -162,7 +162,7 @@ internal class PlatformPrefetchSchedulerImpl(
 
     fun dispose() {
         check(NSThread.isMainThread) {
-            "PlatformPrefetchSchedulerImpl.dispose() must be called on main thread"
+            "IosPrefetchScheduler.dispose() must be called on main thread"
         }
         isDisposed = true
         scheduledPrefetchRequests.clear()

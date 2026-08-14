@@ -96,7 +96,7 @@ import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.KeyboardInsetsManager
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.OverlayInputView
-import androidx.compose.ui.window.PlatformPrefetchSchedulerImpl
+import androidx.compose.ui.window.IosPrefetchScheduler
 import androidx.compose.ui.window.TouchesEventKind
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
@@ -211,8 +211,8 @@ internal class ComposeSceneMediator(
 
     private val isActive get() = coroutineContext.isActive
 
-    private var isPrefetchVoteActive: Boolean = false // TODO CMP-10587: Move inside the PlatformPrefetchSchedulerImpl
-    private val prefetchScheduler = PlatformPrefetchSchedulerImpl(
+    private var isPrefetchVoteActive: Boolean = false // TODO CMP-10587: Move inside the IosPrefetchScheduler
+    private val prefetchScheduler = IosPrefetchScheduler(
         onHasWorkScheduled = { hasWork ->
             if (hasWork != isPrefetchVoteActive) {
                 isPrefetchVoteActive = hasWork
