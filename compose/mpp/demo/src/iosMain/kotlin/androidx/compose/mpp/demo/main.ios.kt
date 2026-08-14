@@ -104,13 +104,13 @@ private class AppDelegate : UIResponder, UIApplicationDelegateProtocol {
         options: UISceneConnectionOptions
     ): UISceneConfiguration {
         val config = UISceneConfiguration()
-        config.delegateClass = IOSSceneDelegate.`class`()
+        config.delegateClass = SceneDelegate.`class`()
         config.sceneClass = UIWindowScene.`class`()
         return config
     }
 }
 
-private class IOSSceneDelegate: UIResponder, UIWindowSceneDelegateProtocol, UISceneDelegateProtocol {
+private class SceneDelegate: UIResponder, UIWindowSceneDelegateProtocol, UISceneDelegateProtocol {
     companion object Companion : UIResponderMeta(), UIApplicationDelegateProtocolMeta
 
     @Suppress("unused")
