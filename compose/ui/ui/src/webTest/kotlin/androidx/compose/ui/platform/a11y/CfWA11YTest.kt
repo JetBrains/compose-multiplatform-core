@@ -20,6 +20,7 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.Button
@@ -525,6 +526,87 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertNotNull(getShadowRoot().getElementById("myColumn"))
         assertTrue(a11yContainer.innerHTML.contains("ChildText"))
+    }
+
+    @Test // https://youtrack.jetbrains.com/issue/CMP-8614
+    fun clickableRemovalStopsFiringClick() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var clickable by mutableStateOf(true)
+
+        createComposeWindow {
+            Text(
+                "Tap me",
+                modifier = Modifier
+                    .testTag("clickableText")
+                    .then(if (clickable) Modifier.clickable { clickCounter++ } else Modifier)
+            )
+        }
+
+        awaitA11YChanges()
+
+        val text = getShadowRoot().getElementById("clickableText") as? HTMLElement
+        assertNotNull(text)
+
+        text.click()
+        assertEquals(1, clickCounter, "Clickable text must fire click action")
+
+        // Remove clickable
+        clickable = false
+        awaitA11YChanges()
+
+        text.click()
+        assertEquals(1, clickCounter, "Text without clickable must not fire click action")
+
+        // Re-add clickable
+        clickable = true
+        awaitA11YChanges()
+
+        text.click()
+        assertEquals(2, clickCounter, "Re-added clickable text must fire click action")
+    }
+
+    @Test // https://youtrack.jetbrains.com/issue/CMP-8614
+    fun disabledButtonAriaDisabledAndClickBehavior() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var buttonEnabled by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(
+                onClick = { clickCounter++ },
+                enabled = buttonEnabled,
+                modifier = Modifier.testTag("disabledButtonTestTag")
+            ) {
+                Text("Button")
+            }
+        }
+
+        awaitA11YChanges()
+
+        val button = getShadowRoot().getElementById("disabledButtonTestTag") as? HTMLElement
+        assertNotNull(button)
+        assertEquals("button", button.getAttribute("role"))
+        assertNull(button.getAttribute("aria-disabled"), "Button should not have aria-disabled when enabled")
+
+        button.click()
+        assertEquals(1, clickCounter, "Enabled button must fire click action")
+
+        // Disable the button
+        buttonEnabled = false
+        awaitA11YChanges()
+
+        assertEquals("true", button.getAttribute("aria-disabled"), "Button must have aria-disabled=\"true\" when disabled")
+        button.click()
+        assertEquals(1, clickCounter, "Disabled button must not fire click action")
+
+        // Re-enable the button
+        buttonEnabled = true
+        awaitA11YChanges()
+
+        assertNull(button.getAttribute("aria-disabled"), "Button must not have aria-disabled when re-enabled")
+        button.click()
+        assertEquals(2, clickCounter, "Re-enabled button must fire click action")
     }
 
     @Test // Reproduces the user-reported scenario from CMP-10226

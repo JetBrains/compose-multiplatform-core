@@ -38,7 +38,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.Event
 
 internal class ComposeWebSemanticsListener(
     val webSemanticsRoot: HTMLElement,
@@ -52,6 +54,7 @@ internal class ComposeWebSemanticsListener(
     private companion object {
         const val MAX_TIME_IN_DEBOUNCE_MS = 1000L
         const val DEBOUNCE_MS = 100L
+        const val DATA_SEMANTICS_ID_KEY = "data-semantics-id"
     }
 
 
@@ -122,6 +125,9 @@ internal class ComposeWebSemanticsListener(
                 }
             }
         }
+
+        // Event delegation: all nodes delegate to one global click listener
+        webSemanticsRoot.addEventListener("click", onClick)
     }
 
     private var semanticsOwner: SemanticsOwner? = null
@@ -151,6 +157,25 @@ internal class ComposeWebSemanticsListener(
     private val nodes = MutableScatterMap<Int, SemanticsNode>()
     private val nodeToParent = MutableScatterMap<Int, Int>()
     private val webNodes = MutableScatterMap<Int, HTMLElement>()
+
+    /**
+     * Event delegation: Single shared click listener for all a11y nodes
+     */
+    private val onClick: (Event) -> Unit = onClick@ { event ->
+        val element = (event.target as? Element)
+            ?.closest("[$DATA_SEMANTICS_ID_KEY]")
+            ?: return@onClick
+        val semanticsId = element.getAttribute(DATA_SEMANTICS_ID_KEY)?.toIntOrNull() ?: return@onClick
+        val config = nodes[semanticsId]?.config ?: return@onClick
+
+        if (config.contains(SemanticsProperties.Disabled)) {
+            return@onClick
+        }
+
+        if (config.contains(SemanticsActions.OnClick)) {
+            config[SemanticsActions.OnClick].action?.invoke()
+        }
+    }
 
 
     private fun syncSemanticsWithWebA11Y() {
@@ -233,6 +258,12 @@ internal class ComposeWebSemanticsListener(
         rootOffset: Offset,
         justCreated: Boolean = false,
     ) {
+        if (justCreated) {
+            // Mark the element with the semantics node ID for click event delegation lookup.
+            // https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes
+            htmlNode.setAttribute(DATA_SEMANTICS_ID_KEY, sn.id.toString())
+        }
+
         val config = sn.config
 
         if (config.contains(SemanticsProperties.Text)) {
@@ -243,15 +274,6 @@ internal class ComposeWebSemanticsListener(
         if (config.contains(SemanticsProperties.ContentDescription)) {
             val contentDescription = config[SemanticsProperties.ContentDescription]
             htmlNode.setAttribute("aria-label", contentDescription.fastJoinToString(", "))
-        }
-
-        if (config.contains(SemanticsActions.OnClick) && justCreated) {
-            val listener = config[SemanticsActions.OnClick].action!!
-
-            // TODO: need to remove the click listener when the new config version doesn't have OnClick action
-            htmlNode.addEventListener("click", {
-                listener.invoke()
-            })
         }
 
         if (config.contains(SemanticsProperties.TestTag)) {
@@ -269,6 +291,12 @@ internal class ComposeWebSemanticsListener(
                     htmlNode.click()
                 })
             }
+        }
+
+        if (config.contains(SemanticsProperties.Disabled)) {
+            htmlNode.setAttribute("aria-disabled", "true")
+        } else {
+            htmlNode.removeAttribute("aria-disabled")
         }
 
         setA11YAriaRole(element = htmlNode, config.getRoleId())
