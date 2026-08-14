@@ -258,7 +258,7 @@ internal class ComposeSceneMediator(
         }
 
     private val scene: ComposeScene by lazy {
-        composeSceneFactory(PlatformContextImpl())
+        composeSceneFactory(IosPlatformContext())
     }
 
     private var composeSceneSize: IntSize?
@@ -876,7 +876,7 @@ internal class ComposeSceneMediator(
         return result
     }
 
-    private inner class PlatformContextImpl : PlatformContext {
+    private inner class IosPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
