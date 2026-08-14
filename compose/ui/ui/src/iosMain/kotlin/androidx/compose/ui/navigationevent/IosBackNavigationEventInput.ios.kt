@@ -51,7 +51,7 @@ import platform.UIKit.UIWindow
 import platform.darwin.NSObject
 import platform.darwin.NSUIntegerMax
 
-internal class UIKitNavigationEventInput(
+internal class IosBackNavigationEventInput(
     private val density: Density,
     initialLayoutDirection: LayoutDirection,
     private val endEdgePanGestureBehavior: EndEdgePanGestureBehavior,
@@ -75,16 +75,16 @@ internal class UIKitNavigationEventInput(
             updateRecognizers()
         }
 
-    private val iosGestureHandler = UiKitScreenEdgePanGestureHandler()
+    private val gestureHandler = ScreenEdgePanGestureHandler()
 
-    private val startEdgePanGestureRecognizer = UIKitBackGestureRecognizer(
-        target = iosGestureHandler,
-        action = NSSelectorFromString(UiKitScreenEdgePanGestureHandler::handleEdgePan.name + ":")
+    private val startEdgePanGestureRecognizer = BackGestureRecognizer(
+        target = gestureHandler,
+        action = NSSelectorFromString(ScreenEdgePanGestureHandler::handleEdgePan.name + ":")
     )
 
-    private val endEdgePanGestureRecognizer = UIKitBackGestureRecognizer(
-        target = iosGestureHandler,
-        action = NSSelectorFromString(UiKitScreenEdgePanGestureHandler::handleEdgePan.name + ":")
+    private val endEdgePanGestureRecognizer = BackGestureRecognizer(
+        target = gestureHandler,
+        action = NSSelectorFromString(ScreenEdgePanGestureHandler::handleEdgePan.name + ":")
     )
 
     val isBackGestureTrackingTouches: Boolean
@@ -146,7 +146,7 @@ internal class UIKitNavigationEventInput(
     }
 
     @OptIn(BetaInteropApi::class, ExperimentalComposeUiApi::class)
-    inner class UiKitScreenEdgePanGestureHandler : NSObject() {
+    inner class ScreenEdgePanGestureHandler : NSObject() {
         private val UIScreenEdgePanGestureRecognizer.isBackEdge: Boolean
             get() = this === startEdgePanGestureRecognizer ||
                 (this === endEdgePanGestureRecognizer && endEdgePanGestureBehavior == EndEdgePanGestureBehavior.Back)
@@ -293,7 +293,7 @@ internal class UIKitNavigationEventInput(
  * A special gesture recognizer that can cancel touches in the Compose scene.
  * See [androidx.compose.ui.window.TouchesGestureRecognizer.canBePreventedByGestureRecognizer]
  */
-internal class UIKitBackGestureRecognizer(
+internal class BackGestureRecognizer(
     target: Any?, action: CPointer<out CPointed>?
 ) : CMPScreenEdgePanGestureRecognizer(target = target, action = action) {
     init {

@@ -23,7 +23,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.MotionDurationScaleImpl
@@ -134,7 +134,7 @@ internal class ComposeContainer(
     private val interfaceOrientationObserver = SceneGeometryObserver {
         updateInterfaceOrientationState()
     }
-    private val navigationEventInput = UIKitNavigationEventInput(
+    private val navigationEventInput = IosBackNavigationEventInput(
         density = view.density,
         initialLayoutDirection = layoutDirection,
         getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen

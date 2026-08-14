@@ -17,7 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.navigationevent.UIKitBackGestureRecognizer
+import androidx.compose.ui.navigationevent.BackGestureRecognizer
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPHoverGestureRecognizer
@@ -272,7 +272,7 @@ private class TouchesGestureRecognizer(
     override fun canBePreventedByGestureRecognizer(
         preventingGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (preventingGestureRecognizer is UIKitBackGestureRecognizer) {
+        return if (preventingGestureRecognizer is BackGestureRecognizer) {
             cancelAllTrackedTouches()
             true
         } else if (canIgnoreDragGesture(preventingGestureRecognizer)) {
@@ -320,7 +320,7 @@ private class TouchesGestureRecognizer(
     override fun shouldRequireFailureOfGestureRecognizer(
         otherGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return (otherGestureRecognizer is UIKitBackGestureRecognizer &&
+        return (otherGestureRecognizer is BackGestureRecognizer &&
             otherGestureRecognizer.state in activeGestureStates) ||
             super.shouldRequireFailureOfGestureRecognizer(otherGestureRecognizer)
     }

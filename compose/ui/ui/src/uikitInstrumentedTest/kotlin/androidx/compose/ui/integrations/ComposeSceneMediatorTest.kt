@@ -17,7 +17,7 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -104,7 +104,7 @@ class ComposeSceneMediatorTest {
             windowContext = PlatformWindowContext(),
             architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
             coroutineContext = coroutineContext,
-            navigationEventInput = UIKitNavigationEventInput(
+            navigationEventInput = IosBackNavigationEventInput(
                 density = Density(1f),
                 initialLayoutDirection = LayoutDirection.Ltr,
                 getTopLeftOffsetInWindow = { IntOffset.Zero },

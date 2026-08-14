@@ -53,7 +53,7 @@ import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.layout.OffsetToFocusedRect
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -194,7 +194,7 @@ internal class ComposeSceneMediator(
     private val windowContext: WindowContext,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
-    private val navigationEventInput: UIKitNavigationEventInput,
+    private val navigationEventInput: IosBackNavigationEventInput,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
 ) {
