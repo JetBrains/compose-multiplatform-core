@@ -59,23 +59,23 @@ internal interface KeyboardVisibilityObserver {
 }
 
 internal object KeyboardVisibilityListener {
-    private val listener = NativeKeyboardVisibilityListener()
+    private val observer = KeyboardVisibilityNotificationObserver()
     private var initOnce = false
     fun initialize() {
         if (initOnce) { return }
         initOnce = true
-        listener.startKeyboardChangesObserving()
+        observer.startKeyboardChangesObserving()
     }
 
-    fun addObserver(observer: KeyboardVisibilityObserver) = listener.observers.add(observer)
+    fun addObserver(observer: KeyboardVisibilityObserver) = this.observer.subscribers.add(observer)
 
-    fun removeObserver(observer: KeyboardVisibilityObserver) = listener.observers.remove(observer)
+    fun removeObserver(observer: KeyboardVisibilityObserver) = this.observer.subscribers.remove(observer)
 
-    val keyboardFrame: CValue<CGRect> get() = listener.keyboardFrame
+    val keyboardFrame: CValue<CGRect> get() = observer.keyboardFrame
 }
 
-private class NativeKeyboardVisibilityListener : NSObject() {
-    val observers = mutableSetOf<KeyboardVisibilityObserver>()
+private class KeyboardVisibilityNotificationObserver : NSObject() {
+    val subscribers = mutableSetOf<KeyboardVisibilityObserver>()
 
     fun startKeyboardChangesObserving() {
         NSNotificationCenter.defaultCenter.addObserver(
@@ -104,7 +104,7 @@ private class NativeKeyboardVisibilityListener : NSObject() {
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun keyboardWillShow(arg: NSNotification) {
-        observers.forEach {
+        subscribers.forEach {
             it.keyboardWillShow(arg.endFrame, arg.duration, arg.animationOptions)
         }
         keyboardFrame = arg.endFrame
@@ -113,7 +113,7 @@ private class NativeKeyboardVisibilityListener : NSObject() {
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun keyboardWillHide(arg: NSNotification) {
-        observers.forEach {
+        subscribers.forEach {
             it.keyboardWillHide(CGRectZero.readValue(), arg.duration, arg.animationOptions)
         }
         keyboardFrame = CGRectZero.readValue()
@@ -122,7 +122,7 @@ private class NativeKeyboardVisibilityListener : NSObject() {
     @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun keyboardWillChangeFrame(arg: NSNotification) {
-        observers.forEach {
+        subscribers.forEach {
             it.keyboardWillChangeFrame(arg.endFrame, arg.duration, arg.animationOptions)
         }
         keyboardFrame = arg.endFrame
