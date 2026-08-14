@@ -455,7 +455,7 @@ internal class ComposeSceneMediator(
     }
 
     private val textInputServiceAdapter by lazy {
-        IosTextInputServiceAdapter(
+        TextInputServiceAdapter(
             textInputService,
             coroutineScope
         )
