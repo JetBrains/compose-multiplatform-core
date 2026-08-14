@@ -19,31 +19,41 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.runtime.CompositeKeyHashCode
 import androidx.compose.runtime.CompositionContext
 import platform.UIKit.UIView
+import platform.UIKit.UIViewController
+import platform.UIKit.addChildViewController
+import platform.UIKit.didMoveToParentViewController
+import platform.UIKit.removeFromParentViewController
+import platform.UIKit.willMoveToParentViewController
 
-internal class UIKitInteropViewHolder<T : UIView>(
+internal class IosInteropViewControllerHolder<T : UIViewController>(
     factory: () -> T,
     interopContainer: InteropContainer,
+    private val parentViewController: UIViewController,
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
-    compositionContext: CompositionContext
+    compositionContext: CompositionContext,
 ) : IosInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,
     compositeKeyHashCode,
-    compositionContext
+    compositionContext,
 ) {
     override val userComponentView: UIView
-        get() = interopView
+        get() = interopView.view
 
     override fun insertInteropView(root: InteropViewGroup, index: Int) {
+        parentViewController.addChildViewController(interopView)
         root.insertSubview(group, index.toLong())
+        interopView.didMoveToParentViewController(parentViewController)
 
         super.insertInteropView(root, index)
     }
 
     override fun removeInteropView(root: InteropViewGroup) {
+        interopView.willMoveToParentViewController(null)
         group.removeFromSuperview()
+        interopView.removeFromParentViewController()
 
         super.removeInteropView(root)
     }
