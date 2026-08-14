@@ -84,7 +84,7 @@ internal class IosComposeSceneLayer(
             }
         }
 
-    val interactionView = UIKitComposeSceneLayerView(
+    val interactionView = ComposeSceneLayerView(
         ::onDidMoveToWindow,
     )
 

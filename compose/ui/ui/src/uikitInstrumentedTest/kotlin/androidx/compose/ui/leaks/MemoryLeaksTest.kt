@@ -488,7 +488,7 @@ class MemoryLeaksTest {
             assertEquals(
                 expected = 6,
                 actual = subviewsReferences.count(),
-                message = "Expected 6 subviews: [ComposeLayersView, ComposeContainerView, UIKitComposeSceneLayerView, BackgroundInputView, MetalView, OverlayInputView]" +
+                message = "Expected 6 subviews: [ComposeLayersView, ComposeContainerView, ComposeSceneLayerView, BackgroundInputView, MetalView, OverlayInputView]" +
                     ", but given: ${
                         subviewsReferences.mapNotNull { ref ->
                             ref.get()?.let { it::class.simpleName }
