@@ -88,7 +88,7 @@ private class UIKitInteropRemeasureRequesterNode(
     }
 
     private fun DelegatableNode.isAttachedToUIKitInteropLayoutNode(): Boolean =
-        requireLayoutNode().interopViewFactoryHolder is UIKitInteropLayoutNodeHolder
+        requireLayoutNode().interopViewFactoryHolder is InteropLayoutNodeHolder
 }
 
 /**
@@ -97,4 +97,4 @@ private class UIKitInteropRemeasureRequesterNode(
  * Used to ensure that [Modifier.remeasureRequester] only registers targets that correspond to
  * UIKit interop elements, and does not accidentally remeasure arbitrary Compose nodes.
  */
-internal interface UIKitInteropLayoutNodeHolder
+internal interface InteropLayoutNodeHolder
