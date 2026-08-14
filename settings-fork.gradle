@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-// Apply the fork's skiko setup so that the SKIKO_VERSION env var override is repsected
+// Apply the fork's skiko setup so that the SKIKO_VERSION env var override is respected
 apply(from: "buildSrc-fork/settingsScripts/skiko-setup.groovy")
 skikoSetup.defineSkikoInVersionCatalog(settings)
 
