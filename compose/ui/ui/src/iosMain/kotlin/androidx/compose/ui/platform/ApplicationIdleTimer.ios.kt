@@ -18,8 +18,8 @@ package androidx.compose.ui.platform
 
 import platform.UIKit.UIApplication
 
-internal object UIKitIdleTimerManager {
-    val isIdleTimerDisabled: Boolean get() = UIApplication.sharedApplication.idleTimerDisabled
+internal object ApplicationIdleTimer {
+    val isDisabled: Boolean get() = UIApplication.sharedApplication.idleTimerDisabled
 
     private val clients = mutableSetOf<Any>()
 

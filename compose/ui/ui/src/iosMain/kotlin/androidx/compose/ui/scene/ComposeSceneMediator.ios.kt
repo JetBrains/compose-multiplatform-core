@@ -63,7 +63,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
-import androidx.compose.ui.platform.UIKitIdleTimerManager
+import androidx.compose.ui.platform.ApplicationIdleTimer
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.UIKitWindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
@@ -914,8 +914,8 @@ internal class ComposeSceneMediator(
             get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
 
         override var isKeepScreenOnEnabled: Boolean
-            get() = UIKitIdleTimerManager.isIdleTimerDisabled
-            set(value) { UIKitIdleTimerManager.setIdleTimerState(this@ComposeSceneMediator, value) }
+            get() = ApplicationIdleTimer.isDisabled
+            set(value) { ApplicationIdleTimer.setIdleTimerState(this@ComposeSceneMediator, value) }
 
         override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
             frameChoreographer.voteFrameRate(frameRate, frameRateCategory)
