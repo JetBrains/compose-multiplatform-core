@@ -18,7 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.DpSize
@@ -55,7 +55,7 @@ internal class ComposeLayersViewController(
     private val coroutineContext: CoroutineContext,
     private val hostingComposeView: ComposeContainerView
 ): UIViewController(nibName = null, bundle = null) {
-    val windowContext = PlatformWindowContext()
+    val windowContext = WindowContext()
 
     private var hasViewAppeared = false
 

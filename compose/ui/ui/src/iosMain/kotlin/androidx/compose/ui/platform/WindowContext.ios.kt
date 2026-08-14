@@ -36,7 +36,7 @@ import platform.UIKit.UIWindow
 /**
  * Tracking a state of window.
  */
-internal class PlatformWindowContext {
+internal class WindowContext {
     private val _windowInfo = WindowInfoImpl()
 
     private val sceneFocusObserver = SceneActiveStateListener(getScene = { window?.windowScene }) {
