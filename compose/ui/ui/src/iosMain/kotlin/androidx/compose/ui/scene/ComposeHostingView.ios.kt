@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.DisplayLinkListener
-import androidx.compose.ui.window.MetalRedrawer
 import androidx.lifecycle.Lifecycle
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
@@ -49,9 +48,6 @@ internal class ComposeHostingView(
         content = content,
         lifecycleDelegate = lifecycleDelegate
     )
-
-    @VisibleForTesting
-    val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
 
     @VisibleForTesting
     fun hasInvalidations(): Boolean = container.hasInvalidations()

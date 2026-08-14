@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.scene
 
+import androidx.annotation.VisibleForTesting
+import platform.UIKit.UIContentSizeCategory
 import platform.UIKit.UIContentSizeCategoryAccessibilityExtraExtraExtraLarge
 import platform.UIKit.UIContentSizeCategoryAccessibilityExtraExtraLarge
 import platform.UIKit.UIContentSizeCategoryAccessibilityExtraLarge
@@ -31,7 +33,9 @@ import platform.UIKit.UIContentSizeCategorySmall
 import platform.UIKit.UIContentSizeCategoryUnspecified
 import platform.UIKit.UIView
 
-internal class FontScale(private val view: UIView) {
+internal fun FontScale(view: UIView) = FontScale({ view.traitCollection.preferredContentSizeCategory ?: UIContentSizeCategoryUnspecified })
+
+internal class FontScale @VisibleForTesting constructor(private val preferredContentSizeCategory: () -> UIContentSizeCategory) {
     private val listeners = mutableListOf<Listener>()
 
     var value: Float = calculateValue()
@@ -50,10 +54,6 @@ internal class FontScale(private val view: UIView) {
     }
 
     fun onTraitCollectionDidChange() {
-        updateValue()
-    }
-
-    private fun updateValue() {
         val newValue = calculateValue()
 
         if (newValue != value) {
@@ -62,11 +62,8 @@ internal class FontScale(private val view: UIView) {
         }
     }
 
-    private fun calculateValue(): Float {
-        val contentSizeCategory =
-            view.traitCollection.preferredContentSizeCategory ?: UIContentSizeCategoryUnspecified
-        return uiContentSizeCategoryToFontScaleMap[contentSizeCategory] ?: 1f
-    }
+    private fun calculateValue(): Float =
+        uiContentSizeCategoryToFontScaleMap[preferredContentSizeCategory()] ?: 1f
 }
 
 private val uiContentSizeCategoryToFontScaleMap = mapOf(

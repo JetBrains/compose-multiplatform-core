@@ -25,7 +25,6 @@ import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
-import androidx.compose.ui.window.MetalRedrawer
 import androidx.lifecycle.Lifecycle
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.NativeRuntimeApi
@@ -54,9 +53,6 @@ internal class ComposeHostingViewController(
         content = content,
         lifecycleDelegate = lifecycleDelegate
     )
-
-    @VisibleForTesting
-    val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
 
     @VisibleForTesting
     fun hasInvalidations(): Boolean = container.hasInvalidations()
