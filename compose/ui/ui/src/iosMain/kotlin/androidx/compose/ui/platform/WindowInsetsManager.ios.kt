@@ -182,7 +182,7 @@ internal class WindowInsetsManager(
                 val derivedSafeAreaInsets: () -> PlatformInsets by lazy { { PlatformInsets.Zero } }
                 val derivedKeyboardOverlapHeight: () -> Int by lazy { { 0 } }
 
-                UIKitWindowInsets(
+                WindowInsets(
                     if (safeInsets) derivedLayoutMargins else layoutMargins,
                     if (safeInsets) derivedSafeAreaInsets else safeAreaInsets,
                     if (ime) derivedKeyboardOverlapHeight else keyboardOverlapHeight,
