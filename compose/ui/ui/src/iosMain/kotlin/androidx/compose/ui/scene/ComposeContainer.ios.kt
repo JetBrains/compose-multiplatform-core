@@ -377,7 +377,7 @@ internal class ComposeContainer(
                 focusable: Boolean,
                 consumePointerInputOutside: Boolean,
             ): ComposeSceneLayer {
-                val layer = UIKitComposeSceneLayer(
+                val layer = IosComposeSceneLayer(
                     frameChoreographer = frameChoreographer,
                     onClosed = {
                         layersHolder.getLayersViewController().detach(it)

@@ -48,7 +48,7 @@ import platform.UIKit.beginAppearanceTransition
 import platform.UIKit.endAppearanceTransition
 
 /**
- * A class responsible for managing and rendering [UIKitComposeSceneLayer]s.
+ * A class responsible for managing and rendering [IosComposeSceneLayer]s.
  */
 internal class ComposeLayersViewController(
     useSeparateRenderThreadWhenPossible: Boolean,
@@ -160,7 +160,7 @@ internal class ComposeLayersViewController(
         layers.fastForEach { it.doMeasureAndLayout() }
     }
 
-    fun withLayers(block: (List<UIKitComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)
+    fun withLayers(block: (List<IosComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)
 
     override fun loadView() {
         this.view = ComposeLayersView()
@@ -169,7 +169,7 @@ internal class ComposeLayersViewController(
 
     val hasInvalidations: Boolean get() = this.layers.any { it.hasInvalidations }
 
-    private val layers = mutableListOf<UIKitComposeSceneLayer>()
+    private val layers = mutableListOf<IosComposeSceneLayer>()
 
     private val layersCache = CopiedList {
         it.addAll(this.layers)
@@ -229,7 +229,7 @@ internal class ComposeLayersViewController(
         windowContext.dispose()
     }
 
-    fun attach(layer: UIKitComposeSceneLayer) {
+    fun attach(layer: IosComposeSceneLayer) {
         val isFirstLayer = layers.isEmpty()
         layers.add(layer)
         composeContainerView.insertSubview(layer.interactionView, belowSubview = metalView.view)
@@ -245,7 +245,7 @@ internal class ComposeLayersViewController(
         invalidateDraw()
     }
 
-    fun detach(layer: UIKitComposeSceneLayer) {
+    fun detach(layer: IosComposeSceneLayer) {
         if (hasViewAppeared) {
             layer.sceneWillDisappear()
         }

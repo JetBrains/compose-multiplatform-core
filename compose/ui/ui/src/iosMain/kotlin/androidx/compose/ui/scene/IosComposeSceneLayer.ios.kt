@@ -48,9 +48,9 @@ import kotlinx.coroutines.Job
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
-internal class UIKitComposeSceneLayer(
+internal class IosComposeSceneLayer(
     private val frameChoreographer: FrameChoreographer,
-    private val onClosed: (UIKitComposeSceneLayer) -> Unit,
+    private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
