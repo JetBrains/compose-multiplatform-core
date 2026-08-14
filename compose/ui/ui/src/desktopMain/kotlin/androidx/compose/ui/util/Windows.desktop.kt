@@ -127,10 +127,13 @@ internal fun Window.setPositionImpl(
 ) = when (position) {
     WindowPosition.PlatformDefault -> location = platformDefaultPosition()
     is WindowPosition.Aligned -> alignToScreen(position.alignment)
-    is WindowPosition.Absolute -> setLocation(
-        position.x.value.roundToInt(),
-        position.y.value.roundToInt()
-    )
+    is WindowPosition.Absolute -> {
+        println("Setting window location to ${position.x.value.roundToInt()}, ${position.y.value.roundToInt()}")
+        setLocation(
+            position.x.value.roundToInt(),
+            position.y.value.roundToInt()
+        )
+    }
 }
 
 internal fun Window.alignToScreen(alignment: Alignment) {
