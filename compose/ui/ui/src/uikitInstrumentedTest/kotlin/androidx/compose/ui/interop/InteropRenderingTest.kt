@@ -22,11 +22,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.captureScreenshot
-import androidx.compose.ui.test.utils.countPixels
+import androidx.compose.ui.test.utils.forEachSampledPixel
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import platform.UIKit.UIColor
 import platform.UIKit.UIView
 
@@ -56,14 +57,20 @@ class InteropRenderingTest {
                 view.backgroundColor == UIColor.blueColor
             }
 
+            var sampledPixels = 0
+            var bluePixels = 0
+            captureScreenshot()!!.forEachSampledPixel(maxSamples = 100) { _, _, color ->
+                sampledPixels++
+                if (color == Color.Blue) {
+                    bluePixels++
+                }
+            }
+
+            assertTrue(sampledPixels > 0, "Screenshot did not contain any pixels")
             assertEquals(
-                expected = 100,
-                actual = captureScreenshot()!!.countPixels(
-                    color = Color.Blue,
-                    step = 4,
-                    maxCount = 100,
-                ),
-                message = "Updated UIKitView was not visible in the rendered hierarchy"
+                expected = sampledPixels,
+                actual = bluePixels,
+                message = "Updated UIKitView was not visible across the rendered hierarchy"
             )
         }
 

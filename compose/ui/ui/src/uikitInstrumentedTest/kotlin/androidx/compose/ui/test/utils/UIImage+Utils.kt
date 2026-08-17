@@ -28,38 +28,52 @@ import platform.CoreGraphics.CGImageGetHeight
 import platform.CoreGraphics.CGImageGetWidth
 import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UIImage
+import kotlin.math.ceil
+import kotlin.math.sqrt
 
 internal fun UIImage.forEachPixel(step: Int = 1, onPixel: (x: Int, y: Int, color: Color) -> Unit) {
-    forEachPixelWhile(step) { x, y, color ->
-        onPixel(x, y, color)
-        true
+    require(step > 0) { "step must be positive" }
+
+    withPixelReader { width, height, colorAt ->
+        for (y in 0 until height step step) {
+            for (x in 0 until width step step) {
+                onPixel(x, y, colorAt(x, y))
+            }
+        }
     }
 }
 
 /**
- * Counts sampled pixels matching [color], stopping once [maxCount] matching pixels are found.
+ * Visits at most [maxSamples] points in an aspect-ratio-aware grid spanning the entire image.
  */
-internal fun UIImage.countPixels(
-    color: Color,
-    step: Int = 1,
-    maxCount: Int = Int.MAX_VALUE,
-): Int {
-    if (maxCount <= 0) return 0
+internal fun UIImage.forEachSampledPixel(
+    maxSamples: Int,
+    onPixel: (x: Int, y: Int, color: Color) -> Unit,
+) {
+    require(maxSamples > 0) { "maxSamples must be positive" }
 
-    var count = 0
-    forEachPixelWhile(step) { _, _, pixelColor ->
-        if (pixelColor == color) {
-            count++
+    withPixelReader { width, height, colorAt ->
+        val samples = minOf(maxSamples.toLong(), width.toLong() * height).toInt()
+        val columns = minOf(
+            width,
+            samples,
+            ceil(sqrt(samples.toDouble() * width / height)).toInt(),
+        )
+        val rows = minOf(height, samples / columns)
+
+        for (row in 0 until rows) {
+            for (column in 0 until columns) {
+                val x = ((column + 0.5) * width / columns).toInt()
+                val y = ((row + 0.5) * height / rows).toInt()
+                onPixel(x, y, colorAt(x, y))
+            }
         }
-        count < maxCount
     }
-    return count
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun UIImage.forEachPixelWhile(
-    step: Int,
-    onPixel: (x: Int, y: Int, color: Color) -> Boolean,
+private fun UIImage.withPixelReader(
+    block: (width: Int, height: Int, colorAt: (x: Int, y: Int) -> Color) -> Unit,
 ) {
     val cgImage = this.CGImage
     val width = CGImageGetWidth(cgImage).toInt()
@@ -82,18 +96,13 @@ private fun UIImage.forEachPixelWhile(
 
         CGContextDrawImage(context, CGRectMake(0.0, 0.0, width.toDouble(), height.toDouble()), cgImage)
 
-        for (y in 0 until height step step) {
-            for (x in 0 until width step step) {
-                val offset = (y * bytesPerRow) + (x * bytesPerPixel)
-                val r = pinned.get()[offset].toUByte().toInt()
-                val g = pinned.get()[offset + 1].toUByte().toInt()
-                val b = pinned.get()[offset + 2].toUByte().toInt()
-                val a = pinned.get()[offset + 3].toUByte().toInt()
-
-                if (!onPixel(x, y, Color(r, g, b, a))) {
-                    return@usePinned
-                }
-            }
+        block(width, height) { x, y ->
+            val offset = (y * bytesPerRow) + (x * bytesPerPixel)
+            val r = pinned.get()[offset].toUByte().toInt()
+            val g = pinned.get()[offset + 1].toUByte().toInt()
+            val b = pinned.get()[offset + 2].toUByte().toInt()
+            val a = pinned.get()[offset + 3].toUByte().toInt()
+            Color(r, g, b, a)
         }
     }
 }

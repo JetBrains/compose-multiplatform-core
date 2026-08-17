@@ -123,7 +123,6 @@ class ComposeSceneMediatorTest {
                     invalidateDraw = {},
                 )
             },
-            invalidateDraw = {},
         )
         return mediator
     }
