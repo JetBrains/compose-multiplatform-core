@@ -33,7 +33,9 @@ import kotlin.js.js
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
@@ -55,15 +57,21 @@ internal class ComposeWebSemanticsListener(
     private companion object {
         const val MAX_TIME_IN_DEBOUNCE_MS = 1000L
         const val DEBOUNCE_MS = 100L
-        const val DATA_SEMANTICS_ID_KEY = "data-semantics-id"
     }
 
+    private var hasStarted = false
+    private var hasStopped = false
+    private val startJob = Job()
 
     /**
      * @param coroutineScope The [CoroutineScope] used to run this listener,
      * typically the composition scope so the listener follows the composition lifecycle.
      */
     internal fun start(coroutineScope: CoroutineScope) {
+        check(!hasStopped) { "ComposeWebSemanticsListener can't be started after it was stopped" }
+        if (hasStarted) return
+        hasStarted = true
+
         // Here we do the following:
         // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the changes have settled (debounce 100ms).
         // - We track the time spent in "debounce", so eventually it must sync the a11y tree despite no pause in invalidation events (the changes couldn't settle).
@@ -81,12 +89,15 @@ internal class ComposeWebSemanticsListener(
                  |---------- 1200ms ---------|             |--- 100 ms ---| -> sync after changes settle
                                              | No forced sync here, because the debouncing has just started
          */
-        coroutineScope.launch {
+        coroutineScope.launch(
+            context = startJob,
+            start = CoroutineStart.UNDISPATCHED
+        ) {
             var timeSpentDebouncing = 0L
             var lastDebouncedTime = 0L
             var lastSyncTime = currentTimeMillis()
 
-            launch {
+            launch(start = CoroutineStart.UNDISPATCHED) {
                 invalidationChannel.receiveAsFlow().collect {
                     val currentTime = currentTimeMillis()
 
@@ -111,7 +122,7 @@ internal class ComposeWebSemanticsListener(
             }
 
             @OptIn(FlowPreview::class)
-            launch {
+            launch(start = CoroutineStart.UNDISPATCHED) {
                 // debounce until the Semantics changes settled for at least 100ms
                 syncTriggerChannel.receiveAsFlow().debounce(DEBOUNCE_MS.milliseconds).collect {
                     val currentTime = currentTimeMillis()
@@ -160,25 +171,25 @@ internal class ComposeWebSemanticsListener(
     private val nodes = MutableScatterMap<Int, SemanticsNode>()
     private val nodeToParent = MutableScatterMap<Int, Int>()
     private val webNodes = MutableScatterMap<Int, HTMLElement>()
+    private val elementToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
 
     // A reusable set of node ids for sync purposes
     private val allNodesIds = MutableIntSet()
 
     /**
-     * Event delegation: Single shared click listener for all a11y nodes
+     * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
+     * It's expected to be triggered by A11Y tools and tests (element.click()), not by pointer input.
      */
     private val onClick: (Event) -> Unit = onClick@ { event ->
-        val element = (event.target as? Element)
-            ?.closest("[$DATA_SEMANTICS_ID_KEY]")
+        val semanticsNode = (event.target as? HTMLElement)
+            ?.let { elementToSemanticsNode[it] }
             ?: return@onClick
-        val semanticsId = element.getAttribute(DATA_SEMANTICS_ID_KEY)?.toIntOrNull() ?: return@onClick
-        val config = nodes[semanticsId]?.config ?: return@onClick
 
-        if (config.contains(SemanticsProperties.Disabled)) {
-            return@onClick
-        }
+        val config = semanticsNode.config
 
-        if (config.contains(SemanticsActions.OnClick)) {
+        if (!config.contains(SemanticsProperties.Disabled) &&
+            config.contains(SemanticsActions.OnClick)
+        ) {
             config[SemanticsActions.OnClick].action?.invoke()
         }
     }
@@ -201,7 +212,10 @@ internal class ComposeWebSemanticsListener(
         }
 
         removedIds.forEach {
-            webNodes.remove(it)
+            val htmlNode = webNodes.remove(it)
+            if (htmlNode != null) {
+                elementToSemanticsNode.remove(htmlNode)
+            }
             nodes.remove(it)
             nodeToParent.remove(it)
         }
@@ -288,6 +302,7 @@ internal class ComposeWebSemanticsListener(
             val parentId = nodeToParent[currentId]
             val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
             htmlParent.appendChild(htmlNode)
+            elementToSemanticsNode[htmlNode] = node
         }
     }
 
@@ -298,12 +313,6 @@ internal class ComposeWebSemanticsListener(
         rootOffset: Offset,
         justCreated: Boolean = false,
     ) {
-        if (justCreated) {
-            // Mark the element with the semantics node ID for click event delegation lookup.
-            // https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes
-            htmlNode.setAttribute(DATA_SEMANTICS_ID_KEY, sn.id.toString())
-        }
-
         if (config.contains(SemanticsProperties.Text)) {
             val text = config[SemanticsProperties.Text]
             htmlNode.innerText = text.fastJoinToString("\n") { it.text }
@@ -353,6 +362,27 @@ internal class ComposeWebSemanticsListener(
 
             setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, width, height)
         }
+    }
+
+
+    internal fun stop() {
+        if (!hasStarted || hasStopped) return
+
+        webSemanticsRoot.removeEventListener("click", onClick)
+
+        dfsDeque.clear()
+        nodes.clear()
+        nodeToParent.clear()
+        webNodes.clear()
+        elementToSemanticsNode.clear()
+        allNodesIds.clear()
+
+        invalidationChannel.close()
+        syncTriggerChannel.close()
+        startJob.cancel()
+
+        removeAllChildrenOf(webSemanticsRoot)
+        hasStopped = true
     }
 }
 

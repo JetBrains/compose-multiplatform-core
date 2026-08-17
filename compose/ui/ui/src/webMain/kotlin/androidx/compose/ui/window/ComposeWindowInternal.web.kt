@@ -23,6 +23,7 @@ import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
@@ -235,6 +236,10 @@ internal class ComposeWindow(
 
     @VisibleForTesting
     internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
+
+    @VisibleForTesting
+    internal val webSemanticsListener: ComposeWebSemanticsListener?
+        get() = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -637,16 +642,17 @@ internal class ComposeWindow(
                         }
                     }
 
-                    val webSemanticsListener = platformContext.semanticsOwnerListener as? ComposeWebSemanticsListener
-                    if (webSemanticsListener != null) {
-                        LaunchedEffect(Unit) {
-                            coroutineScope {
-                                // The initial composition would create a lot of noisy invalidations,
-                                // so it makes sense to start the listener here - after the initial composition.
-                                // The composition's coroutine scope ties the listener's lifetime to the composition.
-                                webSemanticsListener.start(this)
-                            }
+                    LaunchedEffect(Unit) {
+                        coroutineScope {
+                            // The initial composition would create a lot of noisy invalidations,
+                            // so it makes sense to start the listener here - after the initial composition.
+                            // The composition's coroutine scope ties the listener's lifetime to the composition.
+                            webSemanticsListener?.start(this)
                         }
+                    }
+
+                    DisposableEffect(Unit) {
+                        onDispose { webSemanticsListener?.stop() }
                     }
                 }
             )
@@ -713,6 +719,7 @@ internal class ComposeWindow(
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
 
+        webSemanticsListener?.stop()
         webOutOfFrameExecutor?.dispose()
         scene.close()
         frameRecomposer.close()
@@ -724,6 +731,7 @@ internal class ComposeWindow(
         // modern browsers supposed to garbage collect all events on the element disposed
         // but actually we never can be sure dom element was collected in first place
         canvasEvents.dispose()
+
         isDisposed = true
     }
 
