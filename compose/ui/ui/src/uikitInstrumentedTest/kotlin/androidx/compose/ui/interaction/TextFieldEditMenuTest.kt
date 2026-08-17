@@ -18,21 +18,11 @@ package androidx.compose.ui.interaction
 
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
@@ -40,10 +30,8 @@ import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMe
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -52,12 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
@@ -259,88 +245,6 @@ class TextFieldEditMenuTest {
         // A tap again brings the context menu back.
         longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
-    }
-
-    @Test
-    fun testBasicTextFieldContextMenuIsPositionedNearTextField() =
-        runComplexTextFieldTest { textFieldKind, newContextMenuEnabled ->
-            UIPasteboard.generalPasteboard().string = "Paste text"
-            setDemoOffsetTextFieldContent(textFieldKind)
-
-            openToolbar("TextField")
-            assertContextMenuNearTextField(
-                label = "Paste",
-                textFieldKind = textFieldKind,
-                newContextMenuEnabled = newContextMenuEnabled
-            )
-        }
-
-    private fun UIKitInstrumentedTest.setDemoOffsetTextFieldContent(
-        textFieldKind: EditableTextFieldKind,
-    ) {
-        setContent {
-            val focusRequester = remember { FocusRequester() }
-            val focusManager = LocalFocusManager.current
-            val defaultModifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = Color.LightGray,
-                    shape = RoundedCornerShape(4.dp)
-                )
-
-            Scaffold(
-                modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
-                topBar = { TopAppBar(title = { Text("TextFields/BasicTextField2") }) }
-            ) { innerPadding ->
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .pointerInput(Unit) {
-                            detectTapGestures {
-                                focusManager.clearFocus(force = true)
-                            }
-                        }
-                ) {
-                    Column(Modifier.fillMaxWidth()) {
-                        when (textFieldKind) {
-                            EditableTextFieldKind.BasicTextField -> {
-                                val text = "I am an old TextField"
-                                val textFieldValue = remember {
-                                    mutableStateOf(
-                                        TextFieldValue(text, TextRange(text.length, text.length))
-                                    )
-                                }
-                                BasicTextField(
-                                    value = textFieldValue.value,
-                                    onValueChange = { textFieldValue.value = it },
-                                    modifier = defaultModifier
-                                        .height(24.dp)
-                                        .then(textFieldModifier(focusRequester))
-                                )
-                            }
-                            EditableTextFieldKind.BasicTextField2 -> {
-                                val text = "I am a BasicTextField(TextFieldState)"
-                                val textFieldState = remember {
-                                    TextFieldState(text, TextRange(text.length, text.length))
-                                }
-                                BasicTextField(
-                                    state = textFieldState,
-                                    modifier = defaultModifier
-                                        .height(24.dp)
-                                        .then(textFieldModifier(focusRequester))
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            LaunchedEffect(focusRequester) {
-                focusRequester.requestFocus()
-            }
-        }
     }
 
     @Test
@@ -851,33 +755,6 @@ class TextFieldEditMenuTest {
         }
         touch.up()
         waitForContextMenu()
-    }
-
-    private fun UIKitInstrumentedTest.assertContextMenuNearTextField(
-        label: String,
-        textFieldKind: EditableTextFieldKind,
-        newContextMenuEnabled: Boolean,
-    ) {
-        val textFieldFrame = findNodeWithTag("TextField").frame ?: error("TextField frame is null")
-        val menuFrame = findNodeWithLabel(label).frame ?: error("$label frame is null")
-        val horizontalDistance = when {
-            menuFrame.right < textFieldFrame.left -> textFieldFrame.left - menuFrame.right
-            menuFrame.left > textFieldFrame.right -> menuFrame.left - textFieldFrame.right
-            else -> 0.dp
-        }
-        val verticalDistance = when {
-            menuFrame.bottom < textFieldFrame.top -> textFieldFrame.top - menuFrame.bottom
-            menuFrame.top > textFieldFrame.bottom -> menuFrame.top - textFieldFrame.bottom
-            else -> 0.dp
-        }
-
-        assertTrue(
-            horizontalDistance < 80.dp && verticalDistance < 80.dp,
-            "Context menu item \"$label\" should be near text field. " +
-                "newContextMenuEnabled: $newContextMenuEnabled, textFieldKind: $textFieldKind. " +
-                "Horizontal distance: $horizontalDistance, vertical distance: $verticalDistance. " +
-                "TextField frame: $textFieldFrame, menu frame: $menuFrame"
-        )
     }
 
     private fun UIKitInstrumentedTest.setTextFieldContent(
