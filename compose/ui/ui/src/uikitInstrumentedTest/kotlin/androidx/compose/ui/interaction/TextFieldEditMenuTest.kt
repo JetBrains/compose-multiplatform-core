@@ -53,16 +53,15 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
-import androidx.compose.ui.test.findContextMenu
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.horizontalDistanceTo
 import androidx.compose.ui.test.utils.isLoupeView
-import androidx.compose.ui.test.utils.union
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.utils.verticalDistanceTo
 import androidx.compose.ui.test.waitForContextMenu
@@ -262,7 +261,7 @@ class TextFieldEditMenuTest {
     }
 
     @Test
- //   @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
+    @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
     fun testBasicTextFieldContextMenuIsPositionedNearCaret() =
         runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField)
 
@@ -864,7 +863,7 @@ class TextFieldEditMenuTest {
         textFieldKind: EditableTextFieldKind,
         newContextMenuEnabled: Boolean,
     ) {
-        val menuFrame = findContextMenuItemsFrame()
+        val menuFrame = findContextMenuFrame()
         val horizontalDistance = menuFrame.horizontalDistanceTo(caretFrame)
         val verticalDistance = menuFrame.verticalDistanceTo(caretFrame)
         val contextMenu = if (newContextMenuEnabled) "new menu" else "old menu"
@@ -883,9 +882,18 @@ class TextFieldEditMenuTest {
         )
     }
 
-    private fun UIKitInstrumentedTest.findContextMenuItemsFrame(): DpRect {
-        val contextMenu = findContextMenu()!!
-        return contextMenu.frame!!
+    private fun UIKitInstrumentedTest.findContextMenuFrame(): DpRect {
+        val contextMenu = firstNodeOrNull { node ->
+            node.element?.let { it::class.simpleName } == "_UIEditMenuContainerView"
+        } ?: error("Context menu is not found")
+
+        // _UIEditMenuContainerView is a full-screen host; its list child is the visible menu.
+        val contextMenuFrameNode = contextMenu.children?.firstOrNull { node ->
+            node.element?.let { it::class.simpleName } == "_UIEditMenuListView"
+        } ?: error("Context menu content is not found")
+
+        contextMenuFrameNode.assertVisibleInContainer()
+        return contextMenuFrameNode.frame ?: error("Context menu frame is null")
     }
 
     private fun TextLayoutResult.cursorFrameInWindow(
@@ -965,7 +973,7 @@ class TextFieldEditMenuTest {
     private companion object {
         private const val PARTIAL_SELECTION_TEXT = "accomplishment extraordinary magnificent establishment"
 
-        private val CARET_N_CONTEXT_MENU_MAX_DIST = 16.dp;
+        private val CARET_N_CONTEXT_MENU_MAX_DIST = 16.dp
     }
 
     @OptIn(ExperimentalFoundationApi::class)
