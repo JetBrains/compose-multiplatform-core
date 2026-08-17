@@ -349,7 +349,9 @@ internal fun Window.setBoundsFrom(
         measureContent = measureContent
     )
     with(scope) {
-        bounds = boundsProvider.getBounds().requireReal().toAwtRectangleSizeRoundedUp()
+        bounds = boundsProvider.getBounds().requireReal().toAwtRectangleSizeRoundedUp().also {
+            println("Setting window bounds to $it; insets are: $insets")
+        }
     }
 }
 
