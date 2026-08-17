@@ -1025,6 +1025,7 @@ class WindowV2StateTest {
             }
         }
         awaitIdle()
+        println("Window insets: ${window.insets}")
         assertEquals(
             expectedWindowSizeSansInsets + window.insets.toDpInsets(),
             windowState.bounds.size
