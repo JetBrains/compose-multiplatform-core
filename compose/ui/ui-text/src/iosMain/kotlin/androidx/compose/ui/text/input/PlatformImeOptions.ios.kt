@@ -276,7 +276,7 @@ val PlatformImeOptions.autocorrectionType: UITextAutocorrectionType?
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.spellCheckingType: UITextSpellCheckingType?
-    get() = (this as? PlatformImeOptionsImpl)?.spellCheckingType
+    get() = (this as? IosImeOptions)?.spellCheckingType
 
 @ExperimentalComposeUiApi
 val PlatformImeOptions.hasExplicitTextContentType: Boolean
