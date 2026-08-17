@@ -770,7 +770,7 @@ class DialogWindowV2StateTest {
         testName: String,
         sizeProvider: WindowSizeProvider,
         content: @Composable () -> Unit,
-        expectedWindowSizeSansInsets: DpSize,
+        expectedDialogSizeSansInsets: DpSize,
     ) = runApplicationTest {
         val dialogState = DialogState(
             initialBoundsProvider = WindowBoundsProvider(sizeProvider)
@@ -780,16 +780,21 @@ class DialogWindowV2StateTest {
             DialogWindow(
                 state = dialogState,
                 onCloseRequest = {},
+                // On Linux, insets are not known until the dialog is visible, but we set the
+                // bounds taking them into account before that
+                decoration =
+                    if (isLinux) WindowDecoration.Undecorated() else WindowDecoration.SystemDefault,
                 title = testName
             ) {
                 dialog = this.window
                 content()
             }
         }
+
         awaitIdle()
         assertEquals(
-            expectedWindowSizeSansInsets + dialog.insets.toDpInsets(),
-            dialogState.bounds.size
+            expected = expectedDialogSizeSansInsets + dialog.insets.toDpInsets(),
+            actual = dialogState.bounds.size
         )
     }
 
@@ -802,7 +807,7 @@ class DialogWindowV2StateTest {
                 width = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
+        expectedDialogSizeSansInsets = DpSize(400.dp, 500.dp)
     )
 
     @Test
@@ -814,7 +819,7 @@ class DialogWindowV2StateTest {
                 height = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
+        expectedDialogSizeSansInsets = DpSize(500.dp, 400.dp)
     )
 
     @Test
@@ -827,7 +832,7 @@ class DialogWindowV2StateTest {
                 layout(size, size) { }
             }
         },
-        expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
+        expectedDialogSizeSansInsets = DpSize(101.dp, 101.dp)
     )
 
     private fun runBoundsOverwriteTest(
