@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findFocusedUITextInput
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.forceNativeTextInputForTests
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
@@ -63,10 +64,12 @@ class NestedComposeTextFieldFocusTest {
                         ComposeUIView(
                             configure = { enforceStrictPlistSanityCheck = false }
                         ) {
-                            FocusReportingTextField(
-                                value = NestedFieldText,
-                                onFocusChanged = { nestedFocused = it }
-                            )
+                            forceNativeTextInputForTests {
+                                FocusReportingTextField(
+                                    value = NestedFieldText,
+                                    onFocusChanged = { nestedFocused = it }
+                                )
+                            }
                         }
                     },
                     modifier = Modifier

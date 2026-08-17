@@ -18,12 +18,15 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
+import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
@@ -59,6 +62,20 @@ import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.input.ImeOptions
+import androidx.compose.ui.text.input.PlatformImeOptions
+import androidx.compose.ui.text.input.autocapitalizationType
+import androidx.compose.ui.text.input.autocorrectionType
+import androidx.compose.ui.text.input.enablesReturnKeyAutomatically
+import androidx.compose.ui.text.input.hasExplicitTextContentType
+import androidx.compose.ui.text.input.inputAccessoryView
+import androidx.compose.ui.text.input.inputView
+import androidx.compose.ui.text.input.isSecureTextEntry
+import androidx.compose.ui.text.input.keyboardAppearance
+import androidx.compose.ui.text.input.keyboardType
+import androidx.compose.ui.text.input.returnKeyType
+import androidx.compose.ui.text.input.textContentType
+import androidx.compose.ui.text.input.writingToolsBehavior
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
@@ -383,7 +400,7 @@ internal class UIKitInstrumentedTest(
 
         return ComposeHostingView(
             configuration = configuration,
-            content = content,
+            content = { forceNativeTextInputForTests(content) },
         ).also {
             it.rootForTestListener = rootForTestRegistry
             this.hostingView = it
@@ -404,7 +421,7 @@ internal class UIKitInstrumentedTest(
 
         return ComposeHostingViewController(
             configuration = configuration,
-            content = content,
+            content = { forceNativeTextInputForTests(content) },
         ).also {
             it.rootForTestListener = rootForTestRegistry
             this.hostingViewController = it
@@ -905,6 +922,52 @@ internal class UIKitInstrumentedTest(
 
     fun AccessibilityTestNode.swipeLeft(fromEdge: Boolean = false, duration: Duration = SwipeDuration): UITouch {
         return swipe(fromPosition = { rightCenter().offsetBy(dx = (-16).dp) }, toPosition = { leftCenter().offsetBy(dx = 16.dp) }, fromEdge = fromEdge, duration = duration)
+    }
+}
+
+@Composable
+internal fun forceNativeTextInputForTests(content: @Composable () -> Unit) {
+    InterceptPlatformTextInput(
+        interceptor = { request, nextHandler ->
+            nextHandler.startInputMethod(request.withNativeTextInput())
+        },
+        content = content,
+    )
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun PlatformTextInputMethodRequest.withNativeTextInput(): PlatformTextInputMethodRequest {
+    val originalRequest = this
+    return object : PlatformTextInputMethodRequest by originalRequest {
+        override val imeOptions: ImeOptions
+            get() = originalRequest.imeOptions.withNativeTextInput()
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun ImeOptions.withNativeTextInput(): ImeOptions =
+    copy(platformImeOptions = platformImeOptions.withNativeTextInput())
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun PlatformImeOptions?.withNativeTextInput(): PlatformImeOptions {
+    val originalOptions = this
+    return PlatformImeOptions {
+        if (originalOptions != null) {
+            keyboardType(originalOptions.keyboardType)
+            keyboardAppearance(originalOptions.keyboardAppearance)
+            returnKeyType(originalOptions.returnKeyType)
+            if (originalOptions.hasExplicitTextContentType) {
+                textContentType(originalOptions.textContentType)
+            }
+            isSecureTextEntry(originalOptions.isSecureTextEntry)
+            enablesReturnKeyAutomatically(originalOptions.enablesReturnKeyAutomatically)
+            autocapitalizationType(originalOptions.autocapitalizationType)
+            autocorrectionType(originalOptions.autocorrectionType)
+            inputView(originalOptions.inputView)
+            inputAccessoryView(originalOptions.inputAccessoryView)
+            writingToolsBehavior(originalOptions.writingToolsBehavior)
+        }
+        usingNativeTextInput(true)
     }
 }
 
