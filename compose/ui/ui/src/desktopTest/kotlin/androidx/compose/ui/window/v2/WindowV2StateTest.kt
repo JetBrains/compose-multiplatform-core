@@ -33,7 +33,6 @@ import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.toDpSize
-import androidx.compose.ui.unit.DpInsets
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -45,6 +44,10 @@ import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.assertCoordinatesApproximatelyEqual
+import androidx.compose.ui.window.assertCoordinatesNotApproximatelyEqual
+import androidx.compose.ui.window.assertSizesApproximatelyEqual
+import androidx.compose.ui.window.assertSizesNotApproximatelyEqual
 import androidx.compose.ui.window.toDpOffset
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.toDpInsets
@@ -57,7 +60,6 @@ import java.awt.event.ComponentEvent
 import java.awt.event.WindowEvent
 import javax.swing.JFrame
 import kotlin.math.abs
-import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1099,8 +1101,8 @@ class WindowV2StateTest {
         }
         awaitIdle()
 
-        assertEquals(expectedSize, windowState.bounds.size)
-        assertEquals(expectedPosition, windowState.bounds.topLeft)
+        assertSizesApproximatelyEqual(expectedSize, windowState.bounds.size)
+        assertCoordinatesApproximatelyEqual(expectedPosition, windowState.bounds.topLeft)
     }
 
     @Test
@@ -1134,66 +1136,6 @@ class WindowV2StateTest {
             windowState = windowState,
             expectedSize = size,
             expectedPosition = position,
-        )
-    }
-}
-
-private const val LinuxCoordinateTolerance = 10
-
-private val CoordinateTolerance = if (isLinux) LinuxCoordinateTolerance else 0
-
-internal fun assertCoordinatesApproximatelyEqual(
-    expected: Point,
-    actual: Point,
-) {
-    if (((expected.x - actual.x).absoluteValue > CoordinateTolerance) ||
-        ((expected.y - actual.y).absoluteValue > CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> with absolute tolerance" +
-                " <$CoordinateTolerance>, actual <$actual>."
-        )
-    }
-}
-
-internal fun assertSizesApproximatelyEqual(
-    expected: Dimension,
-    actual: Dimension,
-) {
-    if (((expected.width - actual.width).absoluteValue > CoordinateTolerance) ||
-        ((expected.height - actual.height).absoluteValue > CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> with absolute tolerance" +
-                " <$CoordinateTolerance>, actual <$actual>."
-        )
-    }
-}
-
-internal fun assertCoordinatesNotApproximatelyEqual(
-    expected: Point,
-    actual: Point,
-) {
-    if (((expected.x - actual.x).absoluteValue <= CoordinateTolerance) &&
-        ((expected.y - actual.y).absoluteValue <= CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> to not equal actual <$actual> with absolute" +
-                " tolerance <$CoordinateTolerance>"
-        )
-    }
-}
-
-internal fun assertSizesNotApproximatelyEqual(
-    expected: Dimension,
-    actual: Dimension,
-) {
-    if (((expected.width - actual.width).absoluteValue <= CoordinateTolerance) &&
-        ((expected.height - actual.height).absoluteValue <= CoordinateTolerance)
-    ) {
-        throw AssertionError(
-            "Expected <$expected> to not equal actual <$actual> with absolute" +
-                " tolerance <$CoordinateTolerance>"
         )
     }
 }

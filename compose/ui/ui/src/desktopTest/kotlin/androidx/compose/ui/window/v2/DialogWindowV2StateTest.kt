@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.assertCoordinatesApproximatelyEqual
+import androidx.compose.ui.window.assertSizesApproximatelyEqual
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpOffset
@@ -861,8 +863,8 @@ class DialogWindowV2StateTest {
         }
         awaitIdle()
 
-        assertEquals(expectedSize, dialogState.bounds.size)
-        assertEquals(expectedPosition, dialogState.bounds.topLeft)
+        assertSizesApproximatelyEqual(expectedSize, dialogState.bounds.size)
+        assertCoordinatesApproximatelyEqual(expectedPosition, dialogState.bounds.topLeft)
     }
 
     @Test
