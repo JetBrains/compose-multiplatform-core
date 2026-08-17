@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntSet
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
@@ -130,15 +131,17 @@ internal class ComposeWebSemanticsListener(
         webSemanticsRoot.addEventListener("click", onClick)
     }
 
-    private var semanticsOwner: SemanticsOwner? = null
+    private val semanticsOwners = mutableListOf<SemanticsOwner>()
 
     override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-        this.semanticsOwner = semanticsOwner
+        if (semanticsOwners.contains(semanticsOwner)) return
+        semanticsOwners.add(semanticsOwner)
+        invalidationChannel.trySend(Unit)
     }
 
     override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-        if (semanticsOwner == this.semanticsOwner) {
-            this.semanticsOwner = null
+        if (semanticsOwners.remove(semanticsOwner)) {
+            invalidationChannel.trySend(Unit)
         }
     }
 
@@ -157,6 +160,9 @@ internal class ComposeWebSemanticsListener(
     private val nodes = MutableScatterMap<Int, SemanticsNode>()
     private val nodeToParent = MutableScatterMap<Int, Int>()
     private val webNodes = MutableScatterMap<Int, HTMLElement>()
+
+    // A reusable set of node ids for sync purposes
+    private val allNodesIds = MutableIntSet()
 
     /**
      * Event delegation: Single shared click listener for all a11y nodes
@@ -179,16 +185,61 @@ internal class ComposeWebSemanticsListener(
 
 
     private fun syncSemanticsWithWebA11Y() {
-        fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
+        allNodesIds.clear()
 
-        val root = semanticsOwner?.rootSemanticsNode ?: return
-
-        if (root.isValid()) {
-            dfsDeque.addLast(root)
+        semanticsOwners.fastForEach {
+            syncSemanticsWithWebA11Y(it, allNodesIds)
         }
 
+        val removedIds = mutableSetOf<Int>()
 
-        val allIds = mutableSetOf<Int>()
+        webNodes.forEachKey {
+            if (it !in allNodesIds) {
+                webNodes[it]?.remove()
+                removedIds.add(it)
+            }
+        }
+
+        removedIds.forEach {
+            webNodes.remove(it)
+            nodes.remove(it)
+            nodeToParent.remove(it)
+        }
+
+        updateInertRoots()
+    }
+
+    // The last (top) root is never inert.
+    // Other owners might become inert when the top root contains a dialog.
+    // See LayersA11YTest.
+    private fun updateInertRoots() {
+        val lastOwnerRoot = webSemanticsRoot.lastElementChild
+        lastOwnerRoot?.setInert(false)
+
+        // Assuming the dialog semantics are set on the first node of the owner:
+        val isModalOnTop = lastOwnerRoot?.firstElementChild?.hasAttribute("aria-modal") == true
+
+        val children = webSemanticsRoot.children
+        repeat(children.length - 1) {
+            val ownerRoot = children.item(it)
+            ownerRoot?.setInert(isModalOnTop)
+        }
+    }
+
+    /**
+     * Sync the tree corresponding to the [semanticsOwner] and populate [allNodesIds] - a set of node ids.
+     */
+    private fun syncSemanticsWithWebA11Y(
+        semanticsOwner: SemanticsOwner,
+        allNodesIds: MutableIntSet
+    ) {
+        fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
+
+        val root = semanticsOwner.rootSemanticsNode
+        if (!root.isValid()) return
+
+        dfsDeque.clear()
+        dfsDeque.addLast(root)
 
         val rootPosition = webSemanticsRoot.getBoundingClientRect().let {
             Offset(it.left.toFloat(), it.top.toFloat())
@@ -197,7 +248,10 @@ internal class ComposeWebSemanticsListener(
         while (!dfsDeque.isEmpty()) {
             val node = dfsDeque.removeLast()
             val currentId = node.id
-            allIds.add(currentId)
+            allNodesIds.add(currentId)
+
+            // `config` recreates the merged subtree on every call, so read it once
+            val config = node.config
 
             val children = node.replacedChildren.asReversed()
             dfsDeque.addAll(children)
@@ -215,7 +269,7 @@ internal class ComposeWebSemanticsListener(
                     removeAllChildrenOf(htmlNode)
                 }
 
-                syncNode(node, htmlNode, rootPosition)
+                syncNode(node, config, htmlNode, rootPosition)
                 htmlNode
             } else {
                 nodes[currentId] = node
@@ -226,7 +280,7 @@ internal class ComposeWebSemanticsListener(
                 }
 
                 webNodes[currentId] = htmlNode
-                syncNode(node, htmlNode, rootPosition, true)
+                syncNode(node, config, htmlNode, rootPosition, true)
                 htmlNode
             }
 
@@ -235,25 +289,11 @@ internal class ComposeWebSemanticsListener(
             val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
             htmlParent.appendChild(htmlNode)
         }
-
-        val removedIds = mutableSetOf<Int>()
-
-        webNodes.forEachKey {
-            if (it !in allIds) {
-                webNodes[it]?.remove()
-                removedIds.add(it)
-            }
-        }
-
-        removedIds.forEach {
-            webNodes.remove(it)
-            nodes.remove(it)
-            nodeToParent.remove(it)
-        }
     }
 
     private fun syncNode(
         sn: SemanticsNode,
+        config: SemanticsConfiguration,
         htmlNode: HTMLElement,
         rootOffset: Offset,
         justCreated: Boolean = false,
@@ -263,8 +303,6 @@ internal class ComposeWebSemanticsListener(
             // https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes
             htmlNode.setAttribute(DATA_SEMANTICS_ID_KEY, sn.id.toString())
         }
-
-        val config = sn.config
 
         if (config.contains(SemanticsProperties.Text)) {
             val text = config[SemanticsProperties.Text]
@@ -300,6 +338,12 @@ internal class ComposeWebSemanticsListener(
         }
 
         setA11YAriaRole(element = htmlNode, config.getRoleId())
+
+        if (config.contains(SemanticsProperties.IsDialog)) {
+            htmlNode.setAttribute("aria-modal", "true")
+        } else {
+            htmlNode.removeAttribute("aria-modal")
+        }
 
         val density = sn.layoutNode.density
         sn.boundsInRoot.let { rect ->
@@ -346,6 +390,7 @@ internal object AriaRoleId {
     const val TextBox = 8
     const val List = 9
     const val Grid = 10
+    const val Dialog = 11
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -392,6 +437,11 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
         }
     }
 
+    // Checked last: a layer's structural role outranks whatever its content looks like.
+    if (this.contains(SemanticsProperties.IsDialog)) {
+        roleId = AriaRoleId.Dialog
+    }
+
     return roleId
 }
 
@@ -436,6 +486,9 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
             case 10: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/grid_role
                 roleValue = "grid";
                 break;
+            case 11: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role
+                roleValue = "dialog";
+                break;
             default:
                 break;
         }
@@ -451,4 +504,20 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
 private fun removeAllChildrenOf(element: HTMLElement) {
     // language=javascript
     js("element.replaceChildren()")
+}
+
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/inert
+ *  When an element is inert, it along with all of the element's descendants,
+ *  including normally interactive elements such as links, buttons, and form controls are disabled
+ *  because they cannot receive focus or be clicked.
+ */
+private fun Element.setInert(inert: Boolean) {
+    val element = this.unsafeCast<CanToggleAttribute>()
+    element.toggleAttribute("inert", inert)
+}
+
+private external interface CanToggleAttribute : JsAny {
+    // https://developer.mozilla.org/en-US/docs/Web/API/Element/toggleAttribute
+    fun toggleAttribute(attributeName: String, force: Boolean): Boolean
 }
