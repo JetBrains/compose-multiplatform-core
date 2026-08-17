@@ -21,7 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitViewController
-import androidx.compose.ui.uikit.SizeReportingStrategy
+import androidx.compose.ui.uikit.PreferredSizeReportingStrategy
 import androidx.compose.ui.window.ComposeUIView
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -124,7 +124,7 @@ internal fun swiftUIIntrinsicSizingExamples(
 @OptIn(ExperimentalComposeUiApi::class)
 private fun intrinsicComposeUIView(content: @Composable () -> Unit): UIView = ComposeUIView(
     configure = {
-        sizeReportingStrategy = SizeReportingStrategy.IntrinsicContentSize
+        preferredSizeReportingStrategy = PreferredSizeReportingStrategy.IntrinsicContentSize
     },
     content = content,
 )
