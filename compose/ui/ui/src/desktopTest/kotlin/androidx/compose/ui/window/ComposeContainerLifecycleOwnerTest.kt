@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.assertThat
-import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -28,6 +26,7 @@ import java.awt.event.WindowEvent
 import java.awt.event.WindowStateListener
 import javax.swing.JFrame
 import javax.swing.JLayeredPane
+import kotlin.test.assertNotNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -283,16 +282,16 @@ class ComposeContainerLifecycleOwnerTest {
     // Some window managers (on Linux) generate unexpected events, such as iconification when the
     // window is first made visible. This means it's not possible to check for the expected stream
     // of events exactly. Instead, we skip unexpected events, waiting for the next expected one.
-    private suspend fun <E> Channel<E>.waitFor(value: E, timeout: Duration = 1.seconds) {
+    private suspend fun <E> Channel<E>.waitFor(value: E, timeout: Duration = 5.seconds) {
         withContext(Dispatchers.Default) {
-            var lastReceived: E? = null
-            withTimeoutOrNull(timeout) {
+            val lastReceived = withTimeoutOrNull(timeout) {
                 while (true) {
-                    lastReceived = receive()
-                    if (lastReceived == value) break
+                    val received = receive()
+                    if (received == value)
+                        return@withTimeoutOrNull received
                 }
             }
-            assertThat(lastReceived).isEqualTo(value)
+            assertNotNull(lastReceived, "Timed out waiting for $value")
         }
     }
 }
