@@ -195,7 +195,6 @@ internal class ComposeSceneMediator(
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
-    invalidateDraw: () -> Unit,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
 ) {
@@ -235,6 +234,12 @@ internal class ComposeSceneMediator(
     private val frameChoreographerListener = object : FrameChoreographer.Listener {
         override fun onDisplayLinkTick() {
             didDrawSinceDisplayLink = false
+        }
+
+        override fun onFramePerformed() {
+            if (interopContainer.hasPendingTransaction) {
+                scene.requestDraw()
+            }
         }
 
         override fun onOutOfFrame(
@@ -366,7 +371,7 @@ internal class ComposeSceneMediator(
     private val interopContainer = IosInteropContainer(
         overlayContainer = _overlayView,
         backgroundContainer = _backgroundView,
-        requestRedraw = invalidateDraw
+        requestRedraw = frameChoreographer::requestFrame
     )
 
     private val dragAndDropManager = IosDragAndDropManager(

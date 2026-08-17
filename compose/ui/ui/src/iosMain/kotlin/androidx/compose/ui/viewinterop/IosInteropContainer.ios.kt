@@ -41,6 +41,8 @@ internal class IosInteropContainer(
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
 
+    val hasPendingTransaction: Boolean get() = transaction.actions.isNotEmpty()
+
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
      * Snapshot observer that is used by underlying [InteropViewHolder] to observe changes in
@@ -134,11 +136,10 @@ internal class IosInteropContainer(
     }
 
     override fun scheduleUpdate(action: () -> Unit) {
-        requestRedraw()
-
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
         transaction.add(action)
+        requestRedraw()
     }
 
     // TODO: Should be the same as [Owner.onInteropViewLayoutChange]?

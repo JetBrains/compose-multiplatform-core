@@ -307,7 +307,6 @@ internal class ComposeContainer(
                     invalidateDraw = invalidateDraw,
                 )
             },
-            invalidateDraw = invalidateDraw,
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->

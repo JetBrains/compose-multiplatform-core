@@ -84,6 +84,11 @@ internal class FrameChoreographer private constructor(
         fun onDisplayLinkTick()
 
         /**
+         * Callback invoked after the shared recomposer has advanced for this display-link tick.
+         */
+        fun onFramePerformed() = Unit
+
+        /**
          * The next runloop is performed after all draw calls are processed and before the next
          * runloop starts, so this is the moment out-of-frame work should run.
          */
@@ -268,6 +273,7 @@ internal class FrameChoreographer private constructor(
 
         displayLinkFrameRate.updateFrameRateIfNeeded()
         performFrameIfNeeded()
+        listeners.fastForEach { it.onFramePerformed() }
         if (advancedFramesCount <= 0 && ongoingActivitiesCount == 0) {
             advancedFramesCount = 0
             displayLink.paused = true

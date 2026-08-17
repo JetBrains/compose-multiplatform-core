@@ -195,6 +195,13 @@ sealed interface ComposeScene : AutoCloseable {
     fun draw(canvas: Canvas)
 
     /**
+     * Requests the scene's host draw pass even when no Compose-owned layer is invalidated.
+     *
+     * Does not recompose the scene.
+     */
+    fun requestDraw()
+
+    /**
      * Send pointer event to the content.
      *
      * @param eventType Indicates the primary reason that the event was sent.
