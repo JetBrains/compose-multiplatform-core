@@ -132,7 +132,7 @@ class TextFieldMagnifierTest {
     private val textValue = "TEXT"
     private val keyboardOptions = KeyboardOptions(
         platformImeOptions = PlatformImeOptions {
-            usingNativeTextInput(false)
+            usingNativeTextInput(true)
         }
     )
     private fun modifier(focusRequester: FocusRequester): Modifier = Modifier
