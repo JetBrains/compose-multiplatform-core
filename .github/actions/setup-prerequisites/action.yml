@@ -6,7 +6,7 @@ runs:
       uses: actions/setup-java@v4
       with:
         java-version: '21'
-        distribution: 'corretto'
+        distribution: 'jetbrains'
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
