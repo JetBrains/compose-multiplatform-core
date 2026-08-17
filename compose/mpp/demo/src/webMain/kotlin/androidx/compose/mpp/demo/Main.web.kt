@@ -71,7 +71,7 @@ fun defaultComposeDemo() {
                 },
                 HtmlInteropDemos,
                 HapticFeedbackExample,
-            )
+            ) + webTargetSpecificScreens
         ) }
 
         if (fontsLoaded.value) {
