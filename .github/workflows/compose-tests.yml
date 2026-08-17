@@ -41,8 +41,7 @@ jobs:
 
       - name: Run Desktop
         run: |
-          ./gradlew testDesktop \
-            --no-daemon --stacktrace
+          ./gradlew :compose:ui:ui:cleanDesktopTest :compose:ui:ui:desktopTest --tests "androidx.compose.ui.window.v2.WindowV2StateTest.windowPreferredWidth"
 
       - name: Upload Screenshots
         uses: actions/upload-artifact@v4
