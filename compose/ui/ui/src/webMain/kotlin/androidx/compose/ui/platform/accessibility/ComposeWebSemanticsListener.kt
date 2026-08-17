@@ -513,11 +513,11 @@ private fun removeAllChildrenOf(element: HTMLElement) {
  *  because they cannot receive focus or be clicked.
  */
 private fun Element.setInert(inert: Boolean) {
-    if (inert == hasAttribute("inert")) return
+    val element = this.unsafeCast<CanToggleAttribute>()
+    element.toggleAttribute("inert", inert)
+}
 
-    if (inert) {
-        setAttribute("inert", "")
-    } else {
-        removeAttribute("inert")
-    }
+private external interface CanToggleAttribute : JsAny {
+    // https://developer.mozilla.org/en-US/docs/Web/API/Element/toggleAttribute
+    fun toggleAttribute(attributeName: String, force: Boolean): Boolean
 }
