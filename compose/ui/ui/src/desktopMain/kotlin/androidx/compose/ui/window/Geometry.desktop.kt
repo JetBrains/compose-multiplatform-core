@@ -78,3 +78,5 @@ internal fun Insets.toDpInsets() = DpInsets(
     bottom = bottom.dp,
     right = right.dp
 )
+
+internal val EmptyDpInsets = DpInsets(0.dp, 0.dp, 0.dp, 0.dp)

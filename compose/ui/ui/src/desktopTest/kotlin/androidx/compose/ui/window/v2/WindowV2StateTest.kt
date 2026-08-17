@@ -33,6 +33,7 @@ import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.toDpSize
+import androidx.compose.ui.unit.DpInsets
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
+import androidx.compose.ui.window.EmptyDpInsets
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.toDpOffset
@@ -1018,6 +1020,10 @@ class WindowV2StateTest {
             Window(
                 state = windowState,
                 onCloseRequest = {},
+                // On Linux, insets are not known until the window is visible, but we set the
+                // bounds taking them into account before that
+                decoration =
+                    if (isLinux) WindowDecoration.Undecorated() else WindowDecoration.SystemDefault,
                 title = testName
             ) {
                 window = this.window
@@ -1025,10 +1031,10 @@ class WindowV2StateTest {
             }
         }
         awaitIdle()
-        println("Window insets: ${window.insets}")
         assertEquals(
-            expectedWindowSizeSansInsets + window.insets.toDpInsets(),
-            windowState.bounds.size
+            expected = expectedWindowSizeSansInsets +
+                if (isLinux) EmptyDpInsets else window.insets.toDpInsets(),
+            actual = windowState.bounds.size
         )
     }
 
