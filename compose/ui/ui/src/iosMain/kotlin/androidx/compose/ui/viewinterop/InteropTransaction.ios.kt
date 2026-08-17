@@ -22,7 +22,7 @@ import platform.QuartzCore.CATransaction
 /**
  * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]
  */
-internal typealias InteropAction = () -> Unit
+internal typealias InteropSyncAction = () -> Unit
 
 /**
  * A transaction containing changes to UIKit objects to be synchronized within [CATransaction] inside a
@@ -30,8 +30,8 @@ internal typealias InteropAction = () -> Unit
  * [actions] contains a list of lambdas that will be executed in the same CATransaction.
  * [isInteropActive] defines if rendering strategy should be changed along with this transaction.
  */
-internal interface InteropTransaction {
-    val actions: List<InteropAction>
+internal interface InteropSyncTransaction {
+    val actions: List<InteropSyncAction>
     val isInteropActive: Boolean
 
     fun performTransaction() {
@@ -47,9 +47,9 @@ internal interface InteropTransaction {
          * @param transactions a list of transactions to be merged
          */
         fun merge(
-            transactions: List<InteropTransaction>
-        ): InteropTransaction =
-            object : InteropTransaction {
+            transactions: List<InteropSyncTransaction>
+        ): InteropSyncTransaction =
+            object : InteropSyncTransaction {
                 override val actions = transactions.flatMap { it.actions }
                 override val isInteropActive = transactions.any { it.isInteropActive }
             }
@@ -64,13 +64,13 @@ internal interface InteropTransaction {
  */
 internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
-) : InteropTransaction {
-    private val _actions = mutableListOf<InteropAction>()
+) : InteropSyncTransaction {
+    private val _actions = mutableListOf<InteropSyncAction>()
 
     override val actions
         get() = _actions
 
-    fun add(action: InteropAction) {
+    fun add(action: InteropSyncAction) {
         _actions.add(action)
     }
 }

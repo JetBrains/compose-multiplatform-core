@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.viewinterop.InteropAction
-import androidx.compose.ui.viewinterop.InteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncAction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
@@ -252,8 +252,8 @@ internal class ComposeContainer(
 
         val metalView = MetalView(
             retrieveInteropTransaction = {
-                mediator?.retrieveInteropTransaction() ?: object : InteropTransaction {
-                    override val actions = emptyList<InteropAction>()
+                mediator?.retrieveInteropTransaction() ?: object : InteropSyncTransaction {
+                    override val actions = emptyList<InteropSyncAction>()
                     override val isInteropActive = false
                 }
             },

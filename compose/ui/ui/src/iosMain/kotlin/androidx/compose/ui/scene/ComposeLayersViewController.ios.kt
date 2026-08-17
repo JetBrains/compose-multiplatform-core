@@ -24,7 +24,7 @@ import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.viewinterop.InteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalView
@@ -178,7 +178,7 @@ internal class ComposeLayersViewController(
     /**
      * Transactions of the layers that were imperatively removed before their changes were applied.
      */
-    private var removedLayersTransactions = mutableListOf<InteropTransaction>()
+    private var removedLayersTransactions = mutableListOf<InteropSyncTransaction>()
 
     var containerWindow: UIWindow? by windowContext::window
 
@@ -305,14 +305,14 @@ internal class ComposeLayersViewController(
      * [MetalViewHolder], also including transactions of the layers that were removed and are not
      * present in [layers] anymore.
      */
-    private fun retrieveAndMergeInteropTransactions(): InteropTransaction {
+    private fun retrieveAndMergeInteropTransactions(): InteropSyncTransaction {
         val removedLayersTransactionsCopy = removedLayersTransactions.toList()
         removedLayersTransactions.clear()
 
         val transactions = this.layers.map {
             it.retrieveInteropTransaction()
         } + removedLayersTransactionsCopy
-        return InteropTransaction.merge(
+        return InteropSyncTransaction.merge(
             transactions = transactions
         )
     }

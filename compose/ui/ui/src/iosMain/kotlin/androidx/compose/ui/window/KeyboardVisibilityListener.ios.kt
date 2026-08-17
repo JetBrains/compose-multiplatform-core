@@ -38,7 +38,7 @@ import platform.UIKit.UIViewAnimationOptionCurveEaseInOut
 import platform.UIKit.UIViewAnimationOptions
 import platform.darwin.NSObject
 
-internal interface KeyboardVisibilityObserver {
+internal interface KeyboardVisibilitySubscriber {
     fun keyboardWillShow(
         targetFrame: CValue<CGRect>,
         duration: Double,
@@ -67,15 +67,15 @@ internal object KeyboardVisibilityListener {
         observer.startKeyboardChangesObserving()
     }
 
-    fun addObserver(observer: KeyboardVisibilityObserver) = this.observer.subscribers.add(observer)
+    fun addSubscriber(subscriber: KeyboardVisibilitySubscriber) = this.observer.subscribers.add(subscriber)
 
-    fun removeObserver(observer: KeyboardVisibilityObserver) = this.observer.subscribers.remove(observer)
+    fun removeSubscriber(subscriber: KeyboardVisibilitySubscriber) = this.observer.subscribers.remove(subscriber)
 
     val keyboardFrame: CValue<CGRect> get() = observer.keyboardFrame
 }
 
 private class KeyboardVisibilityNotificationObserver : NSObject() {
-    val subscribers = mutableSetOf<KeyboardVisibilityObserver>()
+    val subscribers = mutableSetOf<KeyboardVisibilitySubscriber>()
 
     fun startKeyboardChangesObserving() {
         NSNotificationCenter.defaultCenter.addObserver(

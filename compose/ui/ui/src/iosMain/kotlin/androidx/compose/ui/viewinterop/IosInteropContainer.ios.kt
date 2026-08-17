@@ -82,7 +82,7 @@ internal class IosInteropContainer(
     /**
      * Return an object containing pending changes and reset internal storage
      */
-    fun retrieveTransaction(): InteropTransaction {
+    fun retrieveTransaction(): InteropSyncTransaction {
         val result = transaction
         transaction = InteropMutableTransaction(
             isInteropActive = interopViews.isNotEmpty()

@@ -19,8 +19,8 @@ package androidx.compose.ui.window
 import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.InteropAction
-import androidx.compose.ui.viewinterop.InteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncAction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
@@ -42,7 +42,7 @@ internal sealed interface MetalRedrawer {
 // All changes made here must also be implemented in the `SurfaceMetalRedrawer`.
 internal class LegacyMetalRedrawer(
     private val metalLayer: CAMetalLayer,
-    private var retrieveInteropTransaction: () -> InteropTransaction,
+    private var retrieveInteropTransaction: () -> InteropSyncTransaction,
     private var draw: (Canvas) -> Unit,
 ): MetalRedrawer {
     /**
@@ -119,9 +119,9 @@ internal class LegacyMetalRedrawer(
         isDisposed = true
 
         retrieveInteropTransaction = {
-            object : InteropTransaction {
+            object : InteropSyncTransaction {
                 override val isInteropActive: Boolean = false
-                override val actions = emptyList<InteropAction>()
+                override val actions = emptyList<InteropSyncAction>()
             }
         }
 
