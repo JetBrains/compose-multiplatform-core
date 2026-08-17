@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontLoadingStrategy.Companion.OptionalLocal
 import androidx.compose.ui.text.platform.FontCache
 import androidx.compose.ui.text.platform.FontLoadResult
 import androidx.compose.ui.text.platform.PlatformFont
+import androidx.compose.ui.text.platform.cloneWithVariationSettings
+import org.jetbrains.skia.Typeface as SkTypeface
 
 /**
  * Skia-backed [PlatformTypefacesLoader]. ui-text adapts this into its internal `PlatformFontLoader`
@@ -34,7 +36,7 @@ internal class SkiaFontLoader(
     fontCacheProvider: () -> FontCache
 ) : PlatformTypefacesLoader {
 
-    constructor(fontCache: FontCache = FontCache()) : this (fontCacheProvider = { fontCache })
+    constructor(fontCache: FontCache = FontCache()) : this(fontCacheProvider = { fontCache })
 
     private val fontCache: FontCache by lazy(fontCacheProvider)
 
@@ -42,6 +44,13 @@ internal class SkiaFontLoader(
         get() = fontCache.fonts
 
     override fun loadBlocking(font: Font): FontLoadResult? {
+        if (font is SkikoFont) {
+            val unvaried = fontCache.get(font.baseCacheKey)
+                ?: font.typefaceLoader.loadBlocking(font)
+                ?: return null
+            return finishSkikoFont(font, unvaried)
+        }
+
         if (font !is PlatformFont) {
             if (font.loadingStrategy != OptionalLocal) {
                 throw IllegalArgumentException("Unsupported font type: $font")
@@ -66,13 +75,32 @@ internal class SkiaFontLoader(
     ): Any = fontCache.loadPlatformTypes(fontFamily, fontWeight, fontStyle)
 
     override suspend fun awaitLoad(font: Font): FontLoadResult? {
-        // TODO: This should actually do async loading, but for now desktop only supports local
-        //  fonts which are allowed to block during loading.
-
-        // When desktop is extended to allow async font resource declarations, this needs updated.
-        return loadBlocking(font)
+        return when (font) {
+            is SkikoFont -> {
+                val unvaried = fontCache.get(font.baseCacheKey)
+                    ?: font.typefaceLoader.awaitLoad(font)
+                    ?: return null
+                finishSkikoFont(font, unvaried)
+            }
+            // Built-in PlatformFont types remain blocking-only.
+            is PlatformFont -> loadBlocking(font)
+            else -> throw IllegalArgumentException("Unsupported font type: $font")
+        }
     }
 
     override val cacheKey: Any?
         get() = fontCache // results are valid for all shared caches
+
+    /**
+     * Two-Level cache for [SkikoFont]
+     * 1. Cache unvaried typeface under [SkikoFont.baseCacheKey]
+     * 2. Clone variation and cache it under [SkikoFont.cacheKey]
+     */
+    private fun finishSkikoFont(font: SkikoFont, unvaried: SkTypeface): FontLoadResult {
+        fontCache.put(font.baseCacheKey, unvaried)
+        return fontCache.register(
+            unvaried.cloneWithVariationSettings(font.variationSettings),
+            font.cacheKey,
+        )
+    }
 }

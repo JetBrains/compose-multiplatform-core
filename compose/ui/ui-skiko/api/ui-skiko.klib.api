@@ -6,6 +6,24 @@
 // - Show declarations: true
 
 // Library unique name: <org.jetbrains.compose.ui:ui-skiko>
+abstract class androidx.compose.ui.text.font/SkikoFont : androidx.compose.ui.text.font/Font { // androidx.compose.ui.text.font/SkikoFont|null[0]
+    constructor <init>(androidx.compose.ui.text.font/FontLoadingStrategy, androidx.compose.ui.text.font/SkikoFont.TypefaceLoader, androidx.compose.ui.text.font/FontVariation.Settings = ...) // androidx.compose.ui.text.font/SkikoFont.<init>|<init>(androidx.compose.ui.text.font.FontLoadingStrategy;androidx.compose.ui.text.font.SkikoFont.TypefaceLoader;androidx.compose.ui.text.font.FontVariation.Settings){}[0]
+
+    abstract val identity // androidx.compose.ui.text.font/SkikoFont.identity|{}identity[0]
+        abstract fun <get-identity>(): kotlin/String // androidx.compose.ui.text.font/SkikoFont.identity.<get-identity>|<get-identity>(){}[0]
+    final val loadingStrategy // androidx.compose.ui.text.font/SkikoFont.loadingStrategy|{}loadingStrategy[0]
+        final fun <get-loadingStrategy>(): androidx.compose.ui.text.font/FontLoadingStrategy // androidx.compose.ui.text.font/SkikoFont.loadingStrategy.<get-loadingStrategy>|<get-loadingStrategy>(){}[0]
+    final val typefaceLoader // androidx.compose.ui.text.font/SkikoFont.typefaceLoader|{}typefaceLoader[0]
+        final fun <get-typefaceLoader>(): androidx.compose.ui.text.font/SkikoFont.TypefaceLoader // androidx.compose.ui.text.font/SkikoFont.typefaceLoader.<get-typefaceLoader>|<get-typefaceLoader>(){}[0]
+    final val variationSettings // androidx.compose.ui.text.font/SkikoFont.variationSettings|{}variationSettings[0]
+        final fun <get-variationSettings>(): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/SkikoFont.variationSettings.<get-variationSettings>|<get-variationSettings>(){}[0]
+
+    abstract interface TypefaceLoader { // androidx.compose.ui.text.font/SkikoFont.TypefaceLoader|null[0]
+        abstract fun loadBlocking(androidx.compose.ui.text.font/SkikoFont): org.jetbrains.skia/Typeface? // androidx.compose.ui.text.font/SkikoFont.TypefaceLoader.loadBlocking|loadBlocking(androidx.compose.ui.text.font.SkikoFont){}[0]
+        abstract suspend fun awaitLoad(androidx.compose.ui.text.font/SkikoFont): org.jetbrains.skia/Typeface? // androidx.compose.ui.text.font/SkikoFont.TypefaceLoader.awaitLoad|awaitLoad(androidx.compose.ui.text.font.SkikoFont){}[0]
+    }
+}
+
 final class androidx.compose.ui.text.platform/FontLoadResult { // androidx.compose.ui.text.platform/FontLoadResult|null[0]
     constructor <init>(org.jetbrains.skia/Typeface?, kotlin.collections/List<kotlin/String>) // androidx.compose.ui.text.platform/FontLoadResult.<init>|<init>(org.jetbrains.skia.Typeface?;kotlin.collections.List<kotlin.String>){}[0]
 
@@ -35,6 +53,7 @@ final val androidx.compose.ui.graphics/skiaPaint // androidx.compose.ui.graphics
     final fun (androidx.compose.ui.graphics/Paint).<get-skiaPaint>(): org.jetbrains.skia/Paint // androidx.compose.ui.graphics/skiaPaint.<get-skiaPaint>|<get-skiaPaint>@androidx.compose.ui.graphics.Paint(){}[0]
 final val androidx.compose.ui.graphics/skiaShader // androidx.compose.ui.graphics/skiaShader|@androidx.compose.ui.graphics.Shader{}skiaShader[0]
     final fun (androidx.compose.ui.graphics/Shader).<get-skiaShader>(): org.jetbrains.skia/Shader // androidx.compose.ui.graphics/skiaShader.<get-skiaShader>|<get-skiaShader>@androidx.compose.ui.graphics.Shader(){}[0]
+final val androidx.compose.ui.text.font/androidx_compose_ui_text_font_SkikoFont$stableprop // androidx.compose.ui.text.font/androidx_compose_ui_text_font_SkikoFont$stableprop|#static{}androidx_compose_ui_text_font_SkikoFont$stableprop[0]
 final val androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Immutable$stableprop // androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Immutable$stableprop|#static{}androidx_compose_ui_text_platform_ComputedStyle_Immutable$stableprop[0]
 final val androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Mutable$stableprop // androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_ComputedStyle_Mutable$stableprop|#static{}androidx_compose_ui_text_platform_ComputedStyle_Mutable$stableprop[0]
 final val androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_FontLoadResult$stableprop // androidx.compose.ui.text.platform/androidx_compose_ui_text_platform_FontLoadResult$stableprop|#static{}androidx_compose_ui_text_platform_FontLoadResult$stableprop[0]
@@ -66,6 +85,7 @@ final fun (org.jetbrains.skia/PathMeasure).androidx.compose.ui.graphics/asCompos
 final fun (org.jetbrains.skia/Rect).androidx.compose.ui.graphics/toComposeRect(): androidx.compose.ui.geometry/Rect // androidx.compose.ui.graphics/toComposeRect|toComposeRect@org.jetbrains.skia.Rect(){}[0]
 final fun (org.jetbrains.skia/Shader).androidx.compose.ui.graphics/asComposeShader(): androidx.compose.ui.graphics/Shader // androidx.compose.ui.graphics/asComposeShader|asComposeShader@org.jetbrains.skia.Shader(){}[0]
 final fun androidx.compose.ui.graphics/androidx_compose_ui_graphics_SkiaGraphicsContext$stableprop_getter(): kotlin/Int // androidx.compose.ui.graphics/androidx_compose_ui_graphics_SkiaGraphicsContext$stableprop_getter|androidx_compose_ui_graphics_SkiaGraphicsContext$stableprop_getter(){}[0]
+final fun androidx.compose.ui.text.font/androidx_compose_ui_text_font_SkikoFont$stableprop_getter(): kotlin/Int // androidx.compose.ui.text.font/androidx_compose_ui_text_font_SkikoFont$stableprop_getter|androidx_compose_ui_text_font_SkikoFont$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text.platform/Font(kotlin/String, kotlin/ByteArray, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.platform/Font|Font(kotlin.String;kotlin.ByteArray;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle){}[0]
 final fun androidx.compose.ui.text.platform/Font(kotlin/String, kotlin/ByteArray, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ..., androidx.compose.ui.text.font/FontVariation.Settings = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.platform/Font|Font(kotlin.String;kotlin.ByteArray;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;androidx.compose.ui.text.font.FontVariation.Settings){}[0]
 final fun androidx.compose.ui.text.platform/Font(kotlin/String, kotlin/Function0<kotlin/ByteArray>, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.platform/Font|Font(kotlin.String;kotlin.Function0<kotlin.ByteArray>;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle){}[0]

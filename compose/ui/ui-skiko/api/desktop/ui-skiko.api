@@ -96,6 +96,21 @@ public final class androidx/compose/ui/graphics/SkiaTileMode_skikoKt {
 	public static final synthetic fun isSupported-0vamqd0 (I)Z
 }
 
+public abstract class androidx/compose/ui/text/font/SkikoFont : androidx/compose/ui/text/font/Font {
+	public static final field $stable I
+	public synthetic fun <init> (ILandroidx/compose/ui/text/font/SkikoFont$TypefaceLoader;Landroidx/compose/ui/text/font/FontVariation$Settings;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ILandroidx/compose/ui/text/font/SkikoFont$TypefaceLoader;Landroidx/compose/ui/text/font/FontVariation$Settings;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public abstract fun getIdentity ()Ljava/lang/String;
+	public final fun getLoadingStrategy-PKNRLFQ ()I
+	public final fun getTypefaceLoader ()Landroidx/compose/ui/text/font/SkikoFont$TypefaceLoader;
+	public final fun getVariationSettings ()Landroidx/compose/ui/text/font/FontVariation$Settings;
+}
+
+public abstract interface class androidx/compose/ui/text/font/SkikoFont$TypefaceLoader {
+	public abstract fun awaitLoad (Landroidx/compose/ui/text/font/SkikoFont;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun loadBlocking (Landroidx/compose/ui/text/font/SkikoFont;)Lorg/jetbrains/skia/Typeface;
+}
+
 public final class androidx/compose/ui/text/platform/DesktopFont_desktopKt {
 	public static final fun Font-Ej4NQ78 (Ljava/io/File;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/Font;
 	public static final fun Font-Ej4NQ78 (Ljava/lang/String;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/Font;

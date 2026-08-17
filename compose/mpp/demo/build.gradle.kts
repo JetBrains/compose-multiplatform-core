@@ -113,6 +113,7 @@ kotlin {
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(libs.kotlinSerializationCore)
                 implementation(libs.skiko.skottie)
+                implementation(libs.ktor.client.core)
 
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:foundation:foundation-layout"))
@@ -160,6 +161,7 @@ kotlin {
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.skikoAwtRuntime)
                 implementation(libs.skikoSkottieAwtRuntime)
+                implementation(libs.ktor.client.cio)
             }
         }
 
@@ -168,6 +170,7 @@ kotlin {
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
+                implementation(libs.ktor.client.js)
             }
         }
 
@@ -178,7 +181,12 @@ kotlin {
         }
 
         val nativeMain by getting { dependsOn(skikoMain) }
-        val darwinMain by creating { dependsOn(nativeMain) }
+        val darwinMain by creating {
+            dependsOn(nativeMain)
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+            }
+        }
         val macosMain by getting { dependsOn(darwinMain) }
         val iosMain by getting { dependsOn(darwinMain) }
     }
