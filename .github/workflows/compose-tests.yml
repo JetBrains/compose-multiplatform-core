@@ -28,20 +28,21 @@ jobs:
         uses: ./.github/actions/setup-prerequisites
 
       - name: Setup Window Manager
-        run: sudo apt-get update && sudo apt-get install -y xvfb openbox x11-utils
+        run: sudo apt-get update && sudo apt-get install -y xvfb fluxbox x11-utils
 
       - name: Start X Server
         run: |
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
           export DISPLAY=:1
           until xdpyinfo >/dev/null 2>&1; do sleep 0.1; done
-          openbox &
+          fluxbox &
           until xprop -root _NET_SUPPORTING_WM_CHECK >/dev/null 2>&1; do sleep 0.1; done
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
       - name: Run Desktop
         run: |
-          ./gradlew :compose:ui:ui:cleanDesktopTest :compose:ui:ui:desktopTest --tests "androidx.compose.ui.window.v2.WindowV2StateTest.windowPreferredWidth"
+          ./gradlew testDesktop --no-daemon --stacktrace
+#          ./gradlew :compose:ui:ui:cleanDesktopTest :compose:ui:ui:desktopTest --tests "androidx.compose.ui.window.v2.WindowV2StateTest.windowPreferredWidth"
 
       - name: Upload Screenshots
         uses: actions/upload-artifact@v4
