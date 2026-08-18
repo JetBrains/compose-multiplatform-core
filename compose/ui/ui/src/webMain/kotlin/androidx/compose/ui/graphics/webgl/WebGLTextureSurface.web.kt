@@ -84,8 +84,8 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
 @Stable
 class WebGLTextureSurface
 internal constructor(
-    private val canvas: HTMLCanvasElement,
-    private val gl: WebGLRenderingContext,
+    val htmlCanvas: HTMLCanvasElement,
+    val webGLContext: WebGLRenderingContext,
     private val directContext: () -> DirectContext?,
     size: IntSize,
 ) {
@@ -164,12 +164,12 @@ internal constructor(
         scope.deltaNanos = if (hasRenderedFrame) frameTimeNanos - previousFrameTimeNanos else 0L
 
         isRendering = true
-        gl.bindFramebuffer(FRAMEBUFFER, scope.framebuffer)
+        webGLContext.bindFramebuffer(FRAMEBUFFER, scope.framebuffer)
         try {
             scope.block()
         } finally {
             isRendering = false
-            gl.bindFramebuffer(FRAMEBUFFER, null)
+            webGLContext.bindFramebuffer(FRAMEBUFFER, null)
             // Everything above went through the context Skia renders Compose with, so whatever Skia
             // believes about the GL state is stale by now.
             context.resetAll()
@@ -192,14 +192,14 @@ internal constructor(
      */
     fun resetSkiaState(): Boolean {
         val context = directContext() ?: return false
-        gl.bindFramebuffer(FRAMEBUFFER, null)
+        webGLContext.bindFramebuffer(FRAMEBUFFER, null)
         context.resetAll()
         return true
     }
 
     private fun prepareWebGLRenderScope(
         context: DirectContext,
-        size: IntSize
+        size: IntSize,
     ): WegGLRenderScopeImpl {
         val current = adopted
         if (current != null && current.size == size) return webGLRenderScope!!
@@ -207,34 +207,42 @@ internal constructor(
         current?.dispose()
         adopted = null
 
-        val framebuffer = framebuffer ?: gl.createFramebuffer() ?: error("createFramebuffer failed")
+        val framebuffer =
+            framebuffer ?: webGLContext.createFramebuffer() ?: error("createFramebuffer failed")
         this.framebuffer = framebuffer
         val depthStencil =
-            depthStencil ?: gl.createRenderbuffer() ?: error("createRenderbuffer failed")
+            depthStencil ?: webGLContext.createRenderbuffer() ?: error("createRenderbuffer failed")
         this.depthStencil = depthStencil
 
-        val adopted = gl.adoptNewTexture(context, size)
+        val adopted = webGLContext.adoptNewTexture(context, size)
         this.adopted = adopted
 
-        gl.bindRenderbuffer(RENDERBUFFER, depthStencil)
-        gl.renderbufferStorage(RENDERBUFFER, GL_DEPTH24_STENCIL8, size.width, size.height)
-        gl.bindRenderbuffer(RENDERBUFFER, null)
+        webGLContext.bindRenderbuffer(RENDERBUFFER, depthStencil)
+        webGLContext.renderbufferStorage(RENDERBUFFER, GL_DEPTH24_STENCIL8, size.width, size.height)
+        webGLContext.bindRenderbuffer(RENDERBUFFER, null)
 
-        gl.bindFramebuffer(FRAMEBUFFER, framebuffer)
-        gl.framebufferTexture2D(FRAMEBUFFER, COLOR_ATTACHMENT0, TEXTURE_2D, adopted.texture, 0)
-        gl.framebufferRenderbuffer(
+        webGLContext.bindFramebuffer(FRAMEBUFFER, framebuffer)
+        webGLContext.framebufferTexture2D(
+            FRAMEBUFFER,
+            COLOR_ATTACHMENT0,
+            TEXTURE_2D,
+            adopted.texture,
+            0,
+        )
+        webGLContext.framebufferRenderbuffer(
             FRAMEBUFFER,
             GL_DEPTH_STENCIL_ATTACHMENT,
             RENDERBUFFER,
             depthStencil,
         )
-        val status = gl.checkFramebufferStatus(FRAMEBUFFER)
-        gl.bindFramebuffer(FRAMEBUFFER, null)
+        val status = webGLContext.checkFramebufferStatus(FRAMEBUFFER)
+        webGLContext.bindFramebuffer(FRAMEBUFFER, null)
         check(status == FRAMEBUFFER_COMPLETE) {
             "the adopted texture is not a complete framebuffer attachment (status $status)"
         }
 
-        webGLRenderScope = WegGLRenderScopeImpl(gl, canvas, framebuffer, size, ++generation)
+        webGLRenderScope =
+            WegGLRenderScopeImpl(webGLContext, htmlCanvas, framebuffer, size, ++generation)
         return webGLRenderScope!!
     }
 
@@ -259,11 +267,11 @@ internal constructor(
         adopted?.dispose()
         adopted = null
         webGLRenderScope = null
-        framebuffer?.let(gl::deleteFramebuffer)
+        framebuffer?.let(webGLContext::deleteFramebuffer)
         framebuffer = null
-        depthStencil?.let(gl::deleteRenderbuffer)
+        depthStencil?.let(webGLContext::deleteRenderbuffer)
         depthStencil = null
-        gl.bindFramebuffer(FRAMEBUFFER, null)
+        webGLContext.bindFramebuffer(FRAMEBUFFER, null)
         directContext()?.resetAll()
     }
 }

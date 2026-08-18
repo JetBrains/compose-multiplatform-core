@@ -65,12 +65,8 @@ import org.khronos.webgl.WebGLRenderingContext.Companion.TRIANGLES
 import org.khronos.webgl.WebGLRenderingContext.Companion.VERTEX_SHADER
 import org.khronos.webgl.WebGLUniformLocation
 
-/**
- * Two independent [WebGLTextureSurface]s rendered with plain WebGL2 — no third-party library.
- */
-val PlainWebGlScreen = Screen.Example("WebGL texture adoption / plain WebGL") {
-    PlainWebGlDemo()
-}
+/** Two independent [WebGLTextureSurface]s rendered with plain WebGL2 — no third-party library. */
+val PlainWebGlScreen = Screen.Example("Plain WebGL") { PlainWebGlDemo() }
 
 @Composable
 private fun PlainWebGlDemo() {
@@ -89,11 +85,10 @@ private fun PlainWebGlDemo() {
     }
 }
 
-
 @Composable
 private fun RotatingTriangle(isAnimating: Boolean) {
     val surface = rememberWebGLTextureSurface(IntSize(512, 320))!!
-    val triangle = remember { TriangleRenderer() }
+    val triangle = remember(surface) { TriangleRenderer(surface.webGLContext) }
 
     DisposableEffect(triangle, surface) {
         onDispose { triangle.dispose(surface) }
@@ -141,10 +136,7 @@ private fun ColorPulse(isAnimating: Boolean) {
 }
 
 @Composable
-private fun LabelledContent(
-    caption: String,
-    content: @Composable () -> Unit
-) {
+private fun LabelledContent(caption: String, content: @Composable () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier =
@@ -173,17 +165,15 @@ private fun LabelledContent(
  * Draws a spinning, vertex-colored triangle. The geometry lives in the vertex shader, so there is
  * no buffer and no attribute to set up: the whole renderer is one program and two uniforms.
  */
-private class TriangleRenderer {
-    /** Kept only so that [dispose] can release the program; the render path uses the scope's. */
-    private var capturedGl: WebGLRenderingContext? = null
-    private var program: WebGLProgram? = null
-    private var angleUniform: WebGLUniformLocation? = null
-    private var aspectUniform: WebGLUniformLocation? = null
+private class TriangleRenderer(private val gl: WebGLRenderingContext) {
+    private val program: WebGLProgram =
+        gl.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
+    private val angleUniform: WebGLUniformLocation? = gl.getUniformLocation(program, "angle")
+    private val aspectUniform: WebGLUniformLocation? = gl.getUniformLocation(program, "aspect")
     private var angle = 0f
 
     fun render(scope: WebGLRenderScope): Unit =
         with(scope) {
-            val program = ensureProgram(webGLContext)
             angle += deltaNanos / 1_000_000_000f * 0.9f
 
             // Skia rendered the previous frame through this very context and left its own state
@@ -205,24 +195,11 @@ private class TriangleRenderer {
             webGLContext.drawArrays(TRIANGLES, 0, 3)
         }
 
-    private fun ensureProgram(gl: WebGLRenderingContext): WebGLProgram {
-        program?.let {
-            return it
-        }
-        val created = gl.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
-        capturedGl = gl
-        program = created
-        angleUniform = gl.getUniformLocation(created, "angle")
-        aspectUniform = gl.getUniformLocation(created, "aspect")
-        return created
-    }
-
-    /** Releases the program; [surface] is what lets Skia recover from that GL work. */
+    /**
+     * Releases the program
+     */
     fun dispose(surface: WebGLTextureSurface) {
-        val gl = capturedGl ?: return
-        program?.let(gl::deleteProgram)
-        program = null
-        capturedGl = null
+        gl.deleteProgram(program)
         surface.resetSkiaState()
     }
 
@@ -266,8 +243,7 @@ private fun WebGLRenderingContext.createProgram(
     fragmentSource: String,
 ): WebGLProgram {
     val program = createProgram() ?: error("gl.createProgram() returned null")
-    for ((type, source) in
-    listOf(VERTEX_SHADER to vertexSource, FRAGMENT_SHADER to fragmentSource)) {
+    for ((type, source) in listOf(VERTEX_SHADER to vertexSource, FRAGMENT_SHADER to fragmentSource)) {
         val shader = createShader(type) ?: error("gl.createShader() returned null")
         shaderSource(shader, source)
         compileShader(shader)
@@ -282,7 +258,6 @@ private fun WebGLRenderingContext.createProgram(
     check(log.isNullOrBlank()) { "program linking reported: $log" }
     return program
 }
-
 
 /** Clears the texture to a pulsing color. No shaders, no resources, nothing to dispose. */
 private class PulseRenderer {

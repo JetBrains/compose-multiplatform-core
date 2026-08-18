@@ -28,11 +28,12 @@ import androidx.compose.ui.graphics.webgl.WebGLTextureSurface
  * Everything here is three.js-specific; nothing here knows about Skia, textures or Compose drawing:
  * that is what [WebGLTextureSurface] takes care of.
  */
-internal class ThreeJsKnotRenderer private constructor(private val three: ThreeModule) {
+internal class ThreeJsKnotRenderer
+private constructor(private val three: ThreeModule, surface: WebGLTextureSurface) {
     companion object {
         /** Loads three.js, or returns `null` when the module is unavailable. */
-        suspend fun createOrNull(): ThreeJsKnotRenderer? =
-            loadThreeModule()?.let(::ThreeJsKnotRenderer)
+        suspend fun createOrNull(surface: WebGLTextureSurface): ThreeJsKnotRenderer? =
+            loadThreeModule()?.let { ThreeJsKnotRenderer(it, surface) }
     }
 
     // The angle is the main dynamic state in this demo, it's updated every frame.
@@ -49,8 +50,8 @@ internal class ThreeJsKnotRenderer private constructor(private val three: ThreeM
     var status: String = "waiting for the first frame"
         private set
 
-    private var renderer: ThreeRenderer? = null
-    private var knotScene: ThreeKnotScene? = null
+    private var renderer: ThreeRenderer? = createThreeRenderer(three, surface.htmlCanvas, surface.webGLContext)
+    private var knotScene: ThreeKnotScene? = createKnotScene(three)
     private var renderTarget: ThreeRenderTarget? = null
     private var targetGeneration = 0
     private var failed = false
@@ -59,9 +60,9 @@ internal class ThreeJsKnotRenderer private constructor(private val three: ThreeM
         with(scope) {
             if (failed) return
             try {
-                val renderer = ensureRenderer()
-                val knotScene = ensureKnotScene()
-                val renderTarget = ensureRenderTarget(renderer, knotScene)
+                val renderer = renderer ?: error("the renderer was disposed")
+                val knotScene = knotScene ?: error("the scene was disposed")
+                val renderTarget = ensureRenderTarget(knotScene)
 
                 knotAngle += deltaNanos / 1_000_000_000.0 * spin
                 knotScene.updateValues()
@@ -84,20 +85,11 @@ internal class ThreeJsKnotRenderer private constructor(private val three: ThreeM
             }
         }
 
-    private fun WebGLRenderScope.ensureRenderer(): ThreeRenderer =
-        renderer ?: createThreeRenderer(three, htmlCanvas, webGLContext).also { renderer = it }
-
-    private fun ensureKnotScene(): ThreeKnotScene =
-        knotScene ?: createKnotScene(three).also { knotScene = it }
-
     /**
      * The render target is only a descriptor for the framebuffer Compose owns, so it has to be
      * replaced whenever Compose recreated that framebuffer.
      */
-    private fun WebGLRenderScope.ensureRenderTarget(
-        renderer: ThreeRenderer,
-        knotScene: ThreeKnotScene,
-    ): ThreeRenderTarget {
+    private fun WebGLRenderScope.ensureRenderTarget(knotScene: ThreeKnotScene): ThreeRenderTarget {
         val current = renderTarget
         if (current != null && targetGeneration == generation) return current
 

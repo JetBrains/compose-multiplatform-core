@@ -91,9 +91,9 @@ private fun ThreeTextureAdoptionDemo() {
     }
 
     // three.js arrives through a dynamic import, so the renderer can only be built asynchronously.
-    val loadState by produceState<LoadState>(LoadState.Loading) {
+    val loadState by produceState<LoadState>(LoadState.Loading, surface) {
         value = try {
-            ThreeJsKnotRenderer.createOrNull()?.let(LoadState::Ready)
+            ThreeJsKnotRenderer.createOrNull(surface)?.let(LoadState::Ready)
                 ?: LoadState.Failed("three.js is unavailable.")
         } catch (throwable: Throwable) {
             LoadState.Failed("Loading three.js failed: ${throwable.message}")
