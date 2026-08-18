@@ -392,21 +392,11 @@ internal class ComposeWindow(
                 get() = configuration.isClearFocusOnMouseDownEnabled
         }
 
-    /**
-     * The canvas Compose renders into. Asking it for a `"webgl2"` context returns the very context
-     * Skiko renders with, which is the only context whose textures Skia is able to use.
-     */
     internal val htmlCanvas: HTMLCanvasElement get() = canvas
 
     /**
-     * Skia's GPU context, captured from the surface canvas on the first rendered frame, or `null`
-     * before that.
-     *
-     * It is only reachable here: the canvas passed to a composable's draw is usually a graphics
-     * layer's display-list recorder, whose `recordingContext` is legitimately `null`. Code that
-     * needs the context (for instance to adopt an externally created WebGL texture into a Skia
-     * image) has to read it from here instead. The context lives as long as the canvas, so it is
-     * safe to hold on to; it must not be closed by the reader.
+     * Skia's GPU context, captured from the surface canvas on the first rendered frame;
+     * It's used by WebGL texture adoption demo.
      */
     internal var skiaDirectContext: DirectContext? = null
         private set
