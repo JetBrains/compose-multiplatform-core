@@ -33,12 +33,12 @@ import platform.UIKit.UIContentSizeCategorySmall
 import platform.UIKit.UIContentSizeCategoryUnspecified
 import platform.UIKit.UIView
 
-internal fun FontScale(view: UIView) = FontScale({ view.traitCollection.preferredContentSizeCategory ?: UIContentSizeCategoryUnspecified })
+internal fun FontScaleProvider(view: UIView) = FontScaleProvider({ view.traitCollection.preferredContentSizeCategory ?: UIContentSizeCategoryUnspecified })
 
-internal class FontScale @VisibleForTesting constructor(private val preferredContentSizeCategory: () -> UIContentSizeCategory) {
+internal class FontScaleProvider @VisibleForTesting constructor(private val preferredContentSizeCategory: () -> UIContentSizeCategory) {
     private val listeners = mutableListOf<Listener>()
 
-    var value: Float = calculateValue()
+    var fontScale: Float = calculateFontScale()
         private set
 
     interface Listener {
@@ -54,15 +54,15 @@ internal class FontScale @VisibleForTesting constructor(private val preferredCon
     }
 
     fun onTraitCollectionDidChange() {
-        val newValue = calculateValue()
+        val newValue = calculateFontScale()
 
-        if (newValue != value) {
-            value = newValue
+        if (newValue != fontScale) {
+            fontScale = newValue
             listeners.toList().forEach { it.onChanged(newValue) }
         }
     }
 
-    private fun calculateValue(): Float =
+    private fun calculateFontScale(): Float =
         uiContentSizeCategoryToFontScaleMap[preferredContentSizeCategory()] ?: 1f
 }
 

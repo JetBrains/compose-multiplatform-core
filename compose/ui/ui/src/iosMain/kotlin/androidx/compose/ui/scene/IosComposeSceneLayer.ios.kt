@@ -53,7 +53,7 @@ internal class IosComposeSceneLayer(
     private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
-    private val fontScale: FontScale,
+    private val fontScaleProvider: FontScaleProvider,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
@@ -111,7 +111,7 @@ internal class IosComposeSceneLayer(
         isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
         windowContext = windowContext,
-        fontScale = fontScale,
+        fontScaleProvider = fontScaleProvider,
         architectureComponentsOwner = ownerProvider,
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
@@ -125,7 +125,7 @@ internal class IosComposeSceneLayer(
     private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
             frameRecomposer = frameChoreographer.frameRecomposer,
-            density = Density(windowContext.screenScale, fontScale.value),
+            density = Density(windowContext.screenScale, fontScaleProvider.fontScale),
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidateLayout = invalidateLayout,

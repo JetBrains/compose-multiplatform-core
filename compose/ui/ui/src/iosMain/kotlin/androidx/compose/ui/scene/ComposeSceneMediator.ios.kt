@@ -73,7 +73,6 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -192,7 +191,7 @@ internal class ComposeSceneMediator(
     private val isClearFocusOnMouseDownEnabled: Boolean,
     focusedViewsList: FocusedViewsList?,
     private val windowContext: WindowContext,
-    private val fontScale: FontScale,
+    private val fontScaleProvider: FontScaleProvider,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
@@ -249,14 +248,14 @@ internal class ComposeSceneMediator(
         }
     }
 
-    private val fontScaleListener = object : FontScale.Listener {
+    private val fontScaleProviderListener = object : FontScaleProvider.Listener {
         override fun onChanged(value: Float) {
             composeSceneDensity = Density(composeSceneDensity.density, value)
         }
     }
 
     init {
-        fontScale.addListener(fontScaleListener)
+        fontScaleProvider.addListener(fontScaleProviderListener)
     }
 
     private val viewConfiguration: ViewConfiguration =
@@ -732,7 +731,7 @@ internal class ComposeSceneMediator(
         onKeyEvent = { false }
 
         frameChoreographer.removeListener(frameChoreographerListener)
-        fontScale.removeListener(fontScaleListener)
+        fontScaleProvider.removeListener(fontScaleProviderListener)
         prefetchScheduler.dispose()
         activitiesHandler.dispose()
 

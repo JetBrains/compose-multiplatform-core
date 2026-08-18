@@ -104,7 +104,7 @@ internal class ComposeContainer(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    private val fontScale = FontScale(view)
+    private val fontScaleProvider = FontScaleProvider(view)
 
     private val frameChoreographer: FrameChoreographer?
         get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
@@ -288,13 +288,13 @@ internal class ComposeContainer(
             isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
-            fontScale = fontScale,
+            fontScaleProvider = fontScaleProvider,
             architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = containerCoroutineContext,
             composeSceneFactory = { context ->
                 PlatformLayersComposeScene(
                     frameRecomposer = frameChoreographer.frameRecomposer,
-                    density = Density(windowContext.screenScale, fontScale.value),
+                    density = Density(windowContext.screenScale, fontScaleProvider.fontScale),
                     layoutDirection = layoutDirection,
                     composeSceneContext = createComposeSceneContext(
                         frameChoreographer = frameChoreographer,
@@ -395,7 +395,7 @@ internal class ComposeContainer(
                         )
                     },
                     layersViewController = layersHolder.getLayersViewController(),
-                    fontScale = fontScale,
+                    fontScaleProvider = fontScaleProvider,
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
                     onFocusConditionsChanged = ::onFocusConditionsChanged,
