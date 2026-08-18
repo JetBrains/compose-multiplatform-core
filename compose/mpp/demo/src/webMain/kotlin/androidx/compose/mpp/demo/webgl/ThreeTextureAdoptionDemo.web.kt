@@ -71,7 +71,7 @@ import kotlin.math.roundToInt
  * and Skia adopted, and Compose then draws that texture like any other image.
  */
 val ThreeJsTextureAdoptionScreen =
-    Screen.Example("WebGL texture adoption / Three.js integration") {
+    Screen.Example("Three.js integration") {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             ThreeTextureAdoptionDemo()
         }

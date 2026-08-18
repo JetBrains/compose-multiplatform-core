@@ -54,15 +54,20 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
  * [image] that can be drawn as many times as needed, anywhere in the composition, including inside
  * graphics layers (`clip`, `blur`, `graphicsLayer`).
  *
- * Obtain an instance with [rememberWebGLTextureSurface], render into it with [renderFrames] (or
- * [render]) and draw it with [androidx.compose.ui.graphics.webgl.drawWebGLTexture]:
+ * Obtain an instance with [rememberWebGLTextureSurface], render into it with [render] and draw it
+ * with [androidx.compose.ui.graphics.webgl.drawWebGLTexture]:
  * ```
  * val surface = rememberWebGLTextureSurface(IntSize(1024, 640)) ?: return
  *
  * LaunchedEffect(surface) {
- *     surface.renderFrames {
- *         // `this` is a WebGLRenderScope: gl, canvas, framebuffer, size, generation, timing.
- *         myRenderer.render(gl, framebuffer, size, generation, deltaNanos)
+ *     while (true) {
+ *         withFrameNanos { frameTimeNanos ->
+ *             surface.render(frameTimeNanos) {
+ *                 // `this` is a WebGLRenderScope: webGLContext, htmlCanvas, framebuffer, size,
+ *                 // generation and the frame timing.
+ *                 myRenderer.render(webGLContext, framebuffer, size, generation, deltaNanos)
+ *             }
+ *         }
  *     }
  * }
  *
@@ -132,9 +137,9 @@ internal constructor(
      * through [image] and bumps [invalidation].
      *
      * This must be called from a [withFrameNanos] callback, so that the texture already holds this
-     * frame's content by the time Skia submits the frame that samples it; [renderFrames] does that
-     * and is the recommended way to drive a surface. It must never be called from a draw or layout
-     * scope: bumping [invalidation] there would invalidate the very drawing that is in progress.
+     * frame's content by the time Skia submits the frame that samples it. It must never be called
+     * from a draw or layout scope: bumping [invalidation] there would invalidate the very drawing
+     * that is in progress.
      *
      * The call allocates the texture and the framebuffer if needed, binds the framebuffer, invokes
      * [block], and afterwards rebinds the default framebuffer and makes Skia drop the GL state it
@@ -204,7 +209,8 @@ internal constructor(
 
         val framebuffer = framebuffer ?: gl.createFramebuffer() ?: error("createFramebuffer failed")
         this.framebuffer = framebuffer
-        val depthStencil = depthStencil ?: gl.createRenderbuffer() ?: error("createRenderbuffer failed")
+        val depthStencil =
+            depthStencil ?: gl.createRenderbuffer() ?: error("createRenderbuffer failed")
         this.depthStencil = depthStencil
 
         val adopted = gl.adoptNewTexture(context, size)
@@ -273,16 +279,15 @@ internal constructor(
 @Composable
 fun rememberWebGLTextureSurface(size: IntSize): WebGLTextureSurface? {
     val window = LocalComposeWindow.current ?: return null
-    val surface =
-        remember(window) {
-            val canvas = window.htmlCanvas
-            val gl = webGl2ContextOrNull(canvas)
-            if (gl == null) {
-                null
-            } else {
-                WebGLTextureSurface(canvas, gl, { window.skiaDirectContext }, size)
-            }
-        } ?: return null
+    val surface = remember(window) {
+        val canvas = window.htmlCanvas
+        val gl = webGl2ContextOrNull(canvas)
+        if (gl == null) {
+            null
+        } else {
+            WebGLTextureSurface(canvas, gl, { window.skiaDirectContext }, size)
+        }
+    } ?: return null
 
     SideEffect(size) { surface.size = size }
     DisposableEffect(surface) { onDispose { surface.dispose() } }
