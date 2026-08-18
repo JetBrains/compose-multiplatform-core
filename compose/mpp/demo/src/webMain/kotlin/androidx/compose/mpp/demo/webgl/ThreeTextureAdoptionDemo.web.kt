@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-// Reaches for ComposeWindow to get the DirectContext Compose renders with; it is internal API, hence
-// the suppression (the same trick the rest of this demo module uses).
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:OptIn(ExperimentalComposeUiApi::class)
 
 package androidx.compose.mpp.demo.webgl
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -43,13 +42,14 @@ import androidx.compose.mpp.demo.Screen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
@@ -57,79 +57,68 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.webgl.WebGLTextureSurface
+import androidx.compose.ui.graphics.webgl.drawWebGLTexture
+import androidx.compose.ui.graphics.webgl.rememberWebGLTextureSurface
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.LocalComposeWindow
 import kotlin.math.roundToInt
-import org.jetbrains.skia.DirectContext
 
 /**
- * The texture adoption demo with the WebGL implementation delegated to three.js:
- * it renders a lit torus knot into a texture, which is then adopted by Skiko and rendered as Skiko Image.
+ * A demo of [WebGLTextureSurface]: three.js renders a lit torus knot into a texture Compose owns
+ * and Skia adopted, and Compose then draws that texture like any other image.
  */
-val ThreeJsTextureAdoptionScreen = Screen.Example("WebGL texture adoption / Three.js integration") {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        ThreeTextureAdoptionDemo()
+val ThreeJsTextureAdoptionScreen =
+    Screen.Example("WebGL texture adoption / Three.js integration") {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            ThreeTextureAdoptionDemo()
+        }
     }
-}
-
-/** One tick of the demo clock. */
-private data class ThreeFrame(val index: Long, val fps: Float)
-
-private sealed interface SceneState {
-    object Loading : SceneState
-
-    class Ready(val scene: ThreeJsAdoptedScene) : SceneState
-
-    class Failed(val message: String) : SceneState
-}
 
 @Composable
 private fun ThreeTextureAdoptionDemo() {
-    val composeWindow = LocalComposeWindow.current
-    var sceneState by remember { mutableStateOf<SceneState>(SceneState.Loading) }
+    var textureWidth by remember { mutableStateOf(512) }
+    val textureSize = IntSize(textureWidth, (textureWidth * 0.625f).roundToInt())
 
-    // three.js arrives through a dynamic import, so the scene can only be built asynchronously.
-    LaunchedEffect(composeWindow) {
-        val canvas = composeWindow?.htmlCanvas
-        sceneState = if (canvas == null) {
-            SceneState.Failed(
-                "Could not obtain the WebGL context Compose renders with, so there is nothing to " +
-                    "adopt a texture from."
+    val surface = rememberWebGLTextureSurface(textureSize)
+    if (surface == null) {
+        Centered(
+            "Compose does not render through a WebGL2 canvas here, so there is no texture to adopt."
+        )
+        return
+    }
+
+    // three.js arrives through a dynamic import, so the renderer can only be built asynchronously.
+    val loadState by produceState<LoadState>(LoadState.Loading) {
+        value = try {
+            ThreeJsKnotRenderer.createOrNull()?.let(LoadState::Ready)
+                ?: LoadState.Failed("three.js is unavailable.")
+        } catch (throwable: Throwable) {
+            LoadState.Failed("Loading three.js failed: ${throwable.message}")
+        }
+    }
+
+    when (val state = loadState) {
+        LoadState.Loading -> Centered("loading three.js…")
+        is LoadState.Failed -> Centered(state.message)
+        is LoadState.Ready ->
+            ThreeSceneContent(
+                surface = surface,
+                threeJs = state.renderer,
+                textureWidth = textureWidth,
+                onTextureWidthChange = { textureWidth = it },
             )
-        } else {
-            try {
-                val scene = ThreeJsAdoptedScene.createOrNull(canvas)
-                if (scene != null) {
-                    SceneState.Ready(scene)
-                } else {
-                    SceneState.Failed("three.js or the WebGL2 context Skiko uses is unavailable.")
-                }
-            } catch (throwable: Throwable) {
-                SceneState.Failed("Loading three.js failed: ${throwable.message}")
-            }
-        }
     }
+}
 
-    val state = sceneState
-    DisposableEffect(state) {
-        onDispose {
-            if (state is SceneState.Ready) {
-                state.scene.dispose(composeWindow?.skiaDirectContext)
-            }
-        }
-    }
+private sealed interface LoadState {
+    object Loading : LoadState
 
-    when (state) {
-        is SceneState.Loading -> Centered("loading three.js…")
-        is SceneState.Failed -> Centered(state.message)
-        // skiaDirectContext is a plain field that stays null until Compose has rendered its first
-        // frame, so it is read through a lambda instead of being captured during composition.
-        is SceneState.Ready ->
-            ThreeSceneContent(state.scene) { composeWindow?.skiaDirectContext }
-    }
+    class Ready(val renderer: ThreeJsKnotRenderer) : LoadState
+
+    class Failed(val message: String) : LoadState
 }
 
 @Composable
@@ -140,55 +129,59 @@ private fun Centered(message: String) {
 }
 
 @Composable
-private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: () -> DirectContext?) {
+private fun ThreeSceneContent(
+    surface: WebGLTextureSurface,
+    threeJs: ThreeJsKnotRenderer,
+    textureWidth: Int,
+    onTextureWidthChange: (Int) -> Unit,
+) {
     var running by remember { mutableStateOf(true) }
-    var spin by remember { mutableStateOf(threeJsScene.spin) }
-    var hue by remember { mutableStateOf(threeJsScene.hue) }
-    var roughness by remember { mutableStateOf(threeJsScene.roughness) }
-    var metalness by remember { mutableStateOf(threeJsScene.metalness) }
-    var opacity by remember { mutableStateOf(threeJsScene.opacity) }
-    var lightIntensity by remember { mutableStateOf(threeJsScene.lightIntensity) }
-    var textureSize by remember { mutableStateOf(512) }
+    var spin by remember { mutableStateOf(threeJs.spin) }
+    var hue by remember { mutableStateOf(threeJs.hue) }
+    var roughness by remember { mutableStateOf(threeJs.roughness) }
+    var metalness by remember { mutableStateOf(threeJs.metalness) }
+    var opacity by remember { mutableStateOf(threeJs.opacity) }
+    var lightIntensity by remember { mutableStateOf(threeJs.lightIntensity) }
 
-    // Read only from draw scopes, so that a new frame invalidates the drawing and not the whole UI.
-    val frame = remember { mutableStateOf(ThreeFrame(0, 0f)) }
+    threeJs.spin = spin
+    threeJs.hue = hue
+    threeJs.roughness = roughness
+    threeJs.metalness = metalness
+    threeJs.opacity = opacity
+    threeJs.lightIntensity = lightIntensity
+
+    DisposableEffect(threeJs, surface) { onDispose { threeJs.dispose(surface) } }
+
+    // Everything three.js does happens inside the frame, before Compose measures, lays out and
+    // draws, so the texture holds this frame's content by the time Skia submits the frame that
+    // samples it. The drawing sites below only draw the result.
+    LaunchedEffect(surface, threeJs, running) {
+        while (running) {
+            withFrameNanos { frameTimeNanos ->
+                surface.render(frameTimeNanos, { threeJs.renderFrame(this) })
+            }
+        }
+    }
+
     // Read from composition, and therefore refreshed a few times per second instead of every frame.
-    var stats by remember { mutableStateOf(ThreeFrame(0, 0f)) }
-
-    threeJsScene.spin = spin
-    threeJsScene.hue = hue
-    threeJsScene.roughness = roughness
-    threeJsScene.metalness = metalness
-    threeJsScene.opacity = opacity
-    threeJsScene.lightIntensity = lightIntensity
-    threeJsScene.textureSize = IntSize(textureSize, (textureSize * 0.625f).roundToInt())
-
-    // withFrameNanos callbacks run inside the frame, before Compose measures, lays out and draws — so
-    // this is where three.js belongs: the texture holds this frame's content by the time Skia submits
-    // the frame that samples it. Drawing sites below only draw the resulting image.
-    LaunchedEffect(running, threeJsScene) {
+    var stats by remember { mutableStateOf(FrameStats(0, 0f)) }
+    LaunchedEffect(running) {
         if (!running) return@LaunchedEffect
         var previousNanos = 0L
         while (true) {
             withFrameNanos { nanos ->
-                val deltaSeconds =
-                    if (previousNanos == 0L) 0f else (nanos - previousNanos) / 1_000_000_000f
-                previousNanos = nanos
-                val current = frame.value
-                val next = ThreeFrame(
-                    index = current.index + 1,
-                    fps = if (deltaSeconds > 0f) {
-                        current.fps * 0.9f + (1f / deltaSeconds) * 0.1f
-                    } else {
-                        current.fps
-                    },
-                )
-                val context = directContext()
-                if (context != null) {
-                    threeJsScene.renderFrame(context, deltaSeconds)
+                val deltaSeconds = if (previousNanos == 0L) {
+                    0f
+                } else {
+                    (nanos - previousNanos) / 1_000_000_000f
                 }
-
-                frame.value = next
+                previousNanos = nanos
+                val next = FrameStats(
+                    index = stats.index + 1,
+                    fps =
+                        if (deltaSeconds > 0f) stats.fps * 0.9f + (1f / deltaSeconds) * 0.1f
+                        else stats.fps,
+                )
                 if (next.index % 20 == 0L) stats = next
             }
         }
@@ -199,7 +192,8 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        AdoptedImageRender({ threeJsScene.imageToRender }, frame)
+        Hero(surface)
+        Variants(surface)
         Card(Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -213,10 +207,10 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
                 LabelledSlider("light", lightIntensity, 0f..8f) { lightIntensity = it }
                 LabelledSlider(
                     label = "texture width",
-                    value = textureSize.toDouble(),
+                    value = textureWidth.toDouble(),
                     valueRange = 16f..2048f,
-                    onValueChange = { textureSize = it.roundToInt() },
-                    valueText = "${textureSize} px",
+                    onValueChange = { onTextureWidthChange(it.roundToInt()) },
+                    valueText = "$textureWidth px",
                 )
                 Toggle("animate", running) { running = it }
             }
@@ -226,49 +220,52 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                StatusLine("skia context", directContext()?.toString() ?: "not captured yet")
-                StatusLine("state", threeJsScene.status)
-                StatusLine("adopted texture id", threeJsScene.adoptedTextureId.toString())
-                StatusLine("textures handed to Skia", threeJsScene.adoptedTextureCount.toString())
+                StatusLine("texture size", "${surface.size.width}×${surface.size.height}")
+                StatusLine("state", threeJs.status)
                 StatusLine("frame", "${stats.index} · ${stats.fps.roundToInt()} fps")
             }
         }
     }
 }
 
-/** The three.js output as the hero: tilted in 3D by dragging, clipped, with Compose content on top. */
+/** One tick of the demo clock, sampled a few times per second. */
+private data class FrameStats(val index: Long, val fps: Float)
+
+/**
+ * The three.js output as the hero: tilted in 3D by dragging, clipped, with Compose content on top.
+ */
 @Composable
-private fun AdoptedImageRender(imageProvider: () -> org.jetbrains.skia.Image?, frame: State<Any?>) {
+private fun Hero(surface: WebGLTextureSurface) {
     var tiltX by remember { mutableStateOf(0f) }
     var tiltY by remember { mutableStateOf(0f) }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1.3f)
-            .pointerInput(Unit) {
-                detectDragGestures { _, dragAmount ->
-                    tiltY = (tiltY + dragAmount.x * 0.15f).coerceIn(-35f, 35f)
-                    tiltX = (tiltX - dragAmount.y * 0.15f).coerceIn(-35f, 35f)
+        modifier =
+            Modifier.fillMaxWidth()
+                .aspectRatio(1.3f)
+                .pointerInput(Unit) {
+                    detectDragGestures { _, dragAmount ->
+                        tiltY = (tiltY + dragAmount.x * 0.15f).coerceIn(-35f, 35f)
+                        tiltX = (tiltX - dragAmount.y * 0.15f).coerceIn(-35f, 35f)
+                    }
                 }
-            }
-            .graphicsLayer {
-                rotationX = tiltX
-                rotationY = tiltY
-                cameraDistance = 16f * density
-            }
-            .clip(RoundedCornerShape(28.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF0E1B33), Color(0xFF3A1250)))),
+                .graphicsLayer {
+                    rotationX = tiltX
+                    rotationY = tiltY
+                    cameraDistance = 16f * density
+                }
+                .clip(RoundedCornerShape(28.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF0E1B33), Color(0xFF3A1250)))),
         contentAlignment = Alignment.BottomStart,
     ) {
         Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
             Text(
                 "This is Compose Text",
                 color = Color.White.copy(alpha = 0.5f),
-                style = MaterialTheme.typography.h3
+                style = MaterialTheme.typography.h3,
             )
         }
-        AdoptedTextureSurface(Modifier.fillMaxSize(), frame, imageProvider)
+        Canvas(Modifier.fillMaxSize()) { drawWebGLTexture(surface) }
         Column(Modifier.padding(20.dp)) {
             Text(
                 "three.js below, Compose above",
@@ -282,19 +279,16 @@ private fun AdoptedImageRender(imageProvider: () -> org.jetbrains.skia.Image?, f
             )
         }
     }
-
-    Variants(imageProvider, frame)
 }
 
-/** The same adopted texture, reused several times in one frame with different transformations. */
+/** The same adopted texture, drawn several times in one frame with different transformations. */
 @Composable
-private fun Variants(imageProvider: () -> org.jetbrains.skia.Image?, frame: State<Any?>) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        AdoptedTextureSurface(Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray), frame, imageProvider)
-        AdoptedTextureSurface(
+private fun Variants(surface: WebGLTextureSurface) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        Canvas(Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray)) {
+            drawWebGLTexture(surface)
+        }
+        Canvas(
             Modifier.size(96.dp)
                 .clip(RoundedCornerShape(32.dp))
                 .background(Color.DarkGray)
@@ -302,19 +296,18 @@ private fun Variants(imageProvider: () -> org.jetbrains.skia.Image?, frame: Stat
                     alpha = 0.75f
                     scaleX = -0.75f
                     scaleY = 0.75f
-
-                },
-            frame,
-            imageProvider,
-        )
-        AdoptedTextureSurface(
+                }
+        ) {
+            drawWebGLTexture(surface)
+        }
+        Canvas(
             Modifier.size(96.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.Gray)
                 .blur(2.dp)
-                .scale(1f, -1f),
-            frame,
-            imageProvider
-        )
+                .scale(1f, -1f)
+        ) {
+            drawWebGLTexture(surface)
+        }
     }
 }

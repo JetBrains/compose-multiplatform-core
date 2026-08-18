@@ -205,8 +205,9 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 
 @VisibleForTesting
 // This value is for internal usage, for example, to call ComposeWindow.dispose() in the tests
+// `null` when Compose is not hosted by a ComposeWindow, e.g. in some tests.
 internal val LocalComposeWindow: ProvidableCompositionLocal<ComposeWindow?> = staticCompositionLocalOf {
-    error("ComposeWindow is not available in this composition")
+    null
 }
 
 @OptIn(InternalComposeApi::class)

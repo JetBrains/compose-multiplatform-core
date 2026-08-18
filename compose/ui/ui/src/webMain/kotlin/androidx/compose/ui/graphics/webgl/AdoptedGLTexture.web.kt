@@ -16,10 +16,11 @@
 
 @file:OptIn(ExperimentalWasmJsInterop::class)
 
-package androidx.compose.mpp.demo.webgl
+package androidx.compose.ui.graphics.webgl
 
 import androidx.compose.ui.unit.IntSize
 import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.JsAny
 import org.jetbrains.skia.BackendTexture
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
@@ -42,30 +43,40 @@ import org.w3c.dom.HTMLCanvasElement
 
 // See https://registry.khronos.org/OpenGL/api/GL/glcorearb.h
 // #define GL_RGBA8 0x8058
-internal const val GL_RGBA8 = 0x8058
+private const val GL_RGBA8 = 0x8058
 
 /**
- * A helper wrapper for values associated with the WebGL texture.
+ * A WebGL texture that a Skia [Image] has adopted: the image samples the texture directly, so
+ * whatever is rendered into the texture is what Compose draws, with no copies in between.
  *
- * @param texture - the WebGL texture in the same WebGL context as Skiko
- * @param textureId - the id that Emscripten associates with the [texture]
- * @param image - Skiko Image which "adopted" the [texture]
+ * @param texture the WebGL texture, living in the same WebGL context as Skia
+ * @param textureId the id Emscripten associates with [texture]
+ * @param image the Skia image which adopted [texture]
  */
-internal class AdoptedGlTexture(
+internal class AdoptedGLTexture(
     val texture: WebGLTexture,
     val textureId: Int,
     val image: Image,
-)
+    val size: IntSize,
+) {
+    fun dispose() {
+        // Closing the image releases Skia's reference to the texture; Skia owns the texture since
+        // it adopted it, so it is not deleted here.
+        image.close()
+        unregisterTexture(textureId)
+    }
+}
 
 /**
- * @param context - the rendering context of Skiko canvas
- * @param size - the size of the texture
- * @return - a wrapper [AdoptedGlTexture]
+ * Allocates an RGBA8 texture in this context and hands it over to Skia.
+ *
+ * @param context the [DirectContext] Skia renders this canvas with
+ * @param size the size of the texture, in pixels
  */
 internal fun WebGLRenderingContext.adoptNewTexture(
     context: DirectContext,
     size: IntSize,
-): AdoptedGlTexture {
+): AdoptedGLTexture {
     val texture = createTexture() ?: error("gl.createTexture() returned null")
     bindTexture(TEXTURE_2D, texture)
     texImage2D(TEXTURE_2D, 0, RGBA, size.width, size.height, 0, RGBA, UNSIGNED_BYTE, null)
@@ -87,15 +98,15 @@ internal fun WebGLRenderingContext.adoptNewTexture(
             textureFormat = GL_RGBA8,
         ).use { backendTexture ->
             Image.adoptTextureFrom(
-                context,
-                backendTexture,
-                SurfaceOrigin.BOTTOM_LEFT,
-                ColorType.RGBA_8888,
-                ColorAlphaType.PREMUL,
+                context = context,
+                backendTexture = backendTexture,
+                origin = SurfaceOrigin.BOTTOM_LEFT,
+                colorType = ColorType.RGBA_8888,
+                alphaType = ColorAlphaType.PREMUL,
             )
         }
         ownershipTransferred = true
-        return AdoptedGlTexture(texture, textureId, image)
+        return AdoptedGLTexture(texture, textureId, image, size)
     } finally {
         if (!ownershipTransferred) {
             unregisterTexture(textureId)
@@ -104,5 +115,30 @@ internal fun WebGLRenderingContext.adoptNewTexture(
     }
 }
 
-internal fun webGl2ContextOf(canvas: HTMLCanvasElement): WebGLRenderingContext? =
+internal fun webGl2ContextOrNull(canvas: HTMLCanvasElement): WebGLRenderingContext? =
     js("canvas.getContext('webgl2')")
+
+@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+// TODO: delete the two helpers below once Skiko exposes them.
+//  See https://github.com/JetBrains/skiko/pull/1270
+private fun pushTexture(texture: JsAny): Int = pushTexture(org.jetbrains.skiko.GL, texture)
+
+@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+private fun unregisterTexture(textureId: Int): Unit =
+    unregisterTexture(org.jetbrains.skiko.GL, textureId)
+
+@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+// language=js
+private fun pushTexture(gl: org.jetbrains.skiko.GLInterface, texture: JsAny): Int =
+    js(
+        """(function() {
+        const textureHandle = gl.getNewId(gl.textures);
+        gl.textures[textureHandle] = texture;
+        return textureHandle;
+    })()"""
+    )
+
+@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+// language=js
+private fun unregisterTexture(gl: org.jetbrains.skiko.GLInterface, textureId: Int): Unit =
+    js("(gl.textures[textureId] = null)")
