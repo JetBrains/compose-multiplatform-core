@@ -55,27 +55,6 @@ androidXMultiplatform {
             api("org.jetbrains.androidx.window:window-core:1.5.0")
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.9.1")
-            api("androidx.annotation:annotation-experimental:1.5.1")
-            api("androidx.window:window:1.5.0")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:material3:material3"))
-            implementation(project(":compose:test-utils"))
-            implementation(project(":window:window-testing"))
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-            implementation(libs.truth)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.junit)
-            implementation(libs.testRunner)
-            implementation(libs.truth)
-        }
-
         nonAndroidMain {
             dependsOn(commonMain)
         }
