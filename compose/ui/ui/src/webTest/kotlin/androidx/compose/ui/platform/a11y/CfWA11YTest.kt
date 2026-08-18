@@ -21,8 +21,10 @@
 package androidx.compose.ui.platform.a11y
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -35,12 +37,16 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -564,6 +570,111 @@ class CfWA11YTest : OnCanvasTests {
 
         text.click()
         assertEquals(2, clickCounter, "Re-added clickable text must fire click action")
+    }
+
+    @Test
+    fun clickOnNestedClickableBox() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var outerClickCounter = 0
+        var innerClickCounter = 0
+
+        createComposeWindow {
+            // A clickable Box is a "merging" semantics node (shouldMergeDescendantSemantics == true),
+            // so it survives the outer clickable's descendant-merge and stays as a separate
+            // nested a11y node (the same way a Button stays separate inside a clickable Row).
+            Box(
+                modifier = Modifier
+                    .testTag("outerBox")
+                    .clickable { outerClickCounter++ }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(40.dp)
+                        .testTag("innerBox")
+                        .clickable { innerClickCounter++ }
+                ) {
+                    Text("Nested text")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = getA11YContainer()!!
+        val outerBox = getShadowRoot().getElementById("outerBox") as? HTMLElement
+        assertTrue(a11yContainer.contains(outerBox))
+        assertNotNull(outerBox, "Outer clickable box must be present in the a11y tree")
+        assertEquals("button", outerBox.getAttribute("role"))
+
+        val innerBox = getShadowRoot().getElementById("innerBox") as? HTMLElement
+        assertTrue(a11yContainer.contains(innerBox))
+        assertNotNull(innerBox, "Nested clickable box must be present in the a11y tree")
+        assertEquals("button", innerBox.getAttribute("role"))
+        assertTrue(outerBox.contains(innerBox), "Nested box must be nested inside the outer box a11y node")
+
+        // A click where event.target is the nested clickable element must fire
+        // the INNER click action (the innermost clickable wins), not the outer one
+        innerBox.click()
+        assertEquals(1, innerClickCounter, "Clicking the nested box must fire its own click action")
+        assertEquals(0, outerClickCounter, "Clicking the nested box must not fire the outer click action")
+
+        // A click where event.target is the outer element fires the outer click action
+        outerBox.click()
+        assertEquals(1, outerClickCounter, "Clicking the outer box must fire its own click action")
+        assertEquals(1, innerClickCounter, "Clicking the outer box must not fire the nested click action")
+    }
+
+    @Test
+    fun stopRemovesClickListenerAndStopsA11YUpdates() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var showButton2 by mutableStateOf(false)
+
+        createComposeWindow {
+            Button(onClick = { clickCounter++ }) {
+                Text("Button1")
+            }
+            if (showButton2) {
+                Button(onClick = {}) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = getA11YContainer()!!
+        val button1 = a11yContainer.children[0]!!.children[0] as HTMLElement
+        assertEquals("button", button1.getAttribute("role"))
+
+        button1.click()
+        assertEquals(1, clickCounter, "Click must fire before stop()")
+
+        val listener = getComposeWindowOrNull()!!.webSemanticsListener
+        assertNotNull(listener, "A11Y semantics listener must be present")
+
+        listener.stop()
+        // stop() must be idempotent
+        listener.stop()
+        assertTrue(a11yContainer.innerHTML.isEmpty(), "A11Y tree must cleared after stop()")
+
+        // A stopped listener must not be restartable
+        assertFailsWith<IllegalStateException> {
+            // The scope doesn't matter: start() must throw before using it
+            listener.start(CoroutineScope(EmptyCoroutineContext))
+        }
+
+        assertEquals(0, a11yContainer.childElementCount, "A11Y tree must be cleared from the DOM after stop()")
+
+        button1.click()
+        assertEquals(1, clickCounter, "Click listener must be removed after stop()")
+
+        // The A11Y tree must not be updated after stop() even though the semantics still change
+        showButton2 = true
+        awaitIdle()
+        // Wait longer than the 100ms debounce: a running listener would have synced the tree by now
+        realDelay(300)
+        assertTrue(a11yContainer.innerHTML.isEmpty(), "A11Y tree must not be synced after stop()")
     }
 
     @Test // https://youtrack.jetbrains.com/issue/CMP-8614
