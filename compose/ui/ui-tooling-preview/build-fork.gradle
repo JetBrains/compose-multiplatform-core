@@ -51,10 +51,6 @@ androidXMultiplatform {
             api(project(":compose:runtime:runtime"))
         }
 
-        androidHostTest.dependencies {
-            implementation(libs.junit)
-        }
-
         nonAndroidMain {
             dependsOn(commonMain)
         }
@@ -102,4 +98,3 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-tooling-preview:ui-tooling-preview-samples"))
 }
-

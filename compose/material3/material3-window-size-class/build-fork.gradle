@@ -60,26 +60,6 @@ androidXMultiplatform {
             implementation(project(":kruth:kruth"))
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation-experimental:1.4.1")
-            implementation("androidx.window:window:1.0.0")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:test-utils"))
-            implementation("androidx.compose.foundation:foundation:1.6.0")
-            implementation(project(":compose:runtime:runtime"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.kotlinTest)
-            implementation(libs.truth)
-        }
-
         // TODO: Align naming: nonAndroidMain
         skikoMain {
             dependsOn(commonMain)

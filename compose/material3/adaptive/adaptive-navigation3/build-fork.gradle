@@ -56,21 +56,6 @@ androidXMultiplatform {
             implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.0.1")
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation:1.8.1")
-            implementation("androidx.activity:activity-compose:1.12.2")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:material3:material3"))
-            implementation(project(":compose:test-utils"))
-            implementation(project(":navigation3:navigation3-ui"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-        }
-
         nonAndroidMain {
             dependsOn(commonMain)
         }
