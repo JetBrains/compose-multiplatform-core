@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// The demo reaches for ComposeWindow to get the DirectContext Compose renders with; it is internal
+// API, hence the suppression (the same trick the rest of this demo module uses).
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+
 package androidx.compose.mpp.demo.webgl
 
 import androidx.compose.foundation.Canvas
@@ -57,14 +61,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.LocalComposeWindow
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.Rect
 
 /**
@@ -81,13 +87,16 @@ private data class Frame(val index: Long, val timeSeconds: Float, val fps: Float
 
 @Composable
 private fun TextureAdoptionDemo() {
-    val scene = remember { AdoptedGlScene.createOrNull() }
+    val composeWindow = LocalComposeWindow.current
+    val scene = remember(composeWindow) {
+        composeWindow?.let { AdoptedGlScene.createOrNull(it.htmlCanvas) }
+    }
     DisposableEffect(scene) { onDispose { scene?.dispose() } }
 
     if (scene == null) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Text(
-                "Could not find the WebGL context Compose renders into, so there is nothing to " +
+                "Could not obtain the WebGL context Compose renders with, so there is nothing to " +
                     "adopt a texture from.",
                 textAlign = TextAlign.Center,
             )
@@ -115,7 +124,10 @@ private fun TextureAdoptionDemo() {
     scene.recreateTextureEveryFrame = recreateEveryFrame
     scene.textureSize = IntSize(textureSide.roundToInt(), (textureSide * 0.625f).roundToInt())
 
-    LaunchedEffect(running) {
+    // withFrameNanos callbacks run inside the frame, before Compose measures, lays out and draws —
+    // so this is where the WebGL pass belongs: the texture holds this frame's content by the time
+    // Skia submits the frame that samples it.
+    LaunchedEffect(running, scene) {
         if (!running) return@LaunchedEffect
         var previousNanos = 0L
         while (true) {
@@ -133,6 +145,12 @@ private fun TextureAdoptionDemo() {
                         current.fps
                     },
                 )
+                // Null until Compose has rendered its first frame and captured the context.
+                val directContext = composeWindow?.skiaDirectContext
+                if (directContext != null) {
+                    scene.renderFrame(directContext, next.timeSeconds)
+                }
+
                 frame.value = next
                 if (next.index % 20 == 0L) stats = next
             }
@@ -162,7 +180,7 @@ private fun TextureAdoptionDemo() {
             onRecreateEveryFrameChange = { recreateEveryFrame = it },
             onRoundTrip = { roundTripLog = scene.registrationRoundTrip() },
         )
-        Status(scene, stats, roundTripLog)
+        Status(scene, stats, composeWindow?.skiaDirectContext, roundTripLog)
     }
 }
 
@@ -238,21 +256,19 @@ private fun Variants(scene: AdoptedGlScene, frame: State<Frame>) {
 }
 
 /**
- * Renders the WebGL scene for this frame and draws the adopted [org.jetbrains.skia.Image].
- *
- * The interesting three lines: `recordingContext` gives the [org.jetbrains.skia.DirectContext]
- * Compose is rendering with, [AdoptedGlScene.prepare] renders raw WebGL into the texture Skia owns,
- * and `drawImageRect` records a draw of that very texture — no readback, no upload.
+ * Draws the adopted [org.jetbrains.skia.Image] — nothing else. All GL work already happened in this
+ * frame's `withFrameNanos` callback, which is what lets this composable live inside graphics layers
+ * (`clip`, `blur`, `graphicsLayer`): the draw is merely recorded here and replayed into the GPU
+ * surface later, which is fine for an image that already belongs to Skia's context.
  */
 @Composable
 private fun AdoptedTextureSurface(scene: AdoptedGlScene, frame: State<Frame>, modifier: Modifier) {
     Canvas(modifier) {
         drawIntoCanvas { canvas ->
             // Reading the frame here, inside the draw scope, is what schedules the next redraw.
-            val currentFrame = frame.value
-            val skiaCanvas = canvas.nativeCanvas
-            val image = scene.prepare(skiaCanvas, currentFrame.index, currentFrame.timeSeconds)
-                ?: return@drawIntoCanvas
+            frame.value
+            val skiaCanvas = canvas.skiaCanvas
+            val image = scene.image ?: return@drawIntoCanvas
 
             // Center-crop so that square tiles do not squash the 16:10 texture.
             val scale = min(image.width / size.width, image.height / size.height)
@@ -349,12 +365,18 @@ private fun Toggle(label: String, checked: Boolean, onCheckedChange: (Boolean) -
 }
 
 @Composable
-private fun Status(scene: AdoptedGlScene, frame: Frame, roundTripLog: String?) {
+private fun Status(
+    scene: AdoptedGlScene,
+    frame: Frame,
+    directContext: DirectContext?,
+    roundTripLog: String?,
+) {
     Card(Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            StatusLine("skia context", directContext?.toString() ?: "not captured yet")
             StatusLine("state", scene.status)
             StatusLine("adopted texture id", scene.adoptedTextureId.toString())
             StatusLine("textures handed to Skia", scene.adoptedTextureCount.toString())

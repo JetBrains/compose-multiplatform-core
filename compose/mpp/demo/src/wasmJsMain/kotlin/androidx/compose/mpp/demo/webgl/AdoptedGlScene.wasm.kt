@@ -27,7 +27,6 @@ import kotlin.js.unsafeCast
 import kotlin.math.cos
 import kotlin.math.sin
 import org.jetbrains.skia.BackendTexture
-import org.jetbrains.skia.Canvas as SkCanvas
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.DirectContext
@@ -93,17 +92,23 @@ private val QUAD_VERTICES = floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f)
  *    no share groups, so this is the only context whose textures Skia is allowed to touch.
  * 2. [pushTexture] publishes our `WebGLTexture` in Emscripten's texture table, which is what turns
  *    it into the numeric id Skia's GL API speaks.
- * 3. `recordingContext` on the Skia canvas hands out the [DirectContext] Compose is rendering with,
- *    and an adopted [Image] can only be drawn by the context that adopted it.
+ * 3. An adopted [Image] can only be drawn by the [DirectContext] that adopted it, so the context
+ *    Compose renders with has to be the one passed to [renderFrame].
+ *
+ * [renderFrame] is meant to be called once per frame from a `withFrameNanos` callback, which runs
+ * before Compose measures, lays out and draws. Drawing sites then only draw [image]; they never
+ * touch GL. That split matters: the canvas a composable draws on is usually a graphics layer's
+ * display-list recorder, so GL work cannot happen there.
  */
 internal class AdoptedGlScene private constructor(private val gl: WebGLRenderingContext) {
 
     companion object {
         /**
-         * Returns a scene bound to Skiko's WebGL context, or `null` when it cannot be found — for
-         * instance when Compose is not rendering into a canvas on this page.
+         * Returns a scene rendering into [canvas]'s WebGL2 context — the context Skiko uses — or
+         * `null` if that context cannot be obtained.
          */
-        fun createOrNull(): AdoptedGlScene? = findComposeWebGlContext()?.let(::AdoptedGlScene)
+        fun createOrNull(canvas: HTMLCanvasElement): AdoptedGlScene? =
+            webGl2ContextOf(canvas)?.let(::AdoptedGlScene)
     }
 
     /** How much the plasma field is domain-warped. */
@@ -147,47 +152,41 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
     private var patternTexture: WebGLTexture? = null
 
     private var target: AdoptedTexture? = null
-    private var adoptedSize = IntSize.Zero
-    private var preparedFrame = -1L
-    private var failed = false
 
     /**
-     * Renders the next frame of the WebGL scene into the adopted texture and returns the [Image]
-     * that wraps it, or `null` when the scene cannot run. Safe to call several times per frame: the
-     * WebGL work happens once per [frameIndex], later calls return the same [Image].
-     *
-     * Must be called while Compose is drawing — that is when `recordingContext` is available.
+     * The previous frame's image in "new texture every frame" mode. It is closed one frame late,
+     * because a display list recorded during the previous frame may still reference it.
      */
-    fun prepare(canvas: SkCanvas, frameIndex: Long, timeSeconds: Float): Image? {
-        if (failed) return null
+    private var retiredImage: Image? = null
+    private var adoptedSize = IntSize.Zero
+    private var failed = false
 
-        // The context Compose is rendering with right now. It is borrowed, never closed here.
-        val context = canvas.recordingContext
-        if (context == null) {
-            status = "this canvas has no recordingContext, so Compose is not rendering on the GPU"
-            return null
-        }
+    /** The adopted texture to draw, or `null` until the first frame has been rendered. */
+    val image: Image? get() = target?.image
+
+    /**
+     * Renders one frame of the WebGL scene into the adopted texture, adopting a new texture first if
+     * needed. Call once per frame from `withFrameNanos`, passing the context Compose renders with.
+     */
+    fun renderFrame(context: DirectContext, timeSeconds: Float) {
+        if (failed) return
 
         val size = IntSize(
             width = textureSize.width.coerceIn(16, 4096),
             height = textureSize.height.coerceIn(16, 4096),
         )
-        val prepared = target
-        if (frameIndex == preparedFrame && prepared != null && adoptedSize == size) {
-            return prepared.image
-        }
 
-        return try {
+        try {
             createGlObjectsIfNeeded()
+
+            retiredImage?.close()
+            retiredImage = null
 
             val previous = target
             val current = when {
                 previous == null || adoptedSize != size || recreateTextureEveryFrame -> {
                     adoptFreshTexture(context, size).also {
-                        // The outgoing Image is closed right away even though Skia may not have
-                        // flushed yet: a recorded draw holds its own reference to the image, so the
-                        // texture stays alive until the frame that uses it is submitted.
-                        previous?.image?.close()
+                        retiredImage = previous?.image
                         adoptedSize = size
                     }
                 }
@@ -201,17 +200,14 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
             // texture bindings it had cached are stale now. Without this, Compose renders garbage.
             context.resetAll()
 
-            preparedFrame = frameIndex
             status = if (recreateTextureEveryFrame) {
                 "adopting a new ${size.width}×${size.height} texture every frame"
             } else {
                 "one adopted ${size.width}×${size.height} texture, re-rendered in place"
             }
-            current.image
         } catch (throwable: Throwable) {
             failed = true
             status = "failed: ${throwable.message}"
-            null
         }
     }
 
@@ -229,6 +225,8 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
     }
 
     fun dispose() {
+        retiredImage?.close()
+        retiredImage = null
         target?.image?.close()
         target = null
         adoptedSize = IntSize.Zero
@@ -449,38 +447,11 @@ private fun WebGLRenderingContext.createCompiledShader(type: Int, source: String
 private fun JsAny?.isTrue(): Boolean = this?.unsafeCast<JsBoolean>()?.toBoolean() == true
 
 /**
- * Compose renders into a `<canvas>` nested in an open shadow root, so it is found by walking the
- * shadow trees on the page.
+ * Skiko already created a `"webgl2"` context for this canvas, and a canvas never hands out a second
+ * context — so this returns the exact context Skia renders with.
  */
-private fun findComposeWebGlContext(): WebGLRenderingContext? {
-    val canvas = findCanvasInShadowRoots() ?: return null
-    // Skiko created a "webgl2" context for this canvas; asking again returns that same object.
-    return webGl2ContextOf(canvas)
-}
-
 private fun webGl2ContextOf(canvas: HTMLCanvasElement): WebGLRenderingContext? =
     js("canvas.getContext('webgl2')")
-
-private fun findCanvasInShadowRoots(): HTMLCanvasElement? = js(
-    """
-    (() => {
-        const search = (root) => {
-            const elements = root.querySelectorAll('*');
-            for (let i = 0; i < elements.length; i++) {
-                const shadow = elements[i].shadowRoot;
-                if (shadow) {
-                    const canvas = shadow.querySelector('canvas');
-                    if (canvas) return canvas;
-                    const nested = search(shadow);
-                    if (nested) return nested;
-                }
-            }
-            return null;
-        };
-        return search(document);
-    })()
-    """
-)
 
 private const val SCENE_VERTEX_SHADER = """
     attribute vec2 aPosition;
