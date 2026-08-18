@@ -199,7 +199,7 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        AdoptedImageRender({ threeJsScene.image }, frame)
+        AdoptedImageRender({ threeJsScene.imageToRender }, frame)
         Card(Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
