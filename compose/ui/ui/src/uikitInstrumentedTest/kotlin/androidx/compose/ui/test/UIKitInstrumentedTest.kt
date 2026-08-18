@@ -17,12 +17,14 @@
 package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.AccessibilityNotification
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
@@ -58,6 +60,7 @@ import androidx.compose.ui.text.input.keyboardAppearance
 import androidx.compose.ui.text.input.keyboardType
 import androidx.compose.ui.text.input.returnKeyType
 import androidx.compose.ui.text.input.textContentType
+import androidx.compose.ui.text.input.usingNativeTextInput
 import androidx.compose.ui.text.input.writingToolsBehavior
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
@@ -78,6 +81,7 @@ import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -128,6 +132,7 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
+import platform.UIKit.accessibilityActivate
 import platform.UIKit.endEditing
 import platform.UIKit.setOverrideTraitCollection
 import platform.UIKit.systemBackgroundColor
@@ -268,6 +273,29 @@ internal class UIKitInstrumentedTest(
     val accessibilityNotifications = mutableListOf<AccessibilityNotification>()
     val lastAccessibilityNotification: AccessibilityNotification?
         get() = accessibilityNotifications.lastOrNull()
+
+    private val _nativeTextInputSessions = mutableListOf<NativeTextInputSessionRecord>()
+    val nativeTextInputSessions: List<NativeTextInputSessionRecord> get() = _nativeTextInputSessions
+
+    internal fun recordForcedNativeTextInputSession(record: NativeTextInputSessionRecord) {
+        _nativeTextInputSessions.add(record)
+    }
+
+    private fun printNativeTextInputSessionsSummary() {
+        val sessions = _nativeTextInputSessions
+        if (sessions.isEmpty()) {
+            println(
+                "Debug: NITI sessions intercepted: 0 — native text input was never exercised"
+            )
+        } else {
+            val alreadyNative = sessions.count { it.wasAlreadyNative }
+            println(
+                "Debug: NITI sessions intercepted: ${sessions.size} " +
+                    "(already native: $alreadyNative, forced: ${sessions.size - alreadyNative})"
+            )
+        }
+    }
+
     private var hostingViewController: ComposeHostingViewController? = null
     private var hostingView: ComposeHostingView? = null
 
@@ -379,6 +407,11 @@ internal class UIKitInstrumentedTest(
     }
 
     fun tearDown() {
+        // Printed before the teardown touches text editing, so the numbers describe only what the
+        // test body did. Grep the run log for "NITI sessions intercepted: 0" to find tests that
+        // passed without ever exercising the native text input path.
+        printNativeTextInputSessionsSummary()
+
         clearComposeContainerReferencesIfDetached()
 
         // Stop text editing and hide keyboard if any
@@ -746,13 +779,47 @@ internal class UIKitInstrumentedTest(
     }
 }
 
+internal class NativeTextInputSessionRecord(
+    val wasAlreadyNative: Boolean,
+)
+
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-internal fun forceNativeTextInputForTests(content: @Composable () -> Unit) {
-    InterceptPlatformTextInput(
-        interceptor = { request, nextHandler ->
+internal fun UIKitInstrumentedTest.forceNativeTextInputForTests(content: @Composable () -> Unit) {
+    val test = this
+    // The interceptor has to be remembered: InterceptPlatformTextInput restarts the active input
+    // session whenever a different interceptor instance is passed, which would resign and re-acquire
+    // first responder and drop the edit menu state in the middle of a test.
+    val interceptor = remember(test) {
+        PlatformTextInputInterceptor { request, nextHandler ->
+            test.recordForcedNativeTextInputSession(
+                NativeTextInputSessionRecord(
+                    wasAlreadyNative =
+                        request.imeOptions.platformImeOptions?.usingNativeTextInput == true
+                )
+            )
             nextHandler.startInputMethod(request.withNativeTextInput())
-        },
+        }
+    }
+    InterceptPlatformTextInput(
+        interceptor = interceptor,
         content = content,
+    )
+}
+
+/**
+ * Asserts that at least one text input session went through [forceNativeTextInputForTests], i.e. that
+ * this test actually exercised the native text input path.
+ *
+ * Use it in tests whose result would otherwise be indistinguishable from a test that never started a
+ * text input session at all — see [UIKitInstrumentedTest.nativeTextInputSessions].
+ */
+internal fun UIKitInstrumentedTest.assertNativeTextInputWasUsed(message: String? = null) {
+    assertTrue(
+        nativeTextInputSessions.isNotEmpty(),
+        message
+            ?: "No text input session was started, so the native text input path was never " +
+                "exercised. This test passing says nothing about NITI behavior."
     )
 }
 
@@ -770,7 +837,7 @@ private fun ImeOptions.withNativeTextInput(): ImeOptions =
     copy(platformImeOptions = platformImeOptions.withNativeTextInput())
 
 @OptIn(ExperimentalComposeUiApi::class)
-private fun PlatformImeOptions?.withNativeTextInput(): PlatformImeOptions {
+internal fun PlatformImeOptions?.withNativeTextInput(): PlatformImeOptions {
     val originalOptions = this
     return PlatformImeOptions {
         if (originalOptions != null) {
@@ -994,15 +1061,17 @@ internal fun UIViewController.setLayoutDirection(
 }
 
 internal fun UIKitInstrumentedTest.tapContextMenuButton(label: String) {
-    if (available(OS.Ios to OSVersion(16))) {
-        findNodeWithLabel(label).tap()
-    } else {
-        // Because on iOS < 16 the context menu is shown in a separate window,
-        // it's not fully interactive with the default Tap action.
-        findNodeWithLabel(label)
-            .touchDown(useNodeWindow = true)
-            .hold()
-            .also { delay(100) }
-            .up()
+    val button = findNodeWithLabel(label)
+    if (available(OS.Ios to OSVersion(16)) && button.element?.accessibilityActivate() == true) {
+        waitForIdle()
+        return
     }
+
+    // Context menus can be shown in a separate window, so route the touch through the menu item's
+    // own window when UIKit exposes it.
+    button
+        .touchDown(useNodeWindow = true)
+        .hold()
+        .also { delay(100) }
+        .up()
 }
