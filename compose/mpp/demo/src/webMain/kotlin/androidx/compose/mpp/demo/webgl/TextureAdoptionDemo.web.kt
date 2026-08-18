@@ -20,7 +20,6 @@
 
 package androidx.compose.mpp.demo.webgl
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -40,8 +39,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Slider
-import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.mpp.demo.Screen
 import androidx.compose.runtime.Composable
@@ -59,19 +56,14 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.LocalComposeWindow
-import kotlin.math.min
 import kotlin.math.roundToInt
 import org.jetbrains.skia.DirectContext
-import org.jetbrains.skia.Rect
 
 /**
  * Draws a WebGL scene inside Compose with no pixel copies: the scene is rendered into a
@@ -79,7 +71,9 @@ import org.jetbrains.skia.Rect
  * clipped, rotated, blurred and composited with regular Compose content on top of it.
  */
 val TextureAdoptionScreen = Screen.Example("WebGL texture adoption") {
-    TextureAdoptionDemo()
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        TextureAdoptionDemo()
+    }
 }
 
 /** One tick of the demo clock. */
@@ -158,8 +152,9 @@ private fun TextureAdoptionDemo() {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        modifier = Modifier.width(600.dp).verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Hero(scene, frame)
         Variants(scene, frame)
@@ -213,7 +208,7 @@ private fun Hero(scene: AdoptedGlScene, frame: State<Frame>) {
             .background(Brush.linearGradient(listOf(Color(0xFF12123A), Color(0xFF3A1250)))),
         contentAlignment = Alignment.BottomStart,
     ) {
-        AdoptedTextureSurface(scene, frame, Modifier.fillMaxSize())
+        AdoptedTextureSurface(Modifier.fillMaxSize(), frame) { scene.image }
         Column(Modifier.padding(20.dp)) {
             Text(
                 "Compose draws on top",
@@ -236,52 +231,20 @@ private fun Variants(scene: AdoptedGlScene, frame: State<Frame>) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        AdoptedTextureSurface(scene, frame, Modifier.size(96.dp).clip(CircleShape))
+        AdoptedTextureSurface(Modifier.size(96.dp).clip(CircleShape), frame) { scene.image }
         AdoptedTextureSurface(
-            scene,
-            frame,
             Modifier.size(96.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .graphicsLayer {
                     rotationZ = 12f
                     alpha = 0.75f
                 },
-        )
-        AdoptedTextureSurface(
-            scene,
             frame,
+        ) { scene.image }
+        AdoptedTextureSurface(
             Modifier.size(96.dp).clip(RoundedCornerShape(16.dp)).blur(6.dp),
-        )
-    }
-}
-
-/**
- * Draws the adopted [org.jetbrains.skia.Image] — nothing else. All GL work already happened in this
- * frame's `withFrameNanos` callback, which is what lets this composable live inside graphics layers
- * (`clip`, `blur`, `graphicsLayer`): the draw is merely recorded here and replayed into the GPU
- * surface later, which is fine for an image that already belongs to Skia's context.
- */
-@Composable
-private fun AdoptedTextureSurface(scene: AdoptedGlScene, frame: State<Frame>, modifier: Modifier) {
-    Canvas(modifier) {
-        drawIntoCanvas { canvas ->
-            // Reading the frame here, inside the draw scope, is what schedules the next redraw.
-            frame.value
-            val skiaCanvas = canvas.skiaCanvas
-            val image = scene.image ?: return@drawIntoCanvas
-
-            // Center-crop so that square tiles do not squash the 16:10 texture.
-            val scale = min(image.width / size.width, image.height / size.height)
-            val cropWidth = size.width * scale
-            val cropHeight = size.height * scale
-            val source = Rect.makeXYWH(
-                (image.width - cropWidth) / 2f,
-                (image.height - cropHeight) / 2f,
-                cropWidth,
-                cropHeight,
-            )
-            skiaCanvas.drawImageRect(image, source, Rect.makeWH(size.width, size.height))
-        }
+            frame,
+        ) { scene.image }
     }
 }
 
@@ -308,10 +271,10 @@ private fun Controls(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            LabelledSlider("warp", warp, 0f..1.2f, onWarpChange)
-            LabelledSlider("palette", hue, 0f..1f, onHueChange)
-            LabelledSlider("glow", glow, 0f..1.5f, onGlowChange)
-            LabelledSlider("speed", speed, 0f..3f, onSpeedChange)
+            LabelledSlider("warp", warp, 0f..1.2f, onValueChange = onWarpChange)
+            LabelledSlider("palette", hue, 0f..1f, onValueChange = onHueChange)
+            LabelledSlider("glow", glow, 0f..1.5f, onValueChange = onGlowChange)
+            LabelledSlider("speed", speed, 0f..3f, onValueChange = onSpeedChange)
             LabelledSlider(
                 label = "texture width",
                 value = textureSide,
@@ -329,38 +292,6 @@ private fun Controls(
                 Text("pushTexture + unregisterTexture round trip")
             }
         }
-    }
-}
-
-@Composable
-private fun LabelledSlider(
-    label: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    valueText: String = ((value * 100).roundToInt() / 100f).toString(),
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.width(110.dp), style = MaterialTheme.typography.body2)
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = valueRange,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            valueText,
-            Modifier.padding(start = 12.dp),
-            style = MaterialTheme.typography.caption,
-        )
-    }
-}
-
-@Composable
-private fun Toggle(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-        Text(label, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.body2)
     }
 }
 
@@ -385,21 +316,5 @@ private fun Status(
                 StatusLine("round trip", roundTripLog)
             }
         }
-    }
-}
-
-@Composable
-private fun StatusLine(label: String, value: String) {
-    Row(Modifier.fillMaxWidth()) {
-        Text(
-            label,
-            Modifier.width(170.dp),
-            style = MaterialTheme.typography.caption,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.caption,
-            fontFamily = FontFamily.Monospace,
-        )
     }
 }

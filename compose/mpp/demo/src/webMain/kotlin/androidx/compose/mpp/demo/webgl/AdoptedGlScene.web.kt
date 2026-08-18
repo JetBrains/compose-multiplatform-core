@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSkikoApi::class, ExperimentalWasmJsInterop::class)
+@file:OptIn(ExperimentalWasmJsInterop::class)
 
 package androidx.compose.mpp.demo.webgl
 
@@ -26,16 +26,8 @@ import kotlin.js.toBoolean
 import kotlin.js.unsafeCast
 import kotlin.math.cos
 import kotlin.math.sin
-import org.jetbrains.skia.BackendTexture
-import org.jetbrains.skia.ColorAlphaType
-import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.DirectContext
 import org.jetbrains.skia.Image
-import org.jetbrains.skia.SurfaceOrigin
-import org.jetbrains.skia.impl.use
-import org.jetbrains.skiko.ExperimentalSkikoApi
-import org.jetbrains.skiko.pushTexture
-import org.jetbrains.skiko.unregisterTexture
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.WebGLBuffer
@@ -76,9 +68,6 @@ import org.khronos.webgl.WebGLUniformLocation
 import org.khronos.webgl.set
 import org.w3c.dom.HTMLCanvasElement
 
-/** `GL_RGBA8`, the sized format Skia expects for an `RGBA` / `UNSIGNED_BYTE` texture. */
-private const val GL_RGBA8 = 0x8058
-
 /** Vertices of a viewport-filling triangle strip, in clip space. */
 private val QUAD_VERTICES = floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f)
 
@@ -91,7 +80,8 @@ private val QUAD_VERTICES = floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f)
  *    `WebGL2RenderingContext` Skiko created — a canvas never hands out a second context. WebGL has
  *    no share groups, so this is the only context whose textures Skia is allowed to touch.
  * 2. [pushTexture] publishes our `WebGLTexture` in Emscripten's texture table, which is what turns
- *    it into the numeric id Skia's GL API speaks.
+ *    it into the numeric id Skia's GL API speaks. Skiko only exposes that helper to Kotlin/Wasm, so
+ *    this demo re-implements it for both web targets in `WebGlTextureRegistration.web.kt`.
  * 3. An adopted [Image] can only be drawn by the [DirectContext] that adopted it, so the context
  *    Compose renders with has to be the one passed to [renderFrame].
  *
@@ -151,7 +141,7 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
     /** A texture the demo keeps ownership of; only our own shader ever samples it. */
     private var patternTexture: WebGLTexture? = null
 
-    private var target: AdoptedTexture? = null
+    private var target: AdoptedGlTexture? = null
 
     /**
      * The previous frame's image in "new texture every frame" mode. It is closed one frame late,
@@ -185,9 +175,11 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
             val previous = target
             val current = when {
                 previous == null || adoptedSize != size || recreateTextureEveryFrame -> {
-                    adoptFreshTexture(context, size).also {
+                    gl.adoptNewTexture(context, size).also {
                         retiredImage = previous?.image
                         adoptedSize = size
+                        adoptedTextureId = it.textureId
+                        adoptedTextureCount++
                     }
                 }
                 else -> previous
@@ -234,61 +226,7 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
         releaseGlObjects()
     }
 
-    /**
-     * Allocates a texture, hands it to Emscripten and then to Skia. Once [Image.adoptTextureFrom]
-     * returns, the GL texture belongs to Skia: it must not be deleted here and its table entry must
-     * not be unregistered — closing the [Image] does both.
-     */
-    private fun adoptFreshTexture(context: DirectContext, size: IntSize): AdoptedTexture {
-        val texture = gl.createTexture() ?: error("gl.createTexture() returned null")
-        gl.bindTexture(TEXTURE_2D, texture)
-        gl.texImage2D(TEXTURE_2D, 0, RGBA, size.width, size.height, 0, RGBA, UNSIGNED_BYTE, null)
-        // No mipmaps and plain LINEAR filtering keep Skia on the "just sample the texture" path, so
-        // that re-rendering into the texture shows up immediately instead of serving a cached copy.
-        gl.texParameteri(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR)
-        gl.texParameteri(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR)
-        gl.texParameteri(TEXTURE_2D, TEXTURE_WRAP_S, CLAMP_TO_EDGE)
-        gl.texParameteri(TEXTURE_2D, TEXTURE_WRAP_T, CLAMP_TO_EDGE)
-        gl.bindTexture(TEXTURE_2D, null)
-
-        val textureId = pushTexture(texture)
-        var ownershipTransferred = false
-        try {
-            // The descriptor is closed as soon as the image exists; the texture it described is
-            // Skia's from that point on.
-            val image = BackendTexture.makeGL(
-                size.width,
-                size.height,
-                /* isMipmapped = */ false,
-                textureId,
-                /* textureTarget = */ TEXTURE_2D,
-                /* textureFormat = */ GL_RGBA8,
-            ).use { backendTexture ->
-                // BOTTOM_LEFT because the scene is rendered into a framebuffer, and PREMUL because
-                // the shaders write premultiplied colors. Together they are what makes the texture
-                // blend correctly with the Compose content behind and in front of it.
-                Image.adoptTextureFrom(
-                    context,
-                    backendTexture,
-                    SurfaceOrigin.BOTTOM_LEFT,
-                    ColorType.RGBA_8888,
-                    ColorAlphaType.PREMUL,
-                )
-            }
-            ownershipTransferred = true
-            adoptedTextureId = textureId
-            adoptedTextureCount++
-            return AdoptedTexture(texture, image)
-        } finally {
-            if (!ownershipTransferred) {
-                // Skia never took the texture, so both the table entry and the texture are ours.
-                unregisterTexture(textureId)
-                gl.deleteTexture(texture)
-            }
-        }
-    }
-
-    private fun renderSceneInto(target: AdoptedTexture, timeSeconds: Float, size: IntSize) {
+    private fun renderSceneInto(target: AdoptedGlTexture, timeSeconds: Float, size: IntSize) {
         val plasma = plasmaProgram ?: error("shader programs are not compiled")
         val quad = quadProgram ?: error("shader programs are not compiled")
         val aspect = size.width.toFloat() / size.height.toFloat()
@@ -397,12 +335,6 @@ internal class AdoptedGlScene private constructor(private val gl: WebGLRendering
     }
 }
 
-/**
- * A WebGL texture that belongs to Skia now. [texture] is kept only to re-attach it to our
- * framebuffer; it must not be deleted here, and its Emscripten id must not be unregistered.
- */
-private class AdoptedTexture(val texture: WebGLTexture, val image: Image)
-
 private class GlProgram(
     private val gl: WebGLRenderingContext,
     vertexShaderSource: String,
@@ -445,13 +377,6 @@ private fun WebGLRenderingContext.createCompiledShader(type: Int, source: String
 }
 
 private fun JsAny?.isTrue(): Boolean = this?.unsafeCast<JsBoolean>()?.toBoolean() == true
-
-/**
- * Skiko already created a `"webgl2"` context for this canvas, and a canvas never hands out a second
- * context — so this returns the exact context Skia renders with.
- */
-private fun webGl2ContextOf(canvas: HTMLCanvasElement): WebGLRenderingContext? =
-    js("canvas.getContext('webgl2')")
 
 private const val SCENE_VERTEX_SHADER = """
     attribute vec2 aPosition;
