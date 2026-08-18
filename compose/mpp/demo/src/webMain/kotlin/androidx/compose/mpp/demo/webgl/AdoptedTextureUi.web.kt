@@ -77,16 +77,16 @@ internal fun AdoptedTextureSurface(
 @Composable
 internal fun LabelledSlider(
     label: String,
-    value: Float,
+    value: Double,
     valueRange: ClosedFloatingPointRange<Float>,
     valueText: String = ((value * 100).roundToInt() / 100f).toString(),
-    onValueChange: (Float) -> Unit,
+    onValueChange: (Double) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.width(110.dp), style = MaterialTheme.typography.body2)
         Slider(
-            value = value,
-            onValueChange = onValueChange,
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.toDouble()) },
             valueRange = valueRange,
             modifier = Modifier.weight(1f),
         )

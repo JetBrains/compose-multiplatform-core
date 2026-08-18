@@ -51,12 +51,12 @@ internal class ThreeJsAdoptedScene private constructor(
         }
     }
 
-    var spin: Float = 2f
-    var hue: Float = 0.85f
-    var roughness: Float = 0.3f
-    var metalness: Float = 0.6f
-    var opacity: Float = 0.8f
-    var lightIntensity: Float = 3f
+    var hue: Double = 0.85
+    var spin: Double = 2.0
+    var roughness: Double = 0.3
+    var metalness: Double = 0.6
+    var opacity: Double = 0.8
+    var lightIntensity: Double = 3.0
     var textureSize: IntSize = IntSize(1024, 640)
     var status: String = "waiting for the first frame"
         private set
@@ -77,7 +77,7 @@ internal class ThreeJsAdoptedScene private constructor(
      */
     private var retiredImage: Image? = null
     private var adoptedSize = IntSize.Zero
-    private var angle = 0f
+    private var angle = 0.0
     private var failed = false
 
     /** The adopted texture to draw, or `null` until the first frame has been rendered. */
@@ -132,13 +132,15 @@ internal class ThreeJsAdoptedScene private constructor(
             val renderTarget = renderTarget ?: error("the render target was not created")
 
             angle += deltaSeconds * spin
-            knotScene.knot.rotation.x = (angle * 0.6f).toDouble()
-            knotScene.knot.rotation.y = angle.toDouble()
-            knotScene.material.roughness = roughness.toDouble()
-            knotScene.material.metalness = metalness.toDouble()
-            knotScene.material.opacity = opacity.toDouble()
-            knotScene.material.color.setHSL(hue.toDouble(), 0.75, 0.6)
-            knotScene.keyLight.intensity = lightIntensity.toDouble()
+
+            knotScene.updateValues(
+                angle = angle,
+                roughness = roughness,
+                metalness = metalness,
+                opacity = opacity,
+                lightIntensity = lightIntensity,
+                hue = hue
+            )
 
             // Skia rendered the previous frame through this very context, so everything three.js
             // believes about the GL state is stale.
@@ -159,6 +161,23 @@ internal class ThreeJsAdoptedScene private constructor(
             failed = true
             status = "failed: ${throwable.message}"
         }
+    }
+
+    private fun ThreeKnotScene.updateValues(
+        angle: Double,
+        roughness: Double,
+        metalness: Double,
+        opacity: Double,
+        lightIntensity: Double,
+        hue: Double,
+    ) {
+        knot.rotation.x = (angle * 0.6f)
+        knot.rotation.y = angle
+        material.roughness = roughness
+        material.metalness = metalness
+        material.opacity = opacity
+        material.color.setHSL(hue, 0.75, 0.6)
+        keyLight.intensity = lightIntensity
     }
 
     /**

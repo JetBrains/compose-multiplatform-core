@@ -148,7 +148,7 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
     var metalness by remember { mutableStateOf(threeJsScene.metalness) }
     var opacity by remember { mutableStateOf(threeJsScene.opacity) }
     var lightIntensity by remember { mutableStateOf(threeJsScene.lightIntensity) }
-    var textureSide by remember { mutableStateOf(512f) }
+    var textureSize by remember { mutableStateOf(512) }
 
     // Read only from draw scopes, so that a new frame invalidates the drawing and not the whole UI.
     val frame = remember { mutableStateOf(ThreeFrame(0, 0f)) }
@@ -161,7 +161,7 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
     threeJsScene.metalness = metalness
     threeJsScene.opacity = opacity
     threeJsScene.lightIntensity = lightIntensity
-    threeJsScene.textureSize = IntSize(textureSide.roundToInt(), (textureSide * 0.625f).roundToInt())
+    threeJsScene.textureSize = IntSize(textureSize, (textureSize * 0.625f).roundToInt())
 
     // withFrameNanos callbacks run inside the frame, before Compose measures, lays out and draws — so
     // this is where three.js belongs: the texture holds this frame's content by the time Skia submits
@@ -213,10 +213,10 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
                 LabelledSlider("light", lightIntensity, 0f..8f) { lightIntensity = it }
                 LabelledSlider(
                     label = "texture width",
-                    value = textureSide,
+                    value = textureSize.toDouble(),
                     valueRange = 16f..2048f,
-                    onValueChange = { textureSide = it },
-                    valueText = "${textureSide.roundToInt()} px",
+                    onValueChange = { textureSize = it.roundToInt() },
+                    valueText = "${textureSize} px",
                 )
                 Toggle("animate", running) { running = it }
             }
