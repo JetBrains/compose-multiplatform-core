@@ -201,7 +201,6 @@ internal class ComposeContainer(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        windowContext.window = window
         navigationEventInput.onDidMoveToWindow(window, view)
         interfaceOrientationObserver.windowScene = window?.windowScene
 
@@ -210,6 +209,7 @@ internal class ComposeContainer(
         updateInterfaceOrientationState()
 
         layersHolder?.layersViewController?.containerWindow = view.window
+        windowContext.window = window
         updateMotionSpeed()
         lifecycleDelegate.windowScene = window.windowScene
     }
