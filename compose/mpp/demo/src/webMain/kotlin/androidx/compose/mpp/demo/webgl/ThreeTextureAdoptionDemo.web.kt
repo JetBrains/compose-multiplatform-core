@@ -65,14 +65,10 @@ import kotlin.math.roundToInt
 import org.jetbrains.skia.DirectContext
 
 /**
- * The texture adoption demo with the WebGL work delegated to three.js: three renders a lit torus knot
- * into a framebuffer whose color attachment is a texture Skia has adopted, and Compose then draws that
- * texture like any other GPU image — tilted, clipped, blurred and composited with Compose content.
- *
- * Everything interesting about sharing one WebGL context between Skia and a third-party renderer lives
- * in [ThreeAdoptedScene].
+ * The texture adoption demo with the WebGL implementation delegated to three.js:
+ * it renders a lit torus knot into a texture, which is then adopted by Skiko and rendered as Skiko Image.
  */
-val ThreeTextureAdoptionScreen = Screen.Example("WebGL texture adoption (three.js)") {
+val ThreeJsTextureAdoptionScreen = Screen.Example("WebGL texture adoption / Three.js integration") {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         ThreeTextureAdoptionDemo()
     }
@@ -84,7 +80,7 @@ private data class ThreeFrame(val index: Long, val fps: Float)
 private sealed interface SceneState {
     object Loading : SceneState
 
-    class Ready(val scene: ThreeAdoptedScene) : SceneState
+    class Ready(val scene: ThreeJsAdoptedScene) : SceneState
 
     class Failed(val message: String) : SceneState
 }
@@ -104,7 +100,7 @@ private fun ThreeTextureAdoptionDemo() {
             )
         } else {
             try {
-                val scene = ThreeAdoptedScene.createOrNull(canvas)
+                val scene = ThreeJsAdoptedScene.createOrNull(canvas)
                 if (scene != null) {
                     SceneState.Ready(scene)
                 } else {
@@ -143,31 +139,31 @@ private fun Centered(message: String) {
 }
 
 @Composable
-private fun ThreeSceneContent(scene: ThreeAdoptedScene, directContext: () -> DirectContext?) {
+private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: () -> DirectContext?) {
     var running by remember { mutableStateOf(true) }
-    var spin by remember { mutableStateOf(scene.spin) }
-    var hue by remember { mutableStateOf(scene.hue) }
-    var roughness by remember { mutableStateOf(scene.roughness) }
-    var metalness by remember { mutableStateOf(scene.metalness) }
-    var lightIntensity by remember { mutableStateOf(scene.lightIntensity) }
-    var textureSide by remember { mutableStateOf(1024f) }
+    var spin by remember { mutableStateOf(threeJsScene.spin) }
+    var hue by remember { mutableStateOf(threeJsScene.hue) }
+    var roughness by remember { mutableStateOf(threeJsScene.roughness) }
+    var metalness by remember { mutableStateOf(threeJsScene.metalness) }
+    var lightIntensity by remember { mutableStateOf(threeJsScene.lightIntensity) }
+    var textureSide by remember { mutableStateOf(512f) }
 
     // Read only from draw scopes, so that a new frame invalidates the drawing and not the whole UI.
     val frame = remember { mutableStateOf(ThreeFrame(0, 0f)) }
     // Read from composition, and therefore refreshed a few times per second instead of every frame.
     var stats by remember { mutableStateOf(ThreeFrame(0, 0f)) }
 
-    scene.spin = spin
-    scene.hue = hue
-    scene.roughness = roughness
-    scene.metalness = metalness
-    scene.lightIntensity = lightIntensity
-    scene.textureSize = IntSize(textureSide.roundToInt(), (textureSide * 0.625f).roundToInt())
+    threeJsScene.spin = spin
+    threeJsScene.hue = hue
+    threeJsScene.roughness = roughness
+    threeJsScene.metalness = metalness
+    threeJsScene.lightIntensity = lightIntensity
+    threeJsScene.textureSize = IntSize(textureSide.roundToInt(), (textureSide * 0.625f).roundToInt())
 
     // withFrameNanos callbacks run inside the frame, before Compose measures, lays out and draws — so
     // this is where three.js belongs: the texture holds this frame's content by the time Skia submits
     // the frame that samples it. Drawing sites below only draw the resulting image.
-    LaunchedEffect(running, scene) {
+    LaunchedEffect(running, threeJsScene) {
         if (!running) return@LaunchedEffect
         var previousNanos = 0L
         while (true) {
@@ -186,7 +182,7 @@ private fun ThreeSceneContent(scene: ThreeAdoptedScene, directContext: () -> Dir
                 )
                 val context = directContext()
                 if (context != null) {
-                    scene.renderFrame(context, deltaSeconds)
+                    threeJsScene.renderFrame(context, deltaSeconds)
                 }
 
                 frame.value = next
@@ -200,8 +196,7 @@ private fun ThreeSceneContent(scene: ThreeAdoptedScene, directContext: () -> Dir
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Hero(scene, frame)
-        Variants(scene, frame)
+        AdoptedImageRender({ threeJsScene.image }, frame)
         Card(Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -215,7 +210,7 @@ private fun ThreeSceneContent(scene: ThreeAdoptedScene, directContext: () -> Dir
                 LabelledSlider(
                     label = "texture width",
                     value = textureSide,
-                    valueRange = 256f..2048f,
+                    valueRange = 16f..2048f,
                     onValueChange = { textureSide = it },
                     valueText = "${textureSide.roundToInt()} px",
                 )
@@ -228,9 +223,9 @@ private fun ThreeSceneContent(scene: ThreeAdoptedScene, directContext: () -> Dir
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 StatusLine("skia context", directContext()?.toString() ?: "not captured yet")
-                StatusLine("state", scene.status)
-                StatusLine("adopted texture id", scene.adoptedTextureId.toString())
-                StatusLine("textures handed to Skia", scene.adoptedTextureCount.toString())
+                StatusLine("state", threeJsScene.status)
+                StatusLine("adopted texture id", threeJsScene.adoptedTextureId.toString())
+                StatusLine("textures handed to Skia", threeJsScene.adoptedTextureCount.toString())
                 StatusLine("frame", "${stats.index} · ${stats.fps.roundToInt()} fps")
             }
         }
@@ -239,14 +234,14 @@ private fun ThreeSceneContent(scene: ThreeAdoptedScene, directContext: () -> Dir
 
 /** The three.js output as the hero: tilted in 3D by dragging, clipped, with Compose content on top. */
 @Composable
-private fun Hero(scene: ThreeAdoptedScene, frame: State<Any?>) {
+private fun AdoptedImageRender(imageProvider: () -> org.jetbrains.skia.Image?, frame: State<Any?>) {
     var tiltX by remember { mutableStateOf(0f) }
     var tiltY by remember { mutableStateOf(0f) }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.6f)
+            .aspectRatio(1.3f)
             .pointerInput(Unit) {
                 detectDragGestures { _, dragAmount ->
                     tiltY = (tiltY + dragAmount.x * 0.15f).coerceIn(-35f, 35f)
@@ -259,12 +254,17 @@ private fun Hero(scene: ThreeAdoptedScene, frame: State<Any?>) {
                 cameraDistance = 16f * density
             }
             .clip(RoundedCornerShape(28.dp))
-            // A gradient underneath proves the texture arrives with a real alpha channel: three.js
-            // clears it to transparent, so this shows through everywhere the knot is not.
             .background(Brush.linearGradient(listOf(Color(0xFF0E1B33), Color(0xFF3A1250)))),
         contentAlignment = Alignment.BottomStart,
     ) {
-        AdoptedTextureSurface(Modifier.fillMaxSize(), frame) { scene.image }
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+            Text(
+                "Text rendered by Compose",
+                color = Color.White.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.h2
+            )
+        }
+        AdoptedTextureSurface(Modifier.fillMaxSize(), frame, imageProvider)
         Column(Modifier.padding(20.dp)) {
             Text(
                 "three.js below, Compose above",
@@ -278,28 +278,33 @@ private fun Hero(scene: ThreeAdoptedScene, frame: State<Any?>) {
             )
         }
     }
+
+    Variants(imageProvider, frame)
 }
 
 /** The same adopted texture, reused several times in one frame with different Compose treatments. */
 @Composable
-private fun Variants(scene: ThreeAdoptedScene, frame: State<Any?>) {
+private fun Variants(imageProvider: () -> org.jetbrains.skia.Image?, frame: State<Any?>) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        AdoptedTextureSurface(Modifier.size(96.dp).clip(CircleShape), frame) { scene.image }
+        AdoptedTextureSurface(Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray), frame, imageProvider)
         AdoptedTextureSurface(
             Modifier.size(96.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(32.dp))
+                .background(Color.DarkGray)
                 .graphicsLayer {
-                    rotationZ = 12f
+                    rotationX = 45f
                     alpha = 0.75f
                 },
             frame,
-        ) { scene.image }
+            imageProvider,
+        )
         AdoptedTextureSurface(
-            Modifier.size(96.dp).clip(RoundedCornerShape(16.dp)).blur(6.dp),
+            Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray).blur(2.dp),
             frame,
-        ) { scene.image }
+            imageProvider
+        )
     }
 }

@@ -230,15 +230,12 @@ internal fun disposeKnotScene(knotScene: ThreeKnotScene): Unit = js(
 // language=js
 private fun importThree(): Promise<JsAny?> = js("import('three').then(function(m) { return m.default || m; })")
 
-// language=js
-private fun describeJsFailure(error: JsAny?): String = js("String(error)")
-
 private suspend fun Promise<JsAny?>.await(): JsAny? = suspendCancellableCoroutine { continuation ->
     then(
         onFulfilled = { value -> continuation.resume(value); null },
         onRejected = { error ->
             continuation.resumeWithException(
-                IllegalStateException("import('three') failed: ${describeJsFailure(error)}")
+                IllegalStateException("import('three') failed: $error}")
             )
             null
         },

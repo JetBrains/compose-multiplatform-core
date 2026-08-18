@@ -31,9 +31,6 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-/** three.js release r180, used by the WebGL texture adoption demo. */
-val threeJsVersion = "0.180.0"
-
 kotlin {
     applyDefaultHierarchyTemplate()
     jvm("desktop")
@@ -171,25 +168,10 @@ kotlin {
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
-                // Shared org.w3c/org.khronos declarations for both js and wasmJs (see webgl demos).
-                api(libs.kotlinXw3c)
-            }
-        }
+                implementation(libs.kotlinXw3c)
 
-        // three.js is used by the WebGL texture adoption demo in webMain, but npm dependencies are
-        // per-target, so both web targets declare it. The Kotlin side reaches it with a dynamic
-        // import(), because typed @JsModule externals cannot be shared between js and wasmJs:
-        // Kotlin/JS requires @JsNonModule alongside @JsModule when compiling to UMD, and Kotlin/Wasm
-        // has no @JsNonModule.
-        val jsMain by getting {
-            dependencies {
-                implementation(npm("three", threeJsVersion))
-            }
-        }
-
-        val wasmJsMain by getting {
-            dependencies {
-                implementation(npm("three", threeJsVersion))
+                // https://github.com/mrdoob/three.js/ for WebGl demo
+                implementation(npm("three", "0.185.0"))
             }
         }
 

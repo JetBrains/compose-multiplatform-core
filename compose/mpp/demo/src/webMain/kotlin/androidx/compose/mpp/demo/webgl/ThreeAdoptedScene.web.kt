@@ -35,68 +35,32 @@ import org.khronos.webgl.WebGLRenderingContext.Companion.TEXTURE_2D
 import org.khronos.webgl.WebGLTexture
 import org.w3c.dom.HTMLCanvasElement
 
-/**
- * The same zero-copy texture adoption as [AdoptedGlScene], except that the pixels are produced by
- * three.js instead of hand-written shaders.
- *
- * Delegating to a third-party renderer adds exactly three requirements to the adoption plumbing:
- * 1. The library has to render in *Skiko's* WebGL context. `WebGLRenderer({ canvas, context })` is
- *    how three.js accepts one; a library that insists on creating its own context could never produce
- *    a texture Skia may read, because WebGL has no share groups.
- * 2. The destination has to stay ours. Skia takes ownership of the adopted texture, so three.js is
- *    pointed at the framebuffer this class owns through
- *    [ThreeRenderer.setRenderTargetFramebuffer] — the hook WebXR uses — instead of allocating a
- *    render target of its own. Nothing is ever copied, and no object has two owners.
- * 3. Both sides have to invalidate their GL state caches every frame:
- *    [ThreeRenderer.resetState] before three.js draws, [DirectContext.resetAll] after it is done.
- *    Skipping either one is the classic "two WebGL libraries in one context" bug, where one of them
- *    silently stops drawing.
- *
- * Unlike the hand-written demo, the framebuffer here also carries a depth attachment: a torus knot
- * self-occludes, so three.js needs a depth buffer, and since three never sets up this render target
- * it never allocates one either.
- */
-internal class ThreeAdoptedScene private constructor(
+internal class ThreeJsAdoptedScene private constructor(
     private val gl: WebGLRenderingContext,
     private val three: ThreeModule,
     private val canvas: HTMLCanvasElement,
 ) {
     companion object {
         /**
-         * Loads three.js and binds it to the WebGL2 context Skiko renders with, or returns `null` if
-         * that context cannot be obtained.
+         * Loads three.js and binds it to the WebGL2 context managed by Skiko
          */
-        suspend fun createOrNull(canvas: HTMLCanvasElement): ThreeAdoptedScene? {
+        suspend fun createOrNull(canvas: HTMLCanvasElement): ThreeJsAdoptedScene? {
             val gl = webGl2ContextOf(canvas) ?: return null
             val three = loadThreeModule() ?: return null
-            return ThreeAdoptedScene(gl, three, canvas)
+            return ThreeJsAdoptedScene(gl, three, canvas)
         }
     }
 
-    /** Rotation speed of the knot, in revolutions-ish per second. */
     var spin: Float = 1f
-
-    /** Hue of the knot's material. */
     var hue: Float = 0.55f
-
     var roughness: Float = 0.28f
-
     var metalness: Float = 0.62f
-
     var lightIntensity: Float = 3.4f
-
-    /** Resolution of the offscreen texture. Changing it adopts a new texture of that size. */
     var textureSize: IntSize = IntSize(1024, 640)
-
-    /** Human readable state, surfaced by the demo UI. */
     var status: String = "waiting for the first frame"
         private set
-
-    /** Emscripten id of the texture Skia currently owns, or `-1`. */
     var adoptedTextureId: Int = -1
         private set
-
-    /** How many textures have been handed over to Skia so far. */
     var adoptedTextureCount: Int = 0
         private set
 

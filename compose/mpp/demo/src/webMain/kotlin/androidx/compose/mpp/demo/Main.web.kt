@@ -19,8 +19,7 @@ package androidx.compose.mpp.demo
 import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.components.text.loadResource
 import androidx.compose.mpp.demo.interops.HtmlInteropDemos
-import androidx.compose.mpp.demo.webgl.TextureAdoptionScreen
-import androidx.compose.mpp.demo.webgl.ThreeTextureAdoptionScreen
+import androidx.compose.mpp.demo.webgl.ThreeJsTextureAdoptionScreen
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.mpp.demo.embedded.embeddedScrollDemo
 import androidx.compose.runtime.mutableStateOf
@@ -73,8 +72,7 @@ fun defaultComposeDemo() {
                 },
                 HtmlInteropDemos,
                 HapticFeedbackExample,
-                TextureAdoptionScreen,
-                ThreeTextureAdoptionScreen,
+                ThreeJsTextureAdoptionScreen,
             )
         ) }
 
