@@ -109,7 +109,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Compose animation library"
-    samples(project(":compose:animation:animation:animation-samples"))
 }
 
 //TODO(b/407640608): Fix to work without this block for PaneMotionTest.test_allDefaultPaneMotionTransitions

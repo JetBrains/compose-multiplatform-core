@@ -155,7 +155,6 @@ androidx {
     description = "Compose graphics"
     legacyDisableKotlinStrictApiMode = true
     enableRobolectric()
-    samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
 }
 
 // TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block

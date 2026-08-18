@@ -160,17 +160,12 @@ androidXMultiplatform {
     }
 }
 
-dependencies {
-    lintChecks(project(":compose:ui:ui-text-lint"))
-}
-
 androidx {
     name = "Compose UI Text"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Compose Text primitives and utilities"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":compose:ui:ui-text:ui-text-samples"))
 }
 
 afterEvaluate {
