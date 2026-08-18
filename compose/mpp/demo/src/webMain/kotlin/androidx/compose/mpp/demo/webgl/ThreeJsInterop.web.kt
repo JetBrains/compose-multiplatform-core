@@ -101,6 +101,7 @@ internal external interface ThreeStandardMaterial : JsAny {
     val color: ThreeColor
     var roughness: Double
     var metalness: Double
+    var opacity: Double
 }
 
 internal external interface ThreeLight : ThreeObject3D {
@@ -187,22 +188,25 @@ internal fun createKnotScene(three: ThreeModule): ThreeKnotScene = js(
 
         const material = new three.MeshStandardMaterial({
             color: 0x66d9ff,
-            roughness: 0.28,
-            metalness: 0.62,
+            roughness: 0.3,
+            metalness: 0.6,
+            transparent: true,
+            opacity: 0.8,
+            side: three.DoubleSide,
         });
-        const geometry = new three.TorusKnotGeometry(0.85, 0.28, 220, 32, 2, 3);
+        const geometry = new three.TorusKnotGeometry(0.85, 0.3, 220, 32, 2, 3);
         const knot = new three.Mesh(geometry, material);
         scene.add(knot);
 
-        const keyLight = new three.DirectionalLight(0xffffff, 3.4);
+        const keyLight = new three.DirectionalLight(0xffffff, 3);
         keyLight.position.set(2.5, 3.0, 4.0);
         scene.add(keyLight);
 
-        const rimLight = new three.DirectionalLight(0xff5fa2, 2.2);
+        const rimLight = new three.DirectionalLight(0xff5fa2, 2);
         rimLight.position.set(-3.0, -1.5, -2.0);
         scene.add(rimLight);
 
-        scene.add(new three.AmbientLight(0x223355, 1.4));
+        scene.add(new three.AmbientLight(0x223355, 1));
 
         return {
             scene: scene,

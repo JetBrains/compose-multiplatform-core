@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -145,6 +146,7 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
     var hue by remember { mutableStateOf(threeJsScene.hue) }
     var roughness by remember { mutableStateOf(threeJsScene.roughness) }
     var metalness by remember { mutableStateOf(threeJsScene.metalness) }
+    var opacity by remember { mutableStateOf(threeJsScene.opacity) }
     var lightIntensity by remember { mutableStateOf(threeJsScene.lightIntensity) }
     var textureSide by remember { mutableStateOf(512f) }
 
@@ -157,6 +159,7 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
     threeJsScene.hue = hue
     threeJsScene.roughness = roughness
     threeJsScene.metalness = metalness
+    threeJsScene.opacity = opacity
     threeJsScene.lightIntensity = lightIntensity
     threeJsScene.textureSize = IntSize(textureSide.roundToInt(), (textureSide * 0.625f).roundToInt())
 
@@ -203,10 +206,11 @@ private fun ThreeSceneContent(threeJsScene: ThreeJsAdoptedScene, directContext: 
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 LabelledSlider("spin", spin, 0f..3f) { spin = it }
-                LabelledSlider("material hue", hue, 0f..1f) { hue = it }
+                LabelledSlider("color", hue, 0f..1f) { hue = it }
                 LabelledSlider("roughness", roughness, 0f..1f) { roughness = it }
                 LabelledSlider("metalness", metalness, 0f..1f) { metalness = it }
-                LabelledSlider("key light", lightIntensity, 0f..8f) { lightIntensity = it }
+                LabelledSlider("opacity", opacity, 0.05f..1f) { opacity = it }
+                LabelledSlider("light", lightIntensity, 0f..8f) { lightIntensity = it }
                 LabelledSlider(
                     label = "texture width",
                     value = textureSide,
@@ -259,9 +263,9 @@ private fun AdoptedImageRender(imageProvider: () -> org.jetbrains.skia.Image?, f
     ) {
         Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
             Text(
-                "Text rendered by Compose",
+                "This is Compose Text",
                 color = Color.White.copy(alpha = 0.5f),
-                style = MaterialTheme.typography.h2
+                style = MaterialTheme.typography.h3
             )
         }
         AdoptedTextureSurface(Modifier.fillMaxSize(), frame, imageProvider)
@@ -282,7 +286,7 @@ private fun AdoptedImageRender(imageProvider: () -> org.jetbrains.skia.Image?, f
     Variants(imageProvider, frame)
 }
 
-/** The same adopted texture, reused several times in one frame with different Compose treatments. */
+/** The same adopted texture, reused several times in one frame with different transformations. */
 @Composable
 private fun Variants(imageProvider: () -> org.jetbrains.skia.Image?, frame: State<Any?>) {
     Row(
@@ -295,14 +299,20 @@ private fun Variants(imageProvider: () -> org.jetbrains.skia.Image?, frame: Stat
                 .clip(RoundedCornerShape(32.dp))
                 .background(Color.DarkGray)
                 .graphicsLayer {
-                    rotationX = 45f
                     alpha = 0.75f
+                    scaleX = -0.75f
+                    scaleY = 0.75f
+
                 },
             frame,
             imageProvider,
         )
         AdoptedTextureSurface(
-            Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray).blur(2.dp),
+            Modifier.size(96.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Gray)
+                .blur(2.dp)
+                .scale(1f, -1f),
             frame,
             imageProvider
         )
