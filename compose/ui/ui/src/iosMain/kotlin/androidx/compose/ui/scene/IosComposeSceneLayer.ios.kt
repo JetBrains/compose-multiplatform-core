@@ -53,7 +53,6 @@ internal class IosComposeSceneLayer(
     private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
-    private val fontScaleProvider: FontScaleProvider,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
@@ -111,7 +110,6 @@ internal class IosComposeSceneLayer(
         isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
         windowContext = windowContext,
-        fontScaleProvider = fontScaleProvider,
         architectureComponentsOwner = ownerProvider,
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
@@ -125,7 +123,7 @@ internal class IosComposeSceneLayer(
     private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
             frameRecomposer = frameChoreographer.frameRecomposer,
-            density = Density(windowContext.screenScale, fontScaleProvider.fontScale),
+            density = mediator.composeSceneDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidateLayout = invalidateLayout,
@@ -252,5 +250,9 @@ internal class IosComposeSceneLayer(
 
     fun sceneWillDisappear() {
         mediator.sceneWillDisappear()
+    }
+
+    fun setComposeSceneFontScale(fontScale: Float) {
+        mediator.setComposeSceneFontScale(fontScale)
     }
 }

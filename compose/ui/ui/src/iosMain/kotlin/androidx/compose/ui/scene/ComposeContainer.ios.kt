@@ -41,6 +41,7 @@ import androidx.compose.ui.uikit.utils.CMPUIWindowSceneUtils
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.viewinterop.InteropSyncAction
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
@@ -104,7 +105,6 @@ internal class ComposeContainer(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    private val fontScaleProvider = FontScaleProvider(view)
 
     private val frameChoreographer: FrameChoreographer?
         get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
@@ -142,6 +142,10 @@ internal class ComposeContainer(
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     )
     private var layoutInvalidationHandler: LayoutInvalidationHandler? = null
+    private val fontScaleProvider = FontScaleProvider(
+        view = view,
+        onFontScaleChanged = ::onFontScaleChanged,
+    )
     val hasInteropViews: Boolean get() = mediator?.hasInteropViews ?: false
 
     /*
@@ -196,7 +200,7 @@ internal class ComposeContainer(
     }
 
     private fun onTraitCollectionDidChange() {
-        fontScale.onTraitCollectionDidChange()
+        fontScaleProvider.onTraitCollectionDidChange()
         layoutDirection = view.effectiveUserInterfaceLayoutDirection.asLayoutDirection()
     }
 
@@ -288,7 +292,6 @@ internal class ComposeContainer(
             isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
-            fontScaleProvider = fontScaleProvider,
             architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = containerCoroutineContext,
             composeSceneFactory = { context ->
@@ -395,7 +398,6 @@ internal class ComposeContainer(
                         )
                     },
                     layersViewController = layersHolder.getLayersViewController(),
-                    fontScaleProvider = fontScaleProvider,
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
                     onFocusConditionsChanged = ::onFocusConditionsChanged,
@@ -429,6 +431,15 @@ internal class ComposeContainer(
             }
         }
         mediator?.isFocusEnabled = isFocusEnabled
+    }
+
+    private fun onFontScaleChanged(fontScale: Float) {
+        mediator?.setComposeSceneFontScale(fontScale)
+        layersHolder?.layersViewController?.withLayers {
+            it.fastForEach { layer ->
+                layer.setComposeSceneFontScale(fontScale)
+            }
+        }
     }
 
     private val containingViewController: UIViewController get() {

@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
-import androidx.compose.ui.scene.FontScaleProvider
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
@@ -40,10 +39,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import platform.UIKit.UIContentSizeCategory
-import platform.UIKit.UIContentSizeCategoryAccessibilityLarge
-import platform.UIKit.UIContentSizeCategoryLarge
-import platform.UIKit.UIContentSizeCategoryUnspecified
 import platform.UIKit.UIWindowScene
 
 class ComposeSceneMediatorUnitTest {
@@ -61,7 +56,7 @@ class ComposeSceneMediatorUnitTest {
             ) {}
             context.cancel()
 
-            mediator.composeSceneDensity = Density(2f)
+            mediator.setComposeSceneDensity(Density(2f))
             mediator.layoutDirection = LayoutDirection.Rtl
             mediator.interactionBounds = IntRect.Zero
             mediator.isFocusEnabled = true
@@ -71,38 +66,25 @@ class ComposeSceneMediatorUnitTest {
 
     @Test
     fun testComposeSceneDensityChangesWhenFontScaleChanges() {
-        var preferredContentSizeCategory: UIContentSizeCategory = UIContentSizeCategoryLarge
         val context = Dispatchers.Main + Job()
-        val fontScaleProvider = FontScaleProvider(preferredContentSizeCategory = { preferredContentSizeCategory })
-        val mediator = makeMediator(
-            coroutineContext = context,
-            fontScaleProvider = fontScaleProvider,
-        )
+        val mediator = makeMediator(coroutineContext = context)
 
-        assertEquals(1f, mediator.composeSceneDensity.fontScale)
-        preferredContentSizeCategory = UIContentSizeCategoryAccessibilityLarge
-        fontScaleProvider.onTraitCollectionDidChange()
+        assertEquals(Density(1f, 1f), mediator.composeSceneDensity)
 
-        assertEquals(1.5f, mediator.composeSceneDensity.fontScale)
+        mediator.setComposeSceneFontScale(1.5f)
+
+        assertEquals(Density(1f, 1.5f), mediator.composeSceneDensity)
         context.cancel()
     }
 
     @Test
     fun testComposeSceneDensityPreservesDensityWhenFontScaleChanges() {
-        var preferredContentSizeCategory: UIContentSizeCategory = UIContentSizeCategoryLarge
         val context = Dispatchers.Main + Job()
-        val fontScaleProvider = FontScaleProvider(preferredContentSizeCategory = { preferredContentSizeCategory })
-        val mediator = makeMediator(
-            coroutineContext = context,
-            fontScaleProvider = fontScaleProvider,
-        )
+        val mediator = makeMediator(coroutineContext = context)
 
-        assertEquals(Density(1f, 1f), mediator.composeSceneDensity)
+        mediator.setComposeSceneDensity(Density(2f))
 
-        mediator.composeSceneDensity = Density(2f)
-
-        preferredContentSizeCategory = UIContentSizeCategoryAccessibilityLarge
-        fontScaleProvider.onTraitCollectionDidChange()
+        mediator.setComposeSceneFontScale(1.5f)
 
         assertEquals(Density(2f, 1.5f), mediator.composeSceneDensity)
         context.cancel()
@@ -111,14 +93,12 @@ class ComposeSceneMediatorUnitTest {
     private fun makeMediator(
         coroutineContext: CoroutineContext,
         frameChoreographer: FrameChoreographer = FrameChoreographer.choreographerForScene(UIWindowScene()),
-        fontScaleProvider: FontScaleProvider = FontScaleProvider({ UIContentSizeCategoryUnspecified }),
     ): ComposeSceneMediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = OnFocusBehavior.DoNothing,
         isClearFocusOnMouseDownEnabled = false,
         focusedViewsList = null,
         windowContext = PlatformWindowContext(),
-        fontScaleProvider = fontScaleProvider,
         architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
         coroutineContext = coroutineContext,
         navigationEventInput = UIKitNavigationEventInput(
