@@ -305,7 +305,7 @@ ext.projectDependencyGraph = createProjectDependencyGraph(
         settings,
         providers.gradleProperty("androidx.constraints").getOrElse("true").toBoolean()
 )
-// A set of projects selected by the configured project filter.
+// A set of projects that the user asked to filter to.
 @Field Set<String> filteredProjects = new HashSet<String>()
 
 // Calling includeProject(name, filePath) is shorthand for:
