@@ -1,4 +1,4 @@
-name: Check Public API
+name: Project Structure
 on:
   workflow_dispatch:
   pull_request:
@@ -8,9 +8,9 @@ on:
       - integration
 
 jobs:
-  check-public-api:
+  check:
     runs-on: macos-26-xlarge
-    name: Check Public API
+    name: Check
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -21,11 +21,13 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Run buildSrc tests
-        run: ./gradlew -p buildSrc :test --stacktrace
+      - name: buildSrc tests
+        run: ./gradlew -p buildSrc :test --continue --stacktrace
 
-      - name: Check Public API
+      - name: Public API
         run: |
-          ./gradlew jbApiCheck \
-            --continue \
-            --no-daemon --stacktrace
+          ./gradlew jbApiCheck --continue --stacktrace
+
+      - name: Fork Dependencies
+        run: |
+          ./gradlew jbVerifyForkDependencies --continue --stacktrace
