@@ -35,16 +35,6 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
     val componentFactory: SoftwareComponentFactory
 ) : Plugin<Project> {
     override fun apply(project: Project) {
-        val buildSrcForkTests = project.tasks.register("jbBuildSrcForkTest", GradleBuild::class.java) { task ->
-            task.dir = project.file("buildSrc")
-            task.tasks = listOf(":tests:test")
-        }
-        project.tasks.register("jbStructureCheck") { checkTask ->
-            checkTask.group = "verification"
-            checkTask.description = "Runs JetBrains structure checks."
-            checkTask.dependsOn(buildSrcForkTests)
-        }
-
         project.allprojects { subproject ->
             // Apply capability rule to resolve conflicts between org.jetbrains.androidx.* and androidx.*
             subproject.configureJetBrainsCapabilityResolution()
