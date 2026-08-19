@@ -237,8 +237,8 @@ internal class ComposeSceneMediator(
         }
 
         override fun onFramePerformed() {
-            if (interopContainer.hasPendingTransaction) {
-                scene.requestDraw()
+            if (!scene.hasPendingDraw) {
+                interopContainer.performPendingViewUpdates()
             }
         }
 

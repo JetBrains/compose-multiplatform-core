@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.InteropSyncAction
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
@@ -118,12 +117,7 @@ internal class LegacyMetalRedrawer(
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
 
-        retrieveInteropTransaction = {
-            object : InteropSyncTransaction {
-                override val isInteropActive: Boolean = false
-                override val actions = emptyList<InteropSyncAction>()
-            }
-        }
+        retrieveInteropTransaction = { InteropSyncTransaction.Empty }
 
         draw = { _ -> }
 
@@ -210,7 +204,7 @@ internal class LegacyMetalRedrawer(
 
                 val presentsWithTransaction =
                     isForcedToPresentWithTransactionEveryFrame
-                        || interopTransaction.actions.isNotEmpty()
+                        || interopTransaction.hasPendingActions
                         || isInteropActive != interopTransaction.isInteropActive
                 metalLayer.presentsWithTransaction = presentsWithTransaction
 

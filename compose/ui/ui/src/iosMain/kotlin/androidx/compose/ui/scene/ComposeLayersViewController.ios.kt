@@ -259,7 +259,7 @@ internal class ComposeLayersViewController(
             // It was the last layer, remove the view and execute the actions immediately
             hide()
 
-            transaction.actions.fastForEach { it.invoke() }
+            transaction.performTransaction()
         } else {
             // It wasn't the last layer, pending transactions should be added to the list
             removedLayersTransactions.add(transaction)

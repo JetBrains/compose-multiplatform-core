@@ -188,10 +188,6 @@ internal abstract class BaseComposeScene(
         }
     }
 
-    override fun requestDraw() {
-        invokeInvalidationCallbacks(forceDraw = true)
-    }
-
     override fun sendPointerEvent(
         eventType: PointerEventType,
         position: Offset,

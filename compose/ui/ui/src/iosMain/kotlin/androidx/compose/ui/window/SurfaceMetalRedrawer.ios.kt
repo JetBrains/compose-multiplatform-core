@@ -151,12 +151,7 @@ internal class SurfaceMetalRedrawer(
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
 
-        retrieveInteropTransaction = {
-            object : InteropSyncTransaction {
-                override val isInteropActive: Boolean = false
-                override val actions = emptyList<InteropSyncAction>()
-            }
-        }
+        retrieveInteropTransaction = { InteropSyncTransaction.Empty }
 
         draw = { _ -> }
 
@@ -471,7 +466,7 @@ internal class SurfaceMetalRedrawer(
         private val scheduledInteropSyncTransactions = Array<InteropSyncTransaction?>(bufferLength) { null }
 
         fun scheduleTransaction(transaction: InteropSyncTransaction): Long {
-            if (transaction.actions.isEmpty()) {
+            if (!transaction.hasPendingActions) {
                 return lastScheduledIndex - 1
             }
             val index = lastScheduledIndex

@@ -41,7 +41,7 @@ internal class IosInteropContainer(
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
 
-    val hasPendingTransaction: Boolean get() = transaction.actions.isNotEmpty()
+    val hasPendingTransaction: Boolean get() = transaction.hasPendingActions
 
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
@@ -71,11 +71,7 @@ internal class IosInteropContainer(
      */
     fun dispose() {
         requestRedraw = {}
-        val lastTransaction = retrieveTransaction()
-
-        for (action in lastTransaction.actions) {
-            action.invoke()
-        }
+        retrieveTransaction().performTransaction()
 
         // snapshotObserver.stop() is not needed, because unplaceInteropView will be called
         // for all interop views and it will stop observing when the last one is removed.
@@ -90,6 +86,21 @@ internal class IosInteropContainer(
             isInteropActive = interopViews.isNotEmpty()
         )
         return result
+    }
+
+    /**
+     * Performs pending updates to already attached UIKit views when they do not need to be
+     * synchronized with a Compose draw.
+     */
+    fun performPendingViewUpdates() {
+        retrieveViewUpdateTransaction()?.performTransaction()
+    }
+
+    private fun retrieveViewUpdateTransaction(): UIKitInteropTransaction? {
+        if (transaction.requiresFrameSynchronization || !transaction.hasPendingActions) {
+            return null
+        }
+        return retrieveTransaction()
     }
 
     override fun place(holder: InteropViewHolder) {
@@ -138,7 +149,12 @@ internal class IosInteropContainer(
     override fun scheduleUpdate(action: () -> Unit) {
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
-        transaction.add(action)
+        transaction.scheduleFrameSynchronizedAction(action)
+        requestRedraw()
+    }
+
+    override fun scheduleUpdate(holder: InteropViewHolder) {
+        transaction.scheduleViewUpdate(holder)
         requestRedraw()
     }
 
