@@ -22,7 +22,12 @@ internal class LazyParsedBuildScript(val text: String) {
         val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
         val sourceSetsText = text.substring(sourceSets.first, sourceSets.last + 1)
         MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
-            val dependencies = sourceSetsText.dependencyBlock(match.value) ?: return@mapNotNull null
+            val sourceSet = sourceSetsText.subblock(match.value) ?: return@mapNotNull null
+            val dependencies = if (".dependencies" in match.value) sourceSet
+            else sourceSetsText.substring(sourceSet.first, sourceSet.last + 1)
+                .subblock("dependencies {")
+                ?.let { sourceSet.first + it.first until sourceSet.first + it.last + 1 }
+                ?: return@mapNotNull null
             match.groupValues[1] to SourceSet(
                 name = match.groupValues[1],
                 lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd().substringAfterLast('\n'),
@@ -57,17 +62,11 @@ internal class LazyParsedBuildScript(val text: String) {
         internal val dependenciesEnd: Int,
         private val lineBefore: String,
     ) {
-        private val dependenciesText: String
-            get() = source.substring(
-                dependenciesStart,
-                dependenciesEnd
-            )
-
         val lines: List<Line> by lazy {
             buildList {
                 var nesting = 0
                 var comment: String? = null
-                for (lineText in dependenciesText.lineSequence()) {
+                for (lineText in source.substring(dependenciesStart, dependenciesEnd).lineSequence()) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -185,14 +184,6 @@ internal class LazyParsedBuildScript(val text: String) {
 private val MAIN_SOURCE_SET_REFERENCE =
     Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
-
-private fun String.dependencyBlock(sourceSetReference: String): IntRange? {
-    val sourceSet = subblock(sourceSetReference) ?: return null
-    return if (".dependencies" in sourceSetReference) sourceSet
-    else substring(sourceSet.first, sourceSet.last + 1).subblock("dependencies {")?.let {
-        sourceSet.first + it.first until sourceSet.first + it.last + 1
-    }
-}
 
 private fun String.subblock(textToFind: String): IntRange? {
     val markerStart = indexOf(textToFind)
