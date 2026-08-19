@@ -639,11 +639,7 @@ class ForkDependenciesTasksTest {
         val root = temporaryFolder.newFolder()
         val pluginClasspath = pluginClasspath()
             .joinToString(",\n                        ") { "\"${it.invariantSeparatorsPath}\"" }
-        root.resolve("gradle.properties").writeText(
-            """
-                androidx.studio.type=jetbrains-fork
-            """.trimIndent()
-        )
+
         // Use empty.gradle so test build.gradle isn't included into the build,
         // just parsed. This allows not bothering writing a fully correct DSL in the tests
         root.resolve("settings.gradle").writeText(
