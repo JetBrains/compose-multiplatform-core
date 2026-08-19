@@ -17,4 +17,4 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Run buildSrc tests
-        run: ./gradlew -p buildSrc :test --stacktrace
+        run: ./gradlew -p buildSrc :tests:test --stacktrace

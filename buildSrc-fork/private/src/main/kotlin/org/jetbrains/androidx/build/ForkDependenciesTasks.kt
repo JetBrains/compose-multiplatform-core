@@ -98,12 +98,8 @@ private fun Project.scriptFile(name: String): File =
         ?: layout.projectDirectory.file("$name.gradle").asFile
 
 internal fun Project.configureForkDependenciesTasks() {
-    val verifyTask =
-        tasks.register("jbVerifyForkDependencies", VerifyForkDependenciesTask::class.java)
+    tasks.register("jbVerifyForkDependencies", VerifyForkDependenciesTask::class.java)
     tasks.register("jbUpdateForkDependencies", UpdateForkDependenciesTask::class.java)
-    rootProject.tasks.named("jbStructureCheck").configure { checkTask ->
-        checkTask.dependsOn(verifyTask)
-    }
 }
 
 internal fun updatedForkText(
