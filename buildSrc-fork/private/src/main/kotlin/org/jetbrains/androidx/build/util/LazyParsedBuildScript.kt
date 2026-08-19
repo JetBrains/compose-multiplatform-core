@@ -16,13 +16,11 @@
 
 package org.jetbrains.androidx.build.util
 
-internal class ParsedBuildScript(val text: String) {
-    private val nameToSourceSet = parseSourceSets(text)
-
-    private fun parseSourceSets(text: String): Map<String, SourceSet> {
-        val sourceSets = text.subblock("sourceSets {") ?: return emptyMap()
+internal class LazyParsedBuildScript(val text: String) {
+    private val nameToSourceSet: Map<String, SourceSet> by lazy {
+        val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
         val sourceSetsText = text.substring(sourceSets.first, sourceSets.last + 1)
-        return MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
+        MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
             val dependencies =
                 sourceSetsText.dependenciesBlock(match.value) ?: return@mapNotNull null
             match.groupValues[1] to SourceSet(
@@ -38,7 +36,7 @@ internal class ParsedBuildScript(val text: String) {
 
     fun sourceSetOf(name: String): SourceSet? = nameToSourceSet[name]
 
-    fun withSourceSets(update: (SourceSet) -> List<Line>): ParsedBuildScript {
+    fun withSourceSets(update: (SourceSet) -> List<Line>): LazyParsedBuildScript {
         val text = StringBuilder(text)
         for (sourceSet in nameToSourceSet.values.reversed()) {
             val lines = update(sourceSet)
@@ -50,7 +48,7 @@ internal class ParsedBuildScript(val text: String) {
                 )
             }
         }
-        return ParsedBuildScript(text.toString())
+        return LazyParsedBuildScript(text.toString())
     }
 
     internal class SourceSet(
@@ -148,7 +146,7 @@ internal class ParsedBuildScript(val text: String) {
         data class Dependency(
             val comment: String? = null,
             val type: String,
-            val dependency: ParsedBuildScript.Dependency,
+            val dependency: LazyParsedBuildScript.Dependency,
             val inlineComment: String? = null,
         ) : Line {
             fun hasMarker(marker: String) = comment?.contains(marker) == true

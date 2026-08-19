@@ -29,9 +29,9 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.androidx.build.JetBrainsPublication.projectPathForCoordinates
-import org.jetbrains.androidx.build.util.ParsedBuildScript
-import org.jetbrains.androidx.build.util.ParsedBuildScript.Dependency
-import org.jetbrains.androidx.build.util.ParsedBuildScript.Line
+import org.jetbrains.androidx.build.util.LazyParsedBuildScript
+import org.jetbrains.androidx.build.util.LazyParsedBuildScript.Dependency
+import org.jetbrains.androidx.build.util.LazyParsedBuildScript.Line
 
 @CacheableTask
 internal abstract class VerifyForkDependenciesTask : DefaultTask() {
@@ -106,8 +106,8 @@ internal fun updatedForkText(
     originalText: String,
     forkText: String,
 ): String {
-    val original = ParsedBuildScript(originalText)
-    val fork = ParsedBuildScript(forkText)
+    val original = LazyParsedBuildScript(originalText)
+    val fork = LazyParsedBuildScript(forkText)
     return fork.withSourceSets { forkedSourceSet ->
         val originalSourceSet = original.sourceSetOf(forkedSourceSet.name)
         if (originalSourceSet == null || forkedSourceSet.hasMarker(SUPPRESS_VERIFICATION_MARKER)) {
