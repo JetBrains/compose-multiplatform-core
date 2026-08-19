@@ -74,7 +74,7 @@ internal abstract class VerifyForkDependenciesTask : DefaultTask() {
 internal abstract class UpdateForkDependenciesTask : DefaultTask() {
     init {
         group = "verification"
-        description = "Adds fork dependency verification suppressions for this project."
+        description = "Verifies commonMain dependencies in build-fork files, that they are the same or compatible with the original build commonMain dependencies."
         onlyIf { forkFile.exists() }
         outputs.upToDateWhen { false }
     }
@@ -163,6 +163,8 @@ private fun updatedForkLines(originalLines: List<Line>, forkLines: List<Line>): 
         .collapseBlankLines()
 }
 
+private const val SUPPRESS_VERIFICATION_MARKER = "jbVerifyForkDependencies: suppress"
+
 private fun List<Line>.collapseBlankLines() = this
     .dropWhile { it is Line.Blank }
     .collapseInnerBlankLines()
@@ -200,8 +202,6 @@ private fun Line.Dependency.hasSameArtifactAs(other: Line.Dependency): Boolean {
     return dependency.group == other.dependency.group &&
         dependency.module == other.dependency.module
 }
-
-private const val SUPPRESS_VERIFICATION_MARKER = "jbVerifyForkDependencies: suppress"
 
 private fun Line.Dependency.hasSameAssociatedProjectAs(other: Line.Dependency) =
     dependency.associatedProjectPath != null &&

@@ -16,7 +16,6 @@
 
 package org.jetbrains.androidx.build.util
 
-
 internal class LazyParsedBuildScript(val text: String) {
     private val nameToSourceSet: Map<String, SourceSet> by lazy {
         val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
