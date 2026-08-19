@@ -16,8 +16,8 @@
 
 package org.jetbrains.androidx.build.util
 
-internal class LazyParsedBuildScript(private val text: String) {
-    private val sourceSets: Map<String, SourceSet> by lazy {
+internal class ParsedBuildScript(val text: String) {
+    private val nameToSourceSet: Map<String, SourceSet> by lazy {
         val sourceSetsBlock = Block(text).subblock("sourceSets {") ?: return@lazy emptyMap()
         val sourceSetsText = sourceSetsBlock.text
         MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
@@ -30,28 +30,30 @@ internal class LazyParsedBuildScript(private val text: String) {
             }
             match.groupValues[1] to SourceSet(
                 name = match.groupValues[1],
-                lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd()
+                lineBefore = sourceSetsText
+                    .substring(0, match.range.first)
+                    .trimEnd()
                     .substringAfterLast('\n'),
                 dependencies = dependenciesBlock,
             )
         }.toMap()
     }
 
-    fun sourceSetOf(name: String): SourceSet? = sourceSets[name]
+    fun sourceSetOf(name: String): SourceSet? = nameToSourceSet[name]
 
-    fun updateSourceSets(update: (SourceSet) -> List<Line>): String {
-        val updatedText = StringBuilder(text)
-        for (sourceSet in sourceSets.values.reversed()) {
+    fun withSourceSets(update: (SourceSet) -> List<Line>): ParsedBuildScript {
+        val text = StringBuilder(this@ParsedBuildScript.text)
+        for (sourceSet in nameToSourceSet.values.reversed()) {
             val lines = update(sourceSet)
             if (lines != sourceSet.lines) {
-                updatedText.replace(
+                text.replace(
                     sourceSet.dependencies.start,
                     sourceSet.dependencies.end,
                     sourceSet.textFor(lines),
                 )
             }
         }
-        return updatedText.toString()
+        return ParsedBuildScript(text.toString())
     }
 
     internal class SourceSet(
@@ -97,17 +99,14 @@ internal class LazyParsedBuildScript(private val text: String) {
             line: Line, indentation: String
         ) = when (line) {
             Line.Blank -> appendLine()
-            is Line.Dependency -> {
-                line.comment?.let {
-                    append(indentation)
-                    appendLine(it)
+            is Line.Dependency -> with(line) {
+                if (comment != null) {
+                    appendLine("$indentation$comment")
                 }
-                append(indentation)
-                append(line.type)
-                append("(")
-                append(line.dependency.formatted)
-                append(")")
-                line.inlineComment?.let { append(" ").append(it) }
+                append("$indentation$type(${dependency.formatted})")
+                if (inlineComment != null) {
+                    append(" ").append(inlineComment)
+                }
                 appendLine()
             }
         }
@@ -144,7 +143,7 @@ internal class LazyParsedBuildScript(private val text: String) {
         data class Dependency(
             val comment: String? = null,
             val type: String,
-            val dependency: LazyParsedBuildScript.Dependency,
+            val dependency: ParsedBuildScript.Dependency,
             val inlineComment: String? = null,
         ) : Line {
             fun hasMarker(marker: String) = comment?.contains(marker) == true
