@@ -115,9 +115,13 @@ tasks.register("jbApiDump") {
     dependsOn(apiValidationTasks(suffix = "ApiDump"))
 }
 
-tasks.register("jbApiCheck") {
+val jbApiCheck = tasks.register("jbApiCheck") {
     group = "Compose Multiplatform"
     dependsOn(apiValidationTasks(suffix = "ApiCheck"))
+}
+
+rootProject.tasks.named("jbStructureCheck") {
+    dependsOn(jbApiCheck)
 }
 
 fun apiValidationTasks(suffix: String) = buildSet<Task> {

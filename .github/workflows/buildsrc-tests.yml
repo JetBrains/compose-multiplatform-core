@@ -1,0 +1,20 @@
+name: BuildSrc Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - jb-main
+      - main
+
+jobs:
+  buildsrc-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Run buildSrc tests
+        run: ./gradlew -p buildSrc :test --stacktrace

@@ -23,5 +23,6 @@ jobs:
 
       - name: Check Public API
         run: |
-          ./gradlew jbApiCheck \
+          ./gradlew jbStructureCheck \
+            --continue \
             --no-daemon --stacktrace
