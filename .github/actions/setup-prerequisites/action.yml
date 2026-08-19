@@ -7,6 +7,8 @@ runs:
       with:
         java-version: '21'
         distribution: 'jetbrains'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
