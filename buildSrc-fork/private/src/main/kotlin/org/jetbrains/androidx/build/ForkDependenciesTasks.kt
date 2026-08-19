@@ -138,7 +138,7 @@ private fun updatedForkLines(originalLines: List<Line>, forkLines: List<Line>): 
 
             forkLine.hasSameAssociatedProjectAs(originalLine) ->
                 originalLine.copy(
-                    comment = forkLine.comment,
+                    comments = forkLine.comments,
                     inlineComment = forkLine.inlineComment,
                     dependency = forkLine.dependency
                 )

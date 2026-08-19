@@ -580,7 +580,8 @@ class ForkDependenciesTasksTest {
                             // UI library
                             api("androidx.compose.ui:ui:1.9.3")
 
-                            // Tool 2.0.0
+                            // Tool dependency
+                            // Version 2.0.0
                             implementation("com.example:tool:2.0.0") // original comment
 
                             // Material library
@@ -619,7 +620,8 @@ class ForkDependenciesTasksTest {
                             // UI Project
                             api(project(":compose:ui:ui")) // fork comment
 
-                            // Tool 2.0.0
+                            // Tool dependency
+                            // Version 2.0.0
                             implementation("com.example:tool:2.0.0") // original comment
 
                             // Material library

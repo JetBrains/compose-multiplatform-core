@@ -64,15 +64,15 @@ internal class ParsedBuildScript(val text: String) {
         val lines: List<Line> by lazy {
             buildList {
                 var nesting = 0
-                var comment: String? = null
+                val comments = mutableListOf<String>()
                 for (lineText in dependencies.text.lineSequence()) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
-                            lineText.trimStart().startsWith("//") -> comment = lineText.trimStart()
+                            lineText.trimStart().startsWith("//") -> comments += lineText.trimStart()
                             else -> parseLine(lineText)?.let { line ->
-                                add(line.copy(comment = comment))
-                                comment = null
+                                add(line.copy(comments = comments.toList()))
+                                comments.clear()
                             }
                         }
                     }
@@ -100,7 +100,7 @@ internal class ParsedBuildScript(val text: String) {
         ) = when (line) {
             Line.Blank -> appendLine()
             is Line.Dependency -> with(line) {
-                if (comment != null) {
+                comments.forEach { comment ->
                     appendLine("$indentation$comment")
                 }
                 append("$indentation$type(${dependency.formatted})")
@@ -141,12 +141,12 @@ internal class ParsedBuildScript(val text: String) {
         data object Blank : Line
 
         data class Dependency(
-            val comment: String? = null,
+            val comments: List<String> = emptyList(),
             val type: String,
             val dependency: ParsedBuildScript.Dependency,
             val inlineComment: String? = null,
         ) : Line {
-            fun hasMarker(marker: String) = comment?.contains(marker) == true
+            fun hasMarker(marker: String) = comments.any { it.contains(marker) }
         }
     }
 
