@@ -16,54 +16,54 @@
 
 package org.jetbrains.androidx.build.util
 
-internal class LazyParsedBuildScript(val text: String) {
-    private val nameToSourceSet: Map<String, SourceSet> by lazy {
-        val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
-        val sourceSetsText = text.substring(sourceSets.first, sourceSets.last + 1)
+internal class LazyParsedBuildScript(private val text: String) {
+    private val sourceSets: Map<String, SourceSet> by lazy {
+        val sourceSetsBlock = Block(text).subblock("sourceSets {") ?: return@lazy emptyMap()
+        val sourceSetsText = sourceSetsBlock.text
         MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
-            val dependencies =
-                sourceSetsText.dependenciesBlock(match.value) ?: return@mapNotNull null
+            val sourceSetBlock =
+                sourceSetsBlock.subblockAt(match.range.last) ?: return@mapNotNull null
+            val dependenciesBlock = if (".dependencies" in match.value) {
+                sourceSetBlock
+            } else {
+                sourceSetBlock.subblock("dependencies {") ?: return@mapNotNull null
+            }
             match.groupValues[1] to SourceSet(
                 name = match.groupValues[1],
                 lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd()
                     .substringAfterLast('\n'),
-                source = text,
-                dependenciesStart = sourceSets.first + dependencies.first,
-                dependenciesEnd = sourceSets.first + dependencies.last + 1,
+                dependencies = dependenciesBlock,
             )
         }.toMap()
     }
 
-    fun sourceSetOf(name: String): SourceSet? = nameToSourceSet[name]
+    fun sourceSetOf(name: String): SourceSet? = sourceSets[name]
 
-    fun withSourceSets(update: (SourceSet) -> List<Line>): LazyParsedBuildScript {
-        val text = StringBuilder(text)
-        for (sourceSet in nameToSourceSet.values.reversed()) {
+    fun updateSourceSets(update: (SourceSet) -> List<Line>): String {
+        val updatedText = StringBuilder(text)
+        for (sourceSet in sourceSets.values.reversed()) {
             val lines = update(sourceSet)
             if (lines != sourceSet.lines) {
-                text.replace(
-                    sourceSet.dependenciesStart,
-                    sourceSet.dependenciesEnd,
+                updatedText.replace(
+                    sourceSet.dependencies.start,
+                    sourceSet.dependencies.end,
                     sourceSet.textFor(lines),
                 )
             }
         }
-        return LazyParsedBuildScript(text.toString())
+        return updatedText.toString()
     }
 
     internal class SourceSet(
         val name: String,
-        private val source: String,
-        internal val dependenciesStart: Int,
-        internal val dependenciesEnd: Int,
+        internal val dependencies: Block,
         private val lineBefore: String,
     ) {
         val lines: List<Line> by lazy {
             buildList {
                 var nesting = 0
                 var comment: String? = null
-                for (lineText in source.substring(dependenciesStart, dependenciesEnd)
-                    .lineSequence()) {
+                for (lineText in dependencies.text.lineSequence()) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -82,9 +82,7 @@ internal class LazyParsedBuildScript(val text: String) {
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
         internal fun textFor(lines: List<Line>): String {
-            val closingIndentation = source
-                .substring(dependenciesStart, dependenciesEnd)
-                .substringAfterLast('\n')
+            val closingIndentation = dependencies.text.substringAfterLast('\n')
             val declarationIndentation = "$closingIndentation    "
             return buildString {
                 appendLine()
@@ -182,21 +180,25 @@ private val MAIN_SOURCE_SET_REFERENCE =
     Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
 
-private fun String.dependenciesBlock(sourceSetReference: String): IntRange? {
-    val sourceSet = subblock(sourceSetReference) ?: return null
-    if (".dependencies" in sourceSetReference) return sourceSet
+internal data class Block(
+    private val source: String,
+    val start: Int = 0,
+    val end: Int = source.length,
+) {
+    val text: String get() = source.substring(start, end)
 
-    val dependencies = substring(sourceSet.first, sourceSet.last + 1).subblock("dependencies {")
-        ?: return null
-    return sourceSet.first + dependencies.first until sourceSet.first + dependencies.last + 1
-}
+    fun subblock(marker: String): Block? {
+        val markerStart = source.indexOf(marker, start)
+        if (markerStart < start || markerStart + marker.length > end) return null
+        return subblockAt(markerStart + marker.length - 1 - start)
+    }
 
-private fun String.subblock(textToFind: String): IntRange? {
-    val markerStart = indexOf(textToFind)
-    if (markerStart < 0) return null
-    val start = markerStart + textToFind.length
-    val end = blockEnd(start - 1) ?: return null
-    return start until end
+    fun subblockAt(relativeOpeningBrace: Int): Block? {
+        val openingBrace = start + relativeOpeningBrace
+        val closingBrace = source.blockEnd(openingBrace) ?: return null
+        if (closingBrace >= end) return null
+        return Block(source, openingBrace + 1, closingBrace)
+    }
 }
 
 private fun String.blockEnd(openingBrace: Int): Int? {

@@ -108,14 +108,14 @@ internal fun updatedForkText(
 ): String {
     val original = LazyParsedBuildScript(originalText)
     val fork = LazyParsedBuildScript(forkText)
-    return fork.withSourceSets { forkedSourceSet ->
+    return fork.updateSourceSets { forkedSourceSet ->
         val originalSourceSet = original.sourceSetOf(forkedSourceSet.name)
         if (originalSourceSet == null || forkedSourceSet.hasMarker(SUPPRESS_VERIFICATION_MARKER)) {
             forkedSourceSet.lines
         } else {
             updatedForkLines(originalSourceSet.lines, forkedSourceSet.lines)
         }
-    }.text
+    }
 }
 
 private fun updatedForkLines(originalLines: List<Line>, forkLines: List<Line>): List<Line> {
