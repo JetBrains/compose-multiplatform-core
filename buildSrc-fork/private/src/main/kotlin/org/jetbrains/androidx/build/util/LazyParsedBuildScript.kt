@@ -22,12 +22,7 @@ internal class LazyParsedBuildScript(val text: String) {
         val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
         val sourceSetsText = text.substring(sourceSets.first, sourceSets.last + 1)
         MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
-            val sourceSet = sourceSetsText.subblock(match.value) ?: return@mapNotNull null
-            val dependencies = if (".dependencies" in match.value) sourceSet
-            else sourceSetsText.substring(sourceSet.first, sourceSet.last + 1)
-                .subblock("dependencies {")
-                ?.let { sourceSet.first + it.first until sourceSet.first + it.last + 1 }
-                ?: return@mapNotNull null
+            val dependencies = sourceSetsText.dependenciesBlock(match.value) ?: return@mapNotNull null
             match.groupValues[1] to SourceSet(
                 name = match.groupValues[1],
                 lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd().substringAfterLast('\n'),
@@ -184,6 +179,15 @@ internal class LazyParsedBuildScript(val text: String) {
 private val MAIN_SOURCE_SET_REFERENCE =
     Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
+
+private fun String.dependenciesBlock(sourceSetReference: String): IntRange? {
+    val sourceSet = subblock(sourceSetReference) ?: return null
+    if (".dependencies" in sourceSetReference) return sourceSet
+
+    val dependencies = substring(sourceSet.first, sourceSet.last + 1).subblock("dependencies {")
+        ?: return null
+    return sourceSet.first + dependencies.first until sourceSet.first + dependencies.last + 1
+}
 
 private fun String.subblock(textToFind: String): IntRange? {
     val markerStart = indexOf(textToFind)
