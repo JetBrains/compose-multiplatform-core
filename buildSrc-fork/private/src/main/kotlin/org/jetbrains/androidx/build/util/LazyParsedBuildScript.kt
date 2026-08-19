@@ -21,10 +21,12 @@ internal class LazyParsedBuildScript(val text: String) {
         val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
         val sourceSetsText = text.substring(sourceSets.first, sourceSets.last + 1)
         MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
-            val dependencies = sourceSetsText.dependenciesBlock(match.value) ?: return@mapNotNull null
+            val dependencies =
+                sourceSetsText.dependenciesBlock(match.value) ?: return@mapNotNull null
             match.groupValues[1] to SourceSet(
                 name = match.groupValues[1],
-                lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd().substringAfterLast('\n'),
+                lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd()
+                    .substringAfterLast('\n'),
                 source = text,
                 dependenciesStart = sourceSets.first + dependencies.first,
                 dependenciesEnd = sourceSets.first + dependencies.last + 1,
@@ -60,7 +62,8 @@ internal class LazyParsedBuildScript(val text: String) {
             buildList {
                 var nesting = 0
                 var comment: String? = null
-                for (lineText in source.substring(dependenciesStart, dependenciesEnd).lineSequence()) {
+                for (lineText in source.substring(dependenciesStart, dependenciesEnd)
+                    .lineSequence()) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -114,7 +117,7 @@ internal class LazyParsedBuildScript(val text: String) {
         private fun parseLine(text: String): Line.Dependency? {
             val (type, argument, inlineComment) =
                 DEPENDENCY_CALL.matchEntire(text)?.destructured
-                ?: return null
+                    ?: return null
             val dependency = parseDependency(argument.trim()) ?: return null
             return Line.Dependency(
                 type = type,
