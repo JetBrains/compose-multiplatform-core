@@ -20,7 +20,7 @@ package org.jetbrains.androidx.build.util
 internal class LazyParsedBuildScript(val text: String) {
     private val nameToSourceSet: Map<String, SourceSet> by lazy {
         val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
-        val sourceSetsText = text.substring(sourceSets.first, sourceSets.second)
+        val sourceSetsText = text.substring(sourceSets.first, sourceSets.last + 1)
         MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
             val dependencies = sourceSetsText.dependencyBlock(match.value) ?: return@mapNotNull null
             match.groupValues[1] to SourceSet(
@@ -28,7 +28,7 @@ internal class LazyParsedBuildScript(val text: String) {
                 lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd().substringAfterLast('\n'),
                 source = text,
                 dependenciesStart = sourceSets.first + dependencies.first,
-                dependenciesEnd = sourceSets.first + dependencies.second,
+                dependenciesEnd = sourceSets.first + dependencies.last + 1,
             )
         }.toMap()
     }
@@ -186,20 +186,20 @@ private val MAIN_SOURCE_SET_REFERENCE =
     Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
 
-private fun String.dependencyBlock(sourceSetReference: String): Pair<Int, Int>? {
+private fun String.dependencyBlock(sourceSetReference: String): IntRange? {
     val sourceSet = subblock(sourceSetReference) ?: return null
     return if (".dependencies" in sourceSetReference) sourceSet
-    else substring(sourceSet.first, sourceSet.second).subblock("dependencies {")?.let {
-        sourceSet.first + it.first to sourceSet.first + it.second
+    else substring(sourceSet.first, sourceSet.last + 1).subblock("dependencies {")?.let {
+        sourceSet.first + it.first until sourceSet.first + it.last + 1
     }
 }
 
-private fun String.subblock(textToFind: String): Pair<Int, Int>? {
+private fun String.subblock(textToFind: String): IntRange? {
     val markerStart = indexOf(textToFind)
     if (markerStart < 0) return null
     val start = markerStart + textToFind.length
     val end = blockEnd(start - 1) ?: return null
-    return start to end
+    return start until end
 }
 
 private fun String.blockEnd(openingBrace: Int): Int? {
