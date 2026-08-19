@@ -21,6 +21,9 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
+      - name: Run buildSrc tests
+        run: ./gradlew -p buildSrc :test --stacktrace
+
       - name: Check Project Structure
         run: |
           ./gradlew jbStructureCheck \
