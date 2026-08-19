@@ -97,7 +97,7 @@ private fun RotatingTriangle(isAnimating: Boolean) {
     LaunchedEffect(surface, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
-                surface.render(frameTimeNanos) { triangle.render(this) }
+                surface.render { triangle.render(this, frameTimeNanos) }
             }
         }
     }
@@ -120,7 +120,7 @@ private fun ColorPulse(isAnimating: Boolean) {
     LaunchedEffect(surface, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
-                surface.render(frameTimeNanos) { pulse.render(this) }
+                surface.render { pulse.render(this, frameTimeNanos) }
             }
         }
     }
@@ -171,9 +171,16 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
     private val angleUniform: WebGLUniformLocation? = gl.getUniformLocation(program, "angle")
     private val aspectUniform: WebGLUniformLocation? = gl.getUniformLocation(program, "aspect")
     private var angle = 0f
+    private var previousFrameTimeNanos = 0L
 
-    fun render(scope: WebGLRenderScope): Unit =
+    fun render(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
         with(scope) {
+            val deltaNanos = if (previousFrameTimeNanos == 0L) {
+                0L
+            } else {
+                frameTimeNanos - previousFrameTimeNanos
+            }
+            previousFrameTimeNanos = frameTimeNanos
             angle += deltaNanos / 1_000_000_000f * 0.9f
 
             // Skia rendered the previous frame through this very context and left its own state
@@ -262,9 +269,16 @@ private fun WebGLRenderingContext.createProgram(
 /** Clears the texture to a pulsing color. No shaders, no resources, nothing to dispose. */
 private class PulseRenderer {
     private var phase = 0f
+    private var previousFrameTimeNanos = 0L
 
-    fun render(scope: WebGLRenderScope): Unit =
+    fun render(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
         with(scope) {
+            val deltaNanos = if (previousFrameTimeNanos == 0L) {
+                0L
+            } else {
+                frameTimeNanos - previousFrameTimeNanos
+            }
+            previousFrameTimeNanos = frameTimeNanos
             phase += deltaNanos / 1_000_000_000f * 1.5f
             val level = sin(phase) * 0.5f + 0.5f
             webGLContext.disable(SCISSOR_TEST)

@@ -158,7 +158,7 @@ private fun ThreeSceneContent(
     LaunchedEffect(surface, threeJs, running) {
         while (running) {
             withFrameNanos { frameTimeNanos ->
-                surface.render(frameTimeNanos, { threeJs.renderFrame(this) })
+                surface.render { threeJs.renderFrame(this, frameTimeNanos) }
             }
         }
     }

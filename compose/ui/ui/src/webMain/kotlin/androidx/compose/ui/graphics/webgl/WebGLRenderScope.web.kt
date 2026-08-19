@@ -67,18 +67,6 @@ sealed interface WebGLRenderScope {
     val size: IntSize
 
     /**
-     * The time of the frame being rendered, in nanoseconds, as reported by
-     * [androidx.compose.runtime.withFrameNanos].
-     */
-    val frameTimeNanos: Long
-
-    /**
-     * The time elapsed since the previously rendered frame, in nanoseconds, or `0` for the first
-     * frame rendered into the surface. This is the value to advance animations by.
-     */
-    val deltaNanos: Long
-
-    /**
      * Incremented every time the surface recreated [framebuffer] and its attachments, which happens
      * on the first frame and whenever [WebGLTextureSurface.size] changed.
      *

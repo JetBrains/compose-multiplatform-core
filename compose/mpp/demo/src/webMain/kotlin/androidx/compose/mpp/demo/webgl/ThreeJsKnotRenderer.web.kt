@@ -55,10 +55,15 @@ private constructor(private val three: ThreeModule, surface: WebGLTextureSurface
     private var renderTarget: ThreeRenderTarget? = null
     private var targetGeneration = 0
     private var failed = false
+    private var previousFrameTimeNanos = 0L
 
-    fun renderFrame(scope: WebGLRenderScope): Unit =
+    fun renderFrame(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
         with(scope) {
             if (failed) return
+            val deltaNanos =
+                if (previousFrameTimeNanos == 0L) 0L
+                else frameTimeNanos - previousFrameTimeNanos
+            previousFrameTimeNanos = frameTimeNanos
             try {
                 val renderer = renderer ?: error("the renderer was disposed")
                 val knotScene = knotScene ?: error("the scene was disposed")

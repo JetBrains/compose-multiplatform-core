@@ -62,10 +62,10 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
  * LaunchedEffect(surface) {
  *     while (true) {
  *         withFrameNanos { frameTimeNanos ->
- *             surface.render(frameTimeNanos) {
- *                 // `this` is a WebGLRenderScope: webGLContext, htmlCanvas, framebuffer, size,
- *                 // generation and the frame timing.
- *                 myRenderer.render(webGLContext, framebuffer, size, generation, deltaNanos)
+ *             surface.render {
+ *                 // `this` is a WebGLRenderScope: webGLContext, htmlCanvas, framebuffer, size
+ *                 // and generation. Pass frameTimeNanos to your renderer if it needs timing.
+ *                 myRenderer.render(frameTimeNanos, this)
  *             }
  *         }
  *     }
@@ -129,8 +129,6 @@ internal constructor(
     private var generation = 0
     private var isDisposed = false
     private var isRendering = false
-    private var hasRenderedFrame = false
-    private var previousFrameTimeNanos = 0L
 
     /**
      * Renders one frame of foreign WebGL content into this surface, then makes the result available
@@ -145,14 +143,11 @@ internal constructor(
      * [block], and afterwards rebinds the default framebuffer and makes Skia drop the GL state it
      * had cached before [block] ran.
      *
-     * @param frameTimeNanos the time of the frame being rendered, as received from
-     *   [withFrameNanos]. It is what [WebGLRenderScope.frameTimeNanos] and
-     *   [WebGLRenderScope.deltaNanos] report to [block].
      * @return `false` when the surface could not be prepared, which happens while Compose has not
      *   rendered its first frame yet and therefore has no GPU context to share; [block] is not
      *   invoked in that case.
      */
-    fun render(frameTimeNanos: Long, block: WebGLRenderScope.() -> Unit): Boolean {
+    fun render(block: WebGLRenderScope.() -> Unit): Boolean {
         if (isDisposed) return false
         check(!isRendering) {
             "render() is already running: it must not be called from within another render() call, " +
@@ -160,9 +155,6 @@ internal constructor(
         }
         val context = directContext() ?: return false
         val scope = prepareWebGLRenderScope(context, size)
-        scope.frameTimeNanos = frameTimeNanos
-        scope.deltaNanos = if (hasRenderedFrame) frameTimeNanos - previousFrameTimeNanos else 0L
-
         isRendering = true
         webGLContext.bindFramebuffer(FRAMEBUFFER, scope.framebuffer)
         try {
@@ -174,8 +166,6 @@ internal constructor(
             // believes about the GL state is stale by now.
             context.resetAll()
         }
-        previousFrameTimeNanos = frameTimeNanos
-        hasRenderedFrame = true
         _invalidation.value++
         return true
     }
@@ -252,10 +242,7 @@ internal constructor(
         override val framebuffer: WebGLFramebuffer,
         override val size: IntSize,
         override val generation: Int,
-    ) : WebGLRenderScope {
-        override var frameTimeNanos: Long = 0L
-        override var deltaNanos: Long = 0L
-    }
+    ) : WebGLRenderScope
 
     /**
      * Releases the texture, the image and the framebuffer. Called by [rememberWebGLTextureSurface]
