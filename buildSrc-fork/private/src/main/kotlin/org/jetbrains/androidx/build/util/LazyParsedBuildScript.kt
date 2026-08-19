@@ -19,20 +19,16 @@ package org.jetbrains.androidx.build.util
 
 internal class LazyParsedBuildScript(val text: String) {
     private val nameToSourceSet: Map<String, SourceSet> by lazy {
-        val sourceSetsBlock =
-            Block(text, 0, text.length).subblock("sourceSets {") ?: return@lazy emptyMap()
-        MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsBlock.text).mapNotNull { match ->
-            val dependencyBlock =
-                sourceSetsBlock.dependencyBlock(match.value) ?: return@mapNotNull null
-            val name = match.groupValues[1]
-            name to SourceSet(
-                name = name,
-                lineBefore = sourceSetsBlock.text.substring(0, match.range.first)
-                    .trimEnd()
-                    .substringAfterLast('\n'),
-                source = dependencyBlock.source,
-                dependenciesStart = dependencyBlock.start,
-                dependenciesEnd = dependencyBlock.end,
+        val sourceSets = text.subblock("sourceSets {") ?: return@lazy emptyMap()
+        val sourceSetsText = text.substring(sourceSets.first, sourceSets.second)
+        MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
+            val dependencies = sourceSetsText.dependencyBlock(match.value) ?: return@mapNotNull null
+            match.groupValues[1] to SourceSet(
+                name = match.groupValues[1],
+                lineBefore = sourceSetsText.substring(0, match.range.first).trimEnd().substringAfterLast('\n'),
+                source = text,
+                dependenciesStart = sourceSets.first + dependencies.first,
+                dependenciesEnd = sourceSets.first + dependencies.second,
             )
         }.toMap()
     }
@@ -190,29 +186,20 @@ private val MAIN_SOURCE_SET_REFERENCE =
     Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
 
-private fun Block.dependencyBlock(sourceSetReference: String): Block? {
-    val sourceSetBlock = subblock(sourceSetReference) ?: return null
-    return if (".dependencies" in sourceSetReference) {
-        sourceSetBlock
-    } else {
-        sourceSetBlock.subblock("dependencies {")
+private fun String.dependencyBlock(sourceSetReference: String): Pair<Int, Int>? {
+    val sourceSet = subblock(sourceSetReference) ?: return null
+    return if (".dependencies" in sourceSetReference) sourceSet
+    else substring(sourceSet.first, sourceSet.second).subblock("dependencies {")?.let {
+        sourceSet.first + it.first to sourceSet.first + it.second
     }
 }
 
-private data class Block(
-    val source: String,
-    val start: Int,
-    val end: Int,
-) {
-    val text: String get() = source.substring(start, end)
-
-    fun subblock(textToFind: String): Block? {
-        val markerStart = text.indexOf(textToFind)
-        if (markerStart < 0) return null
-        val contentStart = start + markerStart + textToFind.length
-        val contentEnd = source.blockEnd(contentStart - 1) ?: return null
-        return Block(source, contentStart, contentEnd)
-    }
+private fun String.subblock(textToFind: String): Pair<Int, Int>? {
+    val markerStart = indexOf(textToFind)
+    if (markerStart < 0) return null
+    val start = markerStart + textToFind.length
+    val end = blockEnd(start - 1) ?: return null
+    return start to end
 }
 
 private fun String.blockEnd(openingBrace: Int): Int? {
