@@ -6,19 +6,3 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }
-
-tasks.named("test", Test).configure { task ->
-    task.useJUnit()
-    def testRuntimeClasspath = configurations.testRuntimeClasspath
-    def pluginClasspathFileProvider = layout.buildDirectory.file("generated/plugin-classpath/test.txt")
-    task.inputs.files(testRuntimeClasspath)
-    task.doFirst {
-        def pluginClasspathFile = pluginClasspathFileProvider.get().asFile
-        pluginClasspathFile.parentFile.mkdirs()
-        pluginClasspathFile.text = testRuntimeClasspath.asPath
-        task.systemProperty(
-                "test.plugin.classpath.file",
-                pluginClasspathFile.absolutePath
-        )
-    }
-}

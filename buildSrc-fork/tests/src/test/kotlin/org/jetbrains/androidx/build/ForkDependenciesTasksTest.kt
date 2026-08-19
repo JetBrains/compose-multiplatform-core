@@ -712,7 +712,7 @@ private fun runner(root: File, vararg arguments: String): GradleRunner =
         .withArguments(arguments.toList() + "--stacktrace")
 
 private fun pluginClasspath(): List<File> {
-    val classpath = File(System.getProperty("test.plugin.classpath.file")).readText()
+    val classpath = System.getProperty("java.class.path")
     return classpath.split(File.pathSeparator)
         .filter { it.isNotBlank() }
         .map(::File)
