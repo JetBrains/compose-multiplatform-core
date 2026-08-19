@@ -258,22 +258,33 @@ internal class ComposeWebSemanticsListener(
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
-
-            val reversedChildren = node.replacedChildren.asReversed()
-            dfsDeque.addAll(reversedChildren)
-            reversedChildren.fastForEach { nodeToParent[it.id] = node.id }
+            val children = node.replacedChildren
 
             // The parent is known here: it was recorded when this node was pushed to the deque.
             val htmlParent = nodeToParent[node.id]?.let { webNodes[it] } ?: webSemanticsRoot
 
-            syncNode(
-                semanticsNode = node,
-                config = config,
-                htmlParent = htmlParent,
-                rootPosition = rootPosition,
-                hasChildren = reversedChildren.isNotEmpty()
-            )
+            if (config.contains(SemanticsProperties.Text)) {
+                // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
+                // But for text with links we have to interleave text parts with links.
+                // We split text into parts: plain text fragments and links.
+                // That's why a text node doesn't push its children to the traversal queue.
+                // It handles its link children itself:
+                syncTextNode(node, config, children, htmlParent, rootPosition)
+            } else {
+                syncNode(node, config, htmlParent, rootPosition, children.isNotEmpty())
+                pushChildren(children, node.id)
+            }
         }
+    }
+
+    /**
+     * Pushes the [children] of the node [parentId] to the traversal deque, keeping the order of the
+     * semantics tree: the deque is LIFO, so the children are added in the reversed order.
+     */
+    private fun pushChildren(children: List<SemanticsNode>, parentId: Int) {
+        val reversedChildren = children.asReversed()
+        dfsDeque.addAll(reversedChildren)
+        reversedChildren.fastForEach { nodeToParent[it.id] = parentId }
     }
 
     /**
@@ -288,7 +299,8 @@ internal class ComposeWebSemanticsListener(
         htmlParent: HTMLElement,
         rootPosition: Offset,
         hasChildren: Boolean,
-    ) {
+        text: String? = null,
+    ): HTMLElement {
         val currentId = semanticsNode.id
         allNodesIds.add(currentId)
 
@@ -304,7 +316,7 @@ internal class ComposeWebSemanticsListener(
                 removeAllChildrenOf(htmlNode)
             }
 
-            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition)
+            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text)
             htmlNode
         } else {
             nodes[currentId] = semanticsNode
@@ -315,12 +327,13 @@ internal class ComposeWebSemanticsListener(
             }
 
             webNodes[currentId] = htmlNode
-            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, justCreated = true)
+            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text, justCreated = true)
             htmlNode
         }
 
         htmlParent.appendChild(htmlNode)
         elementToSemanticsNode[htmlNode] = semanticsNode
+        return htmlNode
     }
 
     /**
@@ -332,11 +345,11 @@ internal class ComposeWebSemanticsListener(
         config: SemanticsConfiguration,
         htmlNode: HTMLElement,
         rootOffset: Offset,
+        text: String?,
         justCreated: Boolean = false,
     ) {
-        if (config.contains(SemanticsProperties.Text)) {
-            val text = config[SemanticsProperties.Text]
-            htmlNode.innerText = text.fastJoinToString("\n") { it.text }
+        if (text != null) {
+            htmlNode.innerText = text
         }
 
         if (config.contains(SemanticsProperties.ContentDescription)) {
@@ -382,6 +395,103 @@ internal class ComposeWebSemanticsListener(
 
             setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, width, height)
         }
+    }
+
+
+    /**
+     * Syncs a node with [SemanticsProperties.Text], attaching its link children right away instead
+     * of scheduling them for the regular traversal.
+     *
+     * A link doesn't have its own text in the semantics tree: the whole text (including the links)
+     * belongs to the text node, while every link range is a separate child node marked with
+     * [SemanticsProperties.LinkTestMarker]. Exposing it as is would read the link text twice,
+     * so the text is split and interleaved with the link nodes:
+     * ```
+     * Semantics nodes:                     HTML nodes:
+     *
+     * Text("Read the docs, please")        <div>
+     *  ├─ LinkTestMarker  // "Read"          <div role="link">Read</div>
+     *  └─ LinkTestMarker  // "the docs"      " "
+     *                                        <div role="link">the docs</div>
+     *                                        ", please"
+     *                                      </div>
+     * ```
+     * Note that the empty text parts (here: the one before the first link) are skipped.
+     *
+     * If the text parts don't surround the link children exactly (for example, a link clipped by
+     * `maxLines` doesn't produce a child node), this node exposes the whole text and the links keep
+     * their own text, so nothing is lost.
+     *
+     * [children] other than the links (a text node might be a merged node with arbitrary merging
+     * children) are pushed to the regular traversal and end up after the links.
+     */
+    private fun syncTextNode(
+        node: SemanticsNode,
+        config: SemanticsConfiguration,
+        children: List<SemanticsNode>,
+        htmlParent: HTMLElement,
+        rootPosition: Offset,
+    ) {
+        val texts = config[SemanticsProperties.Text]
+        val linksCount = children.count { it.config.contains(SemanticsProperties.LinkTestMarker) }
+
+        val split = if (linksCount == 0) null else splitTextAndLinks(texts)
+        // Null if the parts don't surround the link children exactly: the whole text is exposed then.
+        val textParts = split?.textParts?.takeIf { split.matchesLinksCount(linksCount) }
+
+        val htmlNode = syncNode(
+            semanticsNode = node,
+            config = config,
+            htmlParent = htmlParent,
+            rootPosition = rootPosition,
+            hasChildren = children.isNotEmpty(),
+            // The text parts are appended in between the link children below.
+            text = if (textParts != null) "" else texts.fastJoinToString("\n") { it.text },
+        )
+
+        var linkIndex = 0
+        // Non-link children are pushed together (after the loop) to keep their relative order.
+        var deferredChildren: MutableList<SemanticsNode>? = null
+
+        children.fastForEach { child ->
+            val childConfig = child.config
+            if (!childConfig.contains(SemanticsProperties.LinkTestMarker)) {
+                val deferred = deferredChildren ?: mutableListOf<SemanticsNode>().also {
+                    deferredChildren = it
+                }
+                deferred.add(child)
+                return@fastForEach
+            }
+
+            if (textParts != null) {
+                htmlNode.appendText(textParts[linkIndex])
+            }
+
+            val linkChildren = child.replacedChildren
+            syncNode(
+                semanticsNode = child,
+                config = childConfig,
+                htmlParent = htmlNode,
+                rootPosition = rootPosition,
+                hasChildren = linkChildren.isNotEmpty(),
+                text = split?.linkTexts?.getOrNull(linkIndex),
+            )
+            // A link node is expected to be a leaf, but don't rely on it.
+            pushChildren(linkChildren, child.id)
+
+            linkIndex++
+        }
+
+        if (textParts != null) {
+            htmlNode.appendText(textParts.last())
+        }
+
+        deferredChildren?.let { pushChildren(it, node.id) }
+    }
+
+    private fun HTMLElement.appendText(text: String?) {
+        if (text.isNullOrEmpty()) return
+        appendChild(document.createTextNode(text))
     }
 
     internal fun stop() {
