@@ -140,7 +140,7 @@ internal class LazyParsedBuildScript(val text: String) {
                     argument.removeSurrounding("project(", ")").trim().trim('"', '\'')
                 )
 
-            argument.startsWith("libs.") -> Dependency.Reference(argument)
+            argument.startsWith("libs.") -> Dependency.LibsReference(argument)
             else -> argument.trim('"', '\'').split(":")
                 .takeIf { it.size == 3 }
                 ?.let { Dependency.Artifact(it[0], it[1], it[2]) }
@@ -178,7 +178,7 @@ internal class LazyParsedBuildScript(val text: String) {
             override val formatted: String get() = "project(\"$path\")"
         }
 
-        data class Reference(
+        data class LibsReference(
             val notation: String,
         ) : Dependency {
             override val formatted: String get() = notation
