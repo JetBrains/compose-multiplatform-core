@@ -41,7 +41,8 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
         }
         project.tasks.register("jbStructureCheck") { checkTask ->
             checkTask.group = "verification"
-            checkTask.description = "Runs JetBrains structure checks."
+            checkTask.description = "Runs JetBrains structure checks, " +
+                "including buildSrc tests and API checks"
             checkTask.dependsOn(buildSrcForkTests)
         }
 
