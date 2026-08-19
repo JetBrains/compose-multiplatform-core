@@ -41,8 +41,6 @@ internal class IosInteropContainer(
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
 
-    val hasPendingTransaction: Boolean get() = transaction.hasPendingActions
-
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
      * Snapshot observer that is used by underlying [InteropViewHolder] to observe changes in

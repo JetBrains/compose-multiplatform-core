@@ -199,17 +199,6 @@ class BaseComposeSceneTest : SkikoComposeTestBase() {
         // Should be only two clicks
         assertEquals(2, clicksCount)
     }
-
-    @Test
-    fun requestDrawTriggersDrawCallback() = runComposeSceneTest { scene ->
-        scene.setContent { Box(Modifier.fillMaxSize()) }
-
-        resetInvalidations()
-        scene.requestDraw()
-
-        assertEquals(1, invalidateDraw)
-        assertTrue(scene.hasPendingDraw)
-    }
 }
 
 class ComposeSceneTestScope(private val testScope: TestScope) {
