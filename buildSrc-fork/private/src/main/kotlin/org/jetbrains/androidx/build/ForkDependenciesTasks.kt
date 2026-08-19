@@ -141,7 +141,11 @@ private fun updatedForkLines(originalLines: List<Line>, forkLines: List<Line>): 
                 originalLine.withMaxVersionFrom(forkLine)
 
             forkLine.hasSameAssociatedProjectAs(originalLine) ->
-                forkLine.copy(type = originalLine.type)
+                originalLine.copy(
+                    comment = forkLine.comment,
+                    inlineComment = forkLine.inlineComment,
+                    dependency = forkLine.dependency
+                )
 
             else -> error("Should not happen")
         }
