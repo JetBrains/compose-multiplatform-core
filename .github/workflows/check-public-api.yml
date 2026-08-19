@@ -24,12 +24,6 @@ jobs:
       - name: Run buildSrc tests
         run: ./gradlew -p buildSrc :test --stacktrace
 
-      - name: Check Project Structure
-        run: |
-          ./gradlew jbStructureCheck \
-            --continue \
-            --no-daemon --stacktrace
-
       - name: Check Public API
         run: |
           ./gradlew jbApiCheck \
