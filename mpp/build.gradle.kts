@@ -120,10 +120,6 @@ val jbApiCheck = tasks.register("jbApiCheck") {
     dependsOn(apiValidationTasks(suffix = "ApiCheck"))
 }
 
-rootProject.tasks.named("jbStructureCheck") {
-    dependsOn(jbApiCheck)
-}
-
 fun apiValidationTasks(suffix: String) = buildSet<Task> {
     fun Iterable<Task>.filterComposePlatforms(vararg platforms: ComposePlatforms) =
         filter { task ->

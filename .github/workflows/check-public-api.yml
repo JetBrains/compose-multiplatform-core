@@ -21,8 +21,14 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Check Public API
+      - name: Check Project Structure
         run: |
           ./gradlew jbStructureCheck \
+            --continue \
+            --no-daemon --stacktrace
+
+      - name: Check Public API
+        run: |
+          ./gradlew jbApiCheck \
             --continue \
             --no-daemon --stacktrace
