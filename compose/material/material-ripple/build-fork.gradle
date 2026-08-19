@@ -61,22 +61,6 @@ androidXMultiplatform {
             implementation(libs.kotlinTest)
         }
 
-        androidDeviceTest.dependencies {
-            implementation(project(":compose:test-utils"))
-            implementation(project(":compose:foundation:foundation"))
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.testRules)
-            implementation(libs.testRunner)
-            implementation(libs.junit)
-            implementation(libs.truth)
-        }
-
         nonAndroidMain {
             dependsOn(commonMain)
         }
@@ -110,4 +94,3 @@ androidx {
     description = "Material ripple used to build interactive components"
     legacyDisableKotlinStrictApiMode = true
 }
-
