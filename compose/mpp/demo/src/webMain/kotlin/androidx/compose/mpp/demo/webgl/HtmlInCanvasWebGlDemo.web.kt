@@ -125,12 +125,12 @@ private fun HtmlInCanvasWebGlDemo() {
         }
     }) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Interactive HTML rendered into a WebGL texture")
-            Box(Modifier.fillMaxWidth().aspectRatio(640f / 360f)) {
+            Box(Modifier.fillMaxWidth(0.8f).aspectRatio(640f / 360f)) {
                 Canvas(
                     Modifier.fillMaxSize()
                         .onGloballyPositioned { coordinates ->
