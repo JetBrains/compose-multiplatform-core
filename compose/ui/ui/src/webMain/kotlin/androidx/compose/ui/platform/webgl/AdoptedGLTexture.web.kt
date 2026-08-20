@@ -52,6 +52,7 @@ private const val GL_RGBA8 = 0x8058
  * @param texture the WebGL texture, living in the same WebGL context as Skia
  * @param textureId the id Emscripten associates with [texture]
  * @param image the Skia image which adopted [texture]
+ * @param size the size of [texture], in pixels
  */
 internal class AdoptedGLTexture(
     val texture: WebGLTexture,
@@ -66,10 +67,11 @@ internal class AdoptedGLTexture(
 }
 
 /**
- * Allocates an RGBA8 texture in this context and hands it over to Skia.
+ * Hands [texture] over to Skia as an RGBA8 image, deleting it again if adoption fails.
  *
  * @param context the [DirectContext] Skia renders this canvas with
- * @param size the size of the texture, in pixels
+ * @param size the size of [texture], in pixels
+ * @param texture the texture to adopt, already allocated in this context
  */
 internal fun WebGLRenderingContext.adoptNewTexture(
     context: DirectContext,

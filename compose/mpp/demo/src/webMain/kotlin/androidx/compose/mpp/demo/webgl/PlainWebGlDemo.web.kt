@@ -206,7 +206,7 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
      */
     fun dispose(surface: WebGLRenderTarget) {
         gl.deleteProgram(program)
-        surface.restoreGLState()
+        surface.markGLStateStale()
     }
 
     companion object {

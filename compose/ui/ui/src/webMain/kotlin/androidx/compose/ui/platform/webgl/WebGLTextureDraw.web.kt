@@ -27,17 +27,17 @@ import androidx.compose.ui.layout.ContentScale
 import org.jetbrains.skia.Rect
 
 /**
- * Draws the latest frame from [renderTarget].
- * Does nothing when [renderTarget] has no frame ready yet.
+ * Draws the last frame rendered into [renderTarget], or nothing if there is no frame yet.
  *
- * Performs no GL rendering directly — only records a draw of the pre-rendered image.
- * Safe for graphics layers (`clip`, `blur`) and multiple draws per frame. Automatically
- * invalidates drawing on new frames without triggering recomposition.
+ * This only records a draw of the already rendered texture, so it issues no GL commands of its own:
+ * it is safe inside graphics layers such as `clip` and `blur`, and can be called several times per
+ * frame to show the same frame in several places. Each new frame repeats the drawing on its own,
+ * without recomposing.
  *
- * @param renderTarget Target surface to draw.
- * @param dstOffset Top-left destination offset in local coordinates.
- * @param dstSize Destination size (defaults to full draw bounds).
- * @param contentScale Scaling behavior when aspect ratios differ.
+ * @param renderTarget The target whose last frame to draw.
+ * @param dstOffset Top-left of the destination, in local coordinates.
+ * @param dstSize Size of the destination. Defaults to the whole draw bounds.
+ * @param contentScale How to fit the frame into the destination when their aspect ratios differ.
  */
 @ExperimentalComposeUiApi
 fun DrawScope.drawWebGLTexture(

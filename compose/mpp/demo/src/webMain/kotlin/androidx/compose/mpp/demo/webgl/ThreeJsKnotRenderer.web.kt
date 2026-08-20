@@ -115,15 +115,15 @@ private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) 
 
     /**
      * Releases three's own GL objects. Since that touches the context Compose renders through,
-     * [WebGLRenderTarget.restoreGLState] has to be called afterwards.
+     * [WebGLRenderTarget.markGLStateStale] has to be called afterwards.
      */
-    fun dispose(surface: WebGLRenderTarget?) {
+    fun dispose(renderTarget: WebGLRenderTarget?) {
         knotScene?.let(::disposeKnotScene)
         knotScene = null
         renderer?.dispose()
         renderer = null
-        renderTarget = null
+        this@ThreeJsKnotRenderer.renderTarget = null
         targetGeneration = 0
-        surface?.restoreGLState()
+        renderTarget?.markGLStateStale()
     }
 }

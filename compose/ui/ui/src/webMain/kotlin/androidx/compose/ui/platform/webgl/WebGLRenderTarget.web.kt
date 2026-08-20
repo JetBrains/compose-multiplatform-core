@@ -54,17 +54,17 @@ private const val GL_DEPTH24_STENCIL8 = 0x88F0
 private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
 
 /**
- * Represents a render target backed by an offscreen WebGL texture created in the same WebGL context
- * that Compose uses for rendering.
- * Its primary purpose is to render WebGL content into a texture that can be drawn alongside Compose
- * content in the same <canvas>.
+ * An offscreen render target that lets WebGL content take part in Compose rendering: WebGL code
+ * draws into it inside [render], and Compose displays the result with [drawWebGLTexture].
  *
- * Obtain an instance with [rememberWebGLRenderTarget].
- * [render] allows callers to execute custom WebGL rendering code with this target as the receiver:
- * inside the block, [framebuffer] is bound and [size] describes it.
+ * It takes care of everything that hand-off needs. It owns the GPU resources — a [framebuffer] with
+ * a color texture and a depth/stencil buffer, in the very WebGL context and `<canvas>` Compose
+ * renders with — restores the GL state Compose's renderer expects after each frame, and redraws the
+ * Compose content once a new frame is ready. Compose draws the color texture as it is, copying no
+ * pixels.
  *
- * After a successful [render], the target’s texture will be implicitly used by [drawWebGLTexture].
- * Use [drawWebGLTexture] to draw the frame.
+ * Obtain an instance with [rememberWebGLRenderTarget], which also disposes it when it leaves the
+ * composition.
  *
  * Usage example:
  * ```
@@ -100,60 +100,47 @@ internal constructor(
     private var requestedSize: IntSize = initialSize.coerceAtLeastOnePixel()
 
     /**
-     * Size in pixels of the currently allocated color texture, or [IntSize.Zero] before the first
-     * successful [render].
+     * Size in pixels of the [framebuffer], i.e. the area to render into: pass it to
+     * [WebGLRenderingContext.viewport] and base projection matrices on it.
+     * [IntSize.Zero] until the first successful [render].
      *
-     * This is the size of the framebuffer that [render] binds — use it for `viewport` and projection
-     * math. A size change requested via [rememberWebGLRenderTarget] is reflected here only after the
-     * [render] that applies it.
+     * Changing the size passed to [rememberWebGLRenderTarget] updates this on the next [render], so
+     * it always describes the framebuffer the current frame draws into.
      */
     var size: IntSize = IntSize.Zero
         private set
 
-    /**
-     * Requests a new color texture size in pixels (coerced to at least 1x1).
-     *
-     * The request is applied by the next [render], which reallocates the texture and bumps
-     * [generation]; [size] keeps describing the previous allocation until then.
-     *
-     * Internal: the size is owned by the `size` argument of [rememberWebGLRenderTarget], so that
-     * the composition stays the single source of truth. Reallocation is costly, so avoid changing
-     * that argument per-frame.
-     */
+    /** Applied by the next [render]; see the `size` parameter of [rememberWebGLRenderTarget]. */
     internal fun requestNewSize(size: IntSize) {
         requestedSize = size.coerceAtLeastOnePixel()
     }
 
     /**
-     * The framebuffer owned by this render target, or `null` before the first successful [render].
+     * The framebuffer to render into, bound for the duration of the [render] block, or `null`
+     * until the first successful [render]. Exposed for engines that need the raw handle, such as
+     * three.js.
      *
-     * It is bound for the duration of the [render] block. Code that changes the binding must restore
-     * it before returning, and must never delete the framebuffer or its attachments.
+     * Rebinding it inside [render] is allowed as long as the binding is restored before returning.
+     * Deleting it or its attachments is not — they belong to this target.
      */
     var framebuffer: WebGLFramebuffer? = null
         private set
 
     /**
-     * Incremented whenever [framebuffer] or its attachments are recreated (initial setup or size
-     * changes). Renderers should check this value to invalidate cached viewports, matrices, or
-     * descriptors.
+     * Bumped whenever [framebuffer] and its attachments are recreated, which happens on the first
+     * [render] and after every size change. Use it to drop anything cached from [framebuffer] or
+     * [size], such as projection matrices or a third-party render target wrapping them.
      */
     var generation: Int = 0
         private set
 
-    /**
-     * A lightweight Skiko [Image] wrapping [adoptedTexture]'s GPU memory without copying pixel data.
-     *
-     * Returns `null` if no texture is currently adopted.
-     */
+    /** The Skia image sampling the color texture, or `null` until the first successful [render]. */
     internal val image: Image?
         get() = adoptedTexture?.image
 
     private val _invalidation = mutableLongStateOf(0L)
 
-    /**
-     * Observes frame invalidation from a draw operation
-     */
+    /** Makes the calling draw operation repeat whenever a new frame is rendered. */
     internal fun observeInvalidation() {
         _invalidation.value
     }
@@ -164,15 +151,30 @@ internal constructor(
     private var isRendering = false
 
     /**
-     * Renders a frame of WebGL content into this surface, updates [image], and triggers a Compose redraw.
+     * Renders one frame into this target and invalidates every [drawWebGLTexture] that displays it,
+     * so they all show the new frame.
      *
-     * Must be called within a [withFrameNanos] callback (before Skia samples the frame) and never
-     * inside a draw or layout scope.
+     * Allocates or reallocates GPU resources if needed, binds [framebuffer], runs [block], then
+     * restores the GL state Compose's renderer expects. [block] receives this target as its
+     * receiver, so [size] and [framebuffer] describe the frame being drawn.
      *
-     * Allocates resources as needed, binds the offscreen framebuffer, executes [block], and restores
-     * the default GL state afterward.
+     * Prefer calling this from a [withFrameNanos] callback: the frame is then ready before Compose
+     * draws, so the new content appears immediately. Rendering at another time is allowed, but the
+     * content only appears in a later Compose frame.
      *
-     * @return `false` (and skips [block]) if the GPU context is unavailable, such as before Compose's first frame.
+     * Never call this from a draw scope, such as a `Canvas` or `Modifier.drawBehind`: the GL state
+     * would be reset while Compose is drawing the frame, and the invalidation would come from
+     * within the drawing it invalidates, keeping that drawing repeating with no loop to stop:
+     * ```
+     * Canvas(Modifier.fillMaxSize()) {
+     *     // Wrong: render() must not run while Compose is drawing.
+     *     renderTarget.render { renderer.drawFrame(this) }
+     *     drawWebGLTexture(renderTarget)
+     * }
+     * ```
+     *
+     * @return `false`, skipping [block], if the GPU context is not available yet — which is the
+     *   case until Compose has drawn its first frame.
      */
     fun render(block: WebGLRenderTarget.() -> Unit): Boolean {
         if (isDisposed) return false
@@ -198,18 +200,17 @@ internal constructor(
     }
 
     /**
-     * Restores the rendering context back to a clean state expected by Compose.
+     * Marks the GL state as changed outside of [render], so that Compose's renderer stops assuming
+     * the state it last set is still in place.
      *
-     * Compose assumes exclusive control over the underlying graphics context.
-     * This call informs the context that the GL state was modified outiside of [render].
-     *
-     * Note: Calling this frequently carries a performance penalty due to GL state cache invalidation.
+     * [render] does this for its own block already, so this is only needed when code touches
+     * [webGLContext] on its own — typically while setting up or tearing down a third-party engine.
+     * The renderer then has to reapply its whole state, so avoid calling this per frame.
      */
-    fun restoreGLState(): Boolean {
-        val context = directContext() ?: return false
+    fun markGLStateStale() {
+        val context = directContext() ?: return
         webGLContext.bindFramebuffer(FRAMEBUFFER, null)
         context.resetAll()
-        return true
     }
 
     private fun prepareFramebuffer(
@@ -262,8 +263,8 @@ internal constructor(
     }
 
     /**
-     * Releases the texture, the image and the framebuffer. Called by [rememberWebGLRenderTarget]
-     * when the surface leaves the composition; calling it twice is a no-op.
+     * Releases the framebuffer and its attachments. Called by [rememberWebGLRenderTarget] when the
+     * target leaves the composition; calling it twice is a no-op.
      */
     internal fun dispose() {
         if (isDisposed) return
@@ -297,13 +298,12 @@ private fun WebGLRenderingContext.defaultWebGLTexture(size: IntSize): WebGLTextu
 }
 
 /**
- * Remembers a [WebGLRenderTarget] of the given [size], automatically disposing it when
- * leaving the composition.
+ * Remembers a [WebGLRenderTarget] of [size] pixels, disposing it when it leaves the composition.
  *
- * [size] is the only way to size the target: changing it recreates the underlying GPU resources.
- * Reallocation is costly, so avoid changing it per-frame.
+ * This is the only way to size the target: a changed [size] reallocates its GPU resources on the
+ * next [WebGLRenderTarget.render], so avoid changing it per frame.
  *
- * @return The target, or `null` if WebGL2 is unsupported.
+ * @return The target, or `null` if the browser does not support WebGL2.
  */
 @ExperimentalComposeUiApi
 @Composable

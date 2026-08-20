@@ -147,7 +147,7 @@ private fun VideoPlayer(
         onDispose {
             videoRenderer.stop()
             videoRenderer.dispose()
-            renderTarget.restoreGLState()
+            renderTarget.markGLStateStale()
         }
     }
 

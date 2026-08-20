@@ -79,7 +79,7 @@ private fun HtmlInCanvasWebGlDemo() {
     DisposableEffect(htmlRenderer, target) {
         onDispose {
             htmlRenderer.dispose()
-            target.restoreGLState()
+            target.markGLStateStale()
         }
     }
 
