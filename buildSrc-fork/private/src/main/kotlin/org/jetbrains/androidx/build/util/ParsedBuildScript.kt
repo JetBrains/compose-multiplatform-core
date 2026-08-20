@@ -147,6 +147,29 @@ internal class ParsedBuildScript(val text: String) {
         val nestedBraces: List<Pair<Int, Int>>,
     ) {
         val contentIndices: IntRange get() = (openingBrace + 1) until closingBrace
+
+        /**
+         * The lines of this block that can hold a declaration.
+         *
+         * A block spanning several lines starts right after its `{` and ends right before the
+         * indentation of its `}`, so its first and its last line hold a brace instead of a
+         * declaration and aren't lines of the block at all.
+         */
+        val declarationLines: List<TextLine> by lazy {
+            var offset = textStart
+            val allLines = text.lineSequence()
+                .map { lineText -> TextLine(lineText, offset).also { offset += lineText.length + 1 } }
+                .toList()
+            if (allLines.size < 2) return@lazy allLines
+            allLines
+                .let { if (it.first().text.isBlank()) it.drop(1) else it }
+                .let { if (it.last().text.isBlank()) it.dropLast(1) else it }
+        }
+    }
+
+    /** A single line of a build script, with the range of offsets it spans. */
+    internal class TextLine(val text: String, val start: Int) {
+        val end: Int get() = start + text.length
     }
 
     internal class SourceSet(
@@ -157,11 +180,10 @@ internal class ParsedBuildScript(val text: String) {
         val lines: List<Line> by lazy {
             buildList {
                 val comments = mutableListOf<String>()
-                var offset = dependencies.textStart
                 var depth = 0
                 var braceIndex = 0
-                for (lineText in dependencies.text.lineSequence()) {
-                    val lineEnd = offset + lineText.length
+                for (line in dependencies.declarationLines) {
+                    val lineText = line.text
                     if (depth == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -174,18 +196,13 @@ internal class ParsedBuildScript(val text: String) {
                     }
                     // Braces on this line take effect on the lines that follow it.
                     while (braceIndex < dependencies.nestedBraces.size &&
-                        dependencies.nestedBraces[braceIndex].first < lineEnd
+                        dependencies.nestedBraces[braceIndex].first < line.end
                     ) {
                         depth += dependencies.nestedBraces[braceIndex].second
                         braceIndex++
                     }
-                    offset = lineEnd + 1
                 }
             }
-                // The first and the last line of a block hold its braces rather than a
-                // declaration, so they are not blank lines of the dependency list.
-                .dropWhile { it is Line.Blank }
-                .dropLastWhile { it is Line.Blank }
         }
 
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
