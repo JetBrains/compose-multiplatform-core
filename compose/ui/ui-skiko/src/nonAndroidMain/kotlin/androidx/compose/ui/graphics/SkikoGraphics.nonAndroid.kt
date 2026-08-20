@@ -215,7 +215,8 @@ internal object SkikoGraphics : PlatformGraphics {
 
     override fun createTintColorFilter(color: Color, blendMode: BlendMode): PlatformColorFilter {
         // TODO: https://github.com/JetBrains/skiko/pull/1272 - drop isNoOpBlend and the
-        //  pass-through filter once skiko reports the absent filter as null.
+        //  pass-through filter once skiko reports the absent filter as null. Replace by this:
+        // SkikoColorFilter(SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia()) ?: PassThroughColorFilter)
         if (isNoOpBlend(color, blendMode)) return SkikoColorFilter(PassThroughColorFilter)
         return SkikoColorFilter(SkColorFilter.makeBlend(color.toArgb(), blendMode.toSkia()))
     }
