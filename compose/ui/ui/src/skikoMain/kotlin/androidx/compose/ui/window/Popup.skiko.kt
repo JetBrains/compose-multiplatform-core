@@ -471,8 +471,9 @@ private fun PopupLayout(
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    // Wait until the popup scene has a real parent anchor before composing its content.
-    // Otherwise, its first layout could position the popup using the initial IntRect.Zero anchor.
+    // Use a MutableState directly to avoid recomposing when the value changes
+    // Use nullable as a marker to wait until the popup scene has a real parent anchor before
+    // composing its content.
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
     EmptyLayout(Modifier.onPlaced { childCoordinates ->
         childCoordinates.parentCoordinates?.let {
