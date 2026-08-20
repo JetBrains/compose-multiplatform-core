@@ -226,26 +226,29 @@ internal class ComposeSceneMediator(
     )
 
     /**
-     * Indicates that a draw happened in the current display-link interval so the prefetch scheduler
-     * can tell whether the draw loop was idle when [FrameChoreographer.Listener.onOutOfFrame]
-     * runs.
+     * Indicates that a draw happened in the current display-link interval.
      */
     private var didDrawSinceDisplayLink = false
+
     private val frameChoreographerListener = object : FrameChoreographer.Listener {
         override fun onDisplayLinkTick() {
             didDrawSinceDisplayLink = false
         }
 
-        override fun onFramePerformed() {
-            if (!scene.hasPendingMeasureOrLayout && !scene.hasPendingDraw) {
-                interopContainer.performPendingViewUpdates()
-            }
+        override fun onFramePerformed(frameId: Long) {
+            interopContainer.snapshotPendingViewUpdatesState(frameId)
         }
 
         override fun onOutOfFrame(
+            frameId: Long,
             lastFrameTimestamp: NSTimeInterval,
             targetTimestamp: NSTimeInterval
         ) {
+            interopContainer.performPendingViewUpdates(
+                captureId = frameId,
+                canPerform = !scene.hasPendingDraw,
+            )
+
             prefetchScheduler.execute(
                 lastFrameTimestamp = lastFrameTimestamp,
                 targetTimestamp = targetTimestamp,

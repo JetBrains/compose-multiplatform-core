@@ -160,7 +160,11 @@ private class CountingListener : FrameChoreographer.Listener {
         displayLinkCount++
     }
 
-    override fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval) {
+    override fun onOutOfFrame(
+        frameId: Long,
+        lastFrameTimestamp: NSTimeInterval,
+        targetTimestamp: NSTimeInterval
+    ) {
         outOfFrameCount++
     }
 }

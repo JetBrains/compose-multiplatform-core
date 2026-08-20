@@ -29,7 +29,7 @@ internal typealias InteropSyncAction = () -> Unit
  *
  * Frame-synchronized changes are performed within the renderer's [CATransaction], so UIKit and
  * Compose are visually simultaneous. Updates to already attached UIKit views may instead be
- * performed after a display-link interval in which Compose did not draw.
+ * performed out of frame after UIKit has had a chance to draw.
  *
  * [isInteropActive] defines if rendering strategy should be changed along with this transaction.
  */

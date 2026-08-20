@@ -86,13 +86,17 @@ internal class FrameChoreographer private constructor(
         /**
          * Callback invoked after the shared recomposer has advanced for this display-link tick.
          */
-        fun onFramePerformed() = Unit
+        fun onFramePerformed(frameId: Long) = Unit
 
         /**
          * The next runloop is performed after all draw calls are processed and before the next
          * runloop starts, so this is the moment out-of-frame work should run.
          */
-        fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval) = Unit
+        fun onOutOfFrame(
+            frameId: Long,
+            lastFrameTimestamp: NSTimeInterval,
+            targetTimestamp: NSTimeInterval
+        ) = Unit
     }
 
     /**
@@ -253,7 +257,10 @@ internal class FrameChoreographer private constructor(
     val currentTargetFrameDuration: NSTimeInterval
         get() = displayLink.targetTimestamp - displayLink.timestamp
 
+    private var nextFrameId = 0L
+
     private fun onDisplayLinkTick() {
+        val frameId = nextFrameId++
         val lastFrameTimestamp = displayLink.timestamp
         val targetTimestamp = displayLink.targetTimestamp
 
@@ -265,7 +272,9 @@ internal class FrameChoreographer private constructor(
             outOfFrameExecutor.onFrameEnd()
 
             applyPendingListenersToRemove()
-            listeners.fastForEach { it.onOutOfFrame(lastFrameTimestamp, targetTimestamp) }
+            listeners.fastForEach {
+                it.onOutOfFrame(frameId, lastFrameTimestamp, targetTimestamp)
+            }
         }
         listeners.fastForEach { it.onDisplayLinkTick() }
 
@@ -273,7 +282,7 @@ internal class FrameChoreographer private constructor(
 
         displayLinkFrameRate.updateFrameRateIfNeeded()
         performFrameIfNeeded()
-        listeners.fastForEach { it.onFramePerformed() }
+        listeners.fastForEach { it.onFramePerformed(frameId) }
         if (advancedFramesCount <= 0 && ongoingActivitiesCount == 0) {
             advancedFramesCount = 0
             displayLink.paused = true
