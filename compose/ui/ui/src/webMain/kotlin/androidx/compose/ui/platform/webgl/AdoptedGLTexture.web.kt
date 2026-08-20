@@ -16,7 +16,7 @@
 
 @file:OptIn(ExperimentalWasmJsInterop::class)
 
-package androidx.compose.ui.graphics.webgl
+package androidx.compose.ui.platform.webgl
 
 import androidx.compose.ui.unit.IntSize
 import kotlin.js.ExperimentalWasmJsInterop
@@ -60,8 +60,6 @@ internal class AdoptedGLTexture(
     val size: IntSize,
 ) {
     fun dispose() {
-        // Closing the image releases Skia's reference to the texture; Skia owns the texture since
-        // it adopted it, so it is not deleted here.
         image.close()
         unregisterTexture(textureId)
     }
@@ -76,16 +74,8 @@ internal class AdoptedGLTexture(
 internal fun WebGLRenderingContext.adoptNewTexture(
     context: DirectContext,
     size: IntSize,
+    texture: WebGLTexture,
 ): AdoptedGLTexture {
-    val texture = createTexture() ?: error("gl.createTexture() returned null")
-    bindTexture(TEXTURE_2D, texture)
-    texImage2D(TEXTURE_2D, 0, RGBA, size.width, size.height, 0, RGBA, UNSIGNED_BYTE, null)
-    texParameteri(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR)
-    texParameteri(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR)
-    texParameteri(TEXTURE_2D, TEXTURE_WRAP_S, CLAMP_TO_EDGE)
-    texParameteri(TEXTURE_2D, TEXTURE_WRAP_T, CLAMP_TO_EDGE)
-    bindTexture(TEXTURE_2D, null)
-
     val textureId = pushTexture(texture)
     var ownershipTransferred = false
     try {

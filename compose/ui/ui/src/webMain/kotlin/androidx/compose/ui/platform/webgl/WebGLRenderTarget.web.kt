@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics.webgl
+package androidx.compose.ui.platform.webgl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LongState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableLongStateOf
@@ -32,11 +31,20 @@ import org.jetbrains.skia.Image
 import org.khronos.webgl.WebGLFramebuffer
 import org.khronos.webgl.WebGLRenderbuffer
 import org.khronos.webgl.WebGLRenderingContext
+import org.khronos.webgl.WebGLRenderingContext.Companion.CLAMP_TO_EDGE
 import org.khronos.webgl.WebGLRenderingContext.Companion.COLOR_ATTACHMENT0
 import org.khronos.webgl.WebGLRenderingContext.Companion.FRAMEBUFFER
 import org.khronos.webgl.WebGLRenderingContext.Companion.FRAMEBUFFER_COMPLETE
+import org.khronos.webgl.WebGLRenderingContext.Companion.LINEAR
 import org.khronos.webgl.WebGLRenderingContext.Companion.RENDERBUFFER
+import org.khronos.webgl.WebGLRenderingContext.Companion.RGBA
 import org.khronos.webgl.WebGLRenderingContext.Companion.TEXTURE_2D
+import org.khronos.webgl.WebGLRenderingContext.Companion.TEXTURE_MAG_FILTER
+import org.khronos.webgl.WebGLRenderingContext.Companion.TEXTURE_MIN_FILTER
+import org.khronos.webgl.WebGLRenderingContext.Companion.TEXTURE_WRAP_S
+import org.khronos.webgl.WebGLRenderingContext.Companion.TEXTURE_WRAP_T
+import org.khronos.webgl.WebGLRenderingContext.Companion.UNSIGNED_BYTE
+import org.khronos.webgl.WebGLTexture
 import org.w3c.dom.HTMLCanvasElement
 
 // WebGL2 only; see https://registry.khronos.org/OpenGL/api/GL/glcorearb.h
@@ -46,83 +54,75 @@ private const val GL_DEPTH24_STENCIL8 = 0x88F0
 private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
 
 /**
- * An offscreen GPU surface that non-Compose WebGL code can render into, and that Compose can draw
- * without copying anything.
+ * Represents a render target backed by an offscreen WebGL texture created in the same WebGL context
+ * that Compose uses for rendering.
+ * Its primary purpose is to render WebGL content into a texture that can be drawn alongside Compose
+ * content in the same <canvas>.
  *
- * It owns a texture allocated in the very same WebGL context Compose renders through, wrapped in a
- * framebuffer with a depth-stencil attachment. Skia adopts that texture, which turns it into an
- * [image] that can be drawn as many times as needed, anywhere in the composition, including inside
- * graphics layers (`clip`, `blur`, `graphicsLayer`).
+ * Obtain an instance with [rememberWebGLRenderTarget].
+ * [render] allows callers to execute custom WebGL rendering code using the provided context.
+ * After a successful [render], the target’s texture will be implicitly used by [drawWebGLTexture].
+ * Use [drawWebGLTexture] to draw the frame.
  *
- * Obtain an instance with [rememberWebGLTextureSurface], render into it with [render] and draw it
- * with [androidx.compose.ui.graphics.webgl.drawWebGLTexture]:
+ * Usage example:
  * ```
- * val surface = rememberWebGLTextureSurface(IntSize(1024, 640)) ?: return
+ * val renderTarget = rememberWebGLRenderTarget(IntSize(1024, 640)) ?: return
  *
- * LaunchedEffect(surface) {
+ * LaunchedEffect(renderTarget) {
  *     while (true) {
  *         withFrameNanos { frameTimeNanos ->
- *             surface.render {
- *                 // `this` is a WebGLRenderScope: webGLContext, htmlCanvas, framebuffer, size
- *                 // and generation. Pass frameTimeNanos to your renderer if it needs timing.
- *                 myRenderer.render(frameTimeNanos, this)
+ *             renderTarget.render {
+ *                val phase = (frameTimeNanos % 1_000_000_000L).toFloat() / 1_000_000_000f
+ *                webGLContext.clearColor(phase, 0.2f, 0.4f, 1f)
+ *                webGLContext.clear(WebGLRenderingContext.COLOR_BUFFER_BIT)
  *             }
  *         }
  *     }
  * }
  *
- * Canvas(Modifier.fillMaxSize()) { drawWebGLTexture(surface) }
+ * Canvas(Modifier.fillMaxSize()) { drawWebGLTexture(renderTarget) }
  * ```
- *
- * The texture is RGBA8 with premultiplied alpha, sampled with `LINEAR` filtering and
- * `CLAMP_TO_EDGE` wrapping, without mipmaps and without multisampling. Clearing it to a transparent
- * premultiplied color is what lets Compose content show through the drawn result.
- *
- * Instances are not thread-safe and are meant to be used from the frame loop only.
  */
 @ExperimentalComposeUiApi
 @Stable
-class WebGLTextureSurface
+class WebGLRenderTarget
 internal constructor(
     val htmlCanvas: HTMLCanvasElement,
     val webGLContext: WebGLRenderingContext,
     private val directContext: () -> DirectContext?,
-    size: IntSize,
+    private val textureFactory: (IntSize) -> WebGLTexture,
+    initialSize: IntSize,
 ) {
+
     /**
-     * The size of the color texture, in pixels, coerced to at least one pixel in each dimension.
+     * Color texture size in pixels (minimum 1x1).
      *
-     * Changing it discards the current texture and [image] and allocates new ones on the next
-     * [render], which also bumps [WebGLRenderScope.generation]. Allocating a texture is not cheap,
-     * so avoid driving this from a value that changes every frame.
+     * Modifying this triggers a texture reallocation on the next [render] and bumps
+     * [WebGLRenderScope.generation]. Avoid updating this per-frame due to allocation cost.
      */
-    var size: IntSize = size.coerceAtLeastOnePixel()
+    var size: IntSize = initialSize.coerceAtLeastOnePixel()
         set(value) {
             field = value.coerceAtLeastOnePixel()
         }
 
     /**
-     * The image that samples the color texture, or `null` until the first [render] succeeded.
+     * A lightweight Skiko [Image] wrapping [adoptedTexture]'s GPU memory without copying pixel data.
      *
-     * The surface owns it: it must not be closed, and it must not be retained across frames, since
-     * a [size] change replaces it.
+     * Returns `null` if no texture is currently adopted.
      */
-    val image: Image?
-        get() = adopted?.image
+    internal val image: Image?
+        get() = adoptedTexture?.image
 
     private val _invalidation = mutableLongStateOf(0L)
 
     /**
-     * A counter incremented after every successful [render].
-     *
-     * Read it from a draw scope rather than from composition, so that a rendered frame invalidates
-     * the drawing without recomposing anything.
-     * [androidx.compose.ui.graphics.webgl.drawWebGLTexture] already does that.
+     * Observes frame invalidation from a draw operation
      */
-    val invalidation: LongState
-        get() = _invalidation
+    internal fun observeInvalidation() {
+        _invalidation.value
+    }
 
-    private var adopted: AdoptedGLTexture? = null
+    private var adoptedTexture: AdoptedGLTexture? = null
     private var framebuffer: WebGLFramebuffer? = null
     private var depthStencil: WebGLRenderbuffer? = null
     private var webGLRenderScope: WegGLRenderScopeImpl? = null
@@ -131,21 +131,15 @@ internal constructor(
     private var isRendering = false
 
     /**
-     * Renders one frame of foreign WebGL content into this surface, then makes the result available
-     * through [image] and bumps [invalidation].
+     * Renders a frame of WebGL content into this surface, updates [image], and triggers a Compose redraw.
      *
-     * This must be called from a [withFrameNanos] callback, so that the texture already holds this
-     * frame's content by the time Skia submits the frame that samples it. It must never be called
-     * from a draw or layout scope: bumping [invalidation] there would invalidate the very drawing
-     * that is in progress.
+     * Must be called within a [withFrameNanos] callback (before Skia samples the frame) and never
+     * inside a draw or layout scope.
      *
-     * The call allocates the texture and the framebuffer if needed, binds the framebuffer, invokes
-     * [block], and afterwards rebinds the default framebuffer and makes Skia drop the GL state it
-     * had cached before [block] ran.
+     * Allocates resources as needed, binds the offscreen framebuffer, executes [block], and restores
+     * the default GL state afterward.
      *
-     * @return `false` when the surface could not be prepared, which happens while Compose has not
-     *   rendered its first frame yet and therefore has no GPU context to share; [block] is not
-     *   invoked in that case.
+     * @return `false` (and skips [block]) if the GPU context is unavailable, such as before Compose's first frame.
      */
     fun render(block: WebGLRenderScope.() -> Unit): Boolean {
         if (isDisposed) return false
@@ -171,16 +165,14 @@ internal constructor(
     }
 
     /**
-     * Tells Compose that WebGL state was changed outside of [render], so that Skia drops the GL
-     * state it had cached.
+     * Restores the rendering context back to a clean state expected by Compose.
      *
-     * Needed for GL work that cannot happen inside [render], typically a library's own teardown:
-     * disposing programs and buffers touches the context Compose renders through as well.
+     * Compose assumes exclusive control over the underlying graphics context.
+     * This call informs the context that the GL state was modified outiside of [render].
      *
-     * @return `false` when Compose has no GPU context to reset, in which case there is nothing to
-     *   do.
+     * Note: Calling this frequently carries a performance penalty due to GL state cache invalidation.
      */
-    fun resetSkiaState(): Boolean {
+    fun restoreGLState(): Boolean {
         val context = directContext() ?: return false
         webGLContext.bindFramebuffer(FRAMEBUFFER, null)
         context.resetAll()
@@ -191,11 +183,11 @@ internal constructor(
         context: DirectContext,
         size: IntSize,
     ): WegGLRenderScopeImpl {
-        val current = adopted
+        val current = adoptedTexture
         if (current != null && current.size == size) return webGLRenderScope!!
 
         current?.dispose()
-        adopted = null
+        adoptedTexture = null
 
         val framebuffer =
             framebuffer ?: webGLContext.createFramebuffer() ?: error("createFramebuffer failed")
@@ -204,8 +196,8 @@ internal constructor(
             depthStencil ?: webGLContext.createRenderbuffer() ?: error("createRenderbuffer failed")
         this.depthStencil = depthStencil
 
-        val adopted = webGLContext.adoptNewTexture(context, size)
-        this.adopted = adopted
+        val adopted = webGLContext.adoptNewTexture(context, size, textureFactory(size))
+        this.adoptedTexture = adopted
 
         webGLContext.bindRenderbuffer(RENDERBUFFER, depthStencil)
         webGLContext.renderbufferStorage(RENDERBUFFER, GL_DEPTH24_STENCIL8, size.width, size.height)
@@ -245,14 +237,14 @@ internal constructor(
     ) : WebGLRenderScope
 
     /**
-     * Releases the texture, the image and the framebuffer. Called by [rememberWebGLTextureSurface]
+     * Releases the texture, the image and the framebuffer. Called by [rememberWebGLRenderTarget]
      * when the surface leaves the composition; calling it twice is a no-op.
      */
     internal fun dispose() {
         if (isDisposed) return
         isDisposed = true
-        adopted?.dispose()
-        adopted = null
+        adoptedTexture?.dispose()
+        adoptedTexture = null
         webGLRenderScope = null
         framebuffer?.let(webGLContext::deleteFramebuffer)
         framebuffer = null
@@ -263,30 +255,56 @@ internal constructor(
     }
 }
 
+private fun WebGLRenderingContext.defaultWebGLTexture(size: IntSize): WebGLTexture {
+    val gl = this
+    val texture = gl.createTexture() ?: error("gl.createTexture() returned null")
+    gl.bindTexture(TEXTURE_2D, texture)
+    // Configure the texture
+    gl.texImage2D(TEXTURE_2D, 0, RGBA, size.width, size.height, 0, RGBA, UNSIGNED_BYTE, null)
+    // LINEAR for smoother scaling:
+    gl.texParameteri(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR)
+    gl.texParameteri(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR)
+    // Prevents Edge Artifacts
+    gl.texParameteri(TEXTURE_2D, TEXTURE_WRAP_S, CLAMP_TO_EDGE)
+    gl.texParameteri(TEXTURE_2D, TEXTURE_WRAP_T, CLAMP_TO_EDGE)
+    gl.bindTexture(TEXTURE_2D, null)
+    return texture
+}
+
 /**
- * Creates and remembers a [WebGLTextureSurface] of [size] pixels, disposing it when it leaves the
- * composition.
+ * Remembers a [WebGLRenderTarget] of the given [size], automatically disposing it when
+ * leaving the composition.
  *
- * @return `null` when Compose does not render through a WebGL2 canvas, in which case there is no
- *   context to share and no texture to adopt. Callers are expected to render a fallback.
+ * Updating [size] recreates the underlying GPU resources.
+ *
+ * @return The target, or `null` if WebGL2 is unsupported.
  */
 @ExperimentalComposeUiApi
 @Composable
-fun rememberWebGLTextureSurface(size: IntSize): WebGLTextureSurface? {
+fun rememberWebGLRenderTarget(
+    size: IntSize
+): WebGLRenderTarget? {
     val window = LocalComposeWindow.current ?: return null
-    val surface = remember(window) {
+    val renderTarget = remember(window) {
         val canvas = window.htmlCanvas
         val gl = webGl2ContextOrNull(canvas)
         if (gl == null) {
             null
         } else {
-            WebGLTextureSurface(canvas, gl, { window.skiaDirectContext }, size)
+            WebGLRenderTarget(
+                htmlCanvas = canvas,
+                webGLContext = gl,
+                directContext = { window.skiaDirectContext },
+                textureFactory = { size ->
+                    gl.defaultWebGLTexture(size)
+                },
+                initialSize = size
+            )
         }
     } ?: return null
-
-    SideEffect(size) { surface.size = size }
-    DisposableEffect(surface) { onDispose { surface.dispose() } }
-    return surface
+    SideEffect(size) { renderTarget.size = size }
+    DisposableEffect(renderTarget) { onDispose { renderTarget.dispose() } }
+    return renderTarget
 }
 
 private fun IntSize.coerceAtLeastOnePixel(): IntSize =

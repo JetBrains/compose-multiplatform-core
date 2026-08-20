@@ -57,9 +57,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.webgl.WebGLTextureSurface
-import androidx.compose.ui.graphics.webgl.drawWebGLTexture
-import androidx.compose.ui.graphics.webgl.rememberWebGLTextureSurface
+import androidx.compose.ui.platform.webgl.WebGLRenderTarget
+import androidx.compose.ui.platform.webgl.drawWebGLTexture
+import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 /**
- * A demo of [WebGLTextureSurface]: three.js renders a lit torus knot into a texture Compose owns
+ * A demo of [WebGLRenderTarget]: three.js renders a lit torus knot into a texture Compose owns
  * and Skia adopted, and Compose then draws that texture like any other image.
  */
 val ThreeJsTextureAdoptionScreen =
@@ -82,7 +82,7 @@ private fun ThreeTextureAdoptionDemo() {
     var textureWidth by remember { mutableStateOf(512) }
     val textureSize = IntSize(textureWidth, (textureWidth * 0.625f).roundToInt())
 
-    val surface = rememberWebGLTextureSurface(textureSize)
+    val surface = rememberWebGLRenderTarget(textureSize)
     if (surface == null) {
         Centered(
             "Compose does not render through a WebGL2 canvas here, so there is no texture to adopt."
@@ -130,7 +130,7 @@ private fun Centered(message: String) {
 
 @Composable
 private fun ThreeSceneContent(
-    surface: WebGLTextureSurface,
+    surface: WebGLRenderTarget,
     threeJs: ThreeJsKnotRenderer,
     textureWidth: Int,
     onTextureWidthChange: (Int) -> Unit,
@@ -235,7 +235,7 @@ private data class FrameStats(val index: Long, val fps: Float)
  * The three.js output as the hero: tilted in 3D by dragging, clipped, with Compose content on top.
  */
 @Composable
-private fun Hero(surface: WebGLTextureSurface) {
+private fun Hero(surface: WebGLRenderTarget) {
     var tiltX by remember { mutableStateOf(0f) }
     var tiltY by remember { mutableStateOf(0f) }
 
@@ -283,7 +283,7 @@ private fun Hero(surface: WebGLTextureSurface) {
 
 /** The same adopted texture, drawn several times in one frame with different transformations. */
 @Composable
-private fun Variants(surface: WebGLTextureSurface) {
+private fun Variants(surface: WebGLRenderTarget) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         Canvas(Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray)) {
             drawWebGLTexture(surface)

@@ -46,10 +46,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.webgl.WebGLRenderScope
-import androidx.compose.ui.graphics.webgl.WebGLTextureSurface
-import androidx.compose.ui.graphics.webgl.drawWebGLTexture
-import androidx.compose.ui.graphics.webgl.rememberWebGLTextureSurface
+import androidx.compose.ui.platform.webgl.WebGLRenderScope
+import androidx.compose.ui.platform.webgl.WebGLRenderTarget
+import androidx.compose.ui.platform.webgl.drawWebGLTexture
+import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -65,7 +65,7 @@ import org.khronos.webgl.WebGLRenderingContext.Companion.TRIANGLES
 import org.khronos.webgl.WebGLRenderingContext.Companion.VERTEX_SHADER
 import org.khronos.webgl.WebGLUniformLocation
 
-/** Two independent [WebGLTextureSurface]s rendered with plain WebGL2 — no third-party library. */
+/** Two independent [WebGLRenderTarget]s rendered with plain WebGL2 — no third-party library. */
 val PlainWebGlScreen = Screen.Example("Plain WebGL") { PlainWebGlDemo() }
 
 @Composable
@@ -87,7 +87,7 @@ private fun PlainWebGlDemo() {
 
 @Composable
 private fun RotatingTriangle(isAnimating: Boolean) {
-    val surface = rememberWebGLTextureSurface(IntSize(512, 320))!!
+    val surface = rememberWebGLRenderTarget(IntSize(512, 320))!!
     val triangle = remember(surface) { TriangleRenderer(surface.webGLContext) }
 
     DisposableEffect(triangle, surface) {
@@ -114,7 +114,7 @@ private fun RotatingTriangle(isAnimating: Boolean) {
 
 @Composable
 private fun ColorPulse(isAnimating: Boolean) {
-    val surface = rememberWebGLTextureSurface(IntSize(64, 64))!!
+    val surface = rememberWebGLRenderTarget(IntSize(64, 64))!!
     val pulse = remember { PulseRenderer() }
 
     LaunchedEffect(surface, isAnimating) {
@@ -205,9 +205,9 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
     /**
      * Releases the program
      */
-    fun dispose(surface: WebGLTextureSurface) {
+    fun dispose(surface: WebGLRenderTarget) {
         gl.deleteProgram(program)
-        surface.resetSkiaState()
+        surface.restoreGLState()
     }
 
     companion object {

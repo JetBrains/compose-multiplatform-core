@@ -19,20 +19,20 @@
 package androidx.compose.mpp.demo.webgl
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.graphics.webgl.WebGLRenderScope
-import androidx.compose.ui.graphics.webgl.WebGLTextureSurface
+import androidx.compose.ui.platform.webgl.WebGLRenderScope
+import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 
 /**
  * A three.js renderer of a lit torus knot, rendering into whatever framebuffer Compose hands it.
  *
  * Everything here is three.js-specific; nothing here knows about Skia, textures or Compose drawing:
- * that is what [WebGLTextureSurface] takes care of.
+ * that is what [WebGLRenderTarget] takes care of.
  */
 internal class ThreeJsKnotRenderer
-private constructor(private val three: ThreeModule, surface: WebGLTextureSurface) {
+private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) {
     companion object {
         /** Loads three.js, or returns `null` when the module is unavailable. */
-        suspend fun createOrNull(surface: WebGLTextureSurface): ThreeJsKnotRenderer? =
+        suspend fun createOrNull(surface: WebGLRenderTarget): ThreeJsKnotRenderer? =
             loadThreeModule()?.let { ThreeJsKnotRenderer(it, surface) }
     }
 
@@ -116,15 +116,15 @@ private constructor(private val three: ThreeModule, surface: WebGLTextureSurface
 
     /**
      * Releases three's own GL objects. Since that touches the context Compose renders through,
-     * [WebGLTextureSurface.resetSkiaState] has to be called afterwards.
+     * [WebGLRenderTarget.restoreGLState] has to be called afterwards.
      */
-    fun dispose(surface: WebGLTextureSurface?) {
+    fun dispose(surface: WebGLRenderTarget?) {
         knotScene?.let(::disposeKnotScene)
         knotScene = null
         renderer?.dispose()
         renderer = null
         renderTarget = null
         targetGeneration = 0
-        surface?.resetSkiaState()
+        surface?.restoreGLState()
     }
 }

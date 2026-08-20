@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics.webgl
+package androidx.compose.ui.platform.webgl
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
@@ -27,37 +27,29 @@ import androidx.compose.ui.layout.ContentScale
 import org.jetbrains.skia.Rect
 
 /**
- * Draws the latest frame rendered into [surface].
+ * Draws the latest frame from [renderTarget].
+ * Does nothing when [renderTarget] has no frame ready yet.
  *
- * Nothing is rendered here: the GL work already happened in this frame's
- * [androidx.compose.runtime.withFrameNanos] callback, so this only records a draw of an image that
- * already belongs to Skia. That is what makes it safe inside graphics layers such as `clip`, `blur`
- * or `graphicsLayer`, and what makes it possible to draw one surface several times per frame with
- * different transformations.
+ * Performs no GL rendering directly — only records a draw of the pre-rendered image.
+ * Safe for graphics layers (`clip`, `blur`) and multiple draws per frame. Automatically
+ * invalidates drawing on new frames without triggering recomposition.
  *
- * Reading [WebGLTextureSurface.invalidation] is part of the draw, so a newly rendered frame
- * invalidates the drawing without recomposing anything.
- *
- * Draws nothing while [WebGLTextureSurface.image] is still `null`, i.e. before the first frame has
- * been rendered.
- *
- * @param surface the surface to draw
- * @param dstOffset the top-left corner of the destination, in local coordinates
- * @param dstSize the size of the destination; defaults to the whole draw scope
- * @param contentScale how the texture is fitted into the destination when their aspect ratios
- *   differ
+ * @param renderTarget Target surface to draw.
+ * @param dstOffset Top-left destination offset in local coordinates.
+ * @param dstSize Destination size (defaults to full draw bounds).
+ * @param contentScale Scaling behavior when aspect ratios differ.
  */
 @ExperimentalComposeUiApi
 fun DrawScope.drawWebGLTexture(
-    surface: WebGLTextureSurface,
+    renderTarget: WebGLRenderTarget,
     dstOffset: Offset = Offset.Zero,
     dstSize: Size = size,
     contentScale: ContentScale = ContentScale.Crop,
 ) {
     // Schedules the next redraw once this frame's content is rendered, without recomposing.
-    surface.invalidation.value
+    renderTarget.observeInvalidation()
 
-    val image = surface.image ?: return
+    val image = renderTarget.image ?: return
     if (!dstSize.isSpecified || dstSize.width <= 0f || dstSize.height <= 0f) return
 
     val srcSize = Size(image.width.toFloat(), image.height.toFloat())
