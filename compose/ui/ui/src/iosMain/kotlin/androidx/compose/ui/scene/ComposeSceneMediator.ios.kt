@@ -237,7 +237,7 @@ internal class ComposeSceneMediator(
         }
 
         override fun onFramePerformed() {
-            if (!scene.hasPendingDraw) {
+            if (!scene.hasPendingMeasureOrLayout && !scene.hasPendingDraw) {
                 interopContainer.performPendingViewUpdates()
             }
         }
