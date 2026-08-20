@@ -40,6 +40,7 @@ import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
 import kotlin.math.absoluteValue
 import kotlin.math.min
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -104,7 +105,7 @@ internal abstract class TextInputConnection(
     }
 
     open fun dismissKeyboard() {
-        focusedViewsList?.remove(textInputView, delayMillis = CLEAR_FOCUS_DELAY)
+        focusedViewsList?.remove(textInputView, delay = CLEAR_FOCUS_DELAY)
     }
 
     open fun onTextFieldValueUpdated(newValue: TextFieldValue) {
@@ -488,7 +489,7 @@ internal abstract class TextInputConnection(
         // Due to unexpected delays between the commands to show/hide the keyboard,
         // it may jump when switching between text fields.
         // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
-        internal const val CLEAR_FOCUS_DELAY: Long = 10L
+        internal val CLEAR_FOCUS_DELAY: Duration = 10.milliseconds
     }
 }
 
