@@ -46,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.platform.webgl.drawWebGLTexture
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -173,8 +172,8 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
     private var angle = 0f
     private var previousFrameTimeNanos = 0L
 
-    fun render(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
-        with(scope) {
+    fun render(target: WebGLRenderTarget, frameTimeNanos: Long): Unit =
+        with(target) {
             val deltaNanos = if (previousFrameTimeNanos == 0L) {
                 0L
             } else {
@@ -271,8 +270,8 @@ private class PulseRenderer {
     private var phase = 0f
     private var previousFrameTimeNanos = 0L
 
-    fun render(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
-        with(scope) {
+    fun render(target: WebGLRenderTarget, frameTimeNanos: Long): Unit =
+        with(target) {
             val deltaNanos = if (previousFrameTimeNanos == 0L) {
                 0L
             } else {

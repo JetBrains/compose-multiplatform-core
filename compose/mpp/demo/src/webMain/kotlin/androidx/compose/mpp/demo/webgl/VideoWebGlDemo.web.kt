@@ -44,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.platform.webgl.drawWebGLTexture
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -180,7 +179,7 @@ private class VideoTextureRenderer(private val gl: WebGLRenderingContext) {
         gl.bindTexture(TEXTURE_2D, null)
     }
 
-    fun renderFrame(scope: WebGLRenderScope, frameTimeNanos: Long) {
+    fun renderFrame(target: WebGLRenderTarget, frameTimeNanos: Long) {
         val video = video ?: return
         val texture = texture ?: return
         if (!textureAllocated) {
@@ -189,7 +188,7 @@ private class VideoTextureRenderer(private val gl: WebGLRenderingContext) {
         }
         if (!uploadVideoFrame(gl, texture, video)) return
 
-        with(scope) {
+        with(target) {
             webGLContext.viewport(0, 0, size.width, size.height)
             webGLContext.disable(org.khronos.webgl.WebGLRenderingContext.Companion.SCISSOR_TEST)
             webGLContext.clearColor(0f, 0f, 0f, 0f)

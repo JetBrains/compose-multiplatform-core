@@ -41,7 +41,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
+import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.platform.webgl.drawWebGLTexture
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.unit.IntSize
@@ -186,10 +186,10 @@ private class HtmlTextureRenderer(
         syncElementBox(element, widthCss.toDouble(), heightCss.toDouble(), leftCss.toDouble(), topCss.toDouble())
     }
 
-    fun renderFrame(scope: WebGLRenderScope, frameTimeNanos: Long) {
+    fun renderFrame(target: WebGLRenderTarget, frameTimeNanos: Long) {
         val element = element ?: return
-        if (!uploadElement(gl, texture, element, scope.size.width, scope.size.height)) return
-        with(scope) {
+        if (!uploadElement(gl, texture, element, target.size.width, target.size.height)) return
+        with(target) {
             webGLContext.viewport(0, 0, size.width, size.height)
             webGLContext.disable(WebGLRenderingContext.SCISSOR_TEST)
             webGLContext.clearColor(0f, 0f, 0f, 0f)

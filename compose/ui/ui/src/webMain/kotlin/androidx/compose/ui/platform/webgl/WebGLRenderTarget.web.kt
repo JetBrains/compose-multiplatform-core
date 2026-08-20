@@ -60,7 +60,9 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
  * content in the same <canvas>.
  *
  * Obtain an instance with [rememberWebGLRenderTarget].
- * [render] allows callers to execute custom WebGL rendering code using the provided context.
+ * [render] allows callers to execute custom WebGL rendering code with this target as the receiver:
+ * inside the block, [framebuffer] is bound and [size] describes it.
+ *
  * After a successful [render], the target’s texture will be implicitly used by [drawWebGLTexture].
  * Use [drawWebGLTexture] to draw the frame.
  *
@@ -73,6 +75,7 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
  *         withFrameNanos { frameTimeNanos ->
  *             renderTarget.render {
  *                val phase = (frameTimeNanos % 1_000_000_000L).toFloat() / 1_000_000_000f
+ *                webGLContext.viewport(0, 0, size.width, size.height)
  *                webGLContext.clearColor(phase, 0.2f, 0.4f, 1f)
  *                webGLContext.clear(WebGLRenderingContext.COLOR_BUFFER_BIT)
  *             }
@@ -94,16 +97,49 @@ internal constructor(
     initialSize: IntSize,
 ) {
 
+    private var requestedSize: IntSize = initialSize.coerceAtLeastOnePixel()
+
     /**
-     * Color texture size in pixels (minimum 1x1).
+     * Size in pixels of the currently allocated color texture, or [IntSize.Zero] before the first
+     * successful [render].
      *
-     * Modifying this triggers a texture reallocation on the next [render] and bumps
-     * [WebGLRenderScope.generation]. Avoid updating this per-frame due to allocation cost.
+     * This is the size of the framebuffer that [render] binds — use it for `viewport` and projection
+     * math. A size change requested via [rememberWebGLRenderTarget] is reflected here only after the
+     * [render] that applies it.
      */
-    var size: IntSize = initialSize.coerceAtLeastOnePixel()
-        set(value) {
-            field = value.coerceAtLeastOnePixel()
-        }
+    var size: IntSize = IntSize.Zero
+        private set
+
+    /**
+     * Requests a new color texture size in pixels (coerced to at least 1x1).
+     *
+     * The request is applied by the next [render], which reallocates the texture and bumps
+     * [generation]; [size] keeps describing the previous allocation until then.
+     *
+     * Internal: the size is owned by the `size` argument of [rememberWebGLRenderTarget], so that
+     * the composition stays the single source of truth. Reallocation is costly, so avoid changing
+     * that argument per-frame.
+     */
+    internal fun requestNewSize(size: IntSize) {
+        requestedSize = size.coerceAtLeastOnePixel()
+    }
+
+    /**
+     * The framebuffer owned by this render target, or `null` before the first successful [render].
+     *
+     * It is bound for the duration of the [render] block. Code that changes the binding must restore
+     * it before returning, and must never delete the framebuffer or its attachments.
+     */
+    var framebuffer: WebGLFramebuffer? = null
+        private set
+
+    /**
+     * Incremented whenever [framebuffer] or its attachments are recreated (initial setup or size
+     * changes). Renderers should check this value to invalidate cached viewports, matrices, or
+     * descriptors.
+     */
+    var generation: Int = 0
+        private set
 
     /**
      * A lightweight Skiko [Image] wrapping [adoptedTexture]'s GPU memory without copying pixel data.
@@ -123,10 +159,7 @@ internal constructor(
     }
 
     private var adoptedTexture: AdoptedGLTexture? = null
-    private var framebuffer: WebGLFramebuffer? = null
     private var depthStencil: WebGLRenderbuffer? = null
-    private var webGLRenderScope: WegGLRenderScopeImpl? = null
-    private var generation = 0
     private var isDisposed = false
     private var isRendering = false
 
@@ -141,18 +174,18 @@ internal constructor(
      *
      * @return `false` (and skips [block]) if the GPU context is unavailable, such as before Compose's first frame.
      */
-    fun render(block: WebGLRenderScope.() -> Unit): Boolean {
+    fun render(block: WebGLRenderTarget.() -> Unit): Boolean {
         if (isDisposed) return false
         check(!isRendering) {
             "render() is already running: it must not be called from within another render() call, " +
                 "nor from a draw or layout scope"
         }
         val context = directContext() ?: return false
-        val scope = prepareWebGLRenderScope(context, size)
+        val framebuffer = prepareFramebuffer(context, requestedSize)
         isRendering = true
-        webGLContext.bindFramebuffer(FRAMEBUFFER, scope.framebuffer)
+        webGLContext.bindFramebuffer(FRAMEBUFFER, framebuffer)
         try {
-            scope.block()
+            block()
         } finally {
             isRendering = false
             webGLContext.bindFramebuffer(FRAMEBUFFER, null)
@@ -179,12 +212,12 @@ internal constructor(
         return true
     }
 
-    private fun prepareWebGLRenderScope(
+    private fun prepareFramebuffer(
         context: DirectContext,
         size: IntSize,
-    ): WegGLRenderScopeImpl {
+    ): WebGLFramebuffer {
         val current = adoptedTexture
-        if (current != null && current.size == size) return webGLRenderScope!!
+        if (current != null && current.size == size) return framebuffer!!
 
         current?.dispose()
         adoptedTexture = null
@@ -223,18 +256,10 @@ internal constructor(
             "the adopted texture is not a complete framebuffer attachment (status $status)"
         }
 
-        webGLRenderScope =
-            WegGLRenderScopeImpl(webGLContext, htmlCanvas, framebuffer, size, ++generation)
-        return webGLRenderScope!!
+        this.size = size
+        generation++
+        return framebuffer
     }
-
-    private class WegGLRenderScopeImpl(
-        override val webGLContext: WebGLRenderingContext,
-        override val htmlCanvas: HTMLCanvasElement,
-        override val framebuffer: WebGLFramebuffer,
-        override val size: IntSize,
-        override val generation: Int,
-    ) : WebGLRenderScope
 
     /**
      * Releases the texture, the image and the framebuffer. Called by [rememberWebGLRenderTarget]
@@ -245,7 +270,7 @@ internal constructor(
         isDisposed = true
         adoptedTexture?.dispose()
         adoptedTexture = null
-        webGLRenderScope = null
+        size = IntSize.Zero
         framebuffer?.let(webGLContext::deleteFramebuffer)
         framebuffer = null
         depthStencil?.let(webGLContext::deleteRenderbuffer)
@@ -275,7 +300,8 @@ private fun WebGLRenderingContext.defaultWebGLTexture(size: IntSize): WebGLTextu
  * Remembers a [WebGLRenderTarget] of the given [size], automatically disposing it when
  * leaving the composition.
  *
- * Updating [size] recreates the underlying GPU resources.
+ * [size] is the only way to size the target: changing it recreates the underlying GPU resources.
+ * Reallocation is costly, so avoid changing it per-frame.
  *
  * @return The target, or `null` if WebGL2 is unsupported.
  */
@@ -302,7 +328,7 @@ fun rememberWebGLRenderTarget(
             )
         }
     } ?: return null
-    SideEffect(size) { renderTarget.size = size }
+    SideEffect(size) { renderTarget.requestNewSize(size) }
     DisposableEffect(renderTarget) { onDispose { renderTarget.dispose() } }
     return renderTarget
 }
