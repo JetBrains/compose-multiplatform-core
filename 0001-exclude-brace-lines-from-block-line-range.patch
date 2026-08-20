@@ -1,0 +1,142 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Igor Demin <igor.demin@jetbrains.com>
+Subject: [PATCH] Exclude the brace lines from a block line range
+
+A Block spanned the offsets between its braces, so its text started with the
+tail of the line holding `{` and ended with the indentation of the line holding
+`}`. Both were parsed as blank lines of the dependency list, which made
+textFor() re-emit them and grow the fork on every round trip. The update path
+hid this because updatedForkLines() ends with collapseBlankLines(), but the
+pass-through path -- taken when the original declares no matching source set,
+or when the source set is suppressed -- returned the lines unchanged, so verify
+reported an up-to-date fork as out of date.
+
+Compute the range from the brace lines instead, so a block spans only the lines
+that can hold a declaration and no filtering of blank lines is needed. A rewrite
+still has to replace everything between the braces to keep the `{` newline and
+the `}` indentation, hence the separate interior range, and textFor() now reads
+the closing indentation from the block rather than deriving it from the text.
+
+Also drop the project path from a test assertion: the task reports
+"Run ./gradlew jbUpdateForkDependencies", so ":test-project:..." never matched.
+---
+diff --git a/buildSrc-fork/private/src/main/kotlin/org/jetbrains/androidx/build/util/ParsedBuildScript.kt b/buildSrc-fork/private/src/main/kotlin/org/jetbrains/androidx/build/util/ParsedBuildScript.kt
+index 0f8209f0..f5912267 100644
+--- a/buildSrc-fork/private/src/main/kotlin/org/jetbrains/androidx/build/util/ParsedBuildScript.kt
++++ b/buildSrc-fork/private/src/main/kotlin/org/jetbrains/androidx/build/util/ParsedBuildScript.kt
+@@ -46,8 +46,8 @@ internal class ParsedBuildScript(val text: String) {
+         for (sourceSet in nameToSourceSet.values.reversed()) {
+             val lines = update(sourceSet)
+             text.replace(
+-                sourceSet.dependencies.start,
+-                sourceSet.dependencies.end,
++                sourceSet.dependencies.interiorStart,
++                sourceSet.dependencies.interiorEnd,
+                 sourceSet.textFor(lines),
+             )
+         }
+@@ -63,7 +63,7 @@ internal class ParsedBuildScript(val text: String) {
+             buildList {
+                 var nesting = 0
+                 val comments = mutableListOf<String>()
+-                for (lineText in dependencies.text.lineSequence()) {
++                for (lineText in dependencies.textLines) {
+                     if (nesting == 0) {
+                         when {
+                             lineText.isBlank() -> add(Line.Blank)
+@@ -82,7 +82,7 @@ internal class ParsedBuildScript(val text: String) {
+         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
+ 
+         internal fun textFor(lines: List<Line>): String {
+-            val closingIndentation = dependencies.text.substringAfterLast('\n')
++            val closingIndentation = dependencies.closingIndentation
+             val declarationIndentation = "$closingIndentation    "
+             return buildString {
+                 appendLine()
+@@ -178,11 +178,23 @@ private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
+ 
+ internal data class Block(
+     private val source: String,
++    /**
++     * The offsets spanned by the lines of this block, which exclude the line holding its `{` and
++     * the line holding its `}`.
++     */
+     val start: Int = 0,
+     val end: Int = source.length,
++    /** The offsets between the braces of this block, which a rewrite of its lines replaces. */
++    val interiorStart: Int = start,
++    val interiorEnd: Int = end,
++    /** The indentation of the line that holds the closing brace of this block. */
++    val closingIndentation: String = "",
+ ) {
+     val text: String get() = source.substring(start, end)
+ 
++    /** The lines of this block, empty when it declares nothing. */
++    val textLines: List<String> get() = if (start == end) emptyList() else text.split('\n')
++
+     fun subblock(marker: String): Block? {
+         val markerStart = source.indexOf(marker, start)
+         if (markerStart < start || markerStart + marker.length > end) return null
+@@ -193,10 +205,45 @@ internal data class Block(
+         val openingBrace = start + relativeOpeningBrace
+         val closingBrace = source.blockEnd(openingBrace) ?: return null
+         if (closingBrace >= end) return null
+-        return Block(source, openingBrace + 1, closingBrace)
++        // A block written over several lines begins on the line after its `{` and ends at the end
++        // of the line before its `}`. Those two lines hold the braces rather than a declaration,
++        // so no line of the block is blank because of them.
++        val firstLineStart = source.lineStartAfter(openingBrace + 1, closingBrace)
++        return Block(
++            source = source,
++            start = firstLineStart,
++            end = source.lineEndBefore(closingBrace, firstLineStart),
++            interiorStart = openingBrace + 1,
++            interiorEnd = closingBrace,
++            closingIndentation = source.substring(
++                source.lastIndexOf('\n', closingBrace - 1) + 1,
++                closingBrace,
++            ),
++        )
+     }
+ }
+ 
++/**
++ * The offset starting the line that follows [from], when everything between the two is blank.
++ * Otherwise [from] itself, because a declaration already starts on its line.
++ */
++private fun String.lineStartAfter(from: Int, bound: Int): Int {
++    val newline = indexOf('\n', from)
++    if (newline < 0 || newline >= bound) return from
++    return if (substring(from, newline).isBlank()) newline + 1 else from
++}
++
++/**
++ * The offset ending the line that precedes [until], when everything between the two is blank.
++ * Otherwise [until] itself, because a declaration still ends on its line. [bound] is returned when
++ * everything up to [until] is blank, so that a block declaring nothing spans no lines at all.
++ */
++private fun String.lineEndBefore(until: Int, bound: Int): Int {
++    val newline = lastIndexOf('\n', until - 1)
++    if (newline < bound) return if (substring(bound, until).isBlank()) bound else until
++    return if (substring(newline + 1, until).isBlank()) newline else until
++}
++
+ private fun String.blockEnd(openingBrace: Int): Int? {
+     var depth = 1
+     for (index in openingBrace + 1 until length) {
+diff --git a/buildSrc-fork/tests/src/test/kotlin/org/jetbrains/androidx/build/ForkDependenciesTasksTest.kt b/buildSrc-fork/tests/src/test/kotlin/org/jetbrains/androidx/build/ForkDependenciesTasksTest.kt
+index 1897939d..980402d5 100644
+--- a/buildSrc-fork/tests/src/test/kotlin/org/jetbrains/androidx/build/ForkDependenciesTasksTest.kt
++++ b/buildSrc-fork/tests/src/test/kotlin/org/jetbrains/androidx/build/ForkDependenciesTasksTest.kt
+@@ -693,7 +693,7 @@ private fun verifyThenUpdate(
+     if (expected != null) {
+         val result = runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").buildAndFail()
+         assertThat(result.output).contains("Fork dependencies are out of date.")
+-        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
++        assertThat(result.output).contains("jbUpdateForkDependencies")
+     } else {
+         runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").build()
+     }
+-- 
+2.43.0
+
