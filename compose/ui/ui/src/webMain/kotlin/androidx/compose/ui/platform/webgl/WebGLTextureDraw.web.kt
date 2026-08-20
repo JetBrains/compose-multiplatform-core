@@ -50,13 +50,33 @@ fun DrawScope.drawWebGLTexture(
     renderTarget.observeInvalidation()
 
     val image = renderTarget.image ?: return
-    if (!dstSize.isSpecified || dstSize.width <= 0f || dstSize.height <= 0f) return
-
     val srcSize = Size(image.width.toFloat(), image.height.toFloat())
-    if (srcSize.width <= 0f || srcSize.height <= 0f) return
+    val placement =
+        webGLTexturePlacement(srcSize, dstSize, dstOffset, contentScale) ?: return
+
+    drawIntoCanvas { canvas ->
+        canvas.skiaCanvas.drawImageRect(image, placement.src, placement.dst)
+    }
+}
+
+/** Source and destination rectangles for one [drawWebGLTexture] call. */
+internal class WebGLTexturePlacement(val src: Rect, val dst: Rect)
+
+/**
+ * Maps a texture of [srcSize] into [dstSize] at [dstOffset] under [contentScale], or returns `null`
+ * when there is nothing to draw.
+ */
+internal fun webGLTexturePlacement(
+    srcSize: Size,
+    dstSize: Size,
+    dstOffset: Offset,
+    contentScale: ContentScale,
+): WebGLTexturePlacement? {
+    if (!dstSize.isSpecified || dstSize.width <= 0f || dstSize.height <= 0f) return null
+    if (srcSize.width <= 0f || srcSize.height <= 0f) return null
 
     val scale = contentScale.computeScaleFactor(srcSize, dstSize)
-    if (scale.scaleX <= 0f || scale.scaleY <= 0f) return
+    if (scale.scaleX <= 0f || scale.scaleY <= 0f) return null
 
     // Per axis: when the scaled texture covers the destination, the source is cropped; when it does
     // not, the destination is inset. This yields the expected result for Crop, Fit, FillBounds,
@@ -66,13 +86,10 @@ fun DrawScope.drawWebGLTexture(
     val (srcY, srcHeight, dstY, dstHeight) =
         axis(srcSize.height, dstSize.height, scale.scaleY, dstOffset.y)
 
-    drawIntoCanvas { canvas ->
-        canvas.skiaCanvas.drawImageRect(
-            image,
-            Rect.makeXYWH(srcX, srcY, srcWidth, srcHeight),
-            Rect.makeXYWH(dstX, dstY, dstWidth, dstHeight),
-        )
-    }
+    return WebGLTexturePlacement(
+        src = Rect.makeXYWH(srcX, srcY, srcWidth, srcHeight),
+        dst = Rect.makeXYWH(dstX, dstY, dstWidth, dstHeight),
+    )
 }
 
 private data class AxisPlacement(
