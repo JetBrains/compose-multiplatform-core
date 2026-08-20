@@ -519,7 +519,7 @@ internal class ComposeSceneMediator(
             scrollDelta = delta.toOffset(composeSceneDensity) * SCROLL_DELTA_MULTIPLIER,
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
         )
     }
 
@@ -546,7 +546,7 @@ internal class ComposeSceneMediator(
             ),
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
         )
     }
 
@@ -616,7 +616,7 @@ internal class ComposeSceneMediator(
             nativeEvent = event,
             button = event?.getButton(previousButtonMask, eventKind, previousTouchEventKind),
             buttons = PointerButtons(pointerButtonsMask),
-            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
         ).also {
             previousButtonMask = event.buttonMaskOrZero
             if (eventKind != TouchesEventKind.MOVED) {
