@@ -46,8 +46,8 @@ internal class ParsedBuildScript(val text: String) {
         for (sourceSet in nameToSourceSet.values.reversed()) {
             val lines = update(sourceSet)
             text.replace(
-                sourceSet.dependencies.start,
-                sourceSet.dependencies.end,
+                sourceSet.dependencies.interiorStart,
+                sourceSet.dependencies.interiorEnd,
                 sourceSet.textFor(lines),
             )
         }
@@ -63,7 +63,7 @@ internal class ParsedBuildScript(val text: String) {
             buildList {
                 var nesting = 0
                 val comments = mutableListOf<String>()
-                for (lineText in dependencies.text.lineSequence()) {
+                for (lineText in dependencies.textLines) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -82,7 +82,7 @@ internal class ParsedBuildScript(val text: String) {
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
         internal fun textFor(lines: List<Line>): String {
-            val closingIndentation = dependencies.text.substringAfterLast('\n')
+            val closingIndentation = dependencies.closingIndentation
             val declarationIndentation = "$closingIndentation    "
             return buildString {
                 appendLine()
@@ -178,10 +178,22 @@ private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
 
 internal data class Block(
     private val source: String,
+    /**
+     * The offsets spanned by the lines of this block, which exclude the line holding its `{` and
+     * the line holding its `}`.
+     */
     val start: Int = 0,
     val end: Int = source.length,
+    /** The offsets between the braces of this block, which a rewrite of its lines replaces. */
+    val interiorStart: Int = start,
+    val interiorEnd: Int = end,
+    /** The indentation of the line that holds the closing brace of this block. */
+    val closingIndentation: String = "",
 ) {
     val text: String get() = source.substring(start, end)
+
+    /** The lines of this block, empty when it declares nothing. */
+    val textLines: List<String> get() = if (start == end) emptyList() else text.split('\n')
 
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
@@ -193,8 +205,43 @@ internal data class Block(
         val openingBrace = start + relativeOpeningBrace
         val closingBrace = source.blockEnd(openingBrace) ?: return null
         if (closingBrace >= end) return null
-        return Block(source, openingBrace + 1, closingBrace)
+        // A block written over several lines begins on the line after its `{` and ends at the end
+        // of the line before its `}`. Those two lines hold the braces rather than a declaration,
+        // so no line of the block is blank because of them.
+        val firstLineStart = source.lineStartAfter(openingBrace + 1, closingBrace)
+        return Block(
+            source = source,
+            start = firstLineStart,
+            end = source.lineEndBefore(closingBrace, firstLineStart),
+            interiorStart = openingBrace + 1,
+            interiorEnd = closingBrace,
+            closingIndentation = source.substring(
+                source.lastIndexOf('\n', closingBrace - 1) + 1,
+                closingBrace,
+            ),
+        )
     }
+}
+
+/**
+ * The offset starting the line that follows [from], when everything between the two is blank.
+ * Otherwise [from] itself, because a declaration already starts on its line.
+ */
+private fun String.lineStartAfter(from: Int, bound: Int): Int {
+    val newline = indexOf('\n', from)
+    if (newline < 0 || newline >= bound) return from
+    return if (substring(from, newline).isBlank()) newline + 1 else from
+}
+
+/**
+ * The offset ending the line that precedes [until], when everything between the two is blank.
+ * Otherwise [until] itself, because a declaration still ends on its line. [bound] is returned when
+ * everything up to [until] is blank, so that a block declaring nothing spans no lines at all.
+ */
+private fun String.lineEndBefore(until: Int, bound: Int): Int {
+    val newline = lastIndexOf('\n', until - 1)
+    if (newline < bound) return if (substring(bound, until).isBlank()) bound else until
+    return if (substring(newline + 1, until).isBlank()) newline else until
 }
 
 private fun String.blockEnd(openingBrace: Int): Int? {

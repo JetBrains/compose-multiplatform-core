@@ -693,7 +693,7 @@ private fun verifyThenUpdate(
     if (expected != null) {
         val result = runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").buildAndFail()
         assertThat(result.output).contains("Fork dependencies are out of date.")
-        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
+        assertThat(result.output).contains("jbUpdateForkDependencies")
     } else {
         runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").build()
     }
