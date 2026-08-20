@@ -16,42 +16,137 @@
 
 package org.jetbrains.androidx.build.util
 
+import org.jetbrains.androidx.build.util.ScriptToken.Kind
+
 internal class ParsedBuildScript(val text: String) {
+    private val tokens: List<ScriptToken> by lazy { tokenizeScript(text) }
+
     private val nameToSourceSet: Map<String, SourceSet> by lazy {
-        val sourceSetsBlock = Block(text).subblock("sourceSets {") ?: return@lazy emptyMap()
-        val sourceSetsText = sourceSetsBlock.text
-        MAIN_SOURCE_SET_REFERENCE.findAll(sourceSetsText).mapNotNull { match ->
-            val sourceSetBlock =
-                sourceSetsBlock.subblockAt(match.range.last) ?: return@mapNotNull null
-            val dependenciesBlock = if (".dependencies" in match.value) {
-                sourceSetBlock
-            } else {
-                sourceSetBlock.subblock("dependencies {") ?: return@mapNotNull null
+        val sourceSets = blockAfter("sourceSets", tokens.indices) ?: return@lazy emptyMap()
+        buildMap {
+            for (index in sourceSets.contentIndices) {
+                val token = tokens[index]
+                if (token.kind != Kind.IDENTIFIER) continue
+                if (!SOURCE_SET_NAME.matches(token.text)) continue
+                val dependencies = dependenciesBlockAt(index, sourceSets.closingBrace) ?: continue
+                put(
+                    token.text,
+                    SourceSet(
+                        name = token.text,
+                        dependencies = dependencies,
+                        lineBefore = lineBefore(token.start),
+                    ),
+                )
             }
-            match.groupValues[1] to SourceSet(
-                name = match.groupValues[1],
-                lineBefore = sourceSetsText
-                    .substring(0, match.range.first)
-                    .trimEnd()
-                    .substringAfterLast('\n'),
-                dependencies = dependenciesBlock,
-            )
-        }.toMap()
+        }
     }
 
     fun sourceSetOf(name: String): SourceSet? = nameToSourceSet[name]
 
     fun withSourceSets(update: (SourceSet) -> List<Line>): ParsedBuildScript {
-        val text = StringBuilder(this@ParsedBuildScript.text)
-        for (sourceSet in nameToSourceSet.values.reversed()) {
-            val lines = update(sourceSet)
-            text.replace(
-                sourceSet.dependencies.start,
-                sourceSet.dependencies.end,
-                sourceSet.textFor(lines),
+        val updated = StringBuilder(text)
+        // Later blocks first, so that replacing one doesn't shift the offsets of the others.
+        val sourceSets = nameToSourceSet.values.sortedByDescending { it.dependencies.textStart }
+        for (sourceSet in sourceSets) {
+            updated.replace(
+                sourceSet.dependencies.textStart,
+                sourceSet.dependencies.textEnd,
+                sourceSet.textFor(update(sourceSet)),
             )
         }
-        return ParsedBuildScript(text.toString())
+        return ParsedBuildScript(updated.toString())
+    }
+
+    /**
+     * Finds the block opened by `<name> {` within [indices], and returns it if it is closed within
+     * [indices] as well.
+     */
+    private fun blockAfter(name: String, indices: IntRange): Block? {
+        for (index in indices) {
+            val token = tokens[index]
+            if (token.kind == Kind.IDENTIFIER &&
+                token.text == name &&
+                tokens.getOrNull(index + 1)?.kind == Kind.OPENING_BRACE
+            ) {
+                return blockAt(index + 1, indices.last)
+            }
+        }
+        return null
+    }
+
+    /** Matches the brace at [openingBrace] with its closing one, searching no further than [bound]. */
+    private fun blockAt(openingBrace: Int, bound: Int): Block? {
+        val nestedBraces = mutableListOf<Pair<Int, Int>>()
+        var depth = 0
+        for (index in openingBrace..bound) {
+            val delta = when (tokens[index].kind) {
+                Kind.OPENING_BRACE -> 1
+                Kind.CLOSING_BRACE -> -1
+                else -> continue
+            }
+            depth += delta
+            if (depth == 0) {
+                return Block(
+                    openingBrace = openingBrace,
+                    closingBrace = index,
+                    textStart = tokens[openingBrace].end,
+                    textEnd = tokens[index].start,
+                    text = text.substring(tokens[openingBrace].end, tokens[index].start),
+                    nestedBraces = nestedBraces,
+                )
+            }
+            if (index != openingBrace) nestedBraces += tokens[index].start to delta
+        }
+        return null
+    }
+
+    /**
+     * Finds the dependencies block declared for the source set named by the token at [nameIndex],
+     * covering the three shapes the DSL allows.
+     */
+    private fun dependenciesBlockAt(nameIndex: Int, bound: Int): Block? {
+        fun kindAt(offset: Int) = tokens.getOrNull(nameIndex + offset)?.kind
+        fun textAt(offset: Int) = tokens.getOrNull(nameIndex + offset)?.text
+
+        return when {
+            // commonMain.dependencies { ... }
+            kindAt(1) == Kind.DOT &&
+                kindAt(2) == Kind.IDENTIFIER &&
+                textAt(2) == DEPENDENCIES &&
+                kindAt(3) == Kind.OPENING_BRACE ->
+                blockAt(nameIndex + 3, bound)
+
+            // commonMain { dependencies { ... } }
+            kindAt(1) == Kind.OPENING_BRACE ->
+                blockAt(nameIndex + 1, bound)?.let { blockAfter(DEPENDENCIES, it.contentIndices) }
+
+            // val commonMain by getting { dependencies { ... } }
+            kindAt(1) == Kind.IDENTIFIER &&
+                kindAt(2) == Kind.IDENTIFIER &&
+                kindAt(3) == Kind.OPENING_BRACE ->
+                blockAt(nameIndex + 3, bound)?.let { blockAfter(DEPENDENCIES, it.contentIndices) }
+
+            else -> null
+        }
+    }
+
+    /** The last non-blank line preceding the line that [offset] is on. */
+    private fun lineBefore(offset: Int): String {
+        val lineStart = text.lastIndexOf('\n', offset - 1) + 1
+        return text.substring(0, lineStart).trimEnd().substringAfterLast('\n')
+    }
+
+    /** A brace-delimited block, addressed both by token index and by text offset. */
+    internal class Block(
+        val openingBrace: Int,
+        val closingBrace: Int,
+        val textStart: Int,
+        val textEnd: Int,
+        val text: String,
+        /** Offsets of the braces nested in this block, each paired with its change of depth. */
+        val nestedBraces: List<Pair<Int, Int>>,
+    ) {
+        val contentIndices: IntRange get() = (openingBrace + 1) until closingBrace
     }
 
     internal class SourceSet(
@@ -61,10 +156,13 @@ internal class ParsedBuildScript(val text: String) {
     ) {
         val lines: List<Line> by lazy {
             buildList {
-                var nesting = 0
                 val comments = mutableListOf<String>()
+                var offset = dependencies.textStart
+                var depth = 0
+                var braceIndex = 0
                 for (lineText in dependencies.text.lineSequence()) {
-                    if (nesting == 0) {
+                    val lineEnd = offset + lineText.length
+                    if (depth == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
                             lineText.trimStart().startsWith("//") -> comments += lineText.trimStart()
@@ -74,9 +172,20 @@ internal class ParsedBuildScript(val text: String) {
                             }
                         }
                     }
-                    nesting += lineText.count { it == '{' } - lineText.count { it == '}' }
+                    // Braces on this line take effect on the lines that follow it.
+                    while (braceIndex < dependencies.nestedBraces.size &&
+                        dependencies.nestedBraces[braceIndex].first < lineEnd
+                    ) {
+                        depth += dependencies.nestedBraces[braceIndex].second
+                        braceIndex++
+                    }
+                    offset = lineEnd + 1
                 }
             }
+                // The first and the last line of a block hold its braces rather than a
+                // declaration, so they are not blank lines of the dependency list.
+                .dropWhile { it is Line.Blank }
+                .dropLastWhile { it is Line.Blank }
         }
 
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
@@ -172,39 +281,6 @@ internal class ParsedBuildScript(val text: String) {
     }
 }
 
-private val MAIN_SOURCE_SET_REFERENCE =
-    Regex("""(?:val\s+)?(\w+Main)(?:\.dependencies|\s+by\s+\w+)?\s*\{""")
+private const val DEPENDENCIES = "dependencies"
+private val SOURCE_SET_NAME = Regex("""\w+Main""")
 private val DEPENDENCY_CALL = Regex("""\s*(\w+)\((.*)\)(?:\s*\{)?\s*(//.*)?""")
-
-internal data class Block(
-    private val source: String,
-    val start: Int = 0,
-    val end: Int = source.length,
-) {
-    val text: String get() = source.substring(start, end)
-
-    fun subblock(marker: String): Block? {
-        val markerStart = source.indexOf(marker, start)
-        if (markerStart < start || markerStart + marker.length > end) return null
-        return subblockAt(markerStart + marker.length - 1 - start)
-    }
-
-    fun subblockAt(relativeOpeningBrace: Int): Block? {
-        val openingBrace = start + relativeOpeningBrace
-        val closingBrace = source.blockEnd(openingBrace) ?: return null
-        if (closingBrace >= end) return null
-        return Block(source, openingBrace + 1, closingBrace)
-    }
-}
-
-private fun String.blockEnd(openingBrace: Int): Int? {
-    var depth = 1
-    for (index in openingBrace + 1 until length) {
-        when (this[index]) {
-            '{' -> depth++
-            '}' -> depth--
-        }
-        if (depth == 0) return index
-    }
-    return null
-}

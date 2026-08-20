@@ -3,6 +3,10 @@ apply plugin: "java-gradle-plugin"
 
 dependencies {
     implementation(project(":public"))
+    // Kotlin lexer, used to tokenize build.gradle(.kts) files in ScriptTokens.kt.
+    // Not kotlinCompilerEmbeddable: shared-dependencies.gradle already puts kotlinCompiler on the
+    // compile classpath, and the two disagree on whether IntelliJ classes are relocated.
+    implementation(libs.kotlinCompiler)
 }
 
 

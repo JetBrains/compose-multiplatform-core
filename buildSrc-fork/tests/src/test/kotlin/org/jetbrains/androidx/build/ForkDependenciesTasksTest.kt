@@ -17,7 +17,7 @@
 package org.jetbrains.androidx.build
 
 import java.io.File
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +29,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `adds and removes dependencies`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -50,10 +50,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXMultiplatform {
                     sourceSets {
@@ -69,7 +65,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `keeps catalog dependencies`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -89,10 +85,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXForkMultiplatform {
                     sourceSets {
@@ -108,7 +100,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `updates dependency version`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -131,10 +123,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXMultiplatform {
                     sourceSets {
@@ -151,7 +139,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `updates dependency type`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -172,10 +160,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXMultiplatform {
                     sourceSets {
@@ -191,7 +175,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `does not change an associated fork artifact version or project, but changes type`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -216,10 +200,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXForkMultiplatform {
                     sourceSets {
@@ -237,7 +217,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `works if fork build file is absent`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -251,57 +231,11 @@ class ForkDependenciesTasksTest {
             """,
             fork = null,
         )
-
-        verifyThenUpdate(root)
-    }
-
-    @Test
-    fun `works with Kotlin build scripts`() {
-        val root = createProject(
-            original = """
-                androidXMultiplatform {
-                    sourceSets {
-                        val commonMain by getting {
-                            dependencies {
-                                api("androidx.compose.ui:ui:2.10.0")
-                            }
-                        }
-                    }
-                }
-            """,
-            fork = """
-                androidXMultiplatform {
-                    sourceSets {
-                        val commonMain by getting {
-                            dependencies {
-                                api("androidx.compose.ui:ui:2.9.0")
-                            }
-                        }
-                    }
-                }
-            """,
-            scriptExtension = "gradle.kts",
-        )
-
-        verifyThenUpdate(
-            root,
-            expected = """
-                androidXMultiplatform {
-                    sourceSets {
-                        val commonMain by getting {
-                            dependencies {
-                                api("androidx.compose.ui:ui:2.10.0")
-                            }
-                        }
-                    }
-                }
-            """.trimIndent(),
-        )
     }
 
     @Test
     fun `works when DSL syntax differs`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -320,39 +254,76 @@ class ForkDependenciesTasksTest {
             fork = """
                 androidXMultiplatform {
                     sourceSets {
-                        commonMain.dependencies {
-                            // Tool dependency
-                            implementation("com.example:tool:1.5.0")
+                        val commonMain by getting {
+                            dependencies {
+                                // Tool dependency
+                                implementation("com.example:tool:1.5.0")
 
-                            // Extra dependency
-                            implementation("com.example:extra:1.0.0")
+                                // Extra dependency
+                                implementation("com.example:extra:1.0.0")
+                            }
+                        }
+                    }
+                }
+            """,
+            expected = """
+                androidXMultiplatform {
+                    sourceSets {
+                        val commonMain by getting {
+                            dependencies {
+                                // Tool dependency
+                                implementation("com.example:tool:1.6.0")
+
+                                // Extra dependency
+                                implementation("com.example:extra:1.0.0")
+                            }
                         }
                     }
                 }
             """,
         )
+    }
 
+    @Test
+    fun `ignores braces in comments and string literals`() {
         verifyThenUpdate(
-            root,
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            // A closing brace } in a comment
+                            implementation("com.example:tool:1.5.0") // and } here
+                            implementation("com.example:bra}ce:1.0.0")
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXMultiplatform {
+                    sourceSets {
+                        commonMain.dependencies {
+                            implementation("com.example:tool:1.4.0")
+                        }
+                    }
+                }
+            """,
             expected = """
                 androidXMultiplatform {
                     sourceSets {
                         commonMain.dependencies {
-                            // Tool dependency
-                            implementation("com.example:tool:1.6.0")
-
-                            // Extra dependency
-                            implementation("com.example:extra:1.0.0")
+                            // A closing brace } in a comment
+                            implementation("com.example:tool:1.5.0") // and } here
+                            implementation("com.example:bra}ce:1.0.0")
                         }
                     }
                 }
-            """.trimIndent()
+            """,
         )
     }
 
     @Test
     fun `works when a version isn't parseable`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -374,10 +345,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXForkMultiplatform {
                     sourceSets {
@@ -388,13 +355,13 @@ class ForkDependenciesTasksTest {
                         }
                     }
                 }
-            """.trimIndent()
+            """,
         )
     }
 
     @Test
     fun `works if using anything else from androidXMultiplatform`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -413,10 +380,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 anythingElse {
                     sourceSets {
@@ -431,7 +394,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `does not update dependencies when dependency verification is suppressed`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -455,10 +418,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXForkMultiplatform {
                     sourceSets {
@@ -479,7 +438,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `does not update dependencies when sourceSet verification is suppressed`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -500,13 +459,11 @@ class ForkDependenciesTasksTest {
                 }
             """,
         )
-
-        verifyThenUpdate(root)
     }
 
     @Test
     fun `updates dependencies for non-commonMain matching source sets`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -526,10 +483,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXMultiplatform {
                     sourceSets {
@@ -545,7 +498,7 @@ class ForkDependenciesTasksTest {
 
     @Test
     fun `does not update dependencies for non-matching source sets`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -566,13 +519,11 @@ class ForkDependenciesTasksTest {
                 }
             """,
         )
-
-        verifyThenUpdate(root)
     }
 
     @Test
     fun `preserves spaces and comments for the same group and module`() {
-        val root = createProject(
+        verifyThenUpdate(
             original = """
                 androidXMultiplatform {
                     sourceSets {
@@ -609,10 +560,6 @@ class ForkDependenciesTasksTest {
                     }
                 }
             """,
-        )
-
-        verifyThenUpdate(
-            root,
             expected = """
                 androidXForkMultiplatform {
                     sourceSets {
@@ -633,10 +580,25 @@ class ForkDependenciesTasksTest {
         )
     }
 
+    /** Runs the tasks against both a Groovy and a Kotlin build script. */
+    private fun verifyThenUpdate(
+        original: String,
+        fork: String?,
+        expected: String? = null,
+    ) {
+        for (scriptExtension in SCRIPT_EXTENSIONS) {
+            verifyThenUpdate(
+                root = createProject(original, fork, scriptExtension),
+                scriptExtension = scriptExtension,
+                expected = expected,
+            )
+        }
+    }
+
     private fun createProject(
         original: String,
         fork: String?,
-        scriptExtension: String = "gradle",
+        scriptExtension: String,
     ): File {
         val root = temporaryFolder.newFolder()
         val pluginClasspath = pluginClasspath()
@@ -682,18 +644,24 @@ class ForkDependenciesTasksTest {
 
 private const val PROJECT_PATH = ":test-project"
 
+private val SCRIPT_EXTENSIONS = listOf("gradle", "gradle.kts")
+
 private fun verifyThenUpdate(
     root: File,
+    scriptExtension: String,
     expected: String? = null,
 ) {
     val forkFile = projectDir(root).listFiles()
         ?.singleOrNull { it.name.startsWith("build-fork.") }
     val expectedFork = expected?.trimIndent() ?: forkFile?.readText()
 
+    fun assertThat(actual: String?) =
+        assertWithMessage("build script extension: $scriptExtension").that(actual)
+
     if (expected != null) {
         val result = runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").buildAndFail()
         assertThat(result.output).contains("Fork dependencies are out of date.")
-        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
+        assertThat(result.output).contains("jbUpdateForkDependencies")
     } else {
         runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").build()
     }
