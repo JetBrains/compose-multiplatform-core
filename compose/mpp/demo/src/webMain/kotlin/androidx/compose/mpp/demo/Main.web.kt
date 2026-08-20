@@ -22,6 +22,7 @@ import androidx.compose.mpp.demo.interops.HtmlInteropDemos
 import androidx.compose.mpp.demo.webgl.PlainWebGlScreen
 import androidx.compose.mpp.demo.webgl.ThreeJsTextureAdoptionScreen
 import androidx.compose.mpp.demo.webgl.VideoWebGlScreen
+import androidx.compose.mpp.demo.webgl.HtmlInCanvasWebGlScreen
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.mpp.demo.embedded.embeddedScrollDemo
 import androidx.compose.mpp.demo.webgl.WebGLDemoScreen

@@ -22,5 +22,6 @@ val WebGLDemoScreen = Screen.Selection(
     "WebGL",
     ThreeJsTextureAdoptionScreen,
     PlainWebGlScreen,
-    VideoWebGlScreen
+    VideoWebGlScreen,
+    HtmlInCanvasWebGlScreen
 )
