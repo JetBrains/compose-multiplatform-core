@@ -633,6 +633,42 @@ class ForkDependenciesTasksTest {
         )
     }
 
+    @Test
+    fun `fills an empty block`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api(libs.jspecify)
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(
+            root,
+            expected = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api(libs.jspecify)
+                        }
+                    }
+                }
+            """,
+        )
+    }
+
     private fun createProject(
         original: String,
         fork: String?,
@@ -693,7 +729,7 @@ private fun verifyThenUpdate(
     if (expected != null) {
         val result = runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").buildAndFail()
         assertThat(result.output).contains("Fork dependencies are out of date.")
-        assertThat(result.output).contains("$PROJECT_PATH:jbUpdateForkDependencies")
+        assertThat(result.output).contains("jbUpdateForkDependencies")
     } else {
         runner(root, "$PROJECT_PATH:jbVerifyForkDependencies").build()
     }

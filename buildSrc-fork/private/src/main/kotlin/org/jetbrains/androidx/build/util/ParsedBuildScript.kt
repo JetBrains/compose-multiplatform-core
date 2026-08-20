@@ -63,7 +63,7 @@ internal class ParsedBuildScript(val text: String) {
             buildList {
                 var nesting = 0
                 val comments = mutableListOf<String>()
-                for (lineText in dependencies.text.lineSequence()) {
+                for (lineText in dependencies.lines) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -81,29 +81,18 @@ internal class ParsedBuildScript(val text: String) {
 
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
-        internal fun textFor(lines: List<Line>): String {
-            val closingIndentation = dependencies.text.substringAfterLast('\n')
-            val declarationIndentation = "$closingIndentation    "
-            return buildString {
-                appendLine()
-                lines.forEach { line ->
-                    appendFormattedLine(line, declarationIndentation)
-                }
-                append(closingIndentation)
-            }
-        }
+        internal fun textFor(lines: List<Line>): String =
+            lines.joinToString("") { formattedLine(it, dependencies.declarationIndentation) }
 
-        private fun StringBuilder.appendFormattedLine(
-            line: Line, indentation: String
-        ) = when (line) {
-            Line.Blank -> appendLine()
-            is Line.Dependency -> with(line) {
-                comments.forEach { comment ->
+        private fun formattedLine(line: Line, indentation: String): String = when (line) {
+            Line.Blank -> "\n"
+            is Line.Dependency -> buildString {
+                line.comments.forEach { comment ->
                     appendLine("$indentation$comment")
                 }
-                append("$indentation$type(${dependency.formatted})")
-                if (inlineComment != null) {
-                    append(" ").append(inlineComment)
+                append("$indentation${line.type}(${line.dependency.formatted})")
+                if (line.inlineComment != null) {
+                    append(" ").append(line.inlineComment)
                 }
                 appendLine()
             }
@@ -180,8 +169,14 @@ internal data class Block(
     private val source: String,
     val start: Int = 0,
     val end: Int = source.length,
+    val declarationIndentation: String = "",
 ) {
     val text: String get() = source.substring(start, end)
+
+    val lines: List<String> get() =
+        // if text doesn't contain \n, it means it is an empty block (with zero lines)
+        // lineSequence won't help because it always returns one line
+        text.split('\n').dropLast(1)
 
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
@@ -193,7 +188,16 @@ internal data class Block(
         val openingBrace = start + relativeOpeningBrace
         val closingBrace = source.blockEnd(openingBrace) ?: return null
         if (closingBrace >= end) return null
-        return Block(source, openingBrace + 1, closingBrace)
+        val interiorStart = openingBrace + 1
+        val interior = source.substring(interiorStart, closingBrace)
+        val openingBraceLineEnd = interiorStart + interior.indexOf('\n')
+        val lastLineEnd = interiorStart + interior.lastIndexOf('\n')
+        return Block(
+            source = source,
+            start = openingBraceLineEnd + 1,
+            end = lastLineEnd.coerceAtLeast(openingBraceLineEnd) + 1,
+            declarationIndentation = source.substring(lastLineEnd + 1, closingBrace) + "    ",
+        )
     }
 }
 
