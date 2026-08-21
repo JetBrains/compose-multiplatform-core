@@ -177,10 +177,7 @@ internal data class Block(
     val text: String get() = source.substring(start, end)
 
     val declarationIndentation: String
-        get() {
-            val indentation = source.substring(start).takeWhile { it == ' ' }
-            return if (start == end) "$indentation    " else indentation
-        }
+        get() = source.substring(end).removePrefix("\n").takeWhile { it == ' ' } + "    "
 
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
