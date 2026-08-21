@@ -44,7 +44,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.interceptedFontWeight
+import androidx.compose.ui.text.font.platformInterceptedFontWeight
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -187,7 +187,7 @@ private sealed interface ComputedStyle {
             // Intercepted like the typeface below: Skia matches fallback faces on this style,
             // so a raw weight would ignore the iOS "Bold Text" setting.
             res.fontStyle = res.fontStyle.withWeight(
-                fontFamilyResolver.interceptedFontWeight(fontWeight ?: FontWeight.Normal).weight
+                platformInterceptedFontWeight(fontWeight ?: FontWeight.Normal).weight
             )
             shadow.takeUnless { it == Shadow.None }?.let {
                 res.addShadow(it.toSkShadow())

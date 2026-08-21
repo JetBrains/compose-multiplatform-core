@@ -88,10 +88,6 @@ internal class FontFamilyResolverImpl(
         )
     }
 
-    /** Returns the [FontWeight] [resolve] will resolve with, after platform interception. */
-    internal fun interceptFontWeight(fontWeight: FontWeight): FontWeight =
-        platformResolveInterceptor.interceptFontWeight(fontWeight)
-
     /** Resolves the final [typefaceRequest] without interceptors. */
     private fun resolve(typefaceRequest: TypefaceRequest): State<Any> {
         val result =
