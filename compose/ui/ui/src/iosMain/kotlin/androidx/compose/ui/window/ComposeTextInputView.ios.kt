@@ -88,7 +88,7 @@ internal class ComposeTextInputView(
             }
         }
 
-    override fun canBecomeFirstResponder() = input.isInteractive
+    override fun canBecomeFirstResponder() = true
 
     override fun isUserInteractionEnabled(): Boolean {
         return false
