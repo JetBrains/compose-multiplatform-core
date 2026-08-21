@@ -633,6 +633,42 @@ class ForkDependenciesTasksTest {
         )
     }
 
+    @Test
+    fun `fills an empty block`() {
+        val root = createProject(
+            original = """
+                androidXMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api(libs.jspecify)
+                        }
+                    }
+                }
+            """,
+            fork = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                        }
+                    }
+                }
+            """,
+        )
+
+        verifyThenUpdate(
+            root,
+            expected = """
+                androidXForkMultiplatform {
+                    sourceSets {
+                        jvmAndAndroidMain.dependencies {
+                            api(libs.jspecify)
+                        }
+                    }
+                }
+            """,
+        )
+    }
+
     private fun createProject(
         original: String,
         fork: String?,
