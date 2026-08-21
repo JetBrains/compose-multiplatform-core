@@ -20,6 +20,7 @@ package androidx.compose.ui.platform.webgl
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
@@ -167,8 +170,10 @@ class WebGLRenderTargetTests : OnCanvasTests {
                     LaunchedEffect(target) {
                         repeat(30) { withFrameNanos { target.render { clearToRed() } } }
                     }
-                    // 100.dp is 200px at the test density, well inside the canvas.
-                    Canvas(Modifier.size(100.dp)) { drawWebGLTexture(target) }
+                    // Setting the density to 2 so the test works correctly on all displays
+                    CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                        Canvas(Modifier.size(100.dp)) { drawWebGLTexture(target) }
+                    }
                 }
             }
 
