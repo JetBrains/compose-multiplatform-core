@@ -88,7 +88,11 @@ internal class ComposeTextInputView(
             }
         }
 
-    override fun canBecomeFirstResponder() = true
+    override fun canBecomeFirstResponder() = input.isInteractive
+
+    override fun isUserInteractionEnabled(): Boolean {
+        return false
+    }
 
     override fun resignFirstResponder(): Boolean {
         input.onResignFocus()
@@ -475,9 +479,7 @@ internal class ComposeTextInputView(
     }
 
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
-        if (!input.isInteractive) return null
-
-        return super.hitTest(point, withEvent)
+        return null
     }
 
     override fun editMenuDelay(): Double =
