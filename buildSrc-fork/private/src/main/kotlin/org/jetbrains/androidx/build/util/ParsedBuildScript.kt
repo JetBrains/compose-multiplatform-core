@@ -63,7 +63,7 @@ internal class ParsedBuildScript(val text: String) {
             buildList {
                 var nesting = 0
                 val comments = mutableListOf<String>()
-                for (lineText in dependencies.text.split('\n').dropLast(1)) {
+                for (lineText in dependencies.lines) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -173,6 +173,12 @@ internal data class Block(
 ) {
     val text: String get() = source.substring(start, end)
 
+    /**
+     * The lines of this block, each without its trailing newline. Empty when the block declares
+     * nothing, because every line of [text] is newline-terminated.
+     */
+    val lines: List<String> get() = text.split('\n').dropLast(1)
+
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
         if (markerStart < start || markerStart + marker.length > end) return null
@@ -183,14 +189,15 @@ internal data class Block(
         val openingBrace = start + relativeOpeningBrace
         val closingBrace = source.blockEnd(openingBrace) ?: return null
         if (closingBrace >= end) return null
-        val interior = source.substring(openingBrace + 1, closingBrace)
-        val firstLineStart = openingBrace + 1 + interior.indexOf('\n') + 1
+        val interiorStart = openingBrace + 1
+        val interior = source.substring(interiorStart, closingBrace)
+        val openingBraceLineEnd = interiorStart + interior.indexOf('\n')
+        val lastLineEnd = interiorStart + interior.lastIndexOf('\n')
         return Block(
             source = source,
-            start = firstLineStart,
-            end = (openingBrace + 1 + interior.lastIndexOf('\n') + 1).coerceAtLeast(firstLineStart),
-            declarationIndentation =
-                source.substring(source.lastIndexOf('\n', closingBrace) + 1, closingBrace) + "    ",
+            start = openingBraceLineEnd + 1,
+            end = lastLineEnd.coerceAtLeast(openingBraceLineEnd) + 1,
+            declarationIndentation = source.substring(lastLineEnd + 1, closingBrace) + "    ",
         )
     }
 }
