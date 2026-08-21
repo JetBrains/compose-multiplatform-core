@@ -185,14 +185,12 @@ internal data class Block(
         val closingBrace = source.blockEnd(openingBrace) ?: return null
         if (closingBrace >= end) return null
         val interior = source.substring(openingBrace + 1, closingBrace)
-        val firstLine = interior.indexOf('\n')
-            .let { if (it >= 0 && interior.take(it).isBlank()) it + 1 else 0 }
-        val lastLineEnd = interior.lastIndexOf('\n')
-            .let { if (it >= 0 && interior.drop(it + 1).isBlank()) it else interior.length }
+        val firstLine = interior.indexOf('\n') + 1
+        val lastLineEnd = interior.lastIndexOf('\n').coerceAtLeast(firstLine)
         return Block(
             source = source,
             start = openingBrace + 1 + firstLine,
-            end = openingBrace + 1 + lastLineEnd.coerceAtLeast(firstLine),
+            end = openingBrace + 1 + lastLineEnd,
         )
     }
 }
