@@ -82,32 +82,21 @@ internal class ParsedBuildScript(val text: String) {
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
         internal fun textFor(lines: List<Line>): String {
-            val text = dependencies.text
-            val indentation = text.lineSequence()
-                .firstOrNull { it.isNotBlank() }
-                ?.takeWhile(Char::isWhitespace)
-                .orEmpty()
-            val formatted = buildString {
-                lines.forEach { line ->
-                    appendFormattedLine(line, indentation)
-                }
-            }
-            return if (text.isEmpty()) formatted else formatted.removeSuffix("\n")
+            val indentation =
+                dependencies.text.takeWhile(Char::isWhitespace).substringAfterLast('\n')
+            return lines.joinToString("\n") { formattedLine(it, indentation) }
         }
 
-        private fun StringBuilder.appendFormattedLine(
-            line: Line, indentation: String
-        ) = when (line) {
-            Line.Blank -> appendLine()
-            is Line.Dependency -> with(line) {
-                comments.forEach { comment ->
+        private fun formattedLine(line: Line, indentation: String): String = when (line) {
+            Line.Blank -> ""
+            is Line.Dependency -> buildString {
+                line.comments.forEach { comment ->
                     appendLine("$indentation$comment")
                 }
-                append("$indentation$type(${dependency.formatted})")
-                if (inlineComment != null) {
-                    append(" ").append(inlineComment)
+                append("$indentation${line.type}(${line.dependency.formatted})")
+                if (line.inlineComment != null) {
+                    append(" ").append(line.inlineComment)
                 }
-                appendLine()
             }
         }
 
@@ -195,25 +184,17 @@ internal data class Block(
         val openingBrace = start + relativeOpeningBrace
         val closingBrace = source.blockEnd(openingBrace) ?: return null
         if (closingBrace >= end) return null
-        val firstLineStart = source.lineStartAfter(openingBrace + 1, closingBrace)
+        val interior = source.substring(openingBrace + 1, closingBrace)
+        val firstLine = interior.indexOf('\n')
+            .let { if (it >= 0 && interior.take(it).isBlank()) it + 1 else 0 }
+        val lastLineEnd = interior.lastIndexOf('\n')
+            .let { if (it >= 0 && interior.drop(it + 1).isBlank()) it else interior.length }
         return Block(
             source = source,
-            start = firstLineStart,
-            end = source.lineEndBefore(closingBrace, firstLineStart),
+            start = openingBrace + 1 + firstLine,
+            end = openingBrace + 1 + lastLineEnd.coerceAtLeast(firstLine),
         )
     }
-}
-
-private fun String.lineStartAfter(from: Int, bound: Int): Int {
-    val newline = indexOf('\n', from)
-    if (newline < 0 || newline >= bound) return from
-    return if (substring(from, newline).isBlank()) newline + 1 else from
-}
-
-private fun String.lineEndBefore(until: Int, bound: Int): Int {
-    val newline = lastIndexOf('\n', until - 1)
-    if (newline < bound) return if (substring(bound, until).isBlank()) bound else until
-    return if (substring(newline + 1, until).isBlank()) newline else until
 }
 
 private fun String.blockEnd(openingBrace: Int): Int? {
