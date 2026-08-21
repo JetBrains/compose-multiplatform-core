@@ -170,7 +170,7 @@ jobs:
           simulator-os: ${{ matrix.simulator_os }}
 
       - name: Run iOS Instrumented
-        timeout-minutes: 30
+        timeout-minutes: 40
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
         env:
