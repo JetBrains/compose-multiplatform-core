@@ -82,8 +82,7 @@ internal class ParsedBuildScript(val text: String) {
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
         internal fun textFor(lines: List<Line>): String {
-            val indentation =
-                dependencies.text.takeWhile(Char::isWhitespace).substringAfterLast('\n')
+            val indentation = dependencies.text.takeWhile { it == ' ' }
             return lines.joinToString("\n") { formattedLine(it, indentation) }
         }
 
