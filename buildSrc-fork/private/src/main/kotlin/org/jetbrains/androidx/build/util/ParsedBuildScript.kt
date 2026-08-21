@@ -60,11 +60,10 @@ internal class ParsedBuildScript(val text: String) {
         private val lineBefore: String,
     ) {
         val lines: List<Line> by lazy {
-            if (dependencies.text.isEmpty()) return@lazy emptyList()
             buildList {
                 var nesting = 0
                 val comments = mutableListOf<String>()
-                for (lineText in dependencies.text.lineSequence()) {
+                for (lineText in dependencies.text.split('\n').dropLast(1)) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -82,15 +81,11 @@ internal class ParsedBuildScript(val text: String) {
 
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
-        internal fun textFor(lines: List<Line>): String {
-            val text = lines.joinToString("\n") {
-                formattedLine(it, dependencies.declarationIndentation)
-            }
-            return if (dependencies.text.isEmpty() && text.isNotEmpty()) "$text\n" else text
-        }
+        internal fun textFor(lines: List<Line>): String =
+            lines.joinToString("") { formattedLine(it, dependencies.declarationIndentation) }
 
         private fun formattedLine(line: Line, indentation: String): String = when (line) {
-            Line.Blank -> ""
+            Line.Blank -> "\n"
             is Line.Dependency -> buildString {
                 line.comments.forEach { comment ->
                     appendLine("$indentation$comment")
@@ -99,6 +94,7 @@ internal class ParsedBuildScript(val text: String) {
                 if (line.inlineComment != null) {
                     append(" ").append(line.inlineComment)
                 }
+                appendLine()
             }
         }
 
@@ -173,11 +169,9 @@ internal data class Block(
     private val source: String,
     val start: Int = 0,
     val end: Int = source.length,
+    val declarationIndentation: String = "",
 ) {
     val text: String get() = source.substring(start, end)
-
-    val declarationIndentation: String
-        get() = source.substring(end).removePrefix("\n").takeWhile { it == ' ' } + "    "
 
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
@@ -191,11 +185,12 @@ internal data class Block(
         if (closingBrace >= end) return null
         val interior = source.substring(openingBrace + 1, closingBrace)
         val firstLine = interior.indexOf('\n') + 1
-        val lastLineEnd = interior.lastIndexOf('\n').coerceAtLeast(firstLine)
+        val afterLastLine = (interior.lastIndexOf('\n') + 1).coerceAtLeast(firstLine)
         return Block(
             source = source,
             start = openingBrace + 1 + firstLine,
-            end = openingBrace + 1 + lastLineEnd,
+            end = openingBrace + 1 + afterLastLine,
+            declarationIndentation = interior.substringAfterLast('\n', "") + "    ",
         )
     }
 }
