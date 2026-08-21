@@ -190,7 +190,8 @@ internal data class Block(
             source = source,
             start = openingBrace + 1 + firstLine,
             end = openingBrace + 1 + afterLastLine,
-            declarationIndentation = interior.substringAfterLast('\n', "") + "    ",
+            declarationIndentation =
+                source.substring(source.lastIndexOf('\n', closingBrace) + 1, closingBrace) + "    ",
         )
     }
 }
