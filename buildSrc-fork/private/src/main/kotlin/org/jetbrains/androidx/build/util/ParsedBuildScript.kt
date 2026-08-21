@@ -60,6 +60,7 @@ internal class ParsedBuildScript(val text: String) {
         private val lineBefore: String,
     ) {
         val lines: List<Line> by lazy {
+            if (dependencies.text.isEmpty()) return@lazy emptyList()
             buildList {
                 var nesting = 0
                 val comments = mutableListOf<String>()
@@ -82,8 +83,10 @@ internal class ParsedBuildScript(val text: String) {
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
         internal fun textFor(lines: List<Line>): String {
-            val indentation = dependencies.text.takeWhile { it == ' ' }
-            return lines.joinToString("\n") { formattedLine(it, indentation) }
+            val text = lines.joinToString("\n") {
+                formattedLine(it, dependencies.declarationIndentation)
+            }
+            return if (dependencies.text.isEmpty() && text.isNotEmpty()) "$text\n" else text
         }
 
         private fun formattedLine(line: Line, indentation: String): String = when (line) {
@@ -172,6 +175,12 @@ internal data class Block(
     val end: Int = source.length,
 ) {
     val text: String get() = source.substring(start, end)
+
+    val declarationIndentation: String
+        get() {
+            val indentation = source.substring(start).takeWhile { it == ' ' }
+            return if (start == end) "$indentation    " else indentation
+        }
 
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
