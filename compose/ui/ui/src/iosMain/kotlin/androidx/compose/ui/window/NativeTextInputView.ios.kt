@@ -113,7 +113,7 @@ internal class NativeTextInputView(
         clipsToBounds = false
     }
 
-    override fun canBecomeFirstResponder() = input.isInteractive
+    override fun canBecomeFirstResponder() = true
 
     private val selectionInteraction =
         UITextInteraction.textInteractionForMode(UITextInteractionMode.UITextInteractionModeEditable)

@@ -46,7 +46,6 @@ import platform.Foundation.NSRange
 import platform.Foundation.dictionary
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionNatural
-import platform.UIKit.UIEvent
 import platform.UIKit.UIKeyInputProtocol
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardType
@@ -88,7 +87,7 @@ internal class ComposeTextInputView(
             }
         }
 
-    override fun canBecomeFirstResponder() = input.isInteractive
+    override fun canBecomeFirstResponder() = true
 
     override fun resignFirstResponder(): Boolean {
         input.onResignFocus()
