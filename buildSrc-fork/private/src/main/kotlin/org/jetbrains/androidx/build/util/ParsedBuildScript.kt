@@ -63,7 +63,7 @@ internal class ParsedBuildScript(val text: String) {
             buildList {
                 var nesting = 0
                 val comments = mutableListOf<String>()
-                for (lineText in dependencies.text.split('\n').dropLast(1)) {
+                for (lineText in dependencies.text.lineSequence()) {
                     if (nesting == 0) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
@@ -82,10 +82,10 @@ internal class ParsedBuildScript(val text: String) {
         fun hasMarker(marker: String): Boolean = lineBefore.contains(marker)
 
         internal fun textFor(lines: List<Line>): String =
-            lines.joinToString("") { formattedLine(it, dependencies.declarationIndentation) }
+            lines.joinToString("\n") { formattedLine(it, dependencies.declarationIndentation) }
 
         private fun formattedLine(line: Line, indentation: String): String = when (line) {
-            Line.Blank -> "\n"
+            Line.Blank -> ""
             is Line.Dependency -> buildString {
                 line.comments.forEach { comment ->
                     appendLine("$indentation$comment")
@@ -94,7 +94,6 @@ internal class ParsedBuildScript(val text: String) {
                 if (line.inlineComment != null) {
                     append(" ").append(line.inlineComment)
                 }
-                appendLine()
             }
         }
 
@@ -184,12 +183,11 @@ internal data class Block(
         val closingBrace = source.blockEnd(openingBrace) ?: return null
         if (closingBrace >= end) return null
         val interior = source.substring(openingBrace + 1, closingBrace)
-        val firstLine = interior.indexOf('\n') + 1
-        val afterLastLine = (interior.lastIndexOf('\n') + 1).coerceAtLeast(firstLine)
+        val lastLineEnd = openingBrace + 1 + interior.lastIndexOf('\n')
         return Block(
             source = source,
-            start = openingBrace + 1 + firstLine,
-            end = openingBrace + 1 + afterLastLine,
+            start = (openingBrace + 1 + interior.indexOf('\n') + 1).coerceAtMost(lastLineEnd),
+            end = lastLineEnd,
             declarationIndentation =
                 source.substring(source.lastIndexOf('\n', closingBrace) + 1, closingBrace) + "    ",
         )
