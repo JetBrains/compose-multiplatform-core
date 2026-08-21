@@ -173,11 +173,10 @@ internal data class Block(
 ) {
     val text: String get() = source.substring(start, end)
 
-    /**
-     * The lines of this block, each without its trailing newline. Empty when the block declares
-     * nothing, because every line of [text] is newline-terminated.
-     */
-    val lines: List<String> get() = text.split('\n').dropLast(1)
+    val lines: List<String> get() =
+        // if text doesn't contain \n, it means it is an empty block (with zero lines)
+        // lineSequence won't help because it always returns one line
+        text.split('\n').dropLast(1)
 
     fun subblock(marker: String): Block? {
         val markerStart = source.indexOf(marker, start)
