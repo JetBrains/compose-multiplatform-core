@@ -396,7 +396,6 @@ object GtkApplication : Application {
                 is Event.ScrollWheel,
                 is Event.DropPerformed,
                 is Event.DragAndDropLeave,
-                is Event.DragAndDropFeedbackFinished,
                     -> {
                     event.windowIdOrNull()
                         ?.let { windowId -> windows[windowId]?.handleEvent(event) }
@@ -738,7 +737,6 @@ private fun Event.windowIdOrNull(): LightweightWindowId? =
         is Event.ScrollWheel -> windowId.toLightweightWindowId()
         is Event.DropPerformed -> windowId.toLightweightWindowId()
         is Event.DragAndDropLeave -> windowId.toLightweightWindowId()
-        is Event.DragAndDropFeedbackFinished -> windowId.toLightweightWindowId()
         else -> null
     }
 
