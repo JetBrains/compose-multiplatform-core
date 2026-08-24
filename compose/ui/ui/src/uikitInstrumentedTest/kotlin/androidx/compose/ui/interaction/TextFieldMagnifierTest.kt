@@ -30,7 +30,7 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.UIKitNativeTextInputContext
+import androidx.compose.ui.platform.NativeTextInputContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
@@ -61,7 +61,7 @@ class TextFieldMagnifierTest {
         params = params
     ) { factory ->
         val focusRequester = FocusRequester()
-        var nativeTextInputContext: UIKitNativeTextInputContext? = null
+        var nativeTextInputContext: NativeTextInputContext? = null
 
         setContent {
             val currentNativeTextInputContext = LocalNativeTextInputContext.current
@@ -96,7 +96,7 @@ class TextFieldMagnifierTest {
         params = params
     ) { factory ->
         val focusRequester = FocusRequester()
-        var nativeTextInputContext: UIKitNativeTextInputContext? = null
+        var nativeTextInputContext: NativeTextInputContext? = null
 
         setContent {
             val currentNativeTextInputContext = LocalNativeTextInputContext.current
