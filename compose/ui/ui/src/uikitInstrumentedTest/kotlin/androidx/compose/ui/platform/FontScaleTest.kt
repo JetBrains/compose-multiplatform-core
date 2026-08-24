@@ -16,10 +16,12 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.setPreferredContentSizeCategory
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import kotlin.test.Test
@@ -34,48 +36,26 @@ internal abstract class FontScaleTest(
     private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
 ) {
     @Test
-    fun traitCollectionChangeUpdatesComposeFontScale() = runUIKitInstrumentedTest {
-        var fontScale = 0f
-        setContent {
-            fontScale = LocalDensity.current.fontScale
+    fun traitCollectionChangeUpdatesAndRevertsComposeFontScaleWithoutChangingScreenDensity() =
+        runUIKitInstrumentedTest {
+            var density = 0f
+            var fontScale = 0f
+            setContent {
+                density = LocalDensity.current.density
+                fontScale = LocalDensity.current.fontScale
+            }
+            val initialDensity = density
+
+            assertEquals(DefaultFontScale, fontScale)
+
+            viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
+            waitUntil { fontScale == AccessibilityLargeFontScale }
+            assertEquals(initialDensity, density)
+
+            viewController.setPreferredContentSizeCategory(UIContentSizeCategoryLarge)
+            waitUntil { fontScale == DefaultFontScale }
+            assertEquals(initialDensity, density)
         }
-
-        assertEquals(DefaultFontScale, fontScale)
-
-        viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
-
-        waitUntil { fontScale == AccessibilityLargeFontScale }
-    }
-
-    @Test
-    fun traitCollectionChangeCanBeReverted() = runUIKitInstrumentedTest {
-        var fontScale = 0f
-        setContent {
-            fontScale = LocalDensity.current.fontScale
-        }
-
-        viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
-        waitUntil { fontScale == AccessibilityLargeFontScale }
-
-        viewController.setPreferredContentSizeCategory(UIContentSizeCategoryLarge)
-        waitUntil { fontScale == DefaultFontScale }
-    }
-
-    @Test
-    fun traitCollectionChangeDoesNotChangeScreenDensity() = runUIKitInstrumentedTest {
-        var density = 0f
-        var fontScale = 0f
-        setContent {
-            density = LocalDensity.current.density
-            fontScale = LocalDensity.current.fontScale
-        }
-        val initialDensity = density
-
-        viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
-
-        waitUntil { fontScale == AccessibilityLargeFontScale }
-        assertEquals(initialDensity, density)
-    }
 
     @Test
     fun popupOpenedAfterTraitCollectionChangeUsesUpdatedFontScale() = runUIKitInstrumentedTest {
@@ -96,61 +76,70 @@ internal abstract class FontScaleTest(
         waitUntil { popupFontScale == AccessibilityLargeFontScale }
     }
 
+    /**
+     * Android popups use platform density instead of inheriting the creator's LocalDensity override.
+     * Keep iOS scene layers aligned with that behavior for both density and font scale.
+     */
     @Test
-    fun dialogOpenedAfterTraitCollectionChangeUsesUpdatedFontScale() = runUIKitInstrumentedTest {
-        val showDialog = mutableStateOf(false)
-        var dialogFontScale = 0f
+    fun popupUsesPlatformDensityInsteadOfCreatorLocalDensity() = runUIKitInstrumentedTest {
+        val showPopup = mutableStateOf(false)
+        var platformDensity = 0f
+        var platformFontScale = 0f
+        var parentDensity = 0f
+        var parentFontScale = 0f
+        var popupDensity = 0f
+        var popupFontScale = 0f
 
         setContent {
-            if (showDialog.value) {
-                Dialog(onDismissRequest = {}) {
-                    dialogFontScale = LocalDensity.current.fontScale
+            platformDensity = LocalDensity.current.density
+            platformFontScale = LocalDensity.current.fontScale
+
+            CompositionLocalProvider(
+                LocalDensity provides Density(CustomDensity, CustomFontScale)
+            ) {
+                parentDensity = LocalDensity.current.density
+                parentFontScale = LocalDensity.current.fontScale
+
+                if (showPopup.value) {
+                    Popup {
+                        popupDensity = LocalDensity.current.density
+                        popupFontScale = LocalDensity.current.fontScale
+                    }
                 }
             }
         }
 
-        viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
+        assertEquals(CustomDensity, parentDensity)
+        assertEquals(CustomFontScale, parentFontScale)
 
-        showDialog.value = true
-        waitUntil { dialogFontScale == AccessibilityLargeFontScale }
-    }
+        showPopup.value = true
+        waitUntil { popupDensity != 0f }
 
-    @Test
-    fun openPopupUpdatesFontScaleAfterTraitCollectionChange() = runUIKitInstrumentedTest {
-        var popupFontScale = 0f
-
-        setContent {
-            Popup {
-                popupFontScale = LocalDensity.current.fontScale
-            }
-        }
-
-        assertEquals(DefaultFontScale, popupFontScale)
-
-        viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
-
-        waitUntil { popupFontScale == AccessibilityLargeFontScale }
+        assertEquals(platformDensity, popupDensity)
+        assertEquals(platformFontScale, popupFontScale)
     }
 
     @Test
     fun openDialogUpdatesFontScaleAfterTraitCollectionChange() = runUIKitInstrumentedTest {
-        var popupFontScale = 0f
+        var dialogFontScale = 0f
 
         setContent {
             Dialog(onDismissRequest = {}) {
-                popupFontScale = LocalDensity.current.fontScale
+                dialogFontScale = LocalDensity.current.fontScale
             }
         }
 
-        assertEquals(DefaultFontScale, popupFontScale)
+        assertEquals(DefaultFontScale, dialogFontScale)
 
         viewController.setPreferredContentSizeCategory(UIContentSizeCategoryAccessibilityLarge)
 
-        waitUntil { popupFontScale == AccessibilityLargeFontScale }
+        waitUntil { dialogFontScale == AccessibilityLargeFontScale }
     }
 
     private companion object {
         const val DefaultFontScale = 1f
         const val AccessibilityLargeFontScale = 1.5f
+        const val CustomDensity = 2.5f
+        const val CustomFontScale = 1.7f
     }
 }

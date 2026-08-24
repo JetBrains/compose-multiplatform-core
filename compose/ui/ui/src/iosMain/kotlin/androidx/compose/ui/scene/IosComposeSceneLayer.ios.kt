@@ -53,6 +53,7 @@ internal class IosComposeSceneLayer(
     private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
+    private val initialDensity: Density,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
@@ -123,7 +124,7 @@ internal class IosComposeSceneLayer(
     private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
             frameRecomposer = frameChoreographer.frameRecomposer,
-            density = mediator.composeSceneDensity,
+            density = initialDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidateLayout = invalidateLayout,

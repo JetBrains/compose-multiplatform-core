@@ -398,6 +398,10 @@ internal class ComposeContainer(
                         )
                     },
                     layersViewController = layersHolder.getLayersViewController(),
+                    initialDensity = Density(
+                        layersHolder.getLayersViewController().windowContext.screenScale,
+                        fontScaleProvider.fontScale,
+                    ),
                     initialLayoutDirection = layoutDirection,
                     configuration = configuration,
                     onFocusConditionsChanged = ::onFocusConditionsChanged,
