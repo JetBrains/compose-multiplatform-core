@@ -50,7 +50,7 @@ unsplitPackage {
 
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
-        groupId = "org.jetbrains.androidx.lifecycle"
+        groupId = "org.jetbrains.fleet.androidx.lifecycle"
         version = properties["jetbrains.publication.version.LIFECYCLE"] as String?
                 ?: "0.0.0-SNAPSHOT"
     }
