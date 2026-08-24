@@ -34,7 +34,7 @@ unsplitPackage {
 
 configure<PublishingExtension> {
     publications.withType<MavenPublication> {
-        groupId = "org.jetbrains.androidx.navigationevent"
+        groupId = "org.jetbrains.fleet.androidx.navigationevent"
         version = properties["jetbrains.publication.version.NAVIGATION_EVENT"] as String?
                 ?: "0.0.0-SNAPSHOT"
     }
