@@ -84,18 +84,10 @@ internal class FrameChoreographer private constructor(
         fun onDisplayLinkTick()
 
         /**
-         * Callback invoked after the shared recomposer has advanced for this display-link tick.
-         */
-        fun onFramePerformed() = Unit
-
-        /**
          * The next runloop is performed after all draw calls are processed and before the next
          * runloop starts, so this is the moment out-of-frame work should run.
          */
-        fun onOutOfFrame(
-            lastFrameTimestamp: NSTimeInterval,
-            targetTimestamp: NSTimeInterval
-        ) = Unit
+        fun onOutOfFrame(lastFrameTimestamp: NSTimeInterval, targetTimestamp: NSTimeInterval) = Unit
     }
 
     /**
@@ -268,9 +260,7 @@ internal class FrameChoreographer private constructor(
             outOfFrameExecutor.onFrameEnd()
 
             applyPendingListenersToRemove()
-            listeners.fastForEach {
-                it.onOutOfFrame(lastFrameTimestamp, targetTimestamp)
-            }
+            listeners.fastForEach { it.onOutOfFrame(lastFrameTimestamp, targetTimestamp) }
         }
         listeners.fastForEach { it.onDisplayLinkTick() }
 
@@ -278,7 +268,6 @@ internal class FrameChoreographer private constructor(
 
         displayLinkFrameRate.updateFrameRateIfNeeded()
         performFrameIfNeeded()
-        listeners.fastForEach { it.onFramePerformed() }
         if (advancedFramesCount <= 0 && ongoingActivitiesCount == 0) {
             advancedFramesCount = 0
             displayLink.paused = true

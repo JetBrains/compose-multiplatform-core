@@ -29,6 +29,7 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.MetalViewHolder
+import androidx.compose.ui.window.renderOrPerformPendingInteropViewUpdates
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
@@ -77,13 +78,12 @@ internal class ComposeLayersViewController(
             onDidMoveToWindow = { endAppearanceTransition() },
             onLayoutSubviews = ::measureAndLayoutLayers,
             onDrawRect = { needsSynchronousDraw ->
-                if (needsComposeSceneDraw() || needsSynchronousDraw) {
-                    metalView.redrawer.render(waitUntilCompletion = needsSynchronousDraw)
-                } else {
-                    metalView.redrawer.performTransaction(
-                        retrieveAndMergePendingViewUpdatesTransactions()
-                    )
-                }
+                metalView.redrawer.renderOrPerformPendingInteropViewUpdates(
+                    needsSynchronousDraw = needsSynchronousDraw,
+                    needsComposeSceneDraw = needsComposeSceneDraw(),
+                    retrievePendingViewUpdatesInteropTransaction =
+                        ::retrieveAndMergePendingViewUpdatesTransactions,
+                )
             },
         )
     }

@@ -37,6 +37,18 @@ internal sealed interface MetalRedrawer {
     fun dispose()
 }
 
+internal inline fun MetalRedrawer.renderOrPerformPendingInteropViewUpdates(
+    needsSynchronousDraw: Boolean,
+    needsComposeSceneDraw: Boolean,
+    retrievePendingViewUpdatesInteropTransaction: () -> InteropSyncTransaction,
+) {
+    if (needsComposeSceneDraw || needsSynchronousDraw) {
+        render(waitUntilCompletion = needsSynchronousDraw)
+    } else {
+        performTransaction(retrievePendingViewUpdatesInteropTransaction())
+    }
+}
+
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class SurfaceMetalRedrawer with a different layer.
 // All changes made here must also be implemented in the `SurfaceMetalRedrawer`.

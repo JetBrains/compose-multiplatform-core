@@ -48,6 +48,7 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.compose.ui.window.renderOrPerformPendingInteropViewUpdates
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.enableSavedStateHandles
@@ -313,13 +314,12 @@ internal class ComposeContainer(
                 onLayoutSubviews = ::onLayoutSubviews,
                 onTraitCollectionDidChange = ::onTraitCollectionDidChange,
                 onDrawRect = { needsSynchronousDraw ->
-                    if (mediator.needsComposeSceneDraw || needsSynchronousDraw) {
-                        metalView.redrawer.render(waitUntilCompletion = needsSynchronousDraw)
-                    } else {
-                        metalView.redrawer.performTransaction(
-                            mediator.retrievePendingViewUpdatesInteropTransaction()
-                        )
-                    }
+                    metalView.redrawer.renderOrPerformPendingInteropViewUpdates(
+                        needsSynchronousDraw = needsSynchronousDraw,
+                        needsComposeSceneDraw = mediator.needsComposeSceneDraw,
+                        retrievePendingViewUpdatesInteropTransaction =
+                            mediator::retrievePendingViewUpdatesInteropTransaction,
+                    )
                 },
             )
             view.embedSubview(mediator.overlayView)
