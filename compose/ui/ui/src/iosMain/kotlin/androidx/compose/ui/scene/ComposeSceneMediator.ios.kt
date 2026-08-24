@@ -192,7 +192,6 @@ internal class ComposeSceneMediator(
     private val isClearFocusOnMouseDownEnabled: Boolean,
     focusedViewsList: FocusedViewsList?,
     private val windowContext: WindowContext,
-    private val fontScaleProvider: FontScaleProvider,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
