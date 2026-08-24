@@ -18,7 +18,7 @@
 
 package androidx.compose.mpp.demo.webgl
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
-import androidx.compose.ui.platform.webgl.drawWebGLTexture
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -112,9 +112,12 @@ private fun VideoPlayer(
         },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawWebGLTexture(renderTarget)
-        }
+        Image(
+            painter = renderTarget.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
         if (!isPlaying || controlsVisible) {
             Box(
                 Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.28f))

@@ -19,6 +19,7 @@
 package androidx.compose.ui.platform.webgl
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -77,9 +79,12 @@ class WebGLRenderTargetTests : OnCanvasTests {
                         }
                     }
                 }
+                // Drawn by hand rather than with Image, so that the counter sits in the very draw
+                // scope that a new frame has to repeat.
                 Canvas(Modifier.size(64.dp)) {
                     drawnFrames++
-                    drawWebGLTexture(target)
+                    val bounds = this.size
+                    with(target.painter) { draw(bounds) }
                 }
             }
         }
@@ -89,7 +94,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
         awaitIdle()
 
         assertTrue(renderedFrames > 0, "render() never ran the block")
-        assertTrue(drawnFrames > 0, "drawWebGLTexture() was never called")
+        assertTrue(drawnFrames > 0, "the painter was never drawn")
 
         assertEquals(IntSize(64, 64), target.size, "unexpected allocated size")
         assertNotNull(target.framebuffer, "framebuffer was not allocated")
@@ -125,7 +130,12 @@ class WebGLRenderTargetTests : OnCanvasTests {
             val target = rememberWebGLRenderTarget(size)
             renderTarget = target
             if (target != null) {
-                Canvas(Modifier.size(32.dp)) { drawWebGLTexture(target) }
+                Image(
+                    painter = target.painter,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(32.dp),
+                )
             }
         }
 
@@ -172,7 +182,12 @@ class WebGLRenderTargetTests : OnCanvasTests {
                     }
                     // Setting the density to 2 so the test works correctly on all displays
                     CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                        Canvas(Modifier.size(100.dp)) { drawWebGLTexture(target) }
+                        Image(
+                            painter = target.painter,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(100.dp),
+                        )
                     }
                 }
             }

@@ -8,7 +8,7 @@
 
 package androidx.compose.mpp.demo.webgl
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,7 +42,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
-import androidx.compose.ui.platform.webgl.drawWebGLTexture
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -131,17 +131,19 @@ private fun HtmlInCanvasWebGlDemo() {
         ) {
             Text("Interactive HTML rendered into a WebGL texture")
             Box(Modifier.fillMaxWidth(0.8f).aspectRatio(640f / 360f)) {
-                Canvas(
-                    Modifier.fillMaxSize()
-                        .onGloballyPositioned { coordinates ->
-                            val bounds = coordinates.boundsInWindow()
-                            boundsPx =
-                                IntSize(bounds.width.roundToInt(), bounds.height.roundToInt())
-                            originPx = Offset(bounds.left, bounds.top)
-                        }
-                ) {
-                    drawWebGLTexture(target)
-                }
+                Image(
+                    painter = target.painter,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .onGloballyPositioned { coordinates ->
+                                val bounds = coordinates.boundsInWindow()
+                                boundsPx =
+                                    IntSize(bounds.width.roundToInt(), bounds.height.roundToInt())
+                                originPx = Offset(bounds.left, bounds.top)
+                            },
+                )
             }
         }
 

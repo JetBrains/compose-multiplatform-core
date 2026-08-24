@@ -18,7 +18,7 @@
 
 package androidx.compose.mpp.demo.webgl
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +58,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
-import androidx.compose.ui.platform.webgl.drawWebGLTexture
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
@@ -265,7 +265,12 @@ private fun Hero(surface: WebGLRenderTarget) {
                 style = MaterialTheme.typography.h3,
             )
         }
-        Canvas(Modifier.fillMaxSize()) { drawWebGLTexture(surface) }
+        Image(
+            painter = surface.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
         Column(Modifier.padding(20.dp)) {
             Text(
                 "three.js below, Compose above",
@@ -285,29 +290,36 @@ private fun Hero(surface: WebGLRenderTarget) {
 @Composable
 private fun Variants(surface: WebGLRenderTarget) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        Canvas(Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray)) {
-            drawWebGLTexture(surface)
-        }
-        Canvas(
-            Modifier.size(96.dp)
-                .clip(RoundedCornerShape(32.dp))
-                .background(Color.DarkGray)
-                .graphicsLayer {
-                    alpha = 0.75f
-                    scaleX = -0.75f
-                    scaleY = 0.75f
-                }
-        ) {
-            drawWebGLTexture(surface)
-        }
-        Canvas(
-            Modifier.size(96.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Gray)
-                .blur(2.dp)
-                .scale(1f, -1f)
-        ) {
-            drawWebGLTexture(surface)
-        }
+        Image(
+            painter = surface.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray),
+        )
+        Image(
+            painter = surface.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier.size(96.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color.DarkGray)
+                    .graphicsLayer {
+                        alpha = 0.75f
+                        scaleX = -0.75f
+                        scaleY = 0.75f
+                    },
+        )
+        Image(
+            painter = surface.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier.size(96.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Gray)
+                    .blur(2.dp)
+                    .scale(1f, -1f),
+        )
     }
 }

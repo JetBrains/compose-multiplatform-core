@@ -18,7 +18,7 @@
 
 package androidx.compose.mpp.demo.webgl
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,7 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
-import androidx.compose.ui.platform.webgl.drawWebGLTexture
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
@@ -86,27 +86,27 @@ private fun PlainWebGlDemo() {
 
 @Composable
 private fun RotatingTriangle(isAnimating: Boolean) {
-    val surface = rememberWebGLRenderTarget(IntSize(512, 320))!!
-    val triangle = remember(surface) { TriangleRenderer(surface.webGLContext) }
+    val renderTarget = rememberWebGLRenderTarget(IntSize(512, 320))!!
+    val triangle = remember(renderTarget) { TriangleRenderer(renderTarget.webGLContext) }
 
-    DisposableEffect(triangle, surface) {
-        onDispose { triangle.dispose(surface) }
+    DisposableEffect(triangle, renderTarget) {
+        onDispose { triangle.dispose(renderTarget) }
     }
 
-    LaunchedEffect(surface, isAnimating) {
+    LaunchedEffect(renderTarget, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
-                surface.render { triangle.render(this, frameTimeNanos) }
+                renderTarget.render { triangle.render(this, frameTimeNanos) }
             }
         }
     }
 
     LabelledContent("512×320 texture\na shader-drawn triangle") {
-        Canvas(
+        Image(
+            painter = renderTarget.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
-            onDraw = {
-                drawWebGLTexture(surface)
-            }
         )
     }
 }
@@ -125,11 +125,11 @@ private fun ColorPulse(isAnimating: Boolean) {
     }
 
     LabelledContent("64×64 texture\nnothing but a pulsing clear color") {
-        Canvas(
+        Image(
+            painter = surface.painter,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
-            onDraw = {
-                drawWebGLTexture(surface)
-            }
         )
     }
 }

@@ -20,10 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.LocalComposeWindow
 import org.jetbrains.skia.DirectContext
@@ -55,7 +59,7 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
 
 /**
  * An offscreen render target that lets WebGL content take part in Compose rendering: WebGL code
- * draws into it inside [render], and Compose displays the result with [drawWebGLTexture].
+ * draws into it inside [render], and Compose displays the result through its [painter].
  *
  * It takes care of everything that hand-off needs. It owns the GPU resources — a [framebuffer] with
  * a color texture and a depth/stencil buffer, in the very WebGL context and `<canvas>` Compose
@@ -83,13 +87,17 @@ private const val GL_DEPTH_STENCIL_ATTACHMENT = 0x821A
  *     }
  * }
  *
- * Canvas(Modifier.fillMaxSize()) { drawWebGLTexture(renderTarget) }
+ * Image(
+ *     painter = renderTarget.painter,
+ *     contentDescription = null,
+ *     contentScale = ContentScale.Crop,
+ *     modifier = Modifier.fillMaxSize(),
+ * )
  * ```
  */
 @ExperimentalComposeUiApi
 @Stable
-class WebGLRenderTarget
-internal constructor(
+class WebGLRenderTarget internal constructor(
     val htmlCanvas: HTMLCanvasElement,
     val webGLContext: WebGLRenderingContext,
     private val directContext: () -> DirectContext?,
@@ -106,8 +114,12 @@ internal constructor(
      *
      * Changing the size passed to [rememberWebGLRenderTarget] updates this on the next [render], so
      * it always describes the framebuffer the current frame draws into.
+     *
+     * Backed by snapshot state, so layout that derives from it - such as a [Painter] sized by
+     * [Painter.intrinsicSize] - is redone when the size changes. Only written from [render], which
+     * must never run while Compose is drawing.
      */
-    var size: IntSize = IntSize.Zero
+    var size: IntSize by mutableStateOf(IntSize.Zero)
         private set
 
     /** Applied by the next [render]; see the `size` parameter of [rememberWebGLRenderTarget]. */
@@ -138,6 +150,30 @@ internal constructor(
     internal val image: Image?
         get() = adoptedTexture?.image
 
+    /**
+     * Draws the last frame rendered into this target, for the standard Compose drawing APIs:
+     * ```
+     * Image(renderTarget.painter, contentDescription = null, contentScale = ContentScale.Crop)
+     * Box(Modifier.paint(renderTarget.painter, contentScale = ContentScale.Fit))
+     * Canvas(Modifier.fillMaxSize()) { with(renderTarget.painter) { draw(size) } }
+     * ```
+     *
+     * Its [Painter.intrinsicSize] is [size] as soon as a frame exists, and `Size.Unspecified`
+     * before that, so scaling and alignment are up to the caller, as for any other painter. Prefer
+     * `Image`, which clips the frame to its bounds: the painter fills the size it is given, so
+     * `ContentScale.Crop` scales the frame beyond that size and `Modifier.paint` alone would let it
+     * spill over its neighbours unless `Modifier.clipToBounds` is added. Note also that
+     * `Modifier.paint` defaults to `ContentScale.Inside`, which never scales a frame up.
+     *
+     * Drawing it issues no GL commands, only a draw of the texture that [render] filled, so it is
+     * safe inside graphics layers such as `clip` and `blur`, and can draw the same frame in several
+     * places. Each new frame repeats the drawing on its own, without recomposing.
+     *
+     * The same instance is returned every time, so that drawing it does not restart on every
+     * recomposition.
+     */
+    val painter: Painter by lazy(LazyThreadSafetyMode.NONE) { WebGLRenderTargetPainter(this) }
+
     private val _invalidation = mutableLongStateOf(0L)
 
     /** Makes the calling draw operation repeat whenever a new frame is rendered. */
@@ -151,8 +187,8 @@ internal constructor(
     private var isRendering = false
 
     /**
-     * Renders one frame into this target and invalidates every [drawWebGLTexture] that displays it,
-     * so they all show the new frame.
+     * Renders one frame into this target and invalidates everything that draws its [painter], so
+     * it all shows the new frame.
      *
      * Allocates or reallocates GPU resources if needed, binds [framebuffer], runs [block], then
      * restores the GL state Compose's renderer expects. [block] receives this target as its
@@ -169,7 +205,7 @@ internal constructor(
      * Canvas(Modifier.fillMaxSize()) {
      *     // Wrong: render() must not run while Compose is drawing.
      *     renderTarget.render { renderer.drawFrame(this) }
-     *     drawWebGLTexture(renderTarget)
+     *     with(renderTarget.painter) { draw(size) }
      * }
      * ```
      *
