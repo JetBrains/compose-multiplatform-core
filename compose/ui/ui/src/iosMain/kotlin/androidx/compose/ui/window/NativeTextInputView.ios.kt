@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.TextInputPosition
 import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
-import androidx.compose.ui.platform.PlatformTextLayoutDirection
+import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.selectTextNearCursor
@@ -433,7 +433,7 @@ internal class NativeTextInputView
     ): UITextPosition {
         val fallback = TextInputPosition(0)
         val textRange = range.toTextRange() ?: return fallback
-        return PlatformTextLayoutDirection(farthestInDirection)?.let { direction ->
+        return TextLayoutDirection(farthestInDirection)?.let { direction ->
             input?.positionWithinRange(textRange, direction)?.let {
                 TextInputPosition(it)
             }

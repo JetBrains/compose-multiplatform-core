@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -48,9 +48,9 @@ import kotlinx.coroutines.Job
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
-internal class UIKitComposeSceneLayer(
+internal class IosComposeSceneLayer(
     private val frameChoreographer: FrameChoreographer,
-    private val onClosed: (UIKitComposeSceneLayer) -> Unit,
+    private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
     private val initialLayoutDirection: LayoutDirection,
@@ -84,7 +84,7 @@ internal class UIKitComposeSceneLayer(
             }
         }
 
-    val interactionView = UIKitComposeSceneLayerView(
+    val interactionView = ComposeSceneLayerView(
         ::onDidMoveToWindow,
     )
 
@@ -93,7 +93,7 @@ internal class UIKitComposeSceneLayer(
     private val navigationEventDispatcher: NavigationEventDispatcher
         get() = ownerProvider.navigationEventDispatcherOwner.navigationEventDispatcher
 
-    private val navigationEventInput = UIKitNavigationEventInput(
+    private val navigationEventInput = IosBackNavigationEventInput(
         density = interactionView.density,
         initialLayoutDirection = initialLayoutDirection,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft },

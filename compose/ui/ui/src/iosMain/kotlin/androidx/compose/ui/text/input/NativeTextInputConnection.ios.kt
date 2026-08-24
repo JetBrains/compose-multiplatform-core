@@ -21,9 +21,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
 import androidx.compose.ui.platform.NativeTextEditingDelegate
-import androidx.compose.ui.platform.PlatformTextLayoutDirection
+import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.TextInputSelectionRect
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.platform.toUIColor
 import androidx.compose.ui.scene.ComposeSceneFocusManager
@@ -327,12 +327,12 @@ internal class NativeTextInputConnection(
 
     override fun positionWithinRange(
         range: TextRange,
-        farthestInDirection: PlatformTextLayoutDirection
+        farthestInDirection: TextLayoutDirection
     ): Int? {
         if (isIncorrect(range)) return null
         return when (farthestInDirection) {
-            PlatformTextLayoutDirection.Up -> range.start
-            PlatformTextLayoutDirection.Down -> range.end
+            TextLayoutDirection.Up -> range.start
+            TextLayoutDirection.Down -> range.end
             else -> {
                 val layout = textLayoutResult ?: return null
                 val startLine = layout.getLineForOffset(range.start)
@@ -349,9 +349,9 @@ internal class NativeTextInputConnection(
                 }
 
                 when (farthestInDirection) {
-                    PlatformTextLayoutDirection.Left ->
+                    TextLayoutDirection.Left ->
                         candidateOffsets.minByOrNull { layout.getHorizontalPosition(it, true) }
-                    PlatformTextLayoutDirection.Right ->
+                    TextLayoutDirection.Right ->
                         candidateOffsets.maxByOrNull { layout.getHorizontalPosition(it, true) }
                     else -> null
                 }
@@ -370,7 +370,7 @@ internal class NativeTextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     ) {
         textInputView.updateMenuActions(
             copy,

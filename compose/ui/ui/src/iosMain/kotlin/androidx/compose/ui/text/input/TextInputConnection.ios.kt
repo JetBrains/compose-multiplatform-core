@@ -26,7 +26,7 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
@@ -150,13 +150,13 @@ internal abstract class TextInputConnection(
         paste: (() -> Unit)?,
         cut: (() -> Unit)?,
         selectAll: (() -> Unit)?,
-        customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+        customActions: List<NativeTextInputContextMenuCustomAction>?
     )
 
     /**
      * Workaround to prevent IME action from being called multiple times with hardware keyboards.
      * When the hardware return key is held down, iOS sends multiple newline characters to the application,
-     * which makes UIKitTextInputService call the current IME action multiple times without an additional
+     * which makes TextInputService call the current IME action multiple times without an additional
      * debouncing logic.
      *
      * @see _tempHardwareReturnKeyPressed is set to true when the return key is pressed with a

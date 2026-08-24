@@ -19,7 +19,7 @@ package androidx.compose.ui.scene
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.animation.withAnimationProgress
-import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
@@ -164,7 +164,7 @@ internal class ComposeHostingViewController(
      * throughout the animation cycle. See [ComposeContainerView.animateSizeTransition].
      * - The animation phase consists of changing scene and window sizes frame by frame.
      * See [ComposeSceneMediator.prepareAndGetSizeTransitionAnimation] and
-     * [PlatformWindowContext.prepareAndGetSizeTransitionAnimation].
+     * [WindowContext.prepareAndGetSizeTransitionAnimation].
      *
      * Known issue: Because per-frame updates between UIKit and Compose are not synchronised,
      * native views can be misaligned with Compose content during animation.

@@ -25,14 +25,14 @@ import platform.UIKit.didMoveToParentViewController
 import platform.UIKit.removeFromParentViewController
 import platform.UIKit.willMoveToParentViewController
 
-internal class UIKitInteropViewControllerHolder<T : UIViewController>(
+internal class IosInteropViewControllerHolder<T : UIViewController>(
     factory: () -> T,
     interopContainer: InteropContainer,
     private val parentViewController: UIViewController,
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
     compositionContext: CompositionContext,
-) : UIKitInteropElementHolder<T>(
+) : IosInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,
