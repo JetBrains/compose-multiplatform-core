@@ -37,7 +37,7 @@ internal sealed interface MetalRedrawer {
     fun dispose()
 }
 
-internal inline fun MetalRedrawer.renderOrPerformPendingInteropViewUpdates(
+internal inline fun MetalRedrawer.onDraw(
     needsSynchronousDraw: Boolean,
     needsComposeSceneDraw: Boolean,
     retrievePendingViewUpdatesInteropTransaction: () -> InteropSyncTransaction,
