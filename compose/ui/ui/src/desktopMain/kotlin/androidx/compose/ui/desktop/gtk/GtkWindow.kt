@@ -231,8 +231,8 @@ class GtkWindow private constructor(
         onNativeWindowAsync {
             setMinSize(
                 LogicalSize(
-                    minSize.width.takeOrElse { this@GtkWindow.minSize.width }.value.toInt(),
-                    minSize.height.takeOrElse { this@GtkWindow.minSize.height }.value.toInt(),
+                    minSize.width.takeOrElse { this@GtkWindow.minSize.width }.roundToLogicalPixelsInt(),
+                    minSize.height.takeOrElse { this@GtkWindow.minSize.height }.roundToLogicalPixelsInt(),
                 ),
             )
         }
@@ -621,16 +621,16 @@ class GtkWindow private constructor(
                         else -> WindowPlacement.Floating
                     }
                     customTitleBarInsets = if (
-                        event.insetStart.width == 0 && event.insetEnd.width == 0
+                        event.insetStart.width.rawLogical == 0 && event.insetEnd.width.rawLogical == 0
                     ) {
                         null
                     } else {
-                        event.insetStart.width.dp to event.insetEnd.width.dp
+                        event.insetStart.width.toDp() to event.insetEnd.width.toDp()
                     }
                     decoration = when (val nativeDecoration = event.decorationMode) {
                         WindowDecorationMode.Server -> WindowDecoration.Decorated
                         is WindowDecorationMode.CustomTitlebar ->
-                            WindowDecoration.CustomTitleBar(nativeDecoration.height.dp)
+                            WindowDecoration.CustomTitleBar(nativeDecoration.height.toDp())
                     }
                     composeScene.size = contentSizeInPx()
                 }
@@ -640,7 +640,7 @@ class GtkWindow private constructor(
 
             is Event.WindowScaleChanged -> {
                 composeScene.withFrameTransaction {
-                    density = Density(event.newScale.toFloat())
+                    density = Density(event.newScale.rawValue.toFloat())
                     composeScene.density = density
                 }
                 EventHandlerResult.Stop
@@ -747,8 +747,6 @@ class GtkWindow private constructor(
                 EventHandlerResult.Stop
             }
 
-            is Event.DragAndDropFeedbackFinished -> EventHandlerResult.Stop
-
             is Event.WindowClosed -> {
                 if (!isDisposed) {
                     // When dispose() was called first, it already ran this cleanup; skip it here.
@@ -851,7 +849,7 @@ class GtkWindow private constructor(
                     actions = supportedActions.toGtkActions(),
                     dragIconParams = DragIconParams(
                         renderingMode = RenderingMode.Auto,
-                        size = decorationSize.toLogicalSize(density),
+                        size = decorationSize.roundToLogicalSize(density),
                     ),
                 ),
             )
@@ -873,8 +871,8 @@ class GtkWindow private constructor(
     private fun draw(event: Event.WindowDraw) {
         val now = System.nanoTime()
         BackendRenderTarget.makeGL(
-            width = event.size.width,
-            height = event.size.height,
+            width = event.size.width.rawPhysical,
+            height = event.size.height.rawPhysical,
             sampleCnt = 1,
             stencilBits = 0,
             fbId = event.openGlDrawData.framebuffer,
@@ -988,10 +986,10 @@ class GtkWindow private constructor(
                     WindowParams(
                         windowId = nativeWindowId,
                         title = "",
-                        size = LogicalSize(800, 600),
+                        size = LogicalSize.makeWH(800, 600),
                         minSize = null,
                         decorationMode = WindowDecorationMode.CustomTitlebar(
-                            DefaultCustomTitleBarHeightForAir.value.toInt(),
+                            DefaultCustomTitleBarHeightForAir.roundToLogicalPixelsInt(),
                         ),
                         renderingMode = RenderingMode.Auto,
                     ),
@@ -1032,8 +1030,8 @@ class GtkWindow private constructor(
             )
             DirectContext.makeGLWithInterface(openGlInterface).use { directContext ->
                 BackendRenderTarget.makeGL(
-                    width = event.size.width,
-                    height = event.size.height,
+                    width = event.size.width.rawPhysical,
+                    height = event.size.height.rawPhysical,
                     sampleCnt = 1,
                     stencilBits = 0,
                     fbId = event.openGlDrawData.framebuffer,
@@ -1055,8 +1053,8 @@ class GtkWindow private constructor(
                                 image.height.toFloat(),
                             ),
                             org.jetbrains.skia.Rect.makeWH(
-                                event.size.width.toFloat(),
-                                event.size.height.toFloat(),
+                                event.size.width.rawPhysical.toFloat(),
+                                event.size.height.rawPhysical.toFloat(),
                             ),
                         )
                         surface.flushAndSubmit()
@@ -1090,4 +1088,3 @@ internal fun mapCommonDialogParams(
         acceptLabel = prompt.takeIf { it.isNotBlank() },
         currentFolder = directoryPath?.toString(),
     )
-

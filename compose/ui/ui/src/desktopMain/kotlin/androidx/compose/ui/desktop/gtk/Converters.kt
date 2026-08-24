@@ -21,55 +21,57 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import kotlin.math.roundToInt
 import org.jetbrains.desktop.gtk.DragAndDropAction
+import org.jetbrains.desktop.gtk.LogicalPixels
+import org.jetbrains.desktop.gtk.LogicalPixelsInt
 import org.jetbrains.desktop.gtk.LogicalPoint
 import org.jetbrains.desktop.gtk.LogicalRect
 import org.jetbrains.desktop.gtk.LogicalSize
 
-internal fun LogicalSize.roundToIntSize(density: Density): IntSize {
-    return with(density) {
-        IntSize(width.dp.roundToPx(), height.dp.roundToPx())
-    }
+internal fun LogicalPixels.toDp(): Dp {
+    return rawLogical.dp
+}
+
+internal fun LogicalPixelsInt.toDp(): Dp {
+    return rawLogical.toFloat().dp
 }
 
 internal fun LogicalSize.toDpSize(): DpSize {
-    return DpSize(width.dp, height.dp)
+    return DpSize(width.toDp(), height.toDp())
 }
 
 internal fun LogicalPoint.toDpOffset(): DpOffset {
-    return DpOffset(x.dp, y.dp)
+    return DpOffset(x.toDp(), y.toDp())
 }
 
 internal fun DpOffset.toPxOffset(density: Density): Offset = with(density) {
     Offset(x.toPx(), y.toPx())
 }
 
-internal fun Size.toLogicalSize(density: Density): LogicalSize {
+internal fun Dp.roundToLogicalPixelsInt(): LogicalPixelsInt {
+    return LogicalPixelsInt(value.roundToInt())
+}
+
+internal fun Size.roundToLogicalSize(density: Density): LogicalSize {
     return with(density) {
-        LogicalSize(width.toDp().value.roundToInt(), height.toDp().value.roundToInt())
+        LogicalSize(width.toDp().roundToLogicalPixelsInt(), height.toDp().roundToLogicalPixelsInt())
     }
 }
 
-internal operator fun LogicalPoint.plus(other: LogicalPoint): LogicalPoint =
-    LogicalPoint(x + other.x, y + other.y)
-
-internal operator fun LogicalPoint.minus(other: LogicalPoint): LogicalPoint =
-    LogicalPoint(x - other.x, y - other.y)
-
-internal fun DpRect.toLogicalRect(): LogicalRect {
+internal fun DpRect.roundToLogicalRect(): LogicalRect {
     return LogicalRect(
-        x = left.value.roundToInt(),
-        y = top.value.roundToInt(),
-        width = width.value.roundToInt(),
-        height = height.value.roundToInt(),
+        x = left.roundToLogicalPixelsInt(),
+        y = top.roundToLogicalPixelsInt(),
+        width = width.roundToLogicalPixelsInt(),
+        height = height.roundToLogicalPixelsInt(),
     )
 }
 

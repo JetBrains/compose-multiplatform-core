@@ -252,9 +252,9 @@ internal class InputStateTracker(
                         position = position,
                         buttons = pointerButtons,
                         scrollDelta = computeLinuxScrollDelta(
-                            horizontalDelta = event.horizontalScroll.delta,
+                            horizontalDelta = event.horizontalScroll.delta.rawLogical,
                             horizontalWheelValue120 = event.horizontalScroll.wheelValue120,
-                            verticalDelta = event.verticalScroll.delta,
+                            verticalDelta = event.verticalScroll.delta.rawLogical,
                             verticalWheelValue120 = event.verticalScroll.wheelValue120,
                             shiftPressed = keyboardModifiers.isShiftPressed,
                         ).toPxOffset(density),

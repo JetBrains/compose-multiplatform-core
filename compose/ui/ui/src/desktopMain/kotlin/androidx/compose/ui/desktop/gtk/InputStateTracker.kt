@@ -216,8 +216,8 @@ internal class InputStateTracker(
                     PointerEventType.Scroll,
                     uptime = uptime,
                     scrollDelta = computeGtkScrollDelta(
-                        scrollingDeltaX = event.scrollingDeltaX,
-                        scrollingDeltaY = event.scrollingDeltaY,
+                        scrollingDeltaX = event.scrollingDeltaX.rawLogical.toFloat(),
+                        scrollingDeltaY = event.scrollingDeltaY.rawLogical.toFloat(),
                         isSmoothScroll = event.isSmoothScroll,
                         shiftPressed = keyboardModifiers.isShiftPressed,
                     ).toPxOffset(density),

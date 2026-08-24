@@ -21,6 +21,91 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+@ExperimentalComposeUiApi
+@Immutable
+class WindowFrameSide(
+    val padding: Dp,
+    val resizerThickness: Dp,
+    val tiled: Boolean,
+) {
+    constructor(padding: Dp, resizerThickness: Dp) : this(padding, resizerThickness, tiled = false)
+
+    fun isEmpty(): Boolean {
+        return padding == 0.dp && resizerThickness == 0.dp
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is WindowFrameSide) return false
+
+        if (tiled != other.tiled) return false
+        if (padding != other.padding) return false
+        if (resizerThickness != other.resizerThickness) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = tiled.hashCode()
+        result = 31 * result + padding.hashCode()
+        result = 31 * result + resizerThickness.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "WindowFrameSide(padding=$padding, resizerThickness=$resizerThickness, tiled=$tiled)"
+    }
+}
+
+@ExperimentalComposeUiApi
+@Immutable
+class WindowFrame(
+    val left: WindowFrameSide,
+    val top: WindowFrameSide,
+    val right: WindowFrameSide,
+    val bottom: WindowFrameSide,
+) {
+    companion object {
+        fun default(): WindowFrame {
+            val frameSide = WindowFrameSide(padding = 24.dp, resizerThickness = 12.dp)
+            return WindowFrame(left = frameSide, top = frameSide, right = frameSide, bottom = frameSide)
+        }
+    }
+
+    fun isEmpty(): Boolean {
+        return left.isEmpty() && top.isEmpty() && right.isEmpty() && bottom.isEmpty()
+    }
+
+    fun isTiled(): Boolean {
+        return left.tiled || top.tiled || right.tiled || bottom.tiled
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is WindowFrame) return false
+
+        if (left != other.left) return false
+        if (top != other.top) return false
+        if (right != other.right) return false
+        if (bottom != other.bottom) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = left.hashCode()
+        result = 31 * result + top.hashCode()
+        result = 31 * result + right.hashCode()
+        result = 31 * result + bottom.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "WindowFrame(left=$left, top=$top, right=$right, bottom=$bottom)"
+    }
+}
+
+
 /**
  * Defines the options for window decoration.
  */
@@ -49,19 +134,18 @@ sealed interface WindowDecoration {
      * If it is resizable, the given thickness will be used for the edge resizers.
      */
     @Immutable
-    class Undecorated(val resizerThickness: Dp = WindowDecorationDefaults.ResizerThickness) :
-        WindowDecoration {
+    class Undecorated(val frame: WindowFrame = WindowFrame.default()) : WindowDecoration {
         override val isDecorated: Boolean = false
         override val leftTitleBarElements: List<TitleBarElement> = emptyList()
         override val rightTitleBarElements: List<TitleBarElement> = emptyList()
 
         override fun equals(other: Any?): Boolean {
             if (other !is Undecorated) return false
-            return other.resizerThickness == resizerThickness
+            return other.frame == frame
         }
 
         override fun hashCode(): Int {
-            return resizerThickness.hashCode()
+            return frame.hashCode()
         }
     }
 
@@ -127,7 +211,7 @@ object WindowDecorationDefaults {
  */
 internal val WindowDecoration.resizerThickness: Dp
     get() = when {
-        this is WindowDecoration.Undecorated -> resizerThickness
+        this is WindowDecoration.Undecorated -> frame.right.resizerThickness
         else -> WindowDecorationDefaults.ResizerThickness
     }
 
@@ -136,7 +220,7 @@ internal val WindowDecoration.resizerThickness: Dp
  * [WindowDecoration.Undecorated] with default resizer thickness, if `true`.
  */
 internal fun windowDecorationFromFlag(undecorated: Boolean): WindowDecoration =
-    if (undecorated) WindowDecoration.Undecorated() else WindowDecoration.Decorated
+    if (undecorated) WindowDecoration.Undecorated(WindowFrame.default()) else WindowDecoration.Decorated
 
 internal expect fun windowDecorationCustomTitleBarHeight(): Dp
 

@@ -179,7 +179,7 @@ private fun createGtkTextInputContext(context: LinuxTextInputContext): TextInput
             }
         },
         contentPurpose = imeOptions.keyboardType.toTextInputContentPurpose(),
-        cursorRectangle = context.cursorRectangle.toLogicalRect(),
+        cursorRectangle = context.cursorRectangle.roundToLogicalRect(),
     )
 }
 

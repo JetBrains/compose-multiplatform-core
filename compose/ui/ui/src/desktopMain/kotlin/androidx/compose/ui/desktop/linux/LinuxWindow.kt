@@ -3,7 +3,6 @@
 
 package androidx.compose.ui.desktop.linux
 
-import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -17,15 +16,16 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
+import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.ClipboardItemsEntry
-import androidx.compose.ui.desktop.LocalTextInputSessionOwner
 import androidx.compose.ui.desktop.InteractiveMoveInitiator
 import androidx.compose.ui.desktop.InteractiveResizeInitiator
 import androidx.compose.ui.desktop.KdtDragAndDropManager
 import androidx.compose.ui.desktop.KdtDragAndDropTransferable
+import androidx.compose.ui.desktop.KdtMainDispatcher
 import androidx.compose.ui.desktop.LightweightWindowId
+import androidx.compose.ui.desktop.LocalTextInputSessionOwner
 import androidx.compose.ui.desktop.LocalWindow
-import androidx.compose.ui.desktop.ApplicationSession
 import androidx.compose.ui.desktop.Window
 import androidx.compose.ui.desktop.WindowCloseRequestReason
 import androidx.compose.ui.desktop.WindowData
@@ -45,28 +45,18 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.InputModeManagerImpl
-import androidx.compose.ui.input.key.InternalKeyEvent
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.DefaultTextToolbar
-import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalPointerIconService
-import androidx.compose.ui.platform.LocalTextInputContext
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformTextInputSession
-import androidx.compose.ui.platform.PlatformTextInputInterceptor
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -75,9 +65,6 @@ import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.scene.withFrameTransaction
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.TestDataMode
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextInputContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -86,12 +73,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.WindowFrame
 import androidx.compose.ui.window.WindowPlacement
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.enableSavedStateHandles
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -126,7 +113,8 @@ import org.jetbrains.skia.SurfaceColorFormat
 import org.jetbrains.skia.SurfaceOrigin
 import org.jetbrains.skia.makeGLWithInterface
 
-class LinuxWindow private constructor(
+class LinuxWindow
+private constructor(
     private val application: LinuxApplication,
     internal val session: ApplicationSession,
     private val onCloseRequest: (WindowCloseRequestReason) -> Unit,
@@ -134,14 +122,11 @@ class LinuxWindow private constructor(
     override val nativeWindow: org.jetbrains.desktop.linux.Window,
     override val id: LightweightWindowId,
 ) : InteractiveMoveInitiator, InteractiveResizeInitiator {
-    @Volatile
-    private var isDisposed = false
+    @Volatile private var isDisposed = false
 
-    @Volatile
-    internal var isMarkedForReuse = false
+    @Volatile internal var isMarkedForReuse = false
 
-    @Volatile
-    internal var isFrameRequested = false
+    @Volatile internal var isFrameRequested = false
 
     private val fileDialogResponses =
         ConcurrentHashMap<RequestId, CancellableContinuation<List<Path>?>>()
@@ -149,25 +134,27 @@ class LinuxWindow private constructor(
     private var titleField by mutableStateOf("")
     private var overriddenSystemTheme by mutableStateOf<SystemTheme?>(null)
     private var windowCapabilities by mutableStateOf<WindowCapabilities?>(null)
+    private var clientSideDecorationFrame: WindowFrame? = null
 
     /**
-     * Mark-in-place reuse (Noria's Wayland model): builds a sibling window around the SAME
-     * native window and the SAME id — the native id is monotonic and must never be re-fed to
-     * a [WindowParams] (KDT errors on duplicate ids), so the native window has to survive.
-     * The shared [linuxTextInputSessionOwner] keeps seat-level IME continuity across the swap.
+     * Mark-in-place reuse (Noria's Wayland model): builds a sibling window around the SAME native
+     * window and the SAME id — the native id is monotonic and must never be re-fed to a
+     * [WindowParams] (KDT errors on duplicate ids), so the native window has to survive. The shared
+     * [linuxTextInputSessionOwner] keeps seat-level IME continuity across the swap.
      */
     internal fun reuse(
         session: ApplicationSession,
         onCloseRequest: (WindowCloseRequestReason) -> Unit,
     ): LinuxWindow {
-        val newWindow = LinuxWindow(
-            application,
-            session,
-            onCloseRequest,
-            linuxTextInputSessionOwner,
-            nativeWindow,
-            id,
-        )
+        val newWindow =
+            LinuxWindow(
+                application,
+                session,
+                onCloseRequest,
+                linuxTextInputSessionOwner,
+                nativeWindow,
+                id,
+            )
 
         newWindow.size = size
         newWindow.contentSize = contentSize
@@ -177,6 +164,7 @@ class LinuxWindow private constructor(
         newWindow.decoration = decoration
         newWindow.density = density
         newWindow.screen = screen
+        newWindow.clientSideDecorationFrame = clientSideDecorationFrame
         // The compositor won't re-send WindowConfigure for the surviving native window, so the
         // sibling's first frame must be armed here or the AIR-5322 draw gate would hold it
         // until some unrelated invalidation.
@@ -227,9 +215,13 @@ class LinuxWindow private constructor(
             onNativeWindowAsync {
                 setMinSize(
                     LogicalSize(
-                        minSize.width.takeOrElse { this@LinuxWindow.minSize.width }.value.roundToInt(),
-                        minSize.height.takeOrElse { this@LinuxWindow.minSize.height }.value.roundToInt(),
-                    ),
+                        minSize.width
+                            .takeOrElse { this@LinuxWindow.minSize.width }
+                            .roundToLogicalPixelsInt(),
+                        minSize.height
+                            .takeOrElse { this@LinuxWindow.minSize.height }
+                            .roundToLogicalPixelsInt(),
+                    )
                 )
             }
         }
@@ -244,9 +236,13 @@ class LinuxWindow private constructor(
         onNativeWindowAsync {
             setMaxSize(
                 LogicalSize(
-                    maxSize.width.takeOrElse { this@LinuxWindow.maxSize.width }.value.roundToInt(),
-                    maxSize.height.takeOrElse { this@LinuxWindow.maxSize.height }.value.roundToInt(),
-                ),
+                    maxSize.width
+                        .takeOrElse { this@LinuxWindow.maxSize.width }
+                        .roundToLogicalPixelsInt(),
+                    maxSize.height
+                        .takeOrElse { this@LinuxWindow.maxSize.height }
+                        .roundToLogicalPixelsInt(),
+                )
             )
         }
     }
@@ -275,25 +271,24 @@ class LinuxWindow private constructor(
     }
 
     @ExperimentalComposeUiApi
-    override var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Undecorated())
+    override var decoration: WindowDecoration by mutableStateOf(WindowDecoration.Decorated)
         private set
 
     @ExperimentalComposeUiApi
     override fun requestDecoration(vararg decorations: WindowDecoration) {
         onNativeWindowAsync {
-            for (decoration in decorations) {
-                when (decoration) {
-                    WindowDecoration.Decorated -> {
-                        requestDecorationMode(WindowDecorationMode.Server)
-                        return@onNativeWindowAsync
+            decorations
+                .firstNotNullOfOrNull { (it as? WindowDecoration.Undecorated)?.frame }
+                ?.let { frame ->
+                    if (clientSideDecorationFrame != frame) {
+                        clientSideDecorationFrame = frame
+                        setClientSideDecorationFrame(frame.toLinuxWindowFrame())
                     }
-                    is WindowDecoration.Undecorated -> {
-                        requestDecorationMode(WindowDecorationMode.Client)
-                        return@onNativeWindowAsync
-                    }
-                    is WindowDecoration.CustomTitleBar -> continue
                 }
-            }
+
+            decorations
+                .firstOrNull { it !is WindowDecoration.CustomTitleBar }
+                ?.let { setPreferClientSideDecoration(!it.isDecorated) }
         }
     }
 
@@ -340,9 +335,7 @@ class LinuxWindow private constructor(
         if (!isDisposed) {
             // Runs on the main/event-loop thread by the @MainThread contract (see the Window
             // interface); withFrameTransaction joins the frame slice like the system-close path.
-            composeScene.withFrameTransaction {
-                onCloseRequest(reason)
-            }
+            composeScene.withFrameTransaction { onCloseRequest(reason) }
         }
     }
 
@@ -358,109 +351,118 @@ class LinuxWindow private constructor(
         performTitleBarAction(application.titleBarRightClickAction, pointerEvent)
     }
 
-    override var screen: LinuxScreen by mutableStateOf(
-        application.screens.values.firstOrNull()
-            ?: LinuxScreen(application.nativeApplication.allScreens().screens.first()),
-    )
+    override var screen: LinuxScreen by
+        mutableStateOf(
+            application.screens.values.firstOrNull()
+                ?: LinuxScreen(application.nativeApplication.allScreens().screens.first())
+        )
         private set
 
     override var density: Density by mutableStateOf(Density(1.0f))
         private set
 
     private val pointerIconService = LinuxPointerIconService(application, nativeWindow)
-    private val inputModeManager = InputModeManagerImpl(InputMode.Touch) {
-        pointerIconService.setHiddenUntilPointerMoves(it == InputMode.Keyboard)
-        true
-    }
-    internal val dragAndDropManager: LinuxDragAndDropManager = LinuxDragAndDropManager(
-        rootDragAndDropNode = { composeScene.rootDragAndDropNode },
-        density = { density },
-        callbackInterceptor = object : CallbackInterceptor {
-            override fun <T> execute(f: () -> T): T {
-                return composeScene.withFrameTransaction {
-                    f()
-                }
-            }
+    private val inputModeManager =
+        InputModeManagerImpl(InputMode.Touch) {
+            pointerIconService.setHiddenUntilPointerMoves(it == InputMode.Keyboard)
+            true
         }
-    )
+    internal val dragAndDropManager: LinuxDragAndDropManager =
+        LinuxDragAndDropManager(
+            rootDragAndDropNode = { composeScene.rootDragAndDropNode },
+            density = { density },
+            callbackInterceptor =
+                object : CallbackInterceptor {
+                    override fun <T> execute(f: () -> T): T {
+                        return composeScene.withFrameTransaction { f() }
+                    }
+                },
+        )
 
     private var layoutDirection: LayoutDirection by mutableStateOf(LayoutDirection.Ltr)
 
-    val viewConfiguration: ViewConfiguration = object : ViewConfiguration {
-        override val longPressTimeoutMillis: Long = 500
-        override val doubleTapTimeoutMillis: Long
-            get() = application.doubleClickIntervalMillis
-        override val doubleTapMinTimeMillis: Long = 40
-        override val touchSlop: Float
-            get() = with(density) { 18.dp.toPx() }
-    }
+    val viewConfiguration: ViewConfiguration =
+        object : ViewConfiguration {
+            override val longPressTimeoutMillis: Long = 500
+            override val doubleTapTimeoutMillis: Long
+                get() = application.doubleClickIntervalMillis
 
-    val windowInfo: WindowInfo = object : WindowInfo {
-        override val isWindowFocused: Boolean
-            get() = isFocused
+            override val doubleTapMinTimeMillis: Long = 40
+            override val touchSlop: Float
+                get() = with(density) { 18.dp.toPx() }
+        }
 
-        override val keyboardModifiers: PointerKeyboardModifiers
-            get() = inputStateTracker.keyboardModifiers
+    val windowInfo: WindowInfo =
+        object : WindowInfo {
+            override val isWindowFocused: Boolean
+                get() = isFocused
 
-        @ExperimentalComposeUiApi
-        override val containerSize: IntSize
-            get() = contentSizeInPx()
-    }
+            override val keyboardModifiers: PointerKeyboardModifiers
+                get() = inputStateTracker.keyboardModifiers
 
-    private fun contentSizeInPx(): IntSize = density.run {
-        IntSize(contentSize.width.roundToPx(), contentSize.height.roundToPx())
-    }
+            @ExperimentalComposeUiApi
+            override val containerSize: IntSize
+                get() = contentSizeInPx()
+        }
+
+    private fun contentSizeInPx(): IntSize =
+        density.run { IntSize(contentSize.width.roundToPx(), contentSize.height.roundToPx()) }
 
     // ----- Compose scene wiring -----
 
-    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner().apply {
-        enableSavedStateHandles()
-        setLifecycleState(Lifecycle.State.RESUMED)
-    }
+    private val architectureComponentsOwner =
+        DefaultArchitectureComponentsOwner().apply {
+            enableSavedStateHandles()
+            setLifecycleState(Lifecycle.State.RESUMED)
+        }
 
     private val semanticsOwners = mutableStateSetOf<SemanticsOwner>()
 
-    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty(),
-        PlatformContext.SemanticsOwnerListener {
-        override val windowInfo: WindowInfo
-            get() = this@LinuxWindow.windowInfo
-        override val viewConfiguration: ViewConfiguration
-            get() = this@LinuxWindow.viewConfiguration
-        override val inputModeManager: InputModeManager
-            get() = this@LinuxWindow.inputModeManager
-        override val architectureComponentsOwner = this@LinuxWindow.architectureComponentsOwner
-        override val textToolbar = DefaultTextToolbar()
-        override val dragAndDropManager: PlatformDragAndDropManager =
-            KdtDragAndDropManager(this@LinuxWindow)
+    private val platformContext: PlatformContext =
+        object :
+            PlatformContext by PlatformContext.Empty(), PlatformContext.SemanticsOwnerListener {
+            override val windowInfo: WindowInfo
+                get() = this@LinuxWindow.windowInfo
 
-        override fun textInputSessionOwner() = linuxTextInputSessionOwner
+            override val viewConfiguration: ViewConfiguration
+                get() = this@LinuxWindow.viewConfiguration
 
-        override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
-            get() = if (TestDataMode.isEnabled) this else null
+            override val inputModeManager: InputModeManager
+                get() = this@LinuxWindow.inputModeManager
 
-        override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
-            semanticsOwners.add(semanticsOwner)
+            override val architectureComponentsOwner = this@LinuxWindow.architectureComponentsOwner
+            override val textToolbar = DefaultTextToolbar()
+            override val dragAndDropManager: PlatformDragAndDropManager =
+                KdtDragAndDropManager(this@LinuxWindow)
+
+            override fun textInputSessionOwner() = linuxTextInputSessionOwner
+
+            override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
+                get() = if (TestDataMode.isEnabled) this else null
+
+            override fun onSemanticsOwnerAppended(semanticsOwner: SemanticsOwner) {
+                semanticsOwners.add(semanticsOwner)
+            }
+
+            override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
+                semanticsOwners.remove(semanticsOwner)
+            }
+
+            override fun onSemanticsChange(semanticsOwner: SemanticsOwner) = Unit
+
+            override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
         }
 
-        override fun onSemanticsOwnerRemoved(semanticsOwner: SemanticsOwner) {
-            semanticsOwners.remove(semanticsOwner)
-        }
-
-        override fun onSemanticsChange(semanticsOwner: SemanticsOwner) = Unit
-
-        override fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int) = Unit
-    }
-
-    private val composeScene: ComposeScene = CanvasLayersComposeScene(
-        density = density,
-        layoutDirection = layoutDirection,
-        size = contentSizeInPx(),
-        coroutineContext = session.coroutineScope.coroutineContext +
-            KdtMainDispatcher.INSTANCE,
-        platformContext = platformContext,
-        dataSourceContext = session.dataSourceContext,
-        invalidate = { isFrameRequested = true },
-    )
+    private val composeScene: ComposeScene =
+        CanvasLayersComposeScene(
+            density = density,
+            layoutDirection = layoutDirection,
+            size = contentSizeInPx(),
+            coroutineContext = session.coroutineScope.coroutineContext + KdtMainDispatcher.INSTANCE,
+            platformContext = platformContext,
+            dataSourceContext = session.dataSourceContext,
+            invalidate = { isFrameRequested = true },
+        )
 
     // The registration init block lives at the BOTTOM of the class; see there.
 
@@ -482,13 +484,15 @@ class LinuxWindow private constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): Path? = openFileDialog(
-        mapCommonDialogParams(title, prompt, message, directoryPath),
-        FileDialog.OpenDialogParams(
-            selectDirectories = canChooseDirectories && !canChooseFiles,
-            allowsMultipleSelections = false,
-        ),
-    )?.firstOrNull()
+    ): Path? =
+        openFileDialog(
+                mapCommonDialogParams(title, prompt, message, directoryPath),
+                FileDialog.OpenDialogParams(
+                    selectDirectories = canChooseDirectories && !canChooseFiles,
+                    allowsMultipleSelections = false,
+                ),
+            )
+            ?.firstOrNull()
 
     override suspend fun showOpenMultipleDialog(
         title: String,
@@ -503,13 +507,14 @@ class LinuxWindow private constructor(
         canChooseFiles: Boolean,
         canChooseDirectories: Boolean,
         resolvesAliases: Boolean,
-    ): List<Path> = openFileDialog(
-        mapCommonDialogParams(title, prompt, message, directoryPath),
-        FileDialog.OpenDialogParams(
-            selectDirectories = canChooseDirectories && !canChooseFiles,
-            allowsMultipleSelections = true,
-        ),
-    ) ?: emptyList()
+    ): List<Path> =
+        openFileDialog(
+            mapCommonDialogParams(title, prompt, message, directoryPath),
+            FileDialog.OpenDialogParams(
+                selectDirectories = canChooseDirectories && !canChooseFiles,
+                allowsMultipleSelections = true,
+            ),
+        ) ?: emptyList()
 
     override suspend fun showSaveDialog(
         title: String,
@@ -522,10 +527,12 @@ class LinuxWindow private constructor(
         canSelectHiddenExtensions: Boolean,
         showsHiddenFiles: Boolean,
         isExtensionHidden: Boolean,
-    ): Path? = saveFileDialog(
-        mapCommonDialogParams(title, prompt, message, directoryPath),
-        FileDialog.SaveDialogParams(nameFieldStringValue = nameFieldStringValue),
-    )?.firstOrNull()
+    ): Path? =
+        saveFileDialog(
+                mapCommonDialogParams(title, prompt, message, directoryPath),
+                FileDialog.SaveDialogParams(nameFieldStringValue = nameFieldStringValue),
+            )
+            ?.firstOrNull()
 
     /**
      * Suspending core of the open-file dialogs. Issues the native request on the KDT event loop,
@@ -634,39 +641,45 @@ class LinuxWindow private constructor(
         return dragAndDropManager.onQuery(query)
     }
 
+    internal fun handleConfigure(event: Event.WindowConfigure): EventHandlerResult {
+        composeScene.withFrameTransaction {
+            size = event.size.toDpSize()
+            contentSize = size
+            isFocused = event.active
+            placement =
+                when {
+                    event.fullscreen -> WindowPlacement.Fullscreen
+                    event.maximized -> WindowPlacement.Maximized
+                    else -> WindowPlacement.Floating
+                }
+            windowCapabilities = event.capabilities
+            decoration =
+                when (val decorationMode = event.decorationMode) {
+                    WindowDecorationMode.Server -> WindowDecoration.Decorated
+                    is WindowDecorationMode.Client ->
+                        WindowDecoration.Undecorated(decorationMode.frame.toWindowFrame())
+                }
+            composeScene.size = contentSizeInPx()
+        }
+        isFrameRequested = true
+        return EventHandlerResult.Stop
+    }
+
     internal fun handleEvent(event: Event): EventHandlerResult {
         // Every branch below that assigns one of this window's observable properties does so inside
         // composeScene.withFrameTransaction. These are snapshot state the composition reads (an
         // application's window model mirrors isFocused, size, placement, ...), and the compositor
-        // delivers these events on the event-loop thread, outside any frame slice. Written bare they
+        // delivers these events on the event-loop thread, outside any frame slice. Written bare
+        // they
         // land in whatever view is current there — under isolation, none — so the frame that
         // publishes them is not the frame that observed them. Branches that only touch plain fields
         // (isFrameRequested, the draw path) stay outside the wrap.
         return when (event) {
-            is Event.WindowConfigure -> {
-                composeScene.withFrameTransaction {
-                    size = event.size.toDpSize()
-                    contentSize = size
-                    isFocused = event.active
-                    placement = when {
-                        event.fullscreen -> WindowPlacement.Fullscreen
-                        event.maximized -> WindowPlacement.Maximized
-                        else -> WindowPlacement.Floating
-                    }
-                    windowCapabilities = event.capabilities
-                    decoration = when (event.decorationMode) {
-                        WindowDecorationMode.Server -> WindowDecoration.Decorated
-                        WindowDecorationMode.Client -> WindowDecoration.Undecorated()
-                    }
-                    composeScene.size = contentSizeInPx()
-                }
-                isFrameRequested = true
-                EventHandlerResult.Stop
-            }
+            is Event.WindowConfigure -> handleConfigure(event)
 
             is Event.WindowScaleChanged -> {
                 composeScene.withFrameTransaction {
-                    density = Density(event.newScale.toFloat())
+                    density = Density(event.newScale.rawScale.toFloat())
                     composeScene.density = density
                 }
                 EventHandlerResult.Stop
@@ -675,8 +688,9 @@ class LinuxWindow private constructor(
             is Event.WindowScreenChange -> {
                 composeScene.withFrameTransaction {
                     screen =
-                        application.screens.values.firstOrNull { it.nativeScreen.screenId == event.newScreenId }
-                            ?: screen
+                        application.screens.values.firstOrNull {
+                            it.nativeScreen.screenId == event.newScreenId
+                        } ?: screen
                 }
                 EventHandlerResult.Stop
             }
@@ -703,8 +717,7 @@ class LinuxWindow private constructor(
             is Event.ScrollWheel,
             is Event.KeyDown,
             is Event.KeyUp,
-            is Event.ModifiersChanged,
-                -> inputStateTracker.updateStateAndSendEvents(event, density)
+            is Event.ModifiersChanged -> inputStateTracker.updateStateAndSendEvents(event, density)
 
             is Event.WindowDraw -> {
                 // AIR-5322: WindowDraw arrives every compositor frame on Wayland, so render
@@ -728,7 +741,8 @@ class LinuxWindow private constructor(
             is Event.FileChooserResponse -> {
                 // KDT delivers URL-encoded file:// paths; decode them before resuming. An empty
                 // list means the user cancelled — the open/save wrappers interpret that.
-                fileDialogResponses.remove(event.requestId)
+                fileDialogResponses
+                    .remove(event.requestId)
                     ?.resume(event.files.map(::decodeFileChooserPath))
                 EventHandlerResult.Stop
             }
@@ -781,44 +795,49 @@ class LinuxWindow private constructor(
         composeScene.simulateHotReload()
     }
 
-    private val inputStateTracker = InputStateTracker(
-        inputModeManager = inputModeManager,
-        sendPointerInputEvent = { pointerInputEvent ->
-            val pointer = pointerInputEvent.pointers.firstOrNull()
-            if (pointer == null) {
-                PointerEventResult()
-            } else {
-                // Joins the frame slice for the same reason the key dispatch below does, and with
-                // more at stake: a pointer press runs click handlers, and those are where an
-                // application reads and writes its own state.
-                composeScene.withFrameTransaction {
-                    composeScene.sendPointerEvent(
-                        eventType = pointerInputEvent.eventType,
-                        position = pointer.position,
-                        scrollDelta = pointer.scrollDelta,
-                        timeMillis = pointerInputEvent.uptime,
-                        type = pointer.type,
-                        buttons = pointerInputEvent.buttons,
-                        keyboardModifiers = pointerInputEvent.keyboardModifiers,
-                        nativeEvent = pointerInputEvent.nativeEvent,
-                        button = pointerInputEvent.button,
-                    )
+    private val inputStateTracker =
+        InputStateTracker(
+            inputModeManager = inputModeManager,
+            sendPointerInputEvent = { pointerInputEvent ->
+                val pointer = pointerInputEvent.pointers.firstOrNull()
+                if (pointer == null) {
+                    PointerEventResult()
+                } else {
+                    // Joins the frame slice for the same reason the key dispatch below does, and
+                    // with
+                    // more at stake: a pointer press runs click handlers, and those are where an
+                    // application reads and writes its own state.
+                    composeScene.withFrameTransaction {
+                        composeScene.sendPointerEvent(
+                            eventType = pointerInputEvent.eventType,
+                            position = pointer.position,
+                            scrollDelta = pointer.scrollDelta,
+                            timeMillis = pointerInputEvent.uptime,
+                            type = pointer.type,
+                            buttons = pointerInputEvent.buttons,
+                            keyboardModifiers = pointerInputEvent.keyboardModifiers,
+                            nativeEvent = pointerInputEvent.nativeEvent,
+                            button = pointerInputEvent.button,
+                        )
+                    }
                 }
-            }
-        },
-        sendKeyEvent = { keyEvent ->
-            // IME commit is driven by the editor's own bubble key handler
-            // (TextInputSessionOwner.handleEventWithInputSession), so the window must not pre-empt
-            // here: doing so would swallow keys before onPreviewKeyEvent and the focus dispatch.
-            // The dispatch chain joins the current frame slice (as macOS does), so DataSource reads
-            // in key handlers observe the frame's pinned view under isolation.
-            composeScene.withFrameTransaction {
-                onPreviewKeyEvent(keyEvent) ||
-                    composeScene.sendKeyEvent(keyEvent) ||
-                    onKeyEvent(keyEvent)
-            }
-        },
-    )
+            },
+            sendKeyEvent = { keyEvent ->
+                // IME commit is driven by the editor's own bubble key handler
+                // (TextInputSessionOwner.handleEventWithInputSession), so the window must not
+                // pre-empt
+                // here: doing so would swallow keys before onPreviewKeyEvent and the focus
+                // dispatch.
+                // The dispatch chain joins the current frame slice (as macOS does), so DataSource
+                // reads
+                // in key handlers observe the frame's pinned view under isolation.
+                composeScene.withFrameTransaction {
+                    onPreviewKeyEvent(keyEvent) ||
+                        composeScene.sendKeyEvent(keyEvent) ||
+                        onKeyEvent(keyEvent)
+                }
+            },
+        )
 
     internal fun startDragSession(
         offset: Offset,
@@ -831,20 +850,25 @@ class LinuxWindow private constructor(
         val itemsEntry = clipEntry.nativeClipEntry as? ClipboardItemsEntry ?: return
         val mimeTypes = itemsEntry.linuxMimeTypes()
         val supportedActions = transferData.supportedActions.toSet()
-        val dragImageBytes = DragAndDropImage(
-            size = decorationSize,
-            density = density,
-            layoutDirection = layoutDirection,
-            drawDragDecoration = drawDragDecoration,
-        ).encodeToPng()
+        val dragImageBytes =
+            DragAndDropImage(
+                    size = decorationSize,
+                    density = density,
+                    layoutDirection = layoutDirection,
+                    drawDragDecoration = drawDragDecoration,
+                )
+                .encodeToPng()
 
-        application.activeDragSource = LinuxApplication.ActiveDragSource(
-            windowId = id,
-            itemsEntry = itemsEntry,
-            supportedActions = supportedActions,
-            onTransferCompleted = { action -> transferData.onTransferCompleted?.invoke(action) },
-            dragIconPngBytes = dragImageBytes,
-        )
+        application.activeDragSource =
+            LinuxApplication.ActiveDragSource(
+                windowId = id,
+                itemsEntry = itemsEntry,
+                supportedActions = supportedActions,
+                onTransferCompleted = { action ->
+                    transferData.onTransferCompleted?.invoke(action)
+                },
+                dragIconPngBytes = dragImageBytes,
+            )
         onNativeWindowAsync {
             // Native DnD takes over the pointer; the compositor sends MouseExited when the grab
             // starts and the tracker clears the pressed buttons there (AIR-5571) — clearing here
@@ -852,12 +876,16 @@ class LinuxWindow private constructor(
             startDragAndDrop(
                 StartDragAndDropParams(
                     mimeTypes = mimeTypes,
-                    actions = supportedActions.mapNotNull(DragAndDropTransferAction::toLinuxAction).toSet(),
-                    dragIconParams = DragIconParams(
-                        renderingMode = RenderingMode.Software,
-                        size = decorationSize.toLogicalSize(density),
-                    ),
-                ),
+                    actions =
+                        supportedActions
+                            .mapNotNull(DragAndDropTransferAction::toLinuxAction)
+                            .toSet(),
+                    dragIconParams =
+                        DragIconParams(
+                            renderingMode = RenderingMode.Software,
+                            size = decorationSize.roundToLogicalSize(density),
+                        ),
+                )
             )
         }
     }
@@ -880,42 +908,46 @@ class LinuxWindow private constructor(
         val softwareDrawData = event.softwareDrawData
         if (softwareDrawData != null) {
             Surface.makeRasterDirect(
-                imageInfo = ImageInfo.makeN32Premul(
-                    event.size.width,
-                    event.size.height,
-                    ColorSpace.sRGB,
-                ),
-                pixelsPtr = softwareDrawData.canvas,
-                rowBytes = softwareDrawData.stride,
-            ).use { surface ->
-                surface.canvas.clear(Color.TRANSPARENT)
-                composeScene.render(surface.canvas.asComposeCanvas(), now)
-                surface.flushAndSubmit()
-            }
+                    imageInfo =
+                        ImageInfo.makeN32Premul(
+                            event.size.width.rawPhysical,
+                            event.size.height.rawPhysical,
+                            ColorSpace.sRGB,
+                        ),
+                    pixelsPtr = softwareDrawData.canvas,
+                    rowBytes = softwareDrawData.stride,
+                )
+                .use { surface ->
+                    surface.canvas.clear(Color.TRANSPARENT)
+                    composeScene.render(surface.canvas.asComposeCanvas(), now)
+                    surface.flushAndSubmit()
+                }
             return
         }
 
         BackendRenderTarget.makeGL(
-            width = event.size.width,
-            height = event.size.height,
-            sampleCnt = 1,
-            stencilBits = 8,
-            fbId = 0,
-            fbFormat = FramebufferFormat.GR_GL_RGBA8,
-        ).use { renderTarget ->
-            Surface.makeFromBackendRenderTarget(
-                context = directContext,
-                rt = renderTarget,
-                origin = SurfaceOrigin.BOTTOM_LEFT,
-                colorFormat = SurfaceColorFormat.RGBA_8888,
-                colorSpace = ColorSpace.sRGB,
-                surfaceProps = null,
-            )!!.use { surface ->
-                surface.canvas.clear(Color.TRANSPARENT)
-                composeScene.render(surface.canvas.asComposeCanvas(), now)
-                surface.flushAndSubmit()
+                width = event.size.width.rawPhysical,
+                height = event.size.height.rawPhysical,
+                sampleCnt = 1,
+                stencilBits = 8,
+                fbId = 0,
+                fbFormat = FramebufferFormat.GR_GL_RGBA8,
+            )
+            .use { renderTarget ->
+                Surface.makeFromBackendRenderTarget(
+                        context = directContext,
+                        rt = renderTarget,
+                        origin = SurfaceOrigin.BOTTOM_LEFT,
+                        colorFormat = SurfaceColorFormat.RGBA_8888,
+                        colorSpace = ColorSpace.sRGB,
+                        surfaceProps = null,
+                    )!!
+                    .use { surface ->
+                        surface.canvas.clear(Color.TRANSPARENT)
+                        composeScene.render(surface.canvas.asComposeCanvas(), now)
+                        surface.flushAndSubmit()
+                    }
             }
-        }
     }
 
     override fun setContent(
@@ -933,9 +965,11 @@ class LinuxWindow private constructor(
     private fun installSceneContentIfNeeded() {
         if (sceneContentInstalled) return
         sceneContentInstalled = true
-        val windowScope = object : WindowScope {
-            override val window: Window get() = this@LinuxWindow
-        }
+        val windowScope =
+            object : WindowScope {
+                override val window: Window
+                    get() = this@LinuxWindow
+            }
         composeScene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemTheme,
@@ -949,8 +983,10 @@ class LinuxWindow private constructor(
             }
 
             // Refresh hit testing under a stationary pointer after relayout. Queued via the scene's
-            // (non-immediate) dispatcher so new SuspendingPointerInputFilters are already subscribed;
-            // the tracker's generation check cancels stale refreshes as soon as a real event arrives.
+            // (non-immediate) dispatcher so new SuspendingPointerInputFilters are already
+            // subscribed;
+            // the tracker's generation check cancels stale refreshes as soon as a real event
+            // arrives.
             rememberCoroutineScope().launch {
                 inputStateTracker
                     .prepareSyntheticPointerEventAfterRelayoutIfNecessary()
@@ -960,11 +996,21 @@ class LinuxWindow private constructor(
     }
 
     override fun startInteractiveMove(pointerEvent: PointerEvent) {
-        onNativeWindowAsync { startMove() }
+        val eventSerial =
+            when (val platformEvent = pointerEvent.nativeEvent) {
+                is Event.MouseDown -> platformEvent.serial
+                else -> return
+            }
+        onNativeWindowAsync { startMove(eventSerial) }
     }
 
     override fun startInteractiveResize(handle: WindowResizeHandle, pointerEvent: PointerEvent) {
-        onNativeWindowAsync { startResize(handle.toWindowResizeEdge()) }
+        val eventSerial =
+            when (val platformEvent = pointerEvent.nativeEvent) {
+                is Event.MouseDown -> platformEvent.serial
+                else -> return
+            }
+        onNativeWindowAsync { startResize(eventSerial, handle.toWindowResizeEdge()) }
     }
 
     private fun performTitleBarAction(action: DesktopTitlebarAction, pointerEvent: PointerEvent) {
@@ -972,8 +1018,7 @@ class LinuxWindow private constructor(
             DesktopTitlebarAction.ToggleMaximize -> {
                 when (placement) {
                     WindowPlacement.Floating,
-                    WindowPlacement.Fullscreen,
-                        -> requestPlacement(WindowPlacement.Maximized)
+                    WindowPlacement.Fullscreen -> requestPlacement(WindowPlacement.Maximized)
 
                     WindowPlacement.Maximized -> requestPlacement(WindowPlacement.Floating)
                 }
@@ -981,15 +1026,20 @@ class LinuxWindow private constructor(
             DesktopTitlebarAction.Minimize -> requestMinimized(true)
             DesktopTitlebarAction.None -> Unit
             DesktopTitlebarAction.Menu -> {
-                val position = pointerEvent.changes.firstOrNull()?.position ?: Offset.Zero
-                onNativeWindowAsync {
-                    showMenu(position.toLogicalPoint(density))
-                }
+                val (eventSerial, position) =
+                    when (val platformEvent = pointerEvent.nativeEvent) {
+                        is Event.MouseDown ->
+                            Pair(platformEvent.serial, platformEvent.locationInWindow)
+                        else -> return
+                    }
+                onNativeWindowAsync { showMenu(eventSerial, position) }
             }
         }
     }
 
-    private inline fun onNativeWindowAsync(crossinline block: org.jetbrains.desktop.linux.Window.() -> Unit) {
+    private inline fun onNativeWindowAsync(
+        crossinline block: org.jetbrains.desktop.linux.Window.() -> Unit
+    ) {
         if (isDisposed) return
         application.onEventLoopAsync {
             if (!isDisposed) {
@@ -999,13 +1049,15 @@ class LinuxWindow private constructor(
     }
 
     private val directContext: DirectContext by lazy {
-        val eglProcFunc = checkNotNull(application.nativeApplication.getEglProcFunc()) {
-            "Linux KDT did not provide an EGL function table"
-        }
-        val openGlInterface = GLAssembledInterface.createFromNativePointers(
-            ctxPtr = eglProcFunc.ctxPtr,
-            fPtr = eglProcFunc.fPtr,
-        )
+        val eglProcFunc =
+            checkNotNull(application.nativeApplication.getEglProcFunc()) {
+                "Linux KDT did not provide an EGL function table"
+            }
+        val openGlInterface =
+            GLAssembledInterface.createFromNativePointers(
+                ctxPtr = eglProcFunc.ctxPtr,
+                fPtr = eglProcFunc.fPtr,
+            )
         DirectContext.makeGLWithInterface(openGlInterface)
     }
 
@@ -1032,105 +1084,114 @@ class LinuxWindow private constructor(
             // only on later event-loop iterations (see the monotonic-id note in
             // LinuxApplication.resetState). Reuse therefore keeps the native window alive
             // (LinuxWindow.reuse) instead of ever recycling an id here.
-            val nativeWindow = application.nativeApplication.createWindow(
-                WindowParams(
-                    windowId = application.allocateNativeWindowId(),
-                    appId = application.identifier,
-                    title = "",
-                    size = LogicalSize(800, 600),
-                    preferClientSideDecoration = true,
-                    renderingMode = RenderingMode.Auto,
-                ),
-            )
+            val nativeWindow =
+                application.nativeApplication.createWindow(
+                    WindowParams(
+                        windowId = application.allocateNativeWindowId(),
+                        appId = application.identifier,
+                        title = "",
+                        size = LogicalSize.makeWH(800, 600),
+                        preferClientSideDecoration = true,
+                        renderingMode = RenderingMode.Auto,
+                        clientSideDecorationFrame = WindowFrame.default().toLinuxWindowFrame(),
+                    )
+                )
             val id = LightweightWindowId(nativeWindow.windowId)
             return LinuxWindow(
                 application = application,
                 session = session,
                 onCloseRequest = onCloseRequest,
-                linuxTextInputSessionOwner = LinuxTextInputSessionOwner(
-                    startInputMethod = { context, surroundingText ->
-                        application.startTextInput(id, context, surroundingText)
-                    },
-                    stopInputMethod = { application.stopTextInput(id) },
-                    onDataChanged = { context, surroundingText ->
-                        application.updateTextInput(id, context, surroundingText)
-                    },
-                ),
+                linuxTextInputSessionOwner =
+                    LinuxTextInputSessionOwner(
+                        startInputMethod = { context, surroundingText ->
+                            application.startTextInput(id, context, surroundingText)
+                        },
+                        stopInputMethod = { application.stopTextInput(id) },
+                        onDataChanged = { context, surroundingText ->
+                            application.updateTextInput(id, context, surroundingText)
+                        },
+                    ),
                 nativeWindow = nativeWindow,
                 id = id,
             )
         }
 
-        internal fun drawDragIcon(
-            event: Event.DragIconDraw,
-            dragIconPngBytes: ByteArray?,
-        ) {
+        internal fun drawDragIcon(event: Event.DragIconDraw, dragIconPngBytes: ByteArray?) {
             val softwareDrawData = event.softwareDrawData ?: return
             val image = dragIconPngBytes?.let(Image::makeFromEncoded) ?: return
             Surface.makeRasterDirect(
-                imageInfo = ImageInfo.makeN32Premul(
-                    event.size.width,
-                    event.size.height,
-                    ColorSpace.sRGB,
-                ),
-                pixelsPtr = softwareDrawData.canvas,
-                rowBytes = softwareDrawData.stride,
-            ).use { surface ->
-                surface.canvas.clear(Color.TRANSPARENT)
-                surface.canvas.drawImageRect(
-                    image,
-                    org.jetbrains.skia.Rect.makeWH(image.width.toFloat(), image.height.toFloat()),
-                    org.jetbrains.skia.Rect.makeWH(
-                        event.size.width.toFloat(),
-                        event.size.height.toFloat(),
-                    ),
+                    imageInfo =
+                        ImageInfo.makeN32Premul(
+                            event.size.width.rawPhysical,
+                            event.size.height.rawPhysical,
+                            ColorSpace.sRGB,
+                        ),
+                    pixelsPtr = softwareDrawData.canvas,
+                    rowBytes = softwareDrawData.stride,
                 )
-                surface.flushAndSubmit()
-            }
+                .use { surface ->
+                    surface.canvas.clear(Color.TRANSPARENT)
+                    surface.canvas.drawImageRect(
+                        image,
+                        org.jetbrains.skia.Rect.makeWH(
+                            image.width.toFloat(),
+                            image.height.toFloat(),
+                        ),
+                        org.jetbrains.skia.Rect.makeWH(
+                            event.size.width.rawPhysical.toFloat(),
+                            event.size.height.rawPhysical.toFloat(),
+                        ),
+                    )
+                    surface.flushAndSubmit()
+                }
         }
     }
 }
 
-private fun WindowResizeHandle.toWindowResizeEdge(): WindowResizeEdge = when (this) {
-    WindowResizeHandle.LeftBorder -> WindowResizeEdge.Left
-    WindowResizeHandle.TopBorder -> WindowResizeEdge.Top
-    WindowResizeHandle.RightBorder -> WindowResizeEdge.Right
-    WindowResizeHandle.BottomBorder -> WindowResizeEdge.Bottom
-    WindowResizeHandle.TopLeftCorner -> WindowResizeEdge.TopLeft
-    WindowResizeHandle.TopRightCorner -> WindowResizeEdge.TopRight
-    WindowResizeHandle.BottomRightCorner -> WindowResizeEdge.BottomRight
-    WindowResizeHandle.BottomLeftCorner -> WindowResizeEdge.BottomLeft
-}
+private fun WindowResizeHandle.toWindowResizeEdge(): WindowResizeEdge =
+    when (this) {
+        WindowResizeHandle.LeftBorder -> WindowResizeEdge.Left
+        WindowResizeHandle.TopBorder -> WindowResizeEdge.Top
+        WindowResizeHandle.RightBorder -> WindowResizeEdge.Right
+        WindowResizeHandle.BottomBorder -> WindowResizeEdge.Bottom
+        WindowResizeHandle.TopLeftCorner -> WindowResizeEdge.TopLeft
+        WindowResizeHandle.TopRightCorner -> WindowResizeEdge.TopRight
+        WindowResizeHandle.BottomRightCorner -> WindowResizeEdge.BottomRight
+        WindowResizeHandle.BottomLeftCorner -> WindowResizeEdge.BottomLeft
+    }
 
 @OptIn(ExperimentalComposeUiApi::class)
-private fun Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>.forCapabilities(
-    capabilities: WindowCapabilities?,
+private fun Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>>
+    .forCapabilities(
+    capabilities: WindowCapabilities?
 ): Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.TitleBarElement>> {
     var layoutLeft = first
     var layoutRight = second
 
     if (
         WindowDecoration.TitleBarElement.Icon !in layoutLeft &&
-        WindowDecoration.TitleBarElement.Icon !in layoutRight
+            WindowDecoration.TitleBarElement.Icon !in layoutRight
     ) {
         when (WindowDecoration.TitleBarElement.AppMenu) {
             in layoutLeft -> {
-                layoutLeft = layoutLeft.map {
-                    if (it == WindowDecoration.TitleBarElement.AppMenu) {
-                        WindowDecoration.TitleBarElement.Icon
-                    } else {
-                        it
+                layoutLeft =
+                    layoutLeft.map {
+                        if (it == WindowDecoration.TitleBarElement.AppMenu) {
+                            WindowDecoration.TitleBarElement.Icon
+                        } else {
+                            it
+                        }
                     }
-                }
             }
             in layoutRight -> {
-                layoutRight = layoutRight.map {
-                    if (it == WindowDecoration.TitleBarElement.AppMenu) {
-                        WindowDecoration.TitleBarElement.Icon
-                    } else {
-                        it
+                layoutRight =
+                    layoutRight.map {
+                        if (it == WindowDecoration.TitleBarElement.AppMenu) {
+                            WindowDecoration.TitleBarElement.Icon
+                        } else {
+                            it
+                        }
                     }
-                }
             }
             else -> {
                 layoutLeft = listOf(WindowDecoration.TitleBarElement.Icon) + layoutLeft
@@ -1143,7 +1204,9 @@ private fun Pair<List<WindowDecoration.TitleBarElement>, List<WindowDecoration.T
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-private fun WindowDecoration.TitleBarElement.isAvailableIn(capabilities: WindowCapabilities?): Boolean =
+private fun WindowDecoration.TitleBarElement.isAvailableIn(
+    capabilities: WindowCapabilities?
+): Boolean =
     when (this) {
         WindowDecoration.TitleBarElement.MinimizeButton -> capabilities?.minimize ?: true
         WindowDecoration.TitleBarElement.MaximizeButton -> capabilities?.maximize ?: true
@@ -1173,12 +1236,14 @@ internal fun mapCommonDialogParams(
     )
 
 /**
- * Decodes a single path as returned in [org.jetbrains.desktop.linux.Event.FileChooserResponse.files]
- * (and its GTK twin) into a [Path]. KDT hands back percent-encoded `file://` URIs; this strips the
- * `file://` scheme prefix and percent-decodes the remainder (UTF-8). `+` is left untouched — unlike
- * form decoding, it is a literal character in a URI path.
+ * Decodes a single path as returned in
+ * [org.jetbrains.desktop.linux.Event.FileChooserResponse.files] (and its GTK twin) into a [Path].
+ * KDT hands back percent-encoded `file://` URIs; this strips the `file://` scheme prefix and
+ * percent-decodes the remainder (UTF-8). `+` is left untouched — unlike form decoding, it is a
+ * literal character in a URI path.
  *
- * Shared by both the Linux and GTK backends (the response payload is package-agnostic `List<String>`).
+ * Shared by both the Linux and GTK backends (the response payload is package-agnostic
+ * `List<String>`).
  */
 internal fun decodeFileChooserPath(encoded: String): Path =
     Path(percentDecodeUtf8(encoded.removePrefix("file://")))
@@ -1198,7 +1263,11 @@ private fun percentDecodeUtf8(value: String): String {
             }
         }
         // A surrogate half encoded on its own yields replacement bytes — keep pairs together.
-        if (Character.isHighSurrogate(c) && i + 1 < value.length && Character.isLowSurrogate(value[i + 1])) {
+        if (
+            Character.isHighSurrogate(c) &&
+                i + 1 < value.length &&
+                Character.isLowSurrogate(value[i + 1])
+        ) {
             out.write(value.substring(i, i + 2).toByteArray(Charsets.UTF_8))
             i += 2
             continue

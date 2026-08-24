@@ -624,7 +624,7 @@ object LinuxApplication : Application {
     internal fun requestWindowActivation(windowId: LightweightWindowId) {
         val nativeWindow = windows[windowId]?.nativeWindow ?: return
         onEventLoopAsync {
-            nativeWindow.requestInternalActivationToken()?.also { requestId ->
+            nativeWindow.requestActivationToken()?.also { requestId ->
                 pendingActivationRequests[requestId] = windowId
             }
         }
@@ -850,7 +850,7 @@ private fun createTextInputContext(
             }
         },
         contentPurpose = contentPurpose,
-        cursorRectangle = context.cursorRectangle.toLogicalRect(),
+        cursorRectangle = context.cursorRectangle.roundToLogicalRect(),
         changeCausedByInputMethod = changeCausedByInputMethod,
     )
 }

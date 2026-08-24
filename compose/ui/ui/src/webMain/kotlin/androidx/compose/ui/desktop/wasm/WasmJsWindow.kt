@@ -98,6 +98,7 @@ import kotlinx.browser.window as browserWindow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
 import androidx.compose.ui.desktop.LocalWindow
+import androidx.compose.ui.window.WindowFrame
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.HTMLCanvasElement
@@ -510,7 +511,7 @@ class WasmJsWindow internal constructor(
         requestFocus()
     }
 
-    override val decoration: WindowDecoration = WindowDecoration.Undecorated()
+    override val decoration: WindowDecoration = WindowDecoration.Undecorated(WindowFrame.default())
 
     override fun requestDecoration(vararg decorations: WindowDecoration) {}
 
