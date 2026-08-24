@@ -82,7 +82,7 @@ internal class ComposeLayersViewController(
                     needsSynchronousDraw = needsSynchronousDraw,
                     needsComposeSceneDraw = needsComposeSceneDraw(),
                     retrievePendingViewUpdatesInteropTransaction =
-                        ::retrieveAndMergePendingViewUpdatesTransactions,
+                        ::retrieveAndMergePendingViewUpdatesInteropTransactions,
                 )
             },
         )
@@ -326,14 +326,14 @@ internal class ComposeLayersViewController(
         )
     }
 
-    private fun retrieveAndMergePendingViewUpdatesTransactions(): InteropSyncTransaction {
+    private fun retrieveAndMergePendingViewUpdatesInteropTransactions(): InteropSyncTransaction {
         // A view-update-only transaction cannot bypass actions belonging to a removed layer.
         if (removedLayersTransactions.any { it.hasPendingActions }) {
             return InteropSyncTransaction.Empty
         }
 
         val transactions = this.layers.map {
-            it.retrievePendingViewUpdatesTransaction()
+            it.retrievePendingViewUpdatesInteropTransaction()
         }
         return InteropSyncTransaction.merge(
             transactions = transactions

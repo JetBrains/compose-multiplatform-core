@@ -184,7 +184,7 @@ internal class IosComposeSceneLayer(
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
 
-    fun retrievePendingViewUpdatesTransaction() = mediator.retrievePendingViewUpdatesInteropTransaction()
+    fun retrievePendingViewUpdatesInteropTransaction() = mediator.retrievePendingViewUpdatesInteropTransaction()
 
     val needsComposeSceneDraw: Boolean get() = mediator.needsComposeSceneDraw
 

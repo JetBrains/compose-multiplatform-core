@@ -258,5 +258,4 @@ class InteropRenderingTest {
             message = "State read only by UIKitView update triggered recomposition"
         )
     }
-
 }
