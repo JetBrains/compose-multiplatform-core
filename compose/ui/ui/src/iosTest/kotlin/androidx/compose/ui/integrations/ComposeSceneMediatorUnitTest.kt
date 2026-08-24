@@ -17,10 +17,10 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.FrameChoreographer
-import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeSceneMediator
@@ -98,10 +98,10 @@ class ComposeSceneMediatorUnitTest {
         onFocusBehavior = OnFocusBehavior.DoNothing,
         isClearFocusOnMouseDownEnabled = false,
         focusedViewsList = null,
-        windowContext = PlatformWindowContext(),
+        windowContext = WindowContext(),
         architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
         coroutineContext = coroutineContext,
-        navigationEventInput = UIKitNavigationEventInput(
+        navigationEventInput = IosBackNavigationEventInput(
             density = Density(1f),
             initialLayoutDirection = LayoutDirection.Ltr,
             getTopLeftOffsetInWindow = { IntOffset.Zero },
