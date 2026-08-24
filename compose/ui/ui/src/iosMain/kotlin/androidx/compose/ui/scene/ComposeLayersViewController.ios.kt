@@ -77,7 +77,7 @@ internal class ComposeLayersViewController(
             onWillMoveToWindow = { beginAppearanceTransition(it != null, animated = false) },
             onDidMoveToWindow = { endAppearanceTransition() },
             onLayoutSubviews = ::measureAndLayoutLayers,
-            onDrawRect = { needsSynchronousDraw ->
+            onDraw = { needsSynchronousDraw ->
                 metalView.redrawer.onDraw(
                     needsSynchronousDraw = needsSynchronousDraw,
                     needsComposeSceneDraw = needsComposeSceneDraw(),

@@ -313,7 +313,7 @@ internal class ComposeContainer(
                 onDidMoveToWindow = ::onDidMoveToWindow,
                 onLayoutSubviews = ::onLayoutSubviews,
                 onTraitCollectionDidChange = ::onTraitCollectionDidChange,
-                onDrawRect = { needsSynchronousDraw ->
+                onDraw = { needsSynchronousDraw ->
                     metalView.redrawer.onDraw(
                         needsSynchronousDraw = needsSynchronousDraw,
                         needsComposeSceneDraw = mediator.needsComposeSceneDraw,
