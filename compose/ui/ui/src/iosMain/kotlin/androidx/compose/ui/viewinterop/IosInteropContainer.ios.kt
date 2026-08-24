@@ -27,7 +27,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
 internal class IosInteropContainer(
     val overlayContainer: InteropViewGroup,
     val backgroundContainer: InteropViewGroup,
-    private var requestDraw: () -> Unit,
+    private var requestRedraw: () -> Unit,
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
 
@@ -69,7 +69,7 @@ internal class IosInteropContainer(
      * synchronized with rendering because scene will never be rendered again past that moment.
      */
     fun dispose() {
-        requestDraw = {}
+        requestRedraw = {}
         retrieveTransaction().performTransaction()
 
         // snapshotObserver.stop() is not needed, because unplaceInteropView will be called
@@ -143,12 +143,12 @@ internal class IosInteropContainer(
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
         transaction.scheduleFrameSynchronizedAction(action)
-        requestDraw()
+        requestRedraw()
     }
 
     override fun scheduleUpdate(holder: InteropViewHolder) {
         transaction.scheduleViewUpdate(holder)
-        requestDraw()
+        requestRedraw()
     }
 
     // TODO: Should be the same as [Owner.onInteropViewLayoutChange]?

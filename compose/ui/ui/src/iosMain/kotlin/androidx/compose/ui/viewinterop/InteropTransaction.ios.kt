@@ -19,7 +19,9 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.ui.util.fastForEach
 import platform.QuartzCore.CATransaction
 
-/** Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]. */
+/**
+ * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]
+ */
 internal typealias InteropSyncAction = () -> Unit
 
 /**
