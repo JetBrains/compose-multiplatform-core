@@ -131,7 +131,8 @@ internal class LegacyMetalRedrawer(
         isDisposed = true
 
         retrieveInteropTransaction = { InteropSyncTransaction.Empty }
-        draw = { }
+
+        draw = { _ -> }
 
         releaseCachedCommandQueue(queue)
 

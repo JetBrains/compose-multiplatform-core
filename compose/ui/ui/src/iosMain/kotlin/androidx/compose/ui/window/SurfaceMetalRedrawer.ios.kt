@@ -152,7 +152,8 @@ internal class SurfaceMetalRedrawer(
         isDisposed = true
 
         retrieveInteropTransaction = { InteropSyncTransaction.Empty }
-        draw = { }
+
+        draw = { _ -> }
 
         releaseCachedCommandQueue(queue)
 
