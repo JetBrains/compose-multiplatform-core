@@ -19,71 +19,59 @@ package androidx.compose.ui.desktop.linux
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.compose.ui.window.WindowFrame
+import androidx.compose.ui.window.WindowFrameSide
 import kotlin.math.roundToInt
 import org.jetbrains.desktop.linux.DragAndDropAction
+import org.jetbrains.desktop.linux.LogicalPixels
+import org.jetbrains.desktop.linux.LogicalPixelsInt
 import org.jetbrains.desktop.linux.LogicalPoint
 import org.jetbrains.desktop.linux.LogicalRect
 import org.jetbrains.desktop.linux.LogicalSize
+import org.jetbrains.desktop.linux.WindowFrame as LinuxWindowFrame
+import org.jetbrains.desktop.linux.WindowFrameSide as LinuxWindowFrameSide
 
-internal fun LogicalSize.roundToIntSize(density: Density): IntSize {
-    return with(density) {
-        IntSize(width.dp.roundToPx(), height.dp.roundToPx())
-    }
+internal fun LogicalPixels.toDp(): Dp {
+    return rawLogical.dp
+}
+
+internal fun LogicalPixelsInt.toDp(): Dp {
+    return rawLogical.toFloat().dp
 }
 
 internal fun LogicalSize.toDpSize(): DpSize {
-    return DpSize(width.dp, height.dp)
+    return DpSize(width.toDp(), height.toDp())
 }
 
 internal fun LogicalPoint.toDpOffset(): DpOffset {
-    return DpOffset(x.dp, y.dp)
+    return DpOffset(x.toDp(), y.toDp())
 }
 
-internal fun Offset.toLogicalPoint(density: Density): LogicalPoint {
+internal fun Dp.roundToLogicalPixelsInt(): LogicalPixelsInt {
+    return LogicalPixelsInt(value.roundToInt())
+}
+
+internal fun Size.roundToLogicalSize(density: Density): LogicalSize {
     return with(density) {
-        LogicalPoint(x.toDp().value.toDouble(), y.toDp().value.toDouble())
+        LogicalSize(width.toDp().roundToLogicalPixelsInt(), height.toDp().roundToLogicalPixelsInt())
     }
 }
 
-internal fun Size.toLogicalSize(density: Density): LogicalSize {
-    return with(density) {
-        LogicalSize(width.toDp().value.roundToInt(), height.toDp().value.roundToInt())
-    }
-}
-
-internal operator fun LogicalPoint.plus(other: LogicalPoint): LogicalPoint =
-    LogicalPoint(x + other.x, y + other.y)
-
-internal operator fun LogicalPoint.minus(other: LogicalPoint): LogicalPoint =
-    LogicalPoint(x - other.x, y - other.y)
-
-internal fun Rect.toLogicalRect(density: Density): LogicalRect {
-    return with(density) {
-        LogicalRect(
-            x = left.toDp().value.roundToInt(),
-            y = top.toDp().value.roundToInt(),
-            width = width.toDp().value.roundToInt(),
-            height = height.toDp().value.roundToInt(),
-        )
-    }
-}
-
-internal fun DpRect.toLogicalRect(): LogicalRect {
+internal fun DpRect.roundToLogicalRect(): LogicalRect {
     return LogicalRect(
-        x = left.value.roundToInt(),
-        y = top.value.roundToInt(),
-        width = width.value.roundToInt(),
-        height = height.value.roundToInt(),
+        x = left.roundToLogicalPixelsInt(),
+        y = top.roundToLogicalPixelsInt(),
+        width = width.roundToLogicalPixelsInt(),
+        height = height.roundToLogicalPixelsInt(),
     )
 }
 
@@ -98,4 +86,52 @@ internal fun DragAndDropTransferAction.toLinuxAction(): DragAndDropAction? {
         DragAndDropTransferAction.Move -> DragAndDropAction.Move
         else -> null
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal fun WindowFrame.toLinuxWindowFrame(): LinuxWindowFrame {
+    return LinuxWindowFrame(
+        left = LinuxWindowFrameSide(
+            padding = left.padding.roundToLogicalPixelsInt(),
+            resizerThickness = left.resizerThickness.roundToLogicalPixelsInt(),
+        ),
+        top = LinuxWindowFrameSide(
+            padding = top.padding.roundToLogicalPixelsInt(),
+            resizerThickness = top.resizerThickness.roundToLogicalPixelsInt(),
+        ),
+        right = LinuxWindowFrameSide(
+            padding = right.padding.roundToLogicalPixelsInt(),
+            resizerThickness = right.resizerThickness.roundToLogicalPixelsInt(),
+        ),
+        bottom = LinuxWindowFrameSide(
+            padding = bottom.padding.roundToLogicalPixelsInt(),
+            resizerThickness = bottom.resizerThickness.roundToLogicalPixelsInt(),
+        ),
+    )
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+internal fun LinuxWindowFrame.toWindowFrame(): WindowFrame {
+    return WindowFrame(
+        left = WindowFrameSide(
+            padding = left.padding.toDp(),
+            resizerThickness = left.resizerThickness.toDp(),
+            tiled = left.tiled,
+        ),
+        top = WindowFrameSide(
+            padding = top.padding.toDp(),
+            resizerThickness = top.resizerThickness.toDp(),
+            tiled = top.tiled,
+        ),
+        right = WindowFrameSide(
+            padding = right.padding.toDp(),
+            resizerThickness = right.resizerThickness.toDp(),
+            tiled = right.tiled,
+        ),
+        bottom = WindowFrameSide(
+            padding = bottom.padding.toDp(),
+            resizerThickness = bottom.resizerThickness.toDp(),
+            tiled = bottom.tiled,
+        ),
+    )
 }
