@@ -27,7 +27,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
 internal class IosInteropContainer(
     val overlayContainer: InteropViewGroup,
     val backgroundContainer: InteropViewGroup,
-    private var requestRedraw: () -> Unit
+    private var requestDraw: () -> Unit,
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
 
@@ -40,6 +40,7 @@ internal class IosInteropContainer(
     private var transaction = InteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
+    val hasPendingViewUpdatesOnly: Boolean get() = transaction.hasPendingViewUpdatesOnly
 
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
@@ -68,8 +69,8 @@ internal class IosInteropContainer(
      * synchronized with rendering because scene will never be rendered again past that moment.
      */
     fun dispose() {
-        requestRedraw = {}
-        transactionsManager.dispose()
+        requestDraw = {}
+        retrieveTransaction().performTransaction()
 
         // snapshotObserver.stop() is not needed, because unplaceInteropView will be called
         // for all interop views and it will stop observing when the last one is removed.
@@ -87,19 +88,12 @@ internal class IosInteropContainer(
     }
 
     /**
-     * Snapshots the current UIKit interop view-update state so it can be applied after UIKit has
-     * had an opportunity to consume it during drawing.
+     * Returns the pending transaction only when it contains view updates that can run in a UIKit
+     * draw callback without a Compose render.
      */
-    fun snapshotPendingViewUpdatesState(captureId: Long) {
-        transactionsManager.snapshotPendingViewUpdatesState(captureId)
-    }
-
-    /**
-     * Applies pending view updates only when the snapshot state remains unchanged and
-     * [canPerform] is `true`.
-     */
-    fun performPendingViewUpdates(captureId: Long, canPerform: Boolean) {
-        transactionsManager.performPendingViewUpdates(captureId, canPerform)
+    fun retrievePendingViewUpdatesTransaction(): InteropSyncTransaction {
+        if (!transaction.hasPendingViewUpdatesOnly) return InteropSyncTransaction.Empty
+        return retrieveTransaction()
     }
 
     override fun place(holder: InteropViewHolder) {
@@ -107,7 +101,7 @@ internal class IosInteropContainer(
         val interopView = checkNotNull(holder.interopView)
 
         if (interopViews.isEmpty()) {
-            transactionsManager.isInteropActive = true
+            transaction.isInteropActive = true
             snapshotObserver.start()
         }
 
@@ -135,7 +129,7 @@ internal class IosInteropContainer(
         interopViews.remove(interopView)
 
         if (interopViews.isEmpty()) {
-            transactionsManager.isInteropActive = false
+            transaction.isInteropActive = false
             snapshotObserver.stop()
         }
         val container = if (holder.placedAsOverlay) overlayContainer else backgroundContainer
@@ -148,13 +142,13 @@ internal class IosInteropContainer(
     override fun scheduleUpdate(action: () -> Unit) {
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
-        transactionsManager.scheduleFrameSynchronizedAction(action)
-        requestRedraw()
+        transaction.scheduleFrameSynchronizedAction(action)
+        requestDraw()
     }
 
     override fun scheduleUpdate(holder: InteropViewHolder) {
-        transactionsManager.scheduleViewUpdate(holder)
-        requestRedraw()
+        transaction.scheduleViewUpdate(holder)
+        requestDraw()
     }
 
     // TODO: Should be the same as [Owner.onInteropViewLayoutChange]?

@@ -62,7 +62,7 @@ internal class ComposeLayersViewController(
     val metalView: MetalViewHolder = MetalView(
         retrieveInteropTransaction = ::retrieveAndMergeInteropTransactions,
         useSeparateRenderThreadWhenPossible = useSeparateRenderThreadWhenPossible,
-        draw = ::draw
+        draw = ::draw,
     ).apply {
         canBeOpaque = false
     }
@@ -76,6 +76,15 @@ internal class ComposeLayersViewController(
             onWillMoveToWindow = { beginAppearanceTransition(it != null, animated = false) },
             onDidMoveToWindow = { endAppearanceTransition() },
             onLayoutSubviews = ::measureAndLayoutLayers,
+            onDrawRect = { needsSynchronousDraw ->
+                if (needsComposeSceneDraw() || needsSynchronousDraw) {
+                    metalView.redrawer.render(waitUntilCompletion = needsSynchronousDraw)
+                } else {
+                    metalView.redrawer.performTransaction(
+                        retrieveAndMergePendingViewUpdatesTransactions()
+                    )
+                }
+            },
         )
     }
 
@@ -315,6 +324,27 @@ internal class ComposeLayersViewController(
         return InteropSyncTransaction.merge(
             transactions = transactions
         )
+    }
+
+    private fun retrieveAndMergePendingViewUpdatesTransactions(): InteropSyncTransaction {
+        // A view-update-only transaction cannot bypass actions belonging to a removed layer.
+        if (removedLayersTransactions.any { it.hasPendingActions }) {
+            return InteropSyncTransaction.Empty
+        }
+
+        val transactions = this.layers.map {
+            it.retrievePendingViewUpdatesTransaction()
+        }
+        return InteropSyncTransaction.merge(
+            transactions = transactions
+        )
+    }
+
+    private fun needsComposeSceneDraw(): Boolean {
+        layersCache.withCopy { layers ->
+            return layers.any { it.needsComposeSceneDraw }
+        }
+        return false
     }
 
     private fun draw(canvas: Canvas) {

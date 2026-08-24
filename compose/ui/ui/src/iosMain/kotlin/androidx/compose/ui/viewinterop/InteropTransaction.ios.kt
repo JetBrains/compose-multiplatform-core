@@ -19,9 +19,7 @@ package androidx.compose.ui.viewinterop
 import androidx.compose.ui.util.fastForEach
 import platform.QuartzCore.CATransaction
 
-/**
- * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]
- */
+/** Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]. */
 internal typealias InteropSyncAction = () -> Unit
 
 /**
@@ -29,7 +27,7 @@ internal typealias InteropSyncAction = () -> Unit
  *
  * Frame-synchronized changes are performed within the renderer's [CATransaction], so UIKit and
  * Compose are visually simultaneous. Updates to already attached UIKit views may instead be
- * performed out of frame after UIKit has had a chance to draw.
+ * performed in an otherwise idle UIKit draw callback.
  *
  * [isInteropActive] defines if rendering strategy should be changed along with this transaction.
  */
@@ -48,7 +46,7 @@ internal interface InteropSyncTransaction {
         fun merge(
             transactions: List<InteropSyncTransaction>
         ): InteropSyncTransaction =
-            object : InteropSyncTransaction { {
+            object : InteropSyncTransaction {
                 override val hasPendingActions = transactions.any { it.hasPendingActions }
                 override val isInteropActive = transactions.any { it.isInteropActive }
 
@@ -75,14 +73,16 @@ internal interface InteropSyncTransaction {
 internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
 ) : InteropSyncTransaction {
-    private val actions = mutableListOf<UIKitInteropAction>()
+    private val actions = mutableListOf<InteropSyncAction>()
     private val holdersWithPendingViewUpdates = mutableSetOf<InteropViewHolder>()
 
-    var requiresFrameSynchronization = false
-        private set
+    private var requiresFrameSynchronization = false
 
     override val hasPendingActions: Boolean
         get() = actions.isNotEmpty()
+
+    val hasPendingViewUpdatesOnly: Boolean
+        get() = hasPendingActions && !requiresFrameSynchronization
 
     override fun performTransaction() {
         actions.fastForEach { it.invoke() }

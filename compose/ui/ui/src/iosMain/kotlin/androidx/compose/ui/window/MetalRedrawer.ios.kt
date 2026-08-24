@@ -31,6 +31,7 @@ import platform.Metal.MTLDeviceProtocol
 
 internal sealed interface MetalRedrawer {
     fun render(waitUntilCompletion: Boolean)
+    fun performTransaction(transaction: InteropSyncTransaction)
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     fun awaitRenderingCompletion()
     fun dispose()
@@ -118,8 +119,7 @@ internal class LegacyMetalRedrawer(
         isDisposed = true
 
         retrieveInteropTransaction = { InteropSyncTransaction.Empty }
-
-        draw = { _ -> }
+        draw = { }
 
         releaseCachedCommandQueue(queue)
 
@@ -266,6 +266,11 @@ internal class LegacyMetalRedrawer(
         } finally {
             isDrawRecursiveCall = false
         }
+    }
+
+    override fun performTransaction(transaction: InteropSyncTransaction) {
+        check(NSThread.isMainThread)
+        transaction.performTransaction()
     }
 
     companion object {

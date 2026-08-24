@@ -67,6 +67,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
@@ -250,9 +251,7 @@ internal class ComposeContainer(
         this.layoutInvalidationHandler = layoutInvalidationHandler
 
         val metalView = MetalView(
-            retrieveInteropTransaction = {
-                mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty
-            },
+            retrieveInteropTransaction = { mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
@@ -305,6 +304,7 @@ internal class ComposeContainer(
             },
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
+            schedulePendingInteropViewUpdates = view::setNeedsDisplay,
         ).also { mediator ->
             view.embedSubview(mediator.backgroundView)
             view.updateMetalView(
@@ -312,6 +312,15 @@ internal class ComposeContainer(
                 onDidMoveToWindow = ::onDidMoveToWindow,
                 onLayoutSubviews = ::onLayoutSubviews,
                 onTraitCollectionDidChange = ::onTraitCollectionDidChange,
+                onDrawRect = { needsSynchronousDraw ->
+                    if (mediator.needsComposeSceneDraw || needsSynchronousDraw) {
+                        metalView.redrawer.render(waitUntilCompletion = needsSynchronousDraw)
+                    } else {
+                        metalView.redrawer.performTransaction(
+                            mediator.retrievePendingViewUpdatesInteropTransaction()
+                        )
+                    }
+                },
             )
             view.embedSubview(mediator.overlayView)
 

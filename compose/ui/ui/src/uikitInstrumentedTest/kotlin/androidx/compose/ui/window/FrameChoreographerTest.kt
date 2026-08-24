@@ -161,7 +161,6 @@ private class CountingListener : FrameChoreographer.Listener {
     }
 
     override fun onOutOfFrame(
-        frameId: Long,
         lastFrameTimestamp: NSTimeInterval,
         targetTimestamp: NSTimeInterval
     ) {

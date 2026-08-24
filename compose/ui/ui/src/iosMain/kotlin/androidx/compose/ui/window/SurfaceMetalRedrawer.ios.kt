@@ -152,8 +152,7 @@ internal class SurfaceMetalRedrawer(
         isDisposed = true
 
         retrieveInteropTransaction = { InteropSyncTransaction.Empty }
-
-        draw = { _ -> }
+        draw = { }
 
         releaseCachedCommandQueue(queue)
 
@@ -244,6 +243,15 @@ internal class SurfaceMetalRedrawer(
                 isDrawRecursiveCall = false
             }
         }
+
+    override fun performTransaction(transaction: InteropSyncTransaction) {
+        check(NSThread.isMainThread) {
+            "SurfaceMetalRedrawer.performTransaction() must be called on main thread"
+        }
+        // Preserve ordering with transactions scheduled by previously rendered frames.
+        val index = transactionQueue.scheduleTransaction(transaction)
+        transactionQueue.performScheduledTransactions(index)
+    }
 
     private class Frame(
         val picture: Picture,
