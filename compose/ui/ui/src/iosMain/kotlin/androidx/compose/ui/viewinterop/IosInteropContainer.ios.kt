@@ -24,7 +24,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
  * elements and contains a logic for syncing changes to UIKit objects driven by Compose state
  * changes with Compose rendering.
  */
-internal class UIKitInteropContainer(
+internal class IosInteropContainer(
     val overlayContainer: InteropViewGroup,
     val backgroundContainer: InteropViewGroup,
     private var requestRedraw: () -> Unit
@@ -37,7 +37,7 @@ internal class UIKitInteropContainer(
     override val root: InteropViewGroup get() = backgroundContainer
 
     private val interopViews = mutableMapOf<InteropView, InteropViewHolder>()
-    private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
+    private var transaction = InteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
 
@@ -82,16 +82,16 @@ internal class UIKitInteropContainer(
     /**
      * Return an object containing pending changes and reset internal storage
      */
-    fun retrieveTransaction(): UIKitInteropTransaction {
+    fun retrieveTransaction(): InteropSyncTransaction {
         val result = transaction
-        transaction = UIKitInteropMutableTransaction(
+        transaction = InteropMutableTransaction(
             isInteropActive = interopViews.isNotEmpty()
         )
         return result
     }
 
     override fun place(holder: InteropViewHolder) {
-        holder as UIKitInteropElementHolder<*>
+        holder as IosInteropElementHolder<*>
         val interopView = checkNotNull(holder.interopView)
 
         if (interopViews.isEmpty()) {
@@ -101,7 +101,7 @@ internal class UIKitInteropContainer(
 
         val isAdded = interopViews.put(interopView, holder) == null
         val countBelow = countInteropComponentsBelow(holder) {
-            contains(it) && (it as UIKitInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
+            contains(it) && (it as IosInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
         }
         val container = if (holder.placedAsOverlay) overlayContainer else backgroundContainer
 
@@ -117,7 +117,7 @@ internal class UIKitInteropContainer(
     }
 
     override fun unplace(holder: InteropViewHolder) {
-        holder as UIKitInteropElementHolder<*>
+        holder as IosInteropElementHolder<*>
         val interopView = requireNotNull(holder.interopView)
 
         interopViews.remove(interopView)

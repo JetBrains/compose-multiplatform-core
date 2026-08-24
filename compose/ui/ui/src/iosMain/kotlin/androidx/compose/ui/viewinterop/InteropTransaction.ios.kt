@@ -22,7 +22,7 @@ import platform.QuartzCore.CATransaction
 /**
  * Lambda containing changes to UIKit objects, which can be synchronized within [CATransaction]
  */
-internal typealias UIKitInteropAction = () -> Unit
+internal typealias InteropSyncAction = () -> Unit
 
 /**
  * A transaction containing changes to UIKit objects to be synchronized within [CATransaction] inside a
@@ -30,8 +30,8 @@ internal typealias UIKitInteropAction = () -> Unit
  * [actions] contains a list of lambdas that will be executed in the same CATransaction.
  * [isInteropActive] defines if rendering strategy should be changed along with this transaction.
  */
-internal interface UIKitInteropTransaction {
-    val actions: List<UIKitInteropAction>
+internal interface InteropSyncTransaction {
+    val actions: List<InteropSyncAction>
     val isInteropActive: Boolean
 
     fun performTransaction() {
@@ -47,9 +47,9 @@ internal interface UIKitInteropTransaction {
          * @param transactions a list of transactions to be merged
          */
         fun merge(
-            transactions: List<UIKitInteropTransaction>
-        ): UIKitInteropTransaction =
-            object : UIKitInteropTransaction {
+            transactions: List<InteropSyncTransaction>
+        ): InteropSyncTransaction =
+            object : InteropSyncTransaction {
                 override val actions = transactions.flatMap { it.actions }
                 override val isInteropActive = transactions.any { it.isInteropActive }
             }
@@ -57,20 +57,20 @@ internal interface UIKitInteropTransaction {
 }
 
 /**
- * A mutable transaction managed by [UIKitInteropContainer] to collect changes
+ * A mutable transaction managed by [IosInteropContainer] to collect changes
  * to UIKit objects to be executed later.
  *
- * @see UIKitInteropContainer.scheduleUpdate
+ * @see IosInteropContainer.scheduleUpdate
  */
-internal class UIKitInteropMutableTransaction(
+internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
-) : UIKitInteropTransaction {
-    private val _actions = mutableListOf<UIKitInteropAction>()
+) : InteropSyncTransaction {
+    private val _actions = mutableListOf<InteropSyncAction>()
 
     override val actions
         get() = _actions
 
-    fun add(action: UIKitInteropAction) {
+    fun add(action: InteropSyncAction) {
         _actions.add(action)
     }
 }

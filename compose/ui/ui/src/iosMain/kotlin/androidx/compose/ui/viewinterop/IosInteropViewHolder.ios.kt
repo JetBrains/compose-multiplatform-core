@@ -20,13 +20,13 @@ import androidx.compose.runtime.CompositeKeyHashCode
 import androidx.compose.runtime.CompositionContext
 import platform.UIKit.UIView
 
-internal class UIKitInteropViewHolder<T : UIView>(
+internal class IosInteropViewHolder<T : UIView>(
     factory: () -> T,
     interopContainer: InteropContainer,
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
     compositionContext: CompositionContext
-) : UIKitInteropElementHolder<T>(
+) : IosInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,

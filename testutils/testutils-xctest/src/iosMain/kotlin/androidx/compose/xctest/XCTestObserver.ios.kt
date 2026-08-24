@@ -35,7 +35,7 @@ import platform.XCTest.*
  *
  * @see TestSettings
  */
-internal class NativeTestObserver(private val testSettings: TestSettings) : NSObject(), XCTestObservationProtocol {
+internal class XCTestObserver(private val testSettings: TestSettings) : NSObject(), XCTestObservationProtocol {
     private val listeners = testSettings.listeners
     private val logger = testSettings.logger
 

@@ -18,13 +18,13 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dpSize
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalView
@@ -48,14 +48,14 @@ import platform.UIKit.beginAppearanceTransition
 import platform.UIKit.endAppearanceTransition
 
 /**
- * A class responsible for managing and rendering [UIKitComposeSceneLayer]s.
+ * A class responsible for managing and rendering [IosComposeSceneLayer]s.
  */
 internal class ComposeLayersViewController(
     useSeparateRenderThreadWhenPossible: Boolean,
     private val coroutineContext: CoroutineContext,
     private val hostingComposeView: ComposeContainerView
 ): UIViewController(nibName = null, bundle = null) {
-    val windowContext = PlatformWindowContext()
+    val windowContext = WindowContext()
 
     private var hasViewAppeared = false
 
@@ -160,7 +160,7 @@ internal class ComposeLayersViewController(
         layers.fastForEach { it.doMeasureAndLayout() }
     }
 
-    fun withLayers(block: (List<UIKitComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)
+    fun withLayers(block: (List<IosComposeSceneLayer>) -> Unit) = layersCache.withCopy(block)
 
     override fun loadView() {
         this.view = ComposeLayersView()
@@ -169,7 +169,7 @@ internal class ComposeLayersViewController(
 
     val hasInvalidations: Boolean get() = this.layers.any { it.hasInvalidations }
 
-    private val layers = mutableListOf<UIKitComposeSceneLayer>()
+    private val layers = mutableListOf<IosComposeSceneLayer>()
 
     private val layersCache = CopiedList {
         it.addAll(this.layers)
@@ -178,7 +178,7 @@ internal class ComposeLayersViewController(
     /**
      * Transactions of the layers that were imperatively removed before their changes were applied.
      */
-    private var removedLayersTransactions = mutableListOf<UIKitInteropTransaction>()
+    private var removedLayersTransactions = mutableListOf<InteropSyncTransaction>()
 
     var containerWindow: UIWindow? by windowContext::window
 
@@ -229,7 +229,7 @@ internal class ComposeLayersViewController(
         windowContext.dispose()
     }
 
-    fun attach(layer: UIKitComposeSceneLayer) {
+    fun attach(layer: IosComposeSceneLayer) {
         val isFirstLayer = layers.isEmpty()
         layers.add(layer)
         composeContainerView.insertSubview(layer.interactionView, belowSubview = metalView.view)
@@ -245,14 +245,14 @@ internal class ComposeLayersViewController(
         invalidateDraw()
     }
 
-    fun detach(layer: UIKitComposeSceneLayer) {
+    fun detach(layer: IosComposeSceneLayer) {
         if (hasViewAppeared) {
             layer.sceneWillDisappear()
         }
 
         this.layers.remove(layer)
 
-        // Intercept the actions UIKitInteropTransaction from the layer
+        // Intercept the actions InteropTransaction from the layer
         val transaction = layer.retrieveInteropTransaction()
 
         if (this.layers.isEmpty()) {
@@ -305,14 +305,14 @@ internal class ComposeLayersViewController(
      * [MetalViewHolder], also including transactions of the layers that were removed and are not
      * present in [layers] anymore.
      */
-    private fun retrieveAndMergeInteropTransactions(): UIKitInteropTransaction {
+    private fun retrieveAndMergeInteropTransactions(): InteropSyncTransaction {
         val removedLayersTransactionsCopy = removedLayersTransactions.toList()
         removedLayersTransactions.clear()
 
         val transactions = this.layers.map {
             it.retrieveInteropTransaction()
         } + removedLayersTransactionsCopy
-        return UIKitInteropTransaction.merge(
+        return InteropSyncTransaction.merge(
             transactions = transactions
         )
     }

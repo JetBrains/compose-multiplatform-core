@@ -56,7 +56,7 @@ import platform.UIKit.UIView
  * @param group clipping viewport that wraps the [userComponent]
  * @param userComponent actual UIKit interop view being embedded
  */
-internal class UIKitInteropElementLayout(
+internal class InteropElementLayout(
     private val group: InteropViewGroup,
     private val userComponent: UIView,
 ) {
@@ -128,7 +128,7 @@ internal class UIKitInteropElementLayout(
     }
 
     /**
-     * Sets the frame of the clipping viewport ([group]) in its superview coordinate space (managed by [UIKitInteropContainer]).
+     * Sets the frame of the clipping viewport ([group]) in its superview coordinate space (managed by [IosInteropContainer]).
      * This rect corresponds to the clipped visible bounds of the element in Compose.
      */
     fun updateGroupFrame(rect: CValue<CGRect>) {

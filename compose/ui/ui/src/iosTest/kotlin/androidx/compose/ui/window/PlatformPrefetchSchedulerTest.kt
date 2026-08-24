@@ -171,7 +171,7 @@ class PlatformPrefetchSchedulerTest {
     private fun scheduler(
         onHasWorkScheduled: (Boolean) -> Unit = {},
         currentTime: () -> NSTimeInterval = { 0.0 },
-    ) = PlatformPrefetchSchedulerImpl(
+    ) = IosPrefetchScheduler(
         onHasWorkScheduled = onHasWorkScheduled,
         currentTime = currentTime,
     )

@@ -37,7 +37,6 @@ import platform.UIKit.UIWindowSceneDelegateProtocol
  * - XCode will open this project automatically
  * - press the Run (Cmd+R) button in the XCode
  */
-@OptIn(ExperimentalComposeUiApi::class)
 fun main(vararg args: String) {
     androidx.compose.ui.util.enableTraceOSLog()
 
@@ -80,12 +79,12 @@ private fun UIKitMain(makeRootViewController: () -> UIViewController) {
         val argc = 1
         val argv = arrayOf("ComposeDemo").map { it.cstr.ptr }.toCValues()
         autoreleasepool {
-            UIApplicationMain(argc, argv, null, NSStringFromClass(IOSAppDelegate))
+            UIApplicationMain(argc, argv, null, NSStringFromClass(AppDelegate))
         }
     }
 }
 
-private class IOSAppDelegate : UIResponder, UIApplicationDelegateProtocol {
+private class AppDelegate : UIResponder, UIApplicationDelegateProtocol {
     companion object Companion : UIResponderMeta(), UIApplicationDelegateProtocolMeta
 
     @Suppress("unused")
@@ -105,13 +104,13 @@ private class IOSAppDelegate : UIResponder, UIApplicationDelegateProtocol {
         options: UISceneConnectionOptions
     ): UISceneConfiguration {
         val config = UISceneConfiguration()
-        config.delegateClass = IOSSceneDelegate.`class`()
+        config.delegateClass = SceneDelegate.`class`()
         config.sceneClass = UIWindowScene.`class`()
         return config
     }
 }
 
-private class IOSSceneDelegate: UIResponder, UIWindowSceneDelegateProtocol, UISceneDelegateProtocol {
+private class SceneDelegate: UIResponder, UIWindowSceneDelegateProtocol, UISceneDelegateProtocol {
     companion object Companion : UIResponderMeta(), UIApplicationDelegateProtocolMeta
 
     @Suppress("unused")

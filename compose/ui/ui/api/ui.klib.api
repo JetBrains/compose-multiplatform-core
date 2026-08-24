@@ -4767,7 +4767,7 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop|#static{}androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop[0]
 
 // Targets: [ios]
-final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop|#static{}androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop[0]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_NativeTextInputContextMenuCustomAction$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_NativeTextInputContextMenuCustomAction$stableprop|#static{}androidx_compose_ui_platform_NativeTextInputContextMenuCustomAction$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.uikit/LocalUIView // androidx.compose.ui.uikit/LocalUIView|{}LocalUIView[0]
@@ -4864,7 +4864,7 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter|androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter(){}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop_getter|androidx_compose_ui_platform_UIKitNativeTextInputContextMenuCustomAction$stableprop_getter(){}[0]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_NativeTextInputContextMenuCustomAction$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_NativeTextInputContextMenuCustomAction$stableprop_getter|androidx_compose_ui_platform_NativeTextInputContextMenuCustomAction$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_ComposeContainerConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.uikit/androidx_compose_ui_uikit_ComposeContainerConfiguration$stableprop_getter|androidx_compose_ui_uikit_ComposeContainerConfiguration$stableprop_getter(){}[0]

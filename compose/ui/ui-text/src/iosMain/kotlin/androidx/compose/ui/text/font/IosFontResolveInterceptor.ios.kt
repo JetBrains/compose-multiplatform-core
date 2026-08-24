@@ -19,9 +19,9 @@ package androidx.compose.ui.text.font
 import platform.UIKit.UIAccessibilityIsBoldTextEnabled
 
 internal actual fun createPlatformResolveInterceptor(): PlatformResolveInterceptor =
-    IOSResolveInterceptor
+    IosFontResolveInterceptor
 
-private object IOSResolveInterceptor : PlatformResolveInterceptor {
+private object IosFontResolveInterceptor : PlatformResolveInterceptor {
     private val boldTextEnabled = UIAccessibilityIsBoldTextEnabled()
     override fun interceptFontWeight(fontWeight: FontWeight): FontWeight {
         return if (boldTextEnabled) {
