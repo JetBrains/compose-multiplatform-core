@@ -30,8 +30,8 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.UIKitNativeTextInputContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.findFirstDescendant
@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(InternalComposeUiApi::class)
@@ -60,12 +61,12 @@ class TextFieldMagnifierTest {
         params = params
     ) { factory ->
         val focusRequester = FocusRequester()
-        var isUsingNativeTextInput: (() -> Boolean)? = null
+        var nativeTextInputContext: UIKitNativeTextInputContext? = null
 
         setContent {
-            val nativeTextInputContext = LocalNativeTextInputContext.current
+            val currentNativeTextInputContext = LocalNativeTextInputContext.current
             SideEffect {
-                isUsingNativeTextInput = { nativeTextInputContext.usingNativeTextInput() }
+                nativeTextInputContext = currentNativeTextInputContext
             }
             Column {
                 Box(Modifier.height(200.dp).fillMaxWidth())
@@ -77,9 +78,11 @@ class TextFieldMagnifierTest {
 
         waitForIdle()
 
-        waitUntilNativeTextInputMode(factory.useNativeTextInput) {
-            isUsingNativeTextInput?.invoke()
-        }
+        assertEquals(
+            expected = factory.useNativeTextInput,
+            actual = nativeTextInputContext?.usingNativeTextInput(),
+            message = "Text input mode should be ${factory.textInputModeName}"
+        )
 
         findNodeWithTag("textField").touchDown()
 
@@ -93,12 +96,12 @@ class TextFieldMagnifierTest {
         params = params
     ) { factory ->
         val focusRequester = FocusRequester()
-        var isUsingNativeTextInput: (() -> Boolean)? = null
+        var nativeTextInputContext: UIKitNativeTextInputContext? = null
 
         setContent {
-            val nativeTextInputContext = LocalNativeTextInputContext.current
+            val currentNativeTextInputContext = LocalNativeTextInputContext.current
             SideEffect {
-                isUsingNativeTextInput = { nativeTextInputContext.usingNativeTextInput() }
+                nativeTextInputContext = currentNativeTextInputContext
             }
             Column {
                 Box(Modifier.height(200.dp).fillMaxWidth())
@@ -110,9 +113,11 @@ class TextFieldMagnifierTest {
 
         waitForIdle()
 
-        waitUntilNativeTextInputMode(factory.useNativeTextInput) {
-            isUsingNativeTextInput?.invoke()
-        }
+        assertEquals(
+            expected = factory.useNativeTextInput,
+            actual = nativeTextInputContext?.usingNativeTextInput(),
+            message = "Text input mode should be ${factory.textInputModeName}"
+        )
 
         val touch = findNodeWithTag("textField").touchDown()
 
@@ -154,18 +159,6 @@ class TextFieldMagnifierTest {
 
         waitUntil {
             findFirstDescendant { it.isLoupeView } == null
-        }
-    }
-
-    private fun UIKitInstrumentedTest.waitUntilNativeTextInputMode(
-        useNativeTextInput: Boolean,
-        isUsingNativeTextInput: () -> Boolean?
-    ) {
-        waitUntil("Native text input context should be captured") {
-            isUsingNativeTextInput() != null
-        }
-        waitUntil("Native text input mode should be $useNativeTextInput") {
-            isUsingNativeTextInput() == useNativeTextInput
         }
     }
 
@@ -211,6 +204,8 @@ private class TextFieldMagnifierParam(
     val useNativeTextInput: Boolean,
     private val content: @Composable (FocusRequester) -> Unit
 ) {
+    val textInputModeName = if (useNativeTextInput) "NITI" else "non-NITI"
+
     @Composable
     operator fun invoke(focusRequester: FocusRequester) {
         content(focusRequester)
