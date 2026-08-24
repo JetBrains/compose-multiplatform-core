@@ -10,6 +10,8 @@ device_name="iPhone 17"
 iterations="1"
 # `run_until_failure` is applied only when iterations > 1.
 run_until_failure="false"
+# When true, xcodebuild output is mirrored into last-run-<n>.log next to this script.
+log_to_file="false"
 
 if [[ -z "$platform" || -z "$os_version" || -z "$device_name" ]]; then
   echo "Platform, OS, and device name must be non-empty." >&2
@@ -26,15 +28,48 @@ if [[ "$run_until_failure" != "true" && "$run_until_failure" != "false" ]]; then
   exit 1
 fi
 
+if [[ "$log_to_file" != "true" && "$log_to_file" != "false" ]]; then
+  echo "log_to_file must be true or false, got: $log_to_file" >&2
+  exit 1
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
 destination="platform=${platform},OS=${os_version},name=${device_name}"
 
+if [[ "$iterations" -eq 1 ]]; then
+  log_file_pattern="last-run.log"
+else
+  log_file_pattern="last-run-<n>.log"
+fi
+
+if [[ "$log_to_file" == "true" ]]; then
+  rm -f last-run.log last-run-[0-9]*.log
+  export NSUnbufferedIO=YES
+else
+  log_file_pattern="disabled"
+fi
+
+log_pipe() {
+  if [[ "$log_to_file" != "true" ]]; then
+    cat
+  elif [[ "$iterations" -eq 1 ]]; then
+    tee "${script_dir}/last-run.log"
+  else
+    awk -v dir="$script_dir" '
+      BEGIN { n = 1; file = dir "/last-run-1.log" }
+      /Test Suite .All tests. started/ { if (started) { n++; file = dir "/last-run-" n ".log" } started = 1 }
+      { print; print > file; fflush() }
+    '
+  fi
+}
+
 echo "Running iOS instrumented tests with:"
 echo "  destination: ${destination}"
 echo "  iterations: ${iterations}"
 echo "  derivedDataPath: Xcode default"
+echo "  log file: ${log_file_pattern}"
 
 # The keyboard preference is picked up when a simulator boots, so shut them all down
 # before forcing the detached-keyboard setup required by these instrumented tests.
@@ -73,8 +108,8 @@ xcodebuild \
   -scheme Launcher \
   -destination "$destination" \
   test-without-building \
-  "${test_args[@]}"
-test_exit_code=$?
+  "${test_args[@]}" 2>&1 | log_pipe
+test_exit_code=${PIPESTATUS[0]}
 set -e
 
 exit "$test_exit_code"

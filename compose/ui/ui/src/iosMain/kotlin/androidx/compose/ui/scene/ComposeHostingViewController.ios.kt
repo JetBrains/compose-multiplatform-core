@@ -47,13 +47,11 @@ import platform.UIKit.UIViewControllerTransitionCoordinatorProtocol
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    coroutineContext: CoroutineContext = Dispatchers.Main,
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate = ComposeContainerLifecycleDelegate()
 ) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
     private val container = ComposeContainer(
         configuration = configuration,
         content = content,
-        coroutineContext = coroutineContext,
         lifecycleDelegate = lifecycleDelegate
     )
 

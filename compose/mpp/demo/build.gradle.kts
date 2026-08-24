@@ -348,9 +348,11 @@ val generateDemoBuildInfo = tasks.register("generateDemoBuildInfo") {
 
         fun esc(value: String) = value
             .replace("\\", "\\\\")
+            .replace("$", "\\\$")
             .replace("\"", "\\\"")
             .replace("\r", "")
             .replace("\n", "\\n")
+            .replace("\t", "\\t")
 
         val branch = git("rev-parse", "--abbrev-ref", "HEAD")
         val hash = git("rev-parse", "--short", "HEAD")

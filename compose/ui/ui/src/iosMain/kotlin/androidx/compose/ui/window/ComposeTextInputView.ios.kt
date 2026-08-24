@@ -66,6 +66,7 @@ import platform.UIKit.UITextLayoutDirectionUp
 import platform.UIKit.UITextPosition
 import platform.UIKit.UITextRange
 import platform.UIKit.UITextSelectionRect
+import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.UITextStorageDirection
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
@@ -439,6 +440,7 @@ internal class ComposeTextInputView(
     override fun enablesReturnKeyAutomatically(): Boolean = inputTraits.enablesReturnKeyAutomatically()
     override fun autocapitalizationType(): UITextAutocapitalizationType = inputTraits.autocapitalizationType()
     override fun autocorrectionType(): UITextAutocorrectionType = inputTraits.autocorrectionType()
+    override fun spellCheckingType(): UITextSpellCheckingType = inputTraits.spellCheckingType()
     override fun writingToolsBehavior(): UIWritingToolsBehavior = inputTraits.writingToolsBehavior()
 
     /**

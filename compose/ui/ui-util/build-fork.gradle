@@ -57,18 +57,6 @@ androidXMultiplatform {
             implementation(project(":kruth:kruth"))
         }
 
-        androidMain.dependencies {
-            api("androidx.annotation:annotation-experimental:1.4.1")
-        }
-
-        androidDeviceTest.dependencies {
-            implementation(libs.testRunner)
-        }
-
-        androidHostTest.dependencies {
-            implementation(libs.truth)
-        }
-
         nonJvmMain {
             dependencies {
                 // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed

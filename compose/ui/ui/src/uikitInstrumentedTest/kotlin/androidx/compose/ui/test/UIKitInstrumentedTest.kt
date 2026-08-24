@@ -19,6 +19,7 @@ package androidx.compose.ui.test
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.AccessibilityNotification
+import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
@@ -67,6 +68,7 @@ import kotlin.time.TimeSource
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
@@ -262,13 +264,8 @@ internal class UIKitInstrumentedTest(
     val rootRedrawer: MetalRedrawer? get() =
         hostingView?.rootRedrawer ?: hostingViewController?.rootRedrawer
 
-    private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
-        override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {
-            throw CancellationException("Infinite animations are disabled on tests")
-        }
-    }
-
-    private val coroutineContext = Dispatchers.Main + infiniteAnimationPolicy
+    val frameChoreographer: FrameChoreographer? get() =
+        appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     fun setContent(
         configure: ComposeContainerConfiguration.() -> Unit = {},
@@ -339,7 +336,6 @@ internal class UIKitInstrumentedTest(
         return ComposeHostingView(
             configuration = configuration,
             content = content,
-            coroutineContext = coroutineContext
         ).also {
             hostingView = it
         }
@@ -360,7 +356,6 @@ internal class UIKitInstrumentedTest(
         return ComposeHostingViewController(
             configuration = configuration,
             content = content,
-            coroutineContext = coroutineContext
         ).also {
             this.hostingViewController = it
         }
@@ -398,7 +393,6 @@ internal class UIKitInstrumentedTest(
             val containerInvalidations =
                 hostingViewController?.hasInvalidations() ?: hostingView?.hasInvalidations()
                 ?: false
-
             return !hadSnapshotChanges && !isApplyObserverNotificationPending && !containerInvalidations
         }
 
@@ -742,11 +736,23 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
     private var supportedInterfaceOrientations: UIInterfaceOrientationMask = UIInterfaceOrientationMaskAll
 
+    private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
+        override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {
+            throw CancellationException("Infinite animations are disabled on tests")
+        }
+    }
+    private var sceneJob = Job()
+
     fun setUpWindow(viewController: UIViewController) {
         UIApplication.sharedApplication().setDelegate(this)
 
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
             ?: error("No window scene found")
+
+        sceneJob.cancel()
+        sceneJob = Job()
+        FrameChoreographer.configureForScene(scene, Dispatchers.Main + infiniteAnimationPolicy + sceneJob)
+
         val allWindows = scene.windows - _window
 
         _window?.backgroundColor = UIColor.systemBackgroundColor
@@ -761,6 +767,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 
     fun cleanUp() {
+        sceneJob.cancel()
         val scene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         val allWindows = scene?.windows ?: emptyList<UIWindow>()
 

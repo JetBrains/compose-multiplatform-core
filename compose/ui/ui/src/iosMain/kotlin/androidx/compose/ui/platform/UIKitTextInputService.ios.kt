@@ -54,10 +54,18 @@ internal class UIKitTextInputService(
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
     private val focusedViewsList: FocusedViewsList?,
-    private var onInputStarted: () -> Unit,
+    private var listener: Listener,
     private var focusManager: () -> ComposeSceneFocusManager?,
     coroutineContext: CoroutineContext
 ) {
+
+    interface Listener {
+        fun onInputWillStart() = Unit
+        fun onInputDidStart() = Unit
+        fun onInputDidStop() = Unit
+    }
+
+    private object EmptyListener : Listener
 
     private val coroutineScope = CoroutineScope(coroutineContext)
 
@@ -100,6 +108,7 @@ internal class UIKitTextInputService(
         val usingNativeTextInput = request.imeOptions.platformImeOptions?.usingNativeTextInput ?: false
 
         currentInputConnection?.stop()
+        listener.onInputWillStart()
         currentInputConnection = if (usingNativeTextInput) {
             NativeTextInputConnection(
                 updateView = updateView,
@@ -120,12 +129,13 @@ internal class UIKitTextInputService(
         }
         currentInputConnection?.start(request)
         updateEditMenuState()
-        onInputStarted()
+        listener.onInputDidStart()
     }
 
     private fun stopInput() {
         currentInputConnection?.stop()
         currentInputConnection = null
+        listener.onInputDidStop()
     }
 
     fun showSoftwareKeyboard() {
@@ -250,7 +260,7 @@ internal class UIKitTextInputService(
 
     fun dispose() {
         stopInput()
-        onInputStarted = {}
+        listener = EmptyListener
         updateView = {}
         focusManager = { null }
     }

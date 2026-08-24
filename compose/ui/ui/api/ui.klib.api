@@ -4909,6 +4909,19 @@ final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function1<an
 final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIViewController // androidx.compose.ui.window/ComposeUIViewController|ComposeUIViewController(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [js, wasmJs]
+final class androidx.compose.ui.window/ComposeViewportConfiguration { // androidx.compose.ui.window/ComposeViewportConfiguration|null[0]
+    final var enableBrowserWindowInsets // androidx.compose.ui.window/ComposeViewportConfiguration.enableBrowserWindowInsets|{}enableBrowserWindowInsets[0]
+        final fun <get-enableBrowserWindowInsets>(): kotlin/Boolean // androidx.compose.ui.window/ComposeViewportConfiguration.enableBrowserWindowInsets.<get-enableBrowserWindowInsets>|<get-enableBrowserWindowInsets>(){}[0]
+        final fun <set-enableBrowserWindowInsets>(kotlin/Boolean) // androidx.compose.ui.window/ComposeViewportConfiguration.enableBrowserWindowInsets.<set-enableBrowserWindowInsets>|<set-enableBrowserWindowInsets>(kotlin.Boolean){}[0]
+    final var isA11YEnabled // androidx.compose.ui.window/ComposeViewportConfiguration.isA11YEnabled|{}isA11YEnabled[0]
+        final fun <get-isA11YEnabled>(): kotlin/Boolean // androidx.compose.ui.window/ComposeViewportConfiguration.isA11YEnabled.<get-isA11YEnabled>|<get-isA11YEnabled>(){}[0]
+        final fun <set-isA11YEnabled>(kotlin/Boolean) // androidx.compose.ui.window/ComposeViewportConfiguration.isA11YEnabled.<set-isA11YEnabled>|<set-isA11YEnabled>(kotlin.Boolean){}[0]
+    final var isClearFocusOnMouseDownEnabled // androidx.compose.ui.window/ComposeViewportConfiguration.isClearFocusOnMouseDownEnabled|{}isClearFocusOnMouseDownEnabled[0]
+        final fun <get-isClearFocusOnMouseDownEnabled>(): kotlin/Boolean // androidx.compose.ui.window/ComposeViewportConfiguration.isClearFocusOnMouseDownEnabled.<get-isClearFocusOnMouseDownEnabled>|<get-isClearFocusOnMouseDownEnabled>(){}[0]
+        final fun <set-isClearFocusOnMouseDownEnabled>(kotlin/Boolean) // androidx.compose.ui.window/ComposeViewportConfiguration.isClearFocusOnMouseDownEnabled.<set-isClearFocusOnMouseDownEnabled>|<set-isClearFocusOnMouseDownEnabled>(kotlin.Boolean){}[0]
+}
+
+// Targets: [js, wasmJs]
 final object androidx.compose.ui.input.pointer/DummyPointerIcon : androidx.compose.ui.input.pointer/PointerIcon // androidx.compose.ui.input.pointer/DummyPointerIcon|null[0]
 
 // Targets: [js, wasmJs]
@@ -4950,6 +4963,15 @@ final val androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus
 final val androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop|#static{}androidx_compose_ui_window_MediaQueryStatus_UNSUPPORTED$stableprop[0]
 
 // Targets: [js, wasmJs]
+final fun <#A: org.w3c.dom/HTMLElement> androidx.compose.ui.viewinterop/HtmlElementView(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/HtmlElementView|HtmlElementView(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<org.w3c.dom.HTMLElement>}[0]
+
+// Targets: [js, wasmJs]
+final fun <#A: org.w3c.dom/HTMLElement> androidx.compose.ui.viewinterop/WebElementView(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/WebElementView|WebElementView(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<org.w3c.dom.HTMLElement>}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.input.pointer/PointerIcon(kotlin/String): androidx.compose.ui.input.pointer/PointerIcon // androidx.compose.ui.input.pointer/PointerIcon|PointerIcon(kotlin.String){}[0]
+
+// Targets: [js, wasmJs]
 final fun androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter|androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
@@ -4960,6 +4982,12 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolb
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter|androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.window/ComposeViewport(kotlin/String? = ..., kotlin/Function1<androidx.compose.ui.window/ComposeViewportConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/ComposeViewport|ComposeViewport(kotlin.String?;kotlin.Function1<androidx.compose.ui.window.ComposeViewportConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.window/ComposeViewport(org.w3c.dom/Element, kotlin/Function1<androidx.compose.ui.window/ComposeViewportConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit> = ...) // androidx.compose.ui.window/ComposeViewport|ComposeViewport(org.w3c.dom.Element;kotlin.Function1<androidx.compose.ui.window.ComposeViewportConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter|androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter(){}[0]

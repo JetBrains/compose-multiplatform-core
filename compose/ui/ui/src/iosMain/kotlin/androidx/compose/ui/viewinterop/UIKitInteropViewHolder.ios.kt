@@ -17,6 +17,7 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.CompositeKeyHashCode
+import androidx.compose.runtime.CompositionContext
 import platform.UIKit.UIView
 
 internal class UIKitInteropViewHolder<T : UIView>(
@@ -24,11 +25,13 @@ internal class UIKitInteropViewHolder<T : UIView>(
     interopContainer: InteropContainer,
     properties: UIKitInteropProperties,
     compositeKeyHashCode: CompositeKeyHashCode,
+    compositionContext: CompositionContext
 ) : UIKitInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,
     compositeKeyHashCode,
+    compositionContext
 ) {
     override val userComponentView: UIView
         get() = interopView

@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.dpRectInWindow
@@ -58,10 +59,11 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -78,7 +80,17 @@ import platform.CoreGraphics.CGRect
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
-internal class KeyboardInsetsTest {
+internal class KeyboardInsetsInHostingViewTest : KeyboardInsetsTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = true, it) }
+)
+
+internal class KeyboardInsetsInHostingViewControllerTest : KeyboardInsetsTest(
+    runUIKitInstrumentedTest = { runUIKitInstrumentedTest(useHostingView = false, it) }
+)
+
+internal abstract class KeyboardInsetsTest(
+    private val runUIKitInstrumentedTest: (UIKitInstrumentedTest.() -> Unit) -> Unit
+) {
     @Test
     fun testImePaddingInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
         val contentFrames = mutableListOf<DpRect>()
@@ -101,6 +113,7 @@ internal class KeyboardInsetsTest {
                     }
                     .drawWithContent {
                         contentFrames.add(lastContentFrame)
+                        drawContent()
                     }
             ) {
                 TextField(
@@ -569,6 +582,57 @@ internal class KeyboardInsetsTest {
             bottom = screenSize.height - keyboardHeight
         )
         assertEquals(expectedTextField, lastTextFieldFrame)
+    }
+
+    @Test
+    fun testFocusableAboveKeyboardWithIMEInsetsStaysAboveKeyboardDuringAnimation() = runUIKitInstrumentedTest {
+        var textFieldBottom = Int.MIN_VALUE
+        val drawnTextFieldFrames = mutableListOf<Pair<Int, Int>>()
+        val focusRequester = FocusRequester()
+
+        setContent({
+            onFocusBehavior = OnFocusBehavior.FocusableAboveKeyboard
+        }) {
+            val imeInsets = WindowInsets.ime
+            BasicTextField(
+                value = "test Focusable AboveKeyboard Large Text Field".repeat(200),
+                onValueChange = {},
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .fillMaxSize()
+                    .imePadding()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldBottom = coordinates.boundsInWindow().roundToIntRect().bottom
+                    }
+                    .drawWithContent {
+                        val visibleBottom = screenSize.height.roundToPx() - imeInsets.getBottom(Density(density))
+                        drawnTextFieldFrames += textFieldBottom to visibleBottom
+                        drawContent()
+                    }
+            )
+        }
+
+        drawnTextFieldFrames.clear()
+        focusRequester.requestFocus()
+        waitForIdle()
+
+        assertTrue(
+            drawnTextFieldFrames.size > 5,
+            "Animation should produce large number of frames"
+        )
+
+        assertEquals(
+            expected = with(density) { (screenSize.height - keyboardHeight).roundToPx() },
+            actual = drawnTextFieldFrames.last().second
+        )
+
+        drawnTextFieldFrames.forEach { frame ->
+            assertTrue(
+                actual = frame.first <= frame.second,
+                "Focused field must be settled above the keyboard in every drawn frame: " +
+                    "fieldBottom=${frame.first}, visibleBottom=${frame.second}",
+            )
+        }
     }
 
     @Test

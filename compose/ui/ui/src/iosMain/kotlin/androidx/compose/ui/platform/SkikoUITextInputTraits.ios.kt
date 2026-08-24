@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.isSecureTextEntry
 import androidx.compose.ui.text.input.keyboardAppearance
 import androidx.compose.ui.text.input.keyboardType
 import androidx.compose.ui.text.input.returnKeyType
+import androidx.compose.ui.text.input.spellCheckingType
 import androidx.compose.ui.text.input.textContentType
 import androidx.compose.ui.text.input.writingToolsBehavior
 import platform.UIKit.UIKeyboardAppearance
@@ -49,6 +50,7 @@ import platform.UIKit.UITextContentType
 import platform.UIKit.UITextContentTypeEmailAddress
 import platform.UIKit.UITextContentTypePassword
 import platform.UIKit.UITextContentTypeTelephoneNumber
+import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
 import platform.UIKit.UIWritingToolsBehaviorDefault
@@ -77,6 +79,9 @@ internal interface SkikoUITextInputTraits {
 
     fun autocorrectionType(): UITextAutocorrectionType =
         UITextAutocorrectionType.UITextAutocorrectionTypeYes
+
+    fun spellCheckingType(): UITextSpellCheckingType =
+        UITextSpellCheckingType.UITextSpellCheckingTypeDefault
 
     fun inputView(): UIView? = null
 
@@ -193,6 +198,18 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
                 true -> UITextAutocorrectionType.UITextAutocorrectionTypeYes
                 false -> UITextAutocorrectionType.UITextAutocorrectionTypeNo
                 else -> UITextAutocorrectionType.UITextAutocorrectionTypeDefault
+            }
+        }
+
+        override fun spellCheckingType(): UITextSpellCheckingType {
+            currentImeOptions?.platformImeOptions?.spellCheckingType?.let {
+                return it
+            }
+
+            return when (currentImeOptions?.autoCorrect) {
+                true -> UITextSpellCheckingType.UITextSpellCheckingTypeYes
+                false -> UITextSpellCheckingType.UITextSpellCheckingTypeNo
+                else -> UITextSpellCheckingType.UITextSpellCheckingTypeDefault
             }
         }
 

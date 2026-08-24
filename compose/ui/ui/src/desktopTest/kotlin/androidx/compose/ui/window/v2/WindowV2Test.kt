@@ -59,6 +59,7 @@ import java.awt.Robot
 import java.awt.Window
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
@@ -697,7 +698,7 @@ class WindowV2Test {
         showInnerWindow = true
         awaitIdle()
 
-        var nonBlackPixelDetected: java.awt.Color? = null
+        val nonBlackPixelDetected = AtomicReference<java.awt.Color?>(null)
         val testLocation = innerWindow.bounds.let {
             Point(it.x + it.width / 2, it.y + it.height / 2)
         }
@@ -707,7 +708,7 @@ class WindowV2Test {
             while (!stopThread.get()) {
                 val pixel = robot.getPixelColor(testLocation.x, testLocation.y)
                 if (pixel != java.awt.Color.BLACK) {
-                    nonBlackPixelDetected = pixel
+                    nonBlackPixelDetected.set(pixel)
                     return@thread
                 }
             }
@@ -721,7 +722,7 @@ class WindowV2Test {
         stopThread.getAndSet(true)
         t.join()
 
-        assertThat(nonBlackPixelDetected).isNull()
+        assertThat(nonBlackPixelDetected.get()).isNull()
     }
 
     @Test
