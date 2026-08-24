@@ -453,7 +453,7 @@ internal fun BasicTextField(
             )
             .pointerHoverIcon(PointerIcon.Text)
             .addContextMenuComponents(textFieldSelectionState, coroutineScope)
-            .textFieldOverlay(state, keyboardOptions, interactionSource)
+            .textFieldOverlay(transformedState, keyboardOptions, interactionSource)
 
     Box(decorationModifiers, propagateMinConstraints = true) {
         ContextMenuArea(textFieldSelectionState, enabled) {
@@ -564,7 +564,7 @@ internal fun BasicTextField(
  * codes, etc.).
  */
 internal expect fun Modifier.textFieldOverlay(
-    state: TextFieldState,
+    transformedState: TransformedTextFieldState,
     keyboardOptions: KeyboardOptions,
     interactionSource: InteractionSource,
 ): Modifier
