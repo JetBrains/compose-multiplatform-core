@@ -27,8 +27,8 @@ import org.gradle.api.Project
 object JetBrainsPublication {
     private const val COMPATIBILITY_STUB_PROJECT_SUFFIX = "-compatibility-stub"
     private const val ANDROIDX_GROUP_PREFIX = "androidx."
-    private const val JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.compose."
-    private const val JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.androidx."
+    private const val JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.fleet.compose."
+    private const val JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.fleet.androidx."
 
     val libraryToComponents = mapOf(
         "COMPOSE" to listOf(
@@ -156,11 +156,11 @@ object JetBrainsPublication {
 
     fun mavenGroupFor(projectPath: String): String = when {
         projectPath == ":annotation:annotation" ->
-            "org.jetbrains.compose.annotation-internal"
+            "org.jetbrains.fleet.compose.annotation-internal"
         projectPath == ":collection:collection" ->
-            "org.jetbrains.compose.collection-internal"
+            "org.jetbrains.fleet.compose.collection-internal"
         projectPath == ":compose:kdt-dispatcher" ->
-            "org.jetbrains.compose"
+            "org.jetbrains.fleet.compose"
         projectPath.startsWith(":compose:") ->
             JETBRAINS_COMPOSE_GROUP_PREFIX + projectPath
                 .removePrefix(":compose:")
@@ -177,11 +177,11 @@ object JetBrainsPublication {
     fun projectPathForCoordinates(group: String, name: String): String? = when {
         isAndroidXGroup(group) ->
             ":${group.removePrefix(ANDROIDX_GROUP_PREFIX).replace(".", ":")}:$name"
-        group == "org.jetbrains.compose.annotation-internal" ->
+        group == "org.jetbrains.fleet.compose.annotation-internal" ->
             ":annotation:annotation"
-        group == "org.jetbrains.compose.collection-internal" ->
+        group == "org.jetbrains.fleet.compose.collection-internal" ->
             ":collection:collection"
-        group == "org.jetbrains.compose" && name == "kdt-dispatcher" ->
+        group == "org.jetbrains.fleet.compose" && name == "kdt-dispatcher" ->
             ":compose:kdt-dispatcher"
         group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
             ":compose:${group.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
