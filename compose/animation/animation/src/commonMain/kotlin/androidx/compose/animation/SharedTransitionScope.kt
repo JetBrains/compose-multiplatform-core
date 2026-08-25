@@ -957,6 +957,7 @@ public interface SharedTransitionScope : LookaheadScope {
      *
      * @sample androidx.compose.animation.samples.DynamicallyEnabledSharedElementInPagerSample
      * @sample androidx.compose.animation.samples.SharedContentConfigSample
+     * @sample androidx.compose.animation.samples.SharedContentConfigDeferredTransitionSample
      */
     public interface SharedContentConfig {
         /**
@@ -986,6 +987,8 @@ public interface SharedTransitionScope : LookaheadScope {
          * the transition switches to the automatic phase. This makes it look like it remains
          * visually attached to its parent container. If false, it remains statically detached in
          * its start position during the deferred phase.
+         *
+         * @sample androidx.compose.animation.samples.SharedContentConfigDeferredTransitionSample
          */
         @ExperimentalDeferredTransitionApi
         @get:Suppress("GetterSetterNames")
@@ -1046,6 +1049,7 @@ public interface SharedTransitionScope : LookaheadScope {
      *   part in the manual transformations applied to its container during the deferred phase of a
      *   [DeferredTransition]. This makes it look like it remains visually attached to its parent
      *   container.
+     * @sample androidx.compose.animation.samples.SharedContentConfigDeferredTransitionSample
      * @see SharedContentConfig
      */
     @ExperimentalDeferredTransitionApi
