@@ -144,6 +144,10 @@ kotlin {
                     exclude("org.jetbrains.compose.runtime")
                     exclude("org.jetbrains.compose.ui")
                 }
+                implementation("org.jetbrains.compose.components:components-resources:1.7.3") {
+                    exclude("org.jetbrains.compose.runtime")
+                    exclude("org.jetbrains.compose.ui")
+                }
             }
         }
 
@@ -380,3 +384,4 @@ val generateDemoBuildInfo = tasks.register("generateDemoBuildInfo") {
 }
 
 kotlin.sourceSets.getByName("commonMain").kotlin.srcDir(generateDemoBuildInfo)
+kotlin.sourceSets.getByName("commonMain").resources.srcDir("src/commonMain/composeResources")

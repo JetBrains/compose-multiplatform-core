@@ -20,6 +20,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
@@ -40,6 +41,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
+import androidx.compose.mpp.demo.resources.Res
+import org.jetbrains.compose.resources.painterResource
 
 // https://youtrack.jetbrains.com/issue/CMP-4993
 // On Web, VectorPainter cannot get the correct size and draw content when running inside other Painters
@@ -69,6 +72,7 @@ val VectorPainterInPainter = Screen.Example(
                 lineTo(21f, 5f)
                 curveTo(21f, 3.9f, 20.1f, 3f, 19f, 3f)
                 close()
+
                 moveTo(14.14f, 11.86f)
                 lineToRelative(-3f, 3.87f)
                 lineTo(9f, 13.14f)
@@ -81,37 +85,72 @@ val VectorPainterInPainter = Screen.Example(
     }
 
     val vectorPainter = rememberVectorPainter(iconVector)
+    val iconImagePainter = painterResource(Res.drawable.ic_image_outline)
 
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("1. Image with VectorPainter")
-        Image(
-            painter = vectorPainter,
-            contentDescription = null,
-            modifier = Modifier.size(100.dp).background(Color.Cyan)
-        )
+    Row(Modifier.fillMaxWidth()) {
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("1. Image with VectorPainter")
+            Image(
+                painter = vectorPainter,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp).background(Color.Cyan)
+            )
 
-        Text("2. drawWithContent calling painter.draw")
-        Box(
-            modifier = Modifier.size(100.dp)
-                .background(Color.Magenta)
-                .drawWithContent {
-                    with(vectorPainter) {
-                        draw(Size(24f, 24f))
+            Text("2. drawWithContent calling painter.draw")
+            Box(
+                modifier = Modifier.size(100.dp)
+                    .background(Color.Magenta)
+                    .drawWithContent {
+                        with(vectorPainter) {
+                            draw(Size(24f, 24f))
+                        }
                     }
-                }
-        )
+            )
 
-        Text("3. Custom IconPainter wrapping VectorPainter")
-        val iconPainter = remember(vectorPainter) {
-            IconPainter(icon = vectorPainter, background = Color.Green)
+            Text("3. Custom IconPainter wrapping VectorPainter")
+            val iconPainter = remember(vectorPainter) {
+                IconPainter(icon = vectorPainter, background = Color.Green)
+            }
+            Image(
+                painter = iconPainter,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp)
+            )
+
+            Text("intrinsicSize: ${vectorPainter.intrinsicSize}")
         }
-        Image(
-            painter = iconPainter,
-            contentDescription = null,
-            modifier = Modifier.size(100.dp)
-        )
 
-        Text("intrinsicSize: ${vectorPainter.intrinsicSize}")
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("1. Image with painterResource")
+            Image(
+                painter = iconImagePainter,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp).background(Color.Cyan)
+            )
+
+            Text("2. drawWithContent calling painter.draw")
+            Box(
+                modifier = Modifier.size(100.dp)
+                    .background(Color.Magenta)
+                    .drawWithContent {
+                        with(iconImagePainter) {
+                            draw(Size(24f, 24f))
+                        }
+                    }
+            )
+
+            Text("3. Custom IconPainter wrapping painterResource")
+            val iconPainter = remember(iconImagePainter) {
+                IconPainter(icon = iconImagePainter, background = Color.Green)
+            }
+            Image(
+                painter = iconPainter,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp)
+            )
+
+            Text("intrinsicSize: ${iconImagePainter.intrinsicSize}")
+        }
     }
 }
 
