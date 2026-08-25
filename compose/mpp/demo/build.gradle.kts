@@ -144,7 +144,7 @@ kotlin {
                     exclude("org.jetbrains.compose.runtime")
                     exclude("org.jetbrains.compose.ui")
                 }
-                implementation("org.jetbrains.compose.components:components-resources:1.7.3") {
+                implementation("org.jetbrains.compose.components:components-resources:1.11.1") {
                     exclude("org.jetbrains.compose.runtime")
                     exclude("org.jetbrains.compose.ui")
                 }
