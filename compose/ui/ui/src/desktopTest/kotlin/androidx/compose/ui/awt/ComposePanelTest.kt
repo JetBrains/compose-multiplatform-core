@@ -1045,6 +1045,9 @@ class ComposePanelTest {
         }
 
         try {
+            // Popup layers have an independent scene, so wait until it receives the
+            // parent anchor before asking the frame for its preferred size.
+            awaitIdle()
             frame.pack()
             val size = frame.size
             assertThat(size).isEqualTo(Dimension(500, 500) + frame.insets)

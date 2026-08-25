@@ -66,6 +66,9 @@ class ComposeSceneInputTest {
             overlappedPopup.Content()
             independentPopup.Content()
         }
+        // The popup is composed after the parent is placed and publishes its anchor.
+        scene.render()
+        scene.render()
 
         scene.sendPointerEvent(PointerEventType.Enter, Offset(5f, 5f))
         background.events.assertReceivedNoEvents()
@@ -155,6 +158,9 @@ class ComposeSceneInputTest {
             overlappedPopup.Content()
             independentPopup.Content()
         }
+        // The popup is composed after the parent is placed and publishes its anchor.
+        scene.render()
+        scene.render()
 
         scene.sendPointerEvent(PointerEventType.Enter, Offset(5f, 5f))
         scene.sendPointerEvent(PointerEventType.Press, Offset(5f, 5f))

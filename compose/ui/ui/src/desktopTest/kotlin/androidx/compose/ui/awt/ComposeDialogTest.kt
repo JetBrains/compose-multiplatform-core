@@ -383,6 +383,9 @@ class ComposeDialogTest {
         }
 
         try {
+            // Popup layers have an independent scene, so wait until it receives the
+            // parent anchor before asking the dialog for its preferred size.
+            awaitIdle()
             dialog.pack()
             val size = dialog.size
             assertThat(size).isEqualTo(Dimension(500, 500) + dialog.insets)
