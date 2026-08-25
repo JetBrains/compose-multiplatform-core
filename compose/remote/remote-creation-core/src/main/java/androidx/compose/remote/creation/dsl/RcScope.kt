@@ -39,7 +39,7 @@ public interface RcScope {
         modifier: Modifier = Modifier,
         horizontal: RcHorizontalPositioning = RcHorizontalPositioning.Start,
         vertical: RcVerticalPositioning = RcVerticalPositioning.Top,
-        content: RcScope.() -> Unit = {},
+        content: RcBoxScope.() -> Unit = {},
     )
 
     /** Adds a [FitBox] layout to the document. */
@@ -143,6 +143,23 @@ public interface RcScope {
         contentScale: RcContentScale = RcContentScale.Fit,
         alpha: Float = 1f,
     )
+
+    /** Adds an Icon component to the document. */
+    public fun Icon(
+        image: RcImage,
+        modifier: Modifier = Modifier,
+        contentDescription: String? = null,
+        tint: RcColorValue? = null,
+    ) {
+        // In RemoteCompose, an Icon is represented as an Image node with optional color tinting.
+        Image(
+            image = image,
+            modifier = modifier,
+            contentDescription = contentDescription,
+            contentScale = RcContentScale.Fit,
+            alpha = 1f,
+        )
+    }
 
     /** Adds a [Canvas] component to the document. */
     public fun Canvas(modifier: Modifier = Modifier, content: RcCanvasScope.() -> Unit)
@@ -737,9 +754,6 @@ public interface RcScope {
     /** Combines two paths using the specified operation. */
     public fun RcPath.combine(path2: RcPath, op: RcPathCombineOp): RcPath
 
-    /** Performs a haptic feedback. */
-    public fun performHaptic(feedbackConstant: Int)
-
     /** Tells the system to wake up in a given number of seconds. */
     public fun wakeIn(seconds: Float)
 
@@ -894,6 +908,11 @@ public interface RcScope {
         content: RcScope.() -> Unit,
     )
 
+    /** Adds an elegant conditional block based on a type-safe [RcCondition]. */
+    public fun ifTrue(condition: RcCondition, block: RcScope.() -> Unit) {
+        conditionalOperations(condition.op.value, condition.a, condition.b, block)
+    }
+
     /** Loops from start to end with a specified step. */
     public fun rcLoop(start: RcFloat, step: Float, end: RcFloat, block: RcScope.(RcFloat) -> Unit)
 
@@ -905,6 +924,33 @@ public interface RcScope {
      * @param flags formatting flags (see [Rc.TextFromFloat])
      */
     public fun Float.format(whole: Int, decimal: Int, flags: Int): RcText
+
+    /** Merges this [RcText] with [other] into a new [RcText]. */
+    public infix fun RcText.merge(other: RcText): RcText
+
+    /** Extracts a substring from this [RcText] starting at [start] for [length] characters. */
+    public fun RcText.subtext(start: RcFloat, length: RcFloat = (-1f).rf): RcText
+
+    public fun RcText.subtext(start: Float, length: Float = -1f): RcText
+
+    /** Returns the length of this [RcText] as an [RcFloat]. */
+    public val RcText.length: RcFloat
+
+    /** Defines a reusable remote Macro template. */
+    public fun defineMacro(
+        name: String,
+        parameters: List<String>,
+        content: RcScope.(Map<String, RcMacroArg>) -> Unit,
+    ): RcMacro
+
+    /** Inflates an existing [RcMacro] with the specified arguments. */
+    public fun RcMacro.inflate(arguments: Map<String, Any>)
+
+    /** Inserts a macro parameter argument placeholder at this position. */
+    public fun RcMacroArg.insertArgument()
+
+    /** Inserts a macro parameter argument block at this position. */
+    public fun RcMacroArg.insertBlock(content: RcScope.() -> Unit)
 
     /** Extension property to convert an [Int] to a [RcFloat] within this scope. */
     public val Int.rf: RcFloat
@@ -1037,7 +1083,7 @@ public interface RcScope {
         skip(kind.value, value, block)
 
     /** Trigger a haptic-feedback pulse on the player device. */
-    public fun performHaptic(haptic: RcHaptic): Unit = performHaptic(haptic.value)
+    public fun performHaptic(haptic: RcHaptic)
 
     /** drawTextAnchored with typed [RcTextAnchorFlags]. */
     public fun drawTextAnchored(
@@ -1299,6 +1345,13 @@ public interface RcImpulseScope : RcScope {
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RcDslMarker
+public interface RcBoxScope : RcScope {
+    /** Matches child size to the parent [Box]. */
+    public fun Modifier.matchParentSize(): Modifier = fillMaxSize()
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RcDslMarker
 public interface RcColumnScope : RcScope {
     /** Sets the vertical weight of the component within a [Column]. */
     public fun Modifier.weight(weight: Float): Modifier
@@ -1432,6 +1485,35 @@ public interface RcCanvasScope : RcScope {
             notches,
             easing,
             *expressions,
+        )
+
+    /**
+     * [addTouch] with **reactive** [min]/[max] bounds and an [RcFloat] touch input [expression].
+     * The expression (typically built from [touchPosX]/[touchPosY], e.g. `touchPosX() *
+     * componentWidth() / windowWidth()`) is evaluated each event to produce the value, which is
+     * then clamped to `[min, max]`. Both bounds may be live expressions (e.g. plot edges).
+     */
+    public fun addTouch(
+        defaultValue: Float,
+        min: RcFloat,
+        max: RcFloat,
+        stopMode: RcTouchStopMode,
+        expression: RcFloat,
+        velocity: Float = 0f,
+        notchHaptic: RcHaptic = RcHaptic.NoHaptics,
+        notches: FloatArray? = null,
+        easing: FloatArray? = null,
+    ): RcFloat =
+        addTouch(
+            defaultValue,
+            min.toFloat(),
+            max.toFloat(),
+            stopMode.value,
+            velocity,
+            notchHaptic.value,
+            notches,
+            easing,
+            *expression.toArray(),
         )
 }
 
