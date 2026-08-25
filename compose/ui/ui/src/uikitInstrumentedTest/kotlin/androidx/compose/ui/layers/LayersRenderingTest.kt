@@ -24,7 +24,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.test.captureScreenshot
@@ -35,9 +34,6 @@ import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import platform.UIKit.UIImage
-import platform.darwin.dispatch_async
-import platform.darwin.dispatch_get_main_queue
 
 class LayersRenderingTest {
     @Test
@@ -45,25 +41,9 @@ class LayersRenderingTest {
         var showRed by mutableStateOf(false)
         var showGreen by mutableStateOf(false)
         var popupContentPlaced by mutableStateOf(false)
-        var renderTick by mutableStateOf(0)
-        var onRender = {}
-        var frameImage: UIImage? = null
-
-        fun prepareForCaptureNextFrame() {
-            frameImage = null
-            onRender = {
-                dispatch_async(dispatch_get_main_queue()) {
-                    frameImage = captureScreenshot()
-                }
-                onRender = {}
-            }
-        }
 
         setContent {
-            Box(Modifier.fillMaxSize().background(Color.Blue).drawBehind {
-                renderTick
-                onRender()
-            })
+            Box(Modifier.fillMaxSize().background(Color.Blue))
             if (showRed) {
                 Popup(
                     onDismissRequest = {},
@@ -98,13 +78,9 @@ class LayersRenderingTest {
             }
         }
 
-        fun assertNextFrameColor(expectedColor: Color) {
-            prepareForCaptureNextFrame()
-            renderTick++
+        fun assertFrameColor(expectedColor: Color) {
             waitForIdle()
-
-            assertNotNull(frameImage)
-            frameImage!!.forEachPixel(step = 4) { _, _, actualColor ->
+            assertNotNull(captureScreenshot()).forEachPixel(step = 4) { _, _, actualColor ->
                 assertEquals(
                     expectedColor,
                     actualColor,
@@ -128,18 +104,18 @@ class LayersRenderingTest {
         // UIKit has processed both scenes, rather than requiring the popup in a particular frame.
         showRed = true
         awaitPopupContentPlacement()
-        assertNextFrameColor(Color.Red)
+        assertFrameColor(Color.Red)
 
         showRed = false
         awaitPopupContentDisposal()
-        assertNextFrameColor(Color.Blue)
+        assertFrameColor(Color.Blue)
 
         showGreen = true
         awaitPopupContentPlacement()
-        assertNextFrameColor(Color.Green)
+        assertFrameColor(Color.Green)
 
         showGreen = false
         awaitPopupContentDisposal()
-        assertNextFrameColor(Color.Blue)
+        assertFrameColor(Color.Blue)
     }
 }
