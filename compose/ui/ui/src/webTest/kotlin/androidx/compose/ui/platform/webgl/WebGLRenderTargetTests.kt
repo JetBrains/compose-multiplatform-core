@@ -120,7 +120,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
         assertTrue(drawnFrames > 0, "the painter was never drawn")
 
         assertEquals(IntSize(64, 64), target.size, "unexpected allocated size")
-        assertNotNull(target.image, "the color texture was not adopted")
+        assertNotNull(target.adoptedTexture?.image, "the color texture was not adopted")
         assertTrue(target.generation > 0, "generation was never bumped")
 
         // Read the frame back from the target's own framebuffer, which render() keeps bound.
