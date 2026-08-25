@@ -56,7 +56,7 @@ internal class WebGLRenderTargetPainter(
         // Schedules the next redraw once a new frame is rendered, without recomposing.
         renderTarget.observeInvalidation()
 
-        val image = renderTarget.image ?: return
+        val image = renderTarget.adoptedTexture?.image ?: return
         if (size.width <= 0f || size.height <= 0f) return
         if (image.width <= 0 || image.height <= 0) return
 

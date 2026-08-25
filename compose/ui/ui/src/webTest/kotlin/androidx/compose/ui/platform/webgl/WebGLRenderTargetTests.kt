@@ -33,6 +33,7 @@ import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
@@ -43,7 +44,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.khronos.webgl.WebGLRenderingContext
+import org.khronos.webgl.WebGLRenderingContext.Companion.COLOR_ATTACHMENT0
 import org.khronos.webgl.WebGLRenderingContext.Companion.COLOR_BUFFER_BIT
+import org.khronos.webgl.WebGLRenderingContext.Companion.FRAMEBUFFER
+import org.khronos.webgl.WebGLRenderingContext.Companion.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME
 import org.khronos.webgl.WebGLRenderingContext.Companion.NO_ERROR
 
 /** Opaque red as `0xRRGGBBAA`, chosen because every channel is exact in RGBA8. */
@@ -57,6 +61,24 @@ private fun clearToRed(target: WebGLRenderTarget): Boolean = target.render {
 }
 
 class WebGLRenderTargetTests : OnCanvasTests {
+
+    @Test
+    fun dpSizeIsConvertedToPixelsUsingCurrentDensity() = runApplicationTest {
+        var renderTarget: WebGLRenderTarget? = null
+
+        createComposeWindow {
+            CompositionLocalProvider(LocalDensity provides Density(3f)) {
+                renderTarget = rememberWebGLRenderTarget(DpSize(32.dp, 16.dp))
+            }
+        }
+
+        val target = renderTarget ?: return@runApplicationTest skipWithoutWebGL2()
+        awaitAnimationFrame()
+        awaitIdle()
+
+        assertTrue(clearToRed(target), "render() did not run")
+        assertEquals(IntSize(96, 48), target.size, "DpSize was converted incorrectly")
+    }
 
     /**
      * The simplest possible renderer: clear the target to a known color. Verifies that a frame
@@ -111,6 +133,13 @@ class WebGLRenderTargetTests : OnCanvasTests {
                 webGLContext.clear(COLOR_BUFFER_BIT)
                 centerPixel = readPixelRgba8(webGLContext, size.width / 2, size.height / 2)
                 glError = webGLContext.getError()
+
+                val attachedTexture = webGLContext.getFramebufferAttachmentParameter(
+                    FRAMEBUFFER,
+                    COLOR_ATTACHMENT0,
+                    FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,
+                )
+                assertSame(target.webGlTexture, attachedTexture, "unexpected framebuffer texture")
             }
         }
 
