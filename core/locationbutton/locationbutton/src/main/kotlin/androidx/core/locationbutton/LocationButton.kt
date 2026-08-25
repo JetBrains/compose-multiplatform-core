@@ -144,8 +144,8 @@ constructor(
     internal var textColor = 0
     internal var backgroundColor = 0
     internal var iconTint = 0
-    internal var cornerRadius = 0f
-    internal var pressedCornerRadius = 0f
+    internal var cornerRadius = -1f
+    internal var pressedCornerRadius = -1f
     internal var strokeColor = 0
     internal var strokeWidth = 0
     internal var textType = TEXT_TYPE_PRECISE_LOCATION
@@ -355,9 +355,9 @@ constructor(
                 iconTint = a.getColor(R.styleable.LocationButton_iconTint, textColor)
                 strokeColor = a.getColor(R.styleable.LocationButton_strokeColor, 0)
                 strokeWidth = a.getDimensionPixelSize(R.styleable.LocationButton_strokeWidth, 0)
-                cornerRadius = a.getDimension(R.styleable.LocationButton_cornerRadius, 0f)
+                cornerRadius = a.getDimension(R.styleable.LocationButton_cornerRadius, -1f)
                 pressedCornerRadius =
-                    a.getDimension(R.styleable.LocationButton_pressedCornerRadius, 0f)
+                    a.getDimension(R.styleable.LocationButton_pressedCornerRadius, -1f)
                 textType =
                     a.getInt(
                         R.styleable.LocationButton_locationButtonTextType,
@@ -644,19 +644,28 @@ constructor(
     }
 
     internal val safePaddingLeft: Int
-        get() = paddingLeft.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingLeft)
 
     internal val safePaddingTop: Int
-        get() = paddingTop.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingTop)
 
     internal val safePaddingRight: Int
-        get() = paddingRight.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingRight)
 
     internal val safePaddingBottom: Int
-        get() = paddingBottom.coerceAtMost(maxPaddingPx)
+        get() = getSafePadding(paddingBottom)
+
+    private fun getSafePadding(padding: Int): Int {
+        val maxPadding = maxPaddingPx
+        val minPadding = minPaddingPx
+        return padding.coerceIn(minPadding, maxPadding)
+    }
 
     private val maxPaddingPx: Int
         get() = (MAX_PADDING_DP * resources.displayMetrics.density).toInt()
+
+    private val minPaddingPx: Int
+        get() = (MIN_PADDING_DP * resources.displayMetrics.density).toInt()
 
     private val maxHeightPx: Int
         get() = (MAX_HEIGHT_DP * resources.displayMetrics.density).toInt()
@@ -692,6 +701,7 @@ constructor(
         // Equivalent to android.view.WindowManagerPolicyConstants.APPLICATION_PANEL_SUBLAYER
         internal const val DEFAULT_COMPOSITION_ORDER = 1
         private const val MAX_PADDING_DP = 8
+        private const val MIN_PADDING_DP = 4
         private const val MAX_HEIGHT_DP = 136
 
         public const val TEXT_TYPE_NONE: Int = LocationButtonSession.TEXT_TYPE_NONE

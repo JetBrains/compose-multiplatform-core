@@ -753,19 +753,6 @@ package androidx.wear.compose.foundation.lazy {
     property public abstract androidx.compose.animation.core.Easing scaleInterpolator;
   }
 
-  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TransformingLazyColumnAnchorType {
-    method @BytecodeOnly public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType! box-impl(int);
-    method @BytecodeOnly public int unbox-impl();
-    field public static final androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType.Companion Companion;
-  }
-
-  public static final class TransformingLazyColumnAnchorType.Companion {
-    method @BytecodeOnly public int getItemBottom-nLXEOWU();
-    method @BytecodeOnly public int getItemTop-nLXEOWU();
-    property public androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType ItemBottom;
-    property public androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType ItemTop;
-  }
-
   public final class TransformingLazyColumnDefaults {
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.compose.foundation.gestures.FlingBehavior snapFlingBehavior(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState state, optional androidx.compose.ui.unit.Dp snapOffset, optional androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float> decay);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.foundation.gestures.FlingBehavior snapFlingBehavior-uFdPcIQ(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState, float, androidx.compose.animation.core.DecayAnimationSpec<java.lang.Float!>?, androidx.compose.runtime.Composer?, int, int);
@@ -779,6 +766,37 @@ package androidx.wear.compose.foundation.lazy {
     method public static inline <T> void itemsIndexed(androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,? extends java.lang.Object?> contentType, kotlin.jvm.functions.Function3<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
     method @BytecodeOnly public static <T> void itemsIndexed(androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope, java.util.List<? extends T>, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>?, kotlin.jvm.functions.Function2<? super java.lang.Integer!,? super T,? extends java.lang.Object!>, kotlin.jvm.functions.Function5<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope!,? super java.lang.Integer!,? super T,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void itemsIndexed$default(androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope!, java.util.List!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function5!, int, Object!);
+  }
+
+  public fun interface TransformingLazyColumnFirstLayoutItemProvider {
+    method public androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemInfo getFirstLayoutItem(androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemInfo current);
+  }
+
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public static final value class TransformingLazyColumnFirstLayoutItemProvider.ItemEdge {
+    method @BytecodeOnly public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge.Companion Companion;
+  }
+
+  public static final class TransformingLazyColumnFirstLayoutItemProvider.ItemEdge.Companion {
+    method @BytecodeOnly public int getEnd-pqtRDQI();
+    method @BytecodeOnly public int getStart-pqtRDQI();
+    property public androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge End;
+    property public androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge Start;
+  }
+
+  public static final class TransformingLazyColumnFirstLayoutItemProvider.ItemInfo {
+    ctor @KotlinOnly public TransformingLazyColumnFirstLayoutItemProvider.ItemInfo(int index, androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge itemEdge, int offset, optional Object? key);
+    ctor @BytecodeOnly public TransformingLazyColumnFirstLayoutItemProvider.ItemInfo(int, int, int, Object!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public TransformingLazyColumnFirstLayoutItemProvider.ItemInfo(int, int, int, Object!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @InaccessibleFromKotlin public int getIndex();
+    method @BytecodeOnly public int getItemEdge-pqtRDQI();
+    method @InaccessibleFromKotlin public Object? getKey();
+    method @InaccessibleFromKotlin public int getOffset();
+    property public int index;
+    property public androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge itemEdge;
+    property public Object? key;
+    property public int offset;
   }
 
   @androidx.wear.compose.foundation.lazy.TransformingLazyColumnScopeMarker public sealed nonexhaustive interface TransformingLazyColumnItemScope {
@@ -818,8 +836,9 @@ package androidx.wear.compose.foundation.lazy {
 
   public final class TransformingLazyColumnKt {
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public static void TransformingLazyColumn(androidx.compose.ui.Modifier!, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState!, androidx.compose.foundation.layout.PaddingValues!, androidx.compose.foundation.layout.Arrangement.Vertical!, androidx.compose.ui.Alignment.Horizontal!, androidx.compose.foundation.gestures.FlingBehavior!, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior!, androidx.compose.foundation.OverscrollEffect!, kotlin.jvm.functions.Function1!, androidx.compose.runtime.Composer!, int, int);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static void TransformingLazyColumn(androidx.compose.ui.Modifier?, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState?, androidx.compose.foundation.layout.PaddingValues?, boolean, androidx.compose.foundation.layout.Arrangement.Vertical?, androidx.compose.ui.Alignment.Horizontal?, androidx.compose.foundation.gestures.FlingBehavior?, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior?, androidx.compose.foundation.OverscrollEffect?, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
-    method @KotlinOnly @androidx.compose.runtime.Composable public static void TransformingLazyColumn(optional androidx.compose.ui.Modifier modifier, optional androidx.wear.compose.foundation.lazy.TransformingLazyColumnState state, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional boolean reverseLayout, optional androidx.compose.foundation.layout.Arrangement.Vertical verticalArrangement, optional androidx.compose.ui.Alignment.Horizontal horizontalAlignment, optional androidx.compose.foundation.gestures.FlingBehavior flingBehavior, optional boolean userScrollEnabled, optional androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior? rotaryScrollableBehavior, optional androidx.compose.foundation.OverscrollEffect? overscrollEffect, kotlin.jvm.functions.Function1<androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit> content);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static void TransformingLazyColumn(androidx.compose.ui.Modifier?, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState?, androidx.compose.foundation.layout.PaddingValues?, boolean, androidx.compose.foundation.layout.Arrangement.Vertical?, androidx.compose.ui.Alignment.Horizontal?, androidx.compose.foundation.gestures.FlingBehavior?, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior?, androidx.compose.foundation.OverscrollEffect?, androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider?, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void TransformingLazyColumn(optional androidx.compose.ui.Modifier modifier, optional androidx.wear.compose.foundation.lazy.TransformingLazyColumnState state, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional boolean reverseLayout, optional androidx.compose.foundation.layout.Arrangement.Vertical verticalArrangement, optional androidx.compose.ui.Alignment.Horizontal horizontalAlignment, optional androidx.compose.foundation.gestures.FlingBehavior flingBehavior, optional boolean userScrollEnabled, optional androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior? rotaryScrollableBehavior, optional androidx.compose.foundation.OverscrollEffect? overscrollEffect, optional androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider? firstLayoutItemProvider, kotlin.jvm.functions.Function1<androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit> content);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable public static void TransformingLazyColumn(androidx.compose.ui.Modifier!, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState!, androidx.compose.foundation.layout.PaddingValues!, boolean, androidx.compose.foundation.layout.Arrangement.Vertical!, androidx.compose.ui.Alignment.Horizontal!, androidx.compose.foundation.gestures.FlingBehavior!, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior!, androidx.compose.foundation.OverscrollEffect!, kotlin.jvm.functions.Function1!, androidx.compose.runtime.Composer!, int, int, int);
   }
 
   public sealed nonexhaustive interface TransformingLazyColumnLayoutInfo {
@@ -860,8 +879,6 @@ package androidx.wear.compose.foundation.lazy {
     method @InaccessibleFromKotlin @androidx.compose.runtime.annotation.FrequentlyChangingValue public int getAnchorItemScrollOffset();
     method @InaccessibleFromKotlin @androidx.compose.runtime.annotation.FrequentlyChangingValue public androidx.wear.compose.foundation.lazy.TransformingLazyColumnLayoutInfo getLayoutInfo();
     method @InaccessibleFromKotlin public boolean isScrollInProgress();
-    method @KotlinOnly public void requestAnchorItem(Object? key, androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType anchorType);
-    method @BytecodeOnly public void requestAnchorItem-bw6Eukk(Object?, int);
     method public void requestScrollToItem(@IntRange(from=0L) int index, optional int scrollOffset);
     method @BytecodeOnly public static void requestScrollToItem$default(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState!, int, int, int, Object!);
     method public suspend Object? scroll(optional androidx.compose.foundation.MutatePriority scrollPriority, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.gestures.ScrollScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super kotlin.Unit>);

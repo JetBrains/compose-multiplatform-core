@@ -37,6 +37,7 @@ internal class RemoteLocationButtonDelegateApi37(
 ) : RemoteLocationButtonDelegate {
     private var provider: LocationButtonProvider? = null
     private var session: LocationButtonSession? = null
+    private var compositionOrder = LocationButton.DEFAULT_COMPOSITION_ORDER
 
     init {
         provider = LocationButtonProviderFactory.create(context)
@@ -100,20 +101,25 @@ internal class RemoteLocationButtonDelegateApi37(
     }
 
     fun createButtonRequest(): LocationButtonRequest {
-        return LocationButtonRequest.Builder(view.width, view.height, view.resources.configuration)
-            .setPaddingLeft(view.safePaddingLeft)
-            .setPaddingTop(view.safePaddingTop)
-            .setPaddingRight(view.safePaddingRight)
-            .setPaddingBottom(view.safePaddingBottom)
-            .setBackgroundColor(view.backgroundColor)
-            .setStrokeColor(view.strokeColor)
-            .setStrokeWidth(view.strokeWidth)
-            .setCornerRadius(view.cornerRadius)
-            .setIconTint(view.iconTint)
-            .setTextType(view.textType)
-            .setTextColor(view.textColor)
-            .setPressedCornerRadius(view.pressedCornerRadius)
-            .build()
+        val builder =
+            LocationButtonRequest.Builder(view.width, view.height, view.resources.configuration)
+                .setPaddingLeft(view.safePaddingLeft)
+                .setPaddingTop(view.safePaddingTop)
+                .setPaddingRight(view.safePaddingRight)
+                .setPaddingBottom(view.safePaddingBottom)
+                .setBackgroundColor(view.backgroundColor)
+                .setStrokeColor(view.strokeColor)
+                .setStrokeWidth(view.strokeWidth)
+                .setIconTint(view.iconTint)
+                .setTextType(view.textType)
+                .setTextColor(view.textColor)
+        if (view.cornerRadius >= 0f) {
+            builder.setCornerRadius(view.cornerRadius)
+        }
+        if (view.pressedCornerRadius >= 0f) {
+            builder.setPressedCornerRadius(view.pressedCornerRadius)
+        }
+        return builder.build()
     }
 
     override fun openSession(activity: Activity, displayId: Int, surfaceView: SurfaceView) {
@@ -151,7 +157,9 @@ internal class RemoteLocationButtonDelegateApi37(
                         surfaceView.apply {
                             visibility = View.VISIBLE
                             setChildSurfacePackage(openedSession.surfacePackage)
-                            setCompositionOrder(LocationButton.DEFAULT_COMPOSITION_ORDER)
+                            setCompositionOrder(
+                                this@RemoteLocationButtonDelegateApi37.getCompositionOrder()
+                            )
                             invalidate()
                         }
                         view.localButtonView.visibility = View.INVISIBLE
@@ -172,10 +180,11 @@ internal class RemoteLocationButtonDelegateApi37(
     }
 
     override fun setCompositionOrder(order: Int) {
+        compositionOrder = order
         view.surfaceView?.setCompositionOrder(order)
     }
 
     override fun getCompositionOrder(): Int {
-        return view.surfaceView?.getCompositionOrder() ?: LocationButton.DEFAULT_COMPOSITION_ORDER
+        return compositionOrder
     }
 }

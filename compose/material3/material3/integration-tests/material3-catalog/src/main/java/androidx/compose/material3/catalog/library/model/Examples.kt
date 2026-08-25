@@ -161,6 +161,10 @@ import androidx.compose.material3.samples.LargeFloatingActionButtonSample
 import androidx.compose.material3.samples.LargeRoundUniformOutlinedIconButtonSample
 import androidx.compose.material3.samples.LargeToggleButtonWithIconSample
 import androidx.compose.material3.samples.LeadingIconTabs
+import androidx.compose.material3.samples.LegacyOneLineListItem
+import androidx.compose.material3.samples.LegacyThreeLineListItemWithExtendedSupporting
+import androidx.compose.material3.samples.LegacyThreeLineListItemWithOverlineAndSupporting
+import androidx.compose.material3.samples.LegacyTwoLineListItem
 import androidx.compose.material3.samples.LinearProgressIndicatorSample
 import androidx.compose.material3.samples.LinearWavyProgressIndicatorSample
 import androidx.compose.material3.samples.ListItemWithModeChangeOnLongClickSample
@@ -189,7 +193,6 @@ import androidx.compose.material3.samples.NavigationBarItemWithBadge
 import androidx.compose.material3.samples.NavigationBarSample
 import androidx.compose.material3.samples.NavigationRailBottomAlignSample
 import androidx.compose.material3.samples.NavigationRailSample
-import androidx.compose.material3.samples.OneLineListItem
 import androidx.compose.material3.samples.OutlinedButtonSample
 import androidx.compose.material3.samples.OutlinedButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.OutlinedCardSample
@@ -227,6 +230,9 @@ import androidx.compose.material3.samples.RadioButtonSample
 import androidx.compose.material3.samples.RadioGroupSample
 import androidx.compose.material3.samples.RangeSliderSample
 import androidx.compose.material3.samples.RangeSliderWithCustomComponents
+import androidx.compose.material3.samples.RichTimeInputSample
+import androidx.compose.material3.samples.RichTimePickerSample
+import androidx.compose.material3.samples.RichTimePickerSwitchableSample
 import androidx.compose.material3.samples.RichTooltipSample
 import androidx.compose.material3.samples.RichTooltipWithCaretSample
 import androidx.compose.material3.samples.RichTooltipWithCustomCaretSample
@@ -247,6 +253,7 @@ import androidx.compose.material3.samples.SecondaryTextTabs
 import androidx.compose.material3.samples.SegmentedButtonMultiSelectSample
 import androidx.compose.material3.samples.SegmentedButtonSingleSelectSample
 import androidx.compose.material3.samples.SegmentedListItemWithExpansionSample
+import androidx.compose.material3.samples.SegmentedListItems
 import androidx.compose.material3.samples.ShortNavigationBarSample
 import androidx.compose.material3.samples.ShortNavigationBarWithHorizontalItemsSample
 import androidx.compose.material3.samples.SimpleBottomAppBar
@@ -277,6 +284,7 @@ import androidx.compose.material3.samples.SplitButtonWithTextSample
 import androidx.compose.material3.samples.SplitButtonWithUnCheckableTrailingButtonSample
 import androidx.compose.material3.samples.SquareButtonSample
 import androidx.compose.material3.samples.SquareToggleButtonSample
+import androidx.compose.material3.samples.StandardListItems
 import androidx.compose.material3.samples.StepRangeSliderSample
 import androidx.compose.material3.samples.StepsSliderSample
 import androidx.compose.material3.samples.SuggestionChipSample
@@ -294,8 +302,6 @@ import androidx.compose.material3.samples.TextFieldWithPlaceholder
 import androidx.compose.material3.samples.TextFieldWithPrefixAndSuffix
 import androidx.compose.material3.samples.TextFieldWithSupportingText
 import androidx.compose.material3.samples.TextFieldWithTransformations
-import androidx.compose.material3.samples.ThreeLineListItemWithExtendedSupporting
-import androidx.compose.material3.samples.ThreeLineListItemWithOverlineAndSupporting
 import androidx.compose.material3.samples.TimeInputSample
 import androidx.compose.material3.samples.TimePickerSample
 import androidx.compose.material3.samples.TimePickerSwitchableSample
@@ -307,7 +313,6 @@ import androidx.compose.material3.samples.TonalSplitButtonSample
 import androidx.compose.material3.samples.TonalToggleButtonSample
 import androidx.compose.material3.samples.TriStateCheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.TriStateCheckboxSample
-import androidx.compose.material3.samples.TwoLineListItem
 import androidx.compose.material3.samples.TypographyCustomFontFamilySample
 import androidx.compose.material3.samples.TypographySample
 import androidx.compose.material3.samples.VerticalButtonGroupSample
@@ -1483,36 +1488,20 @@ private const val ListsExampleSourceUrl = "$SampleSourceUrl/ListSamples.kt"
 val ListsExamples =
     listOf(
         Example(
-            name = "OneLineListItem",
+            name = "StandardListItems",
             description = ListsExampleDescription,
             sourceUrl = ListsExampleSourceUrl,
-            isExpressive = false,
+            isExpressive = true,
         ) {
-            OneLineListItem()
+            StandardListItems()
         },
         Example(
-            name = "TwoLineListItem",
+            name = "SegmentedListItems",
             description = ListsExampleDescription,
             sourceUrl = ListsExampleSourceUrl,
-            isExpressive = false,
+            isExpressive = true,
         ) {
-            TwoLineListItem()
-        },
-        Example(
-            name = "ThreeLineListItemWithOverlineAndSupporting",
-            description = ListsExampleDescription,
-            sourceUrl = ListsExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            ThreeLineListItemWithOverlineAndSupporting()
-        },
-        Example(
-            name = "ThreeLineListItemWithExtendedSupporting",
-            description = ListsExampleDescription,
-            sourceUrl = ListsExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            ThreeLineListItemWithExtendedSupporting()
+            SegmentedListItems()
         },
         Example(
             name = "ClickableListItemSample",
@@ -1577,6 +1566,38 @@ val ListsExamples =
             isExpressive = true,
         ) {
             SegmentedListItemWithExpansionSample()
+        },
+        Example(
+            name = "LegacyOneLineListItem",
+            description = ListsExampleDescription,
+            sourceUrl = ListsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            LegacyOneLineListItem()
+        },
+        Example(
+            name = "LegacyTwoLineListItem",
+            description = ListsExampleDescription,
+            sourceUrl = ListsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            LegacyTwoLineListItem()
+        },
+        Example(
+            name = "LegacyThreeLineListItemWithOverlineAndSupporting",
+            description = ListsExampleDescription,
+            sourceUrl = ListsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            LegacyThreeLineListItemWithOverlineAndSupporting()
+        },
+        Example(
+            name = "LegacyThreeLineListItemWithExtendedSupporting",
+            description = ListsExampleDescription,
+            sourceUrl = ListsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            LegacyThreeLineListItemWithExtendedSupporting()
         },
     )
 
@@ -2652,6 +2673,30 @@ val TimePickerExamples =
             isExpressive = false,
         ) {
             TimePickerSwitchableSample()
+        },
+        Example(
+            name = "RichTimePickerSample",
+            description = TimePickerDescription,
+            sourceUrl = TimePickerSourceUrl,
+            isExpressive = true,
+        ) {
+            RichTimePickerSample()
+        },
+        Example(
+            name = "RichTimeInputSample",
+            description = TimePickerDescription,
+            sourceUrl = TimePickerSourceUrl,
+            isExpressive = true,
+        ) {
+            RichTimeInputSample()
+        },
+        Example(
+            name = "RichTimePickerSwitchableSample",
+            description = TimePickerDescription,
+            sourceUrl = TimePickerSourceUrl,
+            isExpressive = true,
+        ) {
+            RichTimePickerSwitchableSample()
         },
     )
 

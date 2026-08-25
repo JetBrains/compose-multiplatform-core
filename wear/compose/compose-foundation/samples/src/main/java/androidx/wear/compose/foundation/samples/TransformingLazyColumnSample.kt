@@ -17,6 +17,7 @@
 package androidx.wear.compose.foundation.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -39,15 +40,19 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
-import androidx.wear.compose.foundation.lazy.TransformingLazyColumnAnchorType
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnDefaults
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.TitleCard
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import kotlin.math.abs
@@ -208,68 +213,71 @@ fun TransformingLazyColumnMinimumVerticalContentPaddingSample() {
 @Sampled
 @Preview
 @Composable
-fun TransformingLazyColumnRequestAnchorItemSample() {
-    // This sample demonstrates how to use requestAnchorItem to control the expansion direction
-    // of an item. When the "input_box" Button is clicked, its text content grows, causing its
-    // intrinsic height to increase. By requesting ItemBottom as the layout anchor immediately
-    // before the state change, the visual bottom edge of the button remains pinned in place on
-    // the screen, and the new height expands upwards.
+fun TransformingLazyColumnFirstLayoutItemProviderSample() {
     val state = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
+    var expandedItemIndex by remember { mutableIntStateOf(-1) }
 
-    var textLines by remember { mutableIntStateOf(1) }
+    // This sample demonstrates how to use the provider API to control the direction of content
+    // shifting. By default, TransformingLazyColumn uses the center item as the layout reference.
+    // This means that if an item above the center expands, it pushes content upwards;
+    // if below, it pushes downwards.
+    //
+    // Here, we fix the Bottom/End edge of the clicked item regardless of its position on screen,
+    // so that when its animated content appears, the card predictably expands *upwards* every time.
+    val upwardExpandingItemProvider =
+        remember(state) {
+            TransformingLazyColumnFirstLayoutItemProvider { current ->
+                val item = expandedItemIndex
+
+                // Yield to the standard layout behavior during active scrolls.
+                // This avoids custom layout overhead and ensures the [TransformingLazyColumn]
+                // tracks
+                // the user's scroll gesture using its default center layout reference.
+                if (item == -1 || state.isScrollInProgress) {
+                    return@TransformingLazyColumnFirstLayoutItemProvider current
+                }
+
+                // Look up the item's offset from state.layoutInfo (which holds the details
+                // from the previous measure pass) to maintain its visual position in the current
+                // pass.
+                return@TransformingLazyColumnFirstLayoutItemProvider state.layoutInfo.visibleItems
+                    .fastFirstOrNull { visibleItem -> visibleItem.index == item }
+                    ?.let { visibleItem ->
+                        TransformingLazyColumnFirstLayoutItemProvider.ItemInfo(
+                            key = visibleItem.key,
+                            index = visibleItem.index,
+                            // Pin the bottom edge of the item
+                            itemEdge = ItemEdge.End,
+                            // Calculate the exact bottom offset from the previous pass
+                            offset = visibleItem.offset + visibleItem.transformedHeight,
+                        )
+                    } ?: current
+            }
+        }
 
     TransformingLazyColumn(
         state = state,
-        contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        firstLayoutItemProvider = upwardExpandingItemProvider,
     ) {
-        items(3, key = { "item_$it" }) { index ->
-            Button(
-                onClick = {},
+        items(count = 10, key = { it }) { cardIndex ->
+            val isExpanded = expandedItemIndex == cardIndex
+            TitleCard(
+                onClick = { expandedItemIndex = cardIndex },
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .transformedHeight(this, transformationSpec)
-                        .minimumVerticalContentPadding(
-                            ButtonDefaults.minimumVerticalListContentPadding
-                        ),
+                    Modifier.minimumVerticalContentPadding(
+                            CardDefaults.minimumVerticalListContentPadding
+                        )
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
                 transformation = SurfaceTransformation(transformationSpec),
-            ) {
-                Text(text = "Item $index")
-            }
-        }
-
-        // The expanding item
-        item(key = "input_box") {
-            Button(
-                onClick = {
-                    state.requestAnchorItem(
-                        key = "input_box",
-                        anchorType = TransformingLazyColumnAnchorType.ItemBottom,
-                    )
-                    textLines = if (textLines < 4) textLines + 1 else 1
+                title = { Text("Card $cardIndex") },
+                subtitle = {
+                    AnimatedVisibility(isExpanded) { Text("Expanded content is available here") }
                 },
-                modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
-                transformation = SurfaceTransformation(transformationSpec),
-            ) {
-                val text = List(textLines) { "Input line ${it + 1}" }.joinToString("\n")
-                Text(text = text)
-            }
-        }
-
-        items(3, key = { "item_${it + 4}" }) { index ->
-            Button(
-                onClick = {},
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .transformedHeight(this, transformationSpec)
-                        .minimumVerticalContentPadding(
-                            ButtonDefaults.minimumVerticalListContentPadding
-                        ),
-                transformation = SurfaceTransformation(transformationSpec),
-            ) {
-                Text(text = "Item ${index + 4}")
-            }
+                content = { Text("Tap to expand") },
+            )
         }
     }
 }

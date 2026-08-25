@@ -60,6 +60,7 @@ import androidx.core.util.Pools
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.core.view.ViewCompat
+import androidx.pdf.Highlight
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfFeature
 import androidx.pdf.PdfPoint
@@ -951,6 +952,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /** Selects all text on the current selected page range asynchronously. */
     internal fun selectAllText() {
         if (pdfDocument?.isFeatureSupported(PdfFeature.TEXT_SELECTION) == true) {
+            selectionStateManager?.maybeHideActionMode()
             selectionStateManager?.selectAllText()
         }
     }

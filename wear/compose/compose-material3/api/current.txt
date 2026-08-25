@@ -1361,8 +1361,8 @@ package androidx.wear.compose.material3 {
     method @InaccessibleFromKotlin @androidx.compose.runtime.annotation.FrequentlyChangingValue public float getOffset();
     method @BytecodeOnly public int getTargetValue-OMiAi4w();
     method @InaccessibleFromKotlin public boolean isAnimationRunning();
-    method @KotlinOnly public float offsetOf(androidx.wear.compose.material3.RevealValue revealValue);
-    method @BytecodeOnly public float offsetOf-MpxWM6I(int);
+    method @KotlinOnly public float positionOf(androidx.wear.compose.material3.RevealValue revealValue);
+    method @BytecodeOnly public float positionOf-MpxWM6I(int);
     method @KotlinOnly public suspend Object? snapTo(androidx.wear.compose.material3.RevealValue targetValue, kotlin.coroutines.Continuation<? super java.lang.Void>);
     method @BytecodeOnly public Object? snapTo-1PKuNuk(int, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
     property public androidx.wear.compose.material3.RevealValue currentValue;
@@ -2394,6 +2394,13 @@ package androidx.wear.compose.material3.lazy {
     property public abstract androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress androidx.compose.ui.graphics.drawscope.DrawScope.scrollProgress;
   }
 
+  public final class TransformingLazyColumnFirstLayoutItemProviderKt {
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider rememberTransformingLazyColumnFirstLayoutItemProvider(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState, kotlin.jvm.functions.Function0<? extends java.lang.Object!>, kotlin.jvm.functions.Function0<androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge!>?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider rememberTransformingLazyColumnFirstLayoutItemProvider(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState state, kotlin.jvm.functions.Function0<java.lang.Object?> itemKey, optional kotlin.jvm.functions.Function0<androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider.ItemEdge> itemEdge);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider rememberTransformingLazyColumnFirstVisibleItemProvider(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState state);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnFirstLayoutItemProvider rememberTransformingLazyColumnFirstVisibleItemProvider(androidx.wear.compose.foundation.lazy.TransformingLazyColumnState, androidx.compose.runtime.Composer?, int);
+  }
+
 }
 
 package androidx.wear.compose.material3.onehandedgesture {
@@ -2483,11 +2490,11 @@ package androidx.wear.compose.material3.onehandedgesture {
   }
 
   public final class OneHandedGestureModifierKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier oneHandedGesture(androidx.compose.ui.Modifier, androidx.wear.compose.material3.onehandedgesture.GestureAction action, optional androidx.wear.compose.material3.onehandedgesture.GesturePriority priority, optional boolean enabledInAmbient, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<kotlin.coroutines.Continuation<? super kotlin.Unit>,?> onGesture);
-    method @KotlinOnly public static androidx.compose.ui.Modifier oneHandedGesture(androidx.compose.ui.Modifier, androidx.wear.compose.material3.onehandedgesture.GestureAction action, String key, optional androidx.wear.compose.material3.onehandedgesture.GesturePriority priority, optional boolean enabledInAmbient, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<kotlin.coroutines.Continuation<? super kotlin.Unit>,?> onGesture);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier oneHandedGesture-GMMnDhw(androidx.compose.ui.Modifier, int, int, boolean, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int, int);
-    method @BytecodeOnly public static androidx.compose.ui.Modifier oneHandedGesture-hkd25ng(androidx.compose.ui.Modifier, int, String, int, boolean, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>);
-    method @BytecodeOnly public static androidx.compose.ui.Modifier! oneHandedGesture-hkd25ng$default(androidx.compose.ui.Modifier!, int, String!, int, boolean, androidx.compose.foundation.interaction.MutableInteractionSource!, kotlin.jvm.functions.Function1!, int, Object!);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier oneHandedGesture(androidx.compose.ui.Modifier, androidx.wear.compose.material3.onehandedgesture.GestureAction action, optional androidx.wear.compose.material3.onehandedgesture.GesturePriority priority, optional boolean enabledInAmbient, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, optional String? gestureLabel, kotlin.jvm.functions.Function1<kotlin.coroutines.Continuation<? super kotlin.Unit>,?> onGesture);
+    method @KotlinOnly public static androidx.compose.ui.Modifier oneHandedGesture(androidx.compose.ui.Modifier, androidx.wear.compose.material3.onehandedgesture.GestureAction action, String key, optional androidx.wear.compose.material3.onehandedgesture.GesturePriority priority, optional boolean enabledInAmbient, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, optional String? gestureLabel, kotlin.jvm.functions.Function1<kotlin.coroutines.Continuation<? super kotlin.Unit>,?> onGesture);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier oneHandedGesture-15i8kPU(androidx.compose.ui.Modifier, int, int, boolean, androidx.compose.foundation.interaction.MutableInteractionSource?, String?, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int, int);
+    method @BytecodeOnly public static androidx.compose.ui.Modifier oneHandedGesture-HwLNB5s(androidx.compose.ui.Modifier, int, String, int, boolean, androidx.compose.foundation.interaction.MutableInteractionSource?, String?, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>);
+    method @BytecodeOnly public static androidx.compose.ui.Modifier! oneHandedGesture-HwLNB5s$default(androidx.compose.ui.Modifier!, int, String!, int, boolean, androidx.compose.foundation.interaction.MutableInteractionSource!, String!, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
 }

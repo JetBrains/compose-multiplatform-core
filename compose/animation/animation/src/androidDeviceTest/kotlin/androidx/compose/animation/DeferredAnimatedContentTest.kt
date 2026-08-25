@@ -433,8 +433,16 @@ class DeferredAnimatedContentTest {
         rule.onNodeWithTag("content_0").assertIsDisplayed()
         // Content_2 should be composed but not yet displayed.
         rule.onNodeWithTag("content_2").assertExists()
-        // Content_1 should no longer be in the composition, as it was never truly "entered"
-        // and has been superseded by content_2 as the new target.
+        // Content_1 should still be in the composition, as it might have manual transformations
+        // applied to it during its deferred phase, and it will be cleared once the transition
+        // settles.
+        rule.onNodeWithTag("content_1").assertExists()
+
+        // Now let the transition settle
+        rule.runOnIdle { state.animateTo(2) }
+        rule.waitForIdle()
+
+        // After settling, content_1 should finally be cleared
         rule.onNodeWithTag("content_1").assertDoesNotExist()
     }
 
@@ -1071,5 +1079,222 @@ class DeferredAnimatedContentTest {
         rule.onNodeWithTag("content_C").assertIsDisplayed()
         rule.onNodeWithTag("content_A").assertDoesNotExist()
         rule.onNodeWithTag("content_B").assertDoesNotExist()
+    }
+
+    @Test
+    fun animatedContent_interruption_during_regular_phase_uses_correct_spec() {
+        val state = DeferredTransitionState("A")
+        var exitSpecForA: ExitTransition? = null
+        var exitSpecForB: ExitTransition? = null
+
+        rule.setContent {
+            val transition = rememberTransition(state)
+            transition.DeferredAnimatedContent(
+                transitionSpec = {
+                    val spec =
+                        if (initialState == "A" && targetState == "B") {
+                            fadeIn() togetherWith fadeOut(tween(100))
+                        } else if (initialState == "A" && targetState == "C") {
+                            fadeIn() togetherWith fadeOut(tween(500))
+                        } else if (initialState == "B" && targetState == "C") {
+                            fadeIn() togetherWith fadeOut(tween(800))
+                        } else {
+                            fadeIn() togetherWith fadeOut()
+                        }
+                    if (initialState == "A") {
+                        exitSpecForA = spec.initialContentExit
+                    }
+                    if (initialState == "B") {
+                        exitSpecForB = spec.initialContentExit
+                    }
+                    spec
+                }
+            ) { target ->
+                Box(Modifier.size(100.dp).testTag("content_$target"))
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        // 1. Animate to B. Spec for A should be fadeOut(100).
+        rule.runOnIdle { state.animateTo("B") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+        assertEquals(fadeOut(tween(100)), exitSpecForA)
+
+        // 2. Interrupt by animating to C.
+        // During a regular interruption, A is already exiting towards B.
+        // AnimatedContent does not re-evaluate the exit spec for content that is already exiting.
+        rule.runOnIdle { state.animateTo("C") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("content_C").assertIsDisplayed()
+        rule.onNodeWithTag("content_A").assertIsDisplayed()
+        rule.onNodeWithTag("content_B").assertIsDisplayed()
+
+        assertEquals(
+            "Exit spec for A should NOT be re-evaluated (it continues its original A->B exit)",
+            fadeOut(tween(100)),
+            exitSpecForA,
+        )
+
+        assertEquals(
+            "Exit spec for B should use the B->C spec since it is now exiting",
+            fadeOut(tween(800)),
+            exitSpecForB,
+        )
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+
+        rule.onNodeWithTag("content_C").assertIsDisplayed()
+        rule.onNodeWithTag("content_A").assertDoesNotExist()
+        rule.onNodeWithTag("content_B").assertDoesNotExist()
+    }
+
+    @Test
+    fun nonMutatingNodeDoesNotReceiveStaleMutations() {
+        val state = DeferredTransitionState("A")
+        var positionA = IntOffset.Zero
+
+        rule.setContent {
+            val transition = rememberTransition(state)
+            transition.DeferredAnimatedContent(
+                transitionSpec = {
+                    (fadeIn(tween(1000, easing = LinearEasing)) +
+                        slideIn(tween(1000, easing = LinearEasing)) { IntOffset.Zero }) togetherWith
+                        (fadeOut(tween(1000, easing = LinearEasing)) +
+                            slideOut(tween(1000, easing = LinearEasing)) { IntOffset.Zero })
+                },
+                mutableTransformSpec = {
+                    if (initialState == "A" && targetState == "B") {
+                        MutableContentTransform {
+                            initialContentTransform {
+                                // Mutate A's offset by 100 pixels
+                                this.offset = IntOffset(100, 100)
+                            }
+                        }
+                    } else {
+                        null
+                    }
+                },
+            ) { target ->
+                Box(
+                    Modifier.size(100.dp).testTag("content_$target").onGloballyPositioned {
+                        if (target == "A")
+                            positionA =
+                                it.positionInRoot().let { pos ->
+                                    IntOffset(pos.x.toInt(), pos.y.toInt())
+                                }
+                    }
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        // 1. Start gesture from A -> B
+        rule.runOnIdle { state.defer("B") }
+        rule.mainClock.advanceTimeByFrame()
+
+        // A should be mutated by the gesture and shifted by 100, 100.
+        rule.runOnIdle { assertEquals(IntOffset(100, 100), positionA) }
+
+        // 2. Gesture ends, animation starts.
+        rule.runOnIdle { state.animateTo("B") }
+
+        // Advance time a bit (100ms) so A starts animating back towards 0,0
+        rule.mainClock.advanceTimeBy(100)
+        rule.waitForIdle()
+
+        // At 10% of 1000ms LinearEasing, the slide transition value should be around 90, 90.
+        val positionBeforeNewGesture = positionA
+        assertTrue(
+            "Position should be animating back to 0,0. Current: $positionBeforeNewGesture",
+            positionBeforeNewGesture.x in 80..95,
+        )
+
+        // 3. Start a NEW gesture B -> C
+        rule.runOnIdle { state.defer("C") }
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        // 4. Verify A's position did not abruptly jump.
+        // Because A is not involved in the new B -> C gesture, it should not be considered as
+        // actively mutating and any stale mutations from the previous gesture should not be
+        // applied. Its position should continue to smoothly animate along its current transition
+        // value (~90,90) without jumping abruptly.
+        val positionAfterNewGesture = positionA
+        assertTrue(
+            "Position abruptly jumped! Expected to be around $positionBeforeNewGesture, but was $positionAfterNewGesture. " +
+                "This indicates stale mutations were applied.",
+            positionAfterNewGesture.x < 100,
+        )
+    }
+
+    @Test
+    fun deferAfterExitFinishedRecoversExitStateTest() {
+        val state = DeferredTransitionState("A")
+        var positionA = IntOffset.Zero
+
+        rule.setContent {
+            val transition = rememberTransition(state)
+            transition.DeferredAnimatedContent(
+                transitionSpec = {
+                    slideInHorizontally(tween(100000, easing = LinearEasing)) { 100 } togetherWith
+                        slideOutHorizontally(tween(100, easing = LinearEasing)) { -100 }
+                },
+                mutableTransformSpec = {
+                    MutableContentTransform {
+                        initialContentTransform {}
+                        targetContentTransform {}
+                    }
+                },
+            ) { target ->
+                Box(
+                    Modifier.size(100.dp).testTag("content_$target").onGloballyPositioned {
+                        if (target == "A") {
+                            val pos = it.positionInRoot()
+                            positionA = IntOffset(pos.x.toInt(), pos.y.toInt())
+                        }
+                    }
+                )
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { state.animateTo("B") }
+
+        // Advance time enough for A to fully exit (since exit duration is 100ms, it finishes
+        // quickly)
+        rule.mainClock.advanceTimeBy(5000)
+        rule.waitForIdle()
+
+        val offScreenPositionA = positionA.x
+        // Ensure A has moved fully off-screen (should be around -100, absolute -96)
+        assertTrue(
+            "A should be fully off-screen, but was $offScreenPositionA",
+            offScreenPositionA < -90,
+        )
+
+        // Defer to A (simulate predictive back gesture)
+        rule.runOnIdle { state.defer("A") }
+
+        // Advance clock by 1ms to trigger recomposition and layout
+        rule.mainClock.advanceTimeBy(1)
+        rule.waitForIdle()
+
+        // Without the fix, A's exit is neutralized during active mutations (like defer),
+        // causing it to instantly jump to 0 offset (absolute position 4).
+        // With the fix, it remains at its off-screen position -100 (absolute position -96).
+        assertTrue(
+            "A jumped! Expected to remain off-screen (around -96), but was ${positionA.x}",
+            positionA.x < -90,
+        )
     }
 }

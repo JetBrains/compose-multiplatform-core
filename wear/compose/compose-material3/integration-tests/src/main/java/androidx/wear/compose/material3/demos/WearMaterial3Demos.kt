@@ -56,6 +56,8 @@ import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSamp
 import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnSample
 import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
+import androidx.wear.compose.material3.samples.TransformationSpecButtonRowSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnFirstLayoutItemProviderSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
 
 val WearMaterial3Demos =
@@ -290,9 +292,6 @@ val WearMaterial3Demos =
                             TransformingLazyColumnExpandableCardSample()
                         },
                         ComposableDemo("TLC Buttons and Cards") { SurfaceTransformationDemo() },
-                        ComposableDemo("Request Anchor Demo") {
-                            TransformingLazyColumnRequestAnchorItemDemo()
-                        },
                         ComposableDemo("Animation Demo") {
                             TransformingLazyColumnAnimationSample()
                         },
@@ -308,7 +307,13 @@ val WearMaterial3Demos =
                         ComposableDemo("Custom container CompositingStrategy") {
                             CustomCompositingStrategyTransformationSpecSample()
                         },
-                        ComposableDemo("Snapping behavior") { TransformingLazyColumnSnappingDemo() },
+                        ComposableDemo("Snapping behavior") {
+                            TransformingLazyColumnSnappingDemo()
+                        },
+                        ComposableDemo("First Layout Item") {
+                            TransformingLazyColumnFirstLayoutItemProviderSample()
+                        },
+                        ComposableDemo("Button Group") { TransformationSpecButtonRowSample() },
                     ),
                 ),
                 Material3DemoCategory(
