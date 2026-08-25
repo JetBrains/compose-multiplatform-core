@@ -24,6 +24,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.IosDragAndDropManager
 import androidx.compose.ui.geometry.Offset
@@ -73,7 +74,6 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
-import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -279,13 +279,20 @@ internal class ComposeSceneMediator(
      * composeSceneDensity without regressions (merging [screenDensity] and [composeSceneDensity]
      * into one causes rendering and interaction issues because they are semantically different).
      */
-    var composeSceneDensity: Density
-        get() = scene.density
-        set(value) {
-            if (isActive) {
-                scene.density = value
-            }
+    val composeSceneDensity: Density get() = scene.density
+
+    fun setComposeSceneFontScale(fontScale: Float) {
+        if (isActive) {
+            scene.density = Density(composeSceneDensity.density, fontScale)
         }
+    }
+
+    @VisibleForTesting
+    fun setComposeSceneDensity(density: Density) {
+        if (isActive) {
+            scene.density = density
+        }
+    }
 
     /**
      * Density of the hosting UIKit screen.
@@ -293,7 +300,7 @@ internal class ComposeSceneMediator(
      * This value is intentionally separate from [composeSceneDensity] so we can support setting
      * composeSceneDensity without regressions.
      */
-    val screenDensity: Density get() = _overlayView.density
+    private val screenDensity: Density get() = windowContext.screenDensity
 
     var layoutDirection: LayoutDirection
         get() = scene.layoutDirection

@@ -53,6 +53,7 @@ internal class IosComposeSceneLayer(
     private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
+    private val initialDensity: Density,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
@@ -102,12 +103,14 @@ internal class IosComposeSceneLayer(
         navigationEventDispatcher.addInput(it)
     }
 
+    private val windowContext get() = layersViewController.windowContext
+
     private val mediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = configuration.onFocusBehavior,
         isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
-        windowContext = layersViewController.windowContext,
+        windowContext = windowContext,
         architectureComponentsOwner = ownerProvider,
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
@@ -121,7 +124,7 @@ internal class IosComposeSceneLayer(
     private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
             frameRecomposer = frameChoreographer.frameRecomposer,
-            density = mediator.screenDensity,
+            density = initialDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidateLayout = invalidateLayout,
@@ -172,7 +175,7 @@ internal class IosComposeSceneLayer(
 
     fun draw(canvas: Canvas) {
         if (scrimColor != null) {
-            val density = layersViewController.metalView.view.density
+            val density = windowContext.screenDensity
             val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
 
             canvas.drawRect(rect, scrimPaint)
@@ -248,5 +251,9 @@ internal class IosComposeSceneLayer(
 
     fun sceneWillDisappear() {
         mediator.sceneWillDisappear()
+    }
+
+    fun setComposeSceneFontScale(fontScale: Float) {
+        mediator.setComposeSceneFontScale(fontScale)
     }
 }
