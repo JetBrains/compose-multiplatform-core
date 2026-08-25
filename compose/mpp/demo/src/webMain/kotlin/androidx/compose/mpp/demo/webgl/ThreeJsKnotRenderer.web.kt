@@ -19,7 +19,6 @@
 package androidx.compose.mpp.demo.webgl
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 
 /**
@@ -29,11 +28,14 @@ import androidx.compose.ui.platform.webgl.WebGLRenderTarget
  * that is what [WebGLRenderTarget] takes care of.
  */
 internal class ThreeJsKnotRenderer
-private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) {
+private constructor(
+    private val three: ThreeModule,
+    private val webGLRenderTarget: WebGLRenderTarget,
+) {
     companion object {
         /** Loads three.js, or returns `null` when the module is unavailable. */
-        suspend fun createOrNull(surface: WebGLRenderTarget): ThreeJsKnotRenderer? =
-            loadThreeModule()?.let { ThreeJsKnotRenderer(it, surface) }
+        suspend fun createOrNull(webGLRenderTarget: WebGLRenderTarget): ThreeJsKnotRenderer? =
+            loadThreeModule()?.let { ThreeJsKnotRenderer(it, webGLRenderTarget) }
     }
 
     // The angle is the main dynamic state in this demo, it's updated every frame.
@@ -50,15 +52,19 @@ private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) 
     var status: String = "waiting for the first frame"
         private set
 
-    private var renderer: ThreeRenderer? = createThreeRenderer(three, surface.htmlCanvas, surface.webGLContext)
+    private var renderer: ThreeRenderer? = createThreeRenderer(three, webGLRenderTarget.htmlCanvas, webGLRenderTarget.webGLContext)
     private var knotScene: ThreeKnotScene? = createKnotScene(three)
     private var renderTarget: ThreeRenderTarget? = null
     private var targetGeneration = 0
     private var failed = false
     private var previousFrameTimeNanos = 0L
 
-    fun renderFrame(target: WebGLRenderScope, frameTimeNanos: Long): Unit =
-        with(target) {
+    fun renderFrame(frameTimeNanos: Long) {
+        webGLRenderTarget.render { renderFrameInTarget(frameTimeNanos) }
+    }
+
+    private fun renderFrameInTarget(frameTimeNanos: Long): Unit =
+        with(webGLRenderTarget) {
             if (failed) return
             val deltaNanos =
                 if (previousFrameTimeNanos == 0L) 0L
@@ -94,7 +100,7 @@ private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) 
      * The render target is only a descriptor for the framebuffer Compose owns, so it has to be
      * replaced whenever Compose recreated that framebuffer.
      */
-    private fun WebGLRenderScope.ensureRenderTarget(knotScene: ThreeKnotScene): ThreeRenderTarget {
+    private fun WebGLRenderTarget.ensureRenderTarget(knotScene: ThreeKnotScene): ThreeRenderTarget {
         val current = renderTarget
         if (current != null && targetGeneration == generation) return current
 

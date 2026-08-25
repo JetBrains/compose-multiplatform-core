@@ -82,8 +82,8 @@ private fun ThreeTextureAdoptionDemo() {
     var textureWidth by remember { mutableStateOf(512) }
     val textureSize = IntSize(textureWidth, (textureWidth * 0.625f).roundToInt())
 
-    val surface = rememberWebGLRenderTarget(textureSize)
-    if (surface == null) {
+    val renderTarget = rememberWebGLRenderTarget(textureSize)
+    if (renderTarget == null) {
         Centered(
             "Compose does not render through a WebGL2 canvas here, so there is no texture to adopt."
         )
@@ -91,9 +91,9 @@ private fun ThreeTextureAdoptionDemo() {
     }
 
     // three.js arrives through a dynamic import, so the renderer can only be built asynchronously.
-    val loadState by produceState<LoadState>(LoadState.Loading, surface) {
+    val loadState by produceState<LoadState>(LoadState.Loading, renderTarget) {
         value = try {
-            ThreeJsKnotRenderer.createOrNull(surface)?.let(LoadState::Ready)
+            ThreeJsKnotRenderer.createOrNull(renderTarget)?.let(LoadState::Ready)
                 ?: LoadState.Failed("three.js is unavailable.")
         } catch (throwable: Throwable) {
             LoadState.Failed("Loading three.js failed: ${throwable.message}")
@@ -105,7 +105,7 @@ private fun ThreeTextureAdoptionDemo() {
         is LoadState.Failed -> Centered(state.message)
         is LoadState.Ready ->
             ThreeSceneContent(
-                surface = surface,
+                renderTarget = renderTarget,
                 threeJs = state.renderer,
                 textureWidth = textureWidth,
                 onTextureWidthChange = { textureWidth = it },
@@ -130,7 +130,7 @@ private fun Centered(message: String) {
 
 @Composable
 private fun ThreeSceneContent(
-    surface: WebGLRenderTarget,
+    renderTarget: WebGLRenderTarget,
     threeJs: ThreeJsKnotRenderer,
     textureWidth: Int,
     onTextureWidthChange: (Int) -> Unit,
@@ -150,15 +150,15 @@ private fun ThreeSceneContent(
     threeJs.opacity = opacity
     threeJs.lightIntensity = lightIntensity
 
-    DisposableEffect(threeJs, surface) { onDispose { threeJs.dispose(surface) } }
+    DisposableEffect(threeJs, renderTarget) { onDispose { threeJs.dispose(renderTarget) } }
 
     // Everything three.js does happens inside the frame, before Compose measures, lays out and
     // draws, so the texture holds this frame's content by the time Skia submits the frame that
     // samples it. The drawing sites below only draw the result.
-    LaunchedEffect(surface, threeJs, running) {
+    LaunchedEffect(renderTarget, threeJs, running) {
         while (running) {
             withFrameNanos { frameTimeNanos ->
-                surface.render { threeJs.renderFrame(this, frameTimeNanos) }
+                threeJs.renderFrame(frameTimeNanos)
             }
         }
     }
@@ -192,8 +192,8 @@ private fun ThreeSceneContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Hero(surface)
-        Variants(surface)
+        Hero(renderTarget)
+        Variants(renderTarget)
         Card(Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -220,7 +220,7 @@ private fun ThreeSceneContent(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                StatusLine("texture size", "${surface.size.width}×${surface.size.height}")
+                StatusLine("texture size", "${renderTarget.size.width}×${renderTarget.size.height}")
                 StatusLine("state", threeJs.status)
                 StatusLine("frame", "${stats.index} · ${stats.fps.roundToInt()} fps")
             }
@@ -235,7 +235,7 @@ private data class FrameStats(val index: Long, val fps: Float)
  * The three.js output as the hero: tilted in 3D by dragging, clipped, with Compose content on top.
  */
 @Composable
-private fun Hero(surface: WebGLRenderTarget) {
+private fun Hero(renderTarget: WebGLRenderTarget) {
     var tiltX by remember { mutableStateOf(0f) }
     var tiltY by remember { mutableStateOf(0f) }
 
@@ -266,7 +266,7 @@ private fun Hero(surface: WebGLRenderTarget) {
             )
         }
         Image(
-            painter = surface.painter,
+            painter = renderTarget.painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
@@ -288,16 +288,16 @@ private fun Hero(surface: WebGLRenderTarget) {
 
 /** The same adopted texture, drawn several times in one frame with different transformations. */
 @Composable
-private fun Variants(surface: WebGLRenderTarget) {
+private fun Variants(renderTarget: WebGLRenderTarget) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         Image(
-            painter = surface.painter,
+            painter = renderTarget.painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.size(96.dp).clip(CircleShape).background(Color.LightGray),
         )
         Image(
-            painter = surface.painter,
+            painter = renderTarget.painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier =
@@ -311,7 +311,7 @@ private fun Variants(surface: WebGLRenderTarget) {
                     },
         )
         Image(
-            painter = surface.painter,
+            painter = renderTarget.painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier =

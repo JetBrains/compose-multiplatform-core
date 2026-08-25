@@ -46,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -88,7 +87,7 @@ private fun PlainWebGlDemo() {
 @Composable
 private fun RotatingTriangle(isAnimating: Boolean) {
     val renderTarget = rememberWebGLRenderTarget(IntSize(512, 320))!!
-    val triangle = remember(renderTarget) { TriangleRenderer(renderTarget.webGLContext) }
+    val triangle = remember(renderTarget) { TriangleRenderer(renderTarget) }
 
     DisposableEffect(triangle, renderTarget) {
         onDispose { triangle.dispose(renderTarget) }
@@ -97,7 +96,7 @@ private fun RotatingTriangle(isAnimating: Boolean) {
     LaunchedEffect(renderTarget, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
-                renderTarget.render { triangle.render(this, frameTimeNanos) }
+                triangle.render(frameTimeNanos)
             }
         }
     }
@@ -115,12 +114,12 @@ private fun RotatingTriangle(isAnimating: Boolean) {
 @Composable
 private fun ColorPulse(isAnimating: Boolean) {
     val webGLRenderTarger = rememberWebGLRenderTarget(IntSize(64, 64))!!
-    val pulse = remember { PulseRenderer() }
+    val pulse = remember(webGLRenderTarger) { PulseRenderer(webGLRenderTarger) }
 
     LaunchedEffect(webGLRenderTarger, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
-                webGLRenderTarger.render { pulse.render(this, frameTimeNanos) }
+                pulse.render(frameTimeNanos)
             }
         }
     }
@@ -165,7 +164,8 @@ private fun LabelledContent(caption: String, content: @Composable () -> Unit) {
  * Draws a spinning, vertex-colored triangle. The geometry lives in the vertex shader, so there is
  * no buffer and no attribute to set up: the whole renderer is one program and two uniforms.
  */
-private class TriangleRenderer(private val gl: WebGLRenderingContext) {
+private class TriangleRenderer(private val target: WebGLRenderTarget) {
+    private val gl = target.webGLContext
     private val program: WebGLProgram =
         gl.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
     private val angleUniform: WebGLUniformLocation? = gl.getUniformLocation(program, "angle")
@@ -173,7 +173,11 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
     private var angle = 0f
     private var previousFrameTimeNanos = 0L
 
-    fun render(target: WebGLRenderScope, frameTimeNanos: Long): Unit =
+    fun render(frameTimeNanos: Long) {
+        target.render { renderFrame(frameTimeNanos) }
+    }
+
+    private fun renderFrame(frameTimeNanos: Long): Unit =
         with(target) {
             val deltaNanos = if (previousFrameTimeNanos == 0L) {
                 0L
@@ -205,9 +209,9 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
     /**
      * Releases the program
      */
-    fun dispose(surface: WebGLRenderTarget) {
+    fun dispose(renderTarget: WebGLRenderTarget) {
         gl.deleteProgram(program)
-        surface.markGLStateStale()
+        renderTarget.markGLStateStale()
     }
 
     companion object {
@@ -267,12 +271,16 @@ private fun WebGLRenderingContext.createProgram(
 }
 
 /** Clears the texture to a pulsing color. No shaders, no resources, nothing to dispose. */
-private class PulseRenderer {
+private class PulseRenderer(private val target: WebGLRenderTarget) {
     private var phase = 0f
     private var previousFrameTimeNanos = 0L
 
-    fun render(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
-        with(scope) {
+    fun render(frameTimeNanos: Long) {
+        target.render { renderFrame(frameTimeNanos) }
+    }
+
+    private fun renderFrame(frameTimeNanos: Long): Unit =
+        with(target) {
             val deltaNanos = if (previousFrameTimeNanos == 0L) {
                 0L
             } else {

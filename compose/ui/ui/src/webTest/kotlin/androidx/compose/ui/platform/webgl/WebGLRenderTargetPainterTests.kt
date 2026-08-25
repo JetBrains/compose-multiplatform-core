@@ -51,10 +51,10 @@ private fun DrawScope.drawPainter(painter: Painter, size: Size = this.size) {
 }
 
 /** The whole "renderer": clear the target to opaque red, like the ColorPulse demo. */
-private fun WebGLRenderScope.clearToRed() {
-    webGLContext.viewport(0, 0, size.width, size.height)
-    webGLContext.clearColor(1f, 0f, 0f, 1f)
-    webGLContext.clear(COLOR_BUFFER_BIT)
+private fun clearToRed(target: WebGLRenderTarget): Boolean = target.render {
+    target.webGLContext.viewport(0, 0, target.size.width, target.size.height)
+    target.webGLContext.clearColor(1f, 0f, 0f, 1f)
+    target.webGLContext.clear(COLOR_BUFFER_BIT)
 }
 
 class WebGLRenderTargetPainterTests : OnCanvasTests {
@@ -105,7 +105,7 @@ class WebGLRenderTargetPainterTests : OnCanvasTests {
         awaitAnimationFrame()
         awaitIdle()
 
-        assertTrue(target.render { clearToRed() }, "the first render() did not run")
+        assertTrue(clearToRed(target), "the first render() did not run")
         assertEquals(
             Size(32f, 32f),
             target.painter.intrinsicSize,
@@ -116,7 +116,7 @@ class WebGLRenderTargetPainterTests : OnCanvasTests {
         awaitAnimationFrame()
         awaitIdle()
 
-        assertTrue(target.render { clearToRed() }, "render() did not run after the size change")
+        assertTrue(clearToRed(target), "render() did not run after the size change")
         assertEquals(
             Size(48f, 24f),
             target.painter.intrinsicSize,
@@ -143,7 +143,7 @@ class WebGLRenderTargetPainterTests : OnCanvasTests {
             if (target != null) {
                 LaunchedEffect(target) {
                     repeat(frames) {
-                        withFrameNanos { if (target.render { clearToRed() }) renderedFrames++ }
+                        withFrameNanos { if (clearToRed(target)) renderedFrames++ }
                     }
                 }
                 // Drawn by hand, so that the draw counter sits in the very scope that the

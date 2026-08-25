@@ -44,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -95,7 +94,7 @@ private fun VideoPlayer(
 ) {
     val renderTarget = rememberWebGLRenderTarget(IntSize(1280, 720)) ?: return
     val videoRenderer = remember(renderTarget) {
-        VideoTextureRenderer(renderTarget.webGLContext).also { it.init(VIDEO_URL) }
+        VideoTextureRenderer(renderTarget).also { it.init(VIDEO_URL) }
     }
 
     var isPlaying by remember { mutableStateOf(false) }
@@ -158,13 +157,14 @@ private fun VideoPlayer(
     LaunchedEffect(videoRenderer, renderTarget) {
         while (true) {
             withFrameNanos { frameTimeNanos ->
-                renderTarget.render { videoRenderer.renderFrame(this, frameTimeNanos) }
+                videoRenderer.renderFrame(frameTimeNanos)
             }
         }
     }
 }
 
-private class VideoTextureRenderer(private val gl: WebGLRenderingContext) {
+private class VideoTextureRenderer(private val target: WebGLRenderTarget) {
+    private val gl = target.webGLContext
     private val program: WebGLProgram =
         gl.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
     private val videoUniform: WebGLUniformLocation? = gl.getUniformLocation(program, "videoTexture")
@@ -183,7 +183,11 @@ private class VideoTextureRenderer(private val gl: WebGLRenderingContext) {
         gl.bindTexture(TEXTURE_2D, null)
     }
 
-    fun renderFrame(target: WebGLRenderScope, frameTimeNanos: Long) {
+    fun renderFrame(frameTimeNanos: Long) {
+        target.render { renderFrameInTarget(frameTimeNanos) }
+    }
+
+    private fun renderFrameInTarget(frameTimeNanos: Long) {
         val video = video ?: return
         val texture = texture ?: return
         if (!textureAllocated) {

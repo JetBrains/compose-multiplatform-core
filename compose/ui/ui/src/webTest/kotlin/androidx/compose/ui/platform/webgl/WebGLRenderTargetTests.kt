@@ -50,10 +50,10 @@ import org.khronos.webgl.WebGLRenderingContext.Companion.NO_ERROR
 private const val OPAQUE_RED = (255 shl 24) or 255
 
 /** The whole "renderer": clear the target to opaque red, like the ColorPulse demo. */
-private fun WebGLRenderScope.clearToRed() {
-    webGLContext.viewport(0, 0, size.width, size.height)
-    webGLContext.clearColor(1f, 0f, 0f, 1f)
-    webGLContext.clear(COLOR_BUFFER_BIT)
+private fun clearToRed(target: WebGLRenderTarget): Boolean = target.render {
+    target.webGLContext.viewport(0, 0, target.size.width, target.size.height)
+    target.webGLContext.clearColor(1f, 0f, 0f, 1f)
+    target.webGLContext.clear(COLOR_BUFFER_BIT)
 }
 
 class WebGLRenderTargetTests : OnCanvasTests {
@@ -76,7 +76,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
                 LaunchedEffect(target) {
                     repeat(frames) {
                         withFrameNanos {
-                            if (target.render { clearToRed() }) renderedFrames++
+                            if (clearToRed(target)) renderedFrames++
                         }
                     }
                 }
@@ -105,9 +105,13 @@ class WebGLRenderTargetTests : OnCanvasTests {
         var centerPixel = 0
         var glError = -1
         val rendered = target.render {
-            clearToRed()
-            centerPixel = readPixelRgba8(webGLContext, size.width / 2, size.height / 2)
-            glError = webGLContext.getError()
+            with (target) {
+                webGLContext.viewport(0, 0, size.width, size.height)
+                webGLContext.clearColor(1f, 0f, 0f, 1f)
+                webGLContext.clear(COLOR_BUFFER_BIT)
+                centerPixel = readPixelRgba8(webGLContext, size.width / 2, size.height / 2)
+                glError = webGLContext.getError()
+            }
         }
 
         assertTrue(rendered, "render() did not run after Compose's first frame")
@@ -143,7 +147,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
         awaitAnimationFrame()
         awaitIdle()
 
-        assertTrue(target.render { clearToRed() }, "the first render() did not run")
+        assertTrue(clearToRed(target), "the first render() did not run")
         assertEquals(IntSize(32, 32), target.size, "unexpected initial size")
         val generationBefore = target.generation
         val framebufferBefore = target.framebuffer
@@ -152,7 +156,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
         awaitAnimationFrame()
         awaitIdle()
 
-        assertTrue(target.render { clearToRed() }, "render() did not run after the size change")
+        assertTrue(clearToRed(target), "render() did not run after the size change")
         assertEquals(IntSize(48, 24), target.size, "the new size was not applied")
         assertTrue(
             target.generation > generationBefore,
@@ -185,7 +189,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
                 renderTarget = target
                 if (target != null) {
                     LaunchedEffect(target) {
-                        repeat(30) { withFrameNanos { target.render { clearToRed() } } }
+                        repeat(30) { withFrameNanos { clearToRed(target) } }
                     }
                     // Setting the density to 2 so the test works correctly on all displays
                     CompositionLocalProvider(LocalDensity provides Density(2f)) {

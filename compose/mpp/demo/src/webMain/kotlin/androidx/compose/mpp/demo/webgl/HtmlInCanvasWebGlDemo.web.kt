@@ -41,7 +41,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -74,7 +73,7 @@ private fun HtmlInCanvasWebGlDemo() {
     var originPx by remember { mutableStateOf(Offset.Zero) }
 
     val target = rememberWebGLRenderTarget(boundsPx) ?: return
-    val htmlRenderer = remember(target) { HtmlTextureRenderer(target.webGLContext, target.htmlCanvas) }
+    val htmlRenderer = remember(target) { HtmlTextureRenderer(target) }
     val supported = remember(htmlRenderer) { htmlRenderer.initialize() }
 
     DisposableEffect(htmlRenderer, target) {
@@ -106,7 +105,7 @@ private fun HtmlInCanvasWebGlDemo() {
     LaunchedEffect(htmlRenderer, target) {
         while (true) {
             withFrameNanos { frameTimeNanos ->
-                target.render { htmlRenderer.renderFrame(this, frameTimeNanos) }
+                htmlRenderer.renderFrame(frameTimeNanos)
             }
         }
     }
@@ -163,10 +162,9 @@ private fun HtmlInCanvasWebGlDemo() {
     }
 }
 
-private class HtmlTextureRenderer(
-    private val gl: WebGLRenderingContext,
-    private val canvas: org.w3c.dom.HTMLCanvasElement,
-) {
+private class HtmlTextureRenderer(private val target: WebGLRenderTarget) {
+    private val gl = target.webGLContext
+    private val canvas = target.htmlCanvas
     private val program = gl.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
     private val texture = gl.createTexture() ?: error("gl.createTexture() returned null")
     private var element: HTMLElement? = null
@@ -189,7 +187,11 @@ private class HtmlTextureRenderer(
         syncElementBox(element, widthCss.toDouble(), heightCss.toDouble(), leftCss.toDouble(), topCss.toDouble())
     }
 
-    fun renderFrame(target: WebGLRenderScope, frameTimeNanos: Long) {
+    fun renderFrame(frameTimeNanos: Long) {
+        target.render { renderFrameInTarget(frameTimeNanos) }
+    }
+
+    private fun renderFrameInTarget(frameTimeNanos: Long) {
         val element = element ?: return
         if (!uploadElement(gl, texture, element, target.size.width, target.size.height)) return
         with(target) {

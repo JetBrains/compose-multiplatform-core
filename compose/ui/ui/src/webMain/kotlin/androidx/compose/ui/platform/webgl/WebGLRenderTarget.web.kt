@@ -190,10 +190,6 @@ class WebGLRenderTarget internal constructor(
         _invalidation.value
     }
 
-    /** The receiver of every [render] block; a view of this target, so it needs no per-frame state. */
-    private val renderScope: WebGLRenderScope by
-        lazy(LazyThreadSafetyMode.NONE) { WebGLRenderScope(this) }
-
     private var adoptedTexture: AdoptedGLTexture? = null
     private var isDisposed = false
     private var isRendering = false
@@ -203,9 +199,8 @@ class WebGLRenderTarget internal constructor(
      * it all shows the new frame.
      *
      * Allocates or reallocates GPU resources if needed, binds [framebuffer], runs [block], then
-     * restores the GL state Compose's renderer expects. [block] receives a [WebGLRenderScope], so
-     * the context, the size and the framebuffer of the frame being drawn are in scope - but not
-     * this target's own lifecycle, which has no meaning mid-frame.
+     * restores the GL state Compose's renderer expects. The [block] runs while this target's
+     * framebuffer is bound; use this target's context, size and framebuffer to draw.
      *
      * Prefer calling this from a [withFrameNanos] callback: the frame is then ready before Compose
      * draws, so the new content appears immediately. Rendering at another time is allowed, but the
@@ -217,7 +212,7 @@ class WebGLRenderTarget internal constructor(
      * ```
      * Canvas(Modifier.fillMaxSize()) {
      *     // Wrong: render() must not run while Compose is drawing.
-     *     renderTarget.render { renderer.drawFrame(this) }
+     *     renderTarget.render { renderer.drawFrame(renderTarget) }
      *     with(renderTarget.painter) { draw(size) }
      * }
      * ```
@@ -225,7 +220,7 @@ class WebGLRenderTarget internal constructor(
      * @return `false`, skipping [block], if the GPU context is not available yet — which is the
      *   case until Compose has drawn its first frame.
      */
-    fun render(block: WebGLRenderScope.() -> Unit): Boolean {
+    fun render(block: () -> Unit): Boolean {
         if (isDisposed) return false
         check(!isRendering) {
             "render() is already running: it must not be called from within another render() call, " +
@@ -236,7 +231,7 @@ class WebGLRenderTarget internal constructor(
         isRendering = true
         webGLContext.bindFramebuffer(FRAMEBUFFER, framebuffer)
         try {
-            renderScope.block()
+            block()
         } finally {
             isRendering = false
             webGLContext.bindFramebuffer(FRAMEBUFFER, null)
