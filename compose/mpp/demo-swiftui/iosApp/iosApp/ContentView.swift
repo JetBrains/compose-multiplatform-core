@@ -15,24 +15,23 @@ private struct ComposeDemoView: UIViewControllerRepresentable {
             makeHostingViewController: { index in
                 UIHostingController(rootView: NestedContentView(index: index.intValue))
             },
-            makeSizingDemoViewController: { composeView, identifier in
-                switch identifier.intValue {
-                case 10...18:
-                    makeComposeInSwiftUIIntrinsicSizingDemoViewController(
-                        composeView: composeView,
-                        identifier: identifier.intValue
-                    )
-                case 20...22:
-                    makeComposeInUIKitSizingDemoViewController(
-                        composeView: composeView,
-                        identifier: identifier.intValue
-                    )
-                default:
-                    makeComposeInSwiftUISizingDemoViewController(
-                        composeView: composeView,
-                        identifier: identifier.intValue
-                    )
-                }
+            makeSwiftUISizeThatFitsSizingDemoViewController: { composeView, example in
+                makeComposeInSwiftUISizingDemoViewController(
+                    composeView: composeView,
+                    example: example
+                )
+            },
+            makeSwiftUIIntrinsicSizingDemoViewController: { composeView, example in
+                makeComposeInSwiftUIIntrinsicSizingDemoViewController(
+                    composeView: composeView,
+                    example: example
+                )
+            },
+            makeUIKitSizingDemoViewController: { composeView, example in
+                makeComposeInUIKitSizingDemoViewController(
+                    composeView: composeView,
+                    example: example
+                )
             }
         )
     }

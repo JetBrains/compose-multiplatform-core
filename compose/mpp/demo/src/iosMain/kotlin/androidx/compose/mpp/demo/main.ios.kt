@@ -52,29 +52,14 @@ fun main(vararg args: String) {
 @Composable
 fun IosDemo(
     arg: String,
-    makeHostingController: ((Int) -> UIViewController)? = null,
-    makeSizingDemoController: ((UIView, Int) -> UIViewController)? = null,
+    viewControllerFactory: IosDemoViewControllerFactory? = null,
 ) {
     val app = remember {
-        val swiftUiExamples = listOfNotNull(
-            makeHostingController?.let(::SwiftUIInteropExample),
-        )
         App(
             extraScreens = listOf(
                 IosBugs,
                 IosSpecificFeatures,
-            ) + listOfNotNull(
-                makeSizingDemoController?.let(::IosSizing),
-            ) + if (swiftUiExamples.isEmpty()) {
-                emptyList()
-            } else {
-                listOf(
-                    Screen.Selection(
-                        "SwiftUI",
-                        swiftUiExamples,
-                    )
-                )
-            }
+            ) + viewControllerFactory?.extraScreens().orEmpty()
         )
     }
     when (arg) {
@@ -84,6 +69,25 @@ fun IosDemo(
             StartRecompositionCheck.content()
         else -> app.Content()
     }
+}
+
+class IosDemoViewControllerFactory(
+    val makeHostingController: (Int) -> UIViewController,
+    val makeSwiftUISizeThatFitsSizingDemoController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+    val makeSwiftUIIntrinsicSizingDemoController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+    val makeUIKitSizingDemoController: (UIView, UIKitSizingExample) -> UIViewController,
+) {
+    internal fun extraScreens(): List<Screen> = listOf(
+        IosSizing(
+            makeSwiftUISizeThatFitsSizingDemoController,
+            makeSwiftUIIntrinsicSizingDemoController,
+            makeUIKitSizingDemoController,
+        ),
+        Screen.Selection(
+            "SwiftUI",
+            SwiftUIInteropExample(makeHostingController),
+        ),
+    )
 }
 
 private lateinit var MakeRootViewController: () -> UIViewController

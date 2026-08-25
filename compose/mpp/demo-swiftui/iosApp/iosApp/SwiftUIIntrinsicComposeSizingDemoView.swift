@@ -3,27 +3,27 @@ import UIKit
 
 func makeComposeInSwiftUIIntrinsicSizingDemoViewController(
     composeView: UIView,
-    identifier: Int
+    example: SwiftUIIntrinsicSizingExample
 ) -> UIViewController {
-    switch identifier {
-    case 10:
+    switch example {
+    case .fixedWidthFittedHeight:
         return UIHostingController(rootView: IntrinsicFixedWidthFittedHeightExample(composeView: composeView))
-    case 11:
+    case .fixedHeightFittedWidth:
         return UIHostingController(rootView: IntrinsicFixedHeightFittedWidthExample(composeView: composeView))
-    case 13:
+    case .naturalSizeComposeContentChanges:
         return UIHostingController(rootView: IntrinsicNaturalSizeContentChangesExample(composeView: composeView))
-    case 14:
+    case .fillAvailableWidthFixedHeight:
         return UIHostingController(rootView: IntrinsicFillAvailableWidthFixedHeightExample(composeView: composeView))
-    case 15:
+    case .fixedWidthFillAvailableHeight:
         return UIHostingController(rootView: IntrinsicFixedWidthFillAvailableHeightExample(composeView: composeView))
-    case 16:
+    case .fillBothAvailableAxes:
         return UIHostingController(rootView: IntrinsicFillBothAvailableAxesExample(composeView: composeView))
-    case 17:
+    case .fillBothAxesComposeFixedHeight:
         return UIHostingController(rootView: IntrinsicFillBothAxesComposeFixedHeightExample(composeView: composeView))
-    case 18:
+    case .fillBothAxesComposeFixedWidth:
         return UIHostingController(rootView: IntrinsicFillBothAxesComposeFixedWidthExample(composeView: composeView))
     default:
-        fatalError("Unknown Compose-in-SwiftUI intrinsic sizing example: \(identifier)")
+        fatalError("Unknown Compose-in-SwiftUI intrinsic sizing example: \(example)")
     }
 }
 

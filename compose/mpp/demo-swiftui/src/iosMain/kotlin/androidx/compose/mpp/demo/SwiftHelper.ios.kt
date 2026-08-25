@@ -22,9 +22,13 @@ import platform.UIKit.UIViewController
 class SwiftHelper {
     fun getViewController(
         makeHostingViewController: (Int) -> UIViewController,
-        makeSizingDemoViewController: (UIView, Int) -> UIViewController,
+        makeSwiftUISizeThatFitsSizingDemoViewController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+        makeSwiftUIIntrinsicSizingDemoViewController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+        makeUIKitSizingDemoViewController: (UIView, UIKitSizingExample) -> UIViewController,
     ): UIViewController = getViewControllerWithCompose(
         makeHostingViewController = makeHostingViewController,
-        makeSizingDemoViewController = makeSizingDemoViewController,
+        makeSwiftUISizeThatFitsSizingDemoViewController = makeSwiftUISizeThatFitsSizingDemoViewController,
+        makeSwiftUIIntrinsicSizingDemoViewController = makeSwiftUIIntrinsicSizingDemoViewController,
+        makeUIKitSizingDemoViewController = makeUIKitSizingDemoViewController,
     )
 }

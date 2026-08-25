@@ -4,28 +4,28 @@ import shared
 
 func makeComposeInSwiftUISizingDemoViewController(
     composeView: UIView,
-    identifier: Int
+    example: SwiftUISizeThatFitsSizingExample
 ) -> UIViewController {
     if #available(iOS 16.0, *) {
-        switch identifier {
-        case 0:
+        switch example {
+        case .fixedWidthFittedHeight:
             return UIHostingController(rootView: FixedWidthFittedHeightExample(composeView: composeView))
-        case 1:
+        case .fixedHeightFittedWidth:
             return UIHostingController(rootView: FixedHeightFittedWidthExample(composeView: composeView))
-        case 3:
+        case .naturalSizeComposeContentChanges:
             return UIHostingController(rootView: NaturalSizeContentChangesExample(composeView: composeView))
-        case 4:
+        case .fillAvailableWidthFixedHeight:
             return UIHostingController(rootView: FillAvailableWidthFixedHeightExample(composeView: composeView))
-        case 5:
+        case .fixedWidthFillAvailableHeight:
             return UIHostingController(rootView: FixedWidthFillAvailableHeightExample(composeView: composeView))
-        case 6:
+        case .fillBothAvailableAxes:
             return UIHostingController(rootView: FillBothAvailableAxesExample(composeView: composeView))
-        case 7:
+        case .fillBothAxesComposeFixedHeight:
             return UIHostingController(rootView: FillBothAxesComposeFixedHeightExample(composeView: composeView))
-        case 8:
+        case .fillBothAxesComposeFixedWidth:
             return UIHostingController(rootView: FillBothAxesComposeFixedWidthExample(composeView: composeView))
         default:
-            fatalError("Unknown Compose-in-SwiftUI sizing example: \(identifier)")
+            fatalError("Unknown Compose-in-SwiftUI sizing example: \(example)")
         }
     }
 

@@ -3,38 +3,38 @@ import UIKit
 
 func makeComposeInUIKitSizingDemoViewController(
     composeView: UIView,
-    identifier: Int
+    example: UIKitSizingExample
 ) -> UIViewController {
     return UIHostingController(
         rootView: UIKitComposeSizingExampleRepresentable(
             composeView: composeView,
-            identifier: identifier
+            example: example
         )
     )
 }
 
 private struct UIKitComposeSizingExampleRepresentable: UIViewControllerRepresentable {
     let composeView: UIView
-    let identifier: Int
+    let example: UIKitSizingExample
 
     func makeUIViewController(context: Context) -> UIViewController {
-        switch identifier {
-        case 20:
+        switch example {
+        case .fixedWidthFittedHeight:
             return UIKitFittedComposeViewController(
                 composeView: composeView,
                 title: "Fixed width, fitted height",
                 explanation: "UIKit owns the width constraint. It asks Compose for the preferred height for that width and applies only that height as a constraint."
             )
-        case 21:
+        case .composeContentChangesFittedHeight:
             return UIKitNaturalSizeComposeViewController(
                 composeView: composeView,
                 title: "Compose content changes natural size",
                 explanation: "UIKit asks Compose for its preferred size with no width or height proposal. When Compose changes its content, UIKit repeats that measurement and updates both owned constraints."
             )
-        case 22:
+        case .fillConstrainedBounds:
             return UIKitFullyConstrainedComposeViewController(composeView: composeView)
         default:
-            fatalError("Unknown Compose-in-UIKit sizing example: \(identifier)")
+            fatalError("Unknown Compose-in-UIKit sizing example: \(example)")
         }
     }
 

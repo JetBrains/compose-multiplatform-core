@@ -20,11 +20,13 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
 internal fun IosSizing(
-    makeSizingDemoController: (UIView, Int) -> UIViewController,
+    makeSwiftUISizeThatFitsSizingDemoController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+    makeSwiftUIIntrinsicSizingDemoController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+    makeUIKitSizingDemoController: (UIView, UIKitSizingExample) -> UIViewController,
 ) = Screen.Selection(
     "iOS Sizing",
-    swiftUISizeThatFitsSizingExamples(makeSizingDemoController),
-    swiftUIIntrinsicSizingExamples(makeSizingDemoController),
-    uiKitSizingExamples(makeSizingDemoController),
+    swiftUISizeThatFitsSizingExamples(makeSwiftUISizeThatFitsSizingDemoController),
+    swiftUIIntrinsicSizingExamples(makeSwiftUIIntrinsicSizingDemoController),
+    uiKitSizingExamples(makeUIKitSizingDemoController),
     uiKitInComposeSizingExamples(),
 )

@@ -26,11 +26,17 @@ import platform.UIKit.UIViewController
 @OptIn(ExperimentalComposeUiApi::class)
 fun getViewControllerWithCompose(
     makeHostingViewController: (Int) -> UIViewController,
-    makeSizingDemoViewController: (UIView, Int) -> UIViewController,
+    makeSwiftUISizeThatFitsSizingDemoViewController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+    makeSwiftUIIntrinsicSizingDemoViewController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+    makeUIKitSizingDemoViewController: (UIView, UIKitSizingExample) -> UIViewController,
 ): UIViewController = ComposeUIViewController {
     IosDemo(
         arg = "",
-        makeHostingController = makeHostingViewController,
-        makeSizingDemoController = makeSizingDemoViewController,
+        viewControllerFactory = IosDemoViewControllerFactory(
+            makeHostingController = makeHostingViewController,
+            makeSwiftUISizeThatFitsSizingDemoController = makeSwiftUISizeThatFitsSizingDemoViewController,
+            makeSwiftUIIntrinsicSizingDemoController = makeSwiftUIIntrinsicSizingDemoViewController,
+            makeUIKitSizingDemoController = makeUIKitSizingDemoViewController,
+        ),
     )
 }

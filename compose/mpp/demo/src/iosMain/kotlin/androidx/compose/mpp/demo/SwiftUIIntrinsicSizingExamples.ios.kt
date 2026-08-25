@@ -28,7 +28,7 @@ import platform.UIKit.UIViewController
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun swiftUIIntrinsicSizingExamples(
-    makeSizingDemoController: (UIView, Int) -> UIViewController,
+    makeSizingDemoController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
 ) = Screen.Selection(
     "Compose in SwiftUI + intrinsic",
     Screen.Example("Fixed width, fitted height (intrinsic)") {
@@ -36,7 +36,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FixedWidthFittedHeightComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FixedWidthFittedHeight,
+                    SwiftUIIntrinsicSizingExample.FIXED_WIDTH_FITTED_HEIGHT,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -47,7 +47,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FixedHeightFittedWidthComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FixedHeightFittedWidth,
+                    SwiftUIIntrinsicSizingExample.FIXED_HEIGHT_FITTED_WIDTH,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -58,7 +58,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { NaturalSizeComposeContentChangeContent() },
-                    SwiftUIIntrinsicSizingExampleId.NaturalSizeComposeContentChanges,
+                    SwiftUIIntrinsicSizingExample.NATURAL_SIZE_COMPOSE_CONTENT_CHANGES,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -69,7 +69,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FillAvailableSpaceComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FillAvailableWidthFixedHeight,
+                    SwiftUIIntrinsicSizingExample.FILL_AVAILABLE_WIDTH_FIXED_HEIGHT,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -80,7 +80,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FillAvailableSpaceComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FixedWidthFillAvailableHeight,
+                    SwiftUIIntrinsicSizingExample.FIXED_WIDTH_FILL_AVAILABLE_HEIGHT,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -91,7 +91,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FillAvailableSpaceComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FillBothAvailableAxes,
+                    SwiftUIIntrinsicSizingExample.FILL_BOTH_AVAILABLE_AXES,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -102,7 +102,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FixedHeightComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FillBothAxesComposeFixedHeight,
+                    SwiftUIIntrinsicSizingExample.FILL_BOTH_AXES_COMPOSE_FIXED_HEIGHT,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -113,7 +113,7 @@ internal fun swiftUIIntrinsicSizingExamples(
             factory = {
                 makeSizingDemoController(
                     intrinsicComposeUIView { FixedWidthComposeContent() },
-                    SwiftUIIntrinsicSizingExampleId.FillBothAxesComposeFixedWidth,
+                    SwiftUIIntrinsicSizingExample.FILL_BOTH_AXES_COMPOSE_FIXED_WIDTH,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -129,13 +129,13 @@ private fun intrinsicComposeUIView(content: @Composable () -> Unit): UIView = Co
     content = content,
 )
 
-internal object SwiftUIIntrinsicSizingExampleId {
-    const val FixedWidthFittedHeight = 10
-    const val FixedHeightFittedWidth = 11
-    const val NaturalSizeComposeContentChanges = 13
-    const val FillAvailableWidthFixedHeight = 14
-    const val FixedWidthFillAvailableHeight = 15
-    const val FillBothAvailableAxes = 16
-    const val FillBothAxesComposeFixedHeight = 17
-    const val FillBothAxesComposeFixedWidth = 18
+enum class SwiftUIIntrinsicSizingExample {
+    FIXED_WIDTH_FITTED_HEIGHT,
+    FIXED_HEIGHT_FITTED_WIDTH,
+    NATURAL_SIZE_COMPOSE_CONTENT_CHANGES,
+    FILL_AVAILABLE_WIDTH_FIXED_HEIGHT,
+    FIXED_WIDTH_FILL_AVAILABLE_HEIGHT,
+    FILL_BOTH_AVAILABLE_AXES,
+    FILL_BOTH_AXES_COMPOSE_FIXED_HEIGHT,
+    FILL_BOTH_AXES_COMPOSE_FIXED_WIDTH,
 }

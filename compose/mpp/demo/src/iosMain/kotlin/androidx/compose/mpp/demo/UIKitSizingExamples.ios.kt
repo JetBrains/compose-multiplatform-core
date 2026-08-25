@@ -26,7 +26,7 @@ import platform.UIKit.UIViewController
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun uiKitSizingExamples(
-    makeSizingDemoController: (UIView, Int) -> UIViewController,
+    makeSizingDemoController: (UIView, UIKitSizingExample) -> UIViewController,
 ) = Screen.Selection(
     "Compose in UIKit",
     Screen.Example("Fixed width, fitted height (UIKit)") {
@@ -34,7 +34,7 @@ internal fun uiKitSizingExamples(
             factory = {
                 makeSizingDemoController(
                     ComposeUIView { FixedWidthFittedHeightComposeContent() },
-                    UIKitSizingExampleId.FixedWidthFittedHeight,
+                    UIKitSizingExample.FIXED_WIDTH_FITTED_HEIGHT,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -45,7 +45,7 @@ internal fun uiKitSizingExamples(
             factory = {
                 makeSizingDemoController(
                     ComposeUIView { NaturalSizeComposeContentChangeContent() },
-                    UIKitSizingExampleId.ComposeContentChangesFittedHeight,
+                    UIKitSizingExample.COMPOSE_CONTENT_CHANGES_FITTED_HEIGHT,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -56,7 +56,7 @@ internal fun uiKitSizingExamples(
             factory = {
                 makeSizingDemoController(
                     ComposeUIView { FillAvailableSpaceComposeContent() },
-                    UIKitSizingExampleId.FillConstrainedBounds,
+                    UIKitSizingExample.FILL_CONSTRAINED_BOUNDS,
                 )
             },
             modifier = Modifier.fillMaxSize(),
@@ -64,8 +64,8 @@ internal fun uiKitSizingExamples(
     },
 )
 
-internal object UIKitSizingExampleId {
-    const val FixedWidthFittedHeight = 20
-    const val ComposeContentChangesFittedHeight = 21
-    const val FillConstrainedBounds = 22
+enum class UIKitSizingExample {
+    FIXED_WIDTH_FITTED_HEIGHT,
+    COMPOSE_CONTENT_CHANGES_FITTED_HEIGHT,
+    FILL_CONSTRAINED_BOUNDS,
 }
