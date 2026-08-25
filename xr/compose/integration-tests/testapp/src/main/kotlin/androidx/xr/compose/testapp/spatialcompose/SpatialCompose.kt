@@ -92,10 +92,10 @@ import androidx.xr.compose.subspace.layout.depth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.transformingMovable
 import androidx.xr.compose.subspace.layout.transformingResizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.semantics.testTag
@@ -109,7 +109,6 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.ExperimentalGltfComposeMethod
 import androidx.xr.scenecore.GltfAnimation.AnimationState
 import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
@@ -268,7 +267,7 @@ class SpatialCompose : ComponentActivity() {
                         modifier =
                             SubspaceModifier.fillMaxHeight(0.7f)
                                 .fillMaxWidth()
-                                .transformingMovable()
+                                .movable()
                                 .transformingResizable()
                     )
                     val intent = remember {
@@ -283,7 +282,7 @@ class SpatialCompose : ComponentActivity() {
                             SubspaceModifier.fillMaxHeight()
                                 .fillMaxWidth()
                                 .testTag("ActivityPanel")
-                                .transformingMovable(),
+                                .movable(),
                     )
                 }
                 SpatialColumn(
@@ -310,7 +309,7 @@ class SpatialCompose : ComponentActivity() {
                 modifier
                     .testTag(text)
                     .alpha(alpha)
-                    .transformingMovable(enabled = !moveResizeLocked)
+                    .movable(enabled = !moveResizeLocked)
                     .transformingResizable(
                         enabled = !moveResizeLocked,
                         onResize = { event ->
@@ -477,7 +476,6 @@ class SpatialCompose : ComponentActivity() {
 
                     // 2. Only calculate the bounding box if the animation is actually playing.
                     if (currentState == AnimationState.PLAYING) {
-                        @OptIn(ExperimentalGltfComposeMethod::class)
                         entitySize = entity.getGltfModelBoundingBox().halfExtents.times(2f)
                     }
 
