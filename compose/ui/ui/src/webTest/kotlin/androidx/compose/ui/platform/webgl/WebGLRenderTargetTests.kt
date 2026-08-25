@@ -40,6 +40,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.khronos.webgl.WebGLRenderingContext
 import org.khronos.webgl.WebGLRenderingContext.Companion.COLOR_BUFFER_BIT
@@ -49,7 +50,7 @@ import org.khronos.webgl.WebGLRenderingContext.Companion.NO_ERROR
 private const val OPAQUE_RED = (255 shl 24) or 255
 
 /** The whole "renderer": clear the target to opaque red, like the ColorPulse demo. */
-private fun WebGLRenderTarget.clearToRed() {
+private fun WebGLRenderScope.clearToRed() {
     webGLContext.viewport(0, 0, size.width, size.height)
     webGLContext.clearColor(1f, 0f, 0f, 1f)
     webGLContext.clear(COLOR_BUFFER_BIT)
@@ -97,7 +98,6 @@ class WebGLRenderTargetTests : OnCanvasTests {
         assertTrue(drawnFrames > 0, "the painter was never drawn")
 
         assertEquals(IntSize(64, 64), target.size, "unexpected allocated size")
-        assertNotNull(target.framebuffer, "framebuffer was not allocated")
         assertNotNull(target.image, "the color texture was not adopted")
         assertTrue(target.generation > 0, "generation was never bumped")
 
@@ -146,6 +146,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
         assertTrue(target.render { clearToRed() }, "the first render() did not run")
         assertEquals(IntSize(32, 32), target.size, "unexpected initial size")
         val generationBefore = target.generation
+        val framebufferBefore = target.framebuffer
 
         requestedSize.value = IntSize(48, 24)
         awaitAnimationFrame()
@@ -156,6 +157,12 @@ class WebGLRenderTargetTests : OnCanvasTests {
         assertTrue(
             target.generation > generationBefore,
             "generation did not change although the texture was reallocated"
+        )
+        // Only the attachments are reallocated, so an engine may keep the handle from setup.
+        assertSame(
+            framebufferBefore,
+            target.framebuffer,
+            "the framebuffer itself was replaced by the size change"
         )
         assertEquals(NO_ERROR, target.webGLContext.getError(), "reallocation reported a GL error")
     }

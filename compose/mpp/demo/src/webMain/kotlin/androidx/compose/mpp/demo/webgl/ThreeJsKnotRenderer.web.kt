@@ -19,6 +19,7 @@
 package androidx.compose.mpp.demo.webgl
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 
 /**
@@ -56,7 +57,7 @@ private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) 
     private var failed = false
     private var previousFrameTimeNanos = 0L
 
-    fun renderFrame(target: WebGLRenderTarget, frameTimeNanos: Long): Unit =
+    fun renderFrame(target: WebGLRenderScope, frameTimeNanos: Long): Unit =
         with(target) {
             if (failed) return
             val deltaNanos =
@@ -93,7 +94,7 @@ private constructor(private val three: ThreeModule, surface: WebGLRenderTarget) 
      * The render target is only a descriptor for the framebuffer Compose owns, so it has to be
      * replaced whenever Compose recreated that framebuffer.
      */
-    private fun WebGLRenderTarget.ensureRenderTarget(knotScene: ThreeKnotScene): ThreeRenderTarget {
+    private fun WebGLRenderScope.ensureRenderTarget(knotScene: ThreeKnotScene): ThreeRenderTarget {
         val current = renderTarget
         if (current != null && targetGeneration == generation) return current
 

@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -182,7 +183,7 @@ private class VideoTextureRenderer(private val gl: WebGLRenderingContext) {
         gl.bindTexture(TEXTURE_2D, null)
     }
 
-    fun renderFrame(target: WebGLRenderTarget, frameTimeNanos: Long) {
+    fun renderFrame(target: WebGLRenderScope, frameTimeNanos: Long) {
         val video = video ?: return
         val texture = texture ?: return
         if (!textureAllocated) {

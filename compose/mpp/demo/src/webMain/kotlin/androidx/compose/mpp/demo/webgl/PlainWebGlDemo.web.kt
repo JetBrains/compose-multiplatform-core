@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.webgl.WebGLRenderScope
 import androidx.compose.ui.platform.webgl.WebGLRenderTarget
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.webgl.rememberWebGLRenderTarget
@@ -113,20 +114,20 @@ private fun RotatingTriangle(isAnimating: Boolean) {
 
 @Composable
 private fun ColorPulse(isAnimating: Boolean) {
-    val surface = rememberWebGLRenderTarget(IntSize(64, 64))!!
+    val webGLRenderTarger = rememberWebGLRenderTarget(IntSize(64, 64))!!
     val pulse = remember { PulseRenderer() }
 
-    LaunchedEffect(surface, isAnimating) {
+    LaunchedEffect(webGLRenderTarger, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
-                surface.render { pulse.render(this, frameTimeNanos) }
+                webGLRenderTarger.render { pulse.render(this, frameTimeNanos) }
             }
         }
     }
 
     LabelledContent("64×64 texture\nnothing but a pulsing clear color") {
         Image(
-            painter = surface.painter,
+            painter = webGLRenderTarger.painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
@@ -172,7 +173,7 @@ private class TriangleRenderer(private val gl: WebGLRenderingContext) {
     private var angle = 0f
     private var previousFrameTimeNanos = 0L
 
-    fun render(target: WebGLRenderTarget, frameTimeNanos: Long): Unit =
+    fun render(target: WebGLRenderScope, frameTimeNanos: Long): Unit =
         with(target) {
             val deltaNanos = if (previousFrameTimeNanos == 0L) {
                 0L
@@ -270,8 +271,8 @@ private class PulseRenderer {
     private var phase = 0f
     private var previousFrameTimeNanos = 0L
 
-    fun render(target: WebGLRenderTarget, frameTimeNanos: Long): Unit =
-        with(target) {
+    fun render(scope: WebGLRenderScope, frameTimeNanos: Long): Unit =
+        with(scope) {
             val deltaNanos = if (previousFrameTimeNanos == 0L) {
                 0L
             } else {

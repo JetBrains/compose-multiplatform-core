@@ -51,7 +51,7 @@ private fun DrawScope.drawPainter(painter: Painter, size: Size = this.size) {
 }
 
 /** The whole "renderer": clear the target to opaque red, like the ColorPulse demo. */
-private fun WebGLRenderTarget.clearToRed() {
+private fun WebGLRenderScope.clearToRed() {
     webGLContext.viewport(0, 0, size.width, size.height)
     webGLContext.clearColor(1f, 0f, 0f, 1f)
     webGLContext.clear(COLOR_BUFFER_BIT)

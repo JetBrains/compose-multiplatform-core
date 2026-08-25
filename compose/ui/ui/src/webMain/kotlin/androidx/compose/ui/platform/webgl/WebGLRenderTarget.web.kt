@@ -128,22 +128,31 @@ class WebGLRenderTarget internal constructor(
     }
 
     /**
-     * The framebuffer to render into, bound for the duration of the [render] block, or `null`
-     * until the first successful [render]. Exposed for engines that need the raw handle, such as
-     * three.js.
+     * The framebuffer to render into, bound for the duration of the [render] block. Exposed for
+     * engines that need the raw handle, such as three.js.
+     *
+     * Created together with this target and never replaced, so it can be handed to an engine once,
+     * at setup: a size change reallocates its attachments, not the framebuffer itself. It only
+     * becomes a complete framebuffer once the first [render] allocated those attachments, and
+     * [dispose] deletes it, after which it must not be used.
      *
      * Rebinding it inside [render] is allowed as long as the binding is restored before returning.
      * Deleting it or its attachments is not — they belong to this target.
      */
-    var framebuffer: WebGLFramebuffer? = null
-        private set
+     val framebuffer: WebGLFramebuffer =
+        webGLContext.createFramebuffer() ?: error("gl.createFramebuffer() returned null")
+
+    /** The depth/stencil attachment of [framebuffer]; like it, created once and only resized. */
+    private val depthStencil: WebGLRenderbuffer =
+        webGLContext.createRenderbuffer() ?: error("gl.createRenderbuffer() returned null")
 
     /**
-     * Bumped whenever [framebuffer] and its attachments are recreated, which happens on the first
-     * [render] and after every size change. Use it to drop anything cached from [framebuffer] or
-     * [size], such as projection matrices or a third-party render target wrapping them.
+     * Bumped whenever the attachments of [framebuffer] are reallocated, which happens on the first
+     * [render] and after every size change. Use it to drop anything derived from [size] or from the
+     * color texture, such as projection matrices or a third-party render target wrapping them.
+     * [framebuffer] itself is stable, so it never needs to be read again.
      */
-    var generation: Int = 0
+    internal var generation: Int = 0
         private set
 
     /** The Skia image sampling the color texture, or `null` until the first successful [render]. */
@@ -181,8 +190,11 @@ class WebGLRenderTarget internal constructor(
         _invalidation.value
     }
 
+    /** The receiver of every [render] block; a view of this target, so it needs no per-frame state. */
+    private val renderScope: WebGLRenderScope by
+        lazy(LazyThreadSafetyMode.NONE) { WebGLRenderScope(this) }
+
     private var adoptedTexture: AdoptedGLTexture? = null
-    private var depthStencil: WebGLRenderbuffer? = null
     private var isDisposed = false
     private var isRendering = false
 
@@ -191,8 +203,9 @@ class WebGLRenderTarget internal constructor(
      * it all shows the new frame.
      *
      * Allocates or reallocates GPU resources if needed, binds [framebuffer], runs [block], then
-     * restores the GL state Compose's renderer expects. [block] receives this target as its
-     * receiver, so [size] and [framebuffer] describe the frame being drawn.
+     * restores the GL state Compose's renderer expects. [block] receives a [WebGLRenderScope], so
+     * the context, the size and the framebuffer of the frame being drawn are in scope - but not
+     * this target's own lifecycle, which has no meaning mid-frame.
      *
      * Prefer calling this from a [withFrameNanos] callback: the frame is then ready before Compose
      * draws, so the new content appears immediately. Rendering at another time is allowed, but the
@@ -212,18 +225,18 @@ class WebGLRenderTarget internal constructor(
      * @return `false`, skipping [block], if the GPU context is not available yet — which is the
      *   case until Compose has drawn its first frame.
      */
-    fun render(block: WebGLRenderTarget.() -> Unit): Boolean {
+    fun render(block: WebGLRenderScope.() -> Unit): Boolean {
         if (isDisposed) return false
         check(!isRendering) {
             "render() is already running: it must not be called from within another render() call, " +
                 "nor from a draw or layout scope"
         }
         val context = directContext() ?: return false
-        val framebuffer = prepareFramebuffer(context, requestedSize)
+        prepareAttachments(context, requestedSize)
         isRendering = true
         webGLContext.bindFramebuffer(FRAMEBUFFER, framebuffer)
         try {
-            block()
+            renderScope.block()
         } finally {
             isRendering = false
             webGLContext.bindFramebuffer(FRAMEBUFFER, null)
@@ -249,22 +262,16 @@ class WebGLRenderTarget internal constructor(
         context.resetAll()
     }
 
-    private fun prepareFramebuffer(
+    /** Allocates the attachments of [framebuffer] for [size], unless they already have that size. */
+    private fun prepareAttachments(
         context: DirectContext,
         size: IntSize,
-    ): WebGLFramebuffer {
+    ) {
         val current = adoptedTexture
-        if (current != null && current.size == size) return framebuffer!!
+        if (current != null && current.size == size) return
 
         current?.dispose()
         adoptedTexture = null
-
-        val framebuffer =
-            framebuffer ?: webGLContext.createFramebuffer() ?: error("createFramebuffer failed")
-        this.framebuffer = framebuffer
-        val depthStencil =
-            depthStencil ?: webGLContext.createRenderbuffer() ?: error("createRenderbuffer failed")
-        this.depthStencil = depthStencil
 
         val adopted = webGLContext.adoptNewTexture(context, size, textureFactory(size))
         this.adoptedTexture = adopted
@@ -295,7 +302,6 @@ class WebGLRenderTarget internal constructor(
 
         this.size = size
         generation++
-        return framebuffer
     }
 
     /**
@@ -308,10 +314,8 @@ class WebGLRenderTarget internal constructor(
         adoptedTexture?.dispose()
         adoptedTexture = null
         size = IntSize.Zero
-        framebuffer?.let(webGLContext::deleteFramebuffer)
-        framebuffer = null
-        depthStencil?.let(webGLContext::deleteRenderbuffer)
-        depthStencil = null
+        webGLContext.deleteFramebuffer(framebuffer)
+        webGLContext.deleteRenderbuffer(depthStencil)
         webGLContext.bindFramebuffer(FRAMEBUFFER, null)
         directContext()?.resetAll()
     }
