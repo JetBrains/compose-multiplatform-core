@@ -85,7 +85,6 @@ val VectorPainterInPainter = Screen.Example(
     }
 
     val vectorPainter = rememberVectorPainter(iconVector)
-    val iconImagePainter = painterResource(Res.drawable.ic_image_outline)
 
     Row(Modifier.fillMaxWidth()) {
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -121,27 +120,30 @@ val VectorPainterInPainter = Screen.Example(
         }
 
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            val iconImagePainter1 = painterResource(Res.drawable.ic_image_outline)
             Text("1. Image with painterResource")
             Image(
-                painter = iconImagePainter,
+                painter = iconImagePainter1,
                 contentDescription = null,
                 modifier = Modifier.size(100.dp).background(Color.Cyan)
             )
 
+            val iconImagePainter2 = painterResource(Res.drawable.ic_image_outline)
             Text("2. drawWithContent calling painter.draw")
             Box(
                 modifier = Modifier.size(100.dp)
                     .background(Color.Magenta)
                     .drawWithContent {
-                        with(iconImagePainter) {
+                        with(iconImagePainter2) {
                             draw(Size(24f, 24f))
                         }
                     }
             )
 
+            val iconImagePainter3 = painterResource(Res.drawable.ic_image_outline)
             Text("3. Custom IconPainter wrapping painterResource")
-            val iconPainter = remember(iconImagePainter) {
-                IconPainter(icon = iconImagePainter, background = Color.Green)
+            val iconPainter = remember(iconImagePainter3) {
+                IconPainter(icon = iconImagePainter3, background = Color.Green)
             }
             Image(
                 painter = iconPainter,
@@ -149,7 +151,7 @@ val VectorPainterInPainter = Screen.Example(
                 modifier = Modifier.size(100.dp)
             )
 
-            Text("intrinsicSize: ${iconImagePainter.intrinsicSize}")
+            Text("intrinsicSize: ${iconImagePainter3.intrinsicSize}")
         }
     }
 }
