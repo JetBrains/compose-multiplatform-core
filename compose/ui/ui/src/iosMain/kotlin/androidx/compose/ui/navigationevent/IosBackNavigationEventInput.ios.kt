@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.width
+import androidx.compose.ui.util.fastCoerceIn
 import androidx.navigationevent.NavigationEvent
 import kotlin.math.abs
-import kotlin.math.max
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CPointed
 import kotlinx.cinterop.CPointer
@@ -231,11 +231,12 @@ internal class IosBackNavigationEventInput(
                         view.bounds.toDpRect().width.toPx()
                     }
 
-                    val progress = if (leftEdge) {
-                        max(0f, touch.x - initialGestureOffset.x) / width
+                    val distance = if (leftEdge) {
+                        touch.x - initialGestureOffset.x
                     } else {
-                        max(0f, initialGestureOffset.x - touch.x) / width
+                        initialGestureOffset.x - touch.x
                     }
+                    val progress = (distance / width).fastCoerceIn(0f, 1f)
                     dispatchOnEventProgressed(
                         recognizer,
                         NavigationEvent(
