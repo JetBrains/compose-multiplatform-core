@@ -21,7 +21,9 @@ import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.ProvideSystemTheme
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -51,6 +53,7 @@ import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
+import androidx.compose.ui.platform.DesktopMediaEnvironment
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.FrameRecomposer
@@ -159,6 +162,8 @@ internal class ComposeSceneMediator(
     private val textInputService by lazy(LazyThreadSafetyMode.NONE) {
         DesktopTextInputService(platformComponent)
     }
+
+    private val desktopMediaEnvironment = DesktopMediaEnvironment(windowInfo = windowContext.windowInfo)
 
     private val textInputService2 by lazy(LazyThreadSafetyMode.NONE) {
         DesktopTextInputService2(platformComponent)
@@ -628,6 +633,8 @@ internal class ComposeSceneMediator(
         // Since rendering will not happen after, we need to execute all scheduled updates
         interopContainer.dispose()
 
+        desktopMediaEnvironment.dispose()
+
         _onComponentAttached = null
     }
 
@@ -833,6 +840,8 @@ internal class ComposeSceneMediator(
 
     private inner class DesktopPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        @OptIn(ExperimentalMediaQueryApi::class)
+        override val mediaEnvironment: UiMediaScope get() = desktopMediaEnvironment
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent
 
