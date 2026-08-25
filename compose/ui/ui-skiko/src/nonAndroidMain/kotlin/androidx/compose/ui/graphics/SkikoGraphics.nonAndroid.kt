@@ -310,29 +310,6 @@ private fun validateColorStops(colors: List<Color>, colorStops: List<Float>?) {
     }
 }
 
-/**
- * Whether skia leaves the color untouched for this blend. Skia has no filter object for those and
- * answers with none at all, which [SkikoColorFilter] cannot carry, so a pass-through filter stands
- * in for them.
- *
- * Decided on the 8 bit alpha that skia itself receives, so that an alpha which rounds to fully
- * transparent or fully opaque is judged the way skia judges it.
- */
-private fun isNoOpBlend(color: Color, blendMode: BlendMode): Boolean {
-    if (blendMode == BlendMode.Dst) return true
-    return when (color.toArgb() ushr 24) {
-        0 ->
-            blendMode == BlendMode.SrcOver ||
-                blendMode == BlendMode.DstOver ||
-                blendMode == BlendMode.DstOut ||
-                blendMode == BlendMode.SrcAtop ||
-                blendMode == BlendMode.Xor ||
-                blendMode == BlendMode.Darken
-        255 -> blendMode == BlendMode.DstIn
-        else -> false
-    }
-}
-
 /** Passes every channel through unchanged. */
 private val PassThroughColorFilter by lazy {
     SkColorFilter.makeMatrix(
