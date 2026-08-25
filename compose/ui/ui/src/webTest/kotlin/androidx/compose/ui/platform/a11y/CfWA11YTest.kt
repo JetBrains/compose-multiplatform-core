@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -37,6 +38,9 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -498,6 +502,35 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals("textbox", textField.getAttribute("role"))
         assertEquals("Hello, World!", textField.innerText)
+    }
+
+    @Test
+    fun clickableNodeKeepsItsExplicitRole() = runApplicationTest {
+        createComposeWindow {
+            Column {
+                Box(
+                    Modifier.testTag("checkbox").size(24.dp)
+                        .semantics { role = Role.Checkbox }
+                        .clickable { }
+                )
+                Box(
+                    Modifier.testTag("tab").size(24.dp)
+                        .semantics { role = Role.Tab }
+                        .clickable { }
+                )
+                Box(Modifier.testTag("clickable").size(24.dp).clickable { })
+            }
+        }
+
+        awaitA11YChanges()
+
+        fun role(testTag: String) =
+            assertNotNull(getShadowRoot().getElementById(testTag) as? HTMLElement, testTag)
+                .getAttribute("role")
+
+        assertEquals("checkbox", role("checkbox"))
+        assertEquals("tab", role("tab"))
+        assertEquals("button", role("clickable"))
     }
 
     @Test // A reproducer for https://youtrack.jetbrains.com/issue/CMP-10226
