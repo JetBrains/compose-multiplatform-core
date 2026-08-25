@@ -144,10 +144,14 @@ class WebGLRenderTargetTests : OnCanvasTests {
         }
 
         val target = renderTarget ?: return@runApplicationTest skipWithoutWebGL2()
+        var invalidationCount = 0
+        target.onTextureWillBeInvalidated = { invalidationCount++ }
+
         awaitAnimationFrame()
         awaitIdle()
 
         assertTrue(clearToRed(target), "the first render() did not run")
+        assertEquals(0, invalidationCount, "the first render unexpectedly invalidated the texture")
         assertEquals(IntSize(32, 32), target.size, "unexpected initial size")
         val generationBefore = target.generation
         val framebufferBefore = target.framebuffer
@@ -157,6 +161,7 @@ class WebGLRenderTargetTests : OnCanvasTests {
         awaitIdle()
 
         assertTrue(clearToRed(target), "render() did not run after the size change")
+        assertEquals(1, invalidationCount, "the texture invalidation listener was not invoked")
         assertEquals(IntSize(48, 24), target.size, "the new size was not applied")
         assertTrue(
             target.generation > generationBefore,

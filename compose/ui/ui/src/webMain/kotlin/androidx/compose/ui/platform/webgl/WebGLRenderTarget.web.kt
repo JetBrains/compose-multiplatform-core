@@ -101,7 +101,6 @@ class WebGLRenderTarget internal constructor(
     val htmlCanvas: HTMLCanvasElement,
     val webGLContext: WebGLRenderingContext,
     private val directContext: () -> DirectContext?,
-    private val textureFactory: (IntSize) -> WebGLTexture,
     initialSize: IntSize,
 ) {
 
@@ -139,12 +138,24 @@ class WebGLRenderTarget internal constructor(
      * Rebinding it inside [render] is allowed as long as the binding is restored before returning.
      * Deleting it or its attachments is not — they belong to this target.
      */
-     val framebuffer: WebGLFramebuffer =
+     val framebuffer: WebGLFramebuffer by lazy {
         webGLContext.createFramebuffer() ?: error("gl.createFramebuffer() returned null")
+    }
+
+    /**
+     * The WebGL texture backing this render target. The texture object remains stable for the
+     * lifetime of the [WebGLRenderTarget]. Its storage is configured and resized by the
+     * [WebGLRenderTarget]. Callers may bind and attach it to their own framebuffer, but must not
+     * delete it or change its storage or texture parameters.
+     */
+    val webGlTexture: WebGLTexture by lazy {
+        webGLContext.createTexture() ?: error("gl.createTexture() returned null")
+    }
 
     /** The depth/stencil attachment of [framebuffer]; like it, created once and only resized. */
-    private val depthStencil: WebGLRenderbuffer =
+    private val depthStencil: WebGLRenderbuffer by lazy {
         webGLContext.createRenderbuffer() ?: error("gl.createRenderbuffer() returned null")
+    }
 
     /**
      * Bumped whenever the attachments of [framebuffer] are reallocated, which happens on the first
@@ -181,7 +192,14 @@ class WebGLRenderTarget internal constructor(
      * The same instance is returned every time, so that drawing it does not restart on every
      * recomposition.
      */
-    val painter: Painter by lazy(LazyThreadSafetyMode.NONE) { WebGLRenderTargetPainter(this) }
+    val painter: Painter by lazy { WebGLRenderTargetPainter(this) }
+
+    /**
+     * Called before the current texture-backed render resource becomes unavailable.
+     * It happens when the texture is about to be reconfigured for a new size or the
+     * [WebGLRenderTarget] is being disposed.
+     */
+    var onTextureWillBeInvalidated: (() -> Unit)? = null
 
     private val _invalidation = mutableLongStateOf(0L)
 
@@ -265,10 +283,15 @@ class WebGLRenderTarget internal constructor(
         val current = adoptedTexture
         if (current != null && current.size == size) return
 
-        current?.dispose()
+        if (current != null) {
+            onTextureWillBeInvalidated?.invoke()
+            current.dispose()
+        }
+
         adoptedTexture = null
 
-        val adopted = webGLContext.adoptNewTexture(context, size, textureFactory(size))
+        webGLContext.configureWebGLTexture(webGlTexture, size)
+        val adopted = webGLContext.adoptNewTexture(context, size, webGlTexture)
         this.adoptedTexture = adopted
 
         webGLContext.bindRenderbuffer(RENDERBUFFER, depthStencil)
@@ -306,8 +329,11 @@ class WebGLRenderTarget internal constructor(
     internal fun dispose() {
         if (isDisposed) return
         isDisposed = true
-        adoptedTexture?.dispose()
-        adoptedTexture = null
+        if (adoptedTexture != null) {
+            onTextureWillBeInvalidated?.invoke()
+            adoptedTexture?.dispose()
+            adoptedTexture = null
+        }
         size = IntSize.Zero
         webGLContext.deleteFramebuffer(framebuffer)
         webGLContext.deleteRenderbuffer(depthStencil)
@@ -316,9 +342,11 @@ class WebGLRenderTarget internal constructor(
     }
 }
 
-private fun WebGLRenderingContext.defaultWebGLTexture(size: IntSize): WebGLTexture {
+private fun WebGLRenderingContext.configureWebGLTexture(
+    texture: WebGLTexture,
+    size: IntSize
+) {
     val gl = this
-    val texture = gl.createTexture() ?: error("gl.createTexture() returned null")
     gl.bindTexture(TEXTURE_2D, texture)
     // Configure the texture
     gl.texImage2D(TEXTURE_2D, 0, RGBA, size.width, size.height, 0, RGBA, UNSIGNED_BYTE, null)
@@ -329,7 +357,6 @@ private fun WebGLRenderingContext.defaultWebGLTexture(size: IntSize): WebGLTextu
     gl.texParameteri(TEXTURE_2D, TEXTURE_WRAP_S, CLAMP_TO_EDGE)
     gl.texParameteri(TEXTURE_2D, TEXTURE_WRAP_T, CLAMP_TO_EDGE)
     gl.bindTexture(TEXTURE_2D, null)
-    return texture
 }
 
 /**
@@ -356,9 +383,6 @@ fun rememberWebGLRenderTarget(
                 htmlCanvas = canvas,
                 webGLContext = gl,
                 directContext = { window.skiaDirectContext },
-                textureFactory = { size ->
-                    gl.defaultWebGLTexture(size)
-                },
                 initialSize = size
             )
         }
