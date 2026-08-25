@@ -21,6 +21,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.DesktopComposeTestRule
+import androidx.compose.ui.test.v2.ComposeTestConfig
 import kotlin.coroutines.CoroutineContext
 
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
@@ -29,5 +30,17 @@ actual fun createComposeRule(effectContext: CoroutineContext): ComposeContentTes
         DesktopComposeUiTest(
             effectContext = effectContext,
             useStandardTestDispatcherForComposition = true
+        )
+    )
+
+@OptIn(ExperimentalTestApi::class, InternalTestApi::class)
+actual fun createComposeRule(config: ComposeTestConfig): ComposeContentTestRule =
+    // TODO(Merge) Implement after merging 0221de5bb907a9b49017d40a2c8507bac7ad3a0b
+    DesktopComposeTestRule(
+        DesktopComposeUiTest(
+            effectContext = config.effectContext,
+            runTestContext = config.runTestContext,
+            testTimeout = config.testTimeout,
+            useStandardTestDispatcherForComposition = true,
         )
     )
