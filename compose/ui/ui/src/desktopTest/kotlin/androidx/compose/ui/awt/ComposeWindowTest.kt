@@ -400,9 +400,11 @@ class ComposeWindowTest {
         }
 
         try {
-            // Popup layers have an independent scene, so wait until it receives the
-            // parent anchor before asking the window for its preferred size.
-            awaitIdle()
+            // The popup is composed after its parent has been placed and published an anchor.
+            window.pack()
+            assertThat(window.size).isEqualTo(Dimension(100, 100) + window.insets)
+
+            window.renderImmediately()
             window.pack()
             val size = window.size
             assertThat(size).isEqualTo(Dimension(500, 500) + window.insets)
