@@ -113,10 +113,16 @@ private fun RotatingTriangle(isAnimating: Boolean) {
 
 @Composable
 private fun ColorPulse(isAnimating: Boolean) {
-    val webGLRenderTarger = rememberWebGLRenderTarget(IntSize(64, 64))!!
-    val pulse = remember(webGLRenderTarger) { PulseRenderer(webGLRenderTarger) }
+    val webGLRenderTarget = rememberWebGLRenderTarget(IntSize(64, 64))
 
-    LaunchedEffect(webGLRenderTarger, isAnimating) {
+    if (webGLRenderTarget == null) {
+        Text("webGLRenderTarget is null")
+        return
+    }
+
+    val pulse = remember(webGLRenderTarget) { PulseRenderer(webGLRenderTarget) }
+
+    LaunchedEffect(webGLRenderTarget, isAnimating) {
         while (isAnimating) {
             withFrameNanos { frameTimeNanos ->
                 pulse.render(frameTimeNanos)
@@ -126,7 +132,7 @@ private fun ColorPulse(isAnimating: Boolean) {
 
     LabelledContent("64×64 texture\nnothing but a pulsing clear color") {
         Image(
-            painter = webGLRenderTarger.painter,
+            painter = webGLRenderTarget.painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
