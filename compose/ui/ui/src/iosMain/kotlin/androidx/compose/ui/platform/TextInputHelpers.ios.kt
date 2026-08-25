@@ -275,7 +275,7 @@ internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
 
     override fun positionWithinRange(
         range: TextRange,
-        farthestInDirection: PlatformTextLayoutDirection
+        farthestInDirection: TextLayoutDirection
     ): Int? = null
 }
 
