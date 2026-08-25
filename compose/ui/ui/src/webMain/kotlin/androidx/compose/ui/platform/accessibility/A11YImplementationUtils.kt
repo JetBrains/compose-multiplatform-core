@@ -76,14 +76,14 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
         else -> AriaRoleId.Unknown
     }
 
-    var roleId = -1
+    var roleId = AriaRoleId.Unknown
 
     if (this.contains(SemanticsProperties.Role)) {
         roleId = this[SemanticsProperties.Role].toIntId()
     }
 
-    if (this.contains(SemanticsActions.OnClick)) {
-        // TODO: Not everything with OnClick is a button!!!
+    if (SemanticsActions.OnClick in this && roleId == AriaRoleId.Unknown) {
+        // TODO: Not everything with OnClick is a button! For now default to button for unknown clickable roles
         roleId = Role.Button.toIntId()
     }
 
