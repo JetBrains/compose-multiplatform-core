@@ -25,7 +25,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.annotation.VisibleForTesting
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.draganddrop.IosDragAndDropManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -65,12 +67,12 @@ import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.ApplicationIdleTimer
+import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.platform.WindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -195,7 +197,7 @@ internal class ComposeSceneMediator(
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
     private val navigationEventInput: IosBackNavigationEventInput,
-    interfaceOrientationState: State<InterfaceOrientation>,
+    private val mediaEnvironment: MediaEnvironment,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
@@ -385,7 +387,7 @@ internal class ComposeSceneMediator(
             { _overlayView },
             { windowContext.window?.rootViewController?.view },
         ),
-        interfaceOrientation = interfaceOrientationState
+        interfaceOrientation = mediaEnvironment.interfaceOrientationState
     )
 
     /**
@@ -493,12 +495,14 @@ internal class ComposeSceneMediator(
             }
         }
 
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun onScrollEvent(
         position: DpOffset,
         delta: DpOffset,
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
+        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         when (eventKind) {
             TouchesEventKind.BEGAN -> activitiesHandler.onActivitiesStarted()
             TouchesEventKind.MOVED -> {}
@@ -522,11 +526,13 @@ internal class ComposeSceneMediator(
         )
     }
 
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun onHoverEvent(
         position: DpOffset,
         event: UIEvent?,
         eventKind: TouchesEventKind
     ) {
+        mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
         val eventType = when (eventKind) {
             TouchesEventKind.BEGAN -> PointerEventType.Enter
             TouchesEventKind.MOVED -> PointerEventType.Move
@@ -565,6 +571,7 @@ internal class ComposeSceneMediator(
      * @param event the [UIEvent] associated with the touches
      * @param eventKind the [TouchesEventKind] of the touches
      */
+    @OptIn(ExperimentalMediaQueryApi::class)
     private fun onTouchesEvent(
         touches: Set<*>,
         event: UIEvent?,
@@ -576,6 +583,7 @@ internal class ComposeSceneMediator(
             TouchesEventKind.MOVED -> {}
         }
 
+        var anyIsStylus = false
         val pointers = touches.mapIndexed { index, touch ->
             touch as UITouch
             val position = touch.offsetInView(_backgroundView, screenDensity.density)
@@ -584,6 +592,9 @@ internal class ComposeSceneMediator(
                 UITouchTypeIndirect, UITouchTypeIndirectPointer -> PointerType.Mouse
                 UITouchTypePencil -> PointerType.Stylus
                 else -> PointerType.Touch
+            }
+            if (pointerType == PointerType.Stylus) {
+                anyIsStylus = true
             }
             val id = touch.hashCode().toLong().takeIf {
                 pointerType != PointerType.Mouse
@@ -600,6 +611,12 @@ internal class ComposeSceneMediator(
                     screenDensity.density
                 ) ?: emptyList()
             )
+        }
+
+        if (anyIsStylus) {
+            mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Fine)
+        } else {
+            mediaEnvironment.updatePointerPrecision(UiMediaScope.PointerPrecision.Coarse)
         }
 
         // UIKit sends buttonMask that was before the release action. It should be empty if no
@@ -885,6 +902,8 @@ internal class ComposeSceneMediator(
 
     private inner class IosPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        @OptIn(ExperimentalMediaQueryApi::class)
+        override val mediaEnvironment: UiMediaScope get() = this@ComposeSceneMediator.mediaEnvironment
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 

@@ -28,10 +28,10 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.platform.MediaEnvironment
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
-import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
@@ -61,7 +61,7 @@ internal class IosComposeSceneLayer(
     consumePointerInputOutside: Boolean = focusedViewsList != null,
     parentCoroutineContext: CoroutineContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
-    private val interfaceOrientationState: State<InterfaceOrientation>,
+    private val mediaEnvironment: MediaEnvironment,
     private var invalidateLayout: () -> Unit,
     private var invalidateDraw: () -> Unit,
 ) : ComposeSceneLayer {
@@ -115,7 +115,7 @@ internal class IosComposeSceneLayer(
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
-        interfaceOrientationState = interfaceOrientationState
+        mediaEnvironment = mediaEnvironment
     ).also {
         interactionView.embedSubview(it.backgroundView)
         it.isInterceptingOutsideEvents = consumePointerInputOutside
