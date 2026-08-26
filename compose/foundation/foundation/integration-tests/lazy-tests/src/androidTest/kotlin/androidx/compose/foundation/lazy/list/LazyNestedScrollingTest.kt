@@ -37,7 +37,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +46,7 @@ import org.junit.runner.RunWith
 class LazyNestedScrollingTest {
     private val LazyTag = "LazyTag"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val expectedDragOffset = 20f
     private val dragOffsetWithTouchSlop = expectedDragOffset + TestTouchSlop
@@ -71,6 +70,7 @@ class LazyNestedScrollingTest {
         rule.onNodeWithTag(LazyTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = 100f + TestTouchSlop))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -104,6 +104,7 @@ class LazyNestedScrollingTest {
             draggedOffset = 0f
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = dragOffsetWithTouchSlop))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -129,6 +130,7 @@ class LazyNestedScrollingTest {
         rule.onNodeWithTag(LazyTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = -dragOffsetWithTouchSlop))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -158,6 +160,7 @@ class LazyNestedScrollingTest {
             draggedOffset = 0f
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = -dragOffsetWithTouchSlop))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -183,6 +186,7 @@ class LazyNestedScrollingTest {
         rule.onNodeWithTag(LazyTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = dragOffsetWithTouchSlop, y = 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -216,6 +220,7 @@ class LazyNestedScrollingTest {
             draggedOffset = 0f
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = dragOffsetWithTouchSlop, y = 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -241,6 +246,7 @@ class LazyNestedScrollingTest {
         rule.onNodeWithTag(LazyTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = -dragOffsetWithTouchSlop, y = 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -270,6 +276,7 @@ class LazyNestedScrollingTest {
             draggedOffset = 0f
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = -dragOffsetWithTouchSlop, y = 0f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 

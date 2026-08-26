@@ -20,14 +20,11 @@ import androidx.annotation.RequiresApi
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room3.concurrent.AtomicBoolean
-import androidx.room3.migration.AutoMigrationSpec
-import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
 import java.util.Locale
 import kotlin.collections.removeFirst as removeFirstKt
-import kotlin.reflect.KClass
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
@@ -73,19 +70,21 @@ class InvalidationTrackerTest {
                     context = mock(),
                     name = null,
                     migrationContainer = RoomDatabase.MigrationContainer(),
-                    callbacks = null,
+                    callbacks = emptyList(),
                     allowMainThreadQueries = true,
                     journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
                     multiInstanceInvalidationServiceIntent = null,
-                    requireMigration = true,
+                    isMigrationRequired = true,
                     allowDestructiveMigrationOnDowngrade = false,
                     migrationNotRequiredFrom = null,
                     prepackagedDatabaseCallback = null,
-                    typeConverters = emptyList(),
+                    columnTypeConverters = emptyList(),
+                    daoReturnTypeConverters = emptyList(),
                     autoMigrationSpecs = emptyList(),
                     allowDestructiveMigrationForAllTables = false,
                     sqliteDriver = sqliteDriver,
                     queryCoroutineContext = testCoroutineScope.coroutineContext,
+                    connectionPoolConfiguration = SingleConnection,
                 )
                 .apply { this.preparedStatementCacheSize = 0 }
         )
@@ -407,16 +406,6 @@ class InvalidationTrackerTest {
     }
 
     @Test
-    fun createLiveDataWithNoExistingTable() {
-        // Validate that sending a bad createLiveData table name fails quickly
-        assertThrows<IllegalArgumentException> {
-                tracker.createLiveData(tableNames = arrayOf("x"), inTransaction = false) {}
-            }
-            .hasMessageThat()
-            .isEqualTo("There is no table with name x")
-    }
-
-    @Test
     fun addAndRemoveObserver() = runTest {
         val invalidations = tracker.createFlow("a", emitInitialState = false).produceIn(this)
 
@@ -483,6 +472,23 @@ class InvalidationTrackerTest {
         }
     }
 
+    @Test
+    fun throwIfDatabaseIsClosed() = runTest {
+        roomDatabase.close()
+
+        assertThrows<IllegalStateException> { tracker.createFlow("x").singleOrNull() }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { tracker.sync() }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { tracker.refresh("x") }
+            .hasMessageThat()
+            .contains("Database is closed")
+    }
+
     private fun runTest(testBody: suspend TestScope.() -> Unit) =
         testCoroutineScope.runTest {
             testBody.invoke(this)
@@ -536,21 +542,7 @@ class InvalidationTrackerTest {
             }
         }
 
-        override fun clearAllTables() {}
-
-        override fun createAutoMigrations(
-            autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
-        ): List<Migration> {
-            return emptyList()
-        }
-
-        override fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>> {
-            return emptySet()
-        }
-
-        override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
-            return emptyMap()
-        }
+        override suspend fun clearAllTables() {}
     }
 
     private class FakeSQLiteDriver : SQLiteDriver {
@@ -585,7 +577,7 @@ class InvalidationTrackerTest {
             override fun close() {}
         }
 
-        private inner class FakeSQLiteStatement(private val invalidateTables: IntArray?) :
+        private class FakeSQLiteStatement(private val invalidateTables: IntArray?) :
             SQLiteStatement {
 
             private var position = -1

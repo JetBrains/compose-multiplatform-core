@@ -17,7 +17,6 @@ package androidx.compose.remote.player.view.accessibility;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
-import android.graphics.Rect;
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
@@ -53,22 +52,23 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
     @Override
     public void applyComponent(
             @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility,
-            @NonNull N nodeInfo, @NonNull Component component,
-            @NonNull List<AccessibilitySemantics> semantics) {
-        float[] locationInWindow = new float[2];
-        component.getLocationInWindow(locationInWindow);
-        Rect bounds = new Rect((int) locationInWindow[0], (int) locationInWindow[1],
-                (int) (locationInWindow[0] + component.getWidth()),
-                (int) (locationInWindow[1] + component.getHeight()));
-        setBoundsInScreen(nodeInfo, bounds);
+            @NonNull N nodeInfo,
+            @NonNull Component component,
+            @NonNull List<AccessibilitySemantics> semantics,
+            @Nullable Integer parentId) {
+        setBoundsInParentOrScreen(nodeInfo, component, parentId);
 
         setUniqueId(nodeInfo, String.valueOf(component.getComponentId()));
 
         if (component instanceof AccessibleComponent) {
-            applyContentDescription(((AccessibleComponent) component).getContentDescriptionId(),
-                    nodeInfo, remoteComposeAccessibility);
+            applyContentDescription(
+                    ((AccessibleComponent) component).getContentDescriptionId(),
+                    nodeInfo,
+                    remoteComposeAccessibility);
 
-            applyText(((AccessibleComponent) component).getTextId(), nodeInfo,
+            applyText(
+                    ((AccessibleComponent) component).getTextId(),
+                    nodeInfo,
                     remoteComposeAccessibility);
 
             applyRole(((AccessibleComponent) component).getRole(), nodeInfo);
@@ -90,9 +90,13 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
         }
     }
 
+    protected abstract void setBoundsInParentOrScreen(
+            @NonNull N nodeInfo, @NonNull Component component, @Nullable Integer parentId);
+
     protected void applySemantics(
             @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility,
-            @NonNull N nodeInfo, @NonNull List<AccessibilitySemantics> semantics) {
+            @NonNull N nodeInfo,
+            @NonNull List<AccessibilitySemantics> semantics) {
         for (AccessibilitySemantics semantic : semantics) {
             if (semantic.isInterestingForSemantics()) {
                 if (semantic instanceof CoreSemantics) {
@@ -105,12 +109,16 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
                     }
 
                     if (accessibleComponent.getContentDescriptionId() != null) {
-                        applyContentDescription(accessibleComponent.getContentDescriptionId(),
-                                nodeInfo, remoteComposeAccessibility);
+                        applyContentDescription(
+                                accessibleComponent.getContentDescriptionId(),
+                                nodeInfo,
+                                remoteComposeAccessibility);
                     }
 
                     if (accessibleComponent.getTextId() != null) {
-                        applyText(accessibleComponent.getTextId(), nodeInfo,
+                        applyText(
+                                accessibleComponent.getTextId(),
+                                nodeInfo,
                                 remoteComposeAccessibility);
                     }
 
@@ -121,8 +129,8 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
                     if (scrollableSemantic.supportsScrollByOffset()) {
                         ScrollAxisRange scrollAxis = scrollableSemantic.getScrollAxisRange();
                         if (scrollAxis != null) {
-                            applyScrollable(nodeInfo, scrollAxis,
-                                    scrollableSemantic.scrollDirection());
+                            applyScrollable(
+                                    nodeInfo, scrollAxis, scrollableSemantic.scrollDirection());
                         }
                     }
                 } else {
@@ -134,27 +142,33 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
 
     protected void applyCoreSemantics(
             @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility,
-            @NonNull N nodeInfo, @NonNull CoreSemantics coreSemantics) {
-        applyContentDescription(coreSemantics.getContentDescriptionId(), nodeInfo,
-                remoteComposeAccessibility);
+            @NonNull N nodeInfo,
+            @NonNull CoreSemantics coreSemantics) {
+        applyContentDescription(
+                coreSemantics.getContentDescriptionId(), nodeInfo, remoteComposeAccessibility);
 
         applyRole(coreSemantics.getRole(), nodeInfo);
 
         applyText(coreSemantics.getTextId(), nodeInfo, remoteComposeAccessibility);
 
-        applyStateDescription(coreSemantics.getStateDescriptionId(), nodeInfo,
-                remoteComposeAccessibility);
+        applyStateDescription(
+                coreSemantics.getStateDescriptionId(), nodeInfo, remoteComposeAccessibility);
 
         if (!coreSemantics.mEnabled) {
             setEnabled(nodeInfo, false);
         }
     }
 
-    protected void applyStateDescription(@Nullable Integer stateDescriptionId, @NonNull N nodeInfo,
+    protected void applyStateDescription(
+            @Nullable Integer stateDescriptionId,
+            @NonNull N nodeInfo,
             @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility) {
         if (stateDescriptionId != null) {
-            setStateDescription(nodeInfo, appendNullable(getStateDescription(nodeInfo),
-                    remoteComposeAccessibility.stringValue(stateDescriptionId)));
+            setStateDescription(
+                    nodeInfo,
+                    appendNullable(
+                            getStateDescription(nodeInfo),
+                            remoteComposeAccessibility.stringValue(stateDescriptionId)));
         }
     }
 
@@ -165,7 +179,9 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
         }
     }
 
-    protected void applyText(@Nullable Integer textId, @NonNull N nodeInfo,
+    protected void applyText(
+            @Nullable Integer textId,
+            @NonNull N nodeInfo,
             @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility) {
         if (textId != null) {
             String value = remoteComposeAccessibility.stringValue(textId);
@@ -173,17 +189,21 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
         }
     }
 
-    protected void applyContentDescription(@Nullable Integer contentDescriptionId,
+    protected void applyContentDescription(
+            @Nullable Integer contentDescriptionId,
             @NonNull N nodeInfo,
             @NonNull RemoteComposeDocumentAccessibility remoteComposeAccessibility) {
         if (contentDescriptionId != null) {
-            setContentDescription(nodeInfo, appendNullable(getContentDescription(nodeInfo),
-                    remoteComposeAccessibility.stringValue(contentDescriptionId)));
+            setContentDescription(
+                    nodeInfo,
+                    appendNullable(
+                            getContentDescription(nodeInfo),
+                            remoteComposeAccessibility.stringValue(contentDescriptionId)));
         }
     }
 
-    private @Nullable CharSequence appendNullable(@Nullable CharSequence contentDescription,
-            @Nullable String value) {
+    private @Nullable CharSequence appendNullable(
+            @Nullable CharSequence contentDescription, @Nullable String value) {
         if (contentDescription == null) {
             return value;
         } else if (value == null) {
@@ -199,8 +219,8 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
 
     protected abstract @Nullable CharSequence getStateDescription(@NonNull N nodeInfo);
 
-    protected abstract void setStateDescription(@NonNull N nodeInfo,
-            @NonNull CharSequence charSequence);
+    protected abstract void setStateDescription(
+            @NonNull N nodeInfo, @NonNull CharSequence charSequence);
 
     protected abstract void setRoleDescription(@NonNull N nodeInfo, @NonNull String description);
 
@@ -210,15 +230,13 @@ public abstract class BaseSemanticNodeApplier<N> implements SemanticNodeApplier<
 
     protected abstract @Nullable CharSequence getContentDescription(@NonNull N nodeInfo);
 
-    protected abstract void setContentDescription(@NonNull N nodeInfo,
-            @Nullable CharSequence charSequence);
-
-    protected abstract void setBoundsInScreen(@NonNull N nodeInfo, @NonNull Rect bounds);
+    protected abstract void setContentDescription(
+            @NonNull N nodeInfo, @Nullable CharSequence charSequence);
 
     protected abstract void setUniqueId(@NonNull N nodeInfo, @NonNull String s);
 
-    protected abstract void applyScrollable(@NonNull N nodeInfo,
-            @NonNull ScrollAxisRange scrollAxis, int scrollDirection);
+    protected abstract void applyScrollable(
+            @NonNull N nodeInfo, @NonNull ScrollAxisRange scrollAxis, int scrollDirection);
 
     protected abstract void applyListItem(@NonNull N nodeInfo, int parentId);
 }

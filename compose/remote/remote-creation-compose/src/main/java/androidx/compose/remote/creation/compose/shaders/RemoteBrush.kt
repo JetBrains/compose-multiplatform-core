@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-
 package androidx.compose.remote.creation.compose.shaders
 
 import androidx.annotation.RestrictTo
@@ -23,36 +21,42 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationSta
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
+import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.SolidColor
 
-/*
- * This is used to provide a way to intercept linear gradient brushes in Remote, so that
- * we can serialize them.
+/**
+ * A remote representation of a [Brush] that can be serialized and reconstructed on a remote
+ * surface.
+ *
+ * This class provides a mechanism to intercept standard Compose [Brush] instances, such as linear
+ * gradients or solid colors, and convert them into a format suitable for remote rendering.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Immutable
-public abstract class RemoteBrush {
+public abstract class RemoteBrush internal constructor() {
 
     /**
-     * Return the intrinsic size of the [Brush]. If the there is no intrinsic size (i.e. filling
-     * bounds with an arbitrary color) return [Size.Unspecified]. If there is no intrinsic size in a
-     * single dimension, return [Size] with [Float.NaN] in the desired dimension.
+     * Return the intrinsic size of the [RemoteBrush]. If the there is no intrinsic size (i.e.
+     * filling bounds with an arbitrary color) return [Size.Unspecified]. If there is no intrinsic
+     * size in a single dimension, return [Size] with [Float.NaN] in the desired dimension.
      */
-    public val intrinsicSize: Size = Size.Unspecified
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val intrinsicSize: Size = Size.Unspecified
 
-    public abstract fun RemoteStateScope.createShader(size: RemoteSize): Shader
-
-    public open val hasShader: Boolean
-        get() = true
+    /**
+     * Applies this [RemoteBrush] to a paint.
+     *
+     * @param paint The paint to apply to.
+     * @param size The size of the area being drawn, used for shader calculation.
+     */
+    public abstract fun RemoteStateScope.applyTo(paint: RemotePaint, size: RemoteSize)
 
     public companion object {
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun fromComposeUi(brush: Brush): RemoteBrush {
             return when (brush) {
                 is SolidColor -> RemoteBrush.solidColor(brush.value.rc)
@@ -73,14 +77,50 @@ public abstract class RemoteBrush {
     }
 }
 
+/**
+ * Brush that applies a shader to the drawn area.
+ *
+ * Base class for shader-based brushes such as gradients and image textures.
+ */
+public abstract class RemoteShaderBrush internal constructor() : RemoteBrush() {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract fun RemoteStateScope.createShader(size: RemoteSize): RemoteShader
+
+    override fun RemoteStateScope.applyTo(paint: RemotePaint, size: RemoteSize) {
+        val shader = createShader(size)
+        paint.shader = shader
+        paint.color = Color.Black.rc
+    }
+
+    /**
+     * Applies this [RemoteShaderBrush] to a [paint] with a given [size] and [matrix3x3]
+     * transformation.
+     *
+     * @sample androidx.compose.remote.creation.compose.samples.RemoteCanvasShaderMatrixSample
+     * @param paint The paint to apply the shader to.
+     * @param size The size of the area being drawn.
+     * @param matrix3x3 The 3x3 matrix to apply to the shader.
+     */
+    public open fun RemoteStateScope.applyTo(
+        paint: RemotePaint,
+        size: RemoteSize,
+        matrix3x3: RemoteMatrix3x3,
+    ) {
+        val shader = createShader(size)
+        shader.remoteMatrix3x3 = matrix3x3
+        paint.shader = shader
+        paint.color = Color.Black.rc
+    }
+}
+
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Suppress("DEPRECATION")
 public abstract class RemoteShader : android.graphics.Shader() {
     public abstract fun apply(creationState: RemoteComposeCreationState, paintBundle: PaintBundle)
 
     /**
-     * The [RemoteMatrix3x3] if any to apply to the shader. Note not all profiles will support
-     * shader rotation.
+     * The [RemoteMatrix3x3] to apply to the shader. Note not all profiles will support shader
+     * rotation.
      */
-    public abstract val remoteMatrix3x3: RemoteMatrix3x3?
+    public open var remoteMatrix3x3: RemoteMatrix3x3 = RemoteMatrix3x3.createIdentity()
 }

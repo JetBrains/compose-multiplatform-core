@@ -20,17 +20,21 @@ import androidx.collection.IntObjectMap
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableObjectList
 import androidx.collection.emptyIntObjectMap
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.semantics.SemanticsProperties.HideFromAccessibility
 import androidx.compose.ui.semantics.SemanticsProperties.InvisibleToUser
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.roundToIntRect
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
 
 /** Owns [SemanticsNode] objects and notifies listeners of changes to the semantics tree */
-class SemanticsOwner
+public class SemanticsOwner
 internal constructor(
     private val rootNode: LayoutNode,
     private val outerSemanticsNode: EmptySemanticsModifier,
@@ -40,12 +44,12 @@ internal constructor(
      * The root node of the semantics tree. Does not contain any unmerged data. May contain merged
      * data.
      */
-    val rootSemanticsNode: SemanticsNode
+    public val rootSemanticsNode: SemanticsNode
         get() {
             return SemanticsNode(rootNode, mergingEnabled = true)
         }
 
-    val unmergedRootSemanticsNode: SemanticsNode
+    public val unmergedRootSemanticsNode: SemanticsNode
         get() {
             return SemanticsNode(
                 outerSemanticsNode = outerSemanticsNode,
@@ -85,7 +89,7 @@ internal constructor(
  *   For example, the children of [androidx.compose.ui.layout.SubcomposeLayout] which are retained
  *   to be reused in future are considered deactivated.
  */
-fun SemanticsOwner.getAllSemanticsNodes(
+public fun SemanticsOwner.getAllSemanticsNodes(
     mergingEnabled: Boolean,
     skipDeactivatedNodes: Boolean = true,
 ): List<SemanticsNode> {
@@ -99,7 +103,7 @@ fun SemanticsOwner.getAllSemanticsNodes(
 
 @Suppress("unused")
 @Deprecated(message = "Use a new overload instead", level = DeprecationLevel.HIDDEN)
-fun SemanticsOwner.getAllSemanticsNodes(mergingEnabled: Boolean) =
+public fun SemanticsOwner.getAllSemanticsNodes(mergingEnabled: Boolean): List<SemanticsNode> =
     getAllSemanticsNodes(mergingEnabled, true)
 
 /**
@@ -128,9 +132,12 @@ internal fun SemanticsOwner.getAllSemanticsNodesToMap(
 }
 
 internal fun SemanticsNode.isImportantForAccessibility() =
-    !isHidden &&
-        (unmergedConfig.isMergingSemanticsOfDescendants ||
-            unmergedConfig.containsImportantForAccessibility())
+    when {
+        isHidden -> false
+        unmergedConfig.isMergingSemanticsOfDescendants -> true
+        unmergedConfig.containsImportantForAccessibility() -> true
+        else -> false
+    }
 
 @Suppress("DEPRECATION")
 internal val SemanticsNode.isHidden: Boolean
@@ -138,39 +145,130 @@ internal val SemanticsNode.isHidden: Boolean
     // This also checks if the node has been marked as `invisibleToUser`, which is what the
     // `hiddenFromAccessibility` API used to  be named.
     get() =
-        isTransparent ||
-            (unmergedConfig.contains(HideFromAccessibility) ||
-                unmergedConfig.contains(InvisibleToUser))
+        when {
+            isTransparent -> true
+            unmergedConfig.contains(HideFromAccessibility) -> true
+            unmergedConfig.contains(InvisibleToUser) -> true
+            else -> false
+        }
 
 private val DefaultFakeNodeBounds = Rect(0f, 0f, 10f, 10f)
 
 /** Semantics node with adjusted bounds for the uncovered(by siblings) part. */
-internal class SemanticsNodeWithAdjustedBounds(
+internal class AdjustedSemanticsNode(
     val semanticsNode: SemanticsNode,
     val adjustedBounds: IntRect,
+    val isInMergingHiddenSubtree: Boolean = false,
 )
 
 /**
  * Finds pruned [SemanticsNode]s in the tree owned by this [SemanticsOwner]. A semantics node
  * completely covered by siblings drawn on top of it will be pruned. Return the results in a map.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
     customRootNodeId: Int,
     shouldIgnoreNode: (SemanticsNode) -> Boolean,
-): IntObjectMap<SemanticsNodeWithAdjustedBounds> {
+): IntObjectMap<AdjustedSemanticsNode> {
     trace("getAllUncoveredSemanticsNodesToIntObjectMap") {
         val root = unmergedRootSemanticsNode
         if (!root.layoutNode.isPlaced || !root.layoutNode.isAttached) {
             return emptyIntObjectMap()
         }
+        val rootBounds = root.boundsInRoot
 
         // Default capacity chosen to accommodate common scenarios
-        val nodes = MutableIntObjectMap<SemanticsNodeWithAdjustedBounds>(48)
+        val nodes = MutableIntObjectMap<AdjustedSemanticsNode>(48)
 
-        val unaccountedSpace = SemanticsRegion()
-        unaccountedSpace.set(root.boundsInRoot.roundToIntRect())
+        fun virtualViewId(node: SemanticsNode) =
+            if (node.id == root.id) {
+                customRootNodeId
+            } else {
+                node.id
+            }
 
-        fun findAllSemanticNodesRecursive(currentNode: SemanticsNode, region: SemanticsRegion) {
+        fun addFakeNode(node: SemanticsNode, isInMergingHiddenSubtree: Boolean = false) {
+            val parentNode = node.parent
+            // use parent bounds for fake node
+            val boundsForFakeNode =
+                if (parentNode?.layoutInfo?.isPlaced == true) {
+                    parentNode.boundsInRoot
+                } else {
+                    DefaultFakeNodeBounds
+                }
+            nodes[virtualViewId(node)] =
+                AdjustedSemanticsNode(
+                    node,
+                    boundsForFakeNode.roundToIntRect(),
+                    isInMergingHiddenSubtree,
+                )
+        }
+
+        /**
+         * Helper to add descendants of a merging node that is partially visible in its scrolling
+         * container. This method is similar to `findAllSemanticNodesRecursive` below but handles
+         * both clipped and unclipped bounds and uses a merging parent (not a root) for unaccounted
+         * space.
+         */
+        fun addDescendantsOfMergingNodePartiallyVisibleInScrollParent(
+            currentNode: SemanticsNode,
+            region: SemanticsRegion,
+            unaccountedSpace: SemanticsRegion,
+            isInMergingHiddenSubtree: Boolean = false,
+        ) {
+            if (
+                !currentNode.layoutNode.isPlaced ||
+                    !currentNode.layoutNode.isAttached ||
+                    unaccountedSpace.isEmpty
+            ) {
+                // The node not attached because this could be a fake node, so we should add it
+                if (currentNode.isFake) addFakeNode(currentNode, isInMergingHiddenSubtree)
+                return
+            }
+
+            // Use unclipped bounds for intersection and reporting within this context only if the
+            // node is fully off-screen. Otherwise, continue using the clipped bounds.
+            val currentBounds =
+                currentNode.touchBoundsInRoot
+                    .run { if (isEmpty) currentNode.unclippedBoundsInRoot else this }
+                    .roundToIntRect()
+            region.set(currentBounds)
+            val isCurrentHidden =
+                isInMergingHiddenSubtree ||
+                    (currentNode.unmergedConfig.isMergingSemanticsOfDescendants &&
+                        currentNode.unmergedConfig.contains(HideFromAccessibility))
+            if (region.intersect(unaccountedSpace)) {
+                // For nodes that are partially visible in the root, we will continue reporting
+                // their clipped bounds. However, if the node is *fully* off-screen, we will add
+                // them with their unclipped bounds. But to send the correct signal to
+                // the accessibility services, we will mark them as invisible to user
+                nodes[virtualViewId(currentNode)] =
+                    AdjustedSemanticsNode(currentNode, region.bounds, isCurrentHidden)
+
+                val children = currentNode.replacedChildren
+                for (i in children.size - 1 downTo 0) {
+                    if (shouldIgnoreNode(children[i])) {
+                        continue
+                    }
+                    addDescendantsOfMergingNodePartiallyVisibleInScrollParent(
+                        children[i],
+                        region,
+                        unaccountedSpace,
+                        isCurrentHidden,
+                    )
+                }
+                if (currentNode.isImportantForAccessibility()) {
+                    unaccountedSpace.difference(currentBounds)
+                }
+            }
+        }
+
+        fun findAllSemanticNodesRecursive(
+            currentNode: SemanticsNode,
+            region: SemanticsRegion,
+            unaccountedSpace: SemanticsRegion,
+            isInMergingHiddenSubtree: Boolean = false,
+        ) {
             val notAttachedOrPlaced =
                 !currentNode.layoutNode.isPlaced || !currentNode.layoutNode.isAttached
             if (
@@ -180,47 +278,68 @@ internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
                 return
             }
             val touchBoundsInRoot = currentNode.touchBoundsInRoot.roundToIntRect()
-
             region.set(touchBoundsInRoot)
 
-            val virtualViewId =
-                if (currentNode.id == root.id) {
-                    customRootNodeId
-                } else {
-                    currentNode.id
-                }
+            val virtualViewId = virtualViewId(currentNode)
+
+            val isCurrentHidden =
+                isInMergingHiddenSubtree ||
+                    (currentNode.unmergedConfig.isMergingSemanticsOfDescendants &&
+                        currentNode.unmergedConfig.contains(HideFromAccessibility))
+
+            // Note that the `intersect` call updates the region
             if (region.intersect(unaccountedSpace)) {
-                nodes[virtualViewId] = SemanticsNodeWithAdjustedBounds(currentNode, region.bounds)
+                nodes[virtualViewId] =
+                    AdjustedSemanticsNode(currentNode, region.bounds, isCurrentHidden)
+
                 // Children could be drawn outside of parent, but we are using clipped bounds for
                 // accessibility now, so let's put the children recursion inside of this if. If
-                // later
-                // we decide to support children drawn outside of parent, we can move it out of the
-                // if block.
+                // later we decide to support children drawn outside of parent, we can move it out
+                // of the `if` block.
                 val children = currentNode.replacedChildren
-                for (i in children.size - 1 downTo 0) {
-                    if (shouldIgnoreNode(children[i])) {
-                        continue
+
+                val shouldIncludeOffscreenChildren =
+                    ComposeUiFlags.isAccessibilityShouldIncludeOffscreenChildrenEnabled &&
+                        currentNode.unmergedConfig.isMergingSemanticsOfDescendants &&
+                        currentNode.isPartiallyOffscreenInScrollParent
+                if (shouldIncludeOffscreenChildren) {
+                    // If this is a partially offscreen node inside the scrolling container,
+                    // and it merges its children, we want to include its children even if they are
+                    // completely offscreen (for screen-readers experience).
+                    val childrenUnaccountedRegion =
+                        SemanticsRegion().also {
+                            it.set(currentNode.unclippedBoundsInRoot.roundToIntRect())
+                        }
+                    for (i in children.size - 1 downTo 0) {
+                        if (shouldIgnoreNode(children[i])) {
+                            continue
+                        }
+                        addDescendantsOfMergingNodePartiallyVisibleInScrollParent(
+                            children[i],
+                            SemanticsRegion(),
+                            childrenUnaccountedRegion,
+                            isCurrentHidden,
+                        )
                     }
-                    findAllSemanticNodesRecursive(children[i], region)
+                } else {
+                    for (i in children.size - 1 downTo 0) {
+                        if (shouldIgnoreNode(children[i])) {
+                            continue
+                        }
+                        findAllSemanticNodesRecursive(
+                            currentNode = children[i],
+                            region = region,
+                            unaccountedSpace = unaccountedSpace,
+                            isInMergingHiddenSubtree = isCurrentHidden,
+                        )
+                    }
                 }
                 if (currentNode.isImportantForAccessibility()) {
                     unaccountedSpace.difference(touchBoundsInRoot)
                 }
             } else {
                 if (currentNode.isFake) {
-                    val parentNode = currentNode.parent
-                    // use parent bounds for fake node
-                    val boundsForFakeNode =
-                        if (parentNode?.layoutInfo?.isPlaced == true) {
-                            parentNode.boundsInRoot
-                        } else {
-                            DefaultFakeNodeBounds
-                        }
-                    nodes[virtualViewId] =
-                        SemanticsNodeWithAdjustedBounds(
-                            currentNode,
-                            boundsForFakeNode.roundToIntRect(),
-                        )
+                    addFakeNode(currentNode, isInMergingHiddenSubtree)
                 } else if (virtualViewId == customRootNodeId) {
                     // Root view might have WRAP_CONTENT layout params in which case it will have
                     // zero
@@ -231,12 +350,46 @@ internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
                     // depend
                     // on accessibility info
                     nodes[virtualViewId] =
-                        SemanticsNodeWithAdjustedBounds(currentNode, region.bounds)
+                        AdjustedSemanticsNode(currentNode, region.bounds, isCurrentHidden)
                 }
             }
         }
 
-        findAllSemanticNodesRecursive(root, SemanticsRegion())
+        val unaccountedSpace = SemanticsRegion().also { it.set(rootBounds.roundToIntRect()) }
+        findAllSemanticNodesRecursive(root, SemanticsRegion(), unaccountedSpace)
         return nodes
     }
 }
+
+/** This is true if the node is partially within the bounds of the scrolling container. */
+private val SemanticsNode.isPartiallyOffscreenInScrollParent: Boolean
+    get() {
+        getScrollableParent()?.let { scrollParent ->
+            val nodeCoordinates =
+                findCoordinatorToGetBounds()?.takeIf { it.isAttached }?.coordinates
+            val parentCoordinatorForBounds =
+                scrollParent.findCoordinatorToGetBounds()?.takeIf { it.isAttached }?.coordinates
+            if (nodeCoordinates == null || parentCoordinatorForBounds == null) return false
+            val unclippedBounds =
+                parentCoordinatorForBounds.localBoundingBoxOf(nodeCoordinates, false)
+            val parentBounds = Rect(Offset.Zero, parentCoordinatorForBounds.size.toSize())
+            val visibleBounds = unclippedBounds.intersect(parentBounds)
+            return unclippedBounds != visibleBounds
+        }
+        return false
+    }
+
+private fun SemanticsNode.getScrollableParent(): SemanticsNode? {
+    var parent: SemanticsNode? = this.parent
+    while (parent != null) {
+        if (parent.isScrollNode) return parent
+        parent = parent.parent
+    }
+    return null
+}
+
+private val SemanticsNode.isScrollNode: Boolean
+    get() {
+        return unmergedConfig.contains(SemanticsProperties.VerticalScrollAxisRange) ||
+            unmergedConfig.contains(SemanticsProperties.HorizontalScrollAxisRange)
+    }

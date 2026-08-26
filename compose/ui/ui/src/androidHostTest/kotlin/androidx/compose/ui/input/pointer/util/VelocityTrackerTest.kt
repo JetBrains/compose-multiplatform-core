@@ -27,23 +27,25 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class VelocityTrackerTest {
+class Lsq2VelocityTrackerTest {
 
     // TODO(shepshapard): This test needs to be broken up into smaller tests
     // that make edge cases clearer.  Right now its just a bunch of inputs and outputs
     // and its impossible for the reader to know how well different cases are being tested.
     private val Tolerance = 0.2f
 
+    private val MaximumVelocity = Velocity(Float.MAX_VALUE, Float.MAX_VALUE)
+
     @Test
     fun calculateVelocity_returnsExpectedValues() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         var i = 0
         velocityEventData.forEach {
             if (it.down) {
                 tracker.addPosition(it.uptime, it.position)
             } else {
                 checkVelocity(
-                    tracker.calculateVelocity(),
+                    tracker.calculateVelocity(MaximumVelocity),
                     expected2DVelocities[i].first,
                     expected2DVelocities[i].second,
                 )
@@ -55,7 +57,7 @@ class VelocityTrackerTest {
 
     @Test
     fun calculateVelocity_returnsExpectedValues_withMaximumVelocity() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         var i = 0
         val maximumVelocity = Velocity(200f, 200f)
         velocityEventData.forEach {
@@ -75,16 +77,19 @@ class VelocityTrackerTest {
         }
     }
 
-    @OptIn(ExperimentalVelocityTrackerApi::class)
     @Test
     fun calculateVelocity_gapOf40MillisecondsInPositions_positionsAfterGapIgnored() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         interruptedVelocityEventData.forEach {
             if (it.down) {
                 tracker.addPosition(it.uptime, it.position)
             } else {
 
-                checkVelocity(tracker.calculateVelocity(), 649.48932102748f, 3890.30505589076f)
+                checkVelocity(
+                    tracker.calculateVelocity(MaximumVelocity),
+                    649.48932102748f,
+                    3890.30505589076f,
+                )
 
                 tracker.resetTracking()
             }
@@ -93,39 +98,75 @@ class VelocityTrackerTest {
 
     @Test
     fun calculateVelocity_noData_returnsZero() {
-        val tracker = VelocityTracker()
-        assertThat(tracker.calculateVelocity()).isEqualTo(Velocity.Zero)
+        val tracker = Lsq2VelocityTracker()
+        assertThat(tracker.calculateVelocity(MaximumVelocity)).isEqualTo(Velocity.Zero)
     }
 
     @Test
     fun calculateVelocity_onePosition_returnsZero() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         tracker.addPosition(velocityEventData[0].uptime, velocityEventData[0].position)
-        assertThat(tracker.calculateVelocity()).isEqualTo(Velocity.Zero)
+        assertThat(tracker.calculateVelocity(MaximumVelocity)).isEqualTo(Velocity.Zero)
     }
 
     @Test // b/355160589
     fun calculateVelocity_twoPoints_sameTimeStamp_returnsZero() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         tracker.addPosition(1000L, Offset(100f, 0f))
         tracker.addPosition(1000L, Offset(200f, 0f))
         tracker.addPosition(1000L, Offset(300f, 0f))
-        assertThat(tracker.calculateVelocity()).isEqualTo(Velocity.Zero)
+        assertThat(tracker.calculateVelocity(MaximumVelocity)).isEqualTo(Velocity.Zero)
+    }
+
+    @Test
+    fun calculateVelocity_whenOlderSamplesDiscardedDueToTimeGap_computesVelocityWithRemainingTwoSamples() {
+        val tracker = Lsq2VelocityTracker()
+
+        // Add older samples which will will end up being discarded due to the time gap.
+        tracker.addPosition(0L, Offset(0f, 0f))
+        tracker.addPosition(20L, Offset(100f, 0f))
+
+        // Introduce a time gap (which exceeds the 40ms threshold).
+        // This leaves exactly 2 effective samples (the ones at 120ms and 130ms) for the
+        // calculation.
+        tracker.addPosition(120L, Offset(200f, 0f))
+        tracker.addPosition(130L, Offset(300f, 0f))
+
+        checkVelocity(
+            actual = tracker.calculateVelocity(MaximumVelocity),
+            expectedDx = 10000f,
+            expectedDy = 0f,
+        )
+    }
+
+    @Test
+    fun calculateVelocity_exactlyTwoSamples_returnsLinearVelocity() {
+        val tracker = Lsq2VelocityTracker()
+
+        // 10 pixels over 10 milliseconds = 1000 pixels per second
+        tracker.addPosition(0L, Offset(0f, 0f))
+        tracker.addPosition(10L, Offset(10f, 0f))
+
+        checkVelocity(
+            actual = tracker.calculateVelocity(MaximumVelocity),
+            expectedDx = 1000f,
+            expectedDy = 0f,
+        )
     }
 
     @Test
     fun resetTracking_resetsTracking() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         tracker.addPosition(velocityEventData[0].uptime, velocityEventData[0].position)
 
         tracker.resetTracking()
 
-        assertThat(tracker.calculateVelocity()).isEqualTo(Velocity.Zero)
+        assertThat(tracker.calculateVelocity(MaximumVelocity)).isEqualTo(Velocity.Zero)
     }
 
     @Test
     fun calculateVelocityWithMaxValue_valueShouldBeGreaterThanZero() {
-        val tracker = VelocityTracker()
+        val tracker = Lsq2VelocityTracker()
         Assert.assertThrows(IllegalStateException::class.java) {
             tracker.calculateVelocity(Velocity(-1f, 1f))
         }
@@ -150,7 +191,6 @@ private fun createPxPosition(width: Float, height: Float) = Offset(width, height
 internal class PointerInputData(val uptime: Long, val position: Offset, val down: Boolean)
 
 // Expected velocities for "velocityEventData". See below.
-@OptIn(ExperimentalVelocityTrackerApi::class)
 internal val expected2DVelocities =
     listOf(
         Pair(219.59280094228163f, 1304.701682306001f),

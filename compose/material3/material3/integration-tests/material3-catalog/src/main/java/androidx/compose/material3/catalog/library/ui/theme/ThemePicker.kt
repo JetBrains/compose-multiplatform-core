@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.catalog.library.R
 import androidx.compose.material3.catalog.library.model.ColorMode
 import androidx.compose.material3.catalog.library.model.ExpressiveThemeMode
+import androidx.compose.material3.catalog.library.model.FocusIndicationStyle
 import androidx.compose.material3.catalog.library.model.FontScaleMode
 import androidx.compose.material3.catalog.library.model.MaxFontScale
 import androidx.compose.material3.catalog.library.model.MinFontScale
@@ -52,7 +53,9 @@ import androidx.compose.material3.catalog.library.model.TextDirection
 import androidx.compose.material3.catalog.library.model.Theme
 import androidx.compose.material3.catalog.library.model.ThemeColorMode
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -274,6 +277,47 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
             HorizontalDivider(Modifier.padding(horizontal = ThemePickerPadding))
         }
         item {
+            Row {
+                Text(
+                    text = stringResource(id = R.string.focus_indication_style),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier =
+                        Modifier.padding(
+                            start = ThemePickerPadding,
+                            // Align Badge closer to text
+                            end = ThemePickerPadding / 2,
+                        ),
+                )
+                Badge { Text(stringResource(R.string.experimental)) }
+            }
+            // LazyVerticalGrid can't be used within LazyColumn due to nested scrolling
+            val focusIndicationStyles = FocusIndicationStyle.values()
+            Column(modifier = Modifier.padding(ThemePickerPadding)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding)) {
+                    RadioButtonOption(
+                        modifier = Modifier.weight(1f),
+                        option = focusIndicationStyles[0],
+                        selected = focusIndicationStyles[0] == theme.focusIndicationStyle,
+                        onClick = {
+                            if (theme.focusIndicationStyle != it) {
+                                onThemeChange(theme.copy(focusIndicationStyle = it))
+                            }
+                        },
+                    )
+                    RadioButtonOption(
+                        modifier = Modifier.weight(1f),
+                        option = focusIndicationStyles[1],
+                        selected = focusIndicationStyles[1] == theme.focusIndicationStyle,
+                        onClick = {
+                            if (theme.focusIndicationStyle != it) {
+                                onThemeChange(theme.copy(focusIndicationStyle = it))
+                            }
+                        },
+                    )
+                }
+            }
+        }
+        item {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -376,13 +420,14 @@ private fun CustomFontScaleSlider(
     onValueChange: (textScale: Float) -> Unit,
     onValueChangeFinished: () -> Unit,
 ) {
+    val state = rememberSliderState(value = fontScale, trackRange = fontScaleMin..fontScaleMax)
+    LaunchedEffect(fontScale) { if (state.value != fontScale) state.value = fontScale }
     Column(modifier = modifier) {
         Slider(
+            state = state,
             enabled = enabled,
-            value = fontScale,
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
-            valueRange = fontScaleMin..fontScaleMax,
         )
         Text(
             text = stringResource(id = R.string.scale, fontScale),

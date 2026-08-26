@@ -33,7 +33,7 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasur
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.scene
 
 /**
  * [SubspaceLayout] is the main component for laying out leaf nodes with zero children.
@@ -41,15 +41,7 @@ import androidx.xr.scenecore.GroupEntity
  * The measurement, layout and intrinsic measurement behaviors of this layout will be defined by the
  * [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
- * Example:
- * ```kotlin
- * fun ExactSizeSpacer(size: IntVolumeSize) {
- *   SubspaceLayout(SubspaceModifier.testTag("exactSizeSpacer")) {
- *     _, _ -> layout(size.width, size.height, size.depth) {}
- *   }
- * }
- * ```
- *
+ * @sample androidx.xr.compose.samples.SubspaceLayoutWithoutContentSample
  * @param modifier SubspaceModifier to apply during layout.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
  */
@@ -83,27 +75,14 @@ public inline fun SubspaceLayout(
  * The measurement, layout and intrinsic measurement behaviors of this layout will be defined by the
  * [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
- * Example:
- * ```kotlin
- * fun MyLayout(
- *     modifier: SubspaceModifier = SubspaceModifier,
- *     content: @SubspaceComposable @Composable () -> Unit) {
- *   SubspaceLayout(content = content, modifier = modifier) {
- *     measurables, constraints ->
- *     val placeables = measurables.map { it.measure(constraints) }
- *     layout(constraints.maxWidth, constraints.maxHeight, constraints.maxDepth) {
- *       placeables.forEach { it.place(Pose.Identity) }
- *     }
- *   }
- * }
- * ```
- *
+ * @sample androidx.xr.compose.samples.SubspaceLayoutWithContentSample
+ * @sample androidx.xr.compose.samples.SubspaceLayoutWithCoreEntityNameSample
  * @param modifier SubspaceModifier to apply during layout
  * @param content the child composables to be laid out.
- * @param coreEntityName A name for the underlying [androidx.xr.scenecore.GroupEntity] that is
- *   created to host the content of this layout. This name is used for debugging and identification
- *   purposes; it will appear in scene graph inspectors, making it easier to correlate this
- *   composable with its corresponding node in the 3D scene.
+ * @param coreEntityName A name for the underlying [androidx.xr.scenecore.Entity] that is created to
+ *   host the content of this layout. This name is used for debugging and identification purposes;
+ *   it will appear in scene graph inspectors, making it easier to correlate this composable with
+ *   its corresponding node in the 3D scene.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
  */
 @Suppress("ComposableLambdaParameterPosition", "NOTHING_TO_INLINE")
@@ -122,7 +101,7 @@ public inline fun SubspaceLayout(
     }
 
     val coreEntity = rememberOpaqueEntity {
-        GroupEntity.create(session = this, name = coreEntityName)
+        Entity.create(session = this, name = coreEntityName, parent = this.scene.activitySpace)
     }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) {
@@ -146,7 +125,7 @@ internal fun rememberOpaqueEntity(
     entityFactory: @DisallowComposableCalls Session.() -> Entity
 ): OpaqueEntity {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    return remember { CoreGroupEntity(session.entityFactory()) }
+    return remember { CoreGroupEntity(session.scene.virtualPixelDensity, session.entityFactory()) }
 }
 
 /**

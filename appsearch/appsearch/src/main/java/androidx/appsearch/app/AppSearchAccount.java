@@ -18,6 +18,7 @@ package androidx.appsearch.app;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 
@@ -25,7 +26,14 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Encapsulates a {@link GenericDocument} that represent an Account.
+ * Encapsulates a {@link GenericDocument} representing an {@link android.accounts.Account}.
+ *
+ * <p>In AppSearch, an Account is used to partition data and manage its lifecycle.
+ * By associating indexed documents with an {@code AppSearchAccount}, the system can
+ * perform automated wipeout documents when an  account is removed from the device.
+ *
+ * <p>This class provides a standardized way for AppSearch to recognize which data
+ * belongs to which user identity in multi-login or synced environments.
  *
  * <p>This class is a higher level implement of {@link GenericDocument}.
  */
@@ -38,20 +46,20 @@ public final class AppSearchAccount extends GenericDocument {
 
     /**
      * The property name of the type of an account.
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     public static final String PROPERTY_ACCOUNT_TYPE = "accountType";
 
     /**
      * The property name of the name of an account.
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     public static final String PROPERTY_ACCOUNT_NAME = "accountName";
 
     /**
      * The property name of the id of an account.
-     * @exportToFramework:hide
      */
+    @HideInPlatform
     public static final String PROPERTY_ACCOUNT_ID = "accountId";
 
     public static final AppSearchSchema SCHEMA = new AppSearchSchema.Builder(SCHEMA_TYPE)
@@ -119,7 +127,10 @@ public final class AppSearchAccount extends GenericDocument {
         }
 
         /**
-         * Sets the type of {@link AppSearchAccount}
+         * Sets the type of {@link AppSearchAccount}.
+         *
+         * @param accountType The non-null, unique identifier for the account service. This must
+         *                    correspond to a registered {@code Authenticator} type on the system.
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setAccountType(@NonNull String accountType) {
@@ -127,7 +138,9 @@ public final class AppSearchAccount extends GenericDocument {
         }
 
         /**
-         * Sets the name of {@link AppSearchAccount}
+         * Sets the name of {@link AppSearchAccount}.
+         *
+         * @param accountName The non-null name for the specific user account.
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setAccountName(@NonNull String accountName) {
@@ -135,7 +148,9 @@ public final class AppSearchAccount extends GenericDocument {
         }
 
         /**
-         * Sets the account id of {@link AppSearchAccount}
+         * Sets the account id of {@link AppSearchAccount}.
+         *
+         * @param accountId A non-null, permanent identifier for the account.
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setAccountId(@NonNull String accountId) {

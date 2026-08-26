@@ -16,7 +16,7 @@
 
 package androidx.ink.authoring.latency.aggregators
 
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -36,7 +36,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 26) // Required for `kotlin.time.Duration`
 class FixedProbabilityLatencyAggregatorTest {
@@ -255,22 +255,18 @@ class FixedProbabilityLatencyAggregatorTest {
     @Test
     fun fixedProbabilityLatencyAggregator_throwsOnInvalidFactoryParams() {
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                FixedProbabilityLatencyAggregator.create(
-                    sampleProbability = -0.1f, // Must be non-negative.
-                    testScope.backgroundScope,
-                ) { _: Long, _: Long ->
-                    Unit
-                }
+            FixedProbabilityLatencyAggregator.create(
+                sampleProbability = -0.1f, // Must be non-negative.
+                testScope.backgroundScope,
+            ) { _: Long, _: Long ->
+            }
         }
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                FixedProbabilityLatencyAggregator.create(
-                    sampleProbability = 1.1f, // Must be <= 1.0.
-                    testScope.backgroundScope,
-                ) { _: Long, _: Long ->
-                    Unit
-                }
+            FixedProbabilityLatencyAggregator.create(
+                sampleProbability = 1.1f, // Must be <= 1.0.
+                testScope.backgroundScope,
+            ) { _: Long, _: Long ->
+            }
         }
     }
 }

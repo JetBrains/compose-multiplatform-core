@@ -22,16 +22,21 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.AppFunctionSearchSpec
+import androidx.appfunctions.AppFunctionState
+import androidx.appfunctions.ObserveAppFunctionsEvent
 import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.AppFunctionReader
+import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -81,12 +86,14 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
         packageToComponentsMetadataMapState = MutableStateFlow(packageToComponentsMetadataMap)
     }
 
-    override fun searchAppFunctions(
+    override fun searchAppFunctionsPackageMetadata(
         searchFunctionSpec: AppFunctionSearchSpec
-    ): Flow<List<AppFunctionPackageMetadata>> =
-        packageToFunctionMetadataMapState.combine(packageToComponentsMetadataMapState) {
-            packageToFunctionMetadataMap,
-            packageToComponentsMetadataMap ->
+    ): Flow<List<AppFunctionPackageMetadata>> {
+        val functionNames = searchFunctionSpec.functionNames
+        return packageToFunctionMetadataMapState.combine(packageToComponentsMetadataMapState) {
+            packageToFunctionMetadataMap:
+                Map<String, Map<String, AppFunctionStaticAndRuntimeMetadata>>,
+            packageToComponentsMetadataMap: Map<String, AppFunctionComponentsMetadata> ->
             packageToFunctionMetadataMap
                 .filterKeys { packageName ->
                     searchFunctionSpec.packageNames == null ||
@@ -95,17 +102,25 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                 .mapNotNull { (packageName, metadataMap) ->
                     val appFunctions =
                         metadataMap.values
-                            .filter { metadata -> matchesSchemaSpec(metadata, searchFunctionSpec) }
+                            .filter { metadata ->
+                                matchesSchemaSpec(metadata, searchFunctionSpec) &&
+                                    (functionNames == null ||
+                                        AppFunctionName(packageName, metadata.staticMetadata.id) in
+                                            functionNames)
+                            }
                             .map { metadata ->
                                 AppFunctionMetadata(
-                                    id = metadata.staticMetadata.id,
-                                    packageName = packageName,
-                                    isEnabled = metadata.computeEffectivelyEnabled(),
+                                    name = AppFunctionName(packageName, metadata.staticMetadata.id),
                                     schema = metadata.staticMetadata.schema,
                                     parameters = metadata.staticMetadata.parameters,
                                     response = metadata.staticMetadata.response,
-                                    components =
-                                        checkNotNull(packageToComponentsMetadataMap[packageName]),
+                                    packageMetadata =
+                                        AppFunctionPackageMetadata(
+                                            packageName,
+                                            checkNotNull(
+                                                packageToComponentsMetadataMap[packageName]
+                                            ),
+                                        ),
                                 )
                             }
                     if (appFunctions.isNotEmpty()) {
@@ -115,6 +130,43 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                     }
                 }
         }
+    }
+
+    override suspend fun searchAppFunctionsMetadata(
+        searchFunctionSpec: AppFunctionSearchSpec
+    ): List<AppFunctionMetadata> {
+        val packageToFunctionMetadataMap = packageToFunctionMetadataMapState.value
+        val packageToComponentsMetadataMap = packageToComponentsMetadataMapState.value
+        val functionNames = searchFunctionSpec.functionNames
+
+        return packageToFunctionMetadataMap
+            .filterKeys { packageName ->
+                searchFunctionSpec.packageNames == null ||
+                    packageName in checkNotNull(searchFunctionSpec.packageNames)
+            }
+            .flatMap { (packageName, metadataMap) ->
+                metadataMap.values
+                    .filter { metadata ->
+                        matchesSchemaSpec(metadata, searchFunctionSpec) &&
+                            (functionNames == null ||
+                                AppFunctionName(packageName, metadata.staticMetadata.id) in
+                                    functionNames)
+                    }
+                    .map { metadata ->
+                        AppFunctionMetadata(
+                            name = AppFunctionName(packageName, metadata.staticMetadata.id),
+                            schema = metadata.staticMetadata.schema,
+                            parameters = metadata.staticMetadata.parameters,
+                            response = metadata.staticMetadata.response,
+                            packageMetadata =
+                                AppFunctionPackageMetadata(
+                                    packageName,
+                                    checkNotNull(packageToComponentsMetadataMap[packageName]),
+                                ),
+                        )
+                    }
+            }
+    }
 
     private fun matchesSchemaSpec(
         metadata: AppFunctionStaticAndRuntimeMetadata,
@@ -139,6 +191,29 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                     ?: AppFunctionComponentsMetadata(),
             )
 
+    override suspend fun getAppFunctionStates(
+        appFunctionNames: List<AppFunctionName>
+    ): List<AppFunctionState> {
+        val packageToFunctionMetadataMap = packageToFunctionMetadataMapState.value
+
+        return appFunctionNames.mapNotNull { appFunctionName ->
+            val metadata =
+                packageToFunctionMetadataMap[appFunctionName.packageName]?.get(
+                    appFunctionName.functionIdentifier
+                ) ?: return@mapNotNull null
+
+            try {
+                AppFunctionState(
+                    functionName = appFunctionName,
+                    isEnabled = metadata.computeEffectivelyEnabled(),
+                )
+            } catch (e: Exception) {
+                Log.w(APP_FUNCTIONS_TAG, "Failed to retrieve state for $appFunctionName.", e)
+                null
+            }
+        }
+    }
+
     fun getAppFunctionStaticAndRuntimeMetadata(
         packageName: String,
         functionId: String,
@@ -157,6 +232,77 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                     (existingPackageMap + (functionId to appFunctionStaticAndRuntimeMetadata)))
         }
     }
+
+    override fun observeAppFunctions(): Flow<ObserveAppFunctionsEvent> {
+        return flow {
+            var prevFunctionMap: Map<String, Map<String, AppFunctionStaticAndRuntimeMetadata>>? =
+                null
+
+            packageToFunctionMetadataMapState.collect { newFunctionMap ->
+                val oldFunctionMap = prevFunctionMap
+                prevFunctionMap = newFunctionMap
+
+                if (oldFunctionMap == null) {
+                    return@collect
+                }
+
+                val changedPackages = mutableSetOf<String>()
+                val changedFunctions = mutableSetOf<AppFunctionName>()
+
+                for ((newPackage, newPackageFunctions) in newFunctionMap) {
+                    val oldPackageFunctions = oldFunctionMap[newPackage]
+                    // Check if package was added
+                    if (oldPackageFunctions == null) {
+                        changedPackages.add(newPackage)
+                        // To align with observe API's behaviour, state change events should be
+                        // emitted for all functions within the newly added package.
+                        changedFunctions.addAll(
+                            newPackageFunctions.keys.map { AppFunctionName(newPackage, it) }
+                        )
+                    } else {
+                        for ((newFunc, newFunctionMetadata) in newPackageFunctions) {
+                            val oldFunctionMetadata = oldPackageFunctions[newFunc]
+                            // Check if function was added or its state changed
+                            if (
+                                oldFunctionMetadata == null ||
+                                    oldFunctionMetadata.runtimeMetadata.enabled !=
+                                        newFunctionMetadata.runtimeMetadata.enabled
+                            ) {
+                                changedFunctions.add(AppFunctionName(newPackage, newFunc))
+                            }
+                        }
+                    }
+                }
+
+                for ((oldPackage, oldPackageFunctions) in oldFunctionMap) {
+                    val newPackageFunctions = newFunctionMap[oldPackage]
+                    // Check if package was removed
+                    if (newPackageFunctions == null) {
+                        changedPackages.add(oldPackage)
+                    } else {
+                        for ((oldFunc, oldFunctionMetadata) in oldPackageFunctions) {
+                            val newFunctionMetadata = newPackageFunctions[oldFunc]
+                            // Check if function was removed or its state was changed
+                            if (
+                                newFunctionMetadata == null ||
+                                    oldFunctionMetadata.runtimeMetadata.enabled !=
+                                        newFunctionMetadata.runtimeMetadata.enabled
+                            ) {
+                                changedFunctions.add(AppFunctionName(oldPackage, oldFunc))
+                            }
+                        }
+                    }
+                }
+
+                if (changedPackages.isNotEmpty()) {
+                    emit(ObserveAppFunctionsEvent.MetadataChanged(changedPackages))
+                }
+                if (changedFunctions.isNotEmpty()) {
+                    emit(ObserveAppFunctionsEvent.StatesChanged(changedFunctions))
+                }
+            }
+        }
+    }
 }
 
 internal data class AppFunctionRuntimeMetadata(@AppFunctionManager.EnabledState val enabled: Int)
@@ -170,13 +316,11 @@ internal data class AppFunctionStaticAndRuntimeMetadata(
         componentsMetadata: AppFunctionComponentsMetadata,
     ) =
         AppFunctionMetadata(
-            id = staticMetadata.id,
-            packageName = packageName,
-            isEnabled = computeEffectivelyEnabled(),
+            name = AppFunctionName(packageName, staticMetadata.id),
             schema = staticMetadata.schema,
             parameters = staticMetadata.parameters,
             response = staticMetadata.response,
-            components = componentsMetadata,
+            packageMetadata = AppFunctionPackageMetadata(packageName, componentsMetadata),
         )
 
     fun computeEffectivelyEnabled(): Boolean =

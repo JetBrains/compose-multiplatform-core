@@ -539,6 +539,9 @@ class TextFieldStateInternalBufferTest {
             temporaryBuffer = TextFieldBuffer(textFieldCharSequence),
             textChanged = !textFieldCharSequence.contentEquals(mainBuffer.toString()),
             selectionChanged = textFieldCharSequence.selection != mainBuffer.selection,
+            styleChanged =
+                textFieldCharSequence.textFieldTextStyles?.textStyleBuffer !=
+                    mainBuffer.textStyleBuffer,
         )
     }
 }

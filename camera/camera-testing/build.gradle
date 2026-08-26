@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -38,6 +37,7 @@ dependencies {
     api(project(":camera:camera-lifecycle"))
     api(project(":camera:camera-video"))
     api("androidx.annotation:annotation:1.8.1")
+    api(project(":camera:camera-common-testing"))
 
     // ensuring implementation versions stay consistent with androidTestImplementation
     def testCoreVersion = "1.5.0"

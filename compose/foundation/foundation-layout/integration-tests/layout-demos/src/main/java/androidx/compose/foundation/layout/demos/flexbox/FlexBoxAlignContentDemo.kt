@@ -20,7 +20,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexAlignContent
 import androidx.compose.foundation.layout.FlexBox
 import androidx.compose.foundation.layout.FlexDirection
@@ -95,13 +94,12 @@ fun FlexBoxAlignContentDemo() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignContentStretchSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.Stretch
+            direction(FlexDirection.Row)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.Stretch)
         },
         modifier = Modifier.fillMaxWidth().height(150.dp).border(1.dp, Color.Black),
     ) {
@@ -119,13 +117,12 @@ private fun FlexBoxRowAlignContentStretchSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignContentCenterSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.Center
+            direction(FlexDirection.Row)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.Center)
         },
         modifier = Modifier.fillMaxWidth().height(150.dp).border(1.dp, Color.Black),
     ) {
@@ -144,13 +141,12 @@ private fun FlexBoxRowAlignContentCenterSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignContentSpaceAroundSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.SpaceAround
+            direction(FlexDirection.Row)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.SpaceAround)
         },
         modifier = Modifier.fillMaxWidth().height(150.dp).border(1.dp, Color.Black),
     ) {
@@ -169,13 +165,12 @@ private fun FlexBoxRowAlignContentSpaceAroundSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignContentSpaceBetweenSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.SpaceBetween
+            direction(FlexDirection.Row)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.SpaceBetween)
         },
         modifier = Modifier.fillMaxWidth().height(150.dp).border(1.dp, Color.Black),
     ) {
@@ -194,13 +189,12 @@ private fun FlexBoxRowAlignContentSpaceBetweenSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignContentStartSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.Start
+            direction(FlexDirection.Row)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.Start)
         },
         modifier = Modifier.fillMaxWidth().height(150.dp).border(1.dp, Color.Black),
     ) {
@@ -219,13 +213,12 @@ private fun FlexBoxRowAlignContentStartSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignContentEndSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.End
+            direction(FlexDirection.Row)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.End)
         },
         modifier = Modifier.fillMaxWidth().height(150.dp).border(1.dp, Color.Black),
     ) {
@@ -244,13 +237,12 @@ private fun FlexBoxRowAlignContentEndSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignContentStretchSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.Stretch
+            direction(FlexDirection.Column)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.Stretch)
         },
         modifier = Modifier.height(300.dp).width(250.dp).border(1.dp, Color.Black),
     ) {
@@ -268,13 +260,12 @@ private fun FlexBoxColumnAlignContentStretchSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignContentCenterSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.Center
+            direction(FlexDirection.Column)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.Center)
         },
         modifier = Modifier.height(300.dp).width(250.dp).border(1.dp, Color.Black),
     ) {
@@ -293,13 +284,12 @@ private fun FlexBoxColumnAlignContentCenterSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignContentSpaceAroundSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.SpaceAround
+            direction(FlexDirection.Column)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.SpaceAround)
         },
         modifier = Modifier.height(300.dp).width(250.dp).border(1.dp, Color.Black),
     ) {
@@ -318,13 +308,12 @@ private fun FlexBoxColumnAlignContentSpaceAroundSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignContentSpaceBetweenSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.SpaceBetween
+            direction(FlexDirection.Column)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.SpaceBetween)
         },
         modifier = Modifier.height(300.dp).width(250.dp).border(1.dp, Color.Black),
     ) {
@@ -343,13 +332,12 @@ private fun FlexBoxColumnAlignContentSpaceBetweenSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignContentStartSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.Start
+            direction(FlexDirection.Column)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.Start)
         },
         modifier = Modifier.height(300.dp).width(250.dp).border(1.dp, Color.Black),
     ) {
@@ -368,13 +356,12 @@ private fun FlexBoxColumnAlignContentStartSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignContentEndSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            wrap = FlexWrap.Wrap
-            alignContent = FlexAlignContent.End
+            direction(FlexDirection.Column)
+            wrap(FlexWrap.Wrap)
+            alignContent(FlexAlignContent.End)
         },
         modifier = Modifier.height(300.dp).width(250.dp).border(1.dp, Color.Black),
     ) {

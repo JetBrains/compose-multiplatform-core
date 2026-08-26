@@ -23,21 +23,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.tooling.animation.clock.TransitionClockTest
-import kotlinx.coroutines.test.StandardTestDispatcher
+import androidx.compose.ui.tooling.animation.search.TransitionSearchInfo
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
 class TransitionComposeAnimationTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun parseIntComposeAnimation() {
         val targetState by mutableStateOf(1)
         rule.setContent {
             val transition = updateTransition(targetState, label = "TestTransition")
-            val composeAnimation = transition.parse()!!
+            val composeAnimation = TransitionSearchInfo(transition).parse()!!
             Assert.assertEquals("TestTransition", composeAnimation.label)
             Assert.assertEquals(ComposeAnimationType.TRANSITION_ANIMATION, composeAnimation.type)
             Assert.assertEquals(transition, composeAnimation.animationObject)
@@ -50,7 +50,7 @@ class TransitionComposeAnimationTest {
         val targetState: MutableState<Int?> = mutableStateOf<Int?>(1)
         rule.setContent {
             val transition = updateTransition(targetState, label = "TestTransition")
-            val composeAnimation = transition.parse()!!
+            val composeAnimation = TransitionSearchInfo(transition).parse()!!
             Assert.assertEquals("TestTransition", composeAnimation.label)
             Assert.assertEquals(ComposeAnimationType.TRANSITION_ANIMATION, composeAnimation.type)
             Assert.assertEquals(transition, composeAnimation.animationObject)
@@ -63,7 +63,7 @@ class TransitionComposeAnimationTest {
         val targetState by mutableStateOf(TransitionClockTest.EnumState.One)
         rule.setContent {
             val transition = updateTransition(targetState, label = "TestTransition")
-            val composeAnimation = transition.parse()!!
+            val composeAnimation = TransitionSearchInfo(transition).parse()!!
             Assert.assertEquals("TestTransition", composeAnimation.label)
             Assert.assertEquals(ComposeAnimationType.TRANSITION_ANIMATION, composeAnimation.type)
             Assert.assertEquals(transition, composeAnimation.animationObject)
@@ -83,7 +83,7 @@ class TransitionComposeAnimationTest {
         val targetState by mutableStateOf("State")
         rule.setContent {
             val transition = updateTransition(targetState, label = "TestTransition")
-            val composeAnimation = transition.parse()!!
+            val composeAnimation = TransitionSearchInfo(transition).parse()!!
             Assert.assertEquals("TestTransition", composeAnimation.label)
             Assert.assertEquals(ComposeAnimationType.TRANSITION_ANIMATION, composeAnimation.type)
             Assert.assertEquals(transition, composeAnimation.animationObject)
@@ -96,7 +96,7 @@ class TransitionComposeAnimationTest {
         val targetState by mutableStateOf(TransitionClockTest.CustomState(0))
         rule.setContent {
             val transition = updateTransition(targetState, label = "TestTransition")
-            val composeAnimation = transition.parse()!!
+            val composeAnimation = TransitionSearchInfo(transition).parse()!!
             Assert.assertEquals("TestTransition", composeAnimation.label)
             Assert.assertEquals(ComposeAnimationType.TRANSITION_ANIMATION, composeAnimation.type)
             Assert.assertEquals(transition, composeAnimation.animationObject)

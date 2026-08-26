@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -29,7 +28,6 @@ plugins {
 }
 
 dependencies {
-    api(project(":pdf:pdf-viewer"))
     api(project(":pdf:pdf-document-service"))
     api("androidx.core:core:1.13.1")
 
@@ -48,6 +46,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    testImplementation(libs.testCore)
     androidTestImplementation("androidx.fragment:fragment-testing:1.7.1")
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.espressoIdlingResource)
@@ -58,7 +57,7 @@ android {
     namespace = "androidx.pdf.viewer.fragment"
     compileSdk { version = release(36) { sdkExtension = 19 }}
     defaultConfig {
-        minSdk { version = release(31) }
+        minSdk { version = release(28) }
     }
 }
 

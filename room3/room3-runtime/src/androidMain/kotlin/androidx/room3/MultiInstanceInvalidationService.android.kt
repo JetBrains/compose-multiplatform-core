@@ -110,9 +110,11 @@ public class MultiInstanceInvalidationService : Service() {
                     }
                 }
             }
+
+            override fun getInterfaceVersion(): Int = VERSION
         }
 
-    override fun onBind(intent: Intent): IBinder {
+    override fun onBind(intent: Intent?): IBinder {
         return binder
     }
 }

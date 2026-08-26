@@ -83,6 +83,7 @@ import androidx.xr.compose.platform.SpatialCapabilities
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.semantics.testTag
+import androidx.xr.compose.testing.ShadowActivityEmbeddingController
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.configureFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
@@ -97,9 +98,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 /** Tests for [SpatialPopup]. */
 @RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowActivityEmbeddingController::class])
 class SpatialPopupTest {
 
     // Migrate to `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
@@ -113,7 +116,7 @@ class SpatialPopupTest {
     @Ignore("Fix underline implementation first")
     @Test
     fun spatialPopup_HSM_dismissOnBackPressTrue_invokesDismissRequest() {
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Subspace {
@@ -144,7 +147,7 @@ class SpatialPopupTest {
 
     @Test
     fun spatialPopup_FSM_dismissOnBackPressTrue_invokesDismissRequest() {
-        composeTestRule.configureFakeSession().scene.requestFullSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestFullSpace()
 
         composeTestRule.setContent {
             var showPopup1 by remember { mutableStateOf(true) }
@@ -169,7 +172,7 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_HSM_dismissOnBackPressFalse_doesNotInvokeDismissRequest() {
         var showPopup by mutableStateOf(true)
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             if (showPopup) {
@@ -193,7 +196,7 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_FSM_dismissOnBackPressFalse_doesNotInvokeDismissRequest() {
         var showPopup by mutableStateOf(true)
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             if (showPopup) {
@@ -220,7 +223,7 @@ class SpatialPopupTest {
     fun spatialPopup_FSM_dismissOnClickOutsideTrue_dismissesOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Subspace {
@@ -263,7 +266,7 @@ class SpatialPopupTest {
     fun spatialPopup_HSM_dismissOnClickOutsideTrue_dismissesOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Subspace {
@@ -304,7 +307,7 @@ class SpatialPopupTest {
     fun spatialPopup_HSM_dismissOnClickOutsideFalse_doesNotDismissOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Subspace {
@@ -345,7 +348,7 @@ class SpatialPopupTest {
     fun spatialPopup_FSM_dismissOnClickOutsideFalse_doesNotDismissOnOutsideClick() {
         var showPopup by mutableStateOf(true)
         var outsideClicked = false
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Subspace {
@@ -464,7 +467,7 @@ class SpatialPopupTest {
     @Test
     fun spatialPopup_withMovableContent_movesContentWithoutRecomposition() {
         var observedCompositionId: String? = null
-        composeTestRule.configureFakeSession().scene.requestHomeSpaceMode()
+        composeTestRule.configureFakeSession().scene.requestHomeSpace()
 
         composeTestRule.setContent {
             Subspace {
@@ -984,6 +987,7 @@ class SpatialPopupTest {
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
+    @Suppress("Deprecation")
     @Test
     fun spatialPopup_withModalBottomSheet_interactsCorrectly() {
         var popupTextString = "N/A"
@@ -1414,9 +1418,9 @@ class SpatialPopupTest {
     private fun correctPositionTest(isHomeSpace: Boolean, layoutDirection: LayoutDirection) {
         composeTestRule.configureFakeSession()
         if (isHomeSpace) {
-            composeTestRule.session?.scene?.requestHomeSpaceMode()
+            composeTestRule.session?.scene?.requestHomeSpace()
         } else {
-            composeTestRule.session?.scene?.requestFullSpaceMode()
+            composeTestRule.session?.scene?.requestFullSpace()
         }
 
         val parentSize = 300.dp
@@ -1483,5 +1487,15 @@ class SpatialPopupTest {
                 .fetchSemanticsNode()
                 .positionOnScreen
         assertThat(textPositionOnScreen.x).isEqualTo(popupOffset.value)
+    }
+
+    @Test
+    fun spatialPopup_whenActivityIsEmbedded_fallsBackToStandardPopup() {
+        ShadowActivityEmbeddingController.isEmbedded = true
+
+        composeTestRule.setContent { SpatialPopup { Text("Fallback Content") } }
+        composeTestRule.onNodeWithText("Fallback Content").assertExists()
+
+        ShadowActivityEmbeddingController.isEmbedded = false
     }
 }

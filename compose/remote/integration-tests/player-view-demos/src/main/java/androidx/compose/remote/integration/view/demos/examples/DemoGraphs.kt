@@ -16,17 +16,15 @@
 
 package androidx.compose.remote.integration.view.demos.examples
 
+import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.creation.RFloat
-import androidx.compose.remote.creation.RemoteComposeContextAndroid
+import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.abs
-import androidx.compose.remote.creation.cos
 import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
-import androidx.compose.remote.creation.plus
 import androidx.compose.remote.creation.sin
 import androidx.compose.remote.creation.times
 import androidx.compose.runtime.Composable
@@ -35,17 +33,19 @@ import kotlin.math.sin
 
 @Suppress("RestrictedApiAndroidX")
 fun demoGraphs(): RemoteComposeWriter {
-    val rc =
-        RemoteComposeContextAndroid(
-            platform = AndroidxRcPlatformServices(),
-            apiLevel = 6,
-            RemoteComposeWriter.hTag(Header.DOC_WIDTH, 500),
-            RemoteComposeWriter.hTag(Header.DOC_HEIGHT, 500),
-            RemoteComposeWriter.hTag(Header.DOC_CONTENT_DESCRIPTION, "Simple Timer"),
-            RemoteComposeWriter.hTag(Header.DOC_PROFILES, 0),
-            RemoteComposeWriter.hTag(Header.DEBUG, 1),
-        ) {
-            root {
+    addHeaderParam(Header.DOC_WIDTH, 500)
+    addHeaderParam(Header.DOC_HEIGHT, 500)
+    addHeaderParam(Header.DOC_CONTENT_DESCRIPTION, "Simple Timer")
+    addHeaderParam(Header.DOC_PROFILES, RcProfiles.PROFILE_ANDROIDX)
+
+    val rc = demo7 {
+        val density = rf(Rc.System.DENSITY)
+        root {
+            column {
+                text(createTextFromFloat(Rc.System.WINDOW_WIDTH, 4, 2, 0))
+                text(createTextFromFloat(Rc.System.WINDOW_HEIGHT, 4, 2, 0))
+                text(createTextFromFloat(Rc.System.DENSITY, 4, 2, 0))
+                text(createTextFromFloat(Rc.System.FONT_SIZE, 4, 2, 0))
                 box(RecordingModifier().fillMaxSize(), BoxLayout.START, BoxLayout.START) {
                     canvas(RecordingModifier().fillMaxSize().background(0xFF112244.toInt())) {
                         val w = ComponentWidth() // component.width()
@@ -55,45 +55,51 @@ fun demoGraphs(): RemoteComposeWriter {
                         val data: FloatArray = FloatArray(32) { x -> sin(x / 3.14f) + 0.5f }
 
                         val values = RFloat(writer, addFloatArray(data))
-                        rcPlotXY(100f + 40f * cos(ContinuousSec() * 2f), 100, w, h, plot = values)
+                        rcPlotXY(
+                            10f * density,
+                            10f * density,
+                            w - 10f * density,
+                            h - 10f * density,
+                            plot = values,
+                        )
                     }
                 }
             }
         }
+    }
     return rc.writer
 }
 
 @Suppress("RestrictedApiAndroidX")
 fun demoGraphs2(): RemoteComposeWriter {
-    val rc =
-        RemoteComposeContextAndroid(
-            platform = AndroidxRcPlatformServices(),
-            apiLevel = 6,
-            RemoteComposeWriter.hTag(Header.DOC_WIDTH, 500),
-            RemoteComposeWriter.hTag(Header.DOC_HEIGHT, 500),
-            RemoteComposeWriter.hTag(Header.DOC_CONTENT_DESCRIPTION, "Simple Timer"),
-            RemoteComposeWriter.hTag(Header.DOC_PROFILES, 0),
-            RemoteComposeWriter.hTag(Header.DEBUG, 1),
-        ) {
-            root {
-                box(RecordingModifier().fillMaxSize(), BoxLayout.START, BoxLayout.START) {
-                    canvas(RecordingModifier().fillMaxSize().background(0xFF112244.toInt())) {
-                        val w = ComponentWidth() // component.width()
-                        val h = ComponentHeight()
-                        val cx = w / 2f
-                        val cy = h / 2f
-                        val scale = abs((sin(ContinuousSec()) + 1.5) * 10f).flush()
-                        val equ = rFun { x -> min(scale, 15f) * sin(x + ContinuousSec() * 3f) }
+    addHeaderParam(Header.DOC_WIDTH, 500)
+    addHeaderParam(Header.DOC_HEIGHT, 500)
+    addHeaderParam(Header.DOC_CONTENT_DESCRIPTION, "Simple Timer")
+    addHeaderParam(Header.DOC_PROFILES, RcProfiles.PROFILE_ANDROIDX)
 
-                        val function = FunctionPlot(equ, rf(-10f), rf(10f), -1f * scale, scale)
-                        rcPlotXY(100f + 40f * cos(ContinuousSec() * 2f), 100, w, h, plot = function)
+    val rc = demo7 {
+        val density = rf(Rc.System.DENSITY)
+        root {
+            box(RecordingModifier().fillMaxSize(), BoxLayout.START, BoxLayout.START) {
+                canvas(RecordingModifier().fillMaxSize().background(0xFF112244.toInt())) {
+                    val w = ComponentWidth() // component.width()
+                    val h = ComponentHeight()
+                    val cx = w / 2f
+                    val cy = h / 2f
+                    val scale = abs((sin(ContinuousSec()) + 1.5) * 10f).flush()
+                    val equ = rFun { x ->
+                        min(scale, 15f) * sin(x * 0.3f + ContinuousSec()) * sin(x * 7f)
                     }
+
+                    val function = FunctionPlot(equ, rf(-10f), rf(10f), -1f * scale, scale)
+                    rcPlotXY(10f * density, 10f * density, w, h, plot = function)
                 }
             }
         }
+    }
     return rc.writer
 }
 
-@Preview @Composable private fun DemoGraphsPreview() = RemoteDocPreview(demoGraphs())
+@Preview @Composable private fun DemoGraphsPreview() = RemoteDocumentPreview(demoGraphs())
 
-@Preview @Composable private fun DemoGraphs2Preview() = RemoteDocPreview(demoGraphs2())
+@Preview @Composable private fun DemoGraphs2Preview() = RemoteDocumentPreview(demoGraphs2())

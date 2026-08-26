@@ -28,6 +28,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.expectError
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -39,7 +41,7 @@ import androidx.compose.ui.input.pointer.PointerEventType.Companion.Release
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InputDispatcher
-import androidx.compose.ui.test.MouseButton
+import androidx.compose.ui.test.TrackpadButton
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.dragAndDrop
@@ -60,13 +62,30 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.roundToInt
+import org.junit.Assume
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+/**
+ * Test for trackpad clicks.
+ *
+ * Note: With isDraggableVelocityTrackerFixEnabled = true, events without position changes (like
+ * hover transitions on release, or button presses/releases when other buttons are held) are no
+ * longer skipped by AndroidComposeView. This introduces some seemingly redundant Move events in the
+ * asserted sequences:
+ * 1. Accompanying hover moves (Move with buttons=0) immediately following the last Release.
+ * 2. Button presses/releases when other buttons are held, which are logged as Move events with the
+ *    updated button state (e.g. Press Secondary -> Move with buttons=PrimarySecondary).
+ */
 class ClickTest {
+    @OptIn(ExperimentalComposeUiApi::class)
+    private fun expectedMoveEnabled() =
+        ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+
     companion object {
         private val T = InputDispatcher.eventPeriodMillis
         private val positionIn = Offset(1f, 1f)
@@ -83,19 +102,29 @@ class ClickTest {
                 // enter the box
                 moveTo(positionIn)
                 // press primary button
-                press(MouseButton.Primary)
+                press(TrackpadButton.Primary)
                 // move around the box
                 moveTo(positionMove1)
                 // release primary button
-                release(MouseButton.Primary)
+                release(TrackpadButton.Primary)
             },
             eventVerifiers =
-                arrayOf(
-                    { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
-                    { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
-                    { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
-                    { verifyTrackpadEvent(2 * T, Release, false, positionMove1) },
-                ),
+                if (expectedMoveEnabled()) {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Release, false, positionMove1) },
+                        { verifyTrackpadEvent(2 * T, Move, false, positionMove1) },
+                    )
+                } else {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Release, false, positionMove1) },
+                    )
+                },
         )
 
     @Test
@@ -105,22 +134,33 @@ class ClickTest {
                 // enter the box
                 moveTo(positionIn)
                 // press primary button
-                press(MouseButton.Primary)
+                press(TrackpadButton.Primary)
                 // move out of the box
                 moveTo(positionOut)
                 // move back into the box
                 moveTo(positionMove1)
                 // release primary button in the box
-                release(MouseButton.Primary)
+                release(TrackpadButton.Primary)
             },
             eventVerifiers =
-                arrayOf(
-                    { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
-                    { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
-                    { verifyTrackpadEvent(2 * T, Exit, true, positionOut, PrimaryButton) },
-                    { verifyTrackpadEvent(3 * T, Enter, true, positionMove1, PrimaryButton) },
-                    { verifyTrackpadEvent(3 * T, Release, false, positionMove1) },
-                ),
+                if (expectedMoveEnabled()) {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Exit, true, positionOut, PrimaryButton) },
+                        { verifyTrackpadEvent(3 * T, Enter, true, positionMove1, PrimaryButton) },
+                        { verifyTrackpadEvent(3 * T, Release, false, positionMove1) },
+                        { verifyTrackpadEvent(3 * T, Move, false, positionMove1) },
+                    )
+                } else {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Exit, true, positionOut, PrimaryButton) },
+                        { verifyTrackpadEvent(3 * T, Enter, true, positionMove1, PrimaryButton) },
+                        { verifyTrackpadEvent(3 * T, Release, false, positionMove1) },
+                    )
+                },
         )
 
     @Test
@@ -130,11 +170,11 @@ class ClickTest {
                 // enter the box
                 moveTo(positionIn)
                 // press primary button
-                press(MouseButton.Primary)
+                press(TrackpadButton.Primary)
                 // move out of the box
                 moveTo(positionOut)
                 // release primary button
-                release(MouseButton.Primary)
+                release(TrackpadButton.Primary)
             },
             eventVerifiers =
                 arrayOf(
@@ -152,39 +192,63 @@ class ClickTest {
                 // enter the box
                 moveTo(positionIn)
                 // press primary button
-                press(MouseButton.Primary)
+                press(TrackpadButton.Primary)
                 // move around the box
                 moveTo(positionMove1)
                 // press secondary button
-                press(MouseButton.Secondary)
+                press(TrackpadButton.Secondary)
                 // move around a bit more
                 moveTo(positionMove2)
                 // release secondary button
-                release(MouseButton.Secondary)
+                release(TrackpadButton.Secondary)
                 // release primary button
-                release(MouseButton.Primary)
+                release(TrackpadButton.Primary)
             },
             eventVerifiers =
-                arrayOf(
-                    { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
-                    { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
-                    { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
-                    // TODO(b/234439423): Expect more events when b/234439423 is fixed
-                    //            { verifyTrackpadEvent(2 * T, Press, true, positionMove1,
-                    //     PrimarySecondaryButton) },
-                    {
-                        verifyTrackpadEvent(
-                            3 * T,
-                            Move,
-                            true,
-                            positionMove2,
-                            PrimarySecondaryButton,
-                        )
-                    },
-                    //            { verifyTrackpadEvent(3 * T, Release, true, positionMove2,
-                    // PrimaryButton) },
-                    { verifyTrackpadEvent(3 * T, Release, false, positionMove2) },
-                ),
+                if (expectedMoveEnabled()) {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
+                        {
+                            verifyTrackpadEvent(
+                                2 * T,
+                                Move,
+                                true,
+                                positionMove1,
+                                PrimarySecondaryButton,
+                            )
+                        },
+                        {
+                            verifyTrackpadEvent(
+                                3 * T,
+                                Move,
+                                true,
+                                positionMove2,
+                                PrimarySecondaryButton,
+                            )
+                        },
+                        { verifyTrackpadEvent(3 * T, Move, true, positionMove2, PrimaryButton) },
+                        { verifyTrackpadEvent(3 * T, Release, false, positionMove2) },
+                        { verifyTrackpadEvent(3 * T, Move, false, positionMove2) },
+                    )
+                } else {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
+                        {
+                            verifyTrackpadEvent(
+                                3 * T,
+                                Move,
+                                true,
+                                positionMove2,
+                                PrimarySecondaryButton,
+                            )
+                        },
+                        { verifyTrackpadEvent(3 * T, Release, false, positionMove2) },
+                    )
+                },
         )
 
     @Test
@@ -194,39 +258,63 @@ class ClickTest {
                 // enter the box
                 moveTo(positionIn)
                 // press primary button
-                press(MouseButton.Primary)
+                press(TrackpadButton.Primary)
                 // move around the box
                 moveTo(positionMove1)
                 // press secondary button
-                press(MouseButton.Secondary)
+                press(TrackpadButton.Secondary)
                 // move around a bit more
                 moveTo(positionMove2)
                 // release primary button
-                release(MouseButton.Primary)
+                release(TrackpadButton.Primary)
                 // release secondary button
-                release(MouseButton.Secondary)
+                release(TrackpadButton.Secondary)
             },
             eventVerifiers =
-                arrayOf(
-                    { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
-                    { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
-                    { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
-                    // TODO(b/234439423): Expect more events when b/234439423 is fixed
-                    //            { verifyTrackpadEvent(2 * T, Press, true, positionMove1,
-                    //     PrimarySecondaryButton) },
-                    {
-                        verifyTrackpadEvent(
-                            3 * T,
-                            Move,
-                            true,
-                            positionMove2,
-                            PrimarySecondaryButton,
-                        )
-                    },
-                    //            { verifyTrackpadEvent(3 * T, Release, true, positionMove2,
-                    // SecondaryButton) },
-                    { verifyTrackpadEvent(3 * T, Release, false, positionMove2) },
-                ),
+                if (expectedMoveEnabled()) {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
+                        {
+                            verifyTrackpadEvent(
+                                2 * T,
+                                Move,
+                                true,
+                                positionMove1,
+                                PrimarySecondaryButton,
+                            )
+                        },
+                        {
+                            verifyTrackpadEvent(
+                                3 * T,
+                                Move,
+                                true,
+                                positionMove2,
+                                PrimarySecondaryButton,
+                            )
+                        },
+                        { verifyTrackpadEvent(3 * T, Move, true, positionMove2, SecondaryButton) },
+                        { verifyTrackpadEvent(3 * T, Release, false, positionMove2) },
+                        { verifyTrackpadEvent(3 * T, Move, false, positionMove2) },
+                    )
+                } else {
+                    arrayOf(
+                        { verifyTrackpadEvent(1 * T, Enter, false, positionIn) },
+                        { verifyTrackpadEvent(1 * T, Press, true, positionIn, PrimaryButton) },
+                        { verifyTrackpadEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
+                        {
+                            verifyTrackpadEvent(
+                                3 * T,
+                                Move,
+                                true,
+                                positionMove2,
+                                PrimarySecondaryButton,
+                            )
+                        },
+                        { verifyTrackpadEvent(3 * T, Release, false, positionMove2) },
+                    )
+                },
         )
 
     @Test
@@ -236,14 +324,14 @@ class ClickTest {
                 // enter the box
                 moveTo(positionIn)
                 // press primary button
-                press(MouseButton.Primary)
+                press(TrackpadButton.Primary)
                 // press primary button again
                 expectError<IllegalStateException>(
                     expectedMessage =
-                        "Cannot send mouse button down event, " +
-                            "button ${MouseButton.Primary.buttonId} is already pressed"
+                        "Cannot send trackpad button down event, " +
+                            "button ${TrackpadButton.Primary.buttonId} is already pressed"
                 ) {
-                    press(MouseButton.Primary)
+                    press(TrackpadButton.Primary)
                 }
             },
             eventVerifiers =
@@ -295,16 +383,24 @@ class ClickTest {
         runTrackpadInputInjectionTest(
             trackpadInput = { doubleClick() },
             eventVerifiers =
-                arrayOf(
-                    // TODO: Difference from mouse/ClickTest.doubleClickTest, we don't see an enter
-                    // here.
-                    //       Should we?
-                    { verifyTrackpadEvent(press1, Press, true, positionCenter, PrimaryButton) },
-                    { verifyTrackpadEvent(release1, Release, false, positionCenter) },
-                    { verifyTrackpadEvent(release1, Enter, false, positionCenter) },
-                    { verifyTrackpadEvent(press2, Press, true, positionCenter, PrimaryButton) },
-                    { verifyTrackpadEvent(release2, Release, false, positionCenter) },
-                ),
+                if (expectedMoveEnabled()) {
+                    arrayOf(
+                        { verifyTrackpadEvent(press1, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release1, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release1, Enter, false, positionCenter) },
+                        { verifyTrackpadEvent(press2, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release2, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release2, Move, false, positionCenter) },
+                    )
+                } else {
+                    arrayOf(
+                        { verifyTrackpadEvent(press1, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release1, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release1, Enter, false, positionCenter) },
+                        { verifyTrackpadEvent(press2, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release2, Release, false, positionCenter) },
+                    )
+                },
         )
     }
 
@@ -321,18 +417,29 @@ class ClickTest {
         runTrackpadInputInjectionTest(
             trackpadInput = { tripleClick() },
             eventVerifiers =
-                arrayOf(
-                    // TODO: Difference from mouse/ClickTest.tripleClickTest, we don't see an enter
-                    // here.
-                    //       Should we?
-                    { verifyTrackpadEvent(press1, Press, true, positionCenter, PrimaryButton) },
-                    { verifyTrackpadEvent(release1, Release, false, positionCenter) },
-                    { verifyTrackpadEvent(release1, Enter, false, positionCenter) },
-                    { verifyTrackpadEvent(press2, Press, true, positionCenter, PrimaryButton) },
-                    { verifyTrackpadEvent(release2, Release, false, positionCenter) },
-                    { verifyTrackpadEvent(press3, Press, true, positionCenter, PrimaryButton) },
-                    { verifyTrackpadEvent(release3, Release, false, positionCenter) },
-                ),
+                if (expectedMoveEnabled()) {
+                    arrayOf(
+                        { verifyTrackpadEvent(press1, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release1, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release1, Enter, false, positionCenter) },
+                        { verifyTrackpadEvent(press2, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release2, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release2, Move, false, positionCenter) },
+                        { verifyTrackpadEvent(press3, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release3, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release3, Move, false, positionCenter) },
+                    )
+                } else {
+                    arrayOf(
+                        { verifyTrackpadEvent(press1, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release1, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(release1, Enter, false, positionCenter) },
+                        { verifyTrackpadEvent(press2, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release2, Release, false, positionCenter) },
+                        { verifyTrackpadEvent(press3, Press, true, positionCenter, PrimaryButton) },
+                        { verifyTrackpadEvent(release3, Release, false, positionCenter) },
+                    )
+                },
         )
     }
 
@@ -370,9 +477,12 @@ class ClickTest {
     // Rather than checking the events sent on, for this more complex trackpad gesture we
     // check if the events actually lead to the expected outcome.
     @Test
-    @OptIn(ExperimentalTestApi::class)
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
     fun dragAndDropTest() = runComposeUiTest {
-        val sizeDp = 50.dp
+        Assume.assumeTrue(ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled)
+        // Kept at 24.dp to ensure the drag gesture stays within window bounds on low-density
+        // (240dpi) devices.
+        val sizeDp = 24.dp
         val sizePx = with(density) { sizeDp.toPx() }
         val marginPx = with(density) { 0.5.dp.toPx() }
 
@@ -400,9 +510,7 @@ class ClickTest {
             dragAndDrop(center, center + Offset(2f * width, 4f * height))
         }
         waitForIdle()
-        // TODO: b/458071288
-        //       This is failing due to touch slop being applied to trackpad events
-        // assertWithMessage("xOffset").that(xOffsetPx).isWithin(marginPx).of(2 * sizePx)
-        // assertWithMessage("yOffset").that(yOffsetPx).isWithin(marginPx).of(4 * sizePx)
+        assertWithMessage("xOffset").that(xOffsetPx).isWithin(marginPx).of(2 * sizePx)
+        assertWithMessage("yOffset").that(yOffsetPx).isWithin(marginPx).of(4 * sizePx)
     }
 }

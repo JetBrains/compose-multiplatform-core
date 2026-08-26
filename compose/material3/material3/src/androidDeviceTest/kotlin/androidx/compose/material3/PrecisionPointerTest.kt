@@ -29,7 +29,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +44,7 @@ import org.mockito.kotlin.mock
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P) // Needed for inline mocking
 class PrecisionPointerTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun setup() {
@@ -149,7 +148,7 @@ private fun ComposeContentTestRule.setContent(inputManager: InputManager) {
     setContent { CompositionLocalProvider(LocalContext provides fakeContext) { MaterialTheme {} } }
 }
 
-private object MockDevices {
+object MockDevices {
     private var nextId = 1000
 
     /** A full physical keyboard. */
@@ -208,7 +207,7 @@ private fun InputDevice.copy(
     on { this.keyboardType } doReturn keyboardType
 }
 
-private class FakeInputManager {
+class FakeInputManager {
     val inputManager: InputManager = mock {
         on { registerInputDeviceListener(any(), anyOrNull()) } doAnswer
             { invocation ->

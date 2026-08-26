@@ -52,8 +52,9 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,7 +62,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class HardwareKeyboardTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
     @Test
@@ -566,6 +567,16 @@ class HardwareKeyboardTest {
         }
     }
 
+    @Test
+    fun textField_ctrlAltA() {
+        keysSequenceTest(initText = "text") {
+            Key.A.downAndUp(META_CTRL_ON or META_ALT_ON)
+            // ctrl-alt-A shouldn't do anything
+            expectedSelection(TextRange.Zero)
+            expectedText("text")
+        }
+    }
+
     private inner class SequenceScope(
         val state: MutableState<TextFieldValue>,
         val nodeGetter: () -> SemanticsNodeInteraction,
@@ -632,8 +643,9 @@ class HardwareKeyboardTest {
         }
 
         rule.onNodeWithTag("textfield").requestFocus()
-        rule.waitForIdle()
-        clipboard.setClipEntry(AnnotatedString("InitialTestText").toClipEntry())
+        withContext(Dispatchers.Main) {
+            clipboard.setClipEntry(AnnotatedString("InitialTestText").toClipEntry())
+        }
 
         withEmojiCompat(context, enabled = useEmojiCompat) {
             sequence(SequenceScope(value) { rule.onNode(hasSetTextAction()) })

@@ -16,44 +16,59 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
-import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.arcore.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-/** Implementation of [androidx.xr.arcore.runtime.Geospatial] on OpenXR. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrGeospatial
-internal constructor(
+/**
+ * Implementation of [Geospatial] on OpenXR.
+ *
+ * @property state the current [Geospatial.State]
+ */
+internal class OpenXrGeospatial(
     private val xrResources: XrResources,
     private val timeSource: OpenXrTimeSource,
 ) : Geospatial, Updatable {
 
-    public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
+    override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
         private set
 
-    override public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
+    override var geospatialPose: GeospatialPose = GeospatialPose()
+        private set
+
+    override var horizontalAccuracy: Double = 0.0
+        private set
+
+    override var verticalAccuracy: Double = 0.0
+        private set
+
+    override var orientationYawAccuracy: Double = 0.0
+        private set
+
+    override fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
         val xrTime = timeSource.getXrTime(timeSource.markNow())
         val result = nativeLocatePoseFromGeospatialPose(xrTime, geospatialPose)
         // The native implementation returns null when not tracking.
         return result ?: throw GeospatialPoseNotTrackingException()
     }
 
-    override public fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
+    override fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
         val xrTime = timeSource.getXrTime(timeSource.markNow())
         val result = nativeCreateGeospatialPoseFromPose(xrTime, pose)
         // The native implementation returns null when not tracking.
         return result ?: throw GeospatialPoseNotTrackingException()
     }
 
-    override public fun createAnchor(
+    override fun createAnchor(
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -68,14 +83,31 @@ internal constructor(
         return anchor
     }
 
-    override public suspend fun createAnchorOnSurface(
+    override suspend fun createAnchorOnSurface(
         latitude: Double,
         longitude: Double,
         altitudeAboveSurface: Double,
         eastUpSouthQuaternion: Quaternion,
         surface: Geospatial.Surface,
     ): Anchor {
-        throw NotImplementedError("Not implemented yet.")
+        return suspendCancellableCoroutine { continuation ->
+            nativeCreateSurfaceAnchorAsync(
+                surfaceTypeToXrSurfaceAnchorType(surface),
+                latitude,
+                longitude,
+                altitudeAboveSurface,
+                eastUpSouthQuaternion,
+            ) { result ->
+                try {
+                    checkNativeAnchorIsValid(result)
+                    val anchor = OpenXrAnchor(result, xrResources)
+                    xrResources.addUpdatable(anchor)
+                    continuation.resume(anchor)
+                } catch (e: Exception) {
+                    continuation.resumeWithException(e)
+                }
+            }
+        }
     }
 
     override suspend fun checkVpsAvailability(
@@ -89,14 +121,40 @@ internal constructor(
         }
     }
 
+    /**
+     * Updates the entity retrieving its state at [xrTime].
+     *
+     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
+     */
     override fun update(xrTime: Long) {
         state = nativeGetGeospatialState(xrTime) ?: Geospatial.State.NOT_RUNNING
+        if (state == Geospatial.State.RUNNING) {
+            nativeCreateGeospatialPoseFromPose(xrTime, Pose())?.let {
+                geospatialPose = it.geospatialPose
+                horizontalAccuracy = it.horizontalAccuracy
+                verticalAccuracy = it.verticalAccuracy
+                orientationYawAccuracy = it.orientationYawAccuracy
+            }
+        }
     }
 
     private fun checkNativeAnchorIsValid(nativeAnchor: Long) {
         when (nativeAnchor) {
             -2L -> throw IllegalStateException("Failed to create anchor.") // kErrorRuntimeFailure
             -10L -> throw AnchorResourcesExhaustedException() // kErrorLimitReached
+            -1000789002L -> throw AnchorNotAuthorizedException() // kErrorCloudAuthFailed
+            -1000797000L ->
+                throw IllegalArgumentException(
+                    "Anchor location is not supported."
+                ) // kErrorSurfaceAnchorLocationUnsupported
+        }
+    }
+
+    private fun surfaceTypeToXrSurfaceAnchorType(surface: Geospatial.Surface): Int {
+        return when (surface) {
+            Geospatial.Surface.TERRAIN -> 1 // XR_SURFACE_ANCHOR_TYPE_TERRAIN_ANDROID
+            Geospatial.Surface.ROOFTOP -> 2 // XR_SURFACE_ANCHOR_TYPE_ROOFTOP_ANDROID
+            else -> 1
         }
     }
 
@@ -124,5 +182,14 @@ internal constructor(
         latitude: Double,
         longitude: Double,
         callback: (VpsAvailabilityResult) -> Unit,
+    )
+
+    private external fun nativeCreateSurfaceAnchorAsync(
+        surfaceAnchorType: Int,
+        latitude: Double,
+        longitude: Double,
+        altitudeRelativeToSurface: Double,
+        eastUpSouthQuaternion: Quaternion,
+        callback: (Long) -> Unit,
     )
 }

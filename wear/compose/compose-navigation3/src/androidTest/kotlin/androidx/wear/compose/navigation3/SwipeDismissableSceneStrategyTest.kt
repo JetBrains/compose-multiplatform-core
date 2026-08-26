@@ -75,7 +75,6 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Text
 import com.google.common.truth.Truth.assertThat
 import kotlin.String
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -85,7 +84,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SwipeDismissableSceneStrategyTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var backPressedDispatcher: OnBackPressedDispatcher
 
@@ -561,8 +560,7 @@ class SwipeDismissableSceneStrategyTest {
                     slideInHorizontally(tween(testDuration)) { -it / 2 } togetherWith
                         slideOutHorizontally(tween(testDuration)) { it / 2 }
                 },
-                sceneStrategy =
-                    SwipeDismissableSceneStrategy(rememberSwipeDismissableSceneStrategyState()),
+                sceneStrategies = listOf(rememberSwipeDismissableSceneStrategy()),
                 entryProvider =
                     entryProvider {
                         entry(FIRST_KEY) {
@@ -617,7 +615,7 @@ class SwipeDismissableSceneStrategyTest {
     ) {
         NavDisplay(
             backStack = backStack,
-            sceneStrategy = sceneStrategy,
+            sceneStrategies = listOf(sceneStrategy),
             entryProvider = entryProvider,
         )
     }

@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.BYTE_ARRAY;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -115,10 +116,11 @@ public class FontData extends Operation implements SerializableToString, Seriali
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int imageId = buffer.readInt();
+        int fontId = buffer.readId();
         int type = buffer.readInt();
-        byte[] fontData = buffer.readBuffer();
-        FontData bitmapData = new FontData(imageId, type, fontData);
+
+        byte[] fontData = buffer.readBuffer(Limits.MAX_FONT_DATA);
+        FontData bitmapData = new FontData(fontId, type, fontData);
         operations.add(bitmapData);
     }
 
@@ -129,6 +131,7 @@ public class FontData extends Operation implements SerializableToString, Seriali
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Data Operations", OP_CODE, CLASS_NAME)
+                .addedVersion(7)
                 .description("Embed raw font data in the document")
                 .field(DocumentedOperation.INT, "fontId", "The ID of the font")
                 .field(DocumentedOperation.INT, "type", "The type of the font (unused)")

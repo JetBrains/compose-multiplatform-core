@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -30,10 +29,6 @@ plugins {
 
 dependencies {
     api(project(":palette:palette"))
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
 }
 
 androidx {
@@ -41,6 +36,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Kotlin extensions for 'palette' artifact"
+    doNotDocumentReason = "empty artifact maintained for compatibility"
 }
 
 android {

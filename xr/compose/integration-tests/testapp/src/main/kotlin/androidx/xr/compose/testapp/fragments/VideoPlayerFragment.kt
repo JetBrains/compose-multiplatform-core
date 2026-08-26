@@ -43,24 +43,26 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MovePolicy
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialExternalSurface
+import androidx.xr.compose.subspace.SpatialExternalSurfaceProtection
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.StereoMode
-import androidx.xr.compose.subspace.SurfaceProtection
 import androidx.xr.compose.subspace.layout.InteractionPolicy
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.common.isDrmSupported
+import androidx.xr.compose.unit.DpVolumeOffset
 
 /** A Fragment using spatial UI. */
 class VideoPlayerFragment : Fragment() {
@@ -84,7 +86,7 @@ class VideoPlayerFragment : Fragment() {
 
             // This strategy handles disposing the Composition when the Fragment's
             // View lifecycle is destroyed, preventing memory leaks.
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
             // Set the Compose content for this Fragment.
             setContent {
@@ -98,6 +100,7 @@ class VideoPlayerFragment : Fragment() {
         var videoWidth by remember { mutableStateOf(600.dp) }
         var videoHeight by remember { mutableStateOf(600.dp) }
         val isDrmSupported = remember { isDrmSupported() }
+
         SpatialExternalSurface(
             modifier =
                 SubspaceModifier.width(
@@ -105,9 +108,9 @@ class VideoPlayerFragment : Fragment() {
                     )
                     .height(
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
-                    ),
-            dragPolicy = MovePolicy(),
-            resizePolicy = ResizePolicy(),
+                    )
+                    .movable()
+                    .resizable(),
             interactionPolicy =
                 InteractionPolicy.clickable {
                     exoPlayer?.let {
@@ -120,7 +123,8 @@ class VideoPlayerFragment : Fragment() {
                 },
             stereoMode = stereoMode,
             surfaceProtection =
-                if (useDrmState.value) SurfaceProtection.Protected else SurfaceProtection.None,
+                if (useDrmState.value) SpatialExternalSurfaceProtection.Protected
+                else SpatialExternalSurfaceProtection.None,
         ) {
             onSurfaceCreated {
                 val player = ExoPlayer.Builder(requireActivity()).build()
@@ -161,7 +165,13 @@ class VideoPlayerFragment : Fragment() {
                 }
             }
 
-            Orbiter(position = ContentEdge.Bottom, offset = 48.dp) {
+            Orbiter(
+                position =
+                    OrbiterPosition.BottomCenter(
+                        EdgeAlignment.Outside,
+                        offset = DpVolumeOffset(y = -48.dp),
+                    )
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { useDrmState.value = !useDrmState.value }) {
                         Text(text = if (useDrmState.value) "Use non-drm video" else "Use drm video")

@@ -16,44 +16,100 @@
 
 package androidx.room3.solver.types
 
+import androidx.room3.ProvidedDaoReturnTypeConverter
 import androidx.room3.compiler.codegen.CodeLanguage
+import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XCodeBlock
+import androidx.room3.compiler.codegen.XFunSpec
 import androidx.room3.compiler.codegen.XPropertySpec
+import androidx.room3.compiler.codegen.XPropertySpec.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XTypeName
+import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.decapitalize
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.vo.CustomDaoReturnTypeConverter
+import androidx.room3.writer.DaoWriter
 import androidx.room3.writer.TypeWriter
 import java.util.Locale
 
 /** Wraps a type converter specified by the developer and forwards calls to it. */
-class DaoReturnTypeConverterWrapper(
-    val customDaoReturnTypeConverter: CustomDaoReturnTypeConverter
-) : DaoReturnTypeConverter(to = customDaoReturnTypeConverter.to) {
-    override val isSuspend = customDaoReturnTypeConverter.function.isSuspendFunction()
-    override val rowAdapterTypeArgPosition = customDaoReturnTypeConverter.rowAdapterTypeArgPosition
-    private val converterClassName = customDaoReturnTypeConverter.className
+class DaoReturnTypeConverterWrapper(val converter: CustomDaoReturnTypeConverter) :
+    DaoReturnTypeConverter(to = converter.to, operationTypes = converter.operationTypes) {
+    override val isSuspend = converter.function.isSuspendFunction()
+    override val requiredParameters = converter.requiredParameters
+    override val executeAndReturnLambda = converter.executeAndReturnLambda
+
+    private val converterClassName = converter.className
 
     override fun buildStatement(returnTypeArgName: XTypeName, scope: CodeGenScope): XCodeBlock {
-        val converterFunctionName = customDaoReturnTypeConverter.getFunctionName(scope.language)
-        return if (customDaoReturnTypeConverter.isEnclosingClassKotlinObject) {
-            when (scope.language) {
-                CodeLanguage.JAVA ->
-                    XCodeBlock.of(
-                        "%T.INSTANCE.%L",
-                        converterClassName,
-                        customDaoReturnTypeConverter.getFunctionName(scope.language),
-                    )
-                CodeLanguage.KOTLIN ->
-                    XCodeBlock.of("%T.%L", converterClassName, converterFunctionName)
-            }
-        } else if (customDaoReturnTypeConverter.isStatic) {
+        val converterFunctionName = converter.getFunctionName(scope.language)
+        return if (converter.isEnclosingClassKotlinObject) {
+            XCodeBlock.of("%T.%L", converterClassName, converterFunctionName)
+        } else if (converter.isStatic) {
             XCodeBlock.of("%T.%L(%L)", converterClassName, converterFunctionName, returnTypeArgName)
         } else {
-            // TODO(b/460563469): Implement Provided DAO Return Type Converter handling, this
-            //  codepath is currently unused.
-            XCodeBlock.of("%N.%L", daoReturnTypeConverter(scope), converterFunctionName)
+            if (converter.isProvidedConverter) {
+                XCodeBlock.of(
+                    "%N().%L",
+                    providedDaoReturnTypeConverter(scope),
+                    converter.function.name,
+                )
+            } else {
+                XCodeBlock.of("%N.%L", daoReturnTypeConverter(scope), converterFunctionName)
+            }
         }
+    }
+
+    private fun providedDaoReturnTypeConverter(scope: CodeGenScope): XFunSpec {
+        val fieldTypeName = KotlinTypeNames.LAZY.parametrizedBy(converterClassName)
+        val baseName = converterClassName.simpleNames.last().decapitalize(Locale.US)
+        scope.writer.addRequiredReturnTypeConverter(converterClassName)
+        val converterField =
+            scope.writer.getOrCreateProperty(
+                object : TypeWriter.SharedPropertySpec(baseName, fieldTypeName) {
+                    override val isMutable = false
+
+                    override fun getUniqueKey(): String {
+                        return "converter_${converterClassName}"
+                    }
+
+                    override fun prepare(writer: TypeWriter, builder: XPropertySpec.Builder) {
+                        builder.applyTo(CodeLanguage.KOTLIN) {
+                            initializer(
+                                XCodeBlock.builder()
+                                    .apply {
+                                        beginControlFlow("lazy")
+                                        addStatement(
+                                            "checkNotNull(%L.getDaoReturnTypeConverter(%L))",
+                                            DaoWriter.DB_PROPERTY_NAME,
+                                            XCodeBlock.ofKotlinClassLiteral(converterClassName),
+                                        )
+                                        endControlFlow()
+                                    }
+                                    .build()
+                            )
+                        }
+                    }
+                }
+            )
+        val funSpec =
+            object : TypeWriter.SharedFunctionSpec(baseName) {
+                override fun getUniqueKey(): String {
+                    return "converterMethod_${converterClassName}"
+                }
+
+                override fun prepare(
+                    functionName: String,
+                    writer: TypeWriter,
+                    builder: XFunSpec.Builder,
+                ) {
+                    val body =
+                        XCodeBlock.builder().addStatement("return %N.value", converterField).build()
+                    builder.addCode(body)
+                    builder.returns(converterClassName)
+                }
+            }
+        return scope.writer.getOrCreateFunction(funSpec)
     }
 
     private fun daoReturnTypeConverter(scope: CodeGenScope): XPropertySpec {
@@ -70,4 +126,13 @@ class DaoReturnTypeConverterWrapper(
             }
         return scope.writer.getOrCreateProperty(propertySpec)
     }
+}
+
+fun TypeWriter.addRequiredReturnTypeConverter(className: XClassName) {
+    this[ProvidedDaoReturnTypeConverter::class] =
+        getRequiredDaoReturnTypeConverters() + setOf(className)
+}
+
+fun TypeWriter.getRequiredDaoReturnTypeConverters(): Set<XClassName> {
+    return this.get<Set<XClassName>>(ProvidedDaoReturnTypeConverter::class) ?: emptySet()
 }

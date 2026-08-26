@@ -20,8 +20,13 @@
 
 package androidx.savedstate
 
+import androidx.savedstate.serialization.SavedStateConfiguration
+import androidx.savedstate.serialization.decodeFromSavedState
+import androidx.savedstate.serialization.encodeToSavedState
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 
 /**
  * An opaque (empty) common type that holds saveable values to be saved and restored by native
@@ -31,7 +36,7 @@ import kotlin.jvm.JvmName
  * (normally using a serialization mechanism), and allow the app to restore its state later. That is
  * commonly referred to as "state restoration".
  *
- * required to act as a source input for a [SavedStateReader] or [SavedStateWriter].
+ * A [SavedState] is required as the source input for a [SavedStateReader] or [SavedStateWriter].
  *
  * This class represents a container for persistable state data. It is designed to be
  * platform-agnostic, allowing seamless state saving and restoration across different environments.
@@ -75,33 +80,119 @@ public expect inline fun savedState(
 ): SavedState
 
 /**
- * Calls the specified function [block] with a [SavedStateReader] value as its receiver and returns
- * the [block] value.
+ * Performs read operations on this [SavedState] using a [SavedStateReader].
  *
  * **IMPORTANT:** The [SavedStateReader] passed as a receiver to the [block] is valid only inside
- * that function. Using it outside of the function may produce an unspecified behavior.
+ * that function. Using it outside of the function may produce unspecified behavior.
  *
  * @param block A lambda function that performs read operations using the [SavedStateReader].
- * @return The result of the lambda function's execution.
- * @see [SavedStateReader]
- * @see [SavedStateWriter]
+ * @return The result of the [block] execution.
+ * @see SavedStateReader
+ * @see SavedStateWriter
  */
 public inline fun <T> SavedState.read(block: SavedStateReader.() -> T): T {
     return block(SavedStateReader(source = this))
 }
 
 /**
- * Calls the specified function [block] with a [SavedStateWriter] value as its receiver and returns
- * the [block] value.
+ * Performs write operations on this [SavedState] using a [SavedStateWriter].
  *
  * **IMPORTANT:** The [SavedStateWriter] passed as a receiver to the [block] is valid only inside
- * that function. Using it outside of the function may produce an unspecified behavior.
+ * that function. Using it outside of the function may produce unspecified behavior.
  *
  * @param block A lambda function that performs write operations using the [SavedStateWriter].
- * @return The result of the lambda function's execution.
- * @see [SavedStateReader]
- * @see [SavedStateWriter]
+ * @return The result of the [block] execution.
+ * @see SavedStateReader
+ * @see SavedStateWriter
  */
 public inline fun <T> SavedState.write(block: SavedStateWriter.() -> T): T {
     return block(SavedStateWriter(source = this))
+}
+
+/**
+ * Stores a [kotlinx.serialization.Serializable] value associated with the specified [key] in the
+ * [SavedState].
+ *
+ * @param serializer The [KSerializer] used to encode the value.
+ * @param key The key to associate the value with.
+ * @param value The [kotlinx.serialization.Serializable] value to store.
+ * @param configuration The [SavedStateConfiguration] to use for the encoding process.
+ * @see encodeToSavedState
+ */
+@Suppress("ValueClassUsageWithoutJvmName")
+public fun <T> SavedStateWriter.putKotlinSerializable(
+    serializer: KSerializer<T>,
+    key: String,
+    value: T,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+) {
+    putSavedState(key, encodeToSavedState(serializer, value, configuration))
+}
+
+/**
+ * Stores a [kotlinx.serialization.Serializable] value associated with the specified [key] in the
+ * [SavedState].
+ *
+ * @param key The key to associate the value with.
+ * @param value The [kotlinx.serialization.Serializable] value to store.
+ * @param configuration The [SavedStateConfiguration] to use for the encoding process.
+ * @see encodeToSavedState
+ */
+@Suppress("ValueClassUsageWithoutJvmName")
+public inline fun <reified T> SavedStateWriter.putKotlinSerializable(
+    key: String,
+    value: T,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+) {
+    putKotlinSerializable(serializer(), key, value, configuration)
+}
+
+/**
+ * Retrieves a [kotlinx.serialization.Serializable] value associated with the specified [key], or
+ * throws an [IllegalArgumentException] if this [SavedState] does not contain a valid value for the
+ * key.
+ *
+ * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the [key]
+ * exists, the associated value is not `null`, and it is of the expected type.
+ *
+ * @param deserializer The [KSerializer] used to decode the value.
+ * @param key The [key] to retrieve the value for.
+ * @param configuration The [SavedStateConfiguration] to use for the decoding process.
+ * @return The [kotlinx.serialization.Serializable] value associated with the [key].
+ * @throws IllegalArgumentException If the [key] is not found.
+ * @throws IllegalArgumentException If associated value is `null`.
+ * @throws IllegalArgumentException If associated value has wrong type.
+ * @see decodeFromSavedState
+ */
+@Suppress("ValueClassUsageWithoutJvmName")
+public fun <T> SavedStateReader.getKotlinSerializable(
+    deserializer: KSerializer<T>,
+    key: String,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+): T {
+    return decodeFromSavedState(deserializer, getSavedState(key), configuration)
+}
+
+/**
+ * Retrieves a [kotlinx.serialization.Serializable] value associated with the specified [key], or
+ * throws an [IllegalArgumentException] if this [SavedState] does not contain a valid value for the
+ * key.
+ *
+ * More specifically, a [SavedState] is considered to contain a valid value for a [key] if the [key]
+ * exists, the associated value is not `null`, and it is of the expected type.
+ *
+ * @param key The [key] to retrieve the value for.
+ * @param configuration The [SavedStateConfiguration] to use for the decoding process.
+ * @return The [kotlinx.serialization.Serializable] value associated with the [key].
+ * @throws IllegalArgumentException If the [key] is not found.
+ * @throws IllegalArgumentException If associated value is `null`.
+ * @throws IllegalArgumentException If associated value has wrong type.
+ * @see decodeFromSavedState
+ */
+@Suppress("ValueClassUsageWithoutJvmName")
+public inline fun <reified T> SavedStateReader.getKotlinSerializable(
+    key: String,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+): T {
+    return getKotlinSerializable(serializer(), key, configuration)
 }

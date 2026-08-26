@@ -31,6 +31,9 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <attribution
+        android:tag="RemoteCompose_audio_support"
+        android:label="@string/attribution" />
 
     <application
         android:enableOnBackInvokedCallback="true"
@@ -67,8 +70,36 @@
             </intent-filter>
         </activity>
 
+         <activity
+             android:name=".FloatingDocsActivity"
+             android:configChanges="uiMode|orientation|screenSize"
+             android:exported="true"
+             android:icon="@drawable/swarm"
+             android:label="RC Swarm"
+             android:screenOrientation="sensorLandscape"
+             android:theme="@android:style/Theme.Material.Light.NoActionBar">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.DEFAULT" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
         <activity
+
             android:name=".ExperimentActivity"
+            android:configChanges="uiMode"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ExperimentComposeActivity"
             android:configChanges="uiMode"
             android:exported="true"
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
@@ -128,9 +159,70 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".DemoActivity"
+            android:configChanges="uiMode|assetsPaths"
+            android:exported="true"
+            android:label="DemoRC"
+            android:icon="@drawable/recycler"
+            android:roundIcon="@drawable/recycler"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ExampleJsonRecyclerActivity"
+            android:configChanges="uiMode|assetsPaths"
+            android:exported="true"
+            android:label="RC JSON Recycler"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".RawViewActivity"
+            android:configChanges="uiMode|assetsPaths"
+            android:exported="true"
+            android:label="RC View"
+            android:icon="@drawable/recycler"
+            android:roundIcon="@drawable/recycler"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".CalendarDemoActivity"
+            android:configChanges="uiMode|assetsPaths"
+            android:exported="true"
+            android:label="RC Calendar"
+            android:icon="@drawable/recycler"
+            android:roundIcon="@drawable/recycler"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+
         <receiver android:name=".widgets.MyWidget"
             android:exported="true"
-            android:label="My New RemoteCompose Widget">
+            android:label="RC Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="androidx.compose.remote.ACTION_CLICKED" />
@@ -140,10 +232,34 @@
                 android:resource="@xml/launcher_widget" />
         </receiver>
 
+        <receiver android:name=".widgets.MyPWidget"
+            android:exported="true"
+            android:label="Procedural RCWidget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget" />
+        </receiver>
+
+        <receiver android:name=".widgets.CalendarWidget"
+            android:exported="true"
+            android:label="RC Calendar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/calendar_widget" />
+        </receiver>
+
         <receiver
             android:name=".ExperimentWidgetProvider"
             android:exported="true"
-            android:label="RemoteCompose Widget">
+            android:label="Experimental Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -175,7 +291,7 @@
         <receiver
             android:name=".TickerWidgetProvider"
             android:exported="true"
-            android:label="RemoteCompose Widget">
+            android:label="Stock ticker Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -187,6 +303,73 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/ticker_widget" />
         </receiver>
+
+        <receiver android:name=".providers.Demo1"
+            android:exported="true"
+            android:label="Demo1">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget" />
+        </receiver>
+
+        <receiver android:name=".providers.Demo2"
+            android:exported="true"
+            android:label="Demo2">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget" />
+        </receiver>
+
+        <receiver android:name=".providers.Demo3"
+            android:exported="true"
+            android:label="Demo3">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget" />
+        </receiver>
+
+        <receiver android:name=".providers.Demo4"
+            android:exported="true"
+            android:label="Demo4">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget" />
+        </receiver>
+
+        <receiver android:name=".providers.Demo5"
+            android:exported="true"
+            android:label="Demo5">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="androidx.compose.remote.ACTION_CLICKED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget" />
+        </receiver>
+
+        <activity
+            android:name=".DumperActivity"
+            android:configChanges="uiMode|assetsPaths"
+            android:exported="true"
+            android:label="RC Dumper"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
 
     </application>
 </manifest>

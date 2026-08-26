@@ -19,7 +19,6 @@ package androidx.compose.remote.integration.view.demos.widgets
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -31,31 +30,37 @@ import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.rc
+import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.creation.compose.widgets.RemoteComposeWidget
 import androidx.compose.remote.creation.compose.widgets.onClick
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 
-@SuppressLint("RestrictedApiAndroidX")
+@SuppressLint(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteComposeWidget, RemoteText, background, onClick
 class MyWidget : RemoteComposeWidget() {
-
     @RemoteComposable
     @Composable
     fun Button(text: String, modifier: RemoteModifier = RemoteModifier, onClick: () -> Unit) {
         RemoteBox(
             modifier
-                .padding(16.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.LightGray)
-                .padding(20.dp)
+                .padding(16.rdp)
+                .clip(RemoteRoundedCornerShape(20.rdp))
+                .background(Color.LightGray.rc)
+                .padding(20.rdp)
                 .onClick(onClick),
-            RemoteAlignment.CenterHorizontally,
-            RemoteArrangement.Center,
+            contentAlignment = RemoteAlignment.Center,
         ) {
-            RemoteText(text, fontSize = 32.sp, color = RemoteColor(Color.White))
+            RemoteText(text.rs, fontSize = 32.rsp, color = RemoteColor(Color.White))
         }
     }
 
@@ -64,12 +69,12 @@ class MyWidget : RemoteComposeWidget() {
     override fun Content(context: Context, widgetId: Int) {
         val counter = readCounter(context, widgetId)
         RemoteRow(
-            RemoteModifier.background(Color.White).fillMaxSize(),
-            horizontalArrangement = RemoteArrangement.CenterHorizontally,
+            RemoteModifier.background(Color.White.rc).fillMaxSize(),
+            horizontalArrangement = RemoteArrangement.Center,
             verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
             Button("-", RemoteModifier.weight(1f)) { writeCounter(context, widgetId, -1) }
-            RemoteText("$counter", fontSize = 48.sp)
+            RemoteText("$counter".rs, fontSize = 48.rsp)
             Button("+", RemoteModifier.weight(1f)) { writeCounter(context, widgetId, 1) }
         }
     }
@@ -97,3 +102,11 @@ class MyWidget : RemoteComposeWidget() {
         }
     }
 }
+
+@Preview
+@Composable
+private fun ButtonPreview() = RemoteContentPreview { MyWidget().Button("Click me") {} }
+
+@Preview
+@Composable
+private fun ContentPreview() = RemoteContentPreview { MyWidget().Content(LocalContext.current, 0) }

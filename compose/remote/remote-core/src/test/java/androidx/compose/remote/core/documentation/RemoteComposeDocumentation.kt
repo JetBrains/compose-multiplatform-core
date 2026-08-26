@@ -22,8 +22,6 @@ import androidx.compose.remote.core.operations.BitmapData
 import androidx.compose.remote.core.operations.BitmapFontData
 import androidx.compose.remote.core.operations.BitmapTextMeasure
 import androidx.compose.remote.core.operations.ClickArea
-import androidx.compose.remote.core.operations.ClipPath
-import androidx.compose.remote.core.operations.ClipRect
 import androidx.compose.remote.core.operations.ColorAttribute
 import androidx.compose.remote.core.operations.ColorConstant
 import androidx.compose.remote.core.operations.ColorExpression
@@ -53,7 +51,6 @@ import androidx.compose.remote.core.operations.DrawRoundRect
 import androidx.compose.remote.core.operations.DrawSector
 import androidx.compose.remote.core.operations.DrawText
 import androidx.compose.remote.core.operations.DrawTextAnchored
-import androidx.compose.remote.core.operations.DrawTextOnCircle
 import androidx.compose.remote.core.operations.DrawTextOnPath
 import androidx.compose.remote.core.operations.DrawToBitmap
 import androidx.compose.remote.core.operations.DrawTweenPath
@@ -77,7 +74,10 @@ import androidx.compose.remote.core.operations.PaintData
 import androidx.compose.remote.core.operations.ParticlesCompare
 import androidx.compose.remote.core.operations.ParticlesCreate
 import androidx.compose.remote.core.operations.ParticlesLoop
-import androidx.compose.remote.core.operations.PathData
+import androidx.compose.remote.core.operations.PathAppend
+import androidx.compose.remote.core.operations.PathCombine
+import androidx.compose.remote.core.operations.PathCreate
+import androidx.compose.remote.core.operations.PathTween
 import androidx.compose.remote.core.operations.Rem
 import androidx.compose.remote.core.operations.RootContentBehavior
 import androidx.compose.remote.core.operations.RootContentDescription
@@ -105,6 +105,7 @@ import androidx.compose.remote.core.operations.layout.ImpulseOperation
 import androidx.compose.remote.core.operations.layout.ImpulseProcess
 import androidx.compose.remote.core.operations.layout.LayoutComponentContent
 import androidx.compose.remote.core.operations.layout.LoopOperation
+import androidx.compose.remote.core.operations.layout.MultiClickModifier
 import androidx.compose.remote.core.operations.layout.RootLayoutComponent
 import androidx.compose.remote.core.operations.layout.TouchCancelModifierOperation
 import androidx.compose.remote.core.operations.layout.TouchDownModifierOperation
@@ -117,16 +118,19 @@ import androidx.compose.remote.core.operations.layout.managers.CollapsibleRowLay
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.CoreText
 import androidx.compose.remote.core.operations.layout.managers.FitBoxLayout
+import androidx.compose.remote.core.operations.layout.managers.FlowLayout
 import androidx.compose.remote.core.operations.layout.managers.ImageLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
 import androidx.compose.remote.core.operations.layout.managers.StateLayout
 import androidx.compose.remote.core.operations.layout.managers.TextLayout
+import androidx.compose.remote.core.operations.layout.managers.TextStyle
 import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.CollapsiblePriorityModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibilityOperation
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.DrawContentOperation
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation
 import androidx.compose.remote.core.operations.layout.modifiers.HeightInModifierOperation
@@ -161,7 +165,7 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class RemoteComposeDocumentation(val title: String, val intro: String) : DocumentationBuilder {
+class RemoteComposeDocumentation(val title: String) : DocumentationBuilder {
     var buffer = StringBuilder(preamble())
 
     fun role(content: String) {
@@ -215,8 +219,24 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
 		      top: 20px;
               overflow-y: auto;
 	        }
+
+            .md table {
+                margin-left: 0 !important;
+                margin-right: auto !important;
+            }
+            
+            .md canvas {
+                display: block !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                padding-bottom: 20px; /* Optional: adds some breathing room */
+            }
 }
             </style>
+            <script type="module">
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+                mermaid.initialize({ startOnLoad: true });
+            </script>
         """
     }
 
@@ -406,6 +426,10 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         operationsMap.put(Operations.DRAW_LINE, DrawLine::documentation)
         operationsMap.put(Operations.DRAW_PATH, DrawPath::documentation)
         operationsMap.put(Operations.DRAW_TWEEN_PATH, DrawTweenPath::documentation)
+        operationsMap.put(Operations.PATH_CREATE, PathCreate::documentation)
+        operationsMap.put(Operations.PATH_ADD, PathAppend::documentation)
+        operationsMap.put(Operations.PATH_COMBINE, PathCombine::documentation)
+        operationsMap.put(Operations.PATH_TWEEN, PathTween::documentation)
         operationsMap.put(Operations.DRAW_BITMAP, DrawBitmap::documentation)
         operationsMap.put(Operations.DRAW_BITMAP_INT, DrawBitmapInt::documentation)
         operationsMap.put(Operations.DRAW_BITMAP_SCALED, DrawBitmapScaled::documentation)
@@ -413,7 +437,7 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         operationsMap.put(Operations.DRAW_TEXT_RUN, DrawText::documentation)
         operationsMap.put(Operations.DRAW_TEXT_ANCHOR, DrawTextAnchored::documentation)
         operationsMap.put(Operations.DRAW_TEXT_ON_PATH, DrawTextOnPath::documentation)
-        operationsMap.put(Operations.DRAW_TEXT_ON_CIRCLE, DrawTextOnCircle::documentation)
+        // operationsMap.put(Operations.DRAW_TEXT_ON_CIRCLE, DrawTextOnCircle::documentation)
         operationsMap.put(Operations.DRAW_BITMAP_FONT_TEXT_RUN, DrawBitmapFontText::documentation)
         operationsMap.put(
             Operations.DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH,
@@ -455,9 +479,12 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
             Operations.LAYOUT_COLLAPSIBLE_COLUMN,
             CollapsibleColumnLayout::documentation,
         )
+        operationsMap.put(Operations.LAYOUT_FLOW, FlowLayout::documentation)
+
         operationsMap.put(Operations.LAYOUT_CANVAS, CanvasLayout::documentation)
         operationsMap.put(Operations.LAYOUT_TEXT, TextLayout::documentation)
         operationsMap.put(Operations.CORE_TEXT, CoreText::documentation)
+        operationsMap.put(Operations.TEXT_STYLE, TextStyle::documentation)
         operationsMap.put(Operations.LAYOUT_IMAGE, ImageLayout::documentation)
         operationsMap.put(Operations.LAYOUT_STATE, StateLayout::documentation)
         operationsMap.put(Operations.COMPONENT_START, ComponentStart::documentation)
@@ -467,6 +494,10 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         operationsMap.put(Operations.MODIFIER_HEIGHT, HeightModifierOperation::documentation)
         operationsMap.put(Operations.MODIFIER_WIDTH_IN, WidthInModifierOperation::documentation)
         operationsMap.put(Operations.MODIFIER_HEIGHT_IN, HeightInModifierOperation::documentation)
+        operationsMap.put(
+            Operations.MODIFIER_DIMENSION_CONSTRAINTS,
+            DimensionConstraintsModifierOperation::documentation,
+        )
         operationsMap.put(
             Operations.MODIFIER_COLLAPSIBLE_PRIORITY,
             CollapsiblePriorityModifierOperation::documentation,
@@ -484,6 +515,7 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         )
         operationsMap.put(Operations.CLICK_AREA, ClickArea::documentation)
         operationsMap.put(Operations.MODIFIER_CLICK, ClickModifierOperation::documentation)
+        operationsMap.put(Operations.MODIFIER_MULTI_CLICK, MultiClickModifier::documentation)
         operationsMap.put(Operations.MODIFIER_TOUCH_DOWN, TouchDownModifierOperation::documentation)
         operationsMap.put(Operations.MODIFIER_TOUCH_UP, TouchUpModifierOperation::documentation)
         operationsMap.put(
@@ -567,186 +599,6 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         operationsMap.put(Operations.HAPTIC_FEEDBACK, HapticFeedback::documentation)
     }
 
-    fun listOperationsOld() {
-
-        // Protocol
-        operationsMap.put(Operations.HEADER, Header::documentation)
-        operationsMap.put(Operations.THEME, Theme::documentation)
-        operationsMap.put(Operations.CLICK_AREA, ClickArea::documentation)
-        operationsMap.put(Operations.ROOT_CONTENT_BEHAVIOR, RootContentBehavior::documentation)
-        operationsMap.put(
-            Operations.ROOT_CONTENT_DESCRIPTION,
-            RootContentDescription::documentation,
-        )
-
-        // wipOperation("Protocol Operations", Operations.HEADER, "Header")
-        // wipOperation("Protocol Operations", Operations.THEME, "Theme")
-        //    wipOperation("Protocol Operations", Operations.ROOT_CONTENT_BEHAVIOR,
-        // "RootContentBehavior")
-        //    wipOperation(
-        //      "Protocol Operations",
-        //      Operations.ROOT_CONTENT_DESCRIPTION,
-        //      "RootContentDescription",
-        //    )
-
-        // Data
-        operationsMap.put(Operations.DATA_BITMAP, BitmapData::documentation)
-        operationsMap.put(Operations.DATA_BITMAP_FONT, BitmapFontData::documentation)
-        operationsMap.put(Operations.DATA_TEXT, TextData::documentation)
-        operationsMap.put(Operations.DATA_SHADER, ShaderData::documentation)
-        operationsMap.put(Operations.DATA_PATH, PathData::documentation)
-        operationsMap.put(Operations.DATA_FLOAT, FloatConstant::documentation)
-        operationsMap.put(Operations.DATA_INT, IntegerConstant::documentation)
-        operationsMap.put(Operations.PAINT_VALUES, PaintData::documentation)
-        operationsMap.put(Operations.DATA_BOOLEAN, BooleanConstant::documentation)
-        operationsMap.put(Operations.DATA_LONG, LongConstant::documentation)
-        operationsMap.put(Operations.ID_LIST, DataListIds::documentation)
-        operationsMap.put(Operations.ID_MAP, DataMapIds::documentation)
-        operationsMap.put(Operations.FLOAT_LIST, DataListFloat::documentation)
-
-        // wipOperation("Data Operations", Operations.DATA_BITMAP, "BitmapData")
-        // wipOperation("Data Operations", Operations.DATA_TEXT, "TextData")
-        wipOperation("Data Operations", Operations.DATA_SHADER, "ShaderData")
-        // wipOperation("Data Operations", Operations.DATA_PATH, "PathData")
-        // wipOperation("Data Operations", Operations.PAINT_VALUES, "PaintData")
-        // wipOperation("Data Operations", Operations.DATA_FLOAT, "FloatConstant")
-        // wipOperation("Data Operations", Operations.DATA_INT, "IntegerConstant")
-        // wipOperation("Data Operations", Operations.DATA_BOOLEAN, "BooleanConstant")
-
-        // Draw
-        operationsMap.put(Operations.DRAW_SECTOR, DrawSector::documentation)
-        operationsMap.put(Operations.DRAW_ARC, DrawArc::documentation)
-        operationsMap.put(Operations.DRAW_BITMAP, DrawBitmap::documentation)
-        operationsMap.put(Operations.DRAW_BITMAP_INT, DrawBitmapInt::documentation)
-        operationsMap.put(Operations.DRAW_CIRCLE, DrawCircle::documentation)
-        operationsMap.put(Operations.DRAW_LINE, DrawLine::documentation)
-        operationsMap.put(Operations.DRAW_OVAL, DrawOval::documentation)
-        operationsMap.put(Operations.DRAW_PATH, DrawPath::documentation)
-        operationsMap.put(Operations.DRAW_RECT, DrawRect::documentation)
-        operationsMap.put(Operations.DRAW_ROUND_RECT, DrawRoundRect::documentation)
-        operationsMap.put(Operations.DRAW_BITMAP_FONT_TEXT_RUN, DrawBitmapFontText::documentation)
-        operationsMap.put(Operations.DRAW_TEXT_ON_PATH, DrawTextOnPath::documentation)
-        operationsMap.put(Operations.DRAW_TEXT_RUN, DrawText::documentation)
-        operationsMap.put(Operations.DRAW_TWEEN_PATH, DrawTweenPath::documentation)
-        operationsMap.put(Operations.DRAW_TEXT_ANCHOR, DrawTextAnchored::documentation)
-        operationsMap.put(Operations.TEXT_FROM_FLOAT, TextFromFloat::documentation)
-        operationsMap.put(Operations.TEXT_MERGE, TextMerge::documentation)
-
-        // wipOperation("Draw Operations", Operations.DRAW_ARC, "DrawArc")
-        //    wipOperation("Draw Operations", Operations.DRAW_BITMAP, "DrawBitmap")
-        //    wipOperation("Draw Operations", Operations.DRAW_BITMAP_INT, "DrawBitmapInt")
-        // wipOperation("Draw Operations", Operations.DRAW_CIRCLE, "DrawCircle")
-        // wipOperation("Draw Operations", Operations.DRAW_LINE, "DrawLine")
-        // wipOperation("Draw Operations", Operations.DRAW_OVAL, "DrawOval")
-        //    wipOperation("Draw Operations", Operations.DRAW_PATH, "DrawPath")
-        // wipOperation("Draw Operations", Operations.DRAW_RECT, "DrawRect")
-        // wipOperation("Draw Operations", Operations.DRAW_ROUND_RECT, "DrawRoundRect")
-        //    wipOperation("Draw Operations", Operations.DRAW_TEXT_ON_PATH, "DrawTextOnPath")
-        //    wipOperation("Draw Operations", Operations.DRAW_TEXT_RUN, "DrawText")
-        //    wipOperation("Draw Operations", Operations.DRAW_TWEEN_PATH, "DrawTweenPath")
-        //    wipOperation("Draw Operations", Operations.DRAW_TEXT_ANCHOR, "DrawTextAnchored")
-        //   wipOperation("Draw Operations", Operations.TEXT_FROM_FLOAT, "TextFromFloat")
-        //   wipOperation("Draw Operations", Operations.TEXT_MERGE, "TextMerge")
-
-        // Canvas
-        operationsMap.put(Operations.MATRIX_RESTORE, MatrixRestore::documentation)
-        operationsMap.put(Operations.MATRIX_ROTATE, MatrixRotate::documentation)
-        operationsMap.put(Operations.MATRIX_SAVE, MatrixSave::documentation)
-        operationsMap.put(Operations.MATRIX_SCALE, MatrixScale::documentation)
-        operationsMap.put(Operations.MATRIX_SKEW, MatrixSkew::documentation)
-        operationsMap.put(Operations.MATRIX_TRANSLATE, MatrixTranslate::documentation)
-        operationsMap.put(Operations.CLIP_PATH, ClipPath::documentation)
-        operationsMap.put(Operations.CLIP_RECT, ClipRect::documentation)
-
-        // Expressions
-        operationsMap.put(Operations.NAMED_VARIABLE, NamedVariable::documentation)
-        operationsMap.put(Operations.COLOR_CONSTANT, ColorConstant::documentation)
-        operationsMap.put(Operations.ANIMATED_FLOAT, FloatExpression::documentation)
-        operationsMap.put(Operations.COLOR_EXPRESSIONS, ColorExpression::documentation)
-        operationsMap.put(Operations.INTEGER_EXPRESSION, IntegerExpression::documentation)
-        operationsMap.put(Operations.COMPONENT_VALUE, ComponentValue::documentation)
-        //    wipOperation("Expressions Operations", Operations.NAMED_VARIABLE, "NamedVariable")
-        //    wipOperation("Expressions Operations", Operations.COLOR_CONSTANT, "ColorConstant")
-        //    wipOperation("Expressions Operations", Operations.ANIMATED_FLOAT, "FloatExpression")
-        //    wipOperation("Expressions Operations", Operations.COLOR_EXPRESSIONS,
-        // "ColorExpression")
-        //    wipOperation("Expressions Operations", Operations.INTEGER_EXPRESSION,
-        // "IntegerExpression")
-
-        // Layout
-        operationsMap.put(Operations.COMPONENT_START, ComponentStart::documentation)
-        operationsMap.put(Operations.ANIMATION_SPEC, AnimationSpec::documentation)
-
-        operationsMap.put(Operations.LAYOUT_ROOT, RootLayoutComponent::documentation)
-        operationsMap.put(Operations.LAYOUT_CONTENT, LayoutComponentContent::documentation)
-        operationsMap.put(Operations.LAYOUT_BOX, BoxLayout::documentation)
-        operationsMap.put(Operations.LAYOUT_COLUMN, ColumnLayout::documentation)
-        operationsMap.put(Operations.LAYOUT_ROW, RowLayout::documentation)
-        operationsMap.put(Operations.LAYOUT_CANVAS, CanvasLayout::documentation)
-        operationsMap.put(Operations.LAYOUT_TEXT, TextLayout::documentation)
-
-        // Modifiers
-        operationsMap.put(Operations.MODIFIER_WIDTH, WidthModifierOperation::documentation)
-        operationsMap.put(Operations.MODIFIER_HEIGHT, HeightModifierOperation::documentation)
-        operationsMap.put(Operations.MODIFIER_PADDING, PaddingModifierOperation::documentation)
-        operationsMap.put(
-            Operations.MODIFIER_BACKGROUND,
-            BackgroundModifierOperation::documentation,
-        )
-        operationsMap.put(Operations.MODIFIER_BORDER, BorderModifierOperation::documentation)
-        operationsMap.put(
-            Operations.MODIFIER_ROUNDED_CLIP_RECT,
-            RoundedClipRectModifierOperation::documentation,
-        )
-        operationsMap.put(Operations.MODIFIER_CLIP_RECT, ClipRectModifierOperation::documentation)
-        operationsMap.put(Operations.MODIFIER_CLICK, ClickModifierOperation::documentation)
-        operationsMap.put(Operations.CONTAINER_END, ContainerEnd::documentation)
-        operationsMap.put(Operations.HOST_ACTION, HostActionOperation::documentation)
-        operationsMap.put(Operations.HOST_NAMED_ACTION, HostNamedActionOperation::documentation)
-        operationsMap.put(
-            Operations.VALUE_INTEGER_CHANGE_ACTION,
-            ValueIntegerChangeActionOperation::documentation,
-        )
-
-        wipOperation(
-            "Modifier Operations",
-            Operations.MODIFIER_GRAPHICS_LAYER,
-            "GraphicsLayerOperation",
-        )
-
-        operationsMap.put(Operations.MODIFIER_OFFSET, OffsetModifierOperation::documentation)
-        operationsMap.put(Operations.MODIFIER_ZINDEX, ZIndexModifierOperation::documentation)
-
-        operationsMap.put(Operations.MODIFIER_TOUCH_DOWN, TouchDownModifierOperation::documentation)
-        operationsMap.put(Operations.MODIFIER_TOUCH_UP, TouchUpModifierOperation::documentation)
-        operationsMap.put(
-            Operations.MODIFIER_TOUCH_CANCEL,
-            TouchCancelModifierOperation::documentation,
-        )
-
-        wipOperation("Modifier Operations", Operations.MODIFIER_WIDTH, "WidthModifierOperation")
-        wipOperation("Modifier Operations", Operations.MODIFIER_HEIGHT, "HeightModifierOperation")
-        wipOperation("Modifier Operations", Operations.MODIFIER_PADDING, "PaddingModifierOperation")
-        wipOperation(
-            "Modifier Operations",
-            Operations.MODIFIER_BACKGROUND,
-            "BackgroundModifierOperation",
-        )
-        wipOperation("Modifier Operations", Operations.MODIFIER_BORDER, "BorderModifierOperation")
-        wipOperation(
-            "Modifier Operations",
-            Operations.MODIFIER_ROUNDED_CLIP_RECT,
-            "RoundedClipRectModifierOperation",
-        )
-        wipOperation(
-            "Modifier Operations",
-            Operations.MODIFIER_CLIP_RECT,
-            "ClipRectModifierOperation",
-        )
-
-        operationsMap.put(Operations.MODIFIER_RIPPLE, RippleModifierOperation::documentation)
-    }
-
     fun content(): String {
 
         listOperations()
@@ -765,27 +617,18 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         role(
             "*Current number of operations: ${numOperations + numWIPOperations} ($numWIPOperations not fully documented)*"
         )
-        role(intro)
 
         //    val interpolationMethods = InterpolationReader.map.values
         //    for (m in interpolationMethods) {
         //      m.documentation(this)
         //    }
 
-        val layoutPart = File("compose/remote/Documentation/parts/rc_layout.md")
-        val fullPath = layoutPart.absolutePath
-        buffer.append(layoutPart.readText())
+        addPart("rc_intro_wire_format.md")
+        addPart("rc_layout.md")
+        addPart("rc_scroll.md")
+        addPart("rc_click.md")
 
         val categories =
-            ////            arrayListOf(
-            ////                "Protocol Operations",
-            ////                "Data Operations",
-            ////                "Canvas Operations",
-            ////                "Draw Operations",
-            ////                "Expressions Operations",
-            ////                "Layout Operations",
-            ////                "Modifier Operations",
-            ////            )
             arrayListOf(
                 "Document Protocol Operations",
                 "Data Operations",
@@ -793,6 +636,7 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
                 "Canvas Operations",
                 "Text Operations",
                 "Layout Operations",
+                "Layout Managers",
                 "Modifier Operations",
                 "Actions & Events Operations",
                 "Animation & Particles Operations",
@@ -803,18 +647,6 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
             )
 
         val categoriesDescriptions =
-            //            hashMapOf(
-            //                "Protocol Operations" to "Operations related to the Origami protocol
-            // itself.",
-            //                "Data operations" to "Operations related to resource loading.",
-            //                "Canvas operations" to
-            //                    "Canvas state manipulations (save, restore, translate, etc.)",
-            //                "Draw operations" to
-            //                    "Operations representing canvas draw commands (draw line, etc.)",
-            //                "Expressions operations" to "Operations related to expression
-            // evaluation.",
-            //                "Layout Operations" to "Layout related operations.",
-            //            )
             hashMapOf(
                 "Document Protocol Operations" to
                     "Core document metadata, versioning, themes, and high-level behaviors.",
@@ -826,6 +658,8 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
                     "Management of paint properties, shaders, and complex color definitions (themes, expressions).",
                 "Matrix Operations" to
                     "Coordinate system transformations, including translation, scaling, rotation, skewing, and matrix math.",
+                "Layout Managers" to
+                    "Higher-level components that manage the positioning and sizing of their children according to specific algorithms (Row, Column, Box, etc.).",
                 "Layout Operations" to
                     "High-level structural components (Box, Row, Column, etc.) used to build the UI hierarchy.",
                 "Modifier Operations" to
@@ -870,8 +704,8 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
                 buffer.append(description + "\n\n")
             }
             buffer.append("Operations in this category:\n")
-            buffer.append("    | ID | Name | Size (bytes) \n")
-            buffer.append("    | ---- | ---- | ---- |\n")
+            buffer.append("    | ID | Name | Version | Size (bytes) \n")
+            buffer.append("    | ---- | ---- | ---- | ---- |\n")
             for (op in ops!!) {
                 val size =
                     if (op.isWIP) {
@@ -879,10 +713,21 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
                     } else {
                         "${op.sizeFields + 1}${op.varSize}"
                     }
-                buffer.append("    | ${op.id} | ${op.name} | $size \n")
+                buffer.append("    | ${op.id} | ${op.name} | v${op.addedVersion} | $size \n")
             }
             for (op in ops!!) {
-                buffer.append("## ${op.name}\n")
+                var title = "## ${op.name}"
+                if (op.isExperimental) {
+                    title += " [EXPERIMENTAL]"
+                }
+                if (op.addedVersion > 6) {
+                    buffer.append("\n$title (added in v${op.addedVersion})\n")
+                } else {
+                    buffer.append("\n$title\n")
+                }
+                if (op.isExperimental) {
+                    buffer.append("!!! WARNING\n    Experimental operation\n\n")
+                }
                 if (op.isWIP) {
                     buffer.append("!!! WARNING\n    Undocumented operation\n\n")
                     continue
@@ -892,27 +737,37 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
                 val sizeFields = op.sizeFields + 1
                 val varSet = op.varSize
                 buffer.append("$numFields Fields, total size $sizeFields$varSet bytes\n")
-                buffer.append("    | Type | Name | Description |\n")
-                buffer.append("    | ---- | ---- | ---- |\n")
+
+                buffer.append("<br>")
+                buffer.append("<table>")
+                buffer.append("<tr><th>Type</th><th>Name</th><th>Description</th></tr>\n")
                 buffer.append(
-                    "    | ${
-                        DocumentedOperation.getType(
-                            DocumentedOperation.BYTE) } | ${op.name} | Value: ${op.id} \n"
+                    "<tr><td>${DocumentedOperation.getType(
+                    DocumentedOperation.BYTE)}</td><td>${op.name}</td><td>Value: ${op.id}</td></tr>\n"
                 )
-                for (field in op.fields) {
-                    buffer.append(
-                        "    | ${DocumentedOperation.getType(field.type)} | ${field.name} | ${field.description} \n"
-                    )
-                }
 
                 for (field in op.fields) {
-                    if (field.hasEnumeratedValues()) {
+                    buffer.append(field.toDoc())
+                }
+                buffer.append("</table>\n\n")
+
+                for (field in op.fields) {
+                    if (field is OperationField && field.hasEnumeratedValues()) {
                         buffer.append("### ${field.name}\n")
                         buffer.append("    | Name | Value |\n")
                         buffer.append("    | ---- | ---- |\n")
                         for (v in field.possibleValues) {
                             buffer.append("    | ${v.name} | ${v.value} \n")
                         }
+                    }
+                }
+
+                val addDoc = op.additionalDocumentation
+                if (addDoc != null) {
+                    val content = readPart("$addDoc.md")
+                    if (content != null) {
+                        buffer.append(content)
+                        buffer.append("\n\n")
                     }
                 }
 
@@ -965,8 +820,21 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
                 }
             }
         }
+        versionSummary(buffer, 6)
+        versionSummary(buffer, 7)
+        experimentalSummary(buffer)
         appendix1(buffer)
         appendix2(buffer)
+        buffer.append(
+            """
+            <script>
+            window.markdeepOptions = {
+                tocDepth: 2,
+                detectMath: true
+            };
+            </script>
+        """
+        )
         buffer.append(postamble())
 
         val content = buffer.toString()
@@ -974,8 +842,75 @@ class RemoteComposeDocumentation(val title: String, val intro: String) : Documen
         return content
     }
 
+    fun versionSummary(buffer: StringBuilder, version: Int) {
+        val versionOps = listOps.values.filter { it.addedVersion == version }.sortedBy { it.id }
+        if (versionOps.isNotEmpty()) {
+            buffer.append("\n# List of Version $version Operations\n\n")
+            buffer.append(
+                "The following ${versionOps.size} operations were added in version $version of the format.\n\n"
+            )
+            buffer.append("    | ID | Name | Category | Description |\n")
+            buffer.append("    | ---- | ---- | ---- | ---- |\n")
+            for (op in versionOps) {
+                buffer.append(
+                    "    | ${op.id} | ${op.name} | ${op.category} | ${stripLineBreaks(op.description)} |\n"
+                )
+            }
+            buffer.append("\n")
+        }
+    }
+
+    fun experimentalSummary(buffer: StringBuilder) {
+        val experimentalOps = listOps.values.filter { it.isExperimental }.sortedBy { it.id }
+        if (experimentalOps.isNotEmpty()) {
+            buffer.append("\n# Experimental Operations\n\n")
+            buffer.append(
+                "The following ${experimentalOps.size} operations are considered experimental and may change in future versions.\n\n"
+            )
+            buffer.append("    | ID | Name | Version | Category | Description |\n")
+            buffer.append("    | ---- | ---- | ---- | ---- | ---- |\n")
+            for (op in experimentalOps) {
+                buffer.append(
+                    "    | ${op.id} | ${op.name} | v${op.addedVersion} | ${op.category} | ${
+                    stripLineBreaks(
+                        op.description
+                    )
+                } |\n"
+                )
+            }
+            buffer.append("\n")
+        }
+    }
+
     fun stripName(name: String): String {
         return name.replace("\\s".toRegex(), "")
+    }
+
+    fun stripLineBreaks(text: String?): String {
+        return text?.replace("\n", " ")?.replace("\r", " ") ?: ""
+    }
+
+    fun readPart(name: String): String? {
+        val paths =
+            arrayOf(
+                "compose/remote/Documentation/parts/",
+                "Documentation/parts/",
+                "../Documentation/parts/",
+            )
+        for (path in paths) {
+            val file = File(path + name)
+            if (file.exists()) {
+                return file.readText()
+            }
+        }
+        return null
+    }
+
+    fun addPart(name: String) {
+        val part = readPart(name)
+        if (part != null) {
+            buffer.append(part)
+        }
     }
 
     override fun add(value: String) {

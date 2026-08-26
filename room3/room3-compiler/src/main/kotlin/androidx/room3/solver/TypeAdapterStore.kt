@@ -29,6 +29,8 @@ import androidx.room3.ext.CollectionTypeNames.INT_SPARSE_ARRAY
 import androidx.room3.ext.CollectionTypeNames.LONG_SPARSE_ARRAY
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.GuavaTypeNames
+import androidx.room3.ext.KotlinTypeNames
+import androidx.room3.ext.SUPPORTED_VALUES_TYPES
 import androidx.room3.ext.getValueClassUnderlyingInfo
 import androidx.room3.ext.isByteBuffer
 import androidx.room3.ext.isEntityElement
@@ -46,22 +48,18 @@ import androidx.room3.processor.ProcessorErrors
 import androidx.room3.processor.ProcessorErrors.DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP
 import androidx.room3.processor.ProcessorErrors.invalidQueryForSingleColumnArray
 import androidx.room3.processor.PropertyProcessor
+import androidx.room3.processor.hasContinuation
 import androidx.room3.solver.binderprovider.CoroutineFlowResultBinderProvider
-import androidx.room3.solver.binderprovider.DaoReturnTypeQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.GuavaListenableFutureQueryResultBinderProvider
+import androidx.room3.solver.binderprovider.DaoConverterDeleteOrUpdateFunctionBinderProvider
+import androidx.room3.solver.binderprovider.DaoConverterInsertOrUpsertFunctionQueryResultBinderProvider
+import androidx.room3.solver.binderprovider.DaoConverterQueryResultBinderProvider
+import androidx.room3.solver.binderprovider.DaoReturnTypePreparedQueryBinderProvider
 import androidx.room3.solver.binderprovider.InstantQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.ListenableFuturePagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.LiveDataQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.PagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxJava3PagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxLambdaQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.SuspendResultBinderProvider
 import androidx.room3.solver.prepared.binder.PreparedQueryResultBinder
-import androidx.room3.solver.prepared.binderprovider.GuavaListenableFuturePreparedQueryResultBinderProvider
 import androidx.room3.solver.prepared.binderprovider.InstantPreparedQueryResultBinderProvider
 import androidx.room3.solver.prepared.binderprovider.PreparedQueryResultBinderProvider
-import androidx.room3.solver.prepared.binderprovider.RxPreparedQueryResultBinderProvider
+import androidx.room3.solver.prepared.binderprovider.SuspendPreparedQueryResultBinderProvider
 import androidx.room3.solver.prepared.result.PreparedQueryResultAdapter
 import androidx.room3.solver.query.parameter.ArrayQueryParameterAdapter
 import androidx.room3.solver.query.parameter.BasicQueryParameterAdapter
@@ -83,6 +81,7 @@ import androidx.room3.solver.query.result.MultimapQueryResultAdapter.Companion.v
 import androidx.room3.solver.query.result.MultimapQueryResultAdapter.Companion.validateMapValueTypeArg
 import androidx.room3.solver.query.result.MultimapQueryResultAdapter.MapType.Companion.isSparseArray
 import androidx.room3.solver.query.result.OptionalQueryResultAdapter
+import androidx.room3.solver.query.result.PairTripleRowAdapter
 import androidx.room3.solver.query.result.QueryResultAdapter
 import androidx.room3.solver.query.result.QueryResultBinder
 import androidx.room3.solver.query.result.RowAdapter
@@ -92,13 +91,11 @@ import androidx.room3.solver.query.result.SingleNamedColumnRowAdapter
 import androidx.room3.solver.shortcut.binder.DeleteOrUpdateFunctionBinder
 import androidx.room3.solver.shortcut.binder.InsertOrUpsertFunctionBinder
 import androidx.room3.solver.shortcut.binderprovider.DeleteOrUpdateFunctionBinderProvider
-import androidx.room3.solver.shortcut.binderprovider.GuavaListenableFutureDeleteOrUpdateFunctionBinderProvider
-import androidx.room3.solver.shortcut.binderprovider.GuavaListenableFutureInsertOrUpsertFunctionBinderProvider
 import androidx.room3.solver.shortcut.binderprovider.InsertOrUpsertFunctionBinderProvider
 import androidx.room3.solver.shortcut.binderprovider.InstantDeleteOrUpdateFunctionBinderProvider
 import androidx.room3.solver.shortcut.binderprovider.InstantInsertOrUpsertFunctionBinderProvider
-import androidx.room3.solver.shortcut.binderprovider.RxCallableDeleteOrUpdateFunctionBinderProvider
-import androidx.room3.solver.shortcut.binderprovider.RxCallableInsertOrUpsertFunctionBinderProvider
+import androidx.room3.solver.shortcut.binderprovider.SuspendDeleteOrUpdateFunctionBinderProvider
+import androidx.room3.solver.shortcut.binderprovider.SuspendInsertOrUpsertFunctionBinderProvider
 import androidx.room3.solver.shortcut.result.DeleteOrUpdateFunctionAdapter
 import androidx.room3.solver.shortcut.result.InsertOrUpsertFunctionAdapter
 import androidx.room3.solver.types.BoxedBooleanToBoxedIntConverter
@@ -107,6 +104,7 @@ import androidx.room3.solver.types.ByteArrayColumnTypeAdapter
 import androidx.room3.solver.types.ByteArrayWrapperColumnTypeAdapter
 import androidx.room3.solver.types.ByteBufferColumnTypeAdapter
 import androidx.room3.solver.types.ColumnTypeAdapter
+import androidx.room3.solver.types.ColumnTypeConverter
 import androidx.room3.solver.types.CompositeAdapter
 import androidx.room3.solver.types.DaoReturnTypeConverter
 import androidx.room3.solver.types.EnumColumnTypeAdapter
@@ -115,7 +113,7 @@ import androidx.room3.solver.types.PrimitiveColumnTypeAdapter
 import androidx.room3.solver.types.StatementValueBinder
 import androidx.room3.solver.types.StatementValueReader
 import androidx.room3.solver.types.StringColumnTypeAdapter
-import androidx.room3.solver.types.TypeConverter
+import androidx.room3.solver.types.UnsignedIntegerColumnTypeAdapter
 import androidx.room3.solver.types.UuidColumnTypeAdapter
 import androidx.room3.solver.types.ValueClassConverterWrapper
 import androidx.room3.vo.BuiltInConverterFlags
@@ -137,7 +135,7 @@ private constructor(
     val context: Context,
     /** first type adapter has the highest priority */
     private val columnTypeAdapters: List<ColumnTypeAdapter>,
-    @get:VisibleForTesting internal val typeConverterStore: TypeConverterStore,
+    @get:VisibleForTesting internal val columnTypeConverterStore: ColumnTypeConverterStore,
     private val builtInConverterFlags: BuiltInConverterFlags,
     private val daoReturnTypeConverters: List<DaoReturnTypeConverter>,
 ) {
@@ -147,7 +145,7 @@ private constructor(
             return TypeAdapterStore(
                 context = context,
                 columnTypeAdapters = store.columnTypeAdapters,
-                typeConverterStore = store.typeConverterStore,
+                columnTypeConverterStore = store.columnTypeConverterStore,
                 builtInConverterFlags = store.builtInConverterFlags,
                 daoReturnTypeConverters = store.daoReturnTypeConverters,
             )
@@ -159,11 +157,11 @@ private constructor(
             vararg extras: Any,
         ): TypeAdapterStore {
             val adapters = arrayListOf<ColumnTypeAdapter>()
-            val converters = arrayListOf<TypeConverter>()
+            val converters = arrayListOf<ColumnTypeConverter>()
             val daoReturnTypeConverters = arrayListOf<DaoReturnTypeConverter>()
             fun addAny(extra: Any?) {
                 when (extra) {
-                    is TypeConverter -> converters.add(extra)
+                    is ColumnTypeConverter -> converters.add(extra)
                     is ColumnTypeAdapter -> adapters.add(extra)
                     is List<*> -> extra.forEach(::addAny)
                     is DaoReturnTypeConverter -> daoReturnTypeConverters.add(extra)
@@ -172,7 +170,7 @@ private constructor(
             }
 
             extras.forEach(::addAny)
-            fun addTypeConverter(converter: TypeConverter) {
+            fun addColumnTypeConverter(converter: ColumnTypeConverter) {
                 converters.add(converter)
             }
 
@@ -189,18 +187,21 @@ private constructor(
             ByteArrayColumnTypeAdapter.create(context.processingEnv).forEach(::addColumnAdapter)
             ByteArrayWrapperColumnTypeAdapter.create(context.processingEnv)
                 .forEach(::addColumnAdapter)
-            PrimitiveBooleanToIntConverter.create(context.processingEnv).forEach(::addTypeConverter)
+            UnsignedIntegerColumnTypeAdapter.createUnsignedAdapters(context.processingEnv)
+                .forEach(::addColumnAdapter)
+            PrimitiveBooleanToIntConverter.create(context.processingEnv)
+                .forEach(::addColumnTypeConverter)
             // null aware converter is able to automatically null wrap converters so we don't
             // need this as long as we are running in KSP
             BoxedBooleanToBoxedIntConverter.create(context.processingEnv)
-                .forEach(::addTypeConverter)
+                .forEach(::addColumnTypeConverter)
             return TypeAdapterStore(
                 context = context,
                 columnTypeAdapters = adapters,
-                typeConverterStore =
-                    TypeConverterStore.create(
+                columnTypeConverterStore =
+                    ColumnTypeConverterStore.create(
                         context = context,
-                        typeConverters = converters,
+                        columnTypeConverters = converters,
                         knownColumnTypes = adapters.map { it.out },
                     ),
                 builtInConverterFlags = builtInConverterFlags,
@@ -209,53 +210,88 @@ private constructor(
         }
     }
 
-    private val coroutineQueryResultBinderProviders =
-        mutableListOf<QueryResultBinderProvider>().apply {
-            addAll(
-                daoReturnTypeConverters
-                    .filter { it.isSuspend }
-                    .map { DaoReturnTypeQueryResultBinderProvider(context, it) }
-            )
-            add(SuspendResultBinderProvider(context))
-        }
+    private val queryResultBinderProviders: List<QueryResultBinderProvider> = buildList {
+        add(CoroutineFlowResultBinderProvider(context))
+        addAll(
+            daoReturnTypeConverters
+                .filterNot { it.isSuspend }
+                .map { DaoConverterQueryResultBinderProvider(context, it) }
+        )
+        add(InstantQueryResultBinderProvider(context))
+    }
 
-    private val queryResultBinderProviders: List<QueryResultBinderProvider> =
-        mutableListOf<QueryResultBinderProvider>().apply {
-            add(LiveDataQueryResultBinderProvider(context))
-            add(GuavaListenableFutureQueryResultBinderProvider(context))
-            addAll(RxQueryResultBinderProvider.getAll(context))
-            addAll(RxLambdaQueryResultBinderProvider.getAll(context))
-            add(RxJava3PagingSourceQueryResultBinderProvider(context))
-            add(ListenableFuturePagingSourceQueryResultBinderProvider(context))
-            add(PagingSourceQueryResultBinderProvider(context))
-            add(CoroutineFlowResultBinderProvider(context))
+    private val coroutineQueryResultBinderProviders = buildList {
+        addAll(
+            daoReturnTypeConverters
+                .filter { it.isSuspend }
+                .map { DaoConverterQueryResultBinderProvider(context, it) }
+        )
+        add(SuspendResultBinderProvider(context))
+    }
+
+    private val preparedQueryResultBinderProviders: List<PreparedQueryResultBinderProvider> =
+        buildList {
             addAll(
                 daoReturnTypeConverters
                     .filterNot { it.isSuspend }
-                    .map { DaoReturnTypeQueryResultBinderProvider(context, it) }
+                    .map { DaoReturnTypePreparedQueryBinderProvider(context, it) }
             )
-            add(InstantQueryResultBinderProvider(context))
-        }
-
-    private val preparedQueryResultBinderProviders: List<PreparedQueryResultBinderProvider> =
-        mutableListOf<PreparedQueryResultBinderProvider>().apply {
-            addAll(RxPreparedQueryResultBinderProvider.getAll(context))
-            add(GuavaListenableFuturePreparedQueryResultBinderProvider(context))
             add(InstantPreparedQueryResultBinderProvider(context))
         }
 
+    private val coroutinePreparedQueryResultBinderProviders:
+        List<PreparedQueryResultBinderProvider> =
+        buildList {
+            addAll(
+                daoReturnTypeConverters
+                    .filter { it.isSuspend }
+                    .map { DaoReturnTypePreparedQueryBinderProvider(context, it) }
+            )
+            add(SuspendPreparedQueryResultBinderProvider(context))
+        }
+
     private val insertOrUpsertBinderProviders: List<InsertOrUpsertFunctionBinderProvider> =
-        mutableListOf<InsertOrUpsertFunctionBinderProvider>().apply {
-            addAll(RxCallableInsertOrUpsertFunctionBinderProvider.getAll(context))
-            add(GuavaListenableFutureInsertOrUpsertFunctionBinderProvider(context))
+        buildList {
+            addAll(
+                daoReturnTypeConverters
+                    .filterNot { it.isSuspend }
+                    .map {
+                        DaoConverterInsertOrUpsertFunctionQueryResultBinderProvider(context, it)
+                    }
+            )
             add(InstantInsertOrUpsertFunctionBinderProvider(context))
         }
 
+    private val coroutineInsertOrUpsertBinderProviders: List<InsertOrUpsertFunctionBinderProvider> =
+        buildList {
+            addAll(
+                daoReturnTypeConverters
+                    .filter { it.isSuspend }
+                    .map {
+                        DaoConverterInsertOrUpsertFunctionQueryResultBinderProvider(context, it)
+                    }
+            )
+            add(SuspendInsertOrUpsertFunctionBinderProvider(context))
+        }
+
     private val deleteOrUpdateBinderProvider: List<DeleteOrUpdateFunctionBinderProvider> =
-        mutableListOf<DeleteOrUpdateFunctionBinderProvider>().apply {
-            addAll(RxCallableDeleteOrUpdateFunctionBinderProvider.getAll(context))
-            add(GuavaListenableFutureDeleteOrUpdateFunctionBinderProvider(context))
+        buildList {
+            addAll(
+                daoReturnTypeConverters
+                    .filterNot { it.isSuspend }
+                    .map { DaoConverterDeleteOrUpdateFunctionBinderProvider(context, it) }
+            )
             add(InstantDeleteOrUpdateFunctionBinderProvider(context))
+        }
+
+    private val coroutineDeleteOrUpdateBinderProvider: List<DeleteOrUpdateFunctionBinderProvider> =
+        buildList {
+            addAll(
+                daoReturnTypeConverters
+                    .filter { it.isSuspend }
+                    .map { DaoConverterDeleteOrUpdateFunctionBinderProvider(context, it) }
+            )
+            add(SuspendDeleteOrUpdateFunctionBinderProvider(context))
         }
 
     /** Searches 1 way to bind a value into a statement. */
@@ -271,7 +307,7 @@ private constructor(
         fun findTypeConverterAdapter(): ColumnTypeAdapter? {
             val targetTypes = affinity?.getTypeMirrors(context.processingEnv)
             val binder =
-                typeConverterStore.findConverterIntoStatement(
+                columnTypeConverterStore.findConverterIntoStatement(
                     input = input,
                     columnTypes = targetTypes,
                 ) ?: return null
@@ -308,7 +344,7 @@ private constructor(
         fun findTypeConverterAdapter(): ColumnTypeAdapter? {
             val targetTypes = affinity?.getTypeMirrors(context.processingEnv)
             val converter =
-                typeConverterStore.findConverterFromStatement(
+                columnTypeConverterStore.findConverterFromStatement(
                     columnTypes = targetTypes,
                     output = output,
                 ) ?: return null
@@ -354,14 +390,14 @@ private constructor(
         fun findTypeConverterAdapter(): ColumnTypeAdapter? {
             val targetTypes = affinity?.getTypeMirrors(context.processingEnv)
             val intoStatement =
-                typeConverterStore.findConverterIntoStatement(
+                columnTypeConverterStore.findConverterIntoStatement(
                     input = out,
                     columnTypes = targetTypes,
                 ) ?: return null
             // ok found a converter, try the reverse now
             val fromStmt =
-                typeConverterStore.reverse(intoStatement)
-                    ?: typeConverterStore.findTypeConverter(intoStatement.to, out)
+                columnTypeConverterStore.reverse(intoStatement)
+                    ?: columnTypeConverterStore.findColumnTypeConverter(intoStatement.to, out)
                     ?: return null
             return CompositeAdapter(
                 out,
@@ -391,6 +427,10 @@ private constructor(
     ): ColumnTypeAdapter? {
         val typeElement = type.typeElement
         if (typeElement?.isValueClass() == true) {
+            // Skip
+            if (typeElement.asClassName() in SUPPORTED_VALUES_TYPES) {
+                return null
+            }
             // Extract the type value of the Value class element
             val underlyingInfo = typeElement.getValueClassUnderlyingInfo()
             if (underlyingInfo.constructor.isPrivate() || underlyingInfo.getter == null) {
@@ -434,26 +474,45 @@ private constructor(
         }
     }
 
-    fun findDeleteOrUpdateFunctionBinder(typeMirror: XType): DeleteOrUpdateFunctionBinder {
-        return deleteOrUpdateBinderProvider.first { it.matches(typeMirror) }.provide(typeMirror)
+    fun findDeleteOrUpdateFunctionBinder(
+        typeMirror: XType,
+        extras: TypeAdapterExtras = TypeAdapterExtras(),
+    ): DeleteOrUpdateFunctionBinder {
+        return if (extras.hasContinuation()) {
+                coroutineDeleteOrUpdateBinderProvider
+            } else {
+                deleteOrUpdateBinderProvider
+            }
+            .first { it.matches(typeMirror) }
+            .provide(typeMirror, extras)
     }
 
     fun findInsertFunctionBinder(
         typeMirror: XType,
         params: List<ShortcutQueryParameter>,
+        extras: TypeAdapterExtras = TypeAdapterExtras(),
     ): InsertOrUpsertFunctionBinder {
-        return insertOrUpsertBinderProviders
+        return if (extras.hasContinuation()) {
+                coroutineInsertOrUpsertBinderProviders
+            } else {
+                insertOrUpsertBinderProviders
+            }
             .first { it.matches(typeMirror) }
-            .provide(typeMirror, params, false)
+            .provide(typeMirror, params, false, extras)
     }
 
     fun findUpsertFunctionBinder(
         typeMirror: XType,
         params: List<ShortcutQueryParameter>,
+        extras: TypeAdapterExtras = TypeAdapterExtras(),
     ): InsertOrUpsertFunctionBinder {
-        return insertOrUpsertBinderProviders
+        return if (extras.hasContinuation()) {
+                coroutineInsertOrUpsertBinderProviders
+            } else {
+                insertOrUpsertBinderProviders
+            }
             .first { it.matches(typeMirror) }
-            .provide(typeMirror, params, true)
+            .provide(typeMirror, params, true, extras)
     }
 
     fun findQueryResultBinder(
@@ -469,17 +528,11 @@ private constructor(
         query: ParsedQuery,
         extras: TypeAdapterExtras,
     ): QueryResultBinder {
-        return queryResultBinderProviders
-            .first { it.matches(typeMirror) }
-            .provide(typeMirror, query, extras)
-    }
-
-    fun findCoroutineQueryResultBinder(
-        typeMirror: XType,
-        query: ParsedQuery,
-        extras: TypeAdapterExtras,
-    ): QueryResultBinder {
-        return coroutineQueryResultBinderProviders
+        return if (extras.hasContinuation()) {
+                coroutineQueryResultBinderProviders
+            } else {
+                queryResultBinderProviders
+            }
             .first { it.matches(typeMirror) }
             .provide(typeMirror, query, extras)
     }
@@ -487,10 +540,15 @@ private constructor(
     fun findPreparedQueryResultBinder(
         typeMirror: XType,
         query: ParsedQuery,
+        extras: TypeAdapterExtras = TypeAdapterExtras(),
     ): PreparedQueryResultBinder {
-        return preparedQueryResultBinderProviders
+        return if (extras.hasContinuation()) {
+                coroutinePreparedQueryResultBinderProviders
+            } else {
+                preparedQueryResultBinderProviders
+            }
             .first { it.matches(typeMirror) }
-            .provide(typeMirror, query)
+            .provide(typeMirror, query, extras)
     }
 
     fun findPreparedQueryResultAdapter(typeMirror: XType, query: ParsedQuery) =
@@ -512,14 +570,6 @@ private constructor(
         params: List<ShortcutQueryParameter>,
     ): InsertOrUpsertFunctionAdapter? {
         return InsertOrUpsertFunctionAdapter.createUpsert(context, typeMirror, params)
-    }
-
-    fun findQueryResultAdapter(
-        typeMirror: XType,
-        query: ParsedQuery,
-        extrasCreator: TypeAdapterExtras.() -> Unit = {},
-    ): QueryResultAdapter? {
-        return findQueryResultAdapter(typeMirror, query, TypeAdapterExtras().apply(extrasCreator))
     }
 
     fun findQueryResultAdapter(
@@ -567,11 +617,14 @@ private constructor(
         } else if (typeMirror.typeArguments.isEmpty()) {
             val rowAdapter = findRowAdapter(typeMirror, query) ?: return null
             return SingleItemQueryResultAdapter(rowAdapter)
+        } else if (typeMirror.isTypeOf(Pair::class) || typeMirror.isTypeOf(Triple::class)) {
+            val rowAdapter = findRowAdapter(typeMirror, query) ?: return null
+            return SingleItemQueryResultAdapter(rowAdapter)
         } else if (typeMirror.rawType.asTypeName() == GuavaTypeNames.OPTIONAL) {
             checkTypeNullability(typeMirror, extras, "Optional")
             // Handle Guava Optional by unpacking its generic type argument and adapting that.
             // The Optional adapter will re-append the Optional type.
-            val typeArg = typeMirror.typeArguments.first()
+            val typeArg = typeMirror.typeArguments.first().type
             // use nullable when finding row adapter as non-null adapters might return
             // default values
             val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
@@ -583,7 +636,7 @@ private constructor(
             checkTypeNullability(typeMirror, extras, "Optional")
 
             // Handle java.util.Optional similarly.
-            val typeArg = typeMirror.typeArguments.first()
+            val typeArg = typeMirror.typeArguments.first().type
             // use nullable when finding row adapter as non-null adapters might return
             // default values
             val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
@@ -800,7 +853,7 @@ private constructor(
         }
 
         collectionType.typeArguments.forEach { typeArg ->
-            if (typeArg.nullability == XNullability.NULLABLE) {
+            if (typeArg.type.nullability == XNullability.NULLABLE) {
                 context.logger.w(
                     Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
                     ProcessorErrors.nullableComponentInDaoFunctionReturnType(
@@ -922,11 +975,38 @@ private constructor(
                 !typeMirror.asTypeName().isPrimitive &&
                 !typeMirror.isKotlinUnit()
         ) {
+            val resultInfo = query.resultInfo
             if (typeMirror.typeArguments.isNotEmpty()) {
-                // TODO one day support this
+                fun createPairTripleRowAdapter(type: XType): PairTripleRowAdapter? {
+                    val typeName = type.rawType.asTypeName()
+                    val readersRequired =
+                        when (typeName) {
+                            KotlinTypeNames.PAIR -> 2
+                            KotlinTypeNames.TRIPLE -> 3
+                            else -> error("Only Pair and Triple type names are supported.")
+                        }
+                    if (resultInfo != null && resultInfo.columns.size < readersRequired) {
+                        context.logger.e(
+                            ProcessorErrors.mismatchPairTripleQueryColumns(
+                                readersRequired,
+                                typeName.toString(context.codeLanguage),
+                            )
+                        )
+                        return null
+                    }
+                    val readers =
+                        List(readersRequired) { index ->
+                            findStatementValueReader(type.typeArguments[index].type, null)
+                                ?: return null
+                        }
+                    return PairTripleRowAdapter(type, readers)
+                }
+                if (typeMirror.isTypeOf(Pair::class) || typeMirror.isTypeOf(Triple::class)) {
+                    return createPairTripleRowAdapter(typeMirror)
+                }
+                // TODO: Support more type argument row adapters
                 return null
             }
-            val resultInfo = query.resultInfo
 
             val (rowAdapter, rowAdapterLogs) =
                 if (resultInfo != null && query.errors.isEmpty() && resultInfo.error == null) {

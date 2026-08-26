@@ -22,7 +22,6 @@ import androidx.compose.runtime.SnapshotMutationPolicy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.internal.AtomicBoolean
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,11 +48,7 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 
 class SnapshotTests {
     @Test
@@ -1401,9 +1396,9 @@ class SnapshotTests {
     @Test // b/442791065 -- test adapted from the report.
     fun testMergePolicy() {
         var mergeCalled = false
-        var lastSeenPrevious = -1
-        var lastSeenCurrent = -1
-        var lastSeenApplied = -1
+        var lastSeenPrevious: Int
+        var lastSeenCurrent: Int
+        var lastSeenApplied: Int
 
         fun myPolicy(): SnapshotMutationPolicy<Int> =
             object : SnapshotMutationPolicy<Int> {
@@ -1478,78 +1473,41 @@ class SnapshotTests {
         )
     }
 
+    // regression test for b/451479063
     @Test
-    fun recursiveSendApplyNotificationsCalls() {
-        val state = mutableIntStateOf(0)
+    fun stateWrittenToBeforeSnapshotApplied() = runTest {
+        var state: MutableState<Int>? = null
 
-        val observer1Handle =
-            Snapshot.registerApplyObserver { _, _ ->
-                if (state.intValue == 1) {
-                    state.intValue = 2
-                    Snapshot.sendApplyNotifications()
-                    if (state.intValue == 3) {
-                        state.intValue = 4
-                    }
+        val snapshot1 = takeMutableSnapshot()
+        snapshot1.enter { state = mutableIntStateOf(0) }
+
+        val snapshot2 = takeMutableSnapshot()
+        var stateObserved = false
+        val handle =
+            Snapshot.registerApplyObserver { changed, _ ->
+                if (state!! in changed) {
+                    stateObserved = true
                 }
             }
 
-        val observer2Handle =
-            Snapshot.registerApplyObserver { _, _ ->
-                if (state.intValue == 2) {
-                    state.intValue = 3
+        try {
+            snapshot2.enter {
+                if (state != null) {
+                    state.value = 1
                 }
             }
 
-        state.intValue = 1
-        Snapshot.sendApplyNotifications()
+            snapshot1.apply().check()
+            snapshot2.apply().check()
 
-        observer1Handle.dispose()
-        observer2Handle.dispose()
+            Snapshot.sendApplyNotifications()
 
-        assertEquals(4, state.intValue)
-    }
-
-    @Test
-    fun sendApplyNotificationsDoesNotReturnTooEarly() = runTest {
-        (0 until 3000).forEach { _ ->
-            val state = mutableIntStateOf(0)
-
-            val mainThreadIsDone = AtomicBoolean(false)
-            var bugWasDetected = false
-            val observerHandle =
-                Snapshot.registerApplyObserver { _, _ ->
-                    // If [mainThreadIsDone] was already set to true before this apply observer is
-                    // notified that [state.intValue] was changed to 1, it means that a bug caused
-                    // [Snapshot.sendApplyNotifications] to return before the necessary apply
-                    // notifications were sent. A detailed description of a possible manifestation
-                    // of
-                    // this bug is available at b/418800424.
-                    if (state.intValue == 1 && mainThreadIsDone.get()) {
-                        bugWasDetected = true
-                    }
-                }
-
-            val jobs = Array<Job?>(3) { null }
-            withContext(Dispatchers.Default) {
-                jobs[0] = launch {
-                    state.intValue = 1
-                    Snapshot.sendApplyNotifications()
-                    mainThreadIsDone.set(true)
-                }
-
-                jobs[1] = launch { Snapshot.sendApplyNotifications() }
-
-                jobs[2] = launch { Snapshot.sendApplyNotifications() }
-            }
-
-            jobs.forEach { it!!.join() }
-            observerHandle.dispose()
-            if (bugWasDetected) {
-                fail(
-                    "sendApplyNotifications call returned before an appropriate set of apply " +
-                        "notifications was sent"
-                )
-            }
+            assertEquals(1, state?.value)
+            assertTrue(stateObserved, "Apply observer should have been triggered")
+        } finally {
+            snapshot1.dispose()
+            snapshot2.dispose()
+            handle.dispose()
         }
     }
 

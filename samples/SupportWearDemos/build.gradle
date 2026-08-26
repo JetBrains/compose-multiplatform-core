@@ -23,12 +23,12 @@ dependencies {
     api(libs.jspecify)
     implementation(project(":wear:wear"))
     implementation(project(":recyclerview:recyclerview"))
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.17.0")
     implementation(project(":appcompat:appcompat"))
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(36) { minorApiLevel = 1 }}
     defaultConfig {
         minSdk { version = release(24) }
     }

@@ -16,6 +16,7 @@
 
 package androidx.car.app.model.constraints;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
@@ -38,7 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * Encapsulates the constraints to apply when creating {@link TabContents}.
+ * Encapsulates the constraints to apply when creating {@link androidx.car.app.model.TabContents}.
  *
  */
 @RequiresCarApi(6)
@@ -70,7 +71,7 @@ public class TabContentsConstraints {
             ));
 
     /** The set of allowed templates as content within a tab template since API 8. */
-    @ExperimentalCarApi
+    @OptIn(markerClass = ExperimentalCarApi.class)
     public static final @NonNull TabContentsConstraints API_8 =
             new TabContentsConstraints(Arrays.asList(
                     ListTemplate.class,

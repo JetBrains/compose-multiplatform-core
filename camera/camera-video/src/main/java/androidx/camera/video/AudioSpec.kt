@@ -21,6 +21,7 @@ import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
+import androidx.camera.video.MediaConstants.MIME_TYPE_UNSPECIFIED
 import java.util.Objects
 
 /** Audio specification that is options to config audio source and encoding. */
@@ -232,7 +233,6 @@ constructor(
          *
          * @see MediaRecorder.AudioSource.UNPROCESSED
          */
-        @RequiresApi(24)
         public const val SOURCE_UNPROCESSED: Int = MediaRecorder.AudioSource.UNPROCESSED
 
         /**
@@ -274,9 +274,6 @@ constructor(
          * choose any appropriate sample rate given the device and codec constraints.
          */
         public const val SAMPLE_RATE_UNSPECIFIED: Int = 0
-
-        /** No preference for MIME type. */
-        public const val MIME_TYPE_UNSPECIFIED: String = "audio/*"
 
         /** An [AudioSpec] representing the default audio configuration. */
         public val DEFAULT: AudioSpec = builder().build()

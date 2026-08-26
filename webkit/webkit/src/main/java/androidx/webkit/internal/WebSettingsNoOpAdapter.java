@@ -19,7 +19,6 @@ package androidx.webkit.internal;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.UserAgentMetadata;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewMediaIntegrityApiStatusConfig;
@@ -311,24 +310,56 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
      * {@link androidx.webkit.WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)}
      */
     @Override
-    public void setHyperlinkContextMenuItems(int hyperlinkMenuItems) {}
+    public void setHyperlinkContextMenuItems(int hyperlinkMenuItems) {
+    }
 
-    /**
-     * {@link androidx.webkit.WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
-     */
     @WebSettingsCompat.ExperimentalBackForwardCacheSettings
     @Override
-    public @NonNull BackForwardCacheSettings getBackForwardCacheSettings() {
-        return new BackForwardCacheSettings.Builder().build();
+    public void setBackForwardCacheTimeoutSeconds(long timeout) {
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public void setBackForwardCacheMaxPagesInCache(int maxPages) {
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public long getBackForwardCacheTimeoutSeconds() {
+        return 0;
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public int getBackForwardCacheMaxPagesInCache() {
+        return 0;
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public void setBackForwardCacheKeepForwardEntries(boolean keepForwardEntries) {
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public boolean getBackForwardCacheKeepForwardEntries() {
+        return true;
     }
 
     /**
      * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     * {@link androidx.webkit.WebSettingsCompat#setDownloadFaviconsEnabled(WebSettings, boolean)}
      */
-    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
     @Override
-    public void setBackForwardCacheSettings(@NonNull BackForwardCacheSettings settings) {
+    public void setDownloadFaviconsEnabled(boolean shouldDownload) {
     }
 
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getDownloadFaviconsEnabled(WebSettings)}
+     */
+    @Override
+    public boolean getDownloadFaviconsEnabled() {
+        return true;
+    }
 }

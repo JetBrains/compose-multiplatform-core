@@ -16,13 +16,16 @@
 package androidx.lifecycle
 
 import androidx.annotation.RestrictTo
+import androidx.collection.MutableScatterMap
+import androidx.collection.ScatterMap
+import androidx.collection.emptyScatterMap
 
 /**
  * Stores [ViewModel] instances by key.
  *
- * A [ViewModelStore] instance must be retained across configuration changes. If an owner (typically
- * a [ViewModelStoreOwner]) is destroyed and recreated due to a configuration change, the new owner
- * must reuse the previous [ViewModelStore] instance.
+ * A [ViewModelStore] instance **must** be retained across configuration changes. If an owner
+ * (typically a [ViewModelStoreOwner]) is destroyed and recreated due to a configuration change, the
+ * new owner must reuse the previous [ViewModelStore] instance.
  *
  * When the owner is being destroyed permanently (i.e., it will not be recreated), it should call
  * [clear] to notify all stored [ViewModel] instances that they are no longer needed (see
@@ -35,10 +38,14 @@ import androidx.annotation.RestrictTo
  *
  * **This class is not intended for inheritance.** It is technically `open` for binary compatibility
  * with previous versions, but extending this class is unsupported.
+ *
+ * @see ViewModel
+ * @see ViewModelProvider
+ * @see ViewModelStoreOwner
  */
 public open class ViewModelStore {
 
-    private val map = mutableMapOf<String, ViewModel>()
+    private val map = mutableMapOf<Any?, ViewModel>()
 
     /**
      * Stores [viewModel] under [key], replacing any existing entry.
@@ -46,21 +53,31 @@ public open class ViewModelStore {
      * If a [ViewModel] is already stored for [key], it is removed and immediately cleared.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun put(key: String, viewModel: ViewModel) {
+    public fun put(key: Any?, viewModel: ViewModel) {
         val oldViewModel = map.put(key, viewModel)
         oldViewModel?.clear()
     }
 
     /** Returns the [ViewModel] stored under [key], or `null` if none exists. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public operator fun get(key: String): ViewModel? = map[key]
+    public operator fun get(key: Any?): ViewModel? = map[key]
+
+    /**
+     * Returns the value for the given [key] if the value is present and not `null`. Otherwise,
+     * calls the [defaultValue] function, puts its result into the map under the given [key] and
+     * returns the call result.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Suppress("UNCHECKED_CAST")
+    public fun <T : ViewModel> getOrPut(key: Any?, defaultValue: () -> T): T =
+        map.getOrPut(key, defaultValue) as T
 
     /**
      * Returns a snapshot of currently stored keys.
      *
      * The returned set is not backed by this store and will not reflect subsequent changes.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun keys(): Set<String> = map.keys.toSet()
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun keys(): Set<Any?> = map.keys.toSet()
 
     /**
      * Clears this store and notifies all stored [ViewModel] instances that they are no longer used.
@@ -70,10 +87,11 @@ public open class ViewModelStore {
      * @see ViewModel.onCleared
      */
     public fun clear() {
-        for (vm in map.values) {
-            vm.clear()
-        }
+        val snapshot = map.toMap()
         map.clear()
+        for (viewModel in snapshot.values) {
+            viewModel.clear()
+        }
     }
 
     override fun toString(): String {
@@ -81,6 +99,10 @@ public open class ViewModelStore {
         val className = this::class.simpleName ?: "ViewModelStore"
         // Discourage relying on the string output.
         val identity = hashCode().toString(radix = 16)
-        return "$className#$identity(keys=${map.keys})"
+        return "$className@$identity(keys=${keys()})"
     }
 }
+
+/** Returns a new read-only [ScatterMap] with the specified mappings. */
+private fun <K, V> ScatterMap<K, V>.toScatterMap(): ScatterMap<K, V> =
+    if (isEmpty()) emptyScatterMap() else MutableScatterMap<K, V>(size).also { it.putAll(this) }

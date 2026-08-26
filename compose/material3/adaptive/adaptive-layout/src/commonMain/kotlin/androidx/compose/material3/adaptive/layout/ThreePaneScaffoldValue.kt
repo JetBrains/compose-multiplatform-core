@@ -45,7 +45,7 @@ import androidx.compose.ui.util.fastForEachReversed
  *   partition.
  */
 @ExperimentalMaterial3AdaptiveApi
-fun calculateThreePaneScaffoldValue(
+public fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     currentDestination: ThreePaneScaffoldDestinationItem<*>?,
@@ -83,7 +83,7 @@ fun calculateThreePaneScaffoldValue(
  *   partition.
  */
 @ExperimentalMaterial3AdaptiveApi
-fun calculateThreePaneScaffoldValue(
+public fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
@@ -206,14 +206,14 @@ private inline fun forEachPaneByPriority(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Immutable
-class ThreePaneScaffoldValue
+public class ThreePaneScaffoldValue
 internal constructor(
-    val primary: PaneAdaptedValue,
-    val secondary: PaneAdaptedValue,
-    val tertiary: PaneAdaptedValue,
+    public val primary: PaneAdaptedValue,
+    public val secondary: PaneAdaptedValue,
+    public val tertiary: PaneAdaptedValue,
     internal val currentDestination: ThreePaneScaffoldRole?,
 ) : PaneScaffoldValue<ThreePaneScaffoldRole>, PaneExpansionStateKeyProvider {
-    constructor(
+    public constructor(
         primary: PaneAdaptedValue,
         secondary: PaneAdaptedValue,
         tertiary: PaneAdaptedValue,
@@ -224,30 +224,32 @@ internal constructor(
         currentDestination = null,
     )
 
-    internal val expandedCount by lazy {
-        var count = 0
-        forEach { _, value ->
-            if (value == PaneAdaptedValue.Expanded) {
-                count++
-            }
-        }
-        count
-    }
-
-    override val paneExpansionStateKey by lazy {
-        if (expandedCount != 2) {
-            PaneExpansionStateKey.Default
-        } else {
-            val expandedPanes = Array<ThreePaneScaffoldRole?>(2) { null }
+    internal val expandedCount by
+        lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
             var count = 0
-            forEach { role, value ->
+            forEach { _, value ->
                 if (value == PaneAdaptedValue.Expanded) {
-                    expandedPanes[count++] = role
+                    count++
                 }
             }
-            TwoPaneExpansionStateKeyImpl(expandedPanes[0]!!, expandedPanes[1]!!)
+            count
         }
-    }
+
+    public override val paneExpansionStateKey: PaneExpansionStateKey by
+        lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            if (expandedCount != 2) {
+                PaneExpansionStateKey.Default
+            } else {
+                val expandedPanes = Array<ThreePaneScaffoldRole?>(2) { null }
+                var count = 0
+                forEach { role, value ->
+                    if (value == PaneAdaptedValue.Expanded) {
+                        expandedPanes[count++] = role
+                    }
+                }
+                TwoPaneExpansionStateKeyImpl(expandedPanes[0]!!, expandedPanes[1]!!)
+            }
+        }
 
     internal inline fun forEach(action: (ThreePaneScaffoldRole, PaneAdaptedValue) -> Unit) {
         action(ThreePaneScaffoldRole.Primary, primary)
@@ -255,7 +257,7 @@ internal constructor(
         action(ThreePaneScaffoldRole.Tertiary, tertiary)
     }
 
-    override fun equals(other: Any?): Boolean {
+    public override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ThreePaneScaffoldValue) return false
         if (primary != other.primary) return false
@@ -264,20 +266,20 @@ internal constructor(
         return true
     }
 
-    override fun hashCode(): Int {
+    public override fun hashCode(): Int {
         var result = primary.hashCode()
         result = 31 * result + secondary.hashCode()
         result = 31 * result + tertiary.hashCode()
         return result
     }
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return "ThreePaneScaffoldValue(primary=$primary, " +
             "secondary=$secondary, " +
             "tertiary=$tertiary)"
     }
 
-    override operator fun get(role: ThreePaneScaffoldRole): PaneAdaptedValue =
+    public override operator fun get(role: ThreePaneScaffoldRole): PaneAdaptedValue =
         when (role) {
             ThreePaneScaffoldRole.Primary -> primary
             ThreePaneScaffoldRole.Secondary -> secondary

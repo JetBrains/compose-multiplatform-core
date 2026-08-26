@@ -124,6 +124,17 @@ class IntrospectionHelper internal constructor(private val env: XProcessingEnv) 
         val DOCUMENT_CLASS_MAPPING_CONTEXT_CLASS: XClassName =
             XClassName.get(APPSEARCH_PKG, "DocumentClassMappingContext")
 
+        @JvmField
+        val REQUIRES_API_ANNOTATION_CLASS = XClassName.get("androidx.annotation", "RequiresApi")
+
+        @JvmField val OPT_IN_ANNOTATION_CLASS = XClassName.get("androidx.annotation", "OptIn")
+
+        @JvmField val KOTLIN_OPT_IN_ANNOTATION_CLASS = XClassName.get("kotlin", "OptIn")
+
+        @JvmField
+        val EXPERIMENTAL_APP_SEARCH_API_ANNOTATION_CLASS =
+            XClassName.get("androidx.appsearch.app", "ExperimentalAppSearchApi")
+
         /**
          * Returns `androidx.appsearch.annotation.Document` annotation element from the input
          * element's annotations. Returns null if no such annotation is found.

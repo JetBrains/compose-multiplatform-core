@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 @file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3.previews
 
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -39,6 +38,8 @@ import androidx.wear.compose.remote.material3.RemoteIcon
 import androidx.wear.compose.remote.material3.RemoteIconButton
 import androidx.wear.compose.remote.material3.RemoteIconButtonDefaults
 import androidx.wear.compose.remote.material3.RemoteMaterialTheme
+import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
+import androidx.wear.compose.remote.material3.previews.utils.TestImageVectors
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @Composable
@@ -53,17 +54,13 @@ fun RemoteIconButtonEnabled() {
 @Composable
 private fun RemoteIconButtonEnabledPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteIconButtonEnabled() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteIconButtonEnabled() } }
 
 @Composable
 @RemoteComposable
 fun RemoteIconButtonTonal() {
     RemoteIconButton(testAction, enabled = true.rb, colors = tonalColors) {
-        RemoteIcon(
-            modifier = RemoteModifier.size(RemoteIconButtonDefaults.SmallIconSize),
-            imageVector = TestImageVectors.VolumeUp,
-            contentDescription = null,
-        )
+        RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
     }
 }
 
@@ -71,7 +68,7 @@ fun RemoteIconButtonTonal() {
 @Composable
 private fun RemoteIconButtonTonalPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteIconButtonTonal() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteIconButtonTonal() } }
 
 @Composable
 @RemoteComposable
@@ -83,11 +80,7 @@ fun RemoteIconButtonOutlined() {
         enabled = true.rb,
         colors = outlinedColors,
     ) {
-        RemoteIcon(
-            modifier = RemoteModifier.size(RemoteIconButtonDefaults.SmallIconSize),
-            imageVector = TestImageVectors.VolumeUp,
-            contentDescription = null,
-        )
+        RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
     }
 }
 
@@ -95,7 +88,7 @@ fun RemoteIconButtonOutlined() {
 @Composable
 private fun RemoteIconButtonOutlinedPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
-) = RemotePreview(profile = profile) { Container { RemoteIconButtonOutlined() } }
+) = RemoteContentPreview(profile = profile) { Container { RemoteIconButtonOutlined() } }
 
 private val tonalColors
     @Composable
@@ -126,12 +119,7 @@ private fun Container(
     modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
     content: @Composable @RemoteComposable () -> Unit,
 ) {
-    RemoteBox(
-        modifier,
-        horizontalAlignment = RemoteAlignment.CenterHorizontally,
-        verticalArrangement = RemoteArrangement.Center,
-        content = content,
-    )
+    RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
 }
 
-private val testAction = HostAction("testAction".rs, 1.rf)
+private val testAction = hostAction("testAction".rs, 1.rf)

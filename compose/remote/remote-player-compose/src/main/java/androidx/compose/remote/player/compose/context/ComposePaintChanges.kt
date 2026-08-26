@@ -52,7 +52,6 @@ import androidx.compose.remote.player.compose.utils.toStampedPathEffectStyle
 import androidx.compose.remote.player.compose.utils.toStrokeCap
 import androidx.compose.remote.player.compose.utils.toStrokeJoin
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
-import androidx.compose.ui.graphics.NativePaint
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathEffect.Companion.chainPathEffect
 import androidx.compose.ui.graphics.PathEffect.Companion.dashPathEffect
@@ -145,7 +144,13 @@ internal class ComposePaintChanges(
      */
     override fun setTypeFace(fontType: String, weight: Int, italic: Boolean) {
         val path = getFontPath(fontType)
+        if (path == null) {
+            return
+        }
         fontBuilder = Font.Builder(File(path!!))
+        if (fontBuilder == null) {
+            return
+        }
         fontBuilder!!.setWeight(weight)
         fontBuilder!!.setSlant(
             if (italic) FontStyle.FONT_SLANT_ITALIC else FontStyle.FONT_SLANT_UPRIGHT
@@ -170,6 +175,9 @@ internal class ComposePaintChanges(
 
     private fun setAxis(axis: Array<FontVariationAxis?>?) {
         var font: Font?
+        if (fontBuilder == null) {
+            return
+        }
         try {
             if (axis != null) {
                 fontBuilder!!.setFontVariationSettings(axis)
@@ -436,7 +444,8 @@ internal class ComposePaintChanges(
         getNativePaint().setColorFilter(PorterDuffColorFilter(color, porterDuffMode))
     }
 
-    private fun getNativePaint(): NativePaint = getPaint().asFrameworkPaint()
+    @Suppress("DEPRECATION")
+    private fun getNativePaint(): android.graphics.Paint = getPaint().asFrameworkPaint()
 
     private fun getShaderData(id: Int): ShaderData? {
         return remoteContext.mRemoteComposeState.getFromId(id) as ShaderData?

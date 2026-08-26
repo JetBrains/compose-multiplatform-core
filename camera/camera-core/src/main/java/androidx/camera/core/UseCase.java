@@ -26,7 +26,9 @@ import static androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELE
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_RESOLUTION;
 import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_PREVIEW_STABILIZATION_MODE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_VIDEO_STABILIZATION_MODE;
 import static androidx.camera.core.impl.utils.TransformUtils.within360;
@@ -60,6 +62,7 @@ import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.Config.Option;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.ImageOutputConfig;
+import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
@@ -144,6 +147,12 @@ public abstract class UseCase {
      * The {@link StreamSpec} assigned to the {@link UseCase} based on the attached camera.
      */
     private StreamSpec mAttachedStreamSpec;
+
+    /**
+     * The secondary {@link StreamSpec} assigned to the {@link UseCase} in dual camera case based
+     * on the attached secondary camera.
+     */
+    private @Nullable StreamSpec mSecondaryAttachedStreamSpec;
 
     /**
      * The camera implementation provided Config. Its options has lowest priority and will be
@@ -263,6 +272,15 @@ public abstract class UseCase {
             if (resolutionSelector.getResolutionStrategy() != null) {
                 mergedConfig.removeOption(OPTION_MAX_RESOLUTION);
             }
+        }
+
+        // Removes the default max resolution setting if session type is high speed. The resolution
+        // limit for high-speed sessions is only subject to specific camera2 APIs.
+        if (mergedConfig.containsOption(OPTION_MAX_RESOLUTION)
+                && mergedConfig.containsOption(OPTION_SESSION_TYPE)
+                && Objects.equals(mergedConfig.retrieveOption(OPTION_SESSION_TYPE),
+                SESSION_TYPE_HIGH_SPEED)) {
+            mergedConfig.removeOption(OPTION_MAX_RESOLUTION);
         }
 
         // If any options need special handling, this is the place to do it. For now we'll just copy
@@ -416,22 +434,24 @@ public abstract class UseCase {
         if (oldRotation == ImageOutputConfig.INVALID_ROTATION || oldRotation != targetRotation) {
             UseCaseConfig.Builder<?, ?, ?> builder = getUseCaseConfigBuilder(mUseCaseConfig);
             UseCaseConfigUtil.updateTargetRotationAndRelatedConfigs(builder, targetRotation);
-            mUseCaseConfig = builder.getUseCaseConfig();
-
-            // Only merge configs if currently attached to a camera. Otherwise, set the current
-            // config to the use case config and mergeConfig() will be called once the use case
-            // is attached to a camera.
-            CameraInternal camera = getCamera();
-            if (camera == null) {
-                mCurrentConfig = mUseCaseConfig;
-            } else {
-                mCurrentConfig = mergeConfigs(camera.getCameraInfoInternal(), mExtendedConfig,
-                        mCameraConfig);
-            }
-
+            updateUseCaseConfigAndCurrentConfig(builder);
             return true;
         }
         return false;
+    }
+
+    private void updateUseCaseConfigAndCurrentConfig(UseCaseConfig.Builder<?, ?, ?> builder) {
+        mUseCaseConfig = builder.getUseCaseConfig();
+        CameraInternal camera = getCamera();
+        // Only merge configs if currently attached to a camera. Otherwise, set the current
+        // config to the use case config and mergeConfig() will be called once the use case
+        // is attached to a camera.
+        if (camera == null) {
+            mCurrentConfig = mUseCaseConfig;
+        } else {
+            mCurrentConfig = mergeConfigs(camera.getCameraInfoInternal(), mExtendedConfig,
+                    mCameraConfig);
+        }
     }
 
     /**
@@ -480,6 +500,27 @@ public abstract class UseCase {
     @MirrorMode.Mirror
     protected int getMirrorModeInternal() {
         return ((ImageOutputConfig) mCurrentConfig).getMirrorMode(MIRROR_MODE_UNSPECIFIED);
+    }
+
+    /**
+     * Updates the mirror mode of the use case config.
+     *
+     * @param mirrorMode The mirror mode.
+     * @return true if the mirror mode was changed.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    protected boolean setMirrorModeInternal(@MirrorMode.Mirror int mirrorMode) {
+        ImageOutputConfig oldConfig = (ImageOutputConfig) getCurrentConfig();
+        int oldMirrorMode = oldConfig.getMirrorMode(MIRROR_MODE_UNSPECIFIED);
+        if (oldMirrorMode != mirrorMode) {
+            UseCaseConfig.Builder<?, ?, ?> builder = getUseCaseConfigBuilder(mUseCaseConfig);
+            if (builder instanceof ImageOutputConfig.Builder) {
+                ((ImageOutputConfig.Builder<?>) builder).setMirrorMode(mirrorMode);
+                updateUseCaseConfigAndCurrentConfig(builder);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -731,6 +772,18 @@ public abstract class UseCase {
     }
 
     /**
+     * Returns the list of input image formats configured for this UseCase.
+     *
+     * <p>If this UseCase is configured for simultaneous capture (e.g. RAW + JPEG), the returned
+     * list contains all configured input formats in order (e.g. {@code [RAW_SENSOR, JPEG]}).
+     * Otherwise, a single-element list containing the primary input format is returned.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @NonNull List<Integer> getInputFormats() {
+        return mCurrentConfig.getInputFormats();
+    }
+
+    /**
      * Returns the currently attached {@link Camera} or {@code null} if none is attached.
      *
      */
@@ -773,6 +826,15 @@ public abstract class UseCase {
     }
 
     /**
+     * Returns the currently attached secondary stream specification in dual camera case, or null
+     * if not set.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @Nullable StreamSpec getSecondaryAttachedStreamSpec() {
+        return mSecondaryAttachedStreamSpec;
+    }
+
+    /**
      * Offers suggested stream specification for the UseCase.
      *
      */
@@ -782,6 +844,7 @@ public abstract class UseCase {
             @Nullable StreamSpec secondaryStreamSpec) {
         mAttachedStreamSpec = onSuggestedStreamSpecUpdated(
                 primaryStreamSpec, secondaryStreamSpec);
+        mSecondaryAttachedStreamSpec = secondaryStreamSpec;
     }
 
     /**
@@ -943,6 +1006,7 @@ public abstract class UseCase {
         }
 
         mAttachedStreamSpec = null;
+        mSecondaryAttachedStreamSpec = null;
         mViewPortCropRect = null;
 
         // Resets the mUseCaseConfig to the initial status when the use case was created to make
@@ -1404,5 +1468,41 @@ public abstract class UseCase {
          * includes updating the {@link Surface} used by the use case.
          */
         void onUseCaseReset(@NonNull UseCase useCase);
+    }
+
+    /**
+     * Applies camera-backend-specific options.
+     *
+     * <p>Implementations (such as {@link UseCase} builders) support applying backend-specific
+     * configurations, such as Camera2 capture request options.
+     *
+     * @param <B> the type of the builder implementing this interface
+     */
+    public interface InteropConfigurable<B extends InteropConfigurable<B>> {
+        /**
+         * Applies interoperability configuration to this builder.
+         *
+         * <p>To configure Camera2 options, use {@code Camera2Interop.forUseCase(configurator)}
+         * (from the {@code camera-camera2} artifact) to create a configurator, then pass it to
+         * this method.
+         *
+         * <p><b>Note:</b> Using Camera2 interop options can override internal CameraX
+         * configurations. If an option configured via interop conflicts with options required by
+         * CameraX internally, the option from Camera2Interop will override, which may result in
+         * unexpected behavior.
+         *
+         * @param configurator the configurator that sets the interoperability options
+         * @return this builder
+         */
+        @SuppressWarnings("unchecked")
+        default @NonNull B setInterop(@NonNull InteropConfigurator<? super B> configurator) {
+            configurator.configure((B) this);
+            return (B) this;
+        }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        default @NonNull MutableConfig getInteropMutableConfig() {
+            return MutableOptionsBundle.create();
+        }
     }
 }

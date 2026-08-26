@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace
 
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
@@ -88,7 +89,11 @@ internal abstract class SpatialRowColumnMeasurePolicy {
      * @param containerSize The total size of the container.
      * @return The offset along the main axis.
      */
-    abstract fun getMainAxisOffset(contentSize: IntVolumeSize, containerSize: IntVolumeSize): Int
+    abstract fun getMainAxisOffset(
+        contentSize: IntVolumeSize,
+        containerSize: IntVolumeSize,
+        layoutDirection: LayoutDirection,
+    ): Int
 
     /**
      * Creates [VolumeConstraints] for a child, given specific constraints for main axis, cross
@@ -258,8 +263,7 @@ internal abstract class SpatialRowColumnMeasurePolicy {
                             placeable.mainAxisSize + measureState.spaceAfterLastNoWeight
                         measureState.crossAxisSize =
                             maxOf(measureState.crossAxisSize, placeable.crossAxisSize)
-                        measureState.depthSize =
-                            maxOf(measureState.depthSize, placeable.measuredDepth)
+                        measureState.depthSize = maxOf(measureState.depthSize, placeable.depth)
                     }
             }
         }
@@ -337,7 +341,7 @@ internal abstract class SpatialRowColumnMeasurePolicy {
                 measureState.weightedChildrenSpace += placeable.mainAxisSize
                 measureState.crossAxisSize =
                     maxOf(measureState.crossAxisSize, placeable.crossAxisSize)
-                measureState.depthSize = maxOf(measureState.depthSize, placeable.measuredDepth)
+                measureState.depthSize = maxOf(measureState.depthSize, placeable.depth)
             }
     }
 
@@ -426,7 +430,8 @@ internal abstract class SpatialRowColumnMeasurePolicy {
         resolvedMeasurables: List<ResolvedMeasurable>,
         subspaceMeasureScope: SubspaceMeasureScope,
     ): SubspaceMeasureResult {
-        val mainAxisOffset = getMainAxisOffset(contentSize, containerSize)
+        val mainAxisOffset =
+            getMainAxisOffset(contentSize, containerSize, subspaceMeasureScope.layoutDirection)
 
         return with(subspaceMeasureScope) {
             layout(containerSize.width, containerSize.height, containerSize.depth) {
@@ -435,7 +440,14 @@ internal abstract class SpatialRowColumnMeasurePolicy {
                         checkNotNull(resolvedMeasurable.placeable) {
                             "Placeable cannot be null during placement. Measurement pass might have failed."
                         }
-                    placeable.place(getPose(resolvedMeasurable, containerSize, mainAxisOffset))
+                    placeable.place(
+                        getPose(
+                            resolvedMeasurable,
+                            containerSize,
+                            mainAxisOffset,
+                            subspaceMeasureScope.layoutDirection,
+                        )
+                    )
                 }
             }
         }
@@ -459,6 +471,7 @@ internal abstract class SpatialRowColumnMeasurePolicy {
         resolvedMeasurable: ResolvedMeasurable,
         containerSize: IntVolumeSize,
         mainAxisOffset: Int,
+        layoutDirection: LayoutDirection,
     ): Pose
 }
 
@@ -488,25 +501,39 @@ internal class ResolvedMeasurable(val measurable: SubspaceMeasurable) {
      * Calculates the horizontal offset, considering local alignment override or falling back to
      * parent alignment.
      */
-    fun horizontalOffset(width: Int, space: Int, parentSpatialAlignment: SpatialAlignment): Int =
-        alignment.horizontalSpatialAlignment?.offset(width, space)
-            ?: parentSpatialAlignment.horizontalOffset(width, space)
+    fun horizontalOffset(
+        width: Int,
+        space: Int,
+        parentSpatialAlignment: SpatialAlignment,
+        layoutDirection: LayoutDirection,
+    ): Int =
+        alignment.horizontalSpatialAlignment?.align(width, space, layoutDirection)
+            ?: parentSpatialAlignment
+                .align(IntVolumeSize(width, 0, 0), IntVolumeSize(space, 0, 0), layoutDirection)
+                .x
+                .toInt()
 
     /**
      * Calculates the vertical offset, considering local alignment override or falling back to
      * parent alignment.
      */
     fun verticalOffset(height: Int, space: Int, parentSpatialAlignment: SpatialAlignment): Int =
-        alignment.verticalSpatialAlignment?.offset(height, space)
-            ?: parentSpatialAlignment.verticalOffset(height, space)
+        alignment.verticalSpatialAlignment?.align(height, space)
+            ?: parentSpatialAlignment
+                .align(IntVolumeSize(0, height, 0), IntVolumeSize(0, space, 0), LayoutDirection.Ltr)
+                .y
+                .toInt()
 
     /**
      * Calculates the depth offset, considering local alignment override or falling back to parent
      * alignment.
      */
     fun depthOffset(depth: Int, space: Int, parentSpatialAlignment: SpatialAlignment): Int =
-        alignment.depthSpatialAlignment?.offset(depth, space)
-            ?: parentSpatialAlignment.depthOffset(depth, space)
+        alignment.depthSpatialAlignment?.align(depth, space)
+            ?: parentSpatialAlignment
+                .align(IntVolumeSize(0, 0, depth), IntVolumeSize(0, 0, space), LayoutDirection.Ltr)
+                .z
+                .toInt()
 
     override fun toString(): String {
         return measurable.toString()

@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.staggeredgrid
 
 import androidx.compose.foundation.AutoTestFrameClock
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
@@ -26,22 +24,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.list.assertIsNotPlaced
 import androidx.compose.foundation.lazy.list.assertIsPlaced
 import androidx.compose.foundation.lazy.list.setContentWithTestViewConfiguration
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -54,15 +56,18 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -116,7 +121,7 @@ class LazyStaggeredGridTest(
                 isSorted,
             )
 
-            assertThat(state.layoutInfo.orientation == orientation)
+            assertThat(state.layoutInfo.orientation).isEqualTo(orientation)
         }
     }
 
@@ -266,6 +271,7 @@ class LazyStaggeredGridTest(
     fun moreItemsDisplayedOnScroll() {
         rule.setContentWithConfigurableLookahead {
             state = rememberLazyStaggeredGridState()
+            state.prefetchingEnabled = false
             LazyStaggeredGrid(
                 lanes = 3,
                 state = state,
@@ -2151,5 +2157,194 @@ class LazyStaggeredGridTest(
         rule.onNodeWithTag("0").assertCrossAxisStartPositionInRootIsEqualTo(0.dp)
         rule.onNodeWithTag("1").assertCrossAxisStartPositionInRootIsEqualTo(itemSizeDp)
         rule.onNodeWithTag("2").assertCrossAxisStartPositionInRootIsEqualTo(itemSizeDp * 2)
+    }
+
+    @Test
+    fun fullSpanItem_scrollPast_withGaps_atStart() {
+        lateinit var state: LazyStaggeredGridState
+
+        // ┌───┬───┐ <- scroll offset
+        // │ 0 │   │
+        // ├───┴───┤
+        // │   1   │
+        // ├───┬───┤ <- end of screen
+        // │ 2 │ 3 │
+        // ├───┼───┤
+        // │ 4 │ 5 │
+        // └───┴───┘
+
+        rule.setContentWithConfigurableLookahead {
+            state = rememberLazyStaggeredGridState().apply { prefetchingEnabled = false }
+            LazyStaggeredGrid(
+                lanes = 2,
+                state = state,
+                modifier = Modifier.mainAxisSize(itemSizeDp * 2).crossAxisSize(itemSizeDp * 2),
+            ) {
+                item { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("0")) }
+
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("1"))
+                }
+
+                items(4) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("${it + 2}")) }
+            }
+        }
+
+        // ┌───┬───┐
+        // │ 0 │   │
+        // ├───┴───┤ <- scroll offset
+        // │   1   │
+        // ├───┬───┤
+        // │ 2 │ 3 │
+        // ├───┼───┤ <- end of screen
+        // │ 4 │ 5 │
+        // └───┴───┘
+
+        state.scrollBy(itemSizeDp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+
+        // ┌───┬───┐
+        // │ 0 │   │
+        // ├───┴───┤
+        // │   1   │
+        // ├───┬───┤ <- scroll offset
+        // │ 2 │ 3 │
+        // ├───┼───┤
+        // │ 4 │ 5 │
+        // └───┴───┘ <- end of screen
+
+        state.scrollBy(itemSizeDp)
+        rule.onNodeWithTag("2").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("3").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+
+        // ┌───┬───┐
+        // │ 0 │   │
+        // ├───┴───┤ <- scroll offset
+        // │   1   │
+        // ├───┬───┤
+        // │ 2 │ 3 │
+        // ├───┼───┤ <- end of screen
+        // │ 4 │ 5 │
+        // └───┴───┘
+
+        state.scrollBy(-itemSizeDp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("2").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+        rule.onNodeWithTag("3").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+
+        // ┌───┬───┐ <- scroll offset
+        // │ 0 │   │
+        // ├───┴───┤
+        // │   1   │
+        // ├───┬───┤ <- end of screen
+        // │ 2 │ 3 │
+        // ├───┼───┤
+        // │ 4 │ 5 │
+        // └───┴───┘
+        state.scrollBy(-itemSizeDp)
+        rule.onNodeWithTag("0").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+    }
+
+    @Test
+    fun triggerBackScrollAndVerifyNoScrollDeltaBetweenTwoPasses() {
+        state = LazyStaggeredGridState()
+        rule.setContent {
+            val list = (0..20).toList()
+            LookaheadScope {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyStaggeredGrid(
+                        lanes = 1,
+                        state = state,
+                        modifier = Modifier.mainAxisSize(500.dp),
+                    ) {
+                        items(list) {
+                            val color = if (it % 2 == 0) Color.Red else Color.Blue
+                            Box(
+                                modifier =
+                                    Modifier.padding(vertical = 6.dp)
+                                        .mainAxisSize(100.dp)
+                                        .crossAxisSize(100.dp)
+                                        .background(color = color)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        state.scrollTo(20)
+        repeat(5) {
+            rule.mainClock.advanceTimeByFrame()
+            assertEquals(0f, state.scrollDeltaBetweenPasses)
+            rule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun triggerBackScrollAndVerifyNoScrollDeltaBetweenTwoPassesMultiLane() {
+        state = LazyStaggeredGridState()
+        rule.setContent {
+            val list = (0..20).toList()
+            LookaheadScope {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyStaggeredGrid(
+                        lanes = 2,
+                        state = state,
+                        modifier = Modifier.mainAxisSize(500.dp),
+                    ) {
+                        items(list) {
+                            val color = if (it % 2 == 0) Color.Red else Color.Blue
+                            Box(
+                                modifier =
+                                    Modifier.padding(vertical = 6.dp)
+                                        .mainAxisSize(100.dp)
+                                        .crossAxisSize(100.dp)
+                                        .background(color = color)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        state.scrollTo(20)
+        repeat(5) {
+            rule.mainClock.advanceTimeByFrame()
+            assertEquals(0f, state.scrollDeltaBetweenPasses)
+            rule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun reorderingInLookahead() {
+        var items by mutableStateOf(List(500) { it })
+
+        val itemSizePx = 50f
+        val itemSize = with(rule.density) { itemSizePx.toDp() }
+
+        rule.setContent {
+            LookaheadScope {
+                LazyStaggeredGrid(lanes = 1, modifier = Modifier.mainAxisSize(itemSize * 2)) {
+                    items(items, key = { it }) {
+                        Box(Modifier.animateItem().mainAxisSize(itemSize)) {
+                            Box { BasicText("Item $it") }
+                        }
+                    }
+                }
+            }
+        }
+
+        val random = Random(42)
+        repeat(20) {
+            val newItems = items.shuffled(random)
+            items = newItems
+            rule.runOnUiThread {
+                Snapshot.sendApplyNotifications()
+                rule.mainClock.advanceTimeByFrame()
+            }
+        }
     }
 }

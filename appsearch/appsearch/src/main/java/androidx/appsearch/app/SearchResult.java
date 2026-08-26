@@ -29,6 +29,7 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
@@ -104,14 +105,13 @@ public final class SearchResult extends AbstractSafeParcelable {
     @Field(id = 8)
     final @NonNull Bundle mParentTypeMap;
 
-
     /** Cache of the {@link GenericDocument}. Comes from mDocument at first use. */
     private @Nullable GenericDocument mDocumentCached;
 
     /** Cache of the inflated {@link MatchInfo}. Comes from inflating mMatchInfos at first use. */
     private @NonNull List<MatchInfo> mMatchInfosCached;
 
-    /** @exportToFramework:hide */
+    @HideInPlatform
     @Constructor
     SearchResult(
             @Param(id = 1) @NonNull GenericDocumentParcel document,
@@ -368,7 +368,7 @@ public final class SearchResult extends AbstractSafeParcelable {
             mDatabaseName = Preconditions.checkNotNull(databaseName);
         }
 
-        /** @exportToFramework:hide */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public Builder(@NonNull SearchResult searchResult) {
@@ -489,7 +489,6 @@ public final class SearchResult extends AbstractSafeParcelable {
             return this;
         }
 
-
         /**
          * Adds a {@link SearchResult} that was joined by the {@link JoinSpec}.
          * @param joinedResult The joined SearchResult to add.
@@ -503,9 +502,8 @@ public final class SearchResult extends AbstractSafeParcelable {
 
         /**
          * Clears the {@link MatchInfo}s.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @CanIgnoreReturnValue
         public @NonNull Builder clearMatchInfos() {
@@ -514,12 +512,10 @@ public final class SearchResult extends AbstractSafeParcelable {
             return this;
         }
 
-
         /**
          * Clears the {@link SearchResult}s that were joined.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @CanIgnoreReturnValue
         public @NonNull Builder clearJoinedResults() {
@@ -672,7 +668,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          *
          * @return A {@link TextMatchInfo} instance, or null if the match is not text-based.
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @Nullable TextMatchInfo getTextMatch() {
             return mTextMatch;
@@ -685,7 +680,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * @return A {@link EmbeddingMatchInfo} instance, or null if the match is not an
          * embedding match.
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @Nullable EmbeddingMatchInfo getEmbeddingMatch() {
             return mEmbeddingMatch;
@@ -841,7 +835,7 @@ public final class SearchResult extends AbstractSafeParcelable {
                 mPropertyPath = Preconditions.checkNotNull(propertyPath);
             }
 
-            /** @exportToFramework:hide */
+            @HideInPlatform
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
             public Builder(@NonNull MatchInfo matchInfo) {
                 Preconditions.checkNotNull(matchInfo);
@@ -858,7 +852,6 @@ public final class SearchResult extends AbstractSafeParcelable {
             /**
              * Sets the {@link EmbeddingMatchInfo} corresponding to the given entry.
              */
-            @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
             @ExperimentalAppSearchApi
             @CanIgnoreReturnValue
             public @NonNull Builder setEmbeddingMatch(@Nullable EmbeddingMatchInfo embeddingMatch) {
@@ -874,7 +867,6 @@ public final class SearchResult extends AbstractSafeParcelable {
                 mExactMatchRange = Preconditions.checkNotNull(matchRange);
                 return this;
             }
-
 
             /**
              * Sets the submatch {@link MatchRange} corresponding to the given entry.
@@ -978,7 +970,6 @@ public final class SearchResult extends AbstractSafeParcelable {
      */
     @SafeParcelable.Class(creator = "TextMatchInfoCreator")
     @SuppressWarnings("HiddenSuperclass")
-    @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
     @ExperimentalAppSearchApi
     public static final class TextMatchInfo extends AbstractSafeParcelable {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -1037,7 +1028,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * <p>Class example 2: for the first {@link TextMatchInfo}, this returns "Test Name Jr."
          * and, for the second {@link TextMatchInfo}, this returns "Testing 1 2 3".
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull String getFullText() {
             if (mFullText == null) {
@@ -1057,7 +1047,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * <p>Class example 2: for the first {@link TextMatchInfo}, this returns [0, 4] and, for the
          * second {@link TextMatchInfo}, this returns [0, 7].
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull MatchRange getExactMatchRange() {
             return mExactMatchRange;
@@ -1069,7 +1058,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * <p>Class example 2: for the first {@link TextMatchInfo}, this returns "Test" and, for the
          * second {@link TextMatchInfo}, this returns "Testing".
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull CharSequence getExactMatch() {
             return getSubstring(getExactMatchRange());
@@ -1093,7 +1081,6 @@ public final class SearchResult extends AbstractSafeParcelable {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull MatchRange getSubmatchRange() {
             checkSubmatchSupported();
@@ -1117,7 +1104,6 @@ public final class SearchResult extends AbstractSafeParcelable {
         @RequiresFeature(
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull CharSequence getSubmatch() {
             checkSubmatchSupported();
@@ -1132,7 +1118,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * <p>Class example 2: for the first {@link TextMatchInfo}, this returns [0, 9] and, for the
          * second {@link TextMatchInfo}, this returns [0, 13].
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull MatchRange getSnippetRange() {
             return mSnippetRange;
@@ -1149,7 +1134,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * for
          * the second {@link TextMatchInfo}, this returns "Testing 1 2 3".
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public @NonNull CharSequence getSnippet() {
             return getSubstring(getSnippetRange());
@@ -1219,7 +1203,6 @@ public final class SearchResult extends AbstractSafeParcelable {
      */
     @SafeParcelable.Class(creator = "EmbeddingMatchInfoCreator")
     @SuppressWarnings("HiddenSuperclass")
-    @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
     @ExperimentalAppSearchApi
     public static final class EmbeddingMatchInfo extends AbstractSafeParcelable {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -1263,7 +1246,6 @@ public final class SearchResult extends AbstractSafeParcelable {
         /**
          * Gets the semantic score corresponding to the embedding match.
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public double getSemanticScore() {
             return mSemanticScore;
@@ -1274,7 +1256,6 @@ public final class SearchResult extends AbstractSafeParcelable {
          * the index of the query {@link EmbeddingVector} in the list returned by
          * {@link SearchSpec#getEmbeddingParameters()}
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         public int getQueryEmbeddingVectorIndex() {
             return mQueryEmbeddingVectorIndex;
@@ -1283,7 +1264,6 @@ public final class SearchResult extends AbstractSafeParcelable {
         /**
          * Gets the embedding search metric type that this embedding match corresponds to.
          */
-        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
         @ExperimentalAppSearchApi
         @SearchSpec.EmbeddingSearchMetricType
         public int getEmbeddingSearchMetricType() {

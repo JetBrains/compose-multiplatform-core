@@ -24,7 +24,6 @@ import androidx.core.telecom.CallException
 import androidx.core.telecom.internal.CapabilityExchangeListenerRemote
 import androidx.core.telecom.internal.LocalCallSilenceActionsRemote
 import androidx.core.telecom.internal.LocalCallSilenceStateListener
-import androidx.core.telecom.util.ExperimentalAppActions
 import kotlin.coroutines.resume
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +31,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalAppActions::class)
 internal class LocalCallSilenceExtensionRemoteImpl(
     private val callScope: CoroutineScope,
     private val onLocalSilenceStateUpdated: suspend (Boolean) -> Unit,
@@ -46,7 +44,6 @@ internal class LocalCallSilenceExtensionRemoteImpl(
 
     override var isSupported: Boolean by Delegates.notNull()
     private var remoteActions: ILocalSilenceActions? = null
-    @Volatile private var canUserUpdateSilenceState = true
 
     /**
      * This method is used by the InCallService to update the VoIP applications local call silence
@@ -58,10 +55,6 @@ internal class LocalCallSilenceExtensionRemoteImpl(
             return CallControlResult.Error(CallException.ERROR_UNKNOWN)
         }
         val cb = ActionsResultCallback()
-        if (!canUserUpdateSilenceState) {
-            Log.w(TAG, "requestLocalCallSilenceState: app does not allow LCS updates")
-            return CallControlResult.Error(CallException.ERROR_UNKNOWN)
-        }
         // this remote impl --> VoIP  / Callback
         remoteActions?.setIsLocallySilenced(isSilenced, cb)
         val result = cb.waitForResponse()
@@ -107,13 +100,15 @@ internal class LocalCallSilenceExtensionRemoteImpl(
                     }
                 },
                 finishSync = { remoteBinder ->
-                    callScope.launch { continuation.resume(remoteBinder) }
+                    callScope.launch {
+                        if (continuation.isActive) {
+                            continuation.resume(remoteBinder)
+                        }
+                    }
                 },
                 updateCanUserUpdateSilence = {
                     callScope.launch {
                         Log.i(TAG, "LCS_SL: updateCanUserUpdateSilence: state=[$it]")
-                        // store the state for reference in requestLocalCallSilenceUpdate
-                        canUserUpdateSilenceState = it
                         // notify the remote surface
                         onCanUserUpdateSilence(it)
                     }

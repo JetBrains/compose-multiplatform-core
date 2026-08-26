@@ -19,39 +19,15 @@ package androidx.xr.arcore.runtime
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.JxrRuntime
-import androidx.xr.runtime.internal.LifecycleManager
-import kotlin.time.ComparableTimeMark
 
-/** Set of behaviors that collectively define a runtime. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Type of [JxrRuntime] for real-world perception.
+ *
+ * @property perceptionManager the [PerceptionManager] for this runtime
+ * @property config the [Config] for this runtime
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface PerceptionRuntime : JxrRuntime {
-    /** Mandatory lifecycle runtime behavior. */
-    public val lifecycleManager: LifecycleManager
 
-    /** Mandatory perception runtime behavior. */
     public val perceptionManager: PerceptionManager
-
-    override fun initialize() {
-        lifecycleManager.create()
-    }
-
-    override fun configure(config: Config) {
-        lifecycleManager.configure(config)
-    }
-
-    override fun resume() {
-        lifecycleManager.resume()
-    }
-
-    override suspend fun update(): ComparableTimeMark? {
-        return lifecycleManager.update()
-    }
-
-    override fun pause() {
-        lifecycleManager.pause()
-    }
-
-    override fun destroy() {
-        lifecycleManager.stop()
-    }
 }

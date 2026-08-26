@@ -30,7 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,6 +63,8 @@ import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.findNearestParentEntity
+import androidx.xr.compose.platform.getActivity
+import androidx.xr.compose.platform.isEmbedded
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.spatialComposeView
@@ -70,9 +72,14 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PixelDensity
+import androidx.xr.scenecore.scene
 
 /**
  * A composable that creates a panel in 3D space to hoist Popup based composables.
+ *
+ * In non-spatialized environments or embedded activities, a standard Compose [Popup] is utilized to
+ * display the content.
  *
  * @param alignment the alignment of the popup relative to its parent.
  * @param offset An offset from the original aligned position of the popup. Offset respects the
@@ -94,8 +101,11 @@ public fun SpatialPopup(
     properties: PopupProperties = PopupProperties(),
     content: @Composable () -> Unit,
 ) {
+    val activity = LocalContext.current.getActivity()
     val movableContent = remember { movableContentOf(content) }
-    if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+    val isActivityEmbedded = activity?.isEmbedded() ?: false
+
+    if (!isActivityEmbedded && LocalSpatialCapabilities.current.isSpatialUiEnabled) {
         LayoutSpatialPopup(
             alignment = alignment,
             offset = offset,
@@ -175,9 +185,7 @@ private fun LayoutSpatialPopup(
     val transition = updateTransition(targetState = elevation, label = "restingLevelTransition")
     val context = LocalContext.current
     val compositionContext = rememberCompositionContext()
-    // TODO(b/474652577): Update from deprecated currentCompositeKey to currentCompositeKeyCode
-    //  once we update JXR Compose to Compile SDK 35
-    @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
+    val localId = currentCompositeKeyHashCode
 
     BackHandler(enabled = properties.dismissOnBackPress) { onDismissRequest?.invoke() }
 
@@ -190,6 +198,7 @@ private fun LayoutSpatialPopup(
                 compositionContext = compositionContext,
                 session = session,
                 transition = transition,
+                pixelDensity = session.scene.virtualPixelDensity,
                 initialPopupProperties = properties,
                 initialParentLayoutDirection = parentLayoutDirection,
                 initialPopupPositionProvider = popupPositionProvider,
@@ -249,12 +258,13 @@ private val EmptyContent: @Composable () -> Unit = {}
  *   [PopupPositionProvider], anchor bounds, and Z-depth transition.
  */
 private class SpatialPopupRenderer(
-    private val localId: Int,
+    private val localId: Long,
     private val context: Context,
     private val parentView: View,
     private val compositionContext: CompositionContext,
     private val session: Session,
     private val transition: Transition<Dp>,
+    private val pixelDensity: PixelDensity,
     initialPopupProperties: PopupProperties,
     initialParentLayoutDirection: LayoutDirection,
     initialPopupPositionProvider: PopupPositionProvider,
@@ -281,12 +291,15 @@ private class SpatialPopupRenderer(
         this.view = view
         panelEntity =
             CorePanelEntity(
-                    PanelEntity.create(
-                        session = session,
-                        view = view,
-                        pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
-                        name = "ElevatedPanel:${view.id}",
-                    )
+                    pixelDensity = pixelDensity,
+                    entity =
+                        PanelEntity.create(
+                            session = session,
+                            view = view,
+                            pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
+                            name = "ElevatedPanel:${view.id}",
+                            parent = session.scene.activitySpace,
+                        ),
                 )
                 .apply { view.setTag(R.id.compose_xr_local_view_entity, this) }
 
@@ -335,6 +348,7 @@ private class SpatialPopupRenderer(
                                 contentSize = contentSize,
                                 zDepth = zDepth,
                                 density = density,
+                                pixelDensity = pixelDensity,
                             )
                         parent = currentParent
                     }
@@ -349,6 +363,8 @@ private class SpatialPopupRenderer(
 
     override fun onForgotten() {
         panelEntity?.dispose()
+        panelEntity = null
+        view?.setContent {}
         view?.disposeComposition()
     }
 

@@ -24,8 +24,11 @@ import java.util.concurrent.Executor
 import java.util.function.Consumer
 
 /** Provide the rendering implementation for [GltfEntity] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface GltfFeature : RenderingFeature {
+
+    /** The flattened list of all nodes contained within this glTF model. */
+    @get:MainThread public val nodes: List<GltfModelNodeFeature>
 
     /**
      * The unscaled size of the glTF model's axis-aligned bounding box in the entity's local space,
@@ -36,8 +39,8 @@ public interface GltfFeature : RenderingFeature {
      */
     @get:MainThread public val size: FloatSize3d
 
-    /** Returns the current animation state of the glTF entity. */
-    public val animationState: Int
+    /** Returns the animations of the glTF model. */
+    @MainThread public fun getAnimations(executor: Executor): List<GltfAnimationFeature>
 
     /**
      * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model.
@@ -51,47 +54,6 @@ public interface GltfFeature : RenderingFeature {
      *   of the box is twice the half-extent. All values are in meters.
      */
     @MainThread public fun getGltfModelBoundingBox(): BoundingBox
-
-    /**
-     * Starts the animation with the given name.
-     *
-     * @param animationName The name of the animation to start. If null is supplied, will play the
-     *   first animation found in the glTF.
-     * @param loop Whether the animation should loop.
-     * @param executor The Entity's executor to use for the animation.
-     */
-    @MainThread public fun startAnimation(loop: Boolean, animationName: String?, executor: Executor)
-
-    /** Stops the animation of the glTF entity. */
-    @MainThread public fun stopAnimation()
-
-    /* Pause the animation of the glTF entity. */
-    @MainThread public fun pauseAnimation()
-
-    /* Resume the animation of the glTF entity. */
-    @MainThread public fun resumeAnimation()
-
-    /**
-     * Sets a material override for a specific mesh of a node.
-     *
-     * @param material The material to use for the mesh primitive.
-     * @param nodeName The name of the node containing the mesh to override.
-     * @param primitiveIndex The zero-based index of the mesh in the node.
-     */
-    @MainThread
-    public fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
-
-    /**
-     * Clears a material override for a specific mesh of a node.
-     *
-     * @param nodeName The name of the node containing the mesh for which to clear the override.
-     * @param primitiveIndex The zero-based index of the mesh in the node.
-     */
-    @MainThread public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int)
 
     /**
      * Sets whether the collider is enabled.

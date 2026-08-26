@@ -16,18 +16,23 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Hand
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * Wraps the native [XrHandJointLocationsEXT] with the [androidx.xr.arcore.runtime.Hand] interface.
+ * Wraps a native
+ * [XrHandJointLocationsEXT](https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrHandJointLocationsEXT)
+ * with the [Hand] interface.
+ *
+ * @property trackingState the [TrackingState] of the hand
+ * @property handJointsBuffer a [FloatBuffer] containing
+ *   [XrHandJointLocationEXT](https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrHandJointLocationEXT)
+ *   data
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrHand internal constructor(private val isLeftHand: Boolean) : Hand, Updatable {
+internal class OpenXrHand(private val isLeftHand: Boolean) : Hand, Updatable {
 
     override var trackingState: TrackingState = TrackingState.PAUSED
         private set
@@ -35,6 +40,11 @@ public class OpenXrHand internal constructor(private val isLeftHand: Boolean) : 
     override var handJointsBuffer: FloatBuffer = ByteBuffer.allocate(0).asFloatBuffer()
         private set
 
+    /**
+     * Updates the entity retrieving its state at [xrTime].
+     *
+     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
+     */
     override fun update(xrTime: Long) {
         val handDataBuffer = nativeGetHandDataBuffer(isLeftHand, xrTime)
         if (handDataBuffer == null) {

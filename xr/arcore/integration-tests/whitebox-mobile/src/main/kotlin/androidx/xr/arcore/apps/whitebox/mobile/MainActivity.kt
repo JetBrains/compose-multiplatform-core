@@ -38,10 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.apps.whitebox.mobile.anchorsplaneshittest.AnchorsPlanesHitTestActivity
-import androidx.xr.arcore.apps.whitebox.mobile.depthmaps.DepthMapsActivity
+import androidx.xr.arcore.apps.whitebox.mobile.depth.DepthActivity
 import androidx.xr.arcore.apps.whitebox.mobile.facemeshing.FaceMeshActivity
 import androidx.xr.arcore.apps.whitebox.mobile.geospatial.GeospatialActivity
-import androidx.xr.runtime.Log
+import androidx.xr.arcore.apps.whitebox.mobile.inertial.InertialTrackingActivity
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -50,9 +50,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        Log.enabled = true
-        Log.level = Log.Level.VERBOSE
 
         setContent { WhiteboxHomeScreen() }
     }
@@ -112,14 +109,21 @@ fun WhiteboxSessionMenu() {
             Text("Geospatial")
         }
         TextButton(
-            onClick = { context.startActivity(Intent(context, DepthMapsActivity::class.java)) }
+            onClick = { context.startActivity(Intent(context, DepthActivity::class.java)) }
         ) {
-            Text("Depth Maps")
+            Text("Depth")
         }
         TextButton(
             onClick = { context.startActivity(Intent(context, FaceMeshActivity::class.java)) }
         ) {
             Text("Face Meshes")
+        }
+        TextButton(
+            onClick = {
+                context.startActivity(Intent(context, InertialTrackingActivity::class.java))
+            }
+        ) {
+            Text("Inertial Tracking")
         }
     }
 }

@@ -37,8 +37,9 @@ import androidx.pdf.TestDraftEditOperation
 import androidx.pdf.annotation.models.PaginatedAnnotations
 import androidx.pdf.annotation.models.PdfObject
 import androidx.pdf.models.Dimensions
+import androidx.pdf.models.PaginatedObjects
 
-class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
+internal class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
     private val behaviors = ArrayDeque<DraftEditResult>()
 
     fun setBehavior(result: DraftEditResult) {
@@ -113,7 +114,7 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
         TODO("Not yet implemented")
     }
 
-    override fun isPdfLinearized(): Boolean {
+    override fun getLinearizationStatus(): Int {
         TODO("Not yet implemented")
     }
 
@@ -170,4 +171,22 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
     ): PdfObject? {
         TODO("Not yet implemented")
     }
+
+    override fun getPageObjects(pageNum: Int, types: Long): PaginatedObjects? {
+        TODO("Not yet implemented")
+    }
+
+    override fun addPageObject(pageNumber: Int, pdfObject: PdfObject): String {
+        return "fake_embedded_object_${System.currentTimeMillis()}"
+    }
+
+    override fun getBatchedPageObjects(
+        pageNum: Int,
+        batchIndex: Int,
+        types: Long,
+    ): PaginatedObjects? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getInterfaceVersion(): Int = VERSION
 }

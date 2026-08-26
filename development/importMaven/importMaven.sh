@@ -12,7 +12,8 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         import-toml)
             # Priority Check: If this argument is present, print and exit immediately
-            (cd $SCRIPT_DIR && ./gradlew -q -PimportToml)
+            # TODO(b/458454333): Remove -Dmaven.repo.local flag when https://github.com/gradle/gradle/issues/38329 is fixed
+            (cd $SCRIPT_DIR && ./gradlew -q -Dmaven.repo.local="$(mktemp -d)" -PimportToml)
             exit 0
             ;;
         --metalava-build-id)
@@ -42,6 +43,15 @@ while [[ "$#" -gt 0 ]]; do
             ARGUMENTS="$ARGUMENTS -PallowJetbrainsDev"
             shift # Shift past the flag
             ;;
+        --override-prebuilts-path)
+            if [[ -d "$2" ]]; then
+                ARGUMENTS="$ARGUMENTS -PoverridePrebuiltsPath=$2"
+                shift 2
+            else
+                echo "Error: Argument for --override-prebuilts-path is missing or is not a directory"
+                exit 1
+            fi
+            ;;
         *)
             # Any argument that doesn't match the flags above is treated as the ARTIFACTS
             # We assume only one required argument is allowed.
@@ -60,9 +70,10 @@ done
 # Check if the required ARTIFACTS argument was set
 if [[ -z "$ARTIFACTS" ]]; then
     echo "Error: Missing required argument 'ARTIFACTS'"
-    echo "Usage: $0 [import-toml] [--metalava-build-id ID] [--androidx-build-id ID] [--redownload] [--allow-jetbrains-dev] ARTIFACTS"
+    echo "Usage: $0 [import-toml] [--metalava-build-id ID] [--androidx-build-id ID] [--redownload] [--allow-jetbrains-dev] [--override-prebuilts-path /path/to/prebuilts] ARTIFACTS"
     exit 1
 fi
 
 # run importMaven
-(cd $SCRIPT_DIR && ./gradlew -q $ARGUMENTS)
+# TODO(b/458454333): Remove -Dmaven.repo.local flag when https://github.com/gradle/gradle/issues/38329 is fixed
+(cd $SCRIPT_DIR && ./gradlew -q -Dmaven.repo.local="$(mktemp -d)" $ARGUMENTS)

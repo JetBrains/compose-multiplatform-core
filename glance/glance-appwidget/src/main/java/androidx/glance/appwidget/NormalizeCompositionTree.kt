@@ -18,7 +18,6 @@ package androidx.glance.appwidget
 import android.os.Build
 import android.util.Log
 import androidx.annotation.DimenRes
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.Backend
@@ -30,12 +29,10 @@ import androidx.glance.EmittableImage
 import androidx.glance.EmittableLazyItemWithChildren
 import androidx.glance.EmittableWithChildren
 import androidx.glance.GlanceModifier
-import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.ActionModifier
 import androidx.glance.action.LambdaAction
 import androidx.glance.action.NoRippleOverride
-import androidx.glance.action.clickable
 import androidx.glance.addChild
 import androidx.glance.addChildIfNotNull
 import androidx.glance.appwidget.action.CompoundButtonAction
@@ -59,8 +56,6 @@ import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.removeModifiersOfType
-import androidx.glance.semantics.contentDescription
-import androidx.glance.semantics.semantics
 import androidx.glance.text.EmittableText
 import androidx.glance.text.FontWeight
 import androidx.glance.text.TextStyle
@@ -70,10 +65,12 @@ import androidx.glance.unit.Dimension
 /** @return what backend to emit: RemoteViews vs RemoteCompose */
 internal fun normalizeCompositionTree(
     root: RemoteViewsRoot,
-    isRemoteComposeAvailable: Boolean,
+    backendOverrideRequest: Backend?,
     isPreviewComposition: Boolean = false,
 ): Backend {
-    val isRemoteCompose: Boolean = root.requiresRemoteCompose() && isRemoteComposeAvailable
+    val isRemoteCompose: Boolean =
+        (root.requiresRemoteCompose() || backendOverrideRequest == Backend.RemoteCompose) &&
+            backendOverrideRequest != Backend.RemoteView
     coerceToOneChild(root)
     root.normalizeSizes()
 
@@ -89,17 +86,13 @@ internal fun normalizeCompositionTree(
     }
 
     // Full normalize pass
-    root.transformTree { view ->
+    root.transformTree { view: Emittable ->
         if (isPreviewComposition) {
             view.removeActionModifiers()
         }
         if (view is EmittableLazyItemWithChildren && !isRemoteCompose) normalizeLazyListItem(view)
 
-        if (!isRemoteCompose) {
-            view.transformBackgroundImageAndActionRipple()
-        } else {
-            view
-        }
+        view.transformBackgroundImageAndActionRipple(isRemoteCompose)
     }
 
     return if (isRemoteCompose) Backend.RemoteCompose else Backend.RemoteView
@@ -237,13 +230,13 @@ private fun normalizeLazyListItem(view: EmittableLazyItemWithChildren) {
 
 /**
  * If this [Emittable] has a background image or a ripple, transform the emittable so that it is
- * wrapped in an [EmittableBox], with the background and ripple added as [ImageView]s in the
- * background and foreground.
+ * wrapped in an [EmittableBox], with the background and ripple added as [android.widget.ImageView]s
+ * in the background and foreground.
  *
- * If this is an [EmittableButton], we additonally set a clip outline on the wrapper box, and
+ * If this is an [EmittableButton], we additionally set a clip outline on the wrapper box, and
  * convert the target emittable to an [EmittableText]
  */
-private fun Emittable.transformBackgroundImageAndActionRipple(): Emittable {
+private fun Emittable.transformBackgroundImageAndActionRipple(isRemoteCompose: Boolean): Emittable {
     // EmittableLazyItemWithChildren and EmittableSizeBox are wrappers for their immediate
     // only child, and do not get translated to their own element. We will transform their child
     // instead.
@@ -294,62 +287,26 @@ private fun Emittable.transformBackgroundImageAndActionRipple(): Emittable {
                 (isButton && Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) ||
                 // Ripples are implemented by placing a drawable after the target in the wrapper
                 // box.
-                (it is ActionModifier && !hasBuiltinRipple())
+                (it is ActionModifier && !hasBuiltinRipple(isRemoteCompose))
         }
     if (!shouldWrapTargetInABox) return target
 
     // Hoisted modifiers are subtracted from the target one by one and added to the box and the
     // remaining modifiers are applied to the target.
-    val boxModifiers = mutableListOf<GlanceModifier?>()
-    val targetModifiers = mutableListOf<GlanceModifier?>()
-    var backgroundImage: EmittableImage? = null
+    val boxModifiers: MutableList<GlanceModifier?> = mutableListOf<GlanceModifier?>()
+    val targetModifiers: MutableList<GlanceModifier?> = mutableListOf<GlanceModifier?>()
     var rippleImage: EmittableImage? = null
 
-    val (bgModifier, targetModifiersMinusBg) = target.modifier.extractModifier<BackgroundModifier>()
+    val (bgModifier: BackgroundModifier?, targetModifiersMinusBg) =
+        target.modifier.extractModifier<BackgroundModifier>()
 
-    if (bgModifier != null) {
-        if (isButton) {
-            // Emulate rounded corners (fixed radius) using a drawable and apply background colors
-            // to it. Note: Currently, button doesn't support bg image modifier, but only button
-            // colors.
-            backgroundImage =
-                EmittableImage().apply {
-                    modifier = GlanceModifier.fillMaxSize()
-                    provider = ImageProvider(R.drawable.glance_button_outline)
-                    // Without setting alpha, if this drawable's base was transparent, solid color
-                    // won't
-                    // be applied as the default blending mode uses alpha from base. And if this
-                    // drawable's base was white/none, applying transparent tint will lead to black
-                    // color. This shouldn't be issue for icon type drawables, but in this case we
-                    // are
-                    // emulating colored outline. So, we apply tint as well as alpha.
-                    (bgModifier as? BackgroundModifier.Color)?.colorProvider?.let {
-                        colorFilterParams = TintAndAlphaColorFilterParams(it)
-                    }
-                    contentScale = ContentScale.FillBounds
-                }
-        } else {
-            // bgModifier.imageProvider is converted to an actual image but bgModifier.colorProvider
-            // is applied back to the target. Note: We could have hoisted the bg color to box
-            // instead of adding it back to the target, but for buttons, we also add an outline
-            // background to the box.
-            when (bgModifier) {
-                is BackgroundModifier.Image -> {
-                    backgroundImage =
-                        EmittableImage().apply {
-                            modifier = GlanceModifier.fillMaxSize()
-                            provider = bgModifier.imageProvider
-                            contentScale = bgModifier.contentScale
-                            colorFilterParams = bgModifier.colorFilter?.colorFilterParams
-                            alpha = bgModifier.alpha
-                        }
-                }
-                is BackgroundModifier.Color -> {
-                    targetModifiers += bgModifier
-                }
-            }
-        }
-    }
+    val backgroundEmittableImage: EmittableImage? =
+        handleBgImage(
+            bgModifier = bgModifier,
+            targetModifiers = targetModifiers,
+            isRemoteCompose = isRemoteCompose,
+            isButton = isButton,
+        )
 
     // Action modifiers are hoisted on the wrapping box and a ripple image is added to the
     // foreground if the target doesn't have it built-in.
@@ -357,7 +314,7 @@ private fun Emittable.transformBackgroundImageAndActionRipple(): Emittable {
     val (actionModifier, targetModifiersMinusAction) =
         targetModifiersMinusBg.extractModifier<ActionModifier>()
     boxModifiers += actionModifier
-    if (actionModifier != null && !hasBuiltinRipple()) {
+    if (actionModifier != null && !hasBuiltinRipple(isRemoteCompose)) {
         val maybeRippleOverride = actionModifier.rippleOverride
         val rippleImageProvider =
             if (maybeRippleOverride != NoRippleOverride) {
@@ -381,7 +338,7 @@ private fun Emittable.transformBackgroundImageAndActionRipple(): Emittable {
     boxModifiers += sizeAndCornerModifiers
     targetModifiers += targetModifiersMinusSizeAndCornerRadius.fillMaxSize()
 
-    if (target is EmittableButton) {
+    if (!isRemoteCompose && target is EmittableButton) {
         boxModifiers += GlanceModifier.enabled(target.enabled)
         target = target.toEmittableText()
         if (target.modifier.findModifier<PaddingModifier>() == null) {
@@ -395,20 +352,25 @@ private fun Emittable.transformBackgroundImageAndActionRipple(): Emittable {
 
         if (isButton) contentAlignment = Alignment.Center
 
-        addChildIfNotNull(backgroundImage)
+        addChildIfNotNull(backgroundEmittableImage)
         addChild(target)
         addChildIfNotNull(rippleImage)
     }
 }
 
-private fun Emittable.hasBuiltinRipple() =
-    this is EmittableSwitch ||
-        this is EmittableRadioButton ||
-        this is EmittableCheckBox ||
-        // S+ versions use a native button with fixed rounded corners and matching ripple set in
-        // layout xml. In R- versions, buttons are implemented using a background drawable with
-        // rounded corners and an EmittableText in R- versions.
-        (this is EmittableButton && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+private fun Emittable.hasBuiltinRipple(isRemoteCompose: Boolean): Boolean {
+    return if (isRemoteCompose) {
+        true // do not add a ripple for remote compose
+    } else {
+        this is EmittableSwitch ||
+            this is EmittableRadioButton ||
+            this is EmittableCheckBox ||
+            // S+ versions use a native button with fixed rounded corners and matching ripple set in
+            // layout xml. In R- versions, buttons are implemented using a background drawable with
+            // rounded corners and an EmittableText in R- versions.
+            (this is EmittableButton && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+    }
+}
 
 private data class ExtractedSizeAndCornerModifiers(
     val sizeAndCornerModifiers: GlanceModifier = GlanceModifier,
@@ -477,8 +439,8 @@ private fun EmittableM3TextButton.normalizeForRemoteViews(): Emittable {
     val totalHorizontalPadding = if (icon != null) 24.dp else 16.dp
 
     val mainBox =
-        EmittableBox().also {
-            it.modifier =
+        EmittableBox().also { mainBox ->
+            mainBox.modifier =
                 this.modifier
                     .padding(
                         start = 16.dp,
@@ -491,13 +453,8 @@ private fun EmittableM3TextButton.normalizeForRemoteViews(): Emittable {
                         colorFilter = ColorFilter.tint(backgroundTint),
                     )
                     .enabled(enabled)
-                    .clickable(
-                        onClick = onClick!!, // onclick is required
-                        rippleOverride =
-                            if (isAtLeastApi31) NoRippleOverride
-                            else R.drawable.glance_component_m3_button_ripple,
-                    )
                     .then(maybeRoundCorners(R.dimen.glance_component_button_corners))
+            mainBox.contentAlignment = Alignment.Center
         }
 
     val emittableText =
@@ -519,6 +476,7 @@ private fun EmittableM3TextButton.normalizeForRemoteViews(): Emittable {
         )
         mainBox.children.add(emittableText)
     } else {
+        // TODO b/479573471 if no text is provided, the icon will be off center
         val row = EmittableRow()
         row.verticalAlignment = Alignment.Vertical.CenterVertically
         row.children.add(
@@ -550,9 +508,7 @@ private fun EmittableM3TextButton.normalizeForRemoteViews(): Emittable {
  */
 private fun EmittableM3IconButton.normalizeForRemoteViews(): Emittable {
     val contentColor = contentColor!! // mandatory
-    val onClick = onClick!! // mandatory
     val backgroundColor = backgroundColor
-    val theContentDescription = contentDescription
 
     val backgroundModifier =
         if (backgroundColor == null) GlanceModifier
@@ -569,31 +525,79 @@ private fun EmittableM3IconButton.normalizeForRemoteViews(): Emittable {
                 GlanceModifier.size(
                         shape.defaultSize
                     ) // acts as a default if not overridden by [modifier]
-                    .then(modifier)
+                    .then(this.modifier)
                     .then(backgroundModifier)
-                    .clickable(onClick = onClick, rippleOverride = shape.ripple)
                     .enabled(enabled)
                     .then(maybeRoundCorners(shape.cornerRadius))
 
             outerBox.addChild(
                 EmittableImage().also { emittableImage ->
-                    val modifier = GlanceModifier.size(24.dp)
-                    val finalModifier =
-                        if (theContentDescription != null) {
-                            modifier.semantics { this.contentDescription = theContentDescription }
-                        } else {
-                            modifier
-                        }
-
                     emittableImage.provider = imageProvider
                     emittableImage.colorFilterParams =
                         ColorFilter.tint(contentColor).colorFilterParams
-                    emittableImage.modifier = finalModifier
+                    emittableImage.modifier = GlanceModifier.size(24.dp)
                 }
             )
         }
 
     return outerBox
+}
+
+/** If [bgModifier] is not null, will handle it. Buttons and other views are handled differently. */
+private fun handleBgImage(
+    bgModifier: BackgroundModifier?,
+    targetModifiers: MutableList<GlanceModifier?>,
+    isRemoteCompose: Boolean,
+    isButton: Boolean,
+): EmittableImage? {
+    if (bgModifier == null) {
+        return null
+    }
+
+    val noBackgroundImage: EmittableImage? = null
+    val backgroundEmittableImage: EmittableImage? =
+        if (!isRemoteCompose && isButton) {
+            // Emulate rounded corners (fixed radius) using a drawable and apply background colors
+            // to it. Note: Currently, button doesn't support bg image modifier, but only button
+            // colors.
+            EmittableImage().apply {
+                modifier = GlanceModifier.fillMaxSize()
+                provider = ImageProvider(R.drawable.glance_button_outline)
+                // Without setting alpha, if this drawable's base was transparent, solid color
+                // won't
+                // be applied as the default blending mode uses alpha from base. And if this
+                // drawable's base was white/none, applying transparent tint will lead to black
+                // color. This shouldn't be issue for icon type drawables, but in this case we
+                // are
+                // emulating colored outline. So, we apply tint as well as alpha.
+                (bgModifier as? BackgroundModifier.Color)?.colorProvider?.let {
+                    colorFilterParams = TintAndAlphaColorFilterParams(it)
+                }
+                contentScale = ContentScale.FillBounds
+            }
+        } else {
+            // bgModifier.imageProvider is converted to an actual image but bgModifier.colorProvider
+            // is applied back to the target. Note: We could have hoisted the bg color to box
+            // instead of adding it back to the target, but for buttons, we also add an outline
+            // background to the box.
+            when (bgModifier) {
+                is BackgroundModifier.Image -> {
+                    EmittableImage().apply {
+                        modifier = GlanceModifier.fillMaxSize()
+                        provider = bgModifier.imageProvider
+                        contentScale = bgModifier.contentScale
+                        colorFilterParams = bgModifier.colorFilter?.colorFilterParams
+                        alpha = bgModifier.alpha
+                    }
+                }
+                is BackgroundModifier.Color -> {
+                    targetModifiers += bgModifier
+                    noBackgroundImage
+                }
+            }
+        }
+
+    return backgroundEmittableImage
 }
 
 private fun maybeRoundCorners(@DimenRes radius: Int) =

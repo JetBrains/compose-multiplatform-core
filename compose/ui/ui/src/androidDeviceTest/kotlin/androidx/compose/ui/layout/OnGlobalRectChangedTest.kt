@@ -22,6 +22,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +49,6 @@ import androidx.compose.ui.FixedSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SimpleRow
 import androidx.compose.ui.Wrap
-import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
@@ -79,7 +79,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -93,7 +92,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class OnGlobalRectChangedTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
     fun correctPositionInRootWhenMovingBothGrandParentAndNodeItself() {

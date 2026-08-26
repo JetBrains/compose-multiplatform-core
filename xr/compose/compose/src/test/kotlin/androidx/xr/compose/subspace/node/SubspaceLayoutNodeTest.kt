@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace.node
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.AndroidComposeSpatialElement
@@ -34,10 +35,14 @@ import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestLogger
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,17 +58,46 @@ class SubspaceLayoutNodeTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
+    private fun createOwner(): AndroidComposeSpatialElement =
+        AndroidComposeSpatialElement(StandardTestDispatcher())
+
+    @Composable
+    @SubspaceComposable
+    private fun EntityLayout(
+        modifier: SubspaceModifier = SubspaceModifier,
+        entity: Entity,
+        content: @Composable @SubspaceComposable () -> Unit = {},
+    ) {
+        val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+        SubspaceLayout(
+            content = content,
+            modifier = modifier,
+            coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, entity),
+        ) { _, _ ->
+            layout(0, 0, 0) {}
+        }
+    }
+
+    private class TestMeasurePolicy : SubspaceMeasurePolicy {
+        override fun SubspaceMeasureScope.measure(
+            measurables: List<SubspaceMeasurable>,
+            constraints: VolumeConstraints,
+        ): SubspaceMeasureResult {
+            return layout(0, 0, 0) {}
+        }
+    }
+
     @Test
-    fun subspaceLayoutNode_shouldParentNodesProperly() {
+    fun subspaceLayoutNode_shouldParentNodesProperly() = runTest {
         var parentEntity: Entity? = null
 
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
-                parentEntity = GroupEntity.create(session, "ParentEntity")
+                parentEntity = Entity.create(session, "ParentEntity")
                 EntityLayout(entity = parentEntity) {
                     EntityLayout(
-                        entity = GroupEntity.create(session, "ChildEntity"),
+                        entity = Entity.create(session, "ChildEntity"),
                         modifier = SubspaceModifier.testTag("Child"),
                     )
                 }
@@ -81,8 +115,8 @@ class SubspaceLayoutNodeTest {
     }
 
     @Test
-    fun subspaceLayoutNode_updatesToMeasurePolicy_triggersRemeasure() {
-        val owner = AndroidComposeSpatialElement()
+    fun subspaceLayoutNode_updatesToMeasurePolicy_triggersRemeasure() = runTest {
+        val owner = createOwner()
         val logger = TestLogger().also { owner.logger = it }
         val node = SubspaceLayoutNode()
         owner.root.insertAt(0, node)
@@ -93,8 +127,8 @@ class SubspaceLayoutNodeTest {
     }
 
     @Test
-    fun subspaceLayoutNode_insertingChild_triggersRemeasure() {
-        val owner = AndroidComposeSpatialElement()
+    fun subspaceLayoutNode_insertingChild_triggersRemeasure() = runTest {
+        val owner = createOwner()
         val logger = TestLogger().also { owner.logger = it }
         val node = SubspaceLayoutNode()
         logger
@@ -106,8 +140,8 @@ class SubspaceLayoutNodeTest {
     }
 
     @Test
-    fun subspaceLayoutNode_movingChild_triggersRemeasure() {
-        val owner = AndroidComposeSpatialElement()
+    fun subspaceLayoutNode_movingChild_triggersRemeasure() = runTest {
+        val owner = createOwner()
         val logger = TestLogger().also { owner.logger = it }
         val node1 = SubspaceLayoutNode()
         owner.root.insertAt(0, node1)
@@ -121,8 +155,8 @@ class SubspaceLayoutNodeTest {
     }
 
     @Test
-    fun subspaceLayoutNode_removingChild_triggersRemeasure() {
-        val owner = AndroidComposeSpatialElement()
+    fun subspaceLayoutNode_removingChild_triggersRemeasure() = runTest {
+        val owner = createOwner()
         val logger = TestLogger().also { owner.logger = it }
         val node1 = SubspaceLayoutNode()
         owner.root.insertAt(0, node1)
@@ -138,73 +172,137 @@ class SubspaceLayoutNodeTest {
     }
 
     @Test
-    fun subspaceLayoutNode_verifyRootDepthIsZero() {
+    fun subspaceLayoutNode_verifyRootDepthIsZero() = runTest {
         val rootNode = SubspaceLayoutNode()
 
         assertThat(rootNode.depth).isEqualTo(0)
     }
 
     @Test
-    fun subspaceLayoutNode_verifyChildrenDepth() {
-        val owner = AndroidComposeSpatialElement()
+    fun subspaceLayoutNode_verifyChildrenDepth() = runTest {
+        val owner = createOwner()
         val rootNode = SubspaceLayoutNode()
         val grandParentNode = SubspaceLayoutNode()
         val parentNode = SubspaceLayoutNode()
         val childNode = SubspaceLayoutNode()
 
-        rootNode.attach(owner)
+        owner.root.insertAt(0, rootNode)
         rootNode.insertAt(0, grandParentNode)
         grandParentNode.insertAt(0, parentNode)
         parentNode.insertAt(0, childNode)
 
-        assertThat(grandParentNode.depth).isEqualTo(1)
-        assertThat(parentNode.depth).isEqualTo(2)
-        assertThat(childNode.depth).isEqualTo(3)
+        assertThat(grandParentNode.depth).isEqualTo(2)
+        assertThat(parentNode.depth).isEqualTo(3)
+        assertThat(childNode.depth).isEqualTo(4)
     }
 
     @Test
-    fun subspaceLayoutNode_verifyDetachingChangesDepth() {
-        val owner = AndroidComposeSpatialElement()
+    fun subspaceLayoutNode_verifyDetachingChangesDepth() = runTest {
+        val owner = createOwner()
         val rootNode = SubspaceLayoutNode()
         val parentNode = SubspaceLayoutNode()
         val childNode = SubspaceLayoutNode()
 
-        rootNode.attach(owner)
+        owner.root.insertAt(0, rootNode)
         rootNode.insertAt(0, parentNode)
         parentNode.insertAt(0, childNode)
 
-        assertThat(parentNode.depth).isEqualTo(1)
-        assertThat(childNode.depth).isEqualTo(2)
+        assertThat(parentNode.depth).isEqualTo(2)
+        assertThat(childNode.depth).isEqualTo(3)
 
         rootNode.removeAt(0, 1)
-        parentNode.attach(owner)
+        owner.root.insertAt(1, parentNode)
 
-        assertThat(parentNode.depth).isEqualTo(0)
-        assertThat(childNode.depth).isEqualTo(1)
+        assertThat(parentNode.depth).isEqualTo(1)
+        assertThat(childNode.depth).isEqualTo(2)
     }
 
-    @Composable
-    @SubspaceComposable
-    private fun EntityLayout(
-        modifier: SubspaceModifier = SubspaceModifier,
-        entity: Entity,
-        content: @Composable @SubspaceComposable () -> Unit = {},
-    ) {
-        SubspaceLayout(
-            content = content,
-            modifier = modifier,
-            coreEntity = CoreGroupEntity(entity),
-        ) { _, _ ->
-            layout(0, 0, 0) {}
-        }
+    @Test
+    fun subspaceLayoutNode_measure_notifiesMeasuredSizeAwareNodes() = runTest {
+        val owner: AndroidComposeSpatialElement = createOwner()
+        val node = SubspaceLayoutNode()
+
+        owner.root.insertAt(index = 0, instance = node)
+
+        // The variable to track the size passed to the measured size aware node.
+        var remeasuredSize: IntVolumeSize? = null
+
+        // A custom modifier node. It implements SubspaceModifierNodeElement.
+        // Whenever onRemeasured is called by the layout engine, it takes the
+        // size it was given and saves it into the remeasuredSize variable.
+        val measuredSizeAwareNode =
+            object : SubspaceMeasuredSizeAwareModifierNode, SubspaceModifier.Node() {
+                override fun onRemeasured(size: IntVolumeSize) {
+                    remeasuredSize = size
+                }
+            }
+
+        // Wrap measuredSizeAwareNode in an SubspaceModifierNodeElement.
+        val element =
+            object : SubspaceModifierNodeElement<SubspaceModifier.Node>() {
+                override fun create() = measuredSizeAwareNode
+
+                override fun update(node: SubspaceModifier.Node) {}
+
+                override fun equals(other: Any?) = this === other
+
+                override fun hashCode() = System.identityHashCode(this)
+            }
+
+        // Attach the SubspaceModifierNodeElement to the layout node.
+        node.modifier = element
+
+        // A hardcoded policy that dictates how a node calculates its size.
+        node.measurePolicy =
+            object : SubspaceMeasurePolicy {
+                override fun SubspaceMeasureScope.measure(
+                    measurables: List<SubspaceMeasurable>,
+                    constraints: VolumeConstraints,
+                ): SubspaceMeasureResult {
+                    return layout(10, 20, 30) {}
+                }
+            }
+
+        // Run the node's measurement pass. The measure policy is evaluated and
+        // onRemeasured is called.
+        node.measurableLayout.measure(constraints = VolumeConstraints())
+
+        assertThat(remeasuredSize).isEqualTo(IntVolumeSize(10, 20, 30))
     }
 
-    private class TestMeasurePolicy : SubspaceMeasurePolicy {
-        override fun SubspaceMeasureScope.measure(
-            measurables: List<SubspaceMeasurable>,
-            constraints: VolumeConstraints,
-        ): SubspaceMeasureResult {
-            return layout(0, 0, 0) {}
-        }
+    @Test
+    fun modifier_updateWithSameTag_preservesSemanticsCache() {
+        val owner = createOwner()
+        val node = SubspaceLayoutNode()
+        owner.root.insertAt(0, node)
+        node.modifier = SubspaceModifier.testTag("tagA")
+
+        val cachedConfig1 = assertNotNull(node.measurableLayout.semanticsConfiguration)
+
+        assertThat(cachedConfig1[SemanticsProperties.TestTag]).isEqualTo("tagA")
+
+        // Reassigning a new modifier element with the exact same tag value.
+        node.modifier = SubspaceModifier.testTag("tagA")
+        val cachedConfig2 = node.measurableLayout.semanticsConfiguration
+
+        assertThat(cachedConfig1).isEqualTo(cachedConfig2)
+    }
+
+    @Test
+    fun modifier_updateWithDifferentTag_invalidatesSemanticsCache() {
+        val owner = createOwner()
+        val node = SubspaceLayoutNode()
+        owner.root.insertAt(0, node)
+        node.modifier = SubspaceModifier.testTag("tagA")
+
+        val cachedConfig1 = assertNotNull(node.measurableLayout.semanticsConfiguration)
+
+        assertThat(cachedConfig1[SemanticsProperties.TestTag]).isEqualTo("tagA")
+
+        // Reassigning a new modifier element with a different tag value.
+        node.modifier = SubspaceModifier.testTag("tagB")
+        val cachedConfig2 = assertNotNull(node.measurableLayout.semanticsConfiguration)
+
+        assertThat(cachedConfig2[SemanticsProperties.TestTag]).isEqualTo("tagB")
     }
 }

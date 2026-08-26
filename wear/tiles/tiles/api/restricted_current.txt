@@ -1057,8 +1057,9 @@ package androidx.wear.tiles {
   }
 
   public final class TileKt {
-    method public static androidx.wear.tiles.TileBuilders.Tile tile(androidx.wear.protolayout.TimelineBuilders.Timeline timeline, optional long freshnessMillis, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.StateBuilders.State? state, optional String? resourcesVersion);
-    method @BytecodeOnly public static androidx.wear.tiles.TileBuilders.Tile! tile$default(androidx.wear.protolayout.TimelineBuilders.Timeline!, long, androidx.wear.protolayout.StateBuilders.State!, String!, int, Object!);
+    method @KotlinOnly public static androidx.wear.tiles.TileBuilders.Tile tile(androidx.wear.protolayout.TimelineBuilders.Timeline timeline, optional kotlin.time.Duration? freshness, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.StateBuilders.State? state, optional String? resourcesVersion);
+    method @BytecodeOnly public static androidx.wear.tiles.TileBuilders.Tile tile-hhJSO8g(androidx.wear.protolayout.TimelineBuilders.Timeline, kotlin.time.Duration?, @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.StateBuilders.State?, String?);
+    method @BytecodeOnly public static androidx.wear.tiles.TileBuilders.Tile! tile-hhJSO8g$default(androidx.wear.protolayout.TimelineBuilders.Timeline!, kotlin.time.Duration!, androidx.wear.protolayout.StateBuilders.State!, String!, int, Object!);
     method @KotlinOnly public static androidx.wear.protolayout.TimelineBuilders.TimeInterval timeInterval(kotlin.time.Duration start, kotlin.time.Duration end);
     method @BytecodeOnly public static androidx.wear.protolayout.TimelineBuilders.TimeInterval timeInterval-QTBD994(long, long);
     method public static androidx.wear.protolayout.TimelineBuilders.Timeline timeline(androidx.wear.protolayout.TimelineBuilders.TimelineEntry... entries);

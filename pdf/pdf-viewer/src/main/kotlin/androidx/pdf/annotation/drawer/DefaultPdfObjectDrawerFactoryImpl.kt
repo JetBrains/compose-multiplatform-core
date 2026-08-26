@@ -16,11 +16,13 @@
 
 package androidx.pdf.annotation.drawer
 
-import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.PdfObject
 
 /** Default implementation of [PdfObjectDrawerFactory]. */
 internal object DefaultPdfObjectDrawerFactoryImpl : PdfObjectDrawerFactory {
+    @OptIn(ExperimentalPdfApi::class)
     override fun create(pdfObject: PdfObject): PdfObjectDrawer<out PdfObject> {
         return when (pdfObject) {
             is PathPdfObject -> PathPdfObjectDrawer

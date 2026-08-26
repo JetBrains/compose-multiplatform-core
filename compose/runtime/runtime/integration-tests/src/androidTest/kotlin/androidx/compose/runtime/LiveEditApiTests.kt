@@ -22,6 +22,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -376,29 +378,43 @@ class LiveEditApiTests : BaseComposeTest() {
         val recompositionErrors =
             mutableMapOf<RecomposerInfo, MutableList<RecomposerErrorInformation?>>()
         val shouldThrow = mutableStateOf(false)
+        var latch = CountDownLatch(1)
         activity.show {
             LaunchedEffect(Unit) {
                 Recomposer.runningRecomposers.collect { recomposerInfos ->
                     recomposerInfos.forEach { info ->
-                        recompositionErrors[info] = mutableListOf()
-                        info.errorState.collect { error -> recompositionErrors[info]!!.add(error) }
+                        if (info !in recompositionErrors) {
+                            recompositionErrors[info] = mutableListOf()
+                        }
+                        info.errorState.collect { error ->
+                            recompositionErrors[info]!!.add(error)
+                            latch.countDown()
+                        }
                     }
                 }
             }
             TestError { shouldThrow.value }
         }
 
-        activity.waitForAFrame()
+        // Await initial state
+        assertTrue("Expected error state change", latch.await(1, TimeUnit.SECONDS))
 
         run {
+            latch = CountDownLatch(1)
             shouldThrow.value = true
+            // Await until the error is reported
             activity.waitForAFrame()
+            assertTrue("Expected error state change", latch.await(1, TimeUnit.SECONDS))
 
+            latch = CountDownLatch(1)
             shouldThrow.value = false
             invalidateGroup(errorKey)
             activity.waitForAFrame()
 
             assertTrue("TestError should be invoked!", errorInvoked > start)
+
+            // Await until the invalidation is settled
+            assertTrue("Expected error state change", latch.await(1, TimeUnit.SECONDS))
         }
 
         assertThat(recompositionErrors).hasSize(1)

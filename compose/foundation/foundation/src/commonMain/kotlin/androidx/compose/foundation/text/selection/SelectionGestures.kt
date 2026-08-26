@@ -100,11 +100,16 @@ internal fun Modifier.updateSelectionTouchMode(updateTouchMode: (Boolean) -> Uni
 /**
  * Gesture handler for mouse and touch. Determines whether this is mouse or touch based on the first
  * down, then uses the gesture handler for that input type, delegating to the appropriate observer.
+ *
  * This handler is used by all text selection surfaces; SelectionContainer, BTF1, and BTF2.
+ *
+ * [textDragObserver] can be `null` if detection of touch selection gestures is not needed. This is
+ * currently the case for [SelectionManager] implementing selection (via mouse only) in the empty
+ * spaces between Text selectables.
  */
 internal suspend fun PointerInputScope.awaitSelectionGestures(
     mouseSelectionObserver: MouseSelectionObserver,
-    textDragObserver: TextDragObserver,
+    textDragObserver: TextDragObserver?,
 ) {
     val clicksCounter = ClicksCounter(viewConfiguration)
     awaitEachGesture {
@@ -117,7 +122,7 @@ internal suspend fun PointerInputScope.awaitSelectionGestures(
                 downEvent.changes.fastAll { !it.isConsumed }
         ) {
             mouseSelection(mouseSelectionObserver, clicksCounter, downEvent)
-        } else if (!isPrecise) {
+        } else if (!isPrecise && (textDragObserver != null)) {
             when (clicksCounter.clicks) {
                 1 -> touchSelectionFirstPress(textDragObserver, downEvent)
                 else ->
@@ -140,7 +145,7 @@ internal suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
         val firstDown = downEvent.changes.first()
         val longPress = awaitLongPressOrCancellation(firstDown.id)
         if (longPress != null && distanceIsTolerable(viewConfiguration, firstDown, longPress)) {
-            observer.onStart(longPress.position, SelectionAdjustment.Word)
+            observer.onStart(longPress.position, FirstLongPressSelectionAdjustment)
             val dragCompletedWithUp =
                 drag(longPress.id) {
                     observer.onDrag(it.positionChange())
@@ -352,3 +357,10 @@ private fun distanceIsTolerable(
 }
 
 internal expect fun PointerEvent.isMouseOrTouchPad(): Boolean
+
+/**
+ * Platform-defined selection adjustment during the first long press action.
+ *
+ * @see SelectionAdjustment
+ */
+internal expect val FirstLongPressSelectionAdjustment: SelectionAdjustment

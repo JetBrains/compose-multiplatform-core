@@ -33,7 +33,7 @@ import kotlin.math.min
  *
  * @see androidx.compose.ui.layout.onLayoutRectChanged
  */
-class RelativeLayoutBounds
+public class RelativeLayoutBounds
 internal constructor(
     private val topLeft: Long,
     private val bottomRight: Long,
@@ -47,11 +47,11 @@ internal constructor(
      * The top left position of the Rect in the coordinates of the root node of the compose
      * hierarchy.
      */
-    val positionInRoot: IntOffset
+    public val positionInRoot: IntOffset
         get() = IntOffset(topLeft)
 
     /** The top left position of the Rect in the coordinates of the Window it is contained in */
-    val positionInWindow: IntOffset
+    public val positionInWindow: IntOffset
         get() {
             val x = screenOffset.x - windowOffset.x
             val y = screenOffset.y - windowOffset.y
@@ -61,7 +61,7 @@ internal constructor(
         }
 
     /** The top left position of the Rect in the coordinates of the Screen it is contained in. */
-    val positionInScreen: IntOffset
+    public val positionInScreen: IntOffset
         get() {
             val x = screenOffset.x
             val y = screenOffset.y
@@ -71,7 +71,7 @@ internal constructor(
         }
 
     /** The width, in pixels, of the Rect */
-    val width: Int
+    public val width: Int
         get() {
             val l = unpackX(topLeft)
             val r = unpackX(bottomRight)
@@ -79,7 +79,7 @@ internal constructor(
         }
 
     /** The height, in pixels, of the Rect */
-    val height: Int
+    public val height: Int
         get() {
             val t = unpackY(topLeft)
             val b = unpackY(bottomRight)
@@ -89,7 +89,7 @@ internal constructor(
     /**
      * The positioned bounding Rect in the coordinates of the root node of the compose hierarchy.
      */
-    val boundsInRoot: IntRect
+    public val boundsInRoot: IntRect
         get() {
             val l = unpackX(topLeft)
             val t = unpackY(topLeft)
@@ -99,12 +99,13 @@ internal constructor(
         }
 
     /** The positioned bounding Rect in the coordinates of the Window which it is contained in. */
-    val boundsInWindow: IntRect
+    public val boundsInWindow: IntRect
         get() {
             val l = unpackX(topLeft)
             val t = unpackY(topLeft)
             val r = unpackX(bottomRight)
             val b = unpackY(bottomRight)
+
             if (viewToWindowMatrix != null) {
                 // TODO: we could implement a `Matrix.map(l, t, r, b): IntRect` that was only a
                 //  single allocation if we wanted to. this would avoid the two Rect(FFFF)
@@ -119,7 +120,7 @@ internal constructor(
         }
 
     /** The positioned bounding Rect in the coordinates of the Screen which it is contained in. */
-    val boundsInScreen: IntRect
+    public val boundsInScreen: IntRect
         get() {
             if (viewToWindowMatrix != null) {
                 val windowRect = boundsInWindow
@@ -131,6 +132,7 @@ internal constructor(
                     windowRect.bottom + offset.y,
                 )
             }
+
             val l = unpackX(topLeft)
             val t = unpackY(topLeft)
             val r = unpackX(bottomRight)
@@ -159,14 +161,17 @@ internal constructor(
      *
      * @return A [List] of the rectangles that occlude the associated Composable Layout.
      */
-    fun calculateOcclusions(): List<IntRect> {
-        val rectManager = node.requireOwner().rectManager
-        val id = node.requireLayoutNode().semanticsId
-        val rectList = rectManager.rects
-        val idIndex = rectList.indexOf(id)
-        if (idIndex < 0) {
+    public fun calculateOcclusions(): List<IntRect> {
+        val targetNode = node.requireLayoutNode()
+        if (targetNode.rectListIndex == NotFound) {
             return emptyList()
         }
+
+        val rectManager = node.requireOwner().rectManager
+        val rectList = rectManager.rects
+
+        val id = targetNode.semanticsId
+        val idIndex = rectList.indexOf(targetNode.semanticsId, targetNode.rectListIndex)
         // For the given `id`, finds intersections and determines occlusions by the result of
         // the 'RectManager.isTargetDrawnFirst', if the node for 'id' is drawn first, then it's
         // being occluded and the intersecting rect is added to the list result.
@@ -190,7 +195,7 @@ internal constructor(
      * @see fractionVisibleInRect
      * @see fractionVisibleInWindowWithInsets
      */
-    fun fractionVisibleIn(viewport: RelativeLayoutBounds): Float {
+    public fun fractionVisibleIn(viewport: RelativeLayoutBounds): Float {
         val tl = viewport.topLeft
         val br = viewport.bottomRight
         return fractionVisibleInRect(
@@ -212,7 +217,7 @@ internal constructor(
      * @see fractionVisibleIn
      * @see fractionVisibleInWindowWithInsets
      */
-    fun fractionVisibleInRect(left: Int, top: Int, right: Int, bottom: Int): Float {
+    public fun fractionVisibleInRect(left: Int, top: Int, right: Int, bottom: Int): Float {
         val l = unpackX(topLeft)
         val clippedLeft = min(max(l, left), right)
 
@@ -243,7 +248,7 @@ internal constructor(
      * @see fractionVisibleIn
      * @see fractionVisibleInWindowWithInsets
      */
-    fun fractionVisibleInWindow(): Float {
+    public fun fractionVisibleInWindow(): Float {
         val windowSize = windowSize
         return fractionVisibleInRect(0, 0, unpackX(windowSize), unpackY(windowSize))
     }
@@ -260,7 +265,7 @@ internal constructor(
      * @see fractionVisibleIn
      * @see fractionVisibleInWindowWithInsets
      */
-    fun fractionVisibleInWindowWithInsets(
+    public fun fractionVisibleInWindowWithInsets(
         topLeftInset: IntOffset,
         bottomRightInset: IntOffset,
     ): Float {

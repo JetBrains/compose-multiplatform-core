@@ -17,13 +17,14 @@
 package androidx.car.app.sample.showcase.common.screens.templatelayouts.listtemplates;
 
 import static androidx.car.app.CarToast.LENGTH_LONG;
-import static androidx.car.app.model.CarColor.GREEN;
 
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
+import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
@@ -47,7 +48,7 @@ public final class ToggleButtonListDemoScreen extends Screen {
     private boolean mFirstToggleState;
     private boolean mSecondToggleState;
     private boolean mSecondToggleEnabled = true;
-    private int mImageType = Row.IMAGE_TYPE_ICON;
+    private int mImageType = Row.IMAGE_TYPE_SMALL;
     private boolean mSetTintToVector;
 
     @Override
@@ -91,7 +92,7 @@ public final class ToggleButtonListDemoScreen extends Screen {
 
         builder.addItem(buildRowForTemplate(titleForVectorDrawable(),
                 R.string.vector_toggle_details, mToggleForVector, buildCarIconForVectorDrawable(),
-                null, Row.IMAGE_TYPE_ICON));
+                null, Row.IMAGE_TYPE_SMALL));
 
         builder.addItem(buildRowForTemplate(R.string.image_test_title,
                 R.string.image_test_text, null, buildCarIconForImageTest(),
@@ -120,7 +121,11 @@ public final class ToggleButtonListDemoScreen extends Screen {
                         R.drawable.ic_fastfood_white_48dp));
 
         if (mSetTintToVector) {
-            carIconBuilder.setTint(GREEN);
+            carIconBuilder =
+                    carIconBuilder.setStyle(
+                            new CarIconStyle.Builder(CarIconStyle.TINTED)
+                                    .setTint(CarColor.GREEN)
+                                    .build());
         }
         return carIconBuilder.build();
     }
@@ -144,9 +149,9 @@ public final class ToggleButtonListDemoScreen extends Screen {
     private OnClickListener buildOnClickListenerForImageTest() {
         return () -> {
             mImageType =
-                    mImageType == Row.IMAGE_TYPE_ICON
+                    mImageType == Row.IMAGE_TYPE_SMALL
                             ? Row.IMAGE_TYPE_LARGE
-                            : Row.IMAGE_TYPE_ICON;
+                            : Row.IMAGE_TYPE_SMALL;
             invalidate();
         };
     }

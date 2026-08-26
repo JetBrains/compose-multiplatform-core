@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(InternalComposeApi::class)
-
 package androidx.compose.runtime
 
 import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentHashMapOf
@@ -30,7 +28,9 @@ import androidx.compose.runtime.mock.expectNoChanges
 import androidx.compose.runtime.mock.revalidate
 import androidx.compose.runtime.mock.validate
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -608,7 +608,7 @@ class CompositionLocalTests {
 
     @Test // Regression test for b/233064044
     fun testRecomposeCacheInvalidation() = compositionTest {
-        var state = mutableStateOf(0)
+        val state = mutableStateOf(0)
 
         compose { CacheInvalidate(state) }
 
@@ -866,6 +866,7 @@ class CompositionLocalTests {
         }
     }
 
+    @Test
     fun staticLocalUpdateInvalidatesCorrectly_startProvides() = compositionTest {
         val SomeValue = staticCompositionLocalOf { 0 }
         val LocalValue = staticCompositionLocalOf<Boolean> { error("Not provided") }
@@ -892,7 +893,7 @@ class CompositionLocalTests {
 
     @Test
     fun hostDefault_resolvesValueFromProvider() = compositionTest {
-        val key = HostDefaultKey<String>()
+        val key = TestHostDefaultKey<String>()
         val local = compositionLocalWithHostDefaultOf(key)
         val provider = TestHostDefaultProvider(mapOf(key to "HostValue"))
 
@@ -905,7 +906,7 @@ class CompositionLocalTests {
 
     @Test
     fun hostDefault_explicitValueOverridesHost() = compositionTest {
-        val key = HostDefaultKey<String>()
+        val key = TestHostDefaultKey<String>()
         val local = compositionLocalWithHostDefaultOf(key)
         val provider = TestHostDefaultProvider(mapOf(key to "HostValue"))
 
@@ -921,7 +922,7 @@ class CompositionLocalTests {
     @Test
     fun hostDefault_returnsNullForMissingNullableKey() = compositionTest {
         // Key expects a nullable String
-        val key = HostDefaultKey<String?>()
+        val key = TestHostDefaultKey<String?>()
         val local = compositionLocalWithHostDefaultOf(key)
         // Provider is empty
         val provider = TestHostDefaultProvider(emptyMap())
@@ -935,36 +936,42 @@ class CompositionLocalTests {
 
     @Test
     fun hostDefault_throwsForMissingNonNullableKey() = compositionTest {
-        // Key expects a non-null String
-        val key = HostDefaultKey<Int>()
+        // We use String (reference type) because Kotlin/Native's LLVM backend may 'segfault' when
+        // attempting to unbox a null 'Any' into a primitive (like Int). Using a reference type
+        // ensures we get a catchable runtime exception instead of a process crash.
+        val key = TestHostDefaultKey<String>()
         val local = compositionLocalWithHostDefaultOf(key)
         val provider = TestHostDefaultProvider(emptyMap())
 
-        var exception: Throwable? = null
-        try {
-            compose {
-                CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
-                    // This access should crash!
-                    @Suppress("UnusedVariable", "unused") val unused = local.current
+        val exception =
+            assertFailsWith<Throwable> {
+                compose {
+                    CompositionLocalProvider(LocalHostDefaultProvider provides provider) {
+                        // We force access with !! because some platforms (e.g., JS) are more
+                        // "relaxed" about nullability at runtime. The assertion ensures the
+                        // failure happens here rather than leaking into later code.
+                        @Suppress(
+                            "UnusedVariable",
+                            "unused",
+                            "UNNECESSARY_NOT_NULL_ASSERTION",
+                            "UNUSED_VARIABLE",
+                        )
+                        val unused: String = local.current!!
+                    }
                 }
             }
-        } catch (e: NullPointerException) {
-            exception = e
-        } catch (e: ClassCastException) {
-            // Depending on K/N or K/JVM internals, unboxing null to non-null
-            // might throw CCE or NPE. We accept either for "failure to provide".
-            exception = e
-        }
 
+        // Different Kotlin backends report "null-to-non-null" failures differently.
+        // JVM usually throws NPE on unboxing; Native/JS may throw ClassCastException.
         assertTrue(
             exception is NullPointerException || exception is ClassCastException,
-            "Expected NPE or CCE when accessing missing non-null host default",
+            "Expected NPE or CCE due to missing provider, but got: ${exception::class.simpleName}",
         )
     }
 
     @Test
     fun hostDefault_dynamicUpdatesFromProvider() = compositionTest {
-        val key = HostDefaultKey<String>()
+        val key = TestHostDefaultKey<String>()
         val local = compositionLocalWithHostDefaultOf(key)
 
         // We use mutable state to swap providers to simulate the host environment changing
@@ -986,6 +993,241 @@ class CompositionLocalTests {
         expectChanges()
         validate { Text("ValueB") }
     }
+
+    @Test
+    fun staticComputedLocal_fallbackAndStaticOverride() = compositionTest {
+        val baseLocal = compositionLocalOf { 10 }
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+            baseLocal.currentValue * 2
+        }
+
+        var overrideValue by mutableStateOf(100)
+        var recomposeCount = 0
+
+        compose {
+            CompositionLocalProvider(baseLocal provides 20) {
+                // Should fall back to baseLocal.currentValue * 2 = 40
+                Text("Fallback: ${staticComputedLocal.current}")
+            }
+
+            CompositionLocalProvider(staticComputedLocal provides overrideValue) {
+                recomposeCount++
+                Text("Override: ${staticComputedLocal.current}")
+            }
+        }
+
+        validate {
+            Text("Fallback: 40")
+            Text("Override: 100")
+        }
+
+        assertEquals(1, recomposeCount)
+
+        // Mutating overrideValue must structurally recompose the static override provider
+        overrideValue = 200
+        expectChanges()
+
+        validate {
+            Text("Fallback: 40")
+            Text("Override: 200")
+        }
+
+        assertEquals(2, recomposeCount)
+    }
+
+    @Test
+    fun staticComputedLocal_providesDefault_yieldsToExplicitOrOverridesFallback() =
+        compositionTest {
+            val baseLocal = compositionLocalOf { 1 }
+            val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+                baseLocal.currentValue * 10
+            }
+
+            compose {
+                // Scenario A: Omitted parent -> providesDefault overrides fallback
+                CompositionLocalProvider(staticComputedLocal providesDefault 50) {
+                    Text("OmittedParent: ${staticComputedLocal.current}")
+                }
+
+                // Scenario B: Provided parent -> providesDefault yields to explicit parent
+                CompositionLocalProvider(staticComputedLocal provides 100) {
+                    CompositionLocalProvider(staticComputedLocal providesDefault 50) {
+                        Text("ProvidedParent: ${staticComputedLocal.current}")
+                    }
+                }
+            }
+
+            validate {
+                Text("OmittedParent: 50")
+                Text("ProvidedParent: 100")
+            }
+        }
+
+    @Test
+    fun staticComputedLocal_propagationOfUpdatedBaseLocal() = compositionTest {
+        val baseLocal = compositionLocalOf { 10 }
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+            baseLocal.currentValue * 2
+        }
+
+        var baseValue by mutableStateOf(10)
+
+        compose {
+            CompositionLocalProvider(baseLocal provides baseValue) {
+                Text("Value: ${staticComputedLocal.current}")
+            }
+        }
+
+        validate { Text("Value: 20") }
+
+        baseValue = 20
+        expectChanges()
+
+        validate { Text("Value: 40") }
+    }
+
+    @Test
+    fun staticComputedLocal_tracksDynamicDefaults_onlyWhenUnprovided() = compositionTest {
+        val baseLocal = compositionLocalOf { 10 }
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf {
+            baseLocal.currentValue * 2
+        }
+
+        var baseValue by mutableStateOf(10)
+        var recomposeCountUnprovided = 0
+        var recomposeCountProvided = 0
+
+        compose {
+            CompositionLocalProvider(baseLocal providesComputed { baseValue }) {
+                // Read staticComputedLocal when unprovided: should track baseLocal reads.
+                ReadIntLocal(staticComputedLocal) { recomposeCountUnprovided++ }
+
+                // Read staticComputedLocal when provided: should NOT track baseLocal reads.
+                CompositionLocalProvider(staticComputedLocal provides 100) {
+                    ReadIntLocal(staticComputedLocal) { recomposeCountProvided++ }
+                }
+            }
+        }
+
+        validate {
+            Text("Value: 20")
+            Text("Value: 100")
+        }
+        assertEquals(1, recomposeCountUnprovided)
+        assertEquals(1, recomposeCountProvided)
+
+        // Mutating baseValue should invalidate the unprovided reader scope
+        baseValue = 20
+        expectChanges()
+
+        validate {
+            Text("Value: 40")
+            Text("Value: 100")
+        }
+        assertEquals(2, recomposeCountUnprovided)
+        assertEquals(1, recomposeCountProvided) // Should NOT recompose!
+    }
+
+    @Test
+    fun staticComputedLocal_changingProvidedValueRecomposesSubtree() = compositionTest {
+        val staticComputedLocal = staticCompositionLocalWithComputedDefaultOf { 10 }
+
+        var providedValue by mutableStateOf(100)
+        var recomposeWithoutRead = 0
+        var recomposeWithRead = 0
+
+        compose {
+            CompositionLocalProvider(staticComputedLocal provides providedValue) {
+                NonReadChild { recomposeWithoutRead++ }
+                ReadChild(staticComputedLocal) { recomposeWithRead++ }
+            }
+        }
+
+        validate {
+            Text("NoRead")
+            Text("Read: 100")
+        }
+        assertEquals(1, recomposeWithoutRead)
+        assertEquals(1, recomposeWithRead)
+
+        providedValue = 200
+        expectChanges()
+
+        validate {
+            Text("NoRead")
+            Text("Read: 200")
+        }
+        // Since it is static when provided, changing the provided value invalidates the entire
+        // subtree
+        assertEquals(2, recomposeWithoutRead)
+        assertEquals(2, recomposeWithRead)
+    }
+
+    @Test
+    fun withCompositionLocalRememberObserverOrdering() = compositionTest {
+        val events = mutableListOf<String>()
+        var show by mutableStateOf(true)
+        val local = compositionLocalOf { 0 }
+
+        fun createRememberObserver(name: String) =
+            object : RememberObserver {
+                override fun onRemembered() {
+                    events += "Remember($name)"
+                }
+
+                override fun onForgotten() {
+                    events += "Forget($name)"
+                }
+
+                override fun onAbandoned() {
+                    events += "Abandon($name)"
+                }
+            }
+
+        compose {
+            if (show) {
+                remember<RememberObserver> { createRememberObserver("before") }
+                withCompositionLocal(local provides 100) {
+                    remember<RememberObserver> { createRememberObserver("inner") }
+                }
+                remember<RememberObserver> { createRememberObserver("after") }
+            }
+        }
+
+        assertContentEquals(
+            actual = events,
+            expected = listOf("Remember(before)", "Remember(inner)", "Remember(after)"),
+            message = "Initial composition had unexpected remember sequence",
+        )
+
+        events.clear()
+        show = false
+        advance()
+
+        assertContentEquals(
+            actual = events,
+            expected = listOf("Forget(after)", "Forget(inner)", "Forget(before)"),
+            message = "Content removal had unexpected remember sequence",
+        )
+    }
+}
+
+@Composable
+private fun ReadIntLocal(local: CompositionLocal<Int>, onRecompose: () -> Unit) {
+    onRecompose()
+    Text("Value: ${local.current}")
+}
+
+@Composable
+private fun NonReadChild(onRecompose: () -> Unit) {
+    onRecompose()
+    Text("NoRead")
+}
+
+@Composable
+private fun ReadChild(local: CompositionLocal<Int>, onRecompose: () -> Unit) {
+    onRecompose()
+    Text("Read: ${local.current}")
 }
 
 val LocalCache = staticCompositionLocalOf { "Unset" }
@@ -1017,6 +1259,8 @@ fun MockViewValidator.CacheInvalidate(state: State<Int>) {
 data class SomeData(val value: String = "default")
 
 @Stable class StableRef<T>(var value: T)
+
+private class TestHostDefaultKey<T> : HostDefaultKey<T>
 
 private class TestHostDefaultProvider(val values: Map<HostDefaultKey<*>, Any?>) :
     HostDefaultProvider {

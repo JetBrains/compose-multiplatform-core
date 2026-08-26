@@ -42,9 +42,10 @@ import androidx.camera.core.Logger
 import androidx.camera.core.SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
 import androidx.camera.core.impl.Timebase
-import androidx.camera.video.MediaSpec
+import androidx.camera.video.MediaConstants.MIME_TYPE_UNSPECIFIED
+import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
+import androidx.camera.video.MediaSpec.OutputFormat
 import androidx.camera.video.VideoSpec
-import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.camera.video.internal.compat.quirk.MediaCodecDefaultDataSpaceQuirk
 import androidx.camera.video.internal.encoder.VideoEncoderConfig
@@ -60,6 +61,8 @@ public object VideoConfigUtil {
     private const val TAG = "VideoConfigUtil"
     private val MIME_TO_DATA_SPACE_MAP: MutableMap<String, Map<Int, VideoEncoderDataSpace>>
     public const val VIDEO_FRAME_RATE_FIXED_DEFAULT: Int = 30
+    private const val VIDEO_ENCODER_MIME_MPEG4_DEFAULT = MediaFormat.MIMETYPE_VIDEO_AVC
+    private const val VIDEO_ENCODER_MIME_WEBM_DEFAULT = MediaFormat.MIMETYPE_VIDEO_VP8
 
     init {
         // --------------------------------------------------------------------------------------//
@@ -121,8 +124,8 @@ public object VideoConfigUtil {
      *
      * This method attempts to find the first profile in the provided list that matches the
      * requested [videoMime] and the constraints (HDR format and bit depth) of the [dynamicRange].
-     * If the [videoMime] is set to [VideoSpec.MIME_TYPE_AUTO], it will return the first profile
-     * that satisfies the [dynamicRange] requirements.
+     * If the [videoMime] is set to [MIME_TYPE_UNSPECIFIED], it will return the first profile that
+     * satisfies the [dynamicRange] requirements.
      *
      * @param videoMime The desired video MIME type.
      * @param dynamicRange The fully specified [DynamicRange] required for the profile.
@@ -142,108 +145,29 @@ public object VideoConfigUtil {
             hdrFormats.contains(it.hdrFormat) &&
                 bitDepths.contains(it.bitDepth) &&
                 // is MIME type compatible
-                (videoMime == VideoSpec.MIME_TYPE_UNSPECIFIED || it.mediaType == videoMime)
+                (videoMime == MIME_TYPE_UNSPECIFIED || it.mediaType == videoMime)
         }
     }
 
     /**
-     * Resolves the video mime information into a [VideoMimeInfo].
+     * Maps a given [OutputFormat] to its default video MIME type.
      *
-     * @param mediaSpec the media spec to resolve the mime info.
-     * @param dynamicRange a fully specified dynamic range.
-     * @param encoderProfiles the encoder profiles to resolve the mime info. It can be null if there
-     *   is no relevant encoder profiles.
-     * @return the video MimeInfo.
+     * @param outputFormat The video recording output format.
+     * @return The default video MIME type string associated with the output format.
      */
-    @JvmStatic
-    public fun resolveVideoMimeInfo(
-        mediaSpec: MediaSpec,
-        dynamicRange: DynamicRange,
-        encoderProfiles: VideoValidatedEncoderProfilesProxy?,
-    ): VideoMimeInfo {
-        check(dynamicRange.isFullySpecified) {
-            "Dynamic range must be a fully specified dynamic range " +
-                "[provided dynamic range: $dynamicRange]"
+    public fun outputFormatToVideoMime(@OutputFormat outputFormat: Int): String {
+        return when (outputFormat) {
+            OUTPUT_FORMAT_WEBM -> VIDEO_ENCODER_MIME_WEBM_DEFAULT
+            else -> VIDEO_ENCODER_MIME_MPEG4_DEFAULT
         }
-        val mediaSpecVideoMime = MediaSpec.outputFormatToVideoMime(mediaSpec.outputFormat)
-        var resolvedVideoMime = mediaSpecVideoMime
-        var compatibleVideoProfile: VideoProfileProxy? = null
-        if (encoderProfiles != null) {
-            val encoderHdrFormats =
-                DynamicRangeUtil.dynamicRangeToVideoProfileHdrFormats(dynamicRange)
-            val encoderBitDepths = DynamicRangeUtil.dynamicRangeToVideoProfileBitDepth(dynamicRange)
-            // Loop through EncoderProfile's VideoProfiles to search for one that supports the
-            // provided dynamic range.
-            for (videoProfile in encoderProfiles.videoProfiles) {
-                // Skip if the dynamic range is not compatible
-                if (
-                    !encoderHdrFormats.contains(videoProfile.hdrFormat) ||
-                        !encoderBitDepths.contains(videoProfile.bitDepth)
-                ) {
-                    continue
-                }
-
-                // Dynamic range is compatible. Use EncoderProfiles settings if the media spec's
-                // output format is UNSPECIFIED or happens to match the EncoderProfiles' output
-                // format.
-                val videoProfileMime = videoProfile.mediaType
-                if (mediaSpecVideoMime == videoProfileMime) {
-                    Logger.d(
-                        TAG,
-                        "MediaSpec video mime matches EncoderProfiles. Using " +
-                            "EncoderProfiles to derive VIDEO settings [mime type: " +
-                            "$resolvedVideoMime]",
-                    )
-                } else if (mediaSpec.outputFormat == MediaSpec.OUTPUT_FORMAT_UNSPECIFIED) {
-                    Logger.d(
-                        TAG,
-                        "MediaSpec contains OUTPUT_FORMAT_UNSPECIFIED. Using CamcorderProfile " +
-                            "to derive VIDEO settings [mime type: $resolvedVideoMime, " +
-                            "dynamic range: $dynamicRange]",
-                    )
-                } else {
-                    continue
-                }
-                compatibleVideoProfile = videoProfile
-                resolvedVideoMime = videoProfileMime
-                break
-            }
-        }
-        if (compatibleVideoProfile == null) {
-            if (mediaSpec.outputFormat == MediaSpec.OUTPUT_FORMAT_UNSPECIFIED) {
-                // If output format is UNSPECIFIED, use the dynamic range to get the mime.
-                // Otherwise, we fall back to the default mime type from MediaSpec
-                resolvedVideoMime = getDynamicRangeDefaultMime(dynamicRange)
-            }
-            if (encoderProfiles == null) {
-                Logger.d(
-                    TAG,
-                    "No EncoderProfiles present. May rely on fallback defaults to derive " +
-                        "VIDEO settings [chosen mime type: $resolvedVideoMime, " +
-                        "dynamic range: $dynamicRange]",
-                )
-            } else {
-                Logger.d(
-                    TAG,
-                    "No video EncoderProfile is compatible with requested output format" +
-                        " and dynamic range. May rely on fallback defaults to derive VIDEO " +
-                        "settings [chosen mime type: $resolvedVideoMime, " +
-                        "dynamic range: $dynamicRange]",
-                )
-            }
-        }
-        return VideoMimeInfo(
-            mimeType = resolvedVideoMime,
-            compatibleVideoProfile = compatibleVideoProfile,
-        )
     }
 
     /**
-     * Returns a list of mimes required for the given dynamic range.
+     * Returns a default mime for the given dynamic range.
      *
-     * If the dynamic range is not supported, an [UnsupportedOperationException] will be thrown.
+     * If the dynamic range is not supported, `null` will be returned.
      */
-    private fun getDynamicRangeDefaultMime(dynamicRange: DynamicRange): String {
+    public fun getDynamicRangeDefaultMime(dynamicRange: DynamicRange): String? {
         return when (dynamicRange.encoding) {
             DynamicRange.ENCODING_DOLBY_VISION ->
                 // Dolby vision only supports dolby vision encoders
@@ -257,11 +181,7 @@ public object VideoConfigUtil {
             DynamicRange.ENCODING_SDR ->
                 // For SDR, default to h264 (AVC)
                 MediaFormat.MIMETYPE_VIDEO_AVC
-            else ->
-                throw UnsupportedOperationException(
-                    "Unsupported dynamic range: $dynamicRange" +
-                        "\nNo supported default mime type available."
-                )
+            else -> null
         }
     }
 

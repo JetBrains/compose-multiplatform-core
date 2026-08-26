@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+@file:kotlin.OptIn(androidx.xr.scenecore.ExperimentalGltfAnimationApi::class)
+
 package androidx.xr.scenecore.testapp.model
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
+import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
@@ -30,58 +37,67 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.GltfAnimation
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.slider.Slider
 import java.nio.file.Paths
+import java.util.Collections
 import kotlinx.coroutines.launch
+
+const val TAG = "GltfModelAnimationActivity"
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
 class GltfModelAnimationActivity : AppCompatActivity() {
 
-    enum class AnimationState(val value: String) {
-        PLAYING("PLAYING"),
-        STOPPED("STOPPED"),
-        PAUSED("PAUSED");
-
-        companion object {
-            private val map = entries.associateBy(AnimationState::value)
-
-            fun fromInt(type: String): AnimationState? {
-                return map[type]
-            }
-        }
-    }
-
+    // Button for glTF loading, entity creation, and entity destruction
     private lateinit var createGltfModelButton: Button
     private lateinit var createGltfEntityButton: Button
-    private lateinit var destroyGltfModelButton: Button
+
+    // Start, Stop, Pause, Resume Button
     private lateinit var startPlayGltfButton: Button
-    private lateinit var startPlayGltfButton2: Button
+    private lateinit var stopPlayGltfButton: Button
     private lateinit var pausePlayGltfButton: Button
     private lateinit var resumePlayGltfButton: Button
-    private lateinit var stopPlayGltfButton: Button
+    private lateinit var stopAllAnimationsButton: Button
+
+    // UI and variable related to 'Loop' animation setup
     private lateinit var loopToggleButton: ToggleButton
+
+    // UI related to the animation speed controlling
+    private lateinit var speedSlider: Slider
+    private lateinit var speedText: TextView
+
+    // UI related to the animation seek to time (in seconds) controlling
+    private lateinit var seekCurrentTimeText: TextView
+    private lateinit var seekPlaySlider: Slider
+    private lateinit var seekEndText: TextView
+
+    // Text UI and map about animation state
+    private lateinit var animationStateText: TextView
+    private val animationStateMap: MutableMap<Int, GltfAnimation.AnimationState> =
+        Collections.synchronizedMap(mutableMapOf())
+
+    private lateinit var animationList: AutoCompleteTextView
+    private lateinit var animations: List<GltfAnimation>
+    private var selectedIndexAtAnimationList = -1
+    private val modelInitTranslation = Vector3(3.0f, 0.0f, -2.0f)
+    private val modelInitQuaternion = Quaternion.Identity
+    private val modelInitPose = Pose(modelInitTranslation, modelInitQuaternion)
+    private val modelScale = 0.3f
 
     private var gltfModel: GltfModel? = null
     private var gltfModelEntity: GltfModelEntity? = null
-    private var isGltfModelLoopAnimation: Boolean = false
-    private var animationState: AnimationState = AnimationState.STOPPED
 
-    @Suppress("DEPRECATION")
-    private val session by lazy {
-        (Session.create(this, unscaledGravityAlignedActivitySpace = true) as SessionCreateSuccess)
-            .session
-    }
+    private lateinit var session: Session
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_gltf_model_animation)
-
-        session.scene.keyEntity = session.scene.mainPanelEntity
 
         findViewById<Toolbar>(R.id.gltf_model_animation_topAppBar).also {
             setSupportActionBar(it)
@@ -91,94 +107,111 @@ class GltfModelAnimationActivity : AppCompatActivity() {
 
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
             it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelAnimationActivity) }
+            it.setOnClickListener {
+                resetUi()
+                ActivityCompat.recreate(this@GltfModelAnimationActivity)
+            }
         }
 
         createGltfModelButton = findViewById(R.id.gltf_model_create)
         createGltfEntityButton = findViewById(R.id.gltf_entity_create)
-        destroyGltfModelButton = findViewById(R.id.gltf_entity_destroy)
 
         startPlayGltfButton = findViewById(R.id.start_play)
-        startPlayGltfButton2 = findViewById(R.id.start_play_2)
+        stopPlayGltfButton = findViewById(R.id.stop_play)
         pausePlayGltfButton = findViewById(R.id.pause_play)
         resumePlayGltfButton = findViewById(R.id.resume_play)
-        stopPlayGltfButton = findViewById(R.id.stop_play)
+        stopAllAnimationsButton = findViewById(R.id.stop_all_animations)
+
         loopToggleButton = findViewById(R.id.loop_toggle_button)
         loopToggleButton.isChecked = false
 
-        loopToggleButton.setOnClickListener {
-            isGltfModelLoopAnimation = loopToggleButton.isChecked
-        }
+        speedText = findViewById(R.id.speed_textview)
+        speedSlider = findViewById(R.id.speed_slider)
+
+        seekCurrentTimeText = findViewById(R.id.seek_current_time_text)
+        seekPlaySlider = findViewById(R.id.seek_time_second_slider)
+        seekEndText = findViewById(R.id.seek_end_text)
+        seekCurrentTimeText.visibility = View.GONE
+        seekPlaySlider.visibility = View.GONE
+        seekEndText.visibility = View.GONE
+
+        animationStateText = findViewById(R.id.animation_current_state_text)
+        animationList = findViewById(R.id.autoCompleteTextView)
 
         createGltfModelButton.setOnClickListener { lifecycleScope.launch { createGltfModel() } }
 
         createGltfEntityButton.setOnClickListener { createGltfEntity() }
 
-        destroyGltfModelButton.setOnClickListener { destroyGltfEntity() }
+        startPlayGltfButton.setOnClickListener {
+            if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
+                return@setOnClickListener
+            }
 
-        startPlayGltfButton.setOnClickListener { playGltfModel() }
-
-        pausePlayGltfButton.setOnClickListener { pauseGltfModel() }
-
-        resumePlayGltfButton.setOnClickListener { resumeGltfModel() }
-
-        stopPlayGltfButton.setOnClickListener { stopGltfModel() }
-
-        startPlayGltfButton2.setOnClickListener {
-            gltfModelEntity?.startAnimation(isGltfModelLoopAnimation, "Linear Scale")
+            val animation = animations[selectedIndexAtAnimationList]
+            animation.loop = loopToggleButton.isChecked
+            animation.speed = speedSlider.value
+            animation.start()
         }
 
-        setAllButtonEnabled(false)
+        stopPlayGltfButton.setOnClickListener {
+            if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
+                return@setOnClickListener
+            }
+
+            animations[selectedIndexAtAnimationList].stop()
+        }
+
+        pausePlayGltfButton.setOnClickListener {
+            if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
+                return@setOnClickListener
+            }
+
+            animations[selectedIndexAtAnimationList].pause()
+        }
+
+        resumePlayGltfButton.setOnClickListener {
+            if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
+                return@setOnClickListener
+            }
+
+            animations[selectedIndexAtAnimationList].resume()
+        }
+
+        stopAllAnimationsButton.setOnClickListener { gltfModelEntity?.stopAllAnimations() }
+
+        seekPlaySlider.addOnChangeListener { _, value, _ ->
+            seekCurrentTimeText.text = "Start time=$value"
+        }
+
+        speedSlider.addOnChangeListener { _, value, _ ->
+            speedText.text = "Speed=$value"
+
+            if (selectedIndexAtAnimationList < 0 || animations.isEmpty()) {
+                return@addOnChangeListener
+            }
+
+            animations[selectedIndexAtAnimationList].speed = value
+        }
+
+        setAllUiEnabled(false)
         createGltfModelButton.isEnabled = true
-    }
 
-    override fun onDestroy() {
-        destroyGltfEntity()
-        super.onDestroy()
-    }
-
-    fun pauseGltfModel() {
-        if (gltfModelEntity?.animationState == GltfModelEntity.AnimationState.PLAYING) {
-            gltfModelEntity!!.pauseAnimation()
-            setAnimationState(AnimationState.PAUSED)
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@GltfModelAnimationActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                session = sessionResult.session
+                session.scene.keyEntity = session.scene.mainPanelEntity
+            } else {
+                this@GltfModelAnimationActivity.finish()
+            }
         }
     }
 
-    fun resumeGltfModel() {
-        if (gltfModelEntity?.animationState == GltfModelEntity.AnimationState.PAUSED) {
-            gltfModelEntity!!.resumeAnimation()
-            setAnimationState(AnimationState.PLAYING)
-        }
-    }
+    suspend fun createGltfModel() {
+        gltfModel = GltfModel.create(session, Paths.get("models", "RobotExpressive.glb"))
 
-    fun playGltfModel() {
-        gltfModelEntity?.startAnimation(isGltfModelLoopAnimation, "Step Scale")
-
-        if (isGltfModelLoopAnimation) {
-            setAnimationState(AnimationState.PLAYING)
-        }
-    }
-
-    fun stopGltfModel() {
-        if (
-            gltfModelEntity?.animationState == GltfModelEntity.AnimationState.PLAYING ||
-                gltfModelEntity?.animationState == GltfModelEntity.AnimationState.PAUSED
-        ) {
-            gltfModelEntity!!.stopAnimation()
-        }
-
-        setAnimationState(AnimationState.STOPPED)
-    }
-
-    fun destroyGltfEntity() {
-        if (gltfModelEntity != null) {
-            gltfModelEntity!!.dispose()
-            gltfModelEntity = null
-        }
-
-        setAnimationState(AnimationState.STOPPED)
-        setAllButtonEnabled(false)
-        createGltfModelButton.isEnabled = true
+        createGltfModelButton.isEnabled = false
+        createGltfEntityButton.isEnabled = true
     }
 
     fun createGltfEntity() {
@@ -188,9 +221,10 @@ class GltfModelAnimationActivity : AppCompatActivity() {
                 GltfModelEntity.create(
                     session,
                     gltfModel,
-                    Pose(Vector3(3.0f, 0.0f, -2.0f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+                    modelInitPose,
+                    parent = session.scene.activitySpace,
                 )
-            gltfModelEntity?.setScale(.3f)
+            gltfModelEntity?.setScale(modelScale)
         }
 
         if (gltfModel != null) {
@@ -202,35 +236,128 @@ class GltfModelAnimationActivity : AppCompatActivity() {
             }
         }
 
-        setAnimationState(AnimationState.STOPPED)
-
-        setAllButtonEnabled(true)
+        setAllUiEnabled(true)
         createGltfModelButton.isEnabled = false
         createGltfEntityButton.isEnabled = false
+
+        if (gltfModelEntity != null) {
+
+            animations = gltfModelEntity!!.getAnimations()
+            Log.w(TAG, "Animation total count is ${animations.size - 1}")
+
+            // setup spinner item to show options in spinner
+            val options = ArrayList<String>()
+
+            var firstAnimationName: String? = null
+
+            for (i in 0..<animations.size) {
+
+                val name = animations[i].name ?: ""
+                val state = animations[i].animationState
+
+                // Add item in animationStateMap
+                animationStateMap[i] = state
+
+                // Add item in options
+                options.add(name)
+
+                printAnimationInfo(animations[i])
+
+                setupCallback(animations[i])
+
+                if (firstAnimationName == null) firstAnimationName = name
+            }
+
+            firstAnimationName?.let { name ->
+                val animation = gltfModelEntity?.getAnimations()?.firstOrNull { it.name == name }
+                if (animation != null) {
+                    Log.d(TAG, "Get Animation by Name Successfully.")
+                } else {
+                    Log.d(TAG, "Get Animation by Name failed. Animation '$name' not found.")
+                }
+            }
+
+            val adapter = ArrayAdapter<String?>(this, android.R.layout.simple_spinner_item, options)
+            animationList.setAdapter(adapter)
+            animationList.setOnItemClickListener { _, _, position, _ ->
+                selectedIndexAtAnimationList = position
+
+                animationStateText.text =
+                    animationStateMap[position]?.toString()
+                        ?: GltfAnimation.AnimationState.STOPPED.toString()
+
+                loopToggleButton.isChecked = false
+
+                seekPlaySlider.value = 0f
+                seekPlaySlider.valueFrom = 0f
+                seekPlaySlider.valueTo = animations[position].duration.toMillis() / 1000f
+                seekPlaySlider.stepSize = (seekPlaySlider.valueTo - seekPlaySlider.valueFrom) / 20f
+
+                seekEndText.text = String.format("%.1fs", seekPlaySlider.valueTo)
+
+                speedSlider.value = 1f
+            }
+
+            animationStateText.text = GltfAnimation.AnimationState.STOPPED.toString()
+        }
     }
 
-    suspend fun createGltfModel() {
-        gltfModel = GltfModel.create(session, Paths.get("models", "InterpolationTest.glb"))
-
-        setAnimationState(AnimationState.STOPPED)
-
-        createGltfModelButton.isEnabled = false
-        createGltfEntityButton.isEnabled = true
+    fun printAnimationInfo(animation: GltfAnimation) {
+        Log.w(TAG, "Animation index is ${animation.index}")
+        Log.w(TAG, "Animation name is ${animation.name}")
+        Log.w(TAG, "Animation duration is ${animation.duration}")
     }
 
-    fun setAnimationState(@NonNull animationState: AnimationState) {
-        this.animationState = animationState
+    fun setupCallback(animation: GltfAnimation) {
+        animation.addAnimationStateListener { state ->
+            when (state) {
+                GltfAnimation.AnimationState.PLAYING -> {
+                    Log.d(TAG, "${animation.name} animation is now playing!!")
+                }
+
+                GltfAnimation.AnimationState.STOPPED -> {
+                    Log.d(TAG, "${animation.name} animation is now stopped!!")
+                }
+
+                GltfAnimation.AnimationState.PAUSED -> {
+                    Log.d(TAG, "${animation.name} animation is now paused!!")
+                }
+            }
+            if (animation.index == selectedIndexAtAnimationList) {
+                animationStateText.text = state.toString()
+            }
+
+            animationStateMap[animation.index] = state
+        }
     }
 
-    fun setAllButtonEnabled(isEnabled: Boolean) {
+    fun resetUi() {
+        setAllUiEnabled(false)
+        createGltfModelButton.isEnabled = true
+
+        // Clean up
+        animations = emptyList()
+        animationStateMap.clear()
+        animationList.setText("Choose glTF Animations")
+        animationStateText.text = GltfAnimation.AnimationState.STOPPED.toString()
+
+        selectedIndexAtAnimationList = -1
+    }
+
+    fun setAllUiEnabled(isEnabled: Boolean) {
         createGltfModelButton.isEnabled = isEnabled
         createGltfEntityButton.isEnabled = isEnabled
-        destroyGltfModelButton.isEnabled = isEnabled
+
         startPlayGltfButton.isEnabled = isEnabled
-        startPlayGltfButton2.isEnabled = isEnabled
+        stopPlayGltfButton.isEnabled = isEnabled
         pausePlayGltfButton.isEnabled = isEnabled
         resumePlayGltfButton.isEnabled = isEnabled
-        stopPlayGltfButton.isEnabled = isEnabled
+        stopAllAnimationsButton.isEnabled = isEnabled
         loopToggleButton.isEnabled = isEnabled
+
+        speedSlider.isEnabled = isEnabled
+
+        seekCurrentTimeText.isEnabled = isEnabled
+        seekPlaySlider.isEnabled = isEnabled
     }
 }

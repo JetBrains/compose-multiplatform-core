@@ -23,14 +23,13 @@ import androidx.room3.compiler.codegen.box
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_BLOCKING
-import androidx.room3.ext.SQLiteDriverMemberNames
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.solver.prepared.result.PreparedQueryResultAdapter
 
 /** Default binder for prepared queries. */
-class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
-    PreparedQueryResultBinder(adapter) {
+class InstantPreparedQueryResultBinder(override val adapter: PreparedQueryResultAdapter?) :
+    PreparedQueryResultBinder {
 
     override fun executeAndReturn(
         sqlQueryVar: String,
@@ -59,9 +58,8 @@ class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
                             addLocalVal(
                                 statementVar,
                                 SQLiteDriverTypeNames.STATEMENT,
-                                "%L.%M(%L)",
+                                "%L.prepare(%L)",
                                 connectionVar,
-                                SQLiteDriverMemberNames.CONNECTION_PREPARE,
                                 sqlQueryVar,
                             )
                             beginControlFlow("try")

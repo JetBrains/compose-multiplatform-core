@@ -17,7 +17,6 @@
 package androidx.appfunction.integration.test.sharedschema
 
 import android.net.Uri
-import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionSchemaDefinition
 import androidx.appfunctions.AppFunctionSerializable
 
@@ -35,14 +34,10 @@ public interface CreateNoteAppFunction {
      * @param tag Optional tag.
      * @return The response including the created note.
      */
-    public suspend fun createNote(
-        appFunctionContext: AppFunctionContext,
-        parameters: Parameters,
-        tag: String? = null,
-    ): Response
+    public suspend fun createNote(parameters: Parameters, tag: String? = null): Response
 
     /** The parameters for creating a note. */
-    @AppFunctionSerializable(isDescribedByKdoc = true)
+    @AppFunctionSerializable(isDescribedByKDoc = true)
     public data class Parameters(
         /** The title of the note. */
         val title: String,
@@ -79,7 +74,7 @@ public interface CreateNoteAppFunction {
     )
 
     /** The response including the created note. */
-    @AppFunctionSerializable(isDescribedByKdoc = true)
+    @AppFunctionSerializable(isDescribedByKDoc = true)
     public data class Response(
         /** The created note. */
         public val createdNote: AppFunctionNote,
@@ -89,7 +84,7 @@ public interface CreateNoteAppFunction {
 }
 
 /** A note entity. */
-@AppFunctionSerializable(isDescribedByKdoc = true)
+@AppFunctionSerializable(isDescribedByKDoc = true)
 public data class AppFunctionNote(
     /** The ID of the note. */
     val id: String,
@@ -104,7 +99,7 @@ public data class AppFunctionNote(
     val attachments: List<Attachment> = emptyList(),
 ) {
     /** An attached file. */
-    @AppFunctionSerializable(isDescribedByKdoc = true)
+    @AppFunctionSerializable(isDescribedByKDoc = true)
     data class Attachment(
         /**
          * The URI of the attached file.

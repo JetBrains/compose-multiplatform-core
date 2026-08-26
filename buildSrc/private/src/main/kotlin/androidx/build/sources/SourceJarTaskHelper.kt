@@ -23,6 +23,7 @@ import androidx.build.dackka.docsPlatform
 import androidx.build.multiplatformExtension
 import androidx.build.registerAsComponentForKmpPublishing
 import androidx.build.registerAsComponentForPublishing
+import androidx.build.sources.SourceJarAttributeConfiguration.multiplatformUsage
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.LibraryVariant
 import com.google.gson.GsonBuilder
@@ -34,6 +35,7 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.DocsType
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
@@ -49,14 +51,20 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation.Companion.MAIN_COMPI
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 
-/** Sets up a source jar task for an Android library project. */
+/**
+ * Sets up a source jar task for an Android library project.
+ *
+ * @param generated R.java file to enable documenting Android resources
+ */
 fun Project.configureSourceJarForAndroid(
     libraryVariant: LibraryVariant,
     samplesProjects: MutableCollection<Project>,
+    rJavaSource: FileCollection,
 ) {
     val allSources =
         project.files(libraryVariant.sources.java?.all) +
-            project.files(libraryVariant.sources.kotlin?.all)
+            project.files(libraryVariant.sources.kotlin?.all) +
+            rJavaSource
     val sourceJar =
         tasks.register("sourceJar${libraryVariant.name.capitalize()}", Jar::class.java) { task ->
             task.archiveClassifier.set("sources")
@@ -129,7 +137,12 @@ fun Project.configureSourceJarForJava(samplesProjects: MutableCollection<Project
     disableUnusedSourceJarTasks(disableNames)
 }
 
-fun Project.configureSourceJarForMultiplatform() {
+/**
+ * Sets up the source jar for a multiplatform project.
+ *
+ * @param rJavaSource generated R.java file to enable documenting Android resources
+ */
+fun Project.configureSourceJarForMultiplatform(rJavaSource: FileCollection) {
     val kmpExtension =
         multiplatformExtension
             ?: throw GradleException(
@@ -162,6 +175,8 @@ fun Project.configureSourceJarForMultiplatform() {
                     }
                 }
             task.metaInf.from(metadataFile)
+            // Set R.java (if it exists) as being part of the android source set.
+            task.from(rJavaSource) { copySpec -> copySpec.into("androidMain") }
         }
     registerMultiplatformSourcesVariant(sourceJar)
 
@@ -176,9 +191,6 @@ fun Project.disableUnusedSourceJarTasks(disableNames: Set<String>) {
         }
     }
 }
-
-internal val Project.multiplatformUsage
-    get() = objects.named<Usage>("androidx-multiplatform-docs")
 
 private fun Project.registerMultiplatformSourcesVariant(sourceJar: TaskProvider<Jar>) =
     registerSourcesVariant(PublishingVariant.KmpSourcesElements.name, sourceJar, multiplatformUsage)
@@ -245,16 +257,22 @@ abstract class CreateMultiplatformMetadata : DefaultTask() {
 }
 
 fun createSourceSetMetadata(kmpExtension: KotlinMultiplatformExtension): Map<String, Any> {
-    val commonMain = kmpExtension.sourceSets.getByName("commonMain")
-    val sourceSetsByName =
-        mutableMapOf(
-            "commonMain" to
-                mapOf(
-                    "name" to commonMain.name,
-                    "dependencies" to commonMain.dependsOn.map { it.name }.sorted(),
-                    "analysisPlatform" to DokkaAnalysisPlatform.COMMON.jsonName,
-                )
-        )
+    // Build a mapping from each source set to the analysis platform for that source set. If a
+    // source set is used by several targets, the analysis platform is found by merging the
+    // platforms from all targets.
+    val sourceSetToPlatforms = mutableMapOf<String, DokkaAnalysisPlatform>()
+    kmpExtension.targets.forEach { target ->
+        val platform = target.docsPlatform()
+        // Skip the metadata compilation.
+        if (platform == DokkaAnalysisPlatform.COMMON) return@forEach
+        // Add or update each source set in the mapping.
+        for (sourceSet in target.mainCompilation().allKotlinSourceSets) {
+            val current = sourceSetToPlatforms[sourceSet.name]
+            sourceSetToPlatforms[sourceSet.name] = platform.merge(current)
+        }
+    }
+
+    val sourceSetsByName = mutableMapOf<String, Map<String, Any>>()
     kmpExtension.targets.forEach { target ->
         // Skip adding entries for stub targets are they are not intended to be documented
         if (target.name in setOfStubTargets) return@forEach
@@ -263,7 +281,7 @@ fun createSourceSetMetadata(kmpExtension: KotlinMultiplatformExtension): Map<Str
                 mapOf(
                     "name" to it.name,
                     "dependencies" to it.transitiveDependsOn().map { it.name }.sorted(),
-                    "analysisPlatform" to target.docsPlatform().jsonName,
+                    "analysisPlatform" to sourceSetToPlatforms[it.name]!!.jsonName,
                 )
             }
         }

@@ -71,6 +71,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.samples.LazyColumnWithLazyRowsSample
 import androidx.compose.foundation.samples.StickyHeaderGridSample
 import androidx.compose.foundation.samples.StickyHeaderHeaderIndexSample
 import androidx.compose.foundation.samples.StickyHeaderListSample
@@ -91,6 +92,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -150,6 +152,7 @@ val LazyListDemos =
         ComposableDemo("Arrangements") { LazyListArrangements() },
         ComposableDemo("ReverseLayout and RTL") { ReverseLayoutAndRtlDemo() },
         ComposableDemo("Nested lazy lists") { NestedLazyDemo() },
+        ComposableDemo("Nested LazyColumn and LazyRows") { LazyColumnWithLazyRowsSample() },
         ComposableDemo("LazyGrid") { LazyGridDemo() },
         ComposableDemo("LazyGrid with Spacing") { LazyGridWithSpacingDemo() },
         ComposableDemo("Custom keys") { ReorderWithCustomKeys() },
@@ -1187,3 +1190,5 @@ private class DragAndDropListState(val targetListState: LazyListState) {
             }
         }
 }
+
+@Immutable private data class ListItem(val name: String)

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.testing
 
 import androidx.annotation.OptIn
@@ -28,6 +30,10 @@ import kotlinx.coroutines.Deferred
 class FakeCamera2CameraControlCompat : Camera2CameraControlCompat {
     override fun addRequestOption(bundle: CaptureRequestOptions) {
         // No-op
+    }
+
+    override fun getSynchronizedMutableConfig(): androidx.camera.core.impl.MutableConfig {
+        return androidx.camera.core.impl.MutableOptionsBundle.create()
     }
 
     override fun getRequestOption(): CaptureRequestOptions {

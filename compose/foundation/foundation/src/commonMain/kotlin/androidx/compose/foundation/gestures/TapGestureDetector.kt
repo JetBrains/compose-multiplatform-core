@@ -48,19 +48,19 @@ import kotlinx.coroutines.sync.Mutex
  * waiting for the press to be released.
  */
 @JvmDefaultWithCompatibility
-interface PressGestureScope : Density {
+public interface PressGestureScope : Density {
     /**
      * Waits for the press to be released before returning. If the gesture was canceled by motion
      * being consumed by another gesture, [GestureCancellationException] will be thrown.
      */
-    suspend fun awaitRelease()
+    public suspend fun awaitRelease()
 
     /**
      * Waits for the press to be released before returning. If the press was released, `true` is
      * returned, or if the gesture was canceled by motion being consumed by another gesture, `false`
      * is returned.
      */
-    suspend fun tryAwaitRelease(): Boolean
+    public suspend fun tryAwaitRelease(): Boolean
 }
 
 private val NoPressGesture: suspend PressGestureScope.(Offset) -> Unit = {}
@@ -91,109 +91,136 @@ private val NoPressGesture: suspend PressGestureScope.(Offset) -> Unit = {}
  * If the first down event is consumed somewhere else, the entire gesture will be skipped, including
  * [onPress].
  */
-suspend fun PointerInputScope.detectTapGestures(
+public suspend fun PointerInputScope.detectTapGestures(
     onDoubleTap: ((Offset) -> Unit)? = null,
     onLongPress: ((Offset) -> Unit)? = null,
     onPress: suspend PressGestureScope.(Offset) -> Unit = NoPressGesture,
     onTap: ((Offset) -> Unit)? = null,
-) = coroutineScope {
+): Unit = coroutineScope {
     // special signal to indicate to the sending side that it shouldn't intercept and consume
     // cancel/up events as we're only require down events
     val pressScope = PressGestureScopeImpl(this@detectTapGestures)
+
     awaitEachGesture {
-        val down = awaitFirstDown()
-        down.consume()
-        var resetJob = launch(start = CoroutineStart.UNDISPATCHED) { pressScope.reset() }
-        if (onPress !== NoPressGesture)
-            launchAwaitingReset(resetJob) { pressScope.onPress(down.position) }
-        val upOrCancel: PointerInputChange?
-        val cancelOrReleaseJob: Job?
+        processTapGesture(
+            scope = this@coroutineScope,
+            pressScope = pressScope,
+            onDoubleTap = onDoubleTap,
+            onLongPress = onLongPress,
+            onPress = onPress,
+            onTap = onTap,
+        )
+    }
+}
 
-        // wait for first tap up or long press
-        if (onLongPress == null) {
-            upOrCancel = waitForUpOrCancellation()
-        } else {
-            upOrCancel =
-                when (val longPressResult = waitForLongPress()) {
-                    LongPressResult.Success -> {
-                        onLongPress.invoke(down.position)
-                        consumeUntilUp()
-                        launchAwaitingReset(resetJob) { pressScope.release() }
-                        // End the current gesture
-                        return@awaitEachGesture
-                    }
+/**
+ * Detects a single tap, double-tap, and long press gesture and calls [onTap], [onDoubleTap], and
+ * [onLongPress], respectively, when detected. This should be called in a loop such as
+ * [awaitEachGesture] to continually listen for multiple gestures.
+ *
+ * @see detectTapGestures
+ */
+internal suspend fun AwaitPointerEventScope.processTapGesture(
+    scope: CoroutineScope,
+    pressScope: PressGestureScopeImpl,
+    onDoubleTap: ((Offset) -> Unit)?,
+    onLongPress: ((Offset) -> Unit)?,
+    onPress: suspend PressGestureScope.(Offset) -> Unit,
+    onTap: ((Offset) -> Unit)?,
+) {
+    val down = awaitFirstDown()
+    down.consume()
 
-                    is LongPressResult.Released -> longPressResult.finalUpChange
-                    is LongPressResult.Canceled -> null
+    var resetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) { pressScope.reset() }
+    if (onPress !== NoPressGesture)
+        scope.launchAwaitingReset(resetJob) { pressScope.onPress(down.position) }
+    val upOrCancel: PointerInputChange?
+    val cancelOrReleaseJob: Job?
+
+    // wait for first tap up or long press
+    if (onLongPress == null) {
+        upOrCancel = waitForUpOrCancellation()
+    } else {
+        upOrCancel =
+            when (val longPressResult = waitForLongPress()) {
+                LongPressResult.Success -> {
+                    onLongPress.invoke(down.position)
+                    consumeUntilUp()
+                    scope.launchAwaitingReset(resetJob) { pressScope.release() }
+                    // End the current gesture
+                    return
                 }
-        }
 
-        if (upOrCancel == null) {
-            cancelOrReleaseJob =
-                launchAwaitingReset(resetJob) {
-                    // tap-up was canceled
-                    pressScope.cancel()
-                }
+                is LongPressResult.Released -> longPressResult.finalUpChange
+                is LongPressResult.Canceled -> null
+            }
+    }
+
+    if (upOrCancel == null) {
+        cancelOrReleaseJob =
+            scope.launchAwaitingReset(resetJob) {
+                // tap-up was canceled
+                pressScope.cancel()
+            }
+    } else {
+        upOrCancel.consume()
+        cancelOrReleaseJob = scope.launchAwaitingReset(resetJob) { pressScope.release() }
+    }
+
+    if (upOrCancel != null) {
+        // tap was successful.
+        if (onDoubleTap == null) {
+            onTap?.invoke(upOrCancel.position) // no need to check for double-tap.
         } else {
-            upOrCancel.consume()
-            cancelOrReleaseJob = launchAwaitingReset(resetJob) { pressScope.release() }
-        }
+            // check for second tap
+            val secondDown = awaitSecondDown(upOrCancel)
 
-        if (upOrCancel != null) {
-            // tap was successful.
-            if (onDoubleTap == null) {
-                onTap?.invoke(upOrCancel.position) // no need to check for double-tap.
+            if (secondDown == null) {
+                onTap?.invoke(upOrCancel.position) // no valid second tap started
             } else {
-                // check for second tap
-                val secondDown = awaitSecondDown(upOrCancel)
-
-                if (secondDown == null) {
-                    onTap?.invoke(upOrCancel.position) // no valid second tap started
-                } else {
-                    // Second tap down detected
-                    resetJob =
-                        launch(start = CoroutineStart.UNDISPATCHED) {
-                            cancelOrReleaseJob.join()
-                            pressScope.reset()
-                        }
-                    if (onPress !== NoPressGesture) {
-                        launchAwaitingReset(resetJob) { pressScope.onPress(secondDown.position) }
+                // Second tap down detected
+                resetJob =
+                    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        cancelOrReleaseJob.join()
+                        pressScope.reset()
                     }
+                if (onPress !== NoPressGesture) {
+                    scope.launchAwaitingReset(resetJob) { pressScope.onPress(secondDown.position) }
+                }
 
-                    // Might have a long second press as the second tap
-                    val secondUp =
-                        if (onLongPress == null) {
-                            waitForUpOrCancellation()
-                        } else {
-                            when (val longPressResult = waitForLongPress()) {
-                                LongPressResult.Success -> {
-                                    // The first tap was valid, but the second tap is a long press -
-                                    // we
-                                    // intentionally do not invoke onClick() for the first tap,
-                                    // since the 'main'
-                                    // gesture here is a long press, which canceled the double tap
-                                    // / tap.
-
-                                    // notify for the long press
-                                    onLongPress.invoke(secondDown.position)
-                                    consumeUntilUp()
-
-                                    launchAwaitingReset(resetJob) { pressScope.release() }
-                                    return@awaitEachGesture
-                                }
-
-                                is LongPressResult.Released -> longPressResult.finalUpChange
-                                is LongPressResult.Canceled -> null
-                            }
-                        }
-                    if (secondUp != null) {
-                        secondUp.consume()
-                        launchAwaitingReset(resetJob) { pressScope.release() }
-                        onDoubleTap(secondUp.position)
+                // Might have a long second press as the second tap
+                val secondUp =
+                    if (onLongPress == null) {
+                        waitForUpOrCancellation()
                     } else {
-                        launchAwaitingReset(resetJob) { pressScope.cancel() }
-                        onTap?.invoke(upOrCancel.position)
+                        when (val longPressResult = waitForLongPress()) {
+                            LongPressResult.Success -> {
+                                // The first tap was valid, but the second tap is a long press -
+                                // we
+                                // intentionally do not invoke onClick() for the first tap,
+                                // since the 'main'
+                                // gesture here is a long press, which canceled the double tap
+                                // / tap.
+
+                                // notify for the long press
+                                onLongPress.invoke(secondDown.position)
+                                consumeUntilUp()
+
+                                scope.launchAwaitingReset(resetJob) { pressScope.release() }
+                                return
+                            }
+
+                            is LongPressResult.Released -> longPressResult.finalUpChange
+                            is LongPressResult.Canceled -> null
+                        }
                     }
+                if (secondUp != null) {
+                    secondUp.consume()
+                    scope.launchAwaitingReset(resetJob) { pressScope.release() }
+                    onDoubleTap(secondUp.position)
+                } else {
+                    scope.launchAwaitingReset(resetJob) { pressScope.cancel() }
+                    onTap?.invoke(upOrCancel.position)
                 }
             }
         }
@@ -272,7 +299,7 @@ internal suspend fun PointerInputScope.detectTapAndPress(
     "Maintained for binary compatibility. Use version with PointerEventPass instead.",
     level = DeprecationLevel.HIDDEN,
 )
-suspend fun AwaitPointerEventScope.awaitFirstDown(
+public suspend fun AwaitPointerEventScope.awaitFirstDown(
     requireUnconsumed: Boolean = true
 ): PointerInputChange =
     awaitFirstDown(requireUnconsumed = requireUnconsumed, pass = PointerEventPass.Main)
@@ -281,7 +308,7 @@ suspend fun AwaitPointerEventScope.awaitFirstDown(
  * Reads events until the first down is received in the given [pass]. If [requireUnconsumed] is
  * `true` and the first down is already consumed in the pass, that gesture is ignored.
  */
-suspend fun AwaitPointerEventScope.awaitFirstDown(
+public suspend fun AwaitPointerEventScope.awaitFirstDown(
     requireUnconsumed: Boolean = true,
     pass: PointerEventPass = PointerEventPass.Main,
 ): PointerInputChange {
@@ -329,7 +356,7 @@ internal fun PointerEvent.isChangedToDown(
     "Maintained for binary compatibility. Use version with PointerEventPass instead.",
     level = DeprecationLevel.HIDDEN,
 )
-suspend fun AwaitPointerEventScope.waitForUpOrCancellation(): PointerInputChange? =
+public suspend fun AwaitPointerEventScope.waitForUpOrCancellation(): PointerInputChange? =
     waitForUpOrCancellation(PointerEventPass.Main)
 
 /**
@@ -344,7 +371,7 @@ internal expect val PointerEvent.isDeepPress: Boolean
  * consumed or a pointer down change event was already consumed in the given pass. If the gesture
  * was not canceled, the final up change is returned or `null` if the event was canceled.
  */
-suspend fun AwaitPointerEventScope.waitForUpOrCancellation(
+public suspend fun AwaitPointerEventScope.waitForUpOrCancellation(
     pass: PointerEventPass = PointerEventPass.Main
 ): PointerInputChange? {
     while (true) {

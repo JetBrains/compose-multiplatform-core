@@ -20,6 +20,7 @@ package androidx.biometric.internal
 import android.app.Application
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.biometric.internal.data.CanceledFrom
 import androidx.biometric.internal.data.FakeAuthenticationStateRepository
 import androidx.biometric.internal.data.FakePromptConfigRepository
 import androidx.biometric.internal.viewmodel.AuthenticationViewModel
@@ -53,12 +54,17 @@ class AuthenticationHandlerKeyguardManagerTest {
 
         handler =
             AuthenticationHandlerKeyguardManager(
-                context = context,
-                lifecycleOwner = testLifecycleOwner,
-                viewModel = viewModel,
-                confirmCredentialActivityLauncher = { isConfirmCredentialActivityLaunched = true },
-                clientExecutor = clientExecutor,
-                clientAuthenticationCallback = clientAuthenticationCallback,
+                AuthenticationManager(
+                    context = context,
+                    lifecycleOwner = testLifecycleOwner,
+                    viewModel = viewModel,
+                    confirmCredentialActivityLauncher = {
+                        isConfirmCredentialActivityLaunched = true
+                    },
+                    clientExecutor = clientExecutor,
+                    clientAuthenticationCallback = clientAuthenticationCallback,
+                    onDismissed = {},
+                )
             )
 
         testLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)

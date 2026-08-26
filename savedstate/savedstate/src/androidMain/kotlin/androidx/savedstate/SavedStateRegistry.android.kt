@@ -22,6 +22,12 @@ import androidx.savedstate.internal.SavedStateRegistryImpl
 public actual class SavedStateRegistry
 internal actual constructor(private val impl: SavedStateRegistryImpl) {
 
+    public actual constructor() : this(SavedStateRegistryImpl())
+
+    public actual constructor(
+        initialState: SavedState?
+    ) : this(SavedStateRegistryImpl(initialState))
+
     @get:MainThread
     public actual val isRestored: Boolean
         get() = impl.isRestored
@@ -36,7 +42,7 @@ internal actual constructor(private val impl: SavedStateRegistryImpl) {
     }
 
     public actual fun getSavedStateProvider(key: String): SavedStateProvider? =
-        impl.getSavedStateProvider(key)
+        impl.getSavedStateProvider(key) as? SavedStateProvider
 
     @MainThread
     public actual fun unregisterSavedStateProvider(key: String) {
@@ -47,12 +53,21 @@ internal actual constructor(private val impl: SavedStateRegistryImpl) {
         public actual fun saveState(): SavedState
     }
 
+    public actual fun interface SavedStateRestorer {
+        public actual fun restoreState(savedState: SavedState?)
+    }
+
     /**
      * Subclasses of this interface will be automatically recreated if they were previously
      * registered via [runOnNextRecreation].
      *
      * Subclasses must have a default constructor
      */
+    @Deprecated(
+        message =
+            "`AutoRecreated` is deprecated. Use `SavedStateProvider` and `SavedStateConsumer` to " +
+                "save and restore state."
+    )
     public interface AutoRecreated {
         /**
          * This method will be called during dispatching of
@@ -76,6 +91,12 @@ internal actual constructor(private val impl: SavedStateRegistryImpl) {
      * @throws IllegalArgumentException if you try to call if after [Lifecycle.Event.ON_STOP] was
      *   dispatched
      */
+    @Deprecated(
+        message =
+            "`runOnNextRecreation` is deprecated. Use `SavedStateProvider` and `SavedStateConsumer` " +
+                "to save and restore state."
+    )
+    @Suppress("DEPRECATION")
     @MainThread
     public fun runOnNextRecreation(clazz: Class<out AutoRecreated>) {
         check(impl.isAllowingSavingState) {

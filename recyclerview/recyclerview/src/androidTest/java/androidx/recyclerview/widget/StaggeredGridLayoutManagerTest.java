@@ -30,13 +30,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
 
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.StateListDrawable;
-import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
@@ -52,6 +50,7 @@ import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
@@ -333,15 +332,15 @@ public class StaggeredGridLayoutManagerTest extends BaseStaggeredGridLayoutManag
         focusSearchFailure(false);
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // b/537526408
     @Test
     public void focusSearchFailureDown() throws Throwable {
-        assumeFalse("Test fails on cuttlefish b/460512080", Build.MODEL.contains("Cuttlefish"));
         focusSearchFailure(true);
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // b/537526408
     @Test
     public void focusSearchFailureFromSubChild() throws Throwable {
-        assumeFalse("Test fails on cuttlefish b/460512080", Build.MODEL.contains("Cuttlefish"));
         setupByConfig(new Config(VERTICAL, false, 3, GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS),
                 new GridTestAdapter(1000, VERTICAL) {
 
@@ -471,6 +470,7 @@ public class StaggeredGridLayoutManagerTest extends BaseStaggeredGridLayoutManag
         for (int i : new int[]{18, 19, 20, 21, 23, 24}) {
             focusSearchAndWaitForScroll(focusedView, focusDir);
             focusedView = mRecyclerView.getFocusedChild();
+            assertFalse(focusedView == null);
             assertEquals(i, mRecyclerView.getChildViewHolder(
                     focusedView).getAbsoluteAdapterPosition());
         }

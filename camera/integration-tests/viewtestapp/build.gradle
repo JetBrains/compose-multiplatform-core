@@ -23,16 +23,15 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         applicationId = "androidx.camera.integration.view"
     }
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro")
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.camera.integration.view"
@@ -71,6 +70,9 @@ dependencies {
     implementation("androidx.compose.material:material:1.4.0")
     implementation("androidx.compose.ui:ui:1.4.0")
     implementation("androidx.compose.foundation:foundation:1.4.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
+    implementation(project(":camera:camera-compose"))
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation(libs.media3Common)
     implementation(libs.media3Effect)
 
@@ -119,5 +121,3 @@ dependencies {
 
 // Publish the APK to dist/apk for testing.
 ApkCopyHelperKt.setupAppApkCopy(project, "release")
-
-androidx.deviceTests.minSdkForFtlOverride = 24 // b/437944630

@@ -25,25 +25,27 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.platformstorage.PlatformConversionAdapter;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
 
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * Translates between Platform and Jetpack versions of {@link SearchSpec}.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 public final class SearchSpecToPlatformConverter {
@@ -57,7 +59,8 @@ public final class SearchSpecToPlatformConverter {
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static android.app.appsearch.@NonNull SearchSpec toPlatformSearchSpec(
             @NonNull Context context,
-            @NonNull SearchSpec jetpackSearchSpec) {
+            @NonNull SearchSpec jetpackSearchSpec,
+            @NonNull PlatformConversionAdapter adapter) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(jetpackSearchSpec);
 
@@ -165,14 +168,20 @@ public final class SearchSpecToPlatformConverter {
                         + " is not available on this AppSearch implementation.");
             }
             ApiHelperForB.addEmbeddingParameters(platformBuilder,
-                    jetpackSearchSpec.getEmbeddingParameters());
+                    jetpackSearchSpec.getEmbeddingParameters(), adapter);
             ApiHelperForB.setDefaultEmbeddingSearchMetricType(platformBuilder,
                     jetpackSearchSpec.getDefaultEmbeddingSearchMetricType());
         }
         if (!jetpackSearchSpec.getSearchStringParameters().isEmpty()) {
             // TODO(b/332620561): Remove this once search parameter strings APIs is supported.
-            throw new UnsupportedOperationException(Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS
-                    + " is not available on this AppSearch implementation.");
+            adapter.setSearchStringParameters(
+                    platformBuilder, jetpackSearchSpec.getSearchStringParameters());
+        }
+        if (jetpackSearchSpec.getEmbeddingQueryProbeCount()
+                != SearchSpec.DEFAULT_EMBEDDING_QUERY_PROBE_COUNT) {
+            // TODO(b/448886757): Update once this feature is supported.
+            adapter.setEmbeddingQueryProbeCount(
+                    platformBuilder, jetpackSearchSpec.getEmbeddingQueryProbeCount());
         }
 
         if (jetpackSearchSpec.getJoinSpec() != null) {
@@ -181,7 +190,7 @@ public final class SearchSpecToPlatformConverter {
                         + "AppSearch implementation.");
             }
             ApiHelperForSdkExtensionUBase.setJoinSpec(
-                    context, platformBuilder, jetpackSearchSpec.getJoinSpec());
+                    context, platformBuilder, jetpackSearchSpec.getJoinSpec(), adapter);
         }
 
         if (!jetpackSearchSpec.getFilterProperties().isEmpty()) {
@@ -250,12 +259,14 @@ public final class SearchSpecToPlatformConverter {
             builder.setRankingStrategy(rankingExpression);
         }
 
+        @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
         @DoNotInline
         static void setJoinSpec(@NonNull Context context,
                 android.app.appsearch.SearchSpec.@NonNull Builder builder,
-                JoinSpec jetpackJoinSpec) {
+                JoinSpec jetpackJoinSpec,
+                @NonNull PlatformConversionAdapter adapter) {
             builder.setJoinSpec(JoinSpecToPlatformConverter.toPlatformJoinSpec(context,
-                    jetpackJoinSpec));
+                    jetpackJoinSpec, adapter));
         }
 
         @DoNotInline
@@ -360,15 +371,26 @@ public final class SearchSpecToPlatformConverter {
         }
 
         @DoNotInline
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         static void addEmbeddingParameters(
                 android.app.appsearch.SearchSpec.@NonNull Builder platformBuilder,
-                @NonNull List<EmbeddingVector> embeddingVectors) {
+                @NonNull List<EmbeddingVector> embeddingVectors,
+                @NonNull PlatformConversionAdapter adapter) {
+            Preconditions.checkNotNull(adapter);
             android.app.appsearch.EmbeddingVector[] platformEmbeddingVectors =
                     new android.app.appsearch.EmbeddingVector[embeddingVectors.size()];
             for (int i = 0; i < embeddingVectors.size(); i++) {
-                platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
-                        embeddingVectors.get(i).getValues(),
-                        embeddingVectors.get(i).getModelSignature());
+                EmbeddingVector jetpackEmbeddingVector = embeddingVectors.get(i);
+                // TODO(b/390450012): Update this once pre-quantized embedding vectors are
+                //  supported.
+                if (jetpackEmbeddingVector.getQuantizedData() != null) {
+                    platformEmbeddingVectors[i] =
+                            adapter.convertQuantizedEmbeddingVector(jetpackEmbeddingVector);
+                } else {
+                    platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
+                            jetpackEmbeddingVector.getValues(),
+                            jetpackEmbeddingVector.getModelSignature());
+                }
             }
             platformBuilder.addEmbeddingParameters(platformEmbeddingVectors);
         }

@@ -23,14 +23,18 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.Anchor
@@ -53,7 +56,6 @@ import androidx.xr.compose.spatial.FollowingSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.FollowBehavior
 import androidx.xr.compose.subspace.FollowTarget
-import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -63,14 +65,25 @@ import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.theme.PurpleGrey80
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
-import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.AnchorSpace
 import kotlinx.coroutines.delay
+
+/** Represents the different states of the AnchorFollowingSubspaceActivity. */
+sealed interface AppState {
+    /** The initial state, showing instructions and a button to start scanning planes. */
+    object Initial : AppState
+
+    /** The state where the app is scanning for planes and showing buttons on them. */
+    object Scanning : AppState
+
+    /** The state where a Pose has been selected for showing anchored content. */
+    data class PoseSelected(val pose: Pose) : AppState
+}
 
 /**
  * Main activity for the FollowingSubspace.
@@ -81,54 +94,89 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalFollowingSubspaceApi::class)
 class AnchorFollowingSubspaceActivity : ComponentActivity() {
     lateinit var session: Session
-
     var planePoses by mutableStateOf(mutableListOf<Pose>())
+    private var appState by mutableStateOf<AppState>(AppState.Initial)
+    private var showErrorDialog by mutableStateOf(false)
 
     companion object {
         private const val TAG = "FollowingSubspaceApp"
+        private val ANIMATION_DELTA = Vector3(.5f, 0f, 0f)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            session =
-                remember(this) { (Session.create(activity = this) as SessionCreateSuccess).session }
-            LaunchedEffect(session) {
-                session.configure(
-                    Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
-                )
+            var sessionCreated by remember { mutableStateOf(false) }
+
+            if (sessionCreated) {
+                MainApp()
             }
 
-            MainPanelContent()
+            LaunchedEffect(Unit) {
+                val sessionResult = Session.create(context = this@AnchorFollowingSubspaceActivity)
+                if (sessionResult is SessionCreateSuccess) {
+                    session = sessionResult.session
+                    session.configure(
+                        Config.Builder()
+                            .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                            .build()
+                    )
+                    sessionCreated = true
+                } else {
+                    finish()
+                }
+            }
         }
     }
 
     @Composable
-    fun GetPlanes() {
-        var poses by remember { mutableStateOf<List<Pose>>(emptyList()) }
-        var selectedPose by remember {
-            mutableStateOf<Pose?>(null)
-        } // To track which pose is selected
-        val currentPose = selectedPose
+    fun MainApp() {
+        when (val currentState = appState) {
+            is AppState.Initial -> {
+                MainPanelContent(currentState) { appState = AppState.Scanning }
+            }
+            is AppState.Scanning -> {
+                PlaneScanner { pose -> appState = AppState.PoseSelected(pose) }
+            }
+            is AppState.PoseSelected -> {
+                MainPanelContent(currentState) {}
+                FollowingSubspaceContent(session, currentState.pose)
+            }
+        }
 
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showErrorDialog = false
+                    appState = AppState.Initial
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showErrorDialog = false
+                            appState = AppState.Initial
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                },
+                title = { Text("Anchor Creation Failed") },
+                text = { Text("Failed to create anchor. Returning to main menu.") },
+            )
+        }
+    }
+
+    @Composable
+    fun PlaneScanner(onPoseSelected: (Pose) -> Unit) {
+        var poses by remember { mutableStateOf<List<Pose>>(emptyList()) }
         LaunchedEffect(session) {
             Plane.subscribe(session).collect { planeUpdate ->
                 val newPoses = updatePlaneModels(planeUpdate)
                 poses = newPoses
             }
         }
-
-        if (currentPose == null) {
-            SetOfAnchorButtons(poses) { pose ->
-                selectedPose = pose // Set the selected pose on button click
-            }
-        } else {
-            FollowingSubspaceContent(session, currentPose)
-            Button(onClick = { this@AnchorFollowingSubspaceActivity.finish() }) {
-                Text("Back to main app")
-            }
-        }
+        SetOfAnchorButtons(poses, onPoseSelected)
     }
 
     @Composable
@@ -150,59 +198,17 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     @Composable
     fun SingleAnchorButtonWithPoseListener(text: String, position: Pose, onClick: () -> Unit) {
-        var rootAnchor = remember { mutableStateOf<AnchorEntity?>(null) }
-        LaunchedEffect(Unit) {
-            val anchorResult = Anchor.create(session, position)
+        var rootAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
+        DisposableEffect(Unit) {
+            val anchorSpace = createAnchorSpace(session, position)
+            val anchor = anchorSpace?.anchor
+            rootAnchor = anchorSpace
 
-            when (anchorResult) {
-                is AnchorCreateSuccess -> {
-                    rootAnchor.value = AnchorEntity.create(session, anchor = anchorResult.anchor)
-                }
-
-                is AnchorCreateResourcesExhausted -> {
-                    Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
-                }
-
-                else -> {
-                    Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
-                }
-            }
+            onDispose { anchor?.detach() }
         }
 
-        if (rootAnchor.value != null) {
-            val currentAnchor = rootAnchor.value!!
-
-            LaunchedEffect(currentAnchor) {
-                val initialPose = currentAnchor.getPose(relativeTo = Space.ACTIVITY)
-                var counter = 0
-
-                // Loop indefinitely as long as the composable is active
-                while (true) {
-                    val translationX = if (counter % 2 == 0) 5f else -5f
-
-                    val newPose =
-                        Pose(
-                            Vector3(
-                                initialPose.translation.x + translationX,
-                                initialPose.translation.y,
-                                initialPose.translation.z,
-                            ),
-                            Quaternion(
-                                initialPose.rotation.x,
-                                initialPose.rotation.y,
-                                initialPose.rotation.z,
-                                initialPose.rotation.w,
-                            ),
-                        )
-
-                    Log.d(TAG, "Anchor moved to: (${newPose.translation}")
-
-                    // Wait for a few seconds before the next move
-                    delay(1000L)
-                    counter++
-                }
-            }
-
+        val currentAnchor = rootAnchor
+        if (currentAnchor != null) {
             FollowingSubspace(
                 target = FollowTarget.Anchor(currentAnchor),
                 behavior = FollowBehavior.Tight,
@@ -239,52 +245,74 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     @OptIn(ExperimentalFollowingSubspaceApi::class)
     @Composable
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
     private fun FollowingSubspaceContent(session: Session, anchorPose: Pose) {
-        var rootAnchor = remember { mutableStateOf<AnchorEntity?>(null) }
+        var rootAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
+        var alternateAnchor by remember { mutableStateOf<AnchorSpace?>(null) }
+        var showAlternate by remember { mutableStateOf(false) }
+        var isAnimating by remember { mutableStateOf(false) }
 
-        val anchorResult = Anchor.create(session, anchorPose)
-        when (anchorResult) {
-            is AnchorCreateSuccess -> {
-                rootAnchor.value = AnchorEntity.create(session, anchor = anchorResult.anchor)
-            }
+        DisposableEffect(anchorPose) {
+            val localRoot = createAnchorSpace(session, anchorPose)
+            val alternatePose = Pose(anchorPose.translation + ANIMATION_DELTA, anchorPose.rotation)
+            val localAlternative = createAnchorSpace(session, alternatePose)
+            rootAnchor = localRoot
+            alternateAnchor = localAlternative
 
-            is AnchorCreateResourcesExhausted -> {
-                Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
-            }
+            val rootAnchorObj = localRoot?.anchor
+            val alternativeAnchorObj = localAlternative?.anchor
 
-            else -> {
-                Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
+            onDispose {
+                rootAnchorObj?.detach()
+                alternativeAnchorObj?.detach()
             }
         }
 
-        if (rootAnchor.value != null) {
+        LaunchedEffect(rootAnchor, alternateAnchor, isAnimating) {
+            if (rootAnchor != null && alternateAnchor != null) {
+                while (isAnimating) {
+                    showAlternate = !showAlternate
+                    delay(2000L)
+                }
+            }
+        }
+
+        val currentAnchor = if (showAlternate) alternateAnchor else rootAnchor
+        currentAnchor?.let { activeAnchor ->
+            val buttonText = if (isAnimating) "Stop anchor animation" else "Start anchor animation"
+
             FollowingSubspace(
-                target = FollowTarget.Anchor(rootAnchor.value!!),
-                behavior = FollowBehavior.Tight,
+                target = FollowTarget.Anchor(activeAnchor),
+                behavior = FollowBehavior.Soft(),
                 modifier = SubspaceModifier.rotate(pitch = -90f, 0f, 0f),
             ) {
                 SpatialRow {
                     CustomSpatialPanel {
-                        Text("Anchored (row)", fontSize = 30.sp, color = Color(16, 156, 11))
-                    }
-                    SpatialColumn {
-                        CustomSpatialPanel {
-                            Text("Anchored (column)", fontSize = 30.sp, color = Color(16, 156, 11))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Anchored", fontSize = 30.sp, color = Color(16, 156, 11))
+                            Spacer(Modifier.height(8.dp))
+                            Button(onClick = { isAnimating = !isAnimating }) { Text(buttonText) }
                         }
                     }
                 }
             }
         }
+    }
 
-        Subspace {
-            SpatialRow {
-                CustomSpatialPanel {
-                    Text("NOT Anchored (row)", fontSize = 30.sp, color = Color.Red)
-                }
-                CustomSpatialPanel {
-                    Text("NOT Anchored (row)", fontSize = 30.sp, color = Color.Red)
-                }
+    private fun createAnchorSpace(session: Session, anchorPose: Pose): AnchorSpace? {
+        when (val anchorResult = Anchor.create(session, anchorPose)) {
+            is AnchorCreateSuccess -> {
+                return AnchorSpace.create(session, anchor = anchorResult.anchor)
+            }
+            is AnchorCreateResourcesExhausted -> {
+                Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
+                showErrorDialog = true
+                return null
+            }
+            else -> {
+                Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                showErrorDialog = true
+                return null
             }
         }
     }
@@ -295,7 +323,7 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
         modifier: SubspaceModifier = SubspaceModifier.Companion,
         content: @Composable () -> Unit,
     ) {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
         (SpatialPanel(modifier.width(300.dp).height(200.dp)) {
             Box(
                 modifier = Modifier.background(Color.LightGray).fillMaxSize(),
@@ -308,35 +336,48 @@ class AnchorFollowingSubspaceActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun MainPanelContent() {
-        var startSubscription by remember { mutableStateOf(false) }
-        CommonTestScaffold(
-            title = "Anchorable Subspace Test case",
-            bottomBarText = "Bottom Bar",
-            onClickBackArrow = { this@AnchorFollowingSubspaceActivity.finish() },
-            showBottomBar = false,
-        ) { padding ->
-            Box(
-                modifier = Modifier.fillMaxSize().background(PurpleGrey80).padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Row {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            "Anchored Subspace will be created if a button is clicked.",
-                            fontSize = 32.sp,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                        )
+    private fun MainPanelContent(appState: AppState, onShowPlanesClick: () -> Unit) {
+        Subspace {
+            SpatialPanel(modifier = SubspaceModifier.width(800.dp).height(350.dp)) {
+                CommonTestScaffold(
+                    title = "Anchorable Subspace Test case",
+                    bottomBarText = "Bottom Bar",
+                    onClickBackArrow = { this@AnchorFollowingSubspaceActivity.finish() },
+                    showBottomBar = false,
+                ) { padding ->
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(PurpleGrey80).padding(padding),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            if (appState == AppState.Initial) {
+                                Text(
+                                    text =
+                                        "Detected planes will be shown with buttons on them. You will then be able to place anchored content at that location.",
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
 
-                        Button(onClick = { startSubscription = true }) {
-                            Text("Show Planes/Buttons", textAlign = TextAlign.Center)
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Button(
+                                    onClick = onShowPlanesClick,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                                ) {
+                                    Text("Show Planes/Buttons")
+                                }
+                            } else {
+                                Text(
+                                    text =
+                                        "There is now content loaded at the anchor you selected.",
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-
-        if (startSubscription) GetPlanes()
     }
 }

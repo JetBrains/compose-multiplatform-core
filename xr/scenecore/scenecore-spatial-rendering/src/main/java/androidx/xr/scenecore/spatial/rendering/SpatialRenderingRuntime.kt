@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,22 @@ package androidx.xr.scenecore.spatial.rendering
 import android.app.Activity
 import android.os.Looper
 import androidx.annotation.VisibleForTesting
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import androidx.xr.scenecore.impl.impress.ExrImage
-import androidx.xr.scenecore.impl.impress.GltfModel
-import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.impl.impress.ImpressApiImpl
-import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial
-import androidx.xr.scenecore.impl.impress.Material
-import androidx.xr.scenecore.impl.impress.Texture
+import androidx.xr.scenecore.runtime.CustomMeshResource
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.ExrImageResource
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.MeshBufferResource
+import androidx.xr.scenecore.runtime.MeshEntity
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -44,7 +43,18 @@ import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
 import androidx.xr.scenecore.runtime.TextureSampler
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
+import androidx.xr.scenecore.runtime.TypeHolder
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsHolderAccessor
+import androidx.xr.scenecore.spatial.rendering.impress.CustomMesh
+import androidx.xr.scenecore.spatial.rendering.impress.ExrImage
+import androidx.xr.scenecore.spatial.rendering.impress.GltfModel
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApiImpl
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
+import androidx.xr.scenecore.spatial.rendering.impress.KhronosPbrMaterial
+import androidx.xr.scenecore.spatial.rendering.impress.Material
+import androidx.xr.scenecore.spatial.rendering.impress.MeshBuffer
+import androidx.xr.scenecore.spatial.rendering.impress.Texture
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.ar.imp.view.splitengine.ImpSplitEngine
@@ -52,7 +62,7 @@ import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
 
 /**
  * Implementation of [RenderingRuntime] for devices that support the
- * [androidx.xr.runtime.internal.Feature.SPATIAL] system feature.
+ * [androidx.xr.runtime.interfaces.Feature.SPATIAL] system feature.
  */
 internal class SpatialRenderingRuntime
 private constructor(
@@ -63,6 +73,9 @@ private constructor(
     private val subspaceManager: SplitEngineSubspaceManager,
     private val renderer: ImpSplitEngineRenderer,
 ) : RenderingRuntime {
+
+    override var config: Config = Config.Builder().build()
+        private set
 
     private lateinit var renderingEntityFactory: RenderingEntityFactory
     private var spatialEnvironmentFeature: SpatialEnvironmentFeatureImpl?
@@ -82,6 +95,10 @@ private constructor(
         (sceneRuntime.spatialEnvironment as SpatialEnvironmentExt).onRenderingFeatureReady(
             spatialEnvironmentFeature as SpatialEnvironmentFeature
         )
+    }
+
+    override fun configure(config: Config) {
+        this.config = config
     }
 
     @SuppressWarnings("RestrictTo")
@@ -690,6 +707,109 @@ private constructor(
         return renderingEntityFactory.createSurfaceEntity(feature, pose, parentEntity)
     }
 
+    override fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        byteOffsets: IntArray,
+        byteStrides: IntArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<java.nio.ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
+        vertexDataSizes: IntArray?,
+        indexData: java.nio.ByteBuffer?,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+    ): MeshBufferResource {
+        return impressApi.createMeshBuffer(
+            attributeIds,
+            attributeTypes,
+            bufferIndices,
+            byteOffsets,
+            byteStrides,
+            maxVertices,
+            maxIndices,
+            vertexData,
+            vertexDataOffsets,
+            vertexDataSizes,
+            indexData,
+            indexDataOffset,
+            indexDataSize,
+        )
+    }
+
+    override fun destroyMeshBuffer(meshBuffer: MeshBufferResource) {
+        (meshBuffer as MeshBuffer).destroy()
+    }
+
+    override fun createCustomMesh(
+        meshBuffer: MeshBufferResource,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): CustomMeshResource {
+        return impressApi.createCustomMesh(
+            (meshBuffer as MeshBuffer).nativeHandle,
+            subsetOffsets,
+            subsetCounts,
+            subsetTopologies,
+            centerX,
+            centerY,
+            centerZ,
+            halfExtentX,
+            halfExtentY,
+            halfExtentZ,
+        )
+    }
+
+    override fun getCustomMeshBoundingBox(customMesh: CustomMeshResource): BoundingBox {
+        val aabb = FloatArray(6)
+        impressApi.getCustomMeshAabb((customMesh as CustomMesh).nativeHandle, aabb)
+        val center = Vector3(aabb[0], aabb[1], aabb[2])
+        val halfExtents = FloatSize3d(aabb[3], aabb[4], aabb[5])
+        return BoundingBox.fromCenterAndHalfExtents(center, halfExtents)
+    }
+
+    override fun destroyCustomMesh(customMesh: CustomMeshResource) {
+        (customMesh as CustomMesh).destroy()
+    }
+
+    override fun createMeshEntity(
+        customMesh: CustomMeshResource,
+        materials: List<MaterialResource>,
+        boneCount: Int,
+        pose: Pose,
+        parent: Entity?,
+    ): MeshEntity {
+        val materialHandles = LongArray(materials.size)
+        for (i in materials.indices) {
+            val material = materials[i]
+            require(material is Material) { "MaterialResource is not a Material" }
+            materialHandles[i] = material.nativeHandle
+        }
+
+        val impressNodeId =
+            impressApi.createCustomMeshNode(
+                (customMesh as CustomMesh).nativeHandle,
+                materialHandles,
+                boneCount,
+                /* enableCollider= */ false,
+            )
+        val impressNode = ImpressNode(impressNodeId)
+        val meshBoundingBox = getCustomMeshBoundingBox(customMesh)
+
+        val feature =
+            MeshFeatureImpl(impressApi, subspaceManager, extensions, impressNode, meshBoundingBox)
+        return renderingEntityFactory.createMeshEntity(feature, pose, parent)
+    }
+
     // JxrRuntime lifecycle
     override fun resume() {
         // Start renderer
@@ -745,8 +865,10 @@ private constructor(
             splitEngineSubspaceManager: SplitEngineSubspaceManager?,
             splitEngineRenderer: ImpSplitEngineRenderer?,
         ): SpatialRenderingRuntime {
-            val extensions =
-                getXrExtensions() ?: throw IllegalStateException("XrExtensions is null")
+            val extensionsHolder =
+                XrExtensionsHolderAccessor.holderLegacy
+                    ?: throw IllegalStateException("XrExtensions is null")
+            val extensions = TypeHolder.assertGetValue(extensionsHolder, XrExtensions::class.java)
 
             val finalImpressApi = impressApi ?: ImpressApiImpl()
 
@@ -757,7 +879,10 @@ private constructor(
                             ImpSplitEngine.SplitEngineSetupParams().apply {
                                 jniLibraryName = SPLIT_ENGINE_LIBRARY_NAME
                             }
-                        ImpSplitEngineRenderer.create(activity, impApiSetupParams, extensions)
+                        ImpSplitEngineRenderer.Builder(activity)
+                            .setSetupParams(impApiSetupParams)
+                            .setXrExtensions(extensions)
+                            .create()
                     }
 
             val finalSubspaceManager =

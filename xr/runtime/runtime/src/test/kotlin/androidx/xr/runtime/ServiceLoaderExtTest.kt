@@ -23,16 +23,11 @@ import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.testing.AnotherFakeStateExtender
-import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
-import androidx.xr.arcore.testing.FakeStateExtender
-import androidx.xr.runtime.internal.Feature
+import androidx.xr.runtime.interfaces.Feature
+import androidx.xr.runtime.interfaces.Service
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
-import androidx.xr.runtime.internal.Service
 import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
 import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
-import androidx.xr.scenecore.testing.FakeRenderingRuntimeFactory
-import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,56 +35,36 @@ import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowBuild
+import org.robolectric.shadows.ShadowSystemProperties
 
 @RunWith(AndroidJUnit4::class)
 class ServiceLoaderExtTest {
 
     @Test
-    // TODO(b/440615454) - Move this test to scenecore-testing/arcore-testing.
     fun loadProviders_loadsProviders() {
         assertThat(
                 loadProviders(
                         PerceptionRuntimeFactory::class.java,
-                        listOf(FakePerceptionRuntimeFactory::class.java.name),
+                        listOf(StubPerceptionRuntimeFactory::class.java.name),
                     )
                     .single()
             )
-            .isInstanceOf(FakePerceptionRuntimeFactory::class.java)
+            .isInstanceOf(StubPerceptionRuntimeFactory::class.java)
         assertThat(
-                loadProviders(
-                        FakeSceneRuntimeFactory::class.java,
-                        listOf(FakeSceneRuntimeFactory::class.java.name),
-                    )
-                    .single()
-            )
-            .isInstanceOf(FakeSceneRuntimeFactory::class.java)
-        assertThat(
-                loadProviders(
-                        FakeRenderingRuntimeFactory::class.java,
-                        listOf(FakeRenderingRuntimeFactory::class.java.name),
-                    )
-                    .single()
-            )
-            .isInstanceOf(FakeRenderingRuntimeFactory::class.java)
-        assertThat(
-                loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
+                loadProviders(StateExtender::class.java, listOf(StubStateExtender::class.java.name))
                     .iterator()
                     .next()
             )
-            .isInstanceOf(FakeStateExtender::class.java)
+            .isInstanceOf(StubStateExtender::class.java)
     }
 
     @Test
     fun loadProviders_combinesFastAndLoaderProviders() {
         val stateExtenders =
-            loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
+            loadProviders(StateExtender::class.java, listOf(StubStateExtender::class.java.name))
 
-        assertThat(stateExtenders.size).isEqualTo(2)
-
-        // TODO(b/436933956) - temp. dependency on arcore package is pulling in
-        // PerceptionStateExtender
-        assertThat(stateExtenders.any { it is FakeStateExtender || it is AnotherFakeStateExtender })
-            .isTrue()
+        assertThat(stateExtenders.size).isEqualTo(1)
+        assertThat(stateExtenders.any { it is StubStateExtender }).isTrue()
     }
 
     @Test
@@ -116,6 +91,33 @@ class ServiceLoaderExtTest {
     }
 
     @Test
+    fun getDeviceContextFeatures_withForceOpenXrPropOne_addsOpenXr() {
+        ShadowBuild.setFingerprint("a_real_device")
+        ShadowSystemProperties.override(FORCE_OPENXR_PROPERTY, "1")
+
+        assertThat(getDeviceContextFeatures(ApplicationProvider.getApplicationContext()))
+            .contains(Feature.OPEN_XR)
+    }
+
+    @Test
+    fun getDeviceContextFeatures_withForceOpenXrPropTrue_addsOpenXr() {
+        ShadowBuild.setFingerprint("a_real_device")
+        ShadowSystemProperties.override(FORCE_OPENXR_PROPERTY, "true")
+
+        assertThat(getDeviceContextFeatures(ApplicationProvider.getApplicationContext()))
+            .contains(Feature.OPEN_XR)
+    }
+
+    @Test
+    fun getDeviceContextFeatures_withForceOpenXrPropDisabled_doesNotAddOpenXr() {
+        ShadowBuild.setFingerprint("a_real_device")
+        ShadowSystemProperties.override(FORCE_OPENXR_PROPERTY, "0")
+
+        assertThat(getDeviceContextFeatures(ApplicationProvider.getApplicationContext()))
+            .doesNotContain(Feature.OPEN_XR)
+    }
+
+    @Test
     fun getDeviceContextFeatures_onSpatialDevice_addsSpatial() {
         ShadowBuild.setFingerprint("a_real_device")
         val context: Context = ApplicationProvider.getApplicationContext()
@@ -134,7 +136,26 @@ class ServiceLoaderExtTest {
         activityInfo.packageName = activity.packageName
         activityInfo.name = activity.componentName.className
         val field = ActivityInfo::class.java.getField("requiredDisplayCategory")
-        field.set(activityInfo, "xr_projected")
+        field.set(activityInfo, REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED)
+        val packageInfo = PackageInfo()
+        packageInfo.packageName = activity.packageName
+        packageInfo.activities = arrayOf(activityInfo)
+
+        shadowOf(activity.packageManager).installPackage(packageInfo)
+
+        assertThat(getDeviceContextFeatures(activity)).contains(Feature.PROJECTED)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun getDeviceContextFeatures_onProjectedActivityLegacy_addsProjected() {
+        ShadowBuild.setFingerprint("a_real_device")
+        val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+        val activityInfo = ActivityInfo()
+        activityInfo.packageName = activity.packageName
+        activityInfo.name = activity.componentName.className
+        val field = ActivityInfo::class.java.getField("requiredDisplayCategory")
+        field.set(activityInfo, REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED_LEGACY)
         val packageInfo = PackageInfo()
         packageInfo.packageName = activity.packageName
         packageInfo.activities = arrayOf(activityInfo)
@@ -180,5 +201,23 @@ class ServiceLoaderExtTest {
             }
 
         assertThat(selectProvider(listOf(unsupportedProvider), emptySet())).isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S]) // API 31 (Android S)
+    // RequiredDisplayCategory was introudced in API 34, any API below this would work
+    fun isProjectedActivity_withMissingApi_doesNotCrashAndReturnsFalse() {
+        val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+        val activityInfo = ActivityInfo()
+        activityInfo.packageName = activity.packageName
+        activityInfo.name = activity.componentName.className
+        val packageInfo = PackageInfo()
+        packageInfo.packageName = activity.packageName
+        packageInfo.activities = arrayOf(activityInfo)
+
+        shadowOf(activity.packageManager).installPackage(packageInfo)
+        val result = isProjectedActivity(activity)
+
+        assertThat(result).isFalse()
     }
 }

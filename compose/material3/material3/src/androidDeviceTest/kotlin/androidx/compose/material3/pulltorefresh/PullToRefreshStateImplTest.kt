@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -34,7 +35,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +42,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class PullToRefreshStateImplTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun refreshTrigger_onlyAfterThreshold() {
@@ -55,7 +55,7 @@ class PullToRefreshStateImplTest {
             touchSlop = LocalViewConfiguration.current.touchSlop
             positionalThreshold =
                 with(LocalDensity.current) { PullToRefreshDefaults.PositionalThreshold.toPx() }
-            var isRefreshing by mutableStateOf(false)
+            var isRefreshing by remember { mutableStateOf(false) }
             PullToRefreshBox(
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = isRefreshing,

@@ -34,8 +34,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,7 +42,7 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 class CompositionLocalConsumerModifierNodeTest(layoutComposableParam: LayoutComposableParam) {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     val testLayout: @Composable (modifier: Modifier) -> Unit = layoutComposableParam.layout
 
@@ -211,7 +209,6 @@ class CompositionLocalConsumerModifierNodeTest(layoutComposableParam: LayoutComp
     }
 
     // Regression test for b/271875799
-    @Ignore("b/275919849")
     @Test
     fun compositionLocalsUpdateWhenContentMoves() {
         var readValue = -1
@@ -242,7 +239,6 @@ class CompositionLocalConsumerModifierNodeTest(layoutComposableParam: LayoutComp
     }
 
     // Regression test for b/271875799
-    @Ignore("b/275919849")
     @Test
     fun staticCompositionLocalsUpdateWhenContentMoves() {
         var readValue = -1

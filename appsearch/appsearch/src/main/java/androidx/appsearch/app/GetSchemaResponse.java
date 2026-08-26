@@ -27,6 +27,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.appsearch.safeparcel.AbstractSafeParcelable;
@@ -37,7 +38,6 @@ import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -736,8 +736,8 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
          * @param visibilitySettingSupported whether supported
          * {@link Features#ADD_PERMISSIONS_AND_GET_VISIBILITY} by this
          *                                      backend/Android API level.
-         * @exportToFramework:hide
          */
+        @HideInPlatform
          // Visibility setting is determined by SDK version, so it won't be needed in framework
         @SuppressLint("MissingGetterMatchingBuilder")
         @CanIgnoreReturnValue
@@ -761,7 +761,7 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
          * {@link #clearSchemaTypeWipeoutAccountPropertyPaths(String)}.
          *
          * @param schemaType The name of the schema type to which these property paths belong.
-         * @param accountPropertyPaths A collection of {@link PropertyPath} that point to accounts.
+         * @param accountPropertyPaths A Set of {@link PropertyPath} that point to accounts.
          * @see SetSchemaRequest.Builder#setSchemaTypeWipeoutAccountPropertyPaths
          */
         // Merged map available from getSchemaTypesWipeoutAccountPropertyPaths
@@ -771,7 +771,7 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
         @ExperimentalAppSearchApi
         public @NonNull Builder setSchemaTypeWipeoutAccountPropertyPaths(
                 @NonNull String schemaType,
-                @NonNull Collection<PropertyPath> accountPropertyPaths) {
+                @NonNull Set<PropertyPath> accountPropertyPaths) {
             Preconditions.checkNotNull(schemaType);
             Preconditions.checkNotNull(accountPropertyPaths);
             resetIfBuilt();

@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class OperationField {
+public class OperationField implements DocumentedField {
     final int mType;
     @NonNull final String mName;
     @NonNull final String mDescription;
@@ -64,12 +64,7 @@ public class OperationField {
         return mPossibleValues;
     }
 
-    /**
-     * Add possible values for a field
-     *
-     * @param name
-     * @param value
-     */
+    /** Add possible values for a field */
     public void possibleValue(@NonNull String name, @NonNull String value) {
         mPossibleValues.add(new StringPair(name, value));
     }
@@ -84,8 +79,21 @@ public class OperationField {
     }
 
     @Nullable
+    @Override
     public String getVarSize() {
         return mVarSize;
+    }
+
+    @NonNull
+    @Override
+    public String toDoc() {
+        return "<tr><td>"
+                + DocumentedOperation.getType(mType)
+                + "</td><td>"
+                + mName
+                + "</td><td>"
+                + mDescription
+                + "</td></tr>";
     }
 
     /**
@@ -93,6 +101,7 @@ public class OperationField {
      *
      * @return the size in bytes
      */
+    @Override
     public int getSize() {
         switch (mType) {
             case DocumentedOperation.BYTE:

@@ -31,7 +31,7 @@ internal interface TransformingLazyColumnPrefetchScope {
      * scroll direction), the request should be canceled via
      * [LazyLayoutPrefetchState.PrefetchHandle.cancel].
      *
-     * See [PrefetchScheduler].
+     * See [androidx.compose.foundation.lazy.layout.PrefetchScheduler].
      *
      * @param index the index of the child to prefetch
      */
@@ -92,16 +92,14 @@ internal class TransformingLazyColumnPrefetchStrategy() {
                     val spacing = measureResult.itemSpacing
                     val distanceToPrefetchItem =
                         lastItem.offset + lastItem.measuredHeight + spacing -
-                            measureResult.viewportSize.height -
-                            measureResult.afterContentPadding
+                            measureResult.viewportSize.height
                     // if in the next frame we will get the same delta will we reach the item?
                     if (distanceToPrefetchItem < -delta) {
                         currentPrefetchHandle?.markAsUrgent()
                     }
                 } else {
                     val firstItem = measureResult.visibleItems.first()
-                    val distanceToPrefetchItem =
-                        measureResult.beforeContentPadding - firstItem.offset
+                    val distanceToPrefetchItem = -firstItem.offset
                     // if in the next frame we will get the same delta will we reach the item?
                     if (distanceToPrefetchItem < delta) {
                         currentPrefetchHandle?.markAsUrgent()

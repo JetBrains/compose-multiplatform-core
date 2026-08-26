@@ -16,6 +16,7 @@
 
 package androidx.biometric.internal.viewmodel
 
+import androidx.biometric.AuthenticationRequest
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.internal.data.FakeAuthenticationStateRepository
 import androidx.biometric.internal.data.FakePromptConfigRepository
@@ -114,6 +115,22 @@ class AuthenticationViewModelTest {
         }
 
     @Test
+    fun testFallbackOptionPressPending() =
+        runTest(UnconfinedTestDispatcher()) {
+            var actualFallback: AuthenticationRequest.Biometric.Fallback.CustomOption? = null
+            val job = launch {
+                viewModel.isFallbackOptionPressPending.collect { actualFallback = it }
+            }
+
+            val expectedFallback = AuthenticationRequest.Biometric.Fallback.CustomOption("test")
+            authRepository.setFallbackOptionPressPending(expectedFallback)
+            runCurrent()
+
+            assertThat(actualFallback).isEqualTo(expectedFallback)
+            job.cancel()
+        }
+
+    @Test
     fun testMoreOptionsButtonPressPending() =
         runTest(UnconfinedTestDispatcher()) {
             var moreOptionsPressPending = false
@@ -129,19 +146,19 @@ class AuthenticationViewModelTest {
         }
 
     @Test
-    fun testGenerateNextManagerKey() {
-        assertThat(viewModel.generateNextManagerKey()).isEqualTo(1)
-        assertThat(viewModel.generateNextManagerKey()).isEqualTo(2)
+    fun testGenerateNextHandlerKey() {
+        assertThat(viewModel.generateNextHandlerKey()).isEqualTo(1)
+        assertThat(viewModel.generateNextHandlerKey()).isEqualTo(2)
     }
 
     @Test
-    fun testResetManagerKey() {
-        viewModel.generateNextManagerKey()
-        viewModel.generateNextManagerKey()
+    fun testResetHandlerKey() {
+        viewModel.generateNextHandlerKey()
+        viewModel.generateNextHandlerKey()
 
-        viewModel.resetManagerKey()
+        viewModel.resetHandlerKey()
 
-        assertThat(viewModel.generateNextManagerKey()).isEqualTo(1)
+        assertThat(viewModel.generateNextHandlerKey()).isEqualTo(1)
     }
 
     @Test

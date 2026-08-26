@@ -277,20 +277,20 @@ public class DrawBitmapScaled extends PaintOperation
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int imageId = buffer.readInt();
+        int imageId = buffer.readId();
 
-        float sLeft = buffer.readFloat();
-        float srcTop = buffer.readFloat();
-        float srcRight = buffer.readFloat();
-        float srcBottom = buffer.readFloat();
+        float sLeft = buffer.readNanId();
+        float srcTop = buffer.readNanId();
+        float srcRight = buffer.readNanId();
+        float srcBottom = buffer.readNanId();
 
-        float dstLeft = buffer.readFloat();
-        float dstTop = buffer.readFloat();
-        float dstRight = buffer.readFloat();
-        float dstBottom = buffer.readFloat();
+        float dstLeft = buffer.readNanId();
+        float dstTop = buffer.readNanId();
+        float dstRight = buffer.readNanId();
+        float dstBottom = buffer.readNanId();
         int scaleType = buffer.readInt();
-        float scaleFactor = buffer.readFloat();
-        int cdId = buffer.readInt();
+        float scaleFactor = buffer.readNanId();
+        int cdId = buffer.readId();
         DrawBitmapScaled op =
                 new DrawBitmapScaled(
                         imageId,
@@ -316,6 +316,7 @@ public class DrawBitmapScaled extends PaintOperation
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Canvas Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("draw_bitmap_scaled")
                 .description("Draw a bitmap with scaling and alignment options")
                 .field(DocumentedOperation.INT, "imageId", "The ID of the bitmap")
                 .field(DocumentedOperation.FLOAT, "srcLeft", "The left side of the source image")

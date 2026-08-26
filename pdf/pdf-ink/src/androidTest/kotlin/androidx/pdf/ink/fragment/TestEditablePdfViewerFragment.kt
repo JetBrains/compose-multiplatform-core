@@ -28,10 +28,14 @@ import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.pdf.ink.EditablePdfViewerFragment
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.util.PdfIdlingResource
+import androidx.pdf.view.PdfContentLayout
 import androidx.pdf.view.PdfView
+import androidx.pdf.viewer.fragment.R as PdfR
 import java.util.UUID
 
 /**
@@ -39,11 +43,15 @@ import java.util.UUID
  * [androidx.test.espresso.IdlingResource] while loading pdf document.
  */
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+@OptIn(ExperimentalPdfApi::class)
 internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
 
     constructor() : super()
 
     val pdfLoadingIdlingResource = PdfIdlingResource(PDF_LOAD_RESOURCE_NAME)
+    val pdfFormFillingIdlingResource = PdfIdlingResource(FORM_FILLING_RESOURCE_NAME)
+    var onFormWidgetInfoUpdatedCalled = false
+    val formEditInfoUpdates = mutableListOf<FormEditInfo>()
 
     var pdfDocument: PdfDocument? = null
     var documentLoaded = false
@@ -71,6 +79,15 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
         return hostView
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        with(view) {
+            findViewById<PdfContentLayout>(PdfR.id.pdfContentLayout).pdfView.apply {
+                isFormFillingEnabled = true
+            }
+        }
+    }
+
     override fun onLoadDocumentSuccess(document: PdfDocument) {
         super.onLoadDocumentSuccess(document)
         pdfDocument = document
@@ -84,6 +101,20 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
         pdfLoadingIdlingResource.decrement()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
+    override fun onPdfViewCreated(pdfView: PdfView) {
+        super.onPdfViewCreated(pdfView)
+        pdfView.addOnFormWidgetInfoUpdatedListener(
+            object : PdfView.OnFormWidgetInfoUpdatedListener {
+                override fun onFormWidgetInfoUpdated(formEditInfo: FormEditInfo) {
+                    formEditInfoUpdates.add(formEditInfo)
+                    onFormWidgetInfoUpdatedCalled = true
+                    pdfFormFillingIdlingResource.decrement()
+                }
+            }
+        )
+    }
+
     fun setIsAnnotationIntentResolvable(value: Boolean) {
         setAnnotationIntentResolvability(value)
     }
@@ -91,6 +122,7 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
     companion object {
         // Resource name must be unique to avoid conflicts while running multiple test scenarios
         private val PDF_LOAD_RESOURCE_NAME = "PdfLoad-${UUID.randomUUID()}"
+        private val FORM_FILLING_RESOURCE_NAME = "FormFilling-${UUID.randomUUID()}"
 
         fun handleInsets(hostView: View) {
             ViewCompat.setOnApplyWindowInsetsListener(hostView) { view, insets ->

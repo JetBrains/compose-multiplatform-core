@@ -25,7 +25,6 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
 import kotlin.math.min
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +33,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ColorsTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun themeUpdatesWithNewColors() {
@@ -52,6 +51,11 @@ class ColorsTest {
         rule.runOnIdle { assertThat(currentColors).isEqualTo(customColors) }
     }
 
+    @Test
+    fun defaultSurfaceColor_matchesThemeSurfaceColor() {
+        assertThat(Colors().surface).isEqualTo(DefaultSurfaceColor)
+    }
+
     /**
      * Test to ensure that the baseline theme colors have acceptable contrast with the calculated
      * content colors. Note that primarily surface should be used to fill surfaces - other colors
@@ -67,6 +71,7 @@ class ColorsTest {
             val secondaryContentColor = calculateContentColor(secondary)
             val positiveContentColor = calculateContentColor(positive)
             val negativeContentColor = calculateContentColor(negative)
+            val backgroundContentColor = calculateContentColor(background)
             val surfaceContentColor = calculateContentColor(surface)
             assertThat(calculateContrastRatio(primaryContentColor, primary))
                 .isAtLeast(expectedContrastValue)
@@ -75,6 +80,8 @@ class ColorsTest {
             assertThat(calculateContrastRatio(positiveContentColor, positive))
                 .isAtLeast(expectedContrastValue)
             assertThat(calculateContrastRatio(negativeContentColor, negative))
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(backgroundContentColor, background))
                 .isAtLeast(expectedContrastValue)
             assertThat(calculateContrastRatio(surfaceContentColor, surface))
                 .isAtLeast(expectedContrastValue)

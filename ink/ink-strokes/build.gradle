@@ -22,7 +22,11 @@ plugins {
 }
 
 androidXMultiplatform {
+    // Only supported on non-Android JVM for Linux on x86_64 and Mac on arm64
     jvm()
+
+    ios()
+
     androidLibrary {
         namespace = "androidx.ink.strokes"
     }
@@ -31,21 +35,24 @@ androidXMultiplatform {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("androidx.annotation:annotation:1.8.0")
-        }
-
-        jvmAndAndroidMain.dependencies {
+            api(project(":annotation:annotation"))
+            implementation(project(":ink:ink-brush"))
+            implementation(project(":ink:ink-geometry"))
             implementation(project(":ink:ink-nativeloader"))
-            implementation(project(":ink:ink-geometry"))
-            implementation(project(":ink:ink-brush"))
         }
 
-        jvmTest.dependencies {
-            implementation(libs.junit)
+        commonTest.dependencies {
             implementation(libs.kotlinTest)
+            implementation(project(":kruth:kruth"))
+        }
+
+        jvmAndAndroidTest.dependencies {
+            implementation(libs.junit)
             implementation(libs.truth)
-            implementation(project(":ink:ink-geometry"))
-            implementation(project(":ink:ink-brush"))
+        }
+
+        androidDeviceTest.dependencies {
+            implementation(libs.testRunner)
         }
     }
 }
@@ -55,10 +62,12 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Create beautiful strokes"
+    usePlatformSpecificCacheForJvmTests = true
 }
 
-// TODO: b/362697089 - Enable to run the tests in a JVM environment in addition to on Android
-//  emulators, once the mysterious SIGSEGV is resolved.
-project.tasks.named("jvmTest").configure {
-    it.enabled = false
+// TODO: b/374774638 - Run tests on host as well as device.
+afterEvaluate {
+    project.tasks.named("testAndroidHostTest").configure {
+        it.enabled = false
+    }
 }

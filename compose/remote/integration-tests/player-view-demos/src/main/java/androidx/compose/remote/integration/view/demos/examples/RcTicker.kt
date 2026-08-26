@@ -16,10 +16,13 @@
 package androidx.compose.remote.integration.view.demos.examples
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Paint
 import android.graphics.Shader
+import androidx.compose.remote.core.RcPlatformServices
 import androidx.compose.remote.core.RcProfiles
+import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
@@ -28,6 +31,7 @@ import androidx.compose.remote.creation.RFloat
 import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
+import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.actions.HostAction
 import androidx.compose.remote.creation.arrayMax
@@ -57,27 +61,38 @@ private lateinit var fontSize: RcFontSizes
 @Composable
 private fun RcTickerPreview() {
     val context = LocalContext.current
-    RemoteDocPreview(RcTicker(context))
+    RemoteDocumentPreview(RcTicker(context))
 }
 
 @Suppress("RestrictedApiAndroidX")
-fun RcTicker(context: Context): RemoteComposeContext {
+@JvmOverloads
+fun RcTicker(
+    context: Context,
+    refresh: Bitmap? = null,
+    platform: RcPlatformServices = AndroidxRcPlatformServices(),
+): RemoteComposeContext {
     val res = context.resources
-    val refresh = BitmapFactory.decodeResource(res, R.drawable.refresh)
+    val refreshBitmap = refresh ?: BitmapFactory.decodeResource(res, R.drawable.refresh)
     return RemoteComposeContextAndroid(
-        0,
-        0,
-        "Demo",
+        platform,
         7,
-        RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
-        AndroidxRcPlatformServices(),
+        RemoteComposeWriter.HTag(Header.DOC_WIDTH, 400),
+        RemoteComposeWriter.HTag(Header.DOC_HEIGHT, 400),
+        RemoteComposeWriter.HTag(Header.DOC_CONTENT_DESCRIPTION, "Activity Rings"),
+        RemoteComposeWriter.HTag(
+            Header.DOC_PROFILES,
+            RcProfiles.PROFILE_ANDROIDX or
+                RcProfiles.PROFILE_WIDGETS or
+                RcProfiles.PROFILE_EXPERIMENTAL,
+        ),
+        RemoteComposeWriter.HTag(Header.DEBUG, 0),
     ) {
         color = RcTickerColorPack(this)
         fontSize = RcFontSizes(this)
         root {
-            column(Modifier.fillMaxSize().backgroundId(color.backgroundId)) {
+            column(Modifier.fillMaxWidth().backgroundId(color.backgroundId)) {
                 row(Modifier.padding(32f)) {
-                    val imageId = addBitmap(refresh)
+                    //  val imageId = addBitmap(refresh)
                     text(
                         "Watchlist",
                         Modifier.padding(24),
@@ -90,10 +105,12 @@ fun RcTicker(context: Context): RemoteComposeContext {
                 }
                 MyScroll() {
                     bigstock("Dow Jones", 47739.32f, "-0.45%")
-                    stock("S&P 500", 6846.51f, "-0.35%")
-                    stock("Nasdaq", 23545.9f, "-0.14%")
-                    stock("Russell", 2520.98f, "-0.020%")
-                    stock("NYA", 21703.2f, "-0.49%")
+                    flow(Modifier.fillMaxWidth()) {
+                        stock("S&P 500", 6846.51f, "-0.35%")
+                        stock("Nasdaq", 23545.9f, "-0.14%")
+                        stock("Russell", 2520.98f, "-0.020%")
+                        stock("NYA", 21703.2f, "-0.49%")
+                    }
                     followInvestments()
                 }
             }
@@ -103,7 +120,7 @@ fun RcTicker(context: Context): RemoteComposeContext {
 
 @Suppress("RestrictedApiAndroidX")
 fun RemoteComposeContextAndroid.MyScroll(content: RemoteComposeContextAndroid.() -> Unit) {
-    box(Modifier.fillMaxWidth().verticalWeight(1f).fillMaxWidth()) {
+    box(Modifier.fillMaxWidth()) {
         val position = rf(0f)
         lateinit var sHeight: RFloat
         column(
@@ -157,7 +174,9 @@ fun RemoteComposeContextAndroid.stock(name: String, price: Float, change: String
         Modifier.padding(32, 0, 32, 28)
             .clip(RoundedRectShape(s, s, s, s))
             .backgroundId(color.panelsId)
-            .padding(24, 24, 24, 8)
+            .horizontalWeight(1f)
+            .widthIn(120f, Float.MAX_VALUE)
+            .padding(24)
     ) {
         column {
             row(vertical = RowLayout.BOTTOM) {
@@ -392,7 +411,7 @@ private class RcTickerColorPack(val rc: RemoteComposeContextAndroid) {
         followTextId = rc.mColor(system_accent2_800, system_accent1_200)
 
         val system_neutral2_800 = rc.addNamedColor("color.system_neutral2_800", 0xFF113311.toInt())
-        val system_neutral2_200 = rc.addNamedColor("color.system_neutral2_200", 0xFFFF9966.toInt())
+        val system_neutral2_200 = rc.addNamedColor("color.system_neutral2_400", 0xFFFF9966.toInt())
         stockNameId = rc.mColor(system_neutral2_800, system_neutral2_200)
 
         val system_accent1_900 = rc.addNamedColor("color.system_accent1_900", 0xFF113311.toInt())
@@ -408,7 +427,7 @@ private class RcTickerColorPack(val rc: RemoteComposeContextAndroid) {
 @Suppress("RestrictedApiAndroidX")
 private fun fillRandom(size: Int, startVal: Float, endVal: Float, roughness: Float): FloatArray {
     val arr = FloatArray(size)
-    var random = Random()
+    var random = Random(42)
     arr[0] = startVal
     arr[size - 1] = endVal
     divide(random, arr, 0, size - 1, roughness)
@@ -487,7 +506,7 @@ fun generateStockDataArray(
     annualVolatility: Float,
     daysPerPoint: Float,
 ): FloatArray {
-    val random = Random()
+    val random = Random(42)
     val prices = FloatArray(numPoints)
     prices[0] = startPrice
 

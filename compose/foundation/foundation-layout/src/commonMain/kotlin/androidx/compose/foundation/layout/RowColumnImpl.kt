@@ -17,7 +17,6 @@
 package androidx.compose.foundation.layout
 
 import androidx.compose.foundation.layout.LayoutOrientation.Horizontal
-import androidx.compose.foundation.layout.LayoutOrientation.Vertical
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +50,7 @@ internal sealed class CrossAxisAlignment {
      * [LayoutDirection.Ltr].
      *
      * @param size The total size of the container.
+     * @param itemCrossAxisSize The size of the item being aligned.
      * @param layoutDirection The layout direction of the content if horizontal or
      *   [LayoutDirection.Ltr] if vertical.
      * @param placeable The item being aligned.
@@ -59,6 +59,7 @@ internal sealed class CrossAxisAlignment {
      */
     internal abstract fun align(
         size: Int,
+        itemCrossAxisSize: Int,
         layoutDirection: LayoutDirection,
         placeable: Placeable,
         beforeCrossAxisAlignmentLine: Int,
@@ -108,6 +109,7 @@ internal sealed class CrossAxisAlignment {
 
         override fun align(
             size: Int,
+            itemCrossAxisSize: Int,
             layoutDirection: LayoutDirection,
             placeable: Placeable,
             beforeCrossAxisAlignmentLine: Int,
@@ -117,7 +119,7 @@ internal sealed class CrossAxisAlignment {
             return if (alignmentLinePosition != AlignmentLine.Unspecified) {
                 val line = beforeCrossAxisAlignmentLine - alignmentLinePosition
                 if (layoutDirection == LayoutDirection.Rtl) {
-                    size - placeable.width - line
+                    size - itemCrossAxisSize - line
                 } else {
                     line
                 }
@@ -131,11 +133,12 @@ internal sealed class CrossAxisAlignment {
         CrossAxisAlignment() {
         override fun align(
             size: Int,
+            itemCrossAxisSize: Int,
             layoutDirection: LayoutDirection,
             placeable: Placeable,
             beforeCrossAxisAlignmentLine: Int,
         ): Int {
-            return vertical.align(placeable.height, size)
+            return vertical.align(itemCrossAxisSize, size)
         }
     }
 
@@ -143,11 +146,12 @@ internal sealed class CrossAxisAlignment {
         CrossAxisAlignment() {
         override fun align(
             size: Int,
+            itemCrossAxisSize: Int,
             layoutDirection: LayoutDirection,
             placeable: Placeable,
             beforeCrossAxisAlignmentLine: Int,
         ): Int {
-            return horizontal.align(placeable.width, size, layoutDirection)
+            return horizontal.align(itemCrossAxisSize, size, layoutDirection)
         }
     }
 }
@@ -487,7 +491,11 @@ internal class LayoutWeightNode(var weight: Float, var fill: Boolean) :
         }
 }
 
-internal class WithAlignmentLineBlockElement(val block: (Measured) -> Int) :
+internal fun interface AlignmentLineProviderBlock {
+    fun calculateAlignmentLinePosition(measured: Measured): Int
+}
+
+internal class WithAlignmentLineBlockElement(val block: AlignmentLineProviderBlock) :
     ModifierNodeElement<SiblingsAlignedNode.WithAlignmentLineBlockNode>() {
     override fun create(): SiblingsAlignedNode.WithAlignmentLineBlockNode {
         return SiblingsAlignedNode.WithAlignmentLineBlockNode(block)
@@ -538,7 +546,7 @@ internal class WithAlignmentLineElement(val alignmentLine: AlignmentLine) :
 internal sealed class SiblingsAlignedNode : ParentDataModifierNode, Modifier.Node() {
     abstract override fun Density.modifyParentData(parentData: Any?): Any?
 
-    internal class WithAlignmentLineBlockNode(var block: (Measured) -> Int) :
+    internal class WithAlignmentLineBlockNode(var block: AlignmentLineProviderBlock) :
         SiblingsAlignedNode() {
         override fun Density.modifyParentData(parentData: Any?): Any {
             return ((parentData as? RowColumnParentData) ?: RowColumnParentData()).also {
@@ -636,9 +644,9 @@ internal data class RowColumnParentData(
 internal sealed class AlignmentLineProvider {
     abstract fun calculateAlignmentLinePosition(placeable: Placeable): Int
 
-    data class Block(val lineProviderBlock: (Measured) -> Int) : AlignmentLineProvider() {
+    data class Block(val lineProviderBlock: AlignmentLineProviderBlock) : AlignmentLineProvider() {
         override fun calculateAlignmentLinePosition(placeable: Placeable): Int {
-            return lineProviderBlock(placeable)
+            return lineProviderBlock.calculateAlignmentLinePosition(placeable)
         }
     }
 

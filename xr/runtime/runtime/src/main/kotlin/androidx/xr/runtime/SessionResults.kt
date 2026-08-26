@@ -16,13 +16,15 @@
 
 package androidx.xr.runtime
 
+import androidx.annotation.RestrictTo
+
 /** Result of a [Session.create] call. */
 public sealed class SessionCreateResult
 
 /**
  * Result of a successful [Session.create] call.
  *
- * @property session the [Session] that was created.
+ * @property session the [Session] that was created
  */
 public class SessionCreateSuccess(public val session: Session) : SessionCreateResult()
 
@@ -31,7 +33,7 @@ public class SessionCreateSuccess(public val session: Session) : SessionCreateRe
  * was unable to confirm availability, or is not installed.
  *
  * @property requiredApk the fully qualified name of the package that is missing or needs to be
- *   updated.
+ *   updated
  */
 public class SessionCreateApkRequired(public val requiredApk: String) : SessionCreateResult()
 
@@ -41,18 +43,60 @@ public class SessionCreateApkRequired(public val requiredApk: String) : SessionC
  */
 public class SessionCreateUnsupportedDevice() : SessionCreateResult()
 
+/**
+ * Result of an unsuccessful [Session.create] call. The session was not created due to an unknown
+ * internal error. See the contents of [errorMessage] for more information.
+ *
+ * @param errorMessage a message supplied by the error that occurred
+ */
+public class SessionCreateUnknownError(public val errorMessage: String) : SessionCreateResult()
+
+/**
+ * Result of an unsuccessful [Session.create] call. The session was not created because the request
+ * timed out.
+ */
+public class SessionCreateTimedOut : SessionCreateResult()
+
+/** Placeholder result to force an 'else' branch in exhaustive when clauses. */
+private class SessionCreateUnusedResult : SessionCreateResult()
+
 /** Result of a [Session.configure] call. */
 public sealed class SessionConfigureResult
 
 /** Result of a successful [Session.configure] call. */
-public class SessionConfigureSuccess() : SessionConfigureResult()
+public class SessionConfigureSuccess : SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
  * not linked.
  */
 @Suppress("MentionsGoogle")
+@Deprecated(
+    "Use SessionConfigureLibraryNotLinked instead.",
+    ReplaceWith(
+        "SessionConfigureLibraryNotLinked(\"com.google.android.gms:play-services-location\")"
+    ),
+)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() : SessionConfigureResult()
+
+/**
+ * Result of an unsuccessful [Session.configure] call. A library required to enable a requested
+ * feature has not been linked to the application.
+ *
+ * @param libraryName refers to the missing library dependency
+ */
+public class SessionConfigureLibraryNotLinked(public val libraryName: String) :
+    SessionConfigureResult()
+
+/**
+ * Result of an unsuccessful [Session.configure] call. The session could not be configured due to an
+ * unknown internal error. See the contents of [errorMessage] for more information.
+ *
+ * @param errorMessage a message supplied by the error that occurred
+ */
+public class SessionConfigureUnknownError(public val errorMessage: String) :
+    SessionConfigureResult()
 
 /**
  * Result of an unsuccessful [Session.configure] call. Required calibration has not been performed
@@ -62,8 +106,5 @@ public class SessionConfigureCalibrationRequired(
     public val calibrationType: RequiredCalibrationType
 ) : SessionConfigureResult()
 
-/** Result of a [Session.resume] call. */
-public sealed class SessionResumeResult
-
-/** Result of a successful [Session.resume] call. */
-public class SessionResumeSuccess() : SessionResumeResult()
+/** Placeholder configure result to force an 'else' branch in exhaustive when clauses. */
+private class SessionConfigureUnusedResult : SessionConfigureResult()

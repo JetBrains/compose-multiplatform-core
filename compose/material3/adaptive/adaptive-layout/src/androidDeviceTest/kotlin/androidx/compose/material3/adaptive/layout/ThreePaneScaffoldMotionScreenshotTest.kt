@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.testutils.assertAgainstGolden
@@ -34,7 +34,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,7 +43,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class ThreePaneScaffoldMotionScreenshotTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3_ADAPTIVE)
 
@@ -389,7 +388,7 @@ class ThreePaneScaffoldMotionScreenshotTest {
 internal fun SampleThreePaneScaffold(scaffoldState: ThreePaneScaffoldState) {
     ThreePaneScaffold(
         modifier = Modifier.fillMaxSize().testTag(ThreePaneScaffoldTestTag),
-        scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
+        scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()),
         scaffoldState = scaffoldState,
         paneOrder = SupportingPaneScaffoldDefaults.PaneOrder,
         secondaryPane = {

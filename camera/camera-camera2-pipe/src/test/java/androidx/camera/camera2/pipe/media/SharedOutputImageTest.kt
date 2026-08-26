@@ -21,6 +21,7 @@ import android.os.Build
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.testing.FakeImage
+import androidx.camera.common.unwrapAs
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
@@ -31,6 +32,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -121,12 +123,14 @@ class SharedOutputImageTest {
     @Test
     fun unwrapAsHardwareBufferReturnsHardwareBufferFromParentClass() {
         val imageHardwareBuffer = mock<HardwareBuffer>()
+        whenever(imageHardwareBuffer.width).thenReturn(IMAGE_WIDTH)
+        whenever(imageHardwareBuffer.height).thenReturn(IMAGE_HEIGHT)
         val fakeImageWithHardwareBuffer =
             FakeImage(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_FORMAT, IMAGE_TIMESTAMP, imageHardwareBuffer)
         val outputImage = OutputImage.from(streamId, outputId, fakeImageWithHardwareBuffer)
         val sharedImage = SharedOutputImage.from(outputImage)
 
-        val hardwareBuffer = sharedImage.unwrapAs(HardwareBuffer::class)
+        val hardwareBuffer = sharedImage.unwrapAs<HardwareBuffer>()
 
         checkNotNull(hardwareBuffer)
         assertThat(imageHardwareBuffer).isSameInstanceAs(hardwareBuffer)
@@ -136,6 +140,8 @@ class SharedOutputImageTest {
     @Test
     fun getHardwareBufferReturnsHardwareBufferFromParentClass() {
         val imageHardwareBuffer = mock<HardwareBuffer>()
+        whenever(imageHardwareBuffer.width).thenReturn(IMAGE_WIDTH)
+        whenever(imageHardwareBuffer.height).thenReturn(IMAGE_HEIGHT)
         val fakeImageWithHardwareBuffer =
             FakeImage(IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_FORMAT, IMAGE_TIMESTAMP, imageHardwareBuffer)
         val outputImage = OutputImage.from(streamId, outputId, fakeImageWithHardwareBuffer)
@@ -206,6 +212,55 @@ class SharedOutputImageTest {
         sharedImage1.close()
         sharedImage1.setFinalizer(finalizer)
         verify(finalizer, times(1)).finalize(null)
+    }
+
+    @Test
+    fun acquireWithOnCloseLambdaInvokesLambdaWhenClosed() {
+        var lambdaInvokedCount = 0
+        val sharedImage1 = SharedOutputImage.from(outputImage)
+
+        // Acquire with the lambda
+        val sharedImage2 = sharedImage1.acquire(onClose = { lambdaInvokedCount++ })
+
+        // Ensure it doesn't invoke prematurely
+        assertThat(lambdaInvokedCount).isEqualTo(0)
+
+        sharedImage2.close()
+
+        // Ensure it invoked upon closing
+        assertThat(lambdaInvokedCount).isEqualTo(1)
+    }
+
+    @Test
+    fun acquireOrNullWithOnCloseLambdaInvokesLambdaWhenClosed() {
+        var lambdaInvokedCount = 0
+        val sharedImage1 = SharedOutputImage.from(outputImage)
+
+        // Acquire with the lambda
+        val sharedImage2 = sharedImage1.acquireOrNull(onClose = { lambdaInvokedCount++ })
+
+        assertThat(sharedImage2).isNotNull()
+        assertThat(lambdaInvokedCount).isEqualTo(0)
+
+        sharedImage2!!.close()
+
+        // Ensure it was invoked upon closing
+        assertThat(lambdaInvokedCount).isEqualTo(1)
+    }
+
+    @Test
+    fun onCloseLambdaInvokedOnlyOnceOnMultipleCloses() {
+        var lambdaInvokedCount = 0
+        val sharedImage1 = SharedOutputImage.from(outputImage)
+        val sharedImage2 = sharedImage1.acquire(onClose = { lambdaInvokedCount++ })
+
+        // Invoke close multiple times.
+        sharedImage2.close()
+        sharedImage2.close()
+        sharedImage2.close()
+
+        // Guarantee that the lambda was executed exactly once.
+        assertThat(lambdaInvokedCount).isEqualTo(1)
     }
 
     companion object {

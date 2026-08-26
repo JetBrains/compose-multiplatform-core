@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -27,6 +26,8 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.leakcanary)
+    androidTestImplementation(libs.leakcanaryInstrumentation)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.opentest4j)
@@ -37,7 +38,6 @@ dependencies {
 
 android {
     compileSdk { version = release(35) }
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     aaptOptions {
         additionalParameters "--no-version-transitions"
     }

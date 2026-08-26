@@ -443,7 +443,6 @@ class FragmentTransactionCallbackTest : BaseTest() {
                     " {@link #onFragmentAttached(FragmentManager, Fragment, Context)}, removing it\n" +
                     " when it receives the {@link Lifecycle.State#CREATED} callback."
             )
-            @Suppress("OVERRIDE_DEPRECATION") // b/446706247
             override fun onFragmentActivityCreated(
                 fm: FragmentManager,
                 f: Fragment,

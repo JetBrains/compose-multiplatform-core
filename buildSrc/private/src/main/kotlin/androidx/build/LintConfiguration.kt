@@ -142,9 +142,8 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         ignoreTestSources = false
         checkTestSources = false
 
-        // Write output directly to the console (and nowhere else).
-        textReport = true
-        htmlReport = false
+        // Write output directly to the console.
+        printTextReport = true
 
         // Format output for convenience.
         explainIssues = true
@@ -238,13 +237,7 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             disable.add("IllegalExperimentalApiUsage")
         }
 
-        // Run the JSpecifyNullness check unless opted-out (for projects that haven't migrated yet).
-        if (extension.optOutJSpecify) {
-            disable.add("JSpecifyNullness")
-        } else {
-            fatal.add("JSpecifyNullness")
-        }
-
+        fatal.add("JSpecifyNullness") // Require JSpecify annotations to be used
         fatal.add("UastImplementation") // go/hide-uast-impl
         fatal.add("KotlincFE10") // b/239982263
 

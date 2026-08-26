@@ -18,12 +18,13 @@ package androidx.biometric.internal.viewmodel
 
 import android.content.DialogInterface
 import android.graphics.Bitmap
+import androidx.biometric.AuthenticationRequest.Biometric.Fallback
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.PromptContentView
 import androidx.biometric.internal.AuthenticationManager
-import androidx.biometric.internal.CanceledFrom
 import androidx.biometric.internal.data.AuthenticationStateRepository
+import androidx.biometric.internal.data.CanceledFrom
 import androidx.biometric.internal.data.PromptConfigRepository
 import androidx.biometric.utils.AuthenticationCallbackProvider
 import androidx.biometric.utils.AuthenticatorUtils
@@ -49,8 +50,8 @@ internal class AuthenticationViewModel(
 ) : ViewModel() {
     /**
      * The key associated with the current authentication session. This key is stored in
-     * [PromptConfigRepository] and is updated to the caller's [authManagerKey] when an
-     * authentication session starts. It is compared with [authManagerKey] to ensure that only the
+     * [PromptConfigRepository] and is updated to the caller's [authHandlerKey] when an
+     * authentication session starts. It is compared with [authHandlerKey] to ensure that only the
      * active [AuthenticationManager] instance processes authentication events, especially after
      * configuration changes.
      */
@@ -169,9 +170,30 @@ internal class AuthenticationViewModel(
     val isConfirmationRequired: Boolean
         get() = promptInfo?.isConfirmationRequired ?: true
 
-    /** The text that should be shown for the negative button on the biometric prompt. */
-    val negativeButtonText: CharSequence?
-        get() = promptConfigRepository.negativeButtonText
+    private val fallbackOptions: List<Fallback>
+        get() = promptConfigRepository.fallbackOptionList
+
+    /** List of options if multiple exist; otherwise null. */
+    val multipleFallbackOptionList: List<Fallback>?
+        get() = fallbackOptions.takeIf { it.size > 1 }
+
+    /** The single fallback option if exactly one exists. */
+    val singleFallbackOption: Fallback?
+        get() = fallbackOptions.singleOrNull()
+
+    /** Checks if the single option is a device credential override. */
+    val isOverriddenDeviceCredential: Boolean
+        get() = singleFallbackOption is Fallback.OverriddenDeviceCredential
+
+    /** The display text for the single fallback option. */
+    val singleFallbackOptionText: CharSequence?
+        get() =
+            when (val option = singleFallbackOption) {
+                is Fallback.OverriddenDeviceCredential -> option.text
+                is Fallback.CustomOption -> option.text
+                is Fallback.DefaultCancel -> option.text
+                else -> null
+            }
 
     /** A provider for cross-platform compatible cancellation signal objects. */
     val cancellationSignalProvider: CancellationSignalProvider
@@ -185,6 +207,14 @@ internal class AuthenticationViewModel(
     /** A dialog listener for the negative button shown on the prompt. */
     val negativeButtonListener: DialogInterface.OnClickListener by lazy {
         NegativeButtonListener(this)
+    }
+
+    /**
+     * A dialog listener for the fallback option shown on the biometric prompt separate fallback
+     * options page.
+     */
+    fun fallbackOptionListener(fallback: Fallback.CustomOption): DialogInterface.OnClickListener {
+        return FallbackOptionListener(this, fallback)
     }
 
     /** A dialog listener for the more options button shown on the prompt content. */
@@ -212,6 +242,10 @@ internal class AuthenticationViewModel(
     val isNegativeButtonPressPending: Flow<Unit>
         get() = authenticationStateRepository.isNegativeButtonPressPending
 
+    /** A flow that emits when the fallback option is pressed. */
+    val isFallbackOptionPressPending: Flow<Fallback.CustomOption>
+        get() = authenticationStateRepository.isFallbackOptionPressPending
+
     /** A flow that emits when the more options button is pressed. */
     val isMoreOptionsButtonPressPending: Flow<Unit>
         get() = authenticationStateRepository.isMoreOptionsButtonPressPending
@@ -236,39 +270,41 @@ internal class AuthenticationViewModel(
         }
 
     /**
-     * A unique identifier for [AuthenticationManager] used to filter callbacks and events.
+     * A unique identifier for [androidx.biometric.internal.AuthenticationHandler] used to filter
+     * callbacks and events.
      *
-     * Since multiple instances of [AuthenticationManager] may exist simultaneously, this key allows
-     * this manager to verify it is the active owner of the current authentication session. If this
-     * key does not match the [currentAuthenticationKey], this manager will ignore incoming events.
+     * Since multiple instances of [androidx.biometric.internal.AuthenticationHandler] may exist
+     * simultaneously, this key allows this handler to verify it is the active owner of the current
+     * authentication session. If this key does not match the [currentAuthenticationKey], this
+     * handler will ignore incoming events.
      *
-     * The key must be got by [generateNextManagerKey] when needed, and the generator must be reset
-     * by [resetManagerKey] when the launcher's lifecycle ends. This ensures that after a
-     * configuration change, managers are recreated and reassigned the same keys in the same order,
+     * The key must be got by [generateNextHandlerKey] when needed, and the generator must be reset
+     * by [resetHandlerKey] when the launcher's lifecycle ends. This ensures that after a
+     * configuration change, handler are recreated and reassigned the same keys in the same order,
      * allowing the authentication process to be correctly restored with the right instance.
      *
      * Note: If it's older API, we need to support the case when BiometricPrompt is initialized
      * later than onCreate(), e.g. button click listener. Therefore, using key does not work for old
      * APIs. See go/bp-androidx-redesign for more information.
      */
-    private val authManagerKey = AtomicInteger()
+    private val authHandlerKey = AtomicInteger()
 
     /**
-     * Atomically increments the current value and get a next manager key.
+     * Atomically increments the current value and get a next handler key.
      *
-     * @see [authManagerKey]
+     * @see [authHandlerKey]
      */
-    fun generateNextManagerKey(): Int {
-        return authManagerKey.incrementAndGet()
+    fun generateNextHandlerKey(): Int {
+        return authHandlerKey.incrementAndGet()
     }
 
     /**
-     * Reset the manager key.
+     * Reset the handler key.
      *
-     * @see [authManagerKey]
+     * @see [authHandlerKey]
      */
-    fun resetManagerKey() {
-        authManagerKey.set(0)
+    fun resetHandlerKey() {
+        authHandlerKey.set(0)
     }
 
     /** Sets the [BiometricPrompt.PromptInfo] for the current authentication session. */
@@ -337,6 +373,12 @@ internal class AuthenticationViewModel(
         viewModelScope.launch { authenticationStateRepository.setNegativeButtonPressPending() }
     }
 
+    fun setFallbackOptionPressPending(fallbackOption: Fallback.CustomOption) {
+        viewModelScope.launch {
+            authenticationStateRepository.setFallbackOptionPressPending(fallbackOption)
+        }
+    }
+
     /** Emits an event for a more options button press. */
     fun setMoreOptionsButtonPressPending() {
         viewModelScope.launch { authenticationStateRepository.setMoreOptionsButtonPressPending() }
@@ -399,6 +441,18 @@ internal class AuthenticationViewModel(
 
         override fun onClick(dialogInterface: DialogInterface?, which: Int) {
             viewModelRef.get()?.setNegativeButtonPressPending()
+        }
+    }
+
+    /** The dialog listener that is returned by [fallbackOptionListener]. */
+    private class FallbackOptionListener(
+        viewModel: AuthenticationViewModel?,
+        val fallbackOption: Fallback.CustomOption,
+    ) : DialogInterface.OnClickListener {
+        private val viewModelRef: WeakReference<AuthenticationViewModel> = WeakReference(viewModel)
+
+        override fun onClick(dialogInterface: DialogInterface?, which: Int) {
+            viewModelRef.get()?.setFallbackOptionPressPending(fallbackOption)
         }
     }
 

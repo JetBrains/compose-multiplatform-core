@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.LazyLayoutScrollScope
@@ -41,8 +42,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -98,6 +99,19 @@ fun LazyVerticalStaggeredGridSpanSample() {
                 Text("Item $it", Modifier.border(1.dp, Color.Blue).height(80.dp).wrapContentSize())
             }
         }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyStaggeredGridCacheWindowSample() {
+    val itemsList = (0..100).toList()
+
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(3),
+        cacheWindow = LazyLayoutCacheWindow(aheadFraction = 0.5f, behindFraction = 0.2f),
+    ) {
+        items(itemsList) { item -> Text("Item $item") }
     }
 }
 

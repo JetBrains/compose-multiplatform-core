@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.xr.scenecore.runtime.SpatialPointerIcon
@@ -55,12 +57,12 @@ class FakeSpatialPointerComponentTest {
     @Test
     fun setSpatialPointerIcon_getSpatialPointerIconReturnsSetIcon() {
         // Default value.
-        check(underTest.getSpatialPointerIcon() == SpatialPointerIcon.TYPE_NONE)
+        check(underTest.spatialPointerIcon == SpatialPointerIcon.TYPE_NONE)
 
-        underTest.setSpatialPointerIcon(SpatialPointerIcon.TYPE_CIRCLE)
-        assertThat(underTest.getSpatialPointerIcon()).isEqualTo(SpatialPointerIcon.TYPE_CIRCLE)
+        underTest.spatialPointerIcon = SpatialPointerIcon.TYPE_CIRCLE
+        assertThat(underTest.spatialPointerIcon).isEqualTo(SpatialPointerIcon.TYPE_CIRCLE)
 
-        underTest.setSpatialPointerIcon(SpatialPointerIcon.TYPE_DEFAULT)
-        assertThat(underTest.getSpatialPointerIcon()).isEqualTo(SpatialPointerIcon.TYPE_DEFAULT)
+        underTest.spatialPointerIcon = SpatialPointerIcon.TYPE_DEFAULT
+        assertThat(underTest.spatialPointerIcon).isEqualTo(SpatialPointerIcon.TYPE_DEFAULT)
     }
 }

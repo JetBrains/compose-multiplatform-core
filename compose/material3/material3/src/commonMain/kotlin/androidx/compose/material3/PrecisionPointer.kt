@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
+@file:JvmName("PrecisionPointer")
+
 package androidx.compose.material3
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import kotlin.jvm.JvmName
 
 /**
  * A flag that represents whether a precision pointer is present, and thus whether components should

@@ -22,24 +22,21 @@ import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
-import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.compose.integration.hero.common.macrobenchmark.HeroMacrobenchmarkDefaults
-import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexConstants.Compose.POKEDEX_ENABLE_SHARED_ELEMENT_TRANSITIONS
-import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexConstants.Compose.POKEDEX_ENABLE_SHARED_TRANSITION_SCOPE
 import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexConstants.POKEDEX_TARGET_PACKAGE_NAME
-import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.PokedexDatabaseCleanupRule
+import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.findObjectOrThrow
+import androidx.compose.integration.hero.pokedex.macrobenchmark.internal.waitOrThrow
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import androidx.testutils.CpuFrequencyChangeMetric
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
 import androidx.tracing.Trace
 import kotlin.math.roundToInt
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -49,14 +46,7 @@ class PokedexScrollBenchmark(
     val compilationMode: CompilationMode,
     val enableSharedTransitionScope: Boolean,
     val enableSharedElementTransitions: Boolean,
-) {
-    private val benchmarkRule = MacrobenchmarkRule()
-    private val databaseCleanupRule = PokedexDatabaseCleanupRule()
-
-    @get:Rule
-    val pokedexBenchmarkRuleChain: RuleChain =
-        RuleChain.outerRule(databaseCleanupRule).around(benchmarkRule)
-
+) : PokedexBenchmarkBase() {
     @Test
     fun scrollHomeCompose() =
         benchmarkScroll(
@@ -98,12 +88,17 @@ class PokedexScrollBenchmark(
     @OptIn(ExperimentalMetricApi::class)
     private fun benchmarkScroll(
         action: String,
+        enableScrollbar: Boolean = true,
         setupBlock: MacrobenchmarkScope.() -> Unit,
         measureBlock: MacrobenchmarkScope.() -> Unit,
-    ) =
+    ) {
+
         benchmarkRule.measureRepeated(
             packageName = POKEDEX_TARGET_PACKAGE_NAME,
-            metrics = defaultComposeScrollingMetrics() + FrameTimingGfxInfoMetric(),
+            metrics =
+                defaultComposeScrollingMetrics() +
+                    FrameTimingGfxInfoMetric() +
+                    CpuFrequencyChangeMetric(),
             compilationMode = compilationMode,
             iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
             setupBlock = {
@@ -111,23 +106,21 @@ class PokedexScrollBenchmark(
                 // activity might be running, and we wouldn't launch our setup activity as the
                 // process is already active.
                 killProcess()
-                setupPokedexBenchmarkTarget()
                 databaseCleanupRule.deleteDatabaseFiles()
-                // We kill the process after setup is complete to ensure startup happens cleanly
-                killProcess()
 
                 val intent = Intent()
-                intent.action = action
-                intent.putExtra(POKEDEX_ENABLE_SHARED_TRANSITION_SCOPE, enableSharedTransitionScope)
-                intent.putExtra(
-                    POKEDEX_ENABLE_SHARED_ELEMENT_TRANSITIONS,
-                    enableSharedElementTransitions,
+                intent.configure(
+                    action = action,
+                    enableSharedTransitionScope = enableSharedTransitionScope,
+                    enableSharedElementTransitions = enableSharedElementTransitions,
+                    enableScrollbar = enableScrollbar,
                 )
                 startActivityAndWait(intent)
                 setupBlock()
             },
             measureBlock = measureBlock,
         )
+    }
 
     private fun MacrobenchmarkScope.scrollActions(content: UiObject2) {
         // Important: We perform up flings with the default fling speed, and down flings with a
@@ -136,14 +129,16 @@ class PokedexScrollBenchmark(
         // specifically only want to measure scroll here.
         val upSpeed = (FLING_SPEED_DP_PER_SECOND * targetDisplayDensity).roundToInt()
         val downSpeed = (upSpeed * OPPOSING_DIRECTION_FLING_FACTOR).roundToInt()
-        content.fling(Direction.DOWN, upSpeed)
-        device.waitForIdle()
-        content.fling(Direction.UP, downSpeed)
-        device.waitForIdle()
-        content.fling(Direction.DOWN, upSpeed)
-        device.waitForIdle()
-        content.fling(Direction.UP, downSpeed)
-        device.waitForIdle()
+        fun flingAndWaitForIdle(direction: Direction, speed: Int) {
+            trace("PokedexScrollBenchmark#fling($direction, speed=$speed)") {
+                content.fling(direction, speed)
+                device.waitForIdle()
+            }
+        }
+        flingAndWaitForIdle(Direction.DOWN, upSpeed)
+        flingAndWaitForIdle(Direction.UP, downSpeed)
+        flingAndWaitForIdle(Direction.DOWN, upSpeed)
+        flingAndWaitForIdle(Direction.UP, downSpeed)
     }
 
     /** Density of the instrumentation's target context, in DP. */

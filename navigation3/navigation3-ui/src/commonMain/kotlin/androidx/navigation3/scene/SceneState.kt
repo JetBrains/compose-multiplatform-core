@@ -22,6 +22,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastMap
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
@@ -37,7 +38,9 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
  * @sample androidx.navigation3.scene.samples.SceneStateSample
  */
 @Deprecated(
-    message = "Deprecated in favor of rememberSceneState that supports sharedTransitionScope",
+    message =
+        "Deprecated in favor of rememberSceneState that supports sharedTransitionScope, " +
+            "sceneDecoratorStrategies, and list of SceneStrategies",
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
@@ -48,7 +51,7 @@ public fun <T : Any> rememberSceneState(
 ): SceneState<T> {
     return rememberSceneState(
         entries = entries,
-        sceneStrategy = sceneStrategy,
+        sceneStrategies = listOf(sceneStrategy),
         sharedTransitionScope = null,
         onBack = onBack,
     )
@@ -60,16 +63,20 @@ public fun <T : Any> rememberSceneState(
  * This calculates all of the scenes and provides them in a [SceneState].
  *
  * @param entries all of the entries that are associated with this state
- * @param sceneStrategy the [SceneStrategy] to determine which scene to render a list of entries.
+ * @param sceneStrategies the list of [SceneStrategy] to determine which scene to render a list of
+ *   entries.
+ * @param sceneDecoratorStrategies list of [SceneDecoratorStrategy] to add content to the scene.
  * @param sharedTransitionScope the [SharedTransitionScope] needed to wrap the scene decorator. If
- *   this parameter is added, this function will require the [LocalNavAnimatedContentScope].
+ *   this parameter is added, this function will require the
+ *   [androidx.navigation3.ui.LocalNavAnimatedContentScope].
  * @param onBack a callback for handling system back press.
  * @sample androidx.navigation3.scene.samples.SceneStateSample
  */
 @Composable
 public fun <T : Any> rememberSceneState(
     entries: List<NavEntry<T>>,
-    sceneStrategy: SceneStrategy<T>,
+    sceneStrategies: List<SceneStrategy<T>>,
+    sceneDecoratorStrategies: List<SceneDecoratorStrategy<T>> = emptyList(),
     sharedTransitionScope: SharedTransitionScope? = null,
     onBack: () -> Unit,
 ): SceneState<T> {
@@ -93,9 +100,10 @@ public fun <T : Any> rememberSceneState(
             ),
         )
 
-    return remember(sceneStrategy, decoratedEntries) {
+    @Suppress("ListIterator")
+    return remember(sceneStrategies.toList(), decoratedEntries) {
         val scope =
-            SceneStrategyScope<T>(
+            SceneDecoratorStrategyScope<T>(
                 // `currentOnBack` invokes the *latest* `onBack` lambda. The outer
                 // `remember` block intentionally skips `onBack` as a key to avoid
                 // recalculating all scenes when just the `onBack` instance changes.
@@ -105,7 +113,7 @@ public fun <T : Any> rememberSceneState(
         // Calculate the single scene based on the sceneStrategy and start the list there.
         val allScenes =
             mutableListOf(
-                sceneStrategy.calculateSceneWithSinglePaneFallback(scope, decoratedEntries)
+                provideScene(scope, decoratedEntries, sceneStrategies, sceneDecoratorStrategies)
             )
 
         // find all of the OverlayScenes
@@ -120,16 +128,16 @@ public fun <T : Any> rememberSceneState(
                 }
                 // Keep added scenes to the end of our list until we find a non-overlay scene
                 allScenes +=
-                    sceneStrategy.calculateSceneWithSinglePaneFallback(scope, overlaidEntries)
+                    provideScene(scope, overlaidEntries, sceneStrategies, sceneDecoratorStrategies)
             }
         } while (overlaidEntries != null)
 
         // Find all the overlay scenes
         val overlayScenes = allScenes.dropLast(1).fastMap { it as OverlayScene<T> }
-        // The currentScene is just just whatever is last on the list.
+        // The currentScene is just whatever is last on the list.
         val currentScene = allScenes.last()
         // Get the previous scenes, starting from the current scene.
-        val previousScenes = mutableListOf(allScenes.first())
+        val previousScenes = mutableListOf(currentScene)
 
         do {
             // get the first scene off the list
@@ -140,7 +148,7 @@ public fun <T : Any> rememberSceneState(
                 // the list
                 previousScenes.add(
                     index = 0,
-                    sceneStrategy.calculateSceneWithSinglePaneFallback(scope, previousEntries),
+                    provideScene(scope, previousEntries, sceneStrategies, sceneDecoratorStrategies),
                 )
             }
         } while (!previousEntries.isNullOrEmpty())
@@ -160,7 +168,8 @@ public fun <T : Any> rememberSceneState(
  *
  * @param entries all of the entries that are associated with this state
  * @param overlayScenes any overlay scenes available to the state
- * @param currentScene the current scene that could be displayed
+ * @param currentScene the current scene that could be displayed, and also the scene that is
+ *   displayed underneath any overlay scenes.
  * @param previousScenes the list of all of the previous scenes before the currentScene
  */
 @Immutable
@@ -194,3 +203,22 @@ internal constructor(
         return "SceneState(entries=$entries, overlayScenes=$overlayScenes, currentScene=$currentScene, previousScenes=$previousScenes)"
     }
 }
+
+/**
+ * Calculates a scene by iterating through the [sceneStrategies] in order.
+ *
+ * If the calculated scene is not an [OverlayScene], it further decorates the scene with
+ * [SceneDecoratorStrategy.decorateScene]. Overlay scenes are animated separately from non-overlays
+ * and therefore don't get decorated along with non-overlays.
+ */
+private fun <T : Any> provideScene(
+    scope: SceneDecoratorStrategyScope<T>,
+    decoratedEntries: List<NavEntry<T>>,
+    sceneStrategies: List<SceneStrategy<T>>,
+    sceneDecorators: List<SceneDecoratorStrategy<T>>,
+): Scene<T> =
+    sceneDecorators.fastFold(
+        calculateSceneWithSinglePaneFallback(sceneStrategies, scope, decoratedEntries)
+    ) { scene, decoratorStrategy ->
+        scene as? OverlayScene ?: decoratorStrategy.decorateScene(scope, scene)
+    }

@@ -21,15 +21,18 @@ import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 
 internal object RemoteComposeConstants {
-    const val DefaultWeight = 1f
-    const val DefaultFontSize = 8f // TODO arbitrary choice of default font size
 
-    const val RemoteComposeVersion = 6
+    object Text {
+        const val DefaultWeight = 1f
+        const val DefaultFontSize = 14f // TODO arbitrary choice of default font size
+    }
+
+    const val RemoteComposeVersion = 7
 
     @OptIn(ExperimentalRemoteCreationApi::class)
     @Suppress("RestrictedApiAndroidX")
     val GlanceRemoteComposeProfile: Profile
-        get() = RcPlatformProfiles.WIDGETS_V6
+        get() = RcPlatformProfiles.WIDGETS_V7
 
-    internal val DebugRemoteCompose = true // TODO: change to false before release
+    internal val DebugRemoteCompose = false // do not commit if DebugRemoteCompose = true
 }

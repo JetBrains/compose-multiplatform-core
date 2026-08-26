@@ -17,8 +17,6 @@ package androidx.compose.remote.integration.view.demos;
 
 import static android.widget.LinearLayout.VERTICAL;
 
-import static androidx.compose.remote.integration.view.demos.DemosComposeKt.getRemoteComposable;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -64,6 +62,7 @@ import androidx.compose.remote.core.CoreDocument.ShaderControl;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.RemoteComposeWriter;
+import androidx.compose.remote.integration.view.demos.customviews.AndroidCustomSupport;
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths;
 import androidx.compose.remote.integration.view.demos.utils.RCDoc;
 import androidx.compose.remote.player.core.RemoteDocument;
@@ -109,6 +108,7 @@ public class ExperimentRecyclerActivity extends Activity {
     static final String CHANNEL_ID = "custom_notification_channel";
     static int sNotificationId = 1;
     public static final boolean BACKGROUND = false;
+    private static final boolean NO_COMPOSE = false;
 
 
     public static @NonNull RemoteComposeBuffer getCurrentDoc() {
@@ -131,8 +131,8 @@ public class ExperimentRecyclerActivity extends Activity {
 
         sPersonImage3 = BitmapFactory.decodeResource(context.getResources(),
                 R.drawable.mostly_cloudy);
-        ArrayList<RCDoc> list = new ArrayList<>(DemosCreation.getDemos(this));
-        list.addAll(getRemoteComposable(context));
+        ArrayList<RCDoc> list = new ArrayList<>(DemosCreation.getDemos(this, 4 + 2));
+     //   list.addAll(getRemoteComposable(context));
 
         return list;
     }
@@ -214,7 +214,34 @@ public class ExperimentRecyclerActivity extends Activity {
         lock.setBackgroundColor(0xFFAAFFAA);
         docControl.addView(lock);
         docControl.addView(mStatsView);
+        // ===================== Next section button ================
+        TextView next = new TextView(this);
+        next.setText(">");
+        next.setTextSize(24);
+        next.setBackgroundColor(Color.LTGRAY);
 
+        next.setPadding(0, 0, 0, 0);
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                nextSection();
+            }
+        });
+        TextView prev = new TextView(this);
+        prev.setText("<");
+        prev.setTextSize(24);
+        prev.setPadding(0, 0, 0, 0);
+        prev.setBackgroundColor(Color.LTGRAY);
+        prev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prevSection();
+            }
+        });
+        docControl.addView(prev);
+        docControl.addView(next);
+
+        // ==========================================================
         layout.addView(docControl);
         LinearLayout row = new LinearLayout(this);
         float textSize = 15;
@@ -263,6 +290,15 @@ public class ExperimentRecyclerActivity extends Activity {
         toPlayer.setText("Player");
         toPlayer.setOnClickListener(this::setToPlayer);
         row.addView(toPlayer);
+        // ==================== Save All ==========================
+        Button saveAll = new Button(this);
+        saveAll.setTextSize(textSize);
+        p = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
+        p.weight = 1;
+        saveAll.setLayoutParams(p);
+        saveAll.setText("Save\nAll");
+        saveAll.setOnClickListener(this::saveAll);
+        row.addView(saveAll);
         createNotificationChannel();
         // ================================ ==========================
 
@@ -286,6 +322,14 @@ public class ExperimentRecyclerActivity extends Activity {
 
         // Set RecyclerView as the content view
         setContentView(layout);
+    }
+
+    void nextSection() {
+
+    }
+
+    void prevSection() {
+
     }
 
     void setUpMetrics() {
@@ -341,6 +385,24 @@ public class ExperimentRecyclerActivity extends Activity {
         setUpMetrics();
     }
 
+    private void saveAll(View v) {
+        File storageDir = new File("/storage/self/primary/Download/");
+        File[] toRemove = storageDir.listFiles();
+        for (int i = 0; i < toRemove.length; i++) {
+            File file = toRemove[i];
+            if (file.getName().endsWith(".rc")) {
+                file.delete();
+            }
+        }
+
+        for (RCDoc doc : mDocList) {
+            if (NO_COMPOSE && doc.toString().startsWith("Compose")) {
+                continue;
+            }
+            saveDoc(doc.toString(), docToBytes(doc), getApplicationContext(), false);
+        }
+    }
+
     private void sendDoc(RCDoc doc) {
         sCurrentBuffer = Objects.requireNonNull(doc.getDoc()).getDocument().getBuffer();
         byte[] buffer = Arrays.copyOf(sCurrentBuffer.getBuffer().getBuffer(),
@@ -364,8 +426,14 @@ public class ExperimentRecyclerActivity extends Activity {
         int left = Objects.requireNonNull(mLinearLayoutManager.findViewByPosition(off)).getLeft();
         if (left < -sScrWidth / 2) off++;
         View view = mLinearLayoutManager.findViewByPosition(off);
-        System.out.println(view);
-
+        {
+            System.out.println(view);
+            MyViewHolder holder = (MyViewHolder) mRecyclerView.findViewHolderForAdapterPosition(
+                    off);
+            if (holder != null) {
+                Log.v("DEBUG", holder.mUi.mPlayer.getDocument().getDocument().toNestedString());
+            }
+        }
         RCDoc doc = mDocList.get(off);
 //        MyViewHolder holder = (MyViewHolder) mRecyclerView.findViewHolderForAdapterPosition(off);
 
@@ -487,7 +555,12 @@ public class ExperimentRecyclerActivity extends Activity {
     }
 
     static byte[] docToBytes(RCDoc doc) {
-        sCurrentBuffer = Objects.requireNonNull(doc.getDoc()).getDocument().getBuffer();
+        RemoteDocument rcdoc = doc.getDoc();
+        if (rcdoc == null) {
+            return null;
+        }
+        sCurrentBuffer = rcdoc.getDocument().getBuffer();
+
         byte[] buffer = Arrays.copyOf(sCurrentBuffer.getBuffer().getBuffer(),
                 sCurrentBuffer.getBuffer().getSize());
         int bufferSize = buffer.length;
@@ -507,9 +580,6 @@ public class ExperimentRecyclerActivity extends Activity {
         int off = mLinearLayoutManager.findFirstVisibleItemPosition();
         int left = Objects.requireNonNull(mLinearLayoutManager.findViewByPosition(off)).getLeft();
         if (left < -sScrWidth / 2) off++;
-        View view = mLinearLayoutManager.findViewByPosition(off);
-        System.out.println(view);
-
         return mDocList.get(off);
     }
 
@@ -552,7 +622,7 @@ public class ExperimentRecyclerActivity extends Activity {
             int read = byteArrayInputStream.read(bytes);
             System.out.println("read " + read);
             saveDoc(doc.toString(), bytes, getApplicationContext(), false);
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Handle the exception
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
@@ -675,8 +745,11 @@ public class ExperimentRecyclerActivity extends Activity {
             super(context);
             setOrientation(VERTICAL);
             mPlayer = new RemoteComposePlayer(context);
+            mPlayer.setCustomSupport(new AndroidCustomSupport(mPlayer));
             mTitle = new TextView(context);
             mStats = new TextView(context);
+            System.out.println("adding id listener");
+
             mPlayer.setShaderControl(new ShaderControl() {
                 @Override
                 public boolean isShaderValid(@NonNull String shader) {
@@ -686,7 +759,7 @@ public class ExperimentRecyclerActivity extends Activity {
 //            int mode =(mPlayer.getResources().getConfiguration().isNightModeActive())?Rc.Theme
 //            .DARK:Rc.Theme.LIGHT;
 //            mPlayer.setTheme(mode);
-            mTitle.setTextSize(32);
+            mTitle.setTextSize(24);
             mTitle.setTypeface(mTitle.getTypeface(), Typeface.BOLD);
             mTitle.setTextColor(Color.BLACK);
             mTitle.setBackgroundColor(0xFFDDDDDD);
@@ -888,6 +961,9 @@ public class ExperimentRecyclerActivity extends Activity {
                 }
                 if (docData != null) {
                     mUi.mPlayer.setDocument(byteData);
+                    mUi.mPlayer.addIdActionListener((id, action) -> {
+                        System.out.println("action id: " + id + " action: \"" + action + "\"");
+                    });
                 }
             }
 
@@ -932,6 +1008,83 @@ public class ExperimentRecyclerActivity extends Activity {
     public static @NonNull RCDoc getpc(@NonNull String name,
             @NonNull Supplier<RemoteComposeContext> gen) {
         return getp(name, () -> gen.get().mRemoteWriter);
+    }
+
+    /**
+     * Creates a document with a name and a writer supplier
+     *
+     * @param name        name of the document
+     * @param docSupplier the writer supplier
+     * @return the document
+     */
+    @SuppressLint("RestrictedApiAndroidX")
+    public static @NonNull RCDoc get(@NonNull String name,
+            @NonNull Supplier<byte @NonNull []> docSupplier) {
+        return new RCDoc() {
+            @NonNull
+            final Supplier<byte @NonNull []> mSupplier = docSupplier;
+            byte @Nullable [] mDoc;
+            float mBuildTime = 0;
+
+            @Override
+            public float getBuildTime() {
+                return mBuildTime;
+            }
+
+            public byte @NonNull [] doc() {
+                if (mDoc == null) {
+                    mDoc = mSupplier.get();
+                }
+
+                return mDoc;
+            }
+
+            @Override
+            public int getColor() {
+                return 0;
+            }
+
+            @Override
+            public void run() {
+            }
+
+            @Override
+            public int size() {
+                return doc().length;
+            }
+
+            @Override
+            public int zipSize() {
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(baos);
+                    deflaterOutputStream.write(doc(), 0, doc().length);
+                    deflaterOutputStream.finish();
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return baos.size();
+            }
+
+            @Override
+            @NonNull
+            public String toString() {
+                return name;
+            }
+
+            @Override
+            public RemoteDocument getDoc() {
+                Log.v("perf", "build doc \"" + name + "\"");
+                long time = System.nanoTime();
+                RemoteDocument ret = new RemoteDocument(
+                        new ByteArrayInputStream(doc(), 0, doc().length));
+                mBuildTime = (System.nanoTime() - time) * 1E-6f;
+                return ret;
+            }
+        };
     }
 
     /**
@@ -1113,12 +1266,19 @@ public class ExperimentRecyclerActivity extends Activity {
      * @param buff       the document
      * @param appContext the application context
      */
-    public static void saveDoc(@NonNull String name, byte @NonNull [] buff, @NonNull Context
+    public static void saveDoc(@NonNull String name, byte @Nullable [] buff, @NonNull Context
             appContext, boolean compress) {
+        if (buff == null) {
+            return;
+        }
         int len = buff.length;
         if (name.indexOf('/') >= 0) {
-            name = name.substring(name.lastIndexOf('/'));
+            name = name.substring(name.lastIndexOf('/') + 1);
         }
+
+        name = name.replaceFirst("^\\d+", "");
+        // convert to snake case
+        name = name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
         File storageDir = appContext.getExternalFilesDir(
                 Environment.DIRECTORY_PICTURES); // Using internal storage
         if (storageDir != null) {
@@ -1129,20 +1289,28 @@ public class ExperimentRecyclerActivity extends Activity {
             if (!mkdirs) {
                 return;
             }
-
         }
-        String str = Base64.getEncoder().encodeToString(buff);
-        StringBuilder output = new StringBuilder("\ndata = ");
-        int chunk = 72;
-        for (int i = 0; i < str.length(); i += chunk) {
-            int endIndex = Math.min(i + chunk, str.length());
-            if (i != 0) output.append("+");
-            output.append("\"").append(str.substring(i, endIndex)).append("\"\n");
+        System.out.println("saving " + name);
+        if (DEBUG) {
+            String str = Base64.getEncoder().encodeToString(buff);
+            StringBuilder output = new StringBuilder("\ndata = ");
+            int chunk = 72;
+            for (int i = 0; i < str.length(); i += chunk) {
+                int endIndex = Math.min(i + chunk, str.length());
+                if (i != 0) output.append("+");
+                output.append("\"").append(str.substring(i, endIndex)).append("\"\n");
+            }
+            Log.v("MAIN", "base64String: " + output);
         }
-
-        Log.v("MAIN", "base64String: " + output);
 
         File imageFile = new File(storageDir, name + ".rc");
+        if (imageFile.exists()) {
+            System.out.println("WARNING IMAGE EXIST " + name + " len = " + buff.length + "  "
+                    + imageFile.length());
+            if (buff.length != imageFile.length()) {
+                imageFile = new File(storageDir, name + "_c.rc");
+            }
+        }
         if (compress) {
             imageFile = new File(storageDir, name + ".rcz");
         }

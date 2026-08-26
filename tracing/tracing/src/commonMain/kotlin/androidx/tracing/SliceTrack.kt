@@ -22,8 +22,6 @@ import androidx.annotation.RestrictTo.Scope
 /**
  * Horizontal track of time in a trace which contains slice events (`beginSection` / `endSection`).
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @RestrictTo(Scope.LIBRARY_GROUP)
 public abstract class SliceTrack(
     /** The [TraceContext] instance. */
@@ -31,19 +29,40 @@ public abstract class SliceTrack(
     /**
      * The uuid for the track descriptor.
      *
-     * This ID must be unique within all [Track]s in a given trace produced by [TraceDriver] - it is
-     * used to connect recorded trace events to the containing track.
+     * This ID must be unique within all [Track]s in a given trace produced by
+     * [AbstractTraceDriver] - it is used to connect recorded trace events to the containing track.
      */
     uuid: Long,
 ) : Track(context = context, uuid = uuid) {
+
+    @JvmField // avoid getter generation
+    internal var preamble = false
 
     // Use a single shared trace event scope to avoid allocations.
     @JvmField
     internal val traceEventScope: TraceEventScope =
         TraceEventScope().apply { owner = this@SliceTrack }
 
+    // Use a single shared trace scope to avoid allocations.
+    @JvmField
+    internal val traceAttributes: TraceAttributesImpl =
+        TraceAttributesImpl().apply { owner = this@SliceTrack }
+
     // Use a single shared instance of MetadataCloseable
     @JvmField internal val eventMetadataCloseable: EventMetadataCloseable = EventMetadataCloseable()
+
+    internal abstract fun preamblePacket(): TraceEvent?
+
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun emitPreamble() {
+        // This method is intentionally not being synchronized. This is because PerfettoTracer
+        // always uses the currentThreadTrack() to dispatch emitPreamble(). This method effectively
+        // ends up running on the same thread as a result.
+        if (!preamble) {
+            dispatchTraceEvent(preamblePacket(), immediateDispatch = true)
+            preamble = true
+        }
+    }
 
     /**
      * Writes a trace message indicating that a given section of code has begun.
@@ -71,7 +90,8 @@ public abstract class SliceTrack(
         eventMetadataCloseable.metadata = EmptyEventMetadata
         eventMetadataCloseable.closeable = EmptyCloseable
         eventMetadataCloseable.propagationToken = PropagationUnsupportedToken
-        if (context.isEnabled) {
+        if (context.isGloballyEnabled) {
+            emitPreamble()
             val event = obtainTraceEvent()
             if (event != null) {
                 eventMetadataCloseable.propagationToken = token
@@ -90,12 +110,13 @@ public abstract class SliceTrack(
     internal inline fun beginCoroutineSection(
         category: String,
         name: String,
-        token: PlatformThreadContextElement<*>,
+        token: PlatformThreadContextElement,
     ): EventMetadataCloseable {
         eventMetadataCloseable.metadata = EmptyEventMetadata
         eventMetadataCloseable.closeable = EmptyCloseable
         eventMetadataCloseable.propagationToken = PropagationUnsupportedToken
-        if (context.isEnabled) {
+        if (context.isGloballyEnabled) {
+            emitPreamble()
             val event = obtainTraceEvent()
             if (event != null) {
                 traceEventScope.event = event
@@ -122,6 +143,7 @@ public abstract class SliceTrack(
      * un-paired calls to [endSection] are ignored when the trace is displayed.
      */
     public open fun endSection() {
+        if (!context.isGloballyEnabled) return
         val event = obtainTraceEvent()
         event?.apply {
             event.setEndSection(trackUuid = uuid)
@@ -140,16 +162,30 @@ public abstract class SliceTrack(
      *
      * Except it is faster to write, and guaranteed zero duration.
      */
-    public fun instant(category: String, name: String): EventMetadataCloseable {
-        if (!context.isEnabled) return EmptyEventMetadataCloseable
+    public fun instant(
+        category: String,
+        name: String,
+        flowIds: List<Long>,
+    ): EventMetadataCloseable {
+        if (!context.isGloballyEnabled) return EmptyEventMetadataCloseable
+        emitPreamble()
         val event = obtainTraceEvent()
         event?.apply {
-            setInstant(trackUuid = uuid, name = name)
+            setInstant(trackUuid = uuid, name = name, flowIds)
             primaryCategory = category
         }
         traceEventScope.event = event
         eventMetadataCloseable.metadata = traceEventScope
         return eventMetadataCloseable
+    }
+
+    public fun traceAttributes(): TraceAttributes {
+        if (!context.isGloballyEnabled) return EmptyTraceAttributes
+        emitPreamble()
+        val event = obtainTraceEvent()
+        event?.timestamp = nanoTime()
+        traceAttributes.event = event
+        return traceAttributes
     }
 
     override fun close() {

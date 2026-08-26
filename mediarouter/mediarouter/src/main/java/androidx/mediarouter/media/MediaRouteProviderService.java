@@ -77,13 +77,10 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.content.ContextCompat;
-import androidx.core.os.BuildCompat;
 import androidx.core.util.Consumer;
 import androidx.core.util.ObjectsCompat;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController;
@@ -91,6 +88,9 @@ import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.OnDynamicRoutesChangedListener;
 import androidx.mediarouter.media.MediaRouteProvider.RouteController;
 import androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -211,7 +211,8 @@ public abstract class MediaRouteProviderService extends Service {
         mReceiveMessenger = new Messenger(mReceiveHandler);
         mPrivateHandler = new PrivateHandler();
 
-        if (BuildCompat.isAtLeastB_1()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+                && Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1) {
             mImpl = new MediaRouteProviderServiceImplApi36_1(this);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             mImpl = new MediaRouteProviderServiceImplApi30(this);
@@ -252,12 +253,10 @@ public abstract class MediaRouteProviderService extends Service {
      * @return The media route provider offered by this service, or null if
      * this service has decided not to offer a media route provider.
      */
-    @Nullable
-    public abstract MediaRouteProvider onCreateMediaRouteProvider();
+    public abstract @Nullable MediaRouteProvider onCreateMediaRouteProvider();
 
     @Override
-    @Nullable
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         return mImpl.onBind(intent);
     }
 
@@ -276,8 +275,7 @@ public abstract class MediaRouteProviderService extends Service {
      *
      * @see #onCreateMediaRouteProvider()
      */
-    @Nullable
-    public MediaRouteProvider getMediaRouteProvider() {
+    public @Nullable MediaRouteProvider getMediaRouteProvider() {
         return mProvider;
     }
 
@@ -380,12 +378,12 @@ public abstract class MediaRouteProviderService extends Service {
          *
          * @return The package name of the client
          */
-        @NonNull
-        public String getPackageName() {
+        public @NonNull String getPackageName() {
             return packageName;
         }
 
         /** Builder for {@link ClientInfo}. */
+        @SuppressLint("EmptyBuilder")
         public static final class Builder {
             private final String packageName;
 
@@ -394,8 +392,7 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             /** Builds and returns the {@link ClientInfo} object. */
-            @NonNull
-            public ClientInfo build() {
+            public @NonNull ClientInfo build() {
                 return new ClientInfo(packageName);
             }
         }
@@ -606,8 +603,7 @@ public abstract class MediaRouteProviderService extends Service {
         MediaRouteDiscoveryRequest mCompositeDiscoveryRequest;
         MediaRouteDiscoveryRequest mBaseDiscoveryRequest;
         long mBaseDiscoveryRequestTimestamp;
-        @Nullable
-        private final Map<Consumer<List<ClientInfo>>, Executor> mClientInfoListeners =
+        private final @Nullable Map<Consumer<List<ClientInfo>>, Executor> mClientInfoListeners =
                 new HashMap<>();
         private final Object mClientInfoListenersLock = new Object();
         private final MediaRouterActiveScanThrottlingHelper mActiveScanThrottlingHelper =
@@ -1230,9 +1226,8 @@ public abstract class MediaRouteProviderService extends Service {
                         .obtainMessage(PRIVATE_MSG_CLIENT_DIED, mMessenger).sendToTarget();
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return getClientId(mMessenger);
             }
 
@@ -1413,11 +1408,6 @@ public abstract class MediaRouteProviderService extends Service {
 
             @Override
             public void dispose() {
-                int count = mControllers.size();
-                for (int i = 0; i < count; i++) {
-                    int controllerId = mControllers.keyAt(i);
-                    mMR2ProviderServiceAdapter.notifyRouteControllerRemoved(controllerId);
-                }
                 mRouteIdToControllerMap.clear();
                 super.dispose();
             }
@@ -1437,12 +1427,6 @@ public abstract class MediaRouteProviderService extends Service {
                 boolean result =
                         super.createRouteController(
                                 routeId, routeGroupId, routeControllerOptions, controllerId);
-                // Don't add route controllers of member routes.
-                if (routeGroupId == null && result && mPackageName != null) {
-                    mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
-                            this, mControllers.get(controllerId),
-                            controllerId, mPackageName, routeId);
-                }
                 if (result) {
                     mRouteIdToControllerMap.put(routeId, mControllers.get(controllerId));
                 }
@@ -1450,24 +1434,7 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             @Override
-            public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId,
-                    RouteControllerOptions routeControllerOptions,
-                    int controllerId) {
-                Bundle result =
-                        super.createDynamicGroupRouteController(
-                                initialMemberRouteId, routeControllerOptions, controllerId);
-                if (result != null && mPackageName != null) {
-                    mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
-                            this, mControllers.get(controllerId),
-                            controllerId, mPackageName, initialMemberRouteId);
-                }
-                return result;
-            }
-
-            @Override
             public boolean releaseRouteController(int controllerId) {
-                mMR2ProviderServiceAdapter.notifyRouteControllerRemoved(controllerId);
                 RouteController controller = mControllers.get(controllerId);
                 if (controller != null) {
                     for (Map.Entry<String, RouteController> entry :
@@ -1485,18 +1452,6 @@ public abstract class MediaRouteProviderService extends Service {
                     }
                 }
                 return super.releaseRouteController(controllerId);
-            }
-
-            @Override
-            void sendDynamicRouteDescriptors(
-                    DynamicGroupRouteController controller,
-                    MediaRouteDescriptor groupRoute,
-                    Collection<DynamicRouteDescriptor> descriptors) {
-                super.sendDynamicRouteDescriptors(controller, groupRoute, descriptors);
-                if (mMR2ProviderServiceAdapter != null) {
-                    mMR2ProviderServiceAdapter.setDynamicRouteDescriptor(controller,
-                            groupRoute, descriptors);
-                }
             }
 
             @Override

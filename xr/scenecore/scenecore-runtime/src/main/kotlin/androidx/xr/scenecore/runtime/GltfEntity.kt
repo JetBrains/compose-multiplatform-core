@@ -18,15 +18,14 @@ package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
-import java.util.concurrent.Executor
 import java.util.function.Consumer
 
 /** Interface for a XR Runtime [GltfEntity]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface GltfEntity : Entity {
 
-    /** Returns the current animation state of the glTF entity. */
-    @AnimationStateValue public val animationState: Int
+    /** The flattened list of all nodes contained within this glTF model entity. */
+    public val nodes: List<GltfModelNodeFeature>
 
     /**
      * Retrieves the axis-aligned bounding box (AABB) of an instanced glTF model in meters in the
@@ -43,55 +42,37 @@ public interface GltfEntity : Entity {
      */
     public val gltfModelBoundingBox: BoundingBox
 
-    /**
-     * Starts the animation with the given name.
-     *
-     * @param animationName The name of the animation to start. If null is supplied, will play the
-     *   first animation found in the glTF.
-     * @param loop Whether the animation should loop.
-     */
-    public fun startAnimation(loop: Boolean, animationName: String?)
-
-    /** Stops the animation of the glTF entity. */
-    public fun stopAnimation()
-
-    /* Pause the animation of the glTF entity. */
-    public fun pauseAnimation()
-
-    /* Resume the animation of the glTF entity. */
-    public fun resumeAnimation()
+    /** Returns a list of all animations in the model. */
+    public val animations: List<GltfAnimationFeature>
 
     /**
-     * Sets a material override for a specific mesh of a node.
+     * Enable/disable the collider for the glTF entity.
      *
-     * @param material The material to use for the mesh primitive.
-     * @param nodeName The name of the node containing the mesh to override.
-     * @param primitiveIndex The zero-based index for the mesh of the node.
+     * @param enabled Whether the collider should be enabled.
      */
-    public fun setMaterialOverride(
-        material: MaterialResource,
-        nodeName: String,
-        primitiveIndex: Int,
-    )
+    public fun setColliderEnabled(enabled: Boolean)
 
     /**
-     * Clears a material override for a specific mesh of a node.
+     * Adds a listener to observe the glTF entity's AA-bounds updates.
      *
-     * @param nodeName The name of the node containing the mesh for which to clear the override.
-     * @param primitiveIndex The zero-based index for the mesh of the node.
+     * @param listener The listener to add.
      */
-    public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int)
+    public fun addOnBoundsUpdateListener(listener: Consumer<BoundingBox>)
 
-    // TODO: b/417750821 - Add an OnAnimationFinished() Listener interface
-    //                     Add a getAnimationTimeRemaining() interface
+    /**
+     * Removes provided listener from registered listeners of glTF entity's AA-bounds updates.
+     *
+     * @param listener The listener to remove.
+     */
+    public fun removeOnBoundsUpdateListener(listener: Consumer<BoundingBox>)
 
-    // TODO: b/451424385 -GltfEntity.getGltfModelBoundingBox() becomes a Flow if the bounding box
-    //  can change during animation.
-    /** Adds a listener to be invoked when the [animationState] value changes. */
-    public fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>)
-
-    /** Removes an [animationState] listener. */
-    public fun removeAnimationStateListener(listener: Consumer<Int>)
+    /**
+     * Enable/disable the reform affordances for glTF entity.
+     *
+     * @param enabled Whether the reform affordances should be enabled.
+     * @param systemMovable Whether the entity should be movable by the system.
+     */
+    public fun setReformAffordanceEnabled(enabled: Boolean, systemMovable: Boolean)
 
     /** Specifies the current animation state of the [GltfEntity]. */
     public annotation class AnimationStateValue

@@ -33,6 +33,7 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
+import androidx.camera.core.MirrorMode
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CameraControlInternal
@@ -637,6 +638,44 @@ abstract class VideoRecordingTestBase(
     }
 
     @Test
+    fun togglingMirrorModeDuringRecordingDoesNotInterruptRecording() {
+        // Set initial mode to OFF
+        val preview = Preview.Builder().setMirrorMode(MirrorMode.MIRROR_MODE_OFF).build()
+        instrumentation.runOnMainSync {
+            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
+        }
+        val videoCapture =
+            VideoCapture.Builder(Recorder.Builder().build())
+                .setMirrorMode(MirrorMode.MIRROR_MODE_OFF)
+                .build()
+
+        checkAndBindUseCases(preview, videoCapture)
+
+        val recording =
+            recordingSession.createRecording(recorder = videoCapture.output).startAndVerify()
+
+        instrumentation.runOnMainSync {
+            // From OFF to ON with set order: videoCapture, preview
+            val newMode = MirrorMode.MIRROR_MODE_ON
+            videoCapture.mirrorMode = newMode
+            preview.setMirrorMode(newMode)
+        }
+
+        recording.clearEvents()
+        recording.verifyStatus(statusCount = 15)
+
+        instrumentation.runOnMainSync {
+            // From ON to FRONT_ONLY with reversed set order: videoCapture, preview
+            val newMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
+            videoCapture.mirrorMode = newMode
+            preview.setMirrorMode(newMode)
+        }
+
+        recording.clearEvents()
+        recording.verifyStatus(statusCount = 15)
+    }
+
+    @Test
     fun updateVideoUsage_whenRecordingStartedPausedResumedStopped(): Unit = runBlocking {
         checkAndBindUseCases(videoCapture, preview)
 
@@ -849,7 +888,7 @@ abstract class VideoRecordingTestBase(
         // If the test starts recording immediately after `onError` is called. There could be a
         // timing issue which causes the recording to be stopped.
         // On the main thread: trigger OnError
-        //    -> resetPipeline
+        //    -> updateConfigAndOutput
         //    -> DeferrableSurface is closed
         //    -> SurfaceRequest is complete
         // On the test thread: start recording

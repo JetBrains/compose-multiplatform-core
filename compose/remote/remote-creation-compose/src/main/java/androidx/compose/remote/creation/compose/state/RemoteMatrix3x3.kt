@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.state
 
@@ -23,12 +22,76 @@ import androidx.compose.remote.core.operations.utilities.MatrixOperations
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 
 /** Represents a 3x3 transformation matrix. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteMatrix3x3
-internal constructor(private val idProvider: (creationState: RemoteComposeCreationState) -> Int) :
-    BaseRemoteState<Any>() {
+internal constructor(
+    private val arrayProvider: (creationState: RemoteComposeCreationState) -> FloatArray,
+    cacheKey: RemoteStateCacheKey,
+) : BaseRemoteState<Any>(cacheKey) {
+
+    internal enum class OperationKey(override val precedence: Int = 100) : RemoteOperation {
+        IDENTITY {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) = "identity()"
+        },
+        ROTATE {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "rotate(${args[0].toDebugString()})"
+        },
+        TRANSLATE_X {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "translateX(${args[0].toDebugString()})"
+        },
+        TRANSLATE_Y {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "translateY(${args[0].toDebugString()})"
+        },
+        TRANSLATE_XY {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "translate(${args[0].toDebugString()}, ${args[1].toDebugString()})"
+        },
+        SCALE_X {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "scaleX(${args[0].toDebugString()})"
+        },
+        SCALE_Y {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                "scaleY(${args[0].toDebugString()})"
+        },
+        ROTATION_AROUND {
+            override fun toDebugString(args: List<RemoteStateCacheKey>): String {
+                val params = args.joinToDebugString()
+                return "rotateAround($params)"
+            }
+        },
+        MUL(3) {
+            override fun toDebugString(args: List<RemoteStateCacheKey>) =
+                args.formatOp("*", precedence)
+        };
+
+        override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+            return when (this) {
+                IDENTITY -> createIdentity()
+                ROTATE -> createRotate(args[0] as RemoteFloat)
+                TRANSLATE_X -> createTranslateX(args[0] as RemoteFloat)
+                TRANSLATE_Y -> createTranslateY(args[0] as RemoteFloat)
+                TRANSLATE_XY -> createTranslateXy(args[0] as RemoteFloat, args[1] as RemoteFloat)
+                SCALE_X -> createScaleX(args[0] as RemoteFloat)
+                SCALE_Y -> createScaleY(args[0] as RemoteFloat)
+                ROTATION_AROUND ->
+                    createRotationAround(
+                        args[0] as RemoteFloat,
+                        args[1] as RemoteFloat,
+                        args[2] as RemoteFloat,
+                    )
+                MUL -> (args[0] as RemoteMatrix3x3) * (args[1] as RemoteMatrix3x3)
+            }
+        }
+    }
+
     override val constantValueOrNull: Any?
         get() = null
+
+    internal val isIdentity: Boolean
+        get() = (cacheKey as? RemoteOperationCacheKey)?.op == OperationKey.IDENTITY
 
     /**
      * Creates a new [RemoteMatrix3x3] that represents the multiplication of this matrix by another.
@@ -36,27 +99,39 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
      * @param v The [RemoteMatrix3x3] to multiply with this one (this * v).
      * @return A new [RemoteMatrix3x3] representing the multiplication.
      */
-    public operator fun times(v: RemoteMatrix3x3): RemoteMatrix3x3 =
-        RemoteMatrix3x3({ creationState ->
-            Utils.idFromNan(
-                creationState.document.matrixExpression(
-                    getFloatIdForCreationState(creationState),
-                    v.getFloatIdForCreationState(creationState),
+    public operator fun times(v: RemoteMatrix3x3): RemoteMatrix3x3 {
+        val key = RemoteOperationCacheKey.create(OperationKey.MUL, this, v)
+        return RemoteMatrix3x3(
+            cacheKey = key,
+            arrayProvider = { creationState ->
+                floatArrayOf(
+                    // Note there is an implicit MatrixOperations.IDENTITY for the first entry,
+                    // see MatrixOperations#eval.
+                    *this@RemoteMatrix3x3.arrayProvider(creationState),
+                    MatrixOperations.IDENTITY,
+                    *v.arrayProvider(creationState),
                     MatrixOperations.MUL,
                 )
-            )
-        })
+            },
+        )
+    }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
-        idProvider(creationState)
+        Utils.idFromNan(creationState.document.matrixExpression(*arrayProvider(creationState)))
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         /** Creates a [RemoteMatrix3x3] representing an identity matrix. */
         public fun createIdentity(): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(creationState.document.matrixExpression(MatrixOperations.IDENTITY))
-            })
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.IDENTITY),
+                arrayProvider = { _ ->
+                    // Note there is an implicit MatrixOperations.IDENTITY for the first entry,
+                    // see MatrixOperations#eval.
+                    floatArrayOf()
+                },
+            )
 
         /**
          * Creates a [RemoteMatrix3x3] that rotates around the Z-axis.
@@ -64,14 +139,15 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
          * @param angle The angle of rotation.
          */
         public fun createRotate(angle: RemoteFloat): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(
-                    creationState.document.matrixExpression(
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.ROTATE, angle),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
                         angle.getFloatIdForCreationState(creationState),
                         MatrixOperations.ROT_Z,
                     )
-                )
-            })
+                },
+            )
 
         /**
          * Creates a [RemoteMatrix3x3] that translates along the X-axis.
@@ -79,14 +155,15 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
          * @param x The distance to translate along the X-axis.
          */
         public fun createTranslateX(x: RemoteFloat): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(
-                    creationState.document.matrixExpression(
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.TRANSLATE_X, x),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
                         x.getFloatIdForCreationState(creationState),
                         MatrixOperations.TRANSLATE_X,
                     )
-                )
-            })
+                },
+            )
 
         /**
          * Creates a [RemoteMatrix3x3] that translates along the Y-axis.
@@ -94,14 +171,33 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
          * @param y The distance to translate along the Y-axis.
          */
         public fun createTranslateY(y: RemoteFloat): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(
-                    creationState.document.matrixExpression(
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.TRANSLATE_Y, y),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
                         y.getFloatIdForCreationState(creationState),
                         MatrixOperations.TRANSLATE_Y,
                     )
-                )
-            })
+                },
+            )
+
+        /**
+         * Creates a [RemoteMatrix3x3] that translates along the X-axis and the Y-axis.
+         *
+         * @param x The distance to translate along the X-axis.
+         * @param y The distance to translate along the Y-axis.
+         */
+        public fun createTranslateXy(x: RemoteFloat, y: RemoteFloat): RemoteMatrix3x3 =
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.TRANSLATE_XY, x, y),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
+                        x.getFloatIdForCreationState(creationState),
+                        y.getFloatIdForCreationState(creationState),
+                        MatrixOperations.TRANSLATE2,
+                    )
+                },
+            )
 
         /**
          * Creates a [RemoteMatrix3x3] that scales along the X-axis.
@@ -109,14 +205,15 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
          * @param scale The scaling factor.
          */
         public fun createScaleX(scale: RemoteFloat): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(
-                    creationState.document.matrixExpression(
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.SCALE_X, scale),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
                         scale.getFloatIdForCreationState(creationState),
                         MatrixOperations.SCALE_X,
                     )
-                )
-            })
+                },
+            )
 
         /**
          * Creates a [RemoteMatrix3x3] that scales along the Y-axis.
@@ -124,14 +221,15 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
          * @param scale The scaling factor.
          */
         public fun createScaleY(scale: RemoteFloat): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(
-                    creationState.document.matrixExpression(
+            RemoteMatrix3x3(
+                cacheKey = RemoteOperationCacheKey.create(OperationKey.SCALE_Y, scale),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
                         scale.getFloatIdForCreationState(creationState),
                         MatrixOperations.SCALE_Y,
                     )
-                )
-            })
+                },
+            )
 
         /**
          * Creates a [RemoteMatrix3x3] that rotates around a pivot point on the Z-plane.
@@ -145,15 +243,22 @@ internal constructor(private val idProvider: (creationState: RemoteComposeCreati
             centerX: RemoteFloat,
             centerY: RemoteFloat,
         ): RemoteMatrix3x3 =
-            RemoteMatrix3x3({ creationState ->
-                Utils.idFromNan(
-                    creationState.document.matrixExpression(
+            RemoteMatrix3x3(
+                cacheKey =
+                    RemoteOperationCacheKey.create(
+                        OperationKey.ROTATION_AROUND,
+                        angle,
+                        centerX,
+                        centerY,
+                    ),
+                arrayProvider = { creationState ->
+                    floatArrayOf(
                         angle.getFloatIdForCreationState(creationState),
                         centerX.getFloatIdForCreationState(creationState),
                         centerY.getFloatIdForCreationState(creationState),
                         MatrixOperations.ROT_PZ,
                     )
-                )
-            })
+                },
+            )
     }
 }

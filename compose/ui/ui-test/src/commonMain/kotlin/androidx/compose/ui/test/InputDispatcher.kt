@@ -16,6 +16,7 @@
 package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.node.RootForTest
 
@@ -68,8 +69,20 @@ internal expect fun createInputDispatcher(
  * * [updateTrackpadPosition]
  * * [enqueueTrackpadRelease]
  * * [enqueueTrackpadCancel]
- * * [enqueueTrackpadScroll]
- * * [enqueueTrackpadPinch]
+ * * [enqueueTrackpadPanStart]
+ * * [enqueueTrackpadPanMove]
+ * * [enqueueTrackpadPanEnd]
+ * * [enqueueTrackpadScaleStart]
+ * * [enqueueTrackpadScaleChange]
+ * * [enqueueTrackpadScaleEnd]
+ *
+ * Indirect Pointer input:
+ * * [getCurrentTouchPosition]
+ * * [enqueueIndirectPointerDown]
+ * * [enqueueIndirectPointerMove]
+ * * [updateIndirectPointer]
+ * * [enqueueIndirectPointerUp]
+ * * [enqueueIndirectPointerCancel]
  *
  * Chaining methods:
  * * [advanceEventTime]
@@ -110,11 +123,30 @@ internal abstract class InputDispatcher(
         const val SubsequentRepeatDelay = 50L
     }
 
-    /** The eventTime of the next event. */
-    protected var currentTime = testContext.currentTime
+    // The initial time for the test clock. This is captured once upon the first call to
+    // [performMultiModalInput] (or its single-modality alternatives) and persists across
+    // subsequent input dispatcher recreations within the same test to ensure consistent timing.
+    internal val initiallyLoadedTestClockTime = testContext.currentTime
+
+    // Used to increase the current time as events are generated.
+    private var currentTimeOffset: Long = 0L
+
+    /**
+     * The eventTime of the next event. It includes the initially loaded test clock time (to start),
+     * and the offset used to increase time.
+     */
+    var currentTime: Long
+        get() = initiallyLoadedTestClockTime + currentTimeOffset
+        protected set(value) {
+            val delta = value - initiallyLoadedTestClockTime
+            currentTimeOffset = if (delta <= 0) 0L else delta
+        }
 
     /** The state of the current touch gesture. If `null`, no touch gesture is in progress. */
     protected var partialGesture: PartialGesture? = null
+
+    /** The state of the current indirect pointer gesture. If `null`, no gesture is in progress. */
+    protected var partialIndirectGesture: PartialIndirectGesture? = null
 
     /**
      * The state of the cursor. The cursor state is always available. It starts at [Offset.Zero] in
@@ -138,6 +170,13 @@ internal abstract class InputDispatcher(
     val isTouchInProgress: Boolean
         get() = partialGesture != null
 
+    /**
+     * Indicates if a gesture is in progress or not. A gesture is in progress if at least one finger
+     * is (still) touching the touchpad.
+     */
+    val isIndirectPointerGestureInProgress: Boolean
+        get() = partialIndirectGesture != null
+
     /** Indicates whether caps lock is on or not. */
     val isCapsLockOn: Boolean
         get() = keyInputState.capsLockOn
@@ -155,6 +194,7 @@ internal abstract class InputDispatcher(
         val state = testContext.states.remove(rootHash)
         if (state != null) {
             partialGesture = state.partialGesture
+            partialIndirectGesture = state.partialIndirectGesture
             cursorInputState = state.cursorInputState
             keyInputState = state.keyInputState
         }
@@ -164,7 +204,12 @@ internal abstract class InputDispatcher(
         if (root != null) {
             val rootHash = identityHashCode(root)
             testContext.states[rootHash] =
-                InputDispatcherState(partialGesture, cursorInputState, keyInputState)
+                InputDispatcherState(
+                    partialGesture,
+                    partialIndirectGesture,
+                    cursorInputState,
+                    keyInputState,
+                )
         }
     }
 
@@ -243,27 +288,34 @@ internal abstract class InputDispatcher(
             "Cannot send DOWN event, a gesture is already in progress for pointer $pointerId"
         }
 
+        // Indirect Pointer Gesture needs to be canceled for touch gestures
+        if (partialIndirectGesture != null) {
+            enqueueIndirectPointerCancel()
+        }
+
         if (cursorInputState.hasAnyButtonPressed) {
             // If cursor buttons are down, a touch gesture cancels the cursor gesture
             when (
-                requireNotNull(cursorInputState.currentCursorInputSource) {
+                requireNotNull(cursorInputState.currentInputSource) {
                     "Cursor input had buttons down, but not associated with a specific input type"
                 }
             ) {
-                CursorInputSource.Mouse -> enqueueMouseCancel()
-                CursorInputSource.Trackpad -> enqueueTrackpadCancel()
+                InputSource.Mouse -> enqueueMouseCancel()
+                InputSource.Trackpad -> enqueueTrackpadCancel()
+                else -> throw IllegalArgumentException("InputSource must be Mouse or Trackpad.")
             }
         } else if (cursorInputState.isEntered) {
             // If no cursor buttons were down, we may have been in hovered state
             when (
-                requireNotNull(cursorInputState.currentCursorInputSource) {
+                requireNotNull(cursorInputState.currentInputSource) {
                     "Cursor is entered, but not associated with a specific input type"
                 }
             ) {
-                CursorInputSource.Mouse -> cursorInputState.exitMouseHover()
-                CursorInputSource.Trackpad -> cursorInputState.exitTrackpadHover()
+                InputSource.Mouse -> cursorInputState.exitMouseHover()
+                InputSource.Trackpad -> cursorInputState.exitTrackpadHover()
+                else -> throw IllegalArgumentException("InputSource must be Mouse or Trackpad.")
             }
-            cursorInputState.currentCursorInputSource = null
+            cursorInputState.currentInputSource = null
         }
 
         // Send a MOVE event if pointers have changed since the last event
@@ -271,7 +323,12 @@ internal abstract class InputDispatcher(
 
         // Start a new gesture, or add the pointerId to the existing gesture
         if (gesture == null) {
-            gesture = PartialGesture(currentTime, position, pointerId)
+            gesture =
+                PartialGesture(
+                    downTime = currentTime,
+                    startPosition = position,
+                    pointerId = pointerId,
+                )
             partialGesture = gesture
         } else {
             gesture.lastPositions[pointerId] = position
@@ -295,6 +352,12 @@ internal abstract class InputDispatcher(
     fun enqueueTouchMove() {
         val gesture =
             checkNotNull(partialGesture) { "Cannot send MOVE event, no gesture is in progress" }
+
+        // Indirect Pointer Gesture needs to be canceled for touch gestures
+        if (partialIndirectGesture != null) {
+            enqueueIndirectPointerCancel()
+        }
+
         gesture.enqueueMove()
         gesture.hasPointerUpdates = false
     }
@@ -312,7 +375,12 @@ internal abstract class InputDispatcher(
         historicalCoordinates: List<List<Offset>>,
     ) {
         val gesture =
-            checkNotNull(partialGesture) { "Cannot send MOVE event, no gesture is in progress" }
+            checkNotNull(partialGesture) { "Cannot send MOVE events, no gesture is in progress" }
+
+        // Indirect Pointer Gesture needs to be canceled for touch gestures
+        if (partialIndirectGesture != null) {
+            enqueueIndirectPointerCancel()
+        }
         gesture.enqueueMoves(relativeHistoricalTimes, historicalCoordinates)
         gesture.hasPointerUpdates = false
     }
@@ -363,6 +431,10 @@ internal abstract class InputDispatcher(
         require(gesture.lastPositions.containsKey(pointerId)) {
             "Cannot send UP event for pointer $pointerId, it is not active in the current gesture"
         }
+        // Indirect Pointer Gesture needs to be canceled for touch gestures
+        if (partialIndirectGesture != null) {
+            enqueueIndirectPointerCancel()
+        }
 
         // First send the UP event
         gesture.enqueueUp(pointerId)
@@ -401,6 +473,223 @@ internal abstract class InputDispatcher(
     }
 
     /**
+     * Generates an indirect pointer down event at [position] for the pointer with the given
+     * [pointerId]. Starts a new indirect pointer gesture if no other [pointerId]s are down. Only
+     * possible if the [pointerId] is not currently being used, although pointer ids may be reused
+     * during an indirect pointer gesture.
+     *
+     * This method is open to allow platform-specific implementations to perform additional
+     * initialization or validation when an indirect pointer sequence begins. Overriding
+     * implementations should typically call super to ensure the internal state of the dispatcher is
+     * updated correctly.
+     *
+     * @param pointerId The id of the pointer, can be any number not yet in use by another pointer
+     * @param position The coordinate of the down event
+     * @param indirectPointerEventPrimaryDirectionalMotionAxis - Axis movement direction of a scroll
+     * @see enqueueIndirectPointerMove
+     * @see updateIndirectPointer
+     * @see enqueueIndirectPointerUp
+     * @see enqueueIndirectPointerCancel
+     */
+    open fun enqueueIndirectPointerDown(
+        pointerId: Int,
+        position: Offset,
+        indirectPointerEventPrimaryDirectionalMotionAxis:
+            IndirectPointerEventPrimaryDirectionalMotionAxis,
+    ) {
+        var indirectGesture = partialIndirectGesture
+
+        // Check if this pointer is not already down
+        require(indirectGesture == null || !indirectGesture.lastPositions.containsKey(pointerId)) {
+            "Cannot send DOWN event, an indirect gesture is already in progress for pointer $pointerId"
+        }
+        // Touch needs to be canceled for indirect pointer gestures
+        if (partialGesture != null) {
+            enqueueTouchCancel()
+        }
+
+        // Send a MOVE event if pointers have changed since the last event
+        indirectGesture?.flushPointerUpdates()
+
+        // Start a new gesture, or add the pointerId to the existing gesture
+        if (indirectGesture == null) {
+            indirectGesture =
+                PartialIndirectGesture(
+                    downTime = currentTime,
+                    startPosition = position,
+                    pointerId = pointerId,
+                    indirectPointerEventPrimaryDirectionalMotionAxis =
+                        indirectPointerEventPrimaryDirectionalMotionAxis,
+                )
+            partialIndirectGesture = indirectGesture
+        } else {
+
+            indirectGesture.lastPositions[pointerId] = position
+        }
+
+        // Send the DOWN event
+        indirectGesture.enqueueIndirectDown(pointerId)
+    }
+
+    /**
+     * During an indirect pointer gesture, returns the position of the last touch event of the given
+     * [pointerId]. Returns `null` if no touch gesture is in progress for that [pointerId].
+     *
+     * @param pointerId The id of the pointer for which to return the current position
+     * @return The current position of the pointer with the given [pointerId], or `null` if the
+     *   pointer is not currently in use
+     */
+    fun getCurrentIndirectPointerPosition(pointerId: Int): Offset? {
+        return partialIndirectGesture?.lastPositions?.get(pointerId)
+    }
+
+    /**
+     * Generates a move indirect pointer event without moving any of the pointers. Use this to
+     * commit all changes in pointer location made with [updateIndirectPointer]. The generated event
+     * will contain the current position of all pointers.
+     *
+     * @see enqueueIndirectPointerDown
+     * @see updateIndirectPointer
+     * @see enqueueIndirectPointerUp
+     * @see enqueueIndirectPointerCancel
+     * @see enqueueIndirectPointerMoves
+     */
+    fun enqueueIndirectPointerMove() {
+        val indirectGesture =
+            checkNotNull(partialIndirectGesture) {
+                "Cannot send MOVE event, no gesture is in progress"
+            }
+
+        // Touch needs to be canceled for indirect pointer gestures
+        if (partialGesture != null) {
+            enqueueTouchCancel()
+        }
+
+        indirectGesture.enqueueIndirectMove()
+        indirectGesture.hasPointerUpdates = false
+    }
+
+    /**
+     * Enqueue the current time+coordinates as a move event, with the historical parameters
+     * preceding it (so that they are ultimately available from methods like
+     * MotionEvent.getHistoricalX).
+     *
+     * @see enqueueIndirectPointerMove
+     * @see IndirectPointerInjectionScope.moveWithHistory
+     */
+    @Suppress("PrimitiveInCollection")
+    fun enqueueIndirectPointerMoves(
+        relativeHistoricalTimes: List<Long>,
+        historicalCoordinates: List<List<Offset>>,
+    ) {
+        val indirectGesture =
+            checkNotNull(partialIndirectGesture) {
+                "Cannot send MOVE event, no gesture is in progress"
+            }
+
+        // Touch needs to be canceled for indirect pointer gestures
+        if (partialGesture != null) {
+            enqueueTouchCancel()
+        }
+        indirectGesture.enqueueIndirectMoves(relativeHistoricalTimes, historicalCoordinates)
+        indirectGesture.hasPointerUpdates = false
+    }
+
+    /**
+     * Updates the position of the indirect pointer with the given [pointerId] to the given
+     * [position], but does not generate a move indirect pointer event. Use this to move multiple
+     * pointers simultaneously. To generate the next move indirect pointer event, which will contain
+     * the current position of _all_ pointers (not just the moved ones), call
+     * [enqueueIndirectPointerMove]. If you move one or more pointers and then call
+     * [enqueueIndirectPointerDown], without calling [enqueueIndirectPointerMove] first, a move
+     * event will be generated right before that down event.
+     *
+     * @param pointerId The id of the pointer to move, as supplied in [enqueueIndirectPointerDown]
+     * @param position The position to move the pointer to
+     * @see enqueueIndirectPointerDown
+     * @see enqueueIndirectPointerMove
+     * @see enqueueIndirectPointerUp
+     * @see enqueueIndirectPointerCancel
+     */
+    fun updateIndirectPointer(pointerId: Int, position: Offset) {
+        val indirectGesture = partialIndirectGesture
+
+        // Check if this pointer is in the gesture
+        check(indirectGesture != null) { "Cannot move pointers, no gesture is in progress" }
+        require(indirectGesture.lastPositions.containsKey(pointerId)) {
+            "Cannot move pointer $pointerId, it is not active in the current gesture"
+        }
+
+        indirectGesture.lastPositions[pointerId] = position
+        indirectGesture.hasPointerUpdates = true
+    }
+
+    /**
+     * Generates an up indirect pointer event for the given [pointerId] at the current position of
+     * that pointer.
+     *
+     * @param pointerId The id of the pointer to lift up, as supplied in
+     *   [enqueueIndirectPointerDown]
+     * @see enqueueIndirectPointerDown
+     * @see updateIndirectPointer
+     * @see enqueueIndirectPointerMove
+     * @see enqueueIndirectPointerCancel
+     */
+    fun enqueueIndirectPointerUp(pointerId: Int) {
+        val indirectGesture = partialIndirectGesture
+
+        // Check if this pointer is in the gesture
+        check(indirectGesture != null) { "Cannot send UP event, no gesture is in progress" }
+
+        require(indirectGesture.lastPositions.containsKey(pointerId)) {
+            "Cannot send UP event for pointer $pointerId, it is not active in the current gesture"
+        }
+
+        // Touch needs to be canceled for indirect pointer gestures
+        if (partialGesture != null) {
+            enqueueTouchCancel()
+        }
+
+        // First send the UP event
+        indirectGesture.enqueueIndirectUp(pointerId)
+
+        // Then remove the pointer, and end the gesture if no pointers are left
+        indirectGesture.lastPositions.remove(pointerId)
+        if (indirectGesture.lastPositions.isEmpty()) {
+            partialIndirectGesture = null
+        }
+    }
+
+    /**
+     * Generates a cancel indirect pointer event for the current indirect pointer gesture. Sent
+     * automatically when mouse events are sent while a indirect pointer gesture is in progress.
+     *
+     * @see enqueueIndirectPointerDown
+     * @see updateIndirectPointer
+     * @see enqueueIndirectPointerMove
+     * @see enqueueIndirectPointerUp
+     */
+    fun enqueueIndirectPointerCancel() {
+        val indirectGesture =
+            checkNotNull(partialIndirectGesture) {
+                "Cannot send CANCEL event, no gesture is in progress"
+            }
+
+        indirectGesture.enqueueIndirectCancel()
+        partialIndirectGesture = null
+    }
+
+    /**
+     * Generates a move event with all indirect pointer locations, if any of the pointers has been
+     * moved by [updateIndirectPointer] since the last move event.
+     */
+    private fun PartialIndirectGesture.flushPointerUpdates() {
+        if (hasPointerUpdates) {
+            enqueueIndirectPointerMove()
+        }
+    }
+
+    /**
      * Generates a mouse button pressed event for the given [buttonId]. This will generate all
      * required associated events as well, such as a down event if it is the first button being
      * pressed and an optional hover exit event.
@@ -418,15 +707,15 @@ internal abstract class InputDispatcher(
             "Cannot start a mouse gesture outside the Compose root bounds, mouse position is " +
                 "$currentCursorPosition and bounds are ${root.bounds}"
         }
-        if (cursor.currentCursorInputSource == CursorInputSource.Trackpad) {
+        if (cursor.currentInputSource == InputSource.Trackpad) {
             enqueueTrackpadCancel()
         }
         if (partialGesture != null) {
             enqueueTouchCancel()
         }
-        cursor.currentCursorInputSource = CursorInputSource.Mouse
+        cursor.currentInputSource = InputSource.Mouse
 
-        // Down time is when the first button is pressed
+        // Downtime is when the first button is pressed
         if (cursor.hasNoButtonsPressed) {
             cursor.downTime = currentTime
         }
@@ -450,14 +739,14 @@ internal abstract class InputDispatcher(
      */
     fun enqueueMouseMove(position: Offset) {
         val cursor = cursorInputState
-        if (cursor.currentCursorInputSource == CursorInputSource.Trackpad) {
+        if (cursor.currentInputSource == InputSource.Trackpad) {
             enqueueTrackpadCancel()
         }
         // Touch needs to be cancelled, even if mouse is out of bounds
         if (partialGesture != null) {
             enqueueTouchCancel()
         }
-        cursor.currentCursorInputSource = CursorInputSource.Mouse
+        cursor.currentInputSource = InputSource.Mouse
 
         updateMousePosition(position)
         val isWithinBounds = isWithinRootBounds(position)
@@ -515,7 +804,7 @@ internal abstract class InputDispatcher(
             cursor.enqueueMouseMove()
         } else {
             // If we are not entering hover, clear out the current cursor input source
-            cursor.currentCursorInputSource = null
+            cursor.currentInputSource = null
         }
     }
 
@@ -536,7 +825,7 @@ internal abstract class InputDispatcher(
         check(isWithinRootBounds(position)) {
             "Cannot send mouse hover enter event, $position is out of bounds"
         }
-        cursor.currentCursorInputSource = CursorInputSource.Mouse
+        cursor.currentInputSource = InputSource.Mouse
 
         updateMousePosition(position)
         cursor.enterMouseHover()
@@ -565,14 +854,14 @@ internal abstract class InputDispatcher(
         check(cursor.hasAnyButtonPressed) {
             "Cannot send mouse cancel event, no mouse buttons are pressed"
         }
-        check(cursor.currentCursorInputSource == CursorInputSource.Mouse) {
+        check(cursor.currentInputSource == InputSource.Mouse) {
             "Cannot send mouse cancel event, since the current cursor input isn't a mouse"
         }
 
         cursor.clearButtonState()
         cursor.enqueueMouseCancel()
 
-        cursor.currentCursorInputSource = null
+        cursor.currentInputSource = null
     }
 
     /**
@@ -584,7 +873,7 @@ internal abstract class InputDispatcher(
      */
     fun enqueueMouseScroll(delta: Float, scrollWheel: ScrollWheel) {
         val cursor = cursorInputState
-        cursor.currentCursorInputSource = CursorInputSource.Mouse
+        cursor.currentInputSource = InputSource.Mouse
 
         if (moveOnScroll) {
             // On Android a scroll is always preceded by a move(/hover) event
@@ -597,7 +886,7 @@ internal abstract class InputDispatcher(
 
     fun enqueueMouseScroll(offset: Offset) {
         val cursor = cursorInputState
-        cursor.currentCursorInputSource = CursorInputSource.Mouse
+        cursor.currentInputSource = InputSource.Mouse
 
         if (moveOnScroll) {
             // On Android a scroll is always preceded by a move(/hover) event
@@ -609,32 +898,32 @@ internal abstract class InputDispatcher(
     }
 
     /**
-     * Generates a mouse button pressed event for the given [buttonId]. This will generate all
+     * Generates a trackpad button pressed event for the given [buttonId]. This will generate all
      * required associated events as well, such as a down event if it is the first button being
      * pressed and an optional hover exit event.
      *
-     * @param buttonId The id of the mouse button. This is platform dependent, use the values
-     *   defined by [MouseButton.buttonId].
+     * @param buttonId The id of the trackpad button. This is platform dependent, use the values
+     *   defined by [TrackpadButton.buttonId].
      */
     fun enqueueTrackpadPress(buttonId: Int) {
         val cursor = cursorInputState
 
         check(!cursor.isButtonPressed(buttonId)) {
-            "Cannot send mouse button down event, button $buttonId is already pressed"
+            "Cannot send trackpad button down event, button $buttonId is already pressed"
         }
         check(isWithinRootBounds(currentCursorPosition) || cursor.hasAnyButtonPressed) {
             "Cannot start a trackpad gesture outside the Compose root bounds, trackpad position " +
                 "is $currentCursorPosition and bounds are ${root.bounds}"
         }
-        if (cursor.currentCursorInputSource == CursorInputSource.Mouse) {
+        if (cursor.currentInputSource == InputSource.Mouse) {
             enqueueMouseCancel()
         }
         if (partialGesture != null) {
             enqueueTouchCancel()
         }
-        cursor.currentCursorInputSource = CursorInputSource.Trackpad
+        cursor.currentInputSource = InputSource.Trackpad
 
-        // Down time is when the first button is pressed
+        // Downtime is when the first button is pressed
         if (cursor.hasNoButtonsPressed) {
             cursor.downTime = currentTime
         }
@@ -651,22 +940,22 @@ internal abstract class InputDispatcher(
     }
 
     /**
-     * Generates a mouse move or hover event to the given [position]. If buttons are pressed, a move
-     * event is generated, otherwise generates a hover event.
+     * Generates a trackpad move or hover event to the given [position]. If buttons are pressed, a
+     * move event is generated, otherwise generates a hover event.
      *
-     * @param position The new mouse position
+     * @param position The new trackpad position
      */
     fun enqueueTrackpadMove(position: Offset) {
         val cursor = cursorInputState
 
-        if (cursor.currentCursorInputSource == CursorInputSource.Mouse) {
+        if (cursor.currentInputSource == InputSource.Mouse) {
             enqueueMouseCancel()
         }
         // Touch needs to be cancelled, even if trackpad is out of bounds
         if (partialGesture != null) {
             enqueueTouchCancel()
         }
-        cursor.currentCursorInputSource = CursorInputSource.Trackpad
+        cursor.currentInputSource = InputSource.Trackpad
 
         updateTrackpadPosition(position)
         val isWithinBounds = isWithinRootBounds(position)
@@ -694,21 +983,21 @@ internal abstract class InputDispatcher(
     }
 
     /**
-     * Generates a mouse button released event for the given [buttonId]. This will generate all
+     * Generates a trackpad button released event for the given [buttonId]. This will generate all
      * required associated events as well, such as an up and hover enter event if it is the last
      * button being released.
      *
-     * @param buttonId The id of the mouse button. This is platform dependent, use the values
-     *   defined by [MouseButton.buttonId].
+     * @param buttonId The id of the trackpad button. This is platform dependent, use the values
+     *   defined by [TrackpadButton.buttonId].
      */
     fun enqueueTrackpadRelease(buttonId: Int) {
         val cursor = cursorInputState
 
         check(cursor.isButtonPressed(buttonId)) {
-            "Cannot send mouse button up event, button $buttonId is not pressed"
+            "Cannot send trackpad button up event, button $buttonId is not pressed"
         }
         check(partialGesture == null) {
-            "Touch gesture can't be in progress, mouse buttons are down"
+            "Touch gesture can't be in progress, trackpad buttons are down"
         }
 
         cursor.unsetButtonBit(buttonId)
@@ -724,7 +1013,7 @@ internal abstract class InputDispatcher(
             cursor.enqueueTrackpadMove()
         } else {
             // If we are not entering hover, clear out the current cursor input source
-            cursor.currentCursorInputSource = null
+            cursor.currentInputSource = null
         }
     }
 
@@ -740,13 +1029,13 @@ internal abstract class InputDispatcher(
             "Cannot send trackpad hover enter event, trackpad is already hovering"
         }
         check(cursor.hasNoButtonsPressed) {
-            "Cannot send trackpad hover enter event, mouse buttons are down"
+            "Cannot send trackpad hover enter event, trackpad buttons are down"
         }
         check(isWithinRootBounds(position)) {
             "Cannot send trackpad hover enter event, $position is out of bounds"
         }
 
-        cursor.currentCursorInputSource = CursorInputSource.Trackpad
+        cursor.currentInputSource = InputSource.Trackpad
 
         updateTrackpadPosition(position)
         cursor.enterTrackpadHover()
@@ -767,44 +1056,99 @@ internal abstract class InputDispatcher(
         updateTrackpadPosition(position)
         cursor.exitTrackpadHover()
 
-        cursor.currentCursorInputSource = null
+        cursor.currentInputSource = null
     }
 
     /**
-     * Generates a trackpad cancel event. Can only be done if no mouse buttons are currently
-     * pressed. Sent automatically if a touch event is sent while mouse buttons are down.
+     * Generates a trackpad cancel event. Can only be done if no trackpad buttons are currently
+     * pressed. Sent automatically if a touch event is sent while trackpad buttons are down.
      */
     fun enqueueTrackpadCancel() {
         val cursor = cursorInputState
         check(cursor.hasAnyButtonPressed) {
-            "Cannot send trackpad cancel event, no mouse buttons are pressed"
+            "Cannot send trackpad cancel event, no trackpad buttons are pressed"
         }
-        check(cursor.currentCursorInputSource == CursorInputSource.Trackpad) {
+        check(cursor.currentInputSource == InputSource.Trackpad) {
             "Cannot send trackpad cancel event, since the current cursor input isn't a trackpad"
         }
 
         cursor.clearButtonState()
         cursor.enqueueTrackpadCancel()
 
-        cursor.currentCursorInputSource = null
+        cursor.currentInputSource = null
     }
 
-    fun enqueueTrackpadScroll(offset: Offset) {
+    fun enqueueTrackpadPanStart() {
         val cursor = cursorInputState
-        cursor.currentCursorInputSource = CursorInputSource.Trackpad
+        cursor.currentInputSource = InputSource.Trackpad
+        check(!cursor.isInPanGesture) {
+            "Cannot send trackpad pan start event, a pan gesture is already in progress"
+        }
+        cursor.panAccumulatedOffset = Offset.Zero
 
         if (isWithinRootBounds(currentCursorPosition)) {
-            cursor.enqueueTrackpadScroll(offset)
+            cursor.enqueueTrackpadPanStart()
         }
     }
 
-    fun enqueueTrackpadPinch(scaleFactor: Float) {
+    fun enqueueTrackpadPanMove(delta: Offset) {
         val cursor = cursorInputState
-        cursor.currentCursorInputSource = CursorInputSource.Trackpad
-
-        if (isWithinRootBounds(currentCursorPosition)) {
-            cursor.enqueueTrackpadPinch(scaleFactor)
+        cursor.currentInputSource = InputSource.Trackpad
+        check(cursor.isInPanGesture) {
+            "Cannot send trackpad pan move event, no pan gesture is in progress"
         }
+        cursor.panAccumulatedOffset = cursor.panAccumulatedOffset!! + delta
+        if (isWithinRootBounds(currentCursorPosition)) {
+            cursor.enqueueTrackpadPanMove(delta)
+        }
+    }
+
+    fun enqueueTrackpadPanEnd() {
+        val cursor = cursorInputState
+        cursor.currentInputSource = InputSource.Trackpad
+        check(cursor.isInPanGesture) {
+            "Cannot send trackpad pan end event, no pan gesture is in progress"
+        }
+        if (isWithinRootBounds(currentCursorPosition)) {
+            cursor.enqueueTrackpadPanEnd()
+        }
+        cursor.panAccumulatedOffset = null
+    }
+
+    fun enqueueTrackpadScaleStart() {
+        val cursor = cursorInputState
+        cursor.currentInputSource = InputSource.Trackpad
+        check(!cursor.isInScaleGesture) {
+            "Cannot send trackpad scale start event, a scale gesture is already in progress"
+        }
+        cursor.scaleAccumulatedFactor = 1f
+        if (isWithinRootBounds(currentCursorPosition)) {
+            cursor.enqueueTrackpadScaleStart()
+        }
+    }
+
+    fun enqueueTrackpadScaleChange(scaleFactor: Float) {
+        val cursor = cursorInputState
+        cursor.currentInputSource = InputSource.Trackpad
+        check(cursor.isInScaleGesture) {
+            "Cannot send trackpad scale change event, no pan gesture is in progress"
+        }
+        cursor.scaleAccumulatedFactor = cursor.scaleAccumulatedFactor!! * scaleFactor
+        if (isWithinRootBounds(currentCursorPosition)) {
+            cursor.enqueueTrackpadScaleChange(scaleFactor)
+        }
+    }
+
+    fun enqueueTrackpadScaleEnd() {
+        val cursor = cursorInputState
+        cursor.currentInputSource = InputSource.Trackpad
+        check(cursor.isInScaleGesture) {
+            "Cannot send trackpad scale end event, no scale gesture is in progress"
+        }
+        if (isWithinRootBounds(currentCursorPosition)) {
+            cursor.enqueueTrackpadScaleEnd()
+        }
+        cursor.scaleAccumulatedFactor = null
     }
 
     /**
@@ -947,6 +1291,20 @@ internal abstract class InputDispatcher(
 
     protected abstract fun PartialGesture.enqueueCancel()
 
+    protected abstract fun PartialIndirectGesture.enqueueIndirectDown(pointerId: Int)
+
+    protected abstract fun PartialIndirectGesture.enqueueIndirectMove()
+
+    @Suppress("PrimitiveInCollection")
+    protected abstract fun PartialIndirectGesture.enqueueIndirectMoves(
+        relativeHistoricalTimes: List<Long>,
+        historicalCoordinates: List<List<Offset>>,
+    )
+
+    protected abstract fun PartialIndirectGesture.enqueueIndirectUp(pointerId: Int)
+
+    protected abstract fun PartialIndirectGesture.enqueueIndirectCancel()
+
     protected abstract fun CursorInputState.enqueueMousePress(buttonId: Int)
 
     protected abstract fun CursorInputState.enqueueMouseMove()
@@ -1006,9 +1364,17 @@ internal abstract class InputDispatcher(
 
     protected abstract fun CursorInputState.enqueueMouseScroll(offset: Offset)
 
-    protected abstract fun CursorInputState.enqueueTrackpadScroll(offset: Offset)
+    protected abstract fun CursorInputState.enqueueTrackpadPanStart()
 
-    protected abstract fun CursorInputState.enqueueTrackpadPinch(scaleFactor: Float)
+    protected abstract fun CursorInputState.enqueueTrackpadPanMove(delta: Offset)
+
+    protected abstract fun CursorInputState.enqueueTrackpadPanEnd()
+
+    protected abstract fun CursorInputState.enqueueTrackpadScaleStart()
+
+    protected abstract fun CursorInputState.enqueueTrackpadScaleChange(delta: Float)
+
+    protected abstract fun CursorInputState.enqueueTrackpadScaleEnd()
 
     protected abstract fun RotaryInputState.enqueueRotaryScrollHorizontally(
         horizontalScrollPixels: Float
@@ -1035,7 +1401,7 @@ internal abstract class InputDispatcher(
 }
 
 /**
- * The state of the current gesture. Contains the current position of all pointers and the down time
+ * The state of the current gesture. Contains the current position of all pointers and the downtime
  * (start time) of the gesture. For the current time, see [InputDispatcher.currentTime].
  *
  * @param downTime The time of the first down event of this gesture
@@ -1048,17 +1414,41 @@ internal class PartialGesture(val downTime: Long, startPosition: Offset, pointer
 }
 
 /**
+ * The state of the current indirect pointer gesture. Contains the current position of all pointers
+ * and the downtime (start time) of the gesture. For the current time, see
+ * [InputDispatcher.currentTime].
+ *
+ * @param downTime The time of the first down event of this gesture
+ * @param startPosition The position of the first down event of this gesture
+ * @param pointerId The pointer id of the first down event of this gesture
+ * @param indirectPointerEventPrimaryDirectionalMotionAxis - Axis movement direction of a scroll
+ */
+internal class PartialIndirectGesture(
+    val downTime: Long,
+    startPosition: Offset,
+    pointerId: Int,
+    val indirectPointerEventPrimaryDirectionalMotionAxis:
+        IndirectPointerEventPrimaryDirectionalMotionAxis,
+) {
+    @Suppress("PrimitiveInCollection")
+    val lastPositions = mutableMapOf(Pair(pointerId, startPosition))
+    var hasPointerUpdates: Boolean = false
+}
+
+/**
  * The current cursor state. Contains the current cursor position, which buttons are pressed, the
  * type of device that is the current cursor input source, if the cursor is hovering over the
- * current node and the down time of the cursor (which is the time of the last pointer down event
- * for the cursor).
+ * current node and the downtime of the cursor (which is the time of the last pointer down event for
+ * the cursor).
  */
 internal class CursorInputState {
     var downTime: Long = 0
     val pressedButtons: MutableSet<Int> = mutableSetOf()
     var lastPosition: Offset = Offset.Zero
     var isEntered: Boolean = false
-    var currentCursorInputSource: CursorInputSource? = null
+    var currentInputSource: InputSource? = null
+    var panAccumulatedOffset: Offset? = null
+    var scaleAccumulatedFactor: Float? = null
 
     val hasAnyButtonPressed
         get() = pressedButtons.isNotEmpty()
@@ -1073,6 +1463,12 @@ internal class CursorInputState {
         return pressedButtons.contains(buttonId)
     }
 
+    val isInPanGesture
+        get() = panAccumulatedOffset != null
+
+    val isInScaleGesture
+        get() = scaleAccumulatedFactor != null
+
     fun setButtonBit(buttonId: Int) {
         pressedButtons.add(buttonId)
     }
@@ -1086,9 +1482,11 @@ internal class CursorInputState {
     }
 }
 
-internal enum class CursorInputSource {
+internal enum class InputSource {
+    TouchScreen,
     Mouse,
     Trackpad,
+    IndirectTouchpad,
 }
 
 /**
@@ -1195,11 +1593,14 @@ internal class RotaryInputState
  *
  * @param partialGesture The state of an incomplete gesture. If no gesture was in progress when the
  *   state of the [InputDispatcher] was saved, this will be `null`.
+ * @param partialIndirectGesture The state of an incomplete indirect pointer gesture. If no gesture
+ *   was in progress when the state of the [InputDispatcher] was saved, this will be `null`.
  * @param cursorInputState The state of the cursor.
  * @param keyInputState The state of the keyboard.
  */
 internal data class InputDispatcherState(
     val partialGesture: PartialGesture?,
+    val partialIndirectGesture: PartialIndirectGesture?,
     val cursorInputState: CursorInputState,
     val keyInputState: KeyInputState,
 )

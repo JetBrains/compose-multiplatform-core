@@ -82,7 +82,7 @@ import kotlin.math.max
  *   perform
  */
 @Composable
-fun Snackbar(
+public fun Snackbar(
     modifier: Modifier = Modifier,
     action: @Composable (() -> Unit)? = null,
     actionOnNewLine: Boolean = false,
@@ -154,7 +154,7 @@ fun Snackbar(
  *   shadow below the SnackBar
  */
 @Composable
-fun Snackbar(
+public fun Snackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
     actionOnNewLine: Boolean = false,
@@ -190,13 +190,13 @@ fun Snackbar(
 }
 
 /** Object to hold defaults used by [Snackbar] */
-object SnackbarDefaults {
+public object SnackbarDefaults {
 
     /** Default alpha of the overlay applied to the [backgroundColor] */
     private const val SnackbarOverlayAlpha = 0.8f
 
     /** Default background color of the [Snackbar] */
-    val backgroundColor: Color
+    public val backgroundColor: Color
         @Composable
         get() =
             MaterialTheme.colors.onSurface
@@ -217,7 +217,7 @@ object SnackbarDefaults {
      * [MaterialTheme.colors] to attempt to reduce the contrast, and when in a dark theme this
      * function uses [Colors.primaryVariant].
      */
-    val primaryActionColor: Color
+    public val primaryActionColor: Color
         @Composable
         get() {
             val colors = MaterialTheme.colors
@@ -369,12 +369,21 @@ private fun OneRowSnackbar(text: @Composable () -> Unit, action: @Composable () 
     }
 }
 
-private val HeightToFirstLine = 30.dp
-private val HorizontalSpacing = 16.dp
-private val HorizontalSpacingButtonSide = 8.dp
-private val SeparateButtonExtraY = 2.dp
-private val SnackbarVerticalPadding = 6.dp
-private val TextEndExtraSpacing = 8.dp
-private val LongButtonVerticalOffset = 12.dp
-private val SnackbarMinHeightOneLine = 48.dp
-private val SnackbarMinHeightTwoLines = 68.dp
+private val HeightToFirstLine
+    get() = 30.dp
+private val HorizontalSpacing
+    get() = 16.dp
+private val HorizontalSpacingButtonSide
+    get() = 8.dp
+private val SeparateButtonExtraY
+    get() = 2.dp
+private val SnackbarVerticalPadding
+    get() = 6.dp
+private val TextEndExtraSpacing
+    get() = 8.dp
+private val LongButtonVerticalOffset
+    get() = 12.dp
+private val SnackbarMinHeightOneLine
+    get() = 48.dp
+private val SnackbarMinHeightTwoLines
+    get() = 68.dp

@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
+import androidx.navigation3.defaultContentKey
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
@@ -32,7 +33,6 @@ import androidx.navigation3.ui.TestTwoPaneSceneStrategy
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -40,7 +40,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class SceneStateTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testSceneStateChanges() {
@@ -60,7 +60,7 @@ internal class SceneStateTest {
                     },
                 )
             sceneState =
-                rememberSceneState(entries, DialogSceneStrategy()) {
+                rememberSceneState(entries, listOf(DialogSceneStrategy())) {
                     backStack.removeAt(backStack.lastIndex)
                 }
         }
@@ -74,23 +74,63 @@ internal class SceneStateTest {
         rule.waitForIdle()
 
         assertThat(sceneState.currentScene).isInstanceOf<SinglePaneScene<Any>>()
-        assertThat(sceneState.previousScenes).hasSize(1)
+        assertThat(sceneState.previousScenes).hasSize(0)
         assertThat(sceneState.overlayScenes).hasSize(1)
 
         rule.runOnIdle { backStack.add(Third) }
 
         assertThat(sceneState.currentScene).isInstanceOf<SinglePaneScene<Any>>()
-        assertThat(sceneState.previousScenes).hasSize(1)
+        assertThat(sceneState.previousScenes).hasSize(0)
         assertThat(sceneState.overlayScenes).hasSize(1)
     }
 
+    @Test
+    fun testSceneStatePreviousScenes() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var sceneState: SceneState<Any>
+
+        rule.setContent {
+            backStack = remember { mutableStateListOf(First, Second, Third) }
+            val entries =
+                rememberDecoratedNavEntries(
+                    backStack,
+                    emptyList(),
+                    entryProvider {
+                        entry<First> { Text("First") }
+                        entry<Second> { Text("Second") }
+                        entry<Third>(metadata = DialogSceneStrategy.dialog()) { Text("Third") }
+                    },
+                )
+            sceneState =
+                rememberSceneState(entries, listOf(DialogSceneStrategy())) {
+                    backStack.removeAt(backStack.lastIndex)
+                }
+        }
+
+        assertThat(sceneState.overlayScenes.size).isEqualTo(1)
+        assertThat(sceneState.overlayScenes.first().entries.size).isEqualTo(1)
+        assertThat(sceneState.overlayScenes.first().entries.first().contentKey)
+            .isEqualTo(Third.defaultContentKey())
+
+        assertThat(sceneState.currentScene).isInstanceOf<SinglePaneScene<Any>>()
+        assertThat(sceneState.currentScene.entries.size).isEqualTo(1)
+        assertThat(sceneState.currentScene.entries.first().contentKey)
+            .isEqualTo(Second.defaultContentKey())
+
+        assertThat(sceneState.previousScenes.size).isEqualTo(1)
+        assertThat(sceneState.previousScenes.first().entries.size).isEqualTo(1)
+        assertThat(sceneState.previousScenes.first().entries.first().contentKey)
+            .isEqualTo(First.defaultContentKey())
+    }
+
+    @Suppress("DEPRECATION")
     @Test
     fun testSceneStrategyThenFirstStrategy() {
         val sceneStrategy = TestTwoPaneSceneStrategy<String>() then (SinglePaneSceneStrategy())
         val entries = listOf(NavEntry(key = "first") {}, NavEntry(key = "second") {})
         var currentScene: Scene<String>? = null
         rule.setContent {
-            val sceneState = rememberSceneState(entries, sceneStrategy) {}
+            val sceneState = rememberSceneState(entries, listOf(sceneStrategy)) {}
             currentScene = sceneState.currentScene
         }
 
@@ -98,13 +138,14 @@ internal class SceneStateTest {
         assertThat(currentScene).isInstanceOf<TestTwoPaneScene<String>>()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun testSceneStrategyThenChainedStrategy() {
         val sceneStrategy = TestTwoPaneSceneStrategy<String>() then (SinglePaneSceneStrategy())
         val entries = listOf(NavEntry(key = "first") {})
         var currentScene: Scene<String>? = null
         rule.setContent {
-            val sceneState = rememberSceneState(entries, sceneStrategy) {}
+            val sceneState = rememberSceneState(entries, listOf(sceneStrategy)) {}
             currentScene = sceneState.currentScene
         }
 
@@ -130,9 +171,9 @@ internal class SceneStateTest {
                 )
 
             // Read tick to participate in recomposition without changing inputs.
-            @Suppress("UnusedVariable", "unused") val unused = tick
+            @Suppress("UnusedVariable", "unused", "UNUSED_VARIABLE") val unused = tick
 
-            sceneStates += rememberSceneState(entries, strategy, onBack = {})
+            sceneStates += rememberSceneState(entries, listOf(strategy), onBack = {})
         }
 
         // First composition should call calculate once.
@@ -174,7 +215,7 @@ internal class SceneStateTest {
                 @Suppress("UNUSED_VARIABLE") val unused = tick
             }
 
-            rememberSceneState(entries, strategy, onBack = unstableOnBack)
+            rememberSceneState(entries, listOf(strategy), onBack = unstableOnBack)
         }
 
         // First composition should call calculate once.
@@ -203,7 +244,7 @@ internal class SceneStateTest {
                         entry<Second> { Text("Second") }
                     },
                 )
-            rememberSceneState(entries, strategy, onBack = {})
+            rememberSceneState(entries, listOf(strategy), onBack = {})
         }
 
         // First composition should call calculate once.
@@ -229,7 +270,7 @@ internal class SceneStateTest {
                     entryDecorators = emptyList(),
                     entryProvider { entry<First> { Text("First") } },
                 )
-            rememberSceneState(entries, strategy, onBack = {})
+            rememberSceneState(entries, listOf(strategy), onBack = {})
         }
 
         // First composition should call calculate once on the initial strategy.

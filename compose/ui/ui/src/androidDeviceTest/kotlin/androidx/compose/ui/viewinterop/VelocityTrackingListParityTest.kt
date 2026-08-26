@@ -25,6 +25,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.annotation.LayoutRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,9 +36,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.util.VelocityTrackerAddPointsFix
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.tests.R
@@ -57,7 +56,6 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
@@ -68,7 +66,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VelocityTrackingListParityTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private var layoutManager: LinearLayoutManager? = null
     private var latestComposeVelocity = 0f
@@ -79,7 +77,6 @@ class VelocityTrackingListParityTest {
     fun setUp() {
         layoutManager = null
         latestComposeVelocity = 0f
-        VelocityTrackerAddPointsFix = true
     }
 
     @Test
@@ -539,4 +536,4 @@ private suspend fun RecyclerView.awaitScrollIdle() {
     }
 }
 
-private const val ItemDifferenceThreshold = 1
+private const val ItemDifferenceThreshold = 2

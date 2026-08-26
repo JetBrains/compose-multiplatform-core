@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -129,7 +128,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "The implementation of SQLite library using the framework code."
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 // b/446711395

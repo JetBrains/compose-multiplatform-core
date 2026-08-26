@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.appsearch.safeparcel.AbstractSafeParcelable;
@@ -30,6 +31,7 @@ import androidx.appsearch.safeparcel.PackageIdentifierParcel;
 import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.VisibilityConfigCreator;
 import androidx.collection.ArraySet;
+import androidx.core.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,9 +171,8 @@ public final class SchemaVisibilityConfig extends AbstractSafeParcelable {
         /**
          * Creates a {@link Builder} copying the values from an existing
          * {@link SchemaVisibilityConfig}.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public Builder(@NonNull SchemaVisibilityConfig schemaVisibilityConfig) {
             Objects.requireNonNull(schemaVisibilityConfig);
@@ -217,6 +218,11 @@ public final class SchemaVisibilityConfig extends AbstractSafeParcelable {
         @CanIgnoreReturnValue
         public @NonNull Builder addRequiredPermissions(@NonNull Set<Integer> visibleToPermissions) {
             Objects.requireNonNull(visibleToPermissions);
+            if (AppSearchEnvironmentFactory.getEnvironmentInstance().getEnvironment()
+                    != AppSearchEnvironment.FRAMEWORK_ENVIRONMENT) {
+                Preconditions.checkArgument(!visibleToPermissions.isEmpty(),
+                        "The set of required permissions cannot be empty");
+            }
             resetIfBuilt();
             mRequiredPermissions.add(new VisibilityPermissionConfig(visibleToPermissions));
             return this;

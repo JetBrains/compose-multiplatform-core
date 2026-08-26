@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -71,6 +72,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
@@ -81,7 +83,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,7 +91,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FloatingActionButtonTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun fabDefaultSemantics() {
@@ -506,7 +507,6 @@ class FloatingActionButtonTest {
             .assertWidthIsEqualTo(FabBaselineTokens.ContainerWidth)
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun expandedLargeExtendedFabTextAndIconHaveSizeFromSpecAndVisible() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -538,7 +538,6 @@ class FloatingActionButtonTest {
         rule.onNodeWithTag("icon", useUnmergedTree = true).assertIsDisplayed()
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun collapsedLargeExtendedFabTextAndIconHaveSizeFromSpecAndTextNotVisible() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -570,7 +569,6 @@ class FloatingActionButtonTest {
         rule.onNodeWithTag("icon", useUnmergedTree = true).assertIsDisplayed()
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun largeExtendedFabAnimates() {
         rule.mainClock.autoAdvance = false
@@ -722,7 +720,6 @@ class FloatingActionButtonTest {
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_hideBottomEnd_scalesAndFadesCorrectly() {
@@ -782,7 +779,6 @@ class FloatingActionButtonTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_hideCenter_scalesAndFadesCorrectly() {
@@ -842,7 +838,6 @@ class FloatingActionButtonTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_hideTopStart_scalesAndFadesCorrectly() {
@@ -902,7 +897,6 @@ class FloatingActionButtonTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_show_noScaleOrFadeAfterAnimation() {
@@ -957,7 +951,6 @@ class FloatingActionButtonTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_show_noScaleOrFadeBeforeAnimation() {
@@ -1001,7 +994,6 @@ class FloatingActionButtonTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_show_consumesClick() {
@@ -1044,7 +1036,6 @@ class FloatingActionButtonTest {
         assertThat(fabBoxClicked).isTrue()
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animateFloatingActionButton_hide_doesNotConsumesClick() {
@@ -1080,6 +1071,62 @@ class FloatingActionButtonTest {
                 )
             }
         }
+
+        rule.onNodeWithTag(AnimateFloatingActionButtonTestTag).performClick()
+
+        assertThat(contentBoxClicked).isTrue()
+        assertThat(fabBoxClicked).isFalse()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun animateFloatingActionButton_hide_doesNotCrashWithDensityRounding() {
+        val visible = mutableStateOf(true)
+        var contentBoxClicked = false
+        var fabBoxClicked = false
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalDensity provides Density(1.1f)) {
+                Box(
+                    modifier =
+                        Modifier.background(Color.Red)
+                            .size(100.dp)
+                            .testTag(AnimateFloatingActionButtonTestTag)
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.background(Color.Green)
+                                .fillMaxSize()
+                                .clickable(onClick = { contentBoxClicked = true })
+                    )
+
+                    Box(
+                        modifier =
+                            Modifier.size(0.dp)
+                                .animateFloatingActionButton(
+                                    visible = visible.value,
+                                    alignment = Alignment.BottomEnd,
+                                    targetScale = 0.2f,
+                                    scaleAnimationSpec = tween(100, easing = LinearEasing),
+                                    alphaAnimationSpec = tween(100, easing = LinearEasing),
+                                )
+                                .background(Color.Blue)
+                                .clickable(onClick = { fabBoxClicked = true })
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { visible.value = false }
+
+        // Wait for initial recomposition / measure after state change
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        // Run full animation
+        rule.mainClock.advanceTimeBy(100)
 
         rule.onNodeWithTag(AnimateFloatingActionButtonTestTag).performClick()
 

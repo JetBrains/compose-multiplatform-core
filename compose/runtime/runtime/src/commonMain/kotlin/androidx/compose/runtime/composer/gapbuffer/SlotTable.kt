@@ -39,6 +39,7 @@ import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.RememberObserverHolder
 import androidx.compose.runtime.SlotStorage
+import androidx.compose.runtime.asGapRememberObserverHolder
 import androidx.compose.runtime.checkPrecondition
 import androidx.compose.runtime.collection.fastCopyInto
 import androidx.compose.runtime.collection.fastFilter
@@ -2216,7 +2217,12 @@ internal class SlotWriter(
         }
     }
 
-    fun forAllDataInRememberOrder(group: Int, block: (index: Int, data: Any?) -> Unit) {
+    /**
+     * Traverses all data in remember order for [group] and its children.
+     *
+     * Note: Be very careful when using this function as it inlines quite a bit of generated code.
+     */
+    inline fun forAllDataInRememberOrder(group: Int, block: (index: Int, data: Any?) -> Unit) {
         // The list and set implement a multi-map of groups to slots that need to be emitted
         // after group. The a multi-map itself is not used as a generic multi map would box the
         // integers and otherwise allocate more memory.
@@ -2229,7 +2235,7 @@ internal class SlotWriter(
                     val address = dataIndexToDataAddress(slotIndex)
                     val value = slots[address]
                     if (value is RememberObserverHolder) {
-                        val after = value.afterGroupIndex
+                        val after = value.asGapRememberObserverHolder().afterGroupIndex
                         if (after >= 0) {
                             // If the data is a remember holder that has an anchor, it must be
                             // emitted after the group it is anchored so defer it now.

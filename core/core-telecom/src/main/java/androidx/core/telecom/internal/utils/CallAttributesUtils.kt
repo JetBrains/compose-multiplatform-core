@@ -37,8 +37,8 @@ internal object CallAttributesUtils {
         }
 
     /**
-     * Maps [CallAttributesCompat.CallCapabilities] bitmask to
-     * [android.telecom.CallAttributes.CallCapabilities] bitmask.
+     * Maps [CallAttributesCompat.CallCapability] bitmask to
+     * [android.telecom.CallAttributes.getCallCapabilities] bitmask.
      */
     private fun remapCapabilities(callCapabilities: Int): Int {
         var platformCapabilities = 0

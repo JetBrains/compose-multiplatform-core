@@ -32,6 +32,7 @@ import androidx.compose.remote.creation.ifElse
 import androidx.compose.remote.creation.log
 import androidx.compose.remote.creation.max
 import androidx.compose.remote.creation.minus
+import androidx.compose.remote.creation.plus
 import androidx.compose.remote.creation.pow
 import androidx.compose.remote.creation.rf
 import androidx.compose.remote.creation.times
@@ -57,10 +58,11 @@ class PlotParams(
     val pad = 0.05f
     var graphMax: RFloat = (dataYMax + pad * yRange).flush()
     var graphMin: RFloat = (dataYMin - pad * yRange).flush()
-    var insertLeft = 100f
-    var insertTop = 10f
-    var insertRight = 10f
-    var insertBottom = 100f
+    var density = RFloat(dataXMax.writer, Rc.System.DENSITY)
+    var insertLeft = 30f * density
+    var insertTop = 10f * density
+    var insertRight = 10f * density
+    var insertBottom = 50f * density
     lateinit var scaleX: RFloat
     lateinit var scaleY: RFloat
     lateinit var offsetX: RFloat
@@ -127,25 +129,29 @@ class XYGraphProperties {
         return paint
     }
 
-    fun setPlotPaint(paint: Painter): Painter {
-        paint.setShader(0).setColor(plotColor).setStyle(Paint.Style.STROKE).setStrokeWidth(6f)
+    fun setPlotPaint(paint: Painter, strokeWidth: Float = 2f): Painter {
+        paint
+            .setShader(0)
+            .setColor(plotColor)
+            .setStyle(Paint.Style.STROKE)
+            .setStrokeWidth(strokeWidth)
         return paint
     }
 
     fun setPlotFill(
         paint: Painter,
-        startX: Float,
-        startY: Float,
-        endX: Float,
-        endY: Float,
+        startX: RFloat,
+        startY: RFloat,
+        endX: RFloat,
+        endY: RFloat,
     ): Painter {
         paint
             .setStyle(Paint.Style.FILL)
             .setLinearGradient(
-                startX,
-                startY,
-                endX,
-                endY,
+                startX.toFloat(),
+                startY.toFloat(),
+                endX.toFloat(),
+                endY.toFloat(),
                 intArrayOf(plotColor, 0x00),
                 0,
                 null,
@@ -209,7 +215,7 @@ class FunctionPlot(
     }
 
     override fun plot(rc: RemoteComposeContextAndroid, params: PlotParams) {
-        params.prop.setPlotPaint(rc.painter).commit()
+        params.prop.setPlotPaint(rc.painter, (2f * rc.rf(Rc.System.DENSITY)).toFloat()).commit()
         with(rc) {
             val pathId =
                 addPathExpression(
@@ -218,8 +224,8 @@ class FunctionPlot(
                         params.offsetY, // rFun{ x -> params.scaleY*sin(x)+params.offsetY },//
                     params.dataXMin,
                     params.dataXMax,
-                    64,
-                    Rc.PathExpression.SPLINE_PATH,
+                    128,
+                    Rc.PathExpression.LINEAR_PATH,
                 )
             drawPath(pathId)
         }
@@ -245,7 +251,7 @@ class Plot(val data: RFloat) : PlotBase {
         val rRight = params.right - params.insertRight
         val rBottom = params.bottom - params.insertBottom
 
-        return params.prop.setPlotFill(paint, rLeft, rTop, rLeft, params.offsetY.toFloat())
+        return params.prop.setPlotFill(paint, rLeft, rTop, rLeft, params.offsetY)
     }
 
     override fun plot(rc: RemoteComposeContextAndroid, params: PlotParams) {
@@ -313,7 +319,7 @@ fun RemoteComposeContextAndroid.rcPlotXY(
     plot: PlotBase,
 ) {
 
-    val margin = 30f
+    val margin = 2f * rf(Rc.System.DENSITY)
     val params =
         PlotParams(
             prop,
@@ -346,14 +352,15 @@ private fun RemoteComposeContextAndroid.axis(params: PlotParams) {
 
     val majorStepX = plotIncrement(xRange, 3)
     val insertX = params.insertLeft
-    val insertY = 100f
+    val insertY = params.insertBottom
 
     params.scaleX = ((w - params.insertLeft - params.insertRight) / (xRange)).flush()
     params.offsetX = (insertX - (params.dataXMin * params.scaleX)).flush()
     params.scaleY = ((params.insertTop + params.insertBottom - h) / (yRange)).flush()
     params.offsetY = ((h - insertY) - (params.scaleY * params.dataYMin)).flush()
+    val density = rf(Rc.System.DENSITY)
 
-    painter.setColor(Color.BLUE).setTextSize(48f).commit()
+    painter.setColor(Color.BLUE).setTextSize((density * 16f).toFloat()).commit()
     params.prop.setVMinorAxis(painter).commit()
     // ================ minor grid  ================
     val minorStepX = plotIncrement(xRange, 20)

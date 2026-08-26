@@ -16,7 +16,8 @@
 
 package androidx.pdf.annotation.drawer
 
-import androidx.pdf.annotation.models.PathPdfObject
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PathPdfObject
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +27,7 @@ import org.robolectric.RobolectricTestRunner
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class DefaultPdfObjectDrawerFactoryImplTest {
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun create_withPathPdfObject_returnsPathPdfObjectDrawer() {
         val pathPdfObject = PathPdfObject(brushColor = 0, brushWidth = 0f, inputs = emptyList())

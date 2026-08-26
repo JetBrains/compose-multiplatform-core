@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -82,9 +81,6 @@ dependencies {
         // Ensure camera-camera2 is not pulled in as it may lead to manifest merge conflict
         exclude(module:"camera-camera2")
     }
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesCore)

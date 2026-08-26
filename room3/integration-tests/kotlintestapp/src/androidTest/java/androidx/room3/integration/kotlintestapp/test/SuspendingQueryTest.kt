@@ -24,13 +24,15 @@ import androidx.arch.core.executor.TaskExecutor
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.kruth.assertWithMessage
-import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.integration.kotlintestapp.NewThreadDispatcher
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.vo.Counter
 import androidx.room3.support.getSupportWrapper
+import androidx.room3.useReaderConnection
+import androidx.room3.useWriterConnection
+import androidx.room3.withReadTransaction
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
@@ -182,7 +184,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun runSuspendingTransaction() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -194,7 +195,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_newThreadDispatcher() {
         runBlocking(NewThreadDispatcher()) {
             database.withWriteTransaction {
@@ -211,7 +211,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_withContext_newThreadDispatcher() {
         runBlocking {
             withContext(NewThreadDispatcher()) {
@@ -230,7 +229,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_ioDispatcher() {
         runBlocking(Dispatchers.IO) {
             database.withWriteTransaction {
@@ -247,7 +245,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_contextSwitch() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -261,7 +258,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_contextSwitch_exception() = runTest {
         assertThrows<IOException> {
                 database.withWriteTransaction {
@@ -285,7 +281,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_exception() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -306,7 +301,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_nested() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -320,7 +314,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_nested_daoTransaction() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -334,7 +327,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_nested_exception() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -353,7 +345,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_nested_finally() = runTest {
         var finallyBlocksExecuted = 0
         try {
@@ -375,7 +366,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_nested_contextSwitch() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -391,7 +381,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_childCoroutine_defaultDispatcher() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -406,7 +395,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_childCoroutine_ioDispatcher() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -421,7 +409,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_cancelCoroutine() = runTest {
         booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
         booksDao.insertBookSuspend(TestUtil.BOOK_1)
@@ -450,11 +437,10 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_busyExecutor_cancelCoroutine() = runTest {
         val executorService = Executors.newSingleThreadExecutor()
         val localDatabase =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()
@@ -491,7 +477,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_blockingDaoFunctions() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -504,7 +489,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_variousLaunch() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -522,7 +506,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_variousLaunch_ioDispatcher() = runTest {
         database.withWriteTransaction {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
@@ -540,7 +523,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_multipleTransactions() = runTest {
         booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
 
@@ -555,11 +537,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(
-        ExperimentalRoomApi::class,
-        DelicateCoroutinesApi::class,
-        ExperimentalCoroutinesApi::class,
-    )
+    @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     fun withWriteTransaction_multipleTransactions_multipleThreads() = runTest {
         booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
 
@@ -584,10 +562,9 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_databaseOpenError() = runTest {
         val localDatabase =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()
@@ -613,7 +590,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_setTransactionSuccessful_error() = runTest {
         assertThrows<IllegalStateException> {
                 database.withWriteTransaction {
@@ -627,7 +603,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_endTransaction_error() = runTest {
         assertThrows<IllegalStateException> {
                 database.withWriteTransaction {
@@ -666,7 +641,20 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
+    fun suspendTransaction_contextSwitch() = runTest {
+        val bookPublisher = TestUtil.PUBLISHER
+        val addedBook = TestUtil.BOOK_1.copy(bookPublisherId = bookPublisher.publisherId)
+        booksDao.addPublishers(bookPublisher)
+
+        booksDao.suspendFunctionWithSuspendFunctionalParam(addedBook) { book ->
+            withContext(Dispatchers.Default) { booksDao.insertBookSuspend(book) }
+            book
+        }
+
+        assertThat(booksDao.getBooksSuspend()).contains(addedBook)
+    }
+
+    @Test
     fun withTransaction_instantTaskExecutorRule() = runTest {
         // Not the actual InstantTaskExecutorRule since this test class already uses
         // CountingTaskExecutorRule but same behaviour.
@@ -693,7 +681,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_singleExecutorDispatcher() = runTest {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
@@ -726,11 +713,10 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withTransaction_reentrant_nested() = runTest {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()
@@ -760,11 +746,10 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_reentrant_nested_exception() = runTest {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()
@@ -795,11 +780,10 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_reentrant_nested_contextSwitch() = runTest {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()
@@ -831,7 +815,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_runBlocking() {
         runBlocking {
             database.withWriteTransaction {
@@ -848,7 +831,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_stress_testMutation() = runTest {
         val output = mutableListOf<String>()
         repeat(5000) { count ->
@@ -869,7 +851,6 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun withWriteTransaction_stress_dbMutation() = runTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         context.deleteDatabase("test_stress_dbMutation.db")
@@ -889,6 +870,33 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val count = db.counterDao().getCounter(1)
         assertThat(count.value).isEqualTo(5000)
         db.close()
+    }
+
+    @Test
+    fun queryAfterCloseThrowsProperException() = runTest {
+        booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
+
+        database.close()
+
+        assertThrows<IllegalStateException> { database.booksDao().getPublishersSuspend() }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.useReaderConnection {} }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.useWriterConnection {} }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.withReadTransaction {} }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.withWriteTransaction {} }
+            .hasMessageThat()
+            .contains("Database is closed")
     }
 
     // Utility function to _really_ suspend.

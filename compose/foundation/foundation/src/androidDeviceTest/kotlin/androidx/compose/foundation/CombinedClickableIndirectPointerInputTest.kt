@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation
 
-import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -35,20 +34,24 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.inputDeviceCenter
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.sendIndirectPointerInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,47 +63,9 @@ import org.junit.runner.RunWith
  */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-class CombinedClickableIndirectPointerInputTest() {
+class CombinedClickableIndirectPointerInputTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
-
-    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
-    @After
-    fun resetTouchMode() =
-        with(InstrumentationRegistry.getInstrumentation()) {
-            if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
-        }
-
-    @Test
-    fun clickWithIndirectPointer() {
-        var counter = 0
-        val focusRequester = FocusRequester()
-        lateinit var inputModeManager: InputModeManager
-        rule.setContent {
-            inputModeManager = LocalInputModeManager.current
-            BasicText(
-                "ClickableText",
-                modifier =
-                    Modifier.testTag("myClickable")
-                        .focusRequester(focusRequester)
-                        .combinedClickable { counter++ },
-            )
-        }
-        rule.runOnIdle {
-            inputModeManager.requestInputMode(Keyboard)
-            focusRequester.requestFocus()
-        }
-
-        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule)
-
-        rule.runOnIdle { assertThat(counter).isEqualTo(0) }
-
-        rule
-            .onNodeWithTag("myClickable")
-            .sendIndirectPointerReleaseEvent(rule, previousEvent = downEvent)
-
-        rule.runOnIdle { assertThat(counter).isEqualTo(1) }
-    }
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun clickWithIndirectPointer_notInvokedIfFocusIsLostWhilePressed() {
@@ -125,7 +90,13 @@ class CombinedClickableIndirectPointerInputTest() {
             clickableFocusRequester.requestFocus()
         }
 
-        rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
 
         rule.runOnIdle {
             assertThat(counter).isEqualTo(0)
@@ -134,10 +105,124 @@ class CombinedClickableIndirectPointerInputTest() {
         }
 
         // (clickable won't see this event as it is no longer focused, but emit for clarity)
-        rule.onNodeWithTag("myClickable").sendIndirectPointerReleaseEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            up()
+        }
 
         // The clickable should never see the up event, so it should never invoke onClick
         rule.runOnIdle { assertThat(counter).isEqualTo(0) }
+    }
+
+    @Test
+    fun longClickWithIndirectPointer_notInvokedIfFocusIsLostWhilePressed() {
+        var counter = 0
+        val outerFocusRequester = FocusRequester()
+        val clickableFocusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        lateinit var viewConfiguration: ViewConfiguration
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            viewConfiguration = LocalViewConfiguration.current
+            Box(Modifier.padding(10.dp).focusRequester(outerFocusRequester).focusTarget()) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(clickableFocusRequester)
+                            .combinedClickable(onLongClick = { counter++ }) {},
+                )
+            }
+        }
+        rule.runOnIdle {
+            inputModeManager.requestInputMode(Keyboard)
+            clickableFocusRequester.requestFocus()
+        }
+
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
+
+        rule.runOnIdle {
+            // Remove focus from the clickable
+            outerFocusRequester.requestFocus()
+        }
+
+        // Advance time past long press timeout
+        rule.mainClock.advanceTimeBy(viewConfiguration.longPressTimeoutMillis + 100)
+
+        // The clickable should have canceled the press when focus was lost
+        rule.runOnIdle { assertThat(counter).isEqualTo(0) }
+    }
+
+    @Test
+    fun doubleClickWithIndirectPointer_notInvokedIfFocusIsLostBetweenClicks() {
+        var clickCounter = 0
+        var doubleClickCounter = 0
+        val outerFocusRequester = FocusRequester()
+        val clickableFocusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            Box(Modifier.padding(10.dp).focusRequester(outerFocusRequester).focusTarget()) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(clickableFocusRequester)
+                            .combinedClickable(
+                                onClick = { clickCounter++ },
+                                onDoubleClick = { doubleClickCounter++ },
+                            ),
+                )
+            }
+        }
+        rule.runOnIdle {
+            inputModeManager.requestInputMode(Keyboard)
+            clickableFocusRequester.requestFocus()
+        }
+
+        // First click
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            click(inputDeviceCenter)
+        }
+
+        rule.runOnIdle {
+            // Remove focus
+            outerFocusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            // Regain focus
+            clickableFocusRequester.requestFocus()
+        }
+
+        // Second click
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            click(inputDeviceCenter)
+        }
+
+        rule.runOnIdle {
+            // The first click should be canceled by losing focus, and the second click is still
+            // waiting for the timeout, so it should not have triggered yet
+            assertThat(clickCounter).isEqualTo(0)
+            assertThat(doubleClickCounter).isEqualTo(0)
+        }
     }
 
     @Test
@@ -169,7 +254,13 @@ class CombinedClickableIndirectPointerInputTest() {
         }
 
         // Press down on the outer box
-        rule.onNodeWithTag("outerBox").sendIndirectPointerPressEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
 
         rule.runOnIdle {
             assertThat(counter).isEqualTo(0)
@@ -178,58 +269,17 @@ class CombinedClickableIndirectPointerInputTest() {
         }
 
         // Release
-        rule.onNodeWithTag("myClickable").sendIndirectPointerReleaseEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            up()
+        }
 
         // The clickable should not invoke onClick because it only saw the up event, not the
         // corresponding down, and hence should not be considered pressed
         rule.runOnIdle { assertThat(counter).isEqualTo(0) }
-    }
-
-    @Test
-    fun indirectPointerPress_emitsInteraction() {
-        val interactionSource = MutableInteractionSource()
-        val focusRequester = FocusRequester()
-        lateinit var scope: CoroutineScope
-        lateinit var inputModeManager: InputModeManager
-        rule.setContent {
-            scope = rememberCoroutineScope()
-            inputModeManager = LocalInputModeManager.current
-            Box(Modifier.padding(10.dp)) {
-                BasicText(
-                    "ClickableText",
-                    modifier =
-                        Modifier.testTag("clickable")
-                            .focusRequester(focusRequester)
-                            .combinedClickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                            ) {},
-                )
-            }
-        }
-        rule.runOnIdle {
-            inputModeManager.requestInputMode(Keyboard)
-            focusRequester.requestFocus()
-        }
-        val interactions = mutableListOf<Interaction>()
-        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
-
-        val downEvent = rule.onNodeWithTag("clickable").sendIndirectPointerPressEvent(rule)
-
-        rule.runOnIdle {
-            assertThat(interactions).hasSize(1)
-            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
-        }
-
-        rule
-            .onNodeWithTag("clickable")
-            .sendIndirectPointerReleaseEvent(rule, previousEvent = downEvent)
-
-        rule.runOnIdle {
-            assertThat(interactions).hasSize(2)
-            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
-            assertThat(interactions.last()).isInstanceOf(PressInteraction.Release::class.java)
-        }
     }
 
     @Test
@@ -263,7 +313,13 @@ class CombinedClickableIndirectPointerInputTest() {
         val interactions = mutableListOf<Interaction>()
         scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        rule.onNodeWithTag("clickable").sendIndirectPointerPressEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
@@ -312,9 +368,13 @@ class CombinedClickableIndirectPointerInputTest() {
         val interactions = mutableListOf<Interaction>()
         scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        val clickableNode = rule.onNodeWithTag("clickable")
-
-        clickableNode.sendIndirectPressReleaseEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            click(inputDeviceCenter)
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -322,7 +382,13 @@ class CombinedClickableIndirectPointerInputTest() {
             assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
         }
 
-        val downEvent = clickableNode.sendIndirectPointerPressEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(3)
@@ -331,7 +397,13 @@ class CombinedClickableIndirectPointerInputTest() {
             assertThat(interactions[2]).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        clickableNode.sendIndirectPointerReleaseEvent(rule, previousEvent = downEvent)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            up()
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(4)
@@ -376,7 +448,13 @@ class CombinedClickableIndirectPointerInputTest() {
 
         val clickableNode = rule.onNodeWithTag("clickable")
 
-        clickableNode.sendIndirectPointerPressEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
@@ -395,8 +473,18 @@ class CombinedClickableIndirectPointerInputTest() {
             assertThat(pressInteractions.last()).isInstanceOf(PressInteraction.Cancel::class.java)
         }
 
-        // Release should not result in interactions.
-        clickableNode.sendIndirectPointerReleaseEvent(rule)
+        // The clickable should have canceled the press when focus was lost
+        val exception =
+            assertThrows(AssertionError::class.java) {
+                rule.sendIndirectPointerInput(
+                    indirectPointerEventPrimaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    inputDeviceSize = squareExternalInputDeviceSize,
+                ) {
+                    up()
+                }
+            }
+        assertThat(exception.message).isEqualTo("No focused nodes within a focused window!")
 
         // Make sure nothing has changed.
         rule.runOnIdle {
@@ -430,10 +518,22 @@ class CombinedClickableIndirectPointerInputTest() {
             focusRequester.requestFocus()
         }
 
-        rule.onNodeWithTag("myClickable").sendIndirectPointerPressEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            down(inputDeviceCenter)
+        }
         rule.runOnIdle { reuseKey = 1 }
         rule.waitForIdle()
-        rule.onNodeWithTag("myClickable").sendIndirectPointerReleaseEvent(rule)
+        rule.sendIndirectPointerInput(
+            indirectPointerEventPrimaryDirectionalMotionAxis =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            inputDeviceSize = squareExternalInputDeviceSize,
+        ) {
+            up()
+        }
 
         rule.runOnIdle { assertThat(counter).isEqualTo(0) }
     }

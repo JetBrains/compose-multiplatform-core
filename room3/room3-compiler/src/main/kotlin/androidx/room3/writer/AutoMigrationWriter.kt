@@ -30,6 +30,7 @@ import androidx.room3.ext.SQLiteDriverTypeNames.CONNECTION
 import androidx.room3.migration.bundle.BaseEntityBundle
 import androidx.room3.migration.bundle.EntityBundle
 import androidx.room3.migration.bundle.FtsEntityBundle
+import androidx.room3.parser.FtsVersion
 import androidx.room3.vo.AutoMigration
 
 /** Writes the implementation of migrations that were annotated with @AutoMigration. */
@@ -161,8 +162,8 @@ class AutoMigrationWriter(
             .forEach {
                 (_, tableNameWithNewPrefix, oldEntityBundle, newEntityBundle, renamedColumnsMap) ->
                 if (
-                    oldEntityBundle is FtsEntityBundle &&
-                        oldEntityBundle.ftsOptions.contentTable.isNotBlank()
+                    newEntityBundle is FtsEntityBundle &&
+                        newEntityBundle.ftsOptions.contentTable.isNotBlank()
                 ) {
                     addStatementsToMigrateFtsTable(
                         migrateBuilder,
@@ -203,13 +204,13 @@ class AutoMigrationWriter(
     private fun addStatementsToMigrateFtsTable(
         migrateBuilder: XFunSpec.Builder,
         oldTable: BaseEntityBundle,
-        newTable: BaseEntityBundle,
+        newTable: FtsEntityBundle,
         renamedColumnsMap: MutableMap<String, String>,
     ) {
         addDatabaseExecuteSqlStatement(migrateBuilder, "DROP TABLE `${oldTable.tableName}`")
         addDatabaseExecuteSqlStatement(migrateBuilder, newTable.createTable())
 
-        val contentTable = (newTable as FtsEntityBundle).ftsOptions.contentTable
+        val contentTable = newTable.ftsOptions.contentTable
         val selectFromTable =
             if (contentTable.isEmpty()) {
                 oldTable.tableName
@@ -297,8 +298,22 @@ class AutoMigrationWriter(
         // transfer or not.
         if (isFtsTableContentTransfer) {
             selectColumnSequence.addAll(newColumnSequence)
-            selectColumnSequence.add("rowId")
-            newColumnSequence.add("docid")
+            check(newEntityBundle is FtsEntityBundle)
+            val bundledContentRowId = newEntityBundle.ftsOptions.contentRowId
+            selectColumnSequence.add(
+                if (!bundledContentRowId.isNullOrEmpty()) {
+                    bundledContentRowId
+                } else {
+                    "rowid"
+                }
+            )
+            newColumnSequence.add(
+                if (newEntityBundle.ftsVersion == FtsVersion.FTS5.name) {
+                    "rowid"
+                } else {
+                    "docid"
+                }
+            )
         } else {
             newColumnSequence.forEach { column ->
                 selectColumnSequence.add(renamedColumnsMap[column] ?: column)

@@ -60,7 +60,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +81,7 @@ import org.junit.runner.RunWith
 @Suppress("DEPRECATION_ERROR")
 class RememberRippleTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val TestRippleColor = Color.Red
 
@@ -97,12 +96,10 @@ class RememberRippleTest {
     private val TestRippleTheme =
         object : RippleTheme {
             @Deprecated("Super method is deprecated")
-            @Suppress("OVERRIDE_DEPRECATION") // b/446706247
             @Composable
             override fun defaultColor() = TestRippleColor
 
             @Deprecated("Super method is deprecated")
-            @Suppress("OVERRIDE_DEPRECATION") // b/446706247
             @Composable
             override fun rippleAlpha() = TestRippleAlpha
         }
@@ -224,12 +221,10 @@ class RememberRippleTest {
                 val rippleAlpha = RippleAlpha(alpha, alpha, alpha, alpha)
 
                 @Deprecated("Super method is deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 @Composable
                 override fun defaultColor() = color
 
                 @Deprecated("Super method is deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 @Composable
                 override fun rippleAlpha() = rippleAlpha
             }
@@ -302,12 +297,10 @@ class RememberRippleTest {
         val rippleTheme =
             object : RippleTheme {
                 @Deprecated("Super method is deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 @Composable
                 override fun defaultColor() = localThemeColor.current
 
                 @Deprecated("Super method is deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 @Composable
                 override fun rippleAlpha() = rippleAlpha
             }
@@ -371,12 +364,10 @@ class RememberRippleTest {
         val rippleTheme =
             object : RippleTheme {
                 @Deprecated("Super method is deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 @Composable
                 override fun defaultColor() = localThemeColor.current
 
                 @Deprecated("Super method is deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 @Composable
                 override fun rippleAlpha() = rippleAlpha
             }

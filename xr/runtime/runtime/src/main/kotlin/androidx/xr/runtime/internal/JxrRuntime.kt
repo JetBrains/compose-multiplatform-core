@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.XrDevice.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /**
- * Describes a runtime that has a lifecycle equivalent of a particular [androidx.xr.runtime.Session]
- * and requires lifecycle and state updates. The Session is responsible for owning these objects.
+ * Runtimes with lifecycles equivalent to a [androidx.xr.runtime.Session] that require state
+ * updates. The Session is responsible for owning these objects.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Suppress("NotCloseable")
 public interface JxrRuntime {
+    /** The configuration of the runtime. */
+    public val config: Config
+
     /**
      * Executes the [JxrRuntime] initialization logic. It is necessary to call [resume] after
      * calling this method to start the runtime's execution logic.
@@ -45,32 +46,10 @@ public interface JxrRuntime {
     public fun pause() {}
 
     /**
-     * Sets or changes the configuration to use, which will affect the availability of properties or
-     * features in other managers. It is necessary to have called [initialize] before calling this
-     * method.
+     * Applies the configuration, affecting availability of properties or features. It is necessary
+     * to have called [initialize] before calling this method.
      */
     public fun configure(config: Config) {}
-
-    /**
-     * Checks whether the provided mode is supported by this runtime for the current device.
-     *
-     * @param configMode the [ConfigMode] mode to check.
-     * @return true if supported, false if not.
-     */
-    public fun isSupported(configMode: ConfigMode): Boolean {
-        return false
-    }
-
-    /**
-     * Gets the preferred [DisplayBlendMode] by the runtime.
-     *
-     * @return the preferred [DisplayBlendMode], or [DisplayBlendMode.NO_DISPLAY] if none are
-     *   supported.
-     */
-    @SuppressWarnings("UnavailableSymbol", "HiddenTypeParameter")
-    public fun getPreferredDisplayBlendMode(): DisplayBlendMode {
-        return DisplayBlendMode.NO_DISPLAY
-    }
 
     /**
      * Updates the state of the system. The call is blocking and will return once the underlying
@@ -78,7 +57,7 @@ public interface JxrRuntime {
      * can only be called when the runtime is resumed.
      *
      * @return the timemark of the latest state. This value is to be used for comparison with other
-     *   timemarks and not to be used for absolute time calculations.
+     *   timemarks and not to be used for absolute time calculations
      */
     public suspend fun update(): ComparableTimeMark? {
         return null
@@ -89,4 +68,8 @@ public interface JxrRuntime {
      * after calling [destroy]. The runtime must not be resumed when this method is called.
      */
     public fun destroy() {}
+
+    /** Gets the pointer to the underlying native session if applicable. */
+    public val sessionPointer: Long?
+        get() = null
 }

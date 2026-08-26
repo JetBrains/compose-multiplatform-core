@@ -18,14 +18,19 @@ package androidx.compose.material3.adaptive.navigation3
 
 import androidx.collection.IntList
 import androidx.collection.buildIntSet
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.MutableThreePaneScaffoldState
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
+import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.PaneMotionDefaults
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
@@ -35,12 +40,17 @@ import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldState
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldValue
+import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
+import androidx.compose.material3.adaptive.layout.calculateDefaultExitTransition
 import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigationevent.NavigationEventInfo
@@ -73,6 +83,8 @@ internal class ThreePaneScaffoldScene<T : Any>(
     val entriesAsNavItems: List<ThreePaneScaffoldDestinationItem<Any>>,
     val getPaneRole: (NavEntry<T>) -> ThreePaneScaffoldRole?,
     val scaffoldType: ThreePaneScaffoldType,
+    val paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)?,
+    val paneExpansionState: PaneExpansionState?,
 ) : Scene<T> {
     override val entries: List<NavEntry<T>>
         get() = scaffoldEntries
@@ -259,14 +271,43 @@ internal class ThreePaneScaffoldScene<T : Any>(
                     {
                         val sceneScope = ListDetailSceneScopeImpl(this)
                         CompositionLocalProvider(LocalListDetailSceneScope provides sceneScope) {
-                            AnimatedPane { it.Content() }
+                            AnimatedPane(
+                                modifier = preferredSizeModifier(lastList),
+                                enterTransition =
+                                    lastList.enterTransition()
+                                        ?: motionDataProvider.calculateDefaultEnterTransition(
+                                            paneRole
+                                        ),
+                                exitTransition =
+                                    lastList.exitTransition()
+                                        ?: motionDataProvider.calculateDefaultExitTransition(
+                                            paneRole
+                                        ),
+                                boundsAnimationSpec =
+                                    lastList.boundsAnimationSpec()
+                                        ?: PaneMotionDefaults.AnimationSpec,
+                            ) {
+                                it.Content()
+                            }
                         }
                     }
                 } ?: {},
             detailPane = {
                 val sceneScope = ListDetailSceneScopeImpl(this)
                 CompositionLocalProvider(LocalListDetailSceneScope provides sceneScope) {
-                    AnimatedPane { lastDetail?.Content() ?: detailPlaceholder() }
+                    AnimatedPane(
+                        modifier = preferredSizeModifier(lastDetail),
+                        enterTransition =
+                            lastDetail.enterTransition()
+                                ?: motionDataProvider.calculateDefaultEnterTransition(paneRole),
+                        exitTransition =
+                            lastDetail.exitTransition()
+                                ?: motionDataProvider.calculateDefaultExitTransition(paneRole),
+                        boundsAnimationSpec =
+                            lastList.boundsAnimationSpec() ?: PaneMotionDefaults.AnimationSpec,
+                    ) {
+                        lastDetail?.Content() ?: detailPlaceholder()
+                    }
                 }
             },
             extraPane =
@@ -274,10 +315,29 @@ internal class ThreePaneScaffoldScene<T : Any>(
                     {
                         val sceneScope = ListDetailSceneScopeImpl(this)
                         CompositionLocalProvider(LocalListDetailSceneScope provides sceneScope) {
-                            AnimatedPane { it.Content() }
+                            AnimatedPane(
+                                modifier = preferredSizeModifier(lastExtra),
+                                enterTransition =
+                                    lastExtra.enterTransition()
+                                        ?: motionDataProvider.calculateDefaultEnterTransition(
+                                            paneRole
+                                        ),
+                                exitTransition =
+                                    lastExtra.exitTransition()
+                                        ?: motionDataProvider.calculateDefaultExitTransition(
+                                            paneRole
+                                        ),
+                                boundsAnimationSpec =
+                                    lastExtra.boundsAnimationSpec()
+                                        ?: PaneMotionDefaults.AnimationSpec,
+                            ) {
+                                it.Content()
+                            }
                         }
                     }
                 },
+            paneExpansionDragHandle = paneExpansionDragHandle,
+            paneExpansionState = paneExpansionState,
         )
     }
 
@@ -298,7 +358,24 @@ internal class ThreePaneScaffoldScene<T : Any>(
                         CompositionLocalProvider(
                             LocalSupportingPaneSceneScope provides sceneScope
                         ) {
-                            AnimatedPane { it.Content() }
+                            AnimatedPane(
+                                modifier = preferredSizeModifier(lastMain),
+                                enterTransition =
+                                    lastMain.enterTransition()
+                                        ?: motionDataProvider.calculateDefaultEnterTransition(
+                                            paneRole
+                                        ),
+                                exitTransition =
+                                    lastMain.exitTransition()
+                                        ?: motionDataProvider.calculateDefaultExitTransition(
+                                            paneRole
+                                        ),
+                                boundsAnimationSpec =
+                                    lastMain.boundsAnimationSpec()
+                                        ?: PaneMotionDefaults.AnimationSpec,
+                            ) {
+                                it.Content()
+                            }
                         }
                     }
                 } ?: {},
@@ -309,7 +386,24 @@ internal class ThreePaneScaffoldScene<T : Any>(
                         CompositionLocalProvider(
                             LocalSupportingPaneSceneScope provides sceneScope
                         ) {
-                            AnimatedPane { it.Content() }
+                            AnimatedPane(
+                                modifier = preferredSizeModifier(lastSupporting),
+                                enterTransition =
+                                    lastSupporting.enterTransition()
+                                        ?: motionDataProvider.calculateDefaultEnterTransition(
+                                            paneRole
+                                        ),
+                                exitTransition =
+                                    lastSupporting.exitTransition()
+                                        ?: motionDataProvider.calculateDefaultExitTransition(
+                                            paneRole
+                                        ),
+                                boundsAnimationSpec =
+                                    lastSupporting.boundsAnimationSpec()
+                                        ?: PaneMotionDefaults.AnimationSpec,
+                            ) {
+                                it.Content()
+                            }
                         }
                     }
                 } ?: {},
@@ -320,12 +414,61 @@ internal class ThreePaneScaffoldScene<T : Any>(
                         CompositionLocalProvider(
                             LocalSupportingPaneSceneScope provides sceneScope
                         ) {
-                            AnimatedPane { it.Content() }
+                            AnimatedPane(
+                                modifier = preferredSizeModifier(lastExtra),
+                                enterTransition =
+                                    lastExtra.enterTransition()
+                                        ?: motionDataProvider.calculateDefaultEnterTransition(
+                                            paneRole
+                                        ),
+                                exitTransition =
+                                    lastExtra.exitTransition()
+                                        ?: motionDataProvider.calculateDefaultExitTransition(
+                                            paneRole
+                                        ),
+                                boundsAnimationSpec =
+                                    lastExtra.boundsAnimationSpec()
+                                        ?: PaneMotionDefaults.AnimationSpec,
+                            ) {
+                                it.Content()
+                            }
                         }
                     }
                 },
+            paneExpansionDragHandle = paneExpansionDragHandle,
+            paneExpansionState = paneExpansionState,
         )
     }
+
+    @Suppress("ModifierFactoryExtensionFunction")
+    private fun ThreePaneScaffoldScope.preferredSizeModifier(entry: NavEntry<T>?): Modifier {
+        if (entry == null) return Modifier
+
+        val widthModifier =
+            when (val width = entry.metadata[MetadataPreferredWidthKey]) {
+                is Float -> Modifier.preferredWidth(width)
+                is Dp -> Modifier.preferredWidth(width)
+                else -> Modifier
+            }
+
+        val heightModifier =
+            when (val height = entry.metadata[MetadataPreferredHeightKey]) {
+                is Float -> Modifier.preferredHeight(height)
+                is Dp -> Modifier.preferredHeight(height)
+                else -> Modifier
+            }
+        return widthModifier.then(heightModifier)
+    }
+
+    private fun NavEntry<T>?.enterTransition(): EnterTransition? =
+        this?.metadata[MetadataEnterTransitionKey] as? EnterTransition
+
+    private fun NavEntry<T>?.exitTransition(): ExitTransition? =
+        this?.metadata[MetadataExitTransitionKey] as? ExitTransition
+
+    @Suppress("UNCHECKED_CAST")
+    private fun NavEntry<T>?.boundsAnimationSpec(): FiniteAnimationSpec<IntRect>? =
+        this?.metadata[MetadataBoundsAnimationSpecKey] as? FiniteAnimationSpec<IntRect>
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -363,6 +506,21 @@ internal class ThreePaneScaffoldScene<T : Any>(
             "scaffoldEntryIndices=$scaffoldEntryIndices, entriesAsNavItems=$entriesAsNavItems)"
     }
 }
+
+internal const val MetadataEnterTransitionKey: String =
+    "androidx.compose.material3.adaptive.layout.PaneMotion.enterTransition"
+
+internal const val MetadataExitTransitionKey: String =
+    "androidx.compose.material3.adaptive.layout.PaneMotion.exitTransition"
+
+internal const val MetadataBoundsAnimationSpecKey: String =
+    "androidx.compose.material3.adaptive.layout.PaneMotion.boundsAnimationSpec"
+
+internal const val MetadataPreferredWidthKey: String =
+    "androidx.compose.material3.adaptive.layout.preferredWidth"
+
+internal const val MetadataPreferredHeightKey: String =
+    "androidx.compose.material3.adaptive.layout.preferredHeight"
 
 private data class ThreePaneScaffoldSceneInfo(val key: Any, val entries: List<NavEntry<*>>) :
     NavigationEventInfo()

@@ -29,6 +29,7 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.MouseButton
+import androidx.compose.ui.test.TrackpadButton
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -41,7 +42,6 @@ import androidx.compose.ui.util.fastMap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +49,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class RightClickGesturesTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val tag = "testTag"
 
@@ -131,11 +131,11 @@ class RightClickGesturesTest {
 
         interaction.performTrackpadInput {
             updatePointerTo(center)
-            press(MouseButton.Secondary)
+            press(TrackpadButton.Secondary)
         }
         assertThat(clickCount).isEqualTo(1)
 
-        interaction.performTrackpadInput { release(MouseButton.Secondary) }
+        interaction.performTrackpadInput { release(TrackpadButton.Secondary) }
         assertThat(clickCount).isEqualTo(1)
     }
 

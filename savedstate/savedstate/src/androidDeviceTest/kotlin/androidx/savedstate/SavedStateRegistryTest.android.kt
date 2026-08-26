@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.savedstate
 
 import android.os.Bundle
@@ -51,16 +53,105 @@ class SavedStateRegistryTest {
 
     @UiThreadTest
     @Test
+    fun restorerSaveRestoreFlow() {
+        val owner1 = FakeSavedStateRegistryOwner()
+        owner1.savedStateRegistry.registerSavedStateProvider("a") { bundleOf("foo", 42) }
+
+        val savedState = Bundle()
+        owner1.savedStateRegistryController.performSave(savedState)
+
+        val owner2 = FakeSavedStateRegistryOwner()
+        var restoredValue: Int? = null
+        val providerRestorer =
+            TestProviderRestorer(
+                onRestore = { state -> restoredValue = state?.read { getInt("foo") } }
+            )
+        owner2.savedStateRegistry.registerSavedStateProvider("a", providerRestorer)
+
+        owner2.savedStateRegistryController.performRestore(savedState)
+
+        assertThat(restoredValue).isEqualTo(42)
+    }
+
+    @UiThreadTest
+    @Test
+    fun restorerLateRegistrationEagerRestoration() {
+        val owner1 = FakeSavedStateRegistryOwner()
+        owner1.savedStateRegistry.registerSavedStateProvider("a") { bundleOf("foo", 42) }
+
+        val savedState = Bundle()
+        owner1.savedStateRegistryController.performSave(savedState)
+
+        val owner2 = FakeSavedStateRegistryOwner()
+        owner2.savedStateRegistryController.performRestore(savedState)
+
+        var restoredValue: Int? = null
+        val providerRestorer =
+            TestProviderRestorer(
+                onRestore = { state -> restoredValue = state?.read { getInt("foo") } }
+            )
+        owner2.savedStateRegistry.registerSavedStateProvider("a", providerRestorer)
+
+        assertThat(restoredValue).isEqualTo(42)
+    }
+
+    @UiThreadTest
+    @Test
+    fun restorerReceivesNullOnFreshStart() {
+        val owner = FakeSavedStateRegistryOwner()
+        var restoredCalled = false
+        var restoredValue: SavedState? = savedState() // non-null initial sentinel
+        val providerRestorer =
+            TestProviderRestorer(
+                onRestore = { state ->
+                    restoredCalled = true
+                    restoredValue = state
+                }
+            )
+        owner.savedStateRegistry.registerSavedStateProvider("a", providerRestorer)
+
+        owner.savedStateRegistryController.performRestore(null)
+
+        assertThat(restoredCalled).isTrue()
+        assertThat(restoredValue).isNull()
+    }
+
+    @UiThreadTest
+    @Test
     fun registerWithSameKey() {
         startFlow { registry ->
-            registry.registerSavedStateProvider("key") { bundleOf("foo", "a") }
+            val provider1 = SavedStateRegistry.SavedStateProvider { bundleOf("foo", "a") }
+            val provider2 = SavedStateRegistry.SavedStateProvider { bundleOf("foo", "b") }
+            registry.registerSavedStateProvider("key", provider1)
             try {
-                registry.registerSavedStateProvider("key") { bundleOf("foo", "b") }
+                registry.registerSavedStateProvider("key", provider2)
                 Assert.fail("can't register with the same key")
             } catch (e: IllegalArgumentException) {
-                // fail as expected
+                assertThat(e)
+                    .hasMessageThat()
+                    .contains(
+                        "SavedStateProvider with key 'key' already registered. " +
+                            "Existing instance: '$provider1'. New instance: '$provider2'."
+                    )
             }
         }
+    }
+
+    @UiThreadTest
+    @Test
+    fun registerSameProviderIdempotent() {
+        startFlow { registry ->
+            val provider = SavedStateRegistry.SavedStateProvider { bundleOf("foo", "a") }
+            registry.registerSavedStateProvider("key", provider)
+            registry.registerSavedStateProvider("key", provider)
+        }
+    }
+
+    @UiThreadTest
+    @Test
+    fun consumeRestoredStateForKey_returnsNullWhenUnrestored() {
+        val registry = SavedStateRegistry()
+        assertThat(registry.consumeRestoredStateForKey("unregistered")).isNull()
     }
 
     @UiThreadTest
@@ -221,6 +312,15 @@ class SavedStateRegistryTest {
 
     private fun startFlow(block: (SavedStateRegistry) -> Unit) =
         TestFlow(null).recreateAndCheck(block)
+
+    private class TestProviderRestorer(
+        val onSave: () -> SavedState = { savedState() },
+        val onRestore: (SavedState?) -> Unit = {},
+    ) : SavedStateRegistry.SavedStateProvider, SavedStateRegistry.SavedStateRestorer {
+        override fun saveState(): SavedState = onSave()
+
+        override fun restoreState(savedState: SavedState?) = onRestore(savedState)
+    }
 }
 
 private class ToBeRecreated : SavedStateRegistry.AutoRecreated {

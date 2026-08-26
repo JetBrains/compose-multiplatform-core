@@ -22,16 +22,17 @@ import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONS
 
 import static java.util.Objects.requireNonNull;
 
+import android.util.Log;
+
 import androidx.annotation.IntDef;
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.constraints.ActionsConstraints;
 import androidx.car.app.model.constraints.CarTextConstraints;
 import androidx.car.app.utils.CollectionUtils;
+import androidx.car.app.utils.LogTags;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -68,7 +69,7 @@ public final class GridTemplate implements Template {
      * and grid item width will vary by bucket, and the number of items per row
      * will be adjusted according to bucket and screen size.
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     @IntDef(
             value = {
                     ITEM_SIZE_SMALL,
@@ -85,7 +86,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemSize(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int ITEM_SIZE_SMALL = (1 << 0);
 
     /**
@@ -93,7 +94,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemSize(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int ITEM_SIZE_MEDIUM = (1 << 1);
 
     /**
@@ -101,7 +102,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemSize(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int ITEM_SIZE_LARGE = (1 << 2);
 
     /**
@@ -109,7 +110,7 @@ public final class GridTemplate implements Template {
      *
      * <p>Grid item images will be cropped by the host to match the shape type.
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     @IntDef(
             value = {
                     ITEM_IMAGE_SHAPE_UNSET,
@@ -127,7 +128,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemImageShape(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int ITEM_IMAGE_SHAPE_UNSET = (1 << 0);
 
     /**
@@ -135,7 +136,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemImageShape(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     public static final int ITEM_IMAGE_SHAPE_CIRCLE = (1 << 1);
 
     private final boolean mIsLoading;
@@ -236,7 +237,6 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#addAction(Action)
      */
-    @ExperimentalCarApi
     @RequiresCarApi(7)
     public @NonNull List<Action> getActions() {
         return mActions;
@@ -247,7 +247,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemSize(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     @ItemSize
     public int getItemSize() {
         return mItemSize;
@@ -260,7 +260,7 @@ public final class GridTemplate implements Template {
      *
      * @see GridTemplate.Builder#setItemImageShape(int)
      */
-    @ExperimentalCarApi
+    @RequiresCarApi(8)
     @ItemImageShape
     public int getItemImageShape() {
         return mItemImageShape;
@@ -341,7 +341,6 @@ public final class GridTemplate implements Template {
     }
 
     /** Constructs an empty instance, used by serialization code. */
-    @OptIn(markerClass = ExperimentalCarApi.class)
     private GridTemplate() {
         mIsLoading = false;
         mTitle = null;
@@ -355,7 +354,6 @@ public final class GridTemplate implements Template {
     }
 
     /** A builder of {@link GridTemplate}. */
-    @OptIn(markerClass = ExperimentalCarApi.class)
     public static final class Builder {
         boolean mIsLoading;
         @Nullable ItemList mSingleList;
@@ -462,18 +460,27 @@ public final class GridTemplate implements Template {
          * Adds a template scoped action outside of the grid items. This action will be displayed
          * as a floating action button.
          *
+         * <p>Note: Starting in Car API 9, for media apps (apps with
+         * {@link androidx.car.app.CarAppPermission#MEDIA_TEMPLATES}), a maximum of 1 action can be
+         * set, as the host reserves space to render a persistent media entry point or miniplayer.
+         * If extra actions are sent by a media app, the host will drop the extra action.
+         *
          * @throws IllegalArgumentException if {@code action} contains unsupported Action types,
          *                                  or does not contain a valid {@link CarIcon} and
          *                                  background {@link CarColor}, or if exceeds the
          *                                  maximum number of allowed actions for the template.
          * @see ActionsConstraints#ACTIONS_CONSTRAINTS_FAB
          */
-        @ExperimentalCarApi
         @RequiresCarApi(7)
         public @NonNull Builder addAction(@NonNull Action action) {
             List<Action> mActionsCopy = new ArrayList<>(mActions);
             mActionsCopy.add(requireNonNull(action));
             ActionsConstraints.ACTIONS_CONSTRAINTS_FAB.validateOrThrow(mActionsCopy);
+            if (action.getType() == Action.TYPE_MEDIA_PLAYBACK) {
+                Log.w(LogTags.TAG,
+                        "Action.TYPE_MEDIA_PLAYBACK is ignored as a floating action button on"
+                                + " Car API 9+ hosts.");
+            }
             mActions.add(action);
             return this;
         }
@@ -490,7 +497,7 @@ public final class GridTemplate implements Template {
          *
          * <p>If this is not called, the default value is {@link #ITEM_SIZE_SMALL}
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setItemSize(@ItemSize int gridItemSize) {
             mItemSize = gridItemSize;
             return this;
@@ -504,7 +511,7 @@ public final class GridTemplate implements Template {
          *
          * <p>If not set, default to ITEM_IMAGE_SHAPE_UNSET.
          */
-        @ExperimentalCarApi
+        @RequiresCarApi(8)
         public @NonNull Builder setItemImageShape(@ItemImageShape int itemImageShape) {
             mItemImageShape = itemImageShape;
             return this;

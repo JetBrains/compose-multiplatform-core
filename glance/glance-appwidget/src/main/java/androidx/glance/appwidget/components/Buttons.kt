@@ -26,6 +26,7 @@ import androidx.glance.Button
 import androidx.glance.ButtonColors
 import androidx.glance.ButtonDefaults
 import androidx.glance.Emittable
+import androidx.glance.EmittableWithText
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceNode
 import androidx.glance.GlanceTheme
@@ -33,7 +34,11 @@ import androidx.glance.ImageProvider
 import androidx.glance.action.Action
 import androidx.glance.action.NoRippleOverride
 import androidx.glance.action.action
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.R
+import androidx.glance.appwidget.isAtLeastApi31
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.unit.ColorProvider
 
 /**
@@ -375,23 +380,37 @@ private fun M3IconButtonElement(
     modifier: GlanceModifier,
     enabled: Boolean,
 ) {
+    var finalModifier =
+        if (enabled)
+            modifier.clickable(
+                onClick = onClick,
+                rippleOverride =
+                    if (isAtLeastApi31) NoRippleOverride
+                    else R.drawable.glance_component_m3_button_ripple,
+            )
+        else modifier
+
+    finalModifier =
+        if (contentDescription != null) {
+            finalModifier.semantics { this.contentDescription = contentDescription }
+        } else {
+            finalModifier
+        }
+
     GlanceNode(
         factory = ::EmittableM3IconButton,
         update = {
             this.set(imageProvider) { this.imageProvider = it }
-            this.set(contentDescription) { this.contentDescription = it }
             this.set(contentColor) { this.contentColor = it }
             this.set(backgroundColor) { this.backgroundColor = it }
             this.set(shape) { this.shape = it }
-            this.set(onClick) { this.onClick = it }
-            this.set(modifier) { this.modifier = it }
+            this.set(finalModifier) { this.modifier = it }
             this.set(enabled) { this.enabled = it }
         },
     )
 }
 
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 private fun M3TextButtonElement(
     text: String,
     onClick: Action,
@@ -404,12 +423,21 @@ private fun M3TextButtonElement(
     maxLines: Int,
     isOutlineButton: Boolean = false, // used for remote compose
 ) {
+    val finalModifier =
+        if (enabled)
+            modifier.clickable(
+                onClick = onClick,
+                rippleOverride =
+                    if (isAtLeastApi31) NoRippleOverride
+                    else R.drawable.glance_component_m3_button_ripple,
+            )
+        else modifier
+
     GlanceNode(
         factory = ::EmittableM3TextButton,
         update = {
             this.set(text) { this.text = it }
-            this.set(onClick) { this.onClick = it }
-            this.set(modifier) { this.modifier = it }
+            this.set(finalModifier) { this.modifier = it }
             this.set(enabled) { this.enabled = it }
             this.set(icon) { this.icon = it }
             this.set(contentColor) { this.contentColor = it }
@@ -424,23 +452,21 @@ private fun M3TextButtonElement(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class EmittableM3TextButton
 private constructor(
-    public var text: String,
-    public var onClick: Action?,
+    public override var text: String,
     public override var modifier: GlanceModifier,
     public var enabled: Boolean = true,
     public var icon: ImageProvider?,
     public var contentColor: ColorProvider,
     public @DrawableRes var backgroundResource: Int,
     public var backgroundTint: ColorProvider,
-    public var maxLines: Int,
+    public override var maxLines: Int,
     public var isOutlineButton: Boolean,
-) : Emittable {
+) : EmittableWithText() {
 
     /** No-arg constructor for when its constructed as a [GlanceNode] */
     public constructor() :
         this(
             text = "",
-            onClick = null,
             modifier = GlanceModifier,
             enabled = false,
             icon = null,
@@ -454,7 +480,6 @@ private constructor(
     override fun copy(): Emittable {
         return EmittableM3TextButton(
             text = text,
-            onClick = onClick,
             modifier = modifier,
             enabled = enabled,
             icon = icon,
@@ -471,11 +496,9 @@ private constructor(
 public class EmittableM3IconButton
 private constructor(
     public var imageProvider: ImageProvider?,
-    public var contentDescription: String?,
     public var contentColor: ColorProvider?,
     public var backgroundColor: ColorProvider?,
     public var shape: IconButtonShape,
-    public var onClick: Action?,
     public override var modifier: GlanceModifier,
     public var enabled: Boolean,
 ) : Emittable {
@@ -483,11 +506,9 @@ private constructor(
     public constructor() :
         this(
             imageProvider = null,
-            contentDescription = null,
             contentColor = null,
             backgroundColor = null,
             shape = IconButtonShape.Circle,
-            onClick = null,
             modifier = GlanceModifier,
             enabled = false,
         )
@@ -495,11 +516,9 @@ private constructor(
     override fun copy(): Emittable {
         return EmittableM3IconButton(
             imageProvider = imageProvider,
-            contentDescription = contentDescription,
             contentColor = contentColor,
             backgroundColor = backgroundColor,
             shape = shape,
-            onClick = onClick,
             modifier = modifier,
             enabled = enabled,
         )

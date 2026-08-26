@@ -17,39 +17,45 @@
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement.Absolute
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement.spacedBy
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
+import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
+import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.DefaultContainerSize
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.toInput
 import androidx.compose.remote.creation.compose.test.util.propertyName
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import com.google.testing.junit.testparameterinjector.TestParameter
-import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@RunWith(TestParameterInjector::class)
+@RunWith(AndroidJUnit4::class)
 class RemoteCollapsibleColumnTest {
-    @TestParameter private lateinit var targetPlayer: TargetPlayer
-
     @get:Rule
-    val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
+    val composeTestRule =
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = targetPlayer,
+            context = ApplicationProvider.getApplicationContext(),
+            matcher = MSSIMMatcher(threshold = 0.999),
         )
-    }
 
     private val gridScreenshotUI = GridScreenshotUI()
     private val collapsibleUI =
@@ -69,30 +75,128 @@ class RemoteCollapsibleColumnTest {
             gridScreenshotUI.GridContent(getLayoutAlignmentUIs() + collapsibleUI.getUIs().toInput())
         }
 
-    private fun getLayoutAlignmentUIs():
-        List<Pair<String, @RemoteComposable @Composable () -> Unit>> =
+    @Test
+    fun rtl() =
+        composeTestRule.runScreenshotTest {
+            val alignments =
+                listOf(
+                    RemoteAlignment.Start,
+                    RemoteAlignment.CenterHorizontally,
+                    RemoteAlignment.End,
+                )
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
+        }
+
+    @Test
+    fun absoluteAlignment() =
+        composeTestRule.runScreenshotTest {
+            val alignments =
+                listOf(
+                    RemoteAbsoluteAlignment.Left,
+                    RemoteAlignment.CenterHorizontally,
+                    RemoteAbsoluteAlignment.Right,
+                )
+            gridScreenshotUI.GridContent(getLayoutAlignmentUIs(alignments))
+        }
+
+    @Test
+    fun rtlAbsoluteAlignment() =
+        composeTestRule.runScreenshotTest {
+            val alignments =
+                listOf(
+                    RemoteAbsoluteAlignment.Left,
+                    RemoteAlignment.CenterHorizontally,
+                    RemoteAbsoluteAlignment.Right,
+                )
+            gridScreenshotUI.GridContent(
+                getLayoutAlignmentUIs(alignments),
+                layoutDirection = LayoutDirection.Rtl,
+            )
+        }
+
+    @Test
+    fun spacedBy() =
+        composeTestRule.runScreenshotTest {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "rdp Top" to { TestSpacedByRemoteDp(alignment = RemoteAlignment.Top) },
+                    "rdp Center" to
+                        {
+                            TestSpacedByRemoteDp(alignment = RemoteAlignment.CenterVertically)
+                        },
+                    "rdp Bottom" to { TestSpacedByRemoteDp(alignment = RemoteAlignment.Bottom) },
+                    "rf Top" to { TestSpacedByRemoteFloat(alignment = RemoteAlignment.Top) },
+                    "rf Center" to
+                        {
+                            TestSpacedByRemoteFloat(alignment = RemoteAlignment.CenterVertically)
+                        },
+                    "rf Bottom" to { TestSpacedByRemoteFloat(alignment = RemoteAlignment.Bottom) },
+                    "rdp" to { TestSpacedByRemoteDp() },
+                    "rf" to { TestSpacedByRemoteFloat() },
+                )
+            )
+        }
+
+    @Test
+    fun spacedByAbsolute() =
+        composeTestRule.runScreenshotTest {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "rdp Top" to { TestSpacedByAbsoluteRemoteDp(alignment = RemoteAlignment.Top) },
+                    "rdp Center" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(
+                                alignment = RemoteAlignment.CenterVertically
+                            )
+                        },
+                    "rdp Bottom" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAlignment.Bottom)
+                        },
+                    "rf Top" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(alignment = RemoteAlignment.Top)
+                        },
+                    "rf Center" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAlignment.CenterVertically
+                            )
+                        },
+                    "rf Bottom" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(alignment = RemoteAlignment.Bottom)
+                        },
+                )
+            )
+        }
+
+    private fun getLayoutAlignmentUIs(
+        alignments: List<RemoteAlignment.Horizontal> = this.alignments
+    ): List<Pair<String, @RemoteComposable @Composable () -> Unit>> =
         sequence {
                 for (arrangement in arrangements) {
                     for (alignment in alignments) {
                         yield(
                             "${arrangement.propertyName()} ${alignment.propertyName()}" to
                                 @RemoteComposable @Composable {
-                                    // TODO(b/447100988): replace size by fillMaxSize in all those
-                                    // RemoteCollapsibleColumn
                                     RemoteCollapsibleColumn(
-                                        modifier = RemoteModifier.size(DefaultContainerSize),
+                                        modifier = RemoteModifier.fillMaxSize(),
                                         horizontalAlignment = alignment,
                                         verticalArrangement = arrangement,
                                     ) {
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(48.rdp)
-                                                    .background(Color(0xFF6200EE))
+                                                    .background(Color(0xFF6200EE).rc)
                                         )
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(24.rdp)
-                                                    .background(Color(0xFF03DAC6))
+                                                    .background(Color(0xFF03DAC6).rc)
                                         )
                                     }
                                 }
@@ -108,14 +212,149 @@ class RemoteCollapsibleColumnTest {
         modifier: RemoteModifier,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
-        // TODO(b/447100988): replace size by fillMaxSize in all those RemoteCollapsibleColumn
-        RemoteCollapsibleColumn(
-            modifier = modifier.size(DefaultContainerSize).background(Color.Red)
-        ) {
+        RemoteCollapsibleColumn(modifier = modifier.fillMaxSize().background(Color.Red.rc)) {
             content()
         }
     }
 
     private fun getPriorityModifier(priority: Float): RemoteModifier =
-        with(RemoteCollapsibleColumnScope()) { RemoteModifier.priority(priority) }
+        with(RemoteCollapsibleColumnScope()) { RemoteModifier.collapsiblePriority(priority) }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByRemoteDp() {
+        RemoteCollapsibleColumn(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = spacedBy(5.rdp),
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByRemoteFloat() {
+        RemoteCollapsibleColumn(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = spacedBy(10f.rf),
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByRemoteDp(alignment: RemoteAlignment.Vertical) {
+        RemoteCollapsibleColumn(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = spacedBy(space = 5.rdp, alignment = alignment),
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByRemoteFloat(alignment: RemoteAlignment.Vertical) {
+        RemoteCollapsibleColumn(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = spacedBy(space = 10f.rf, alignment = alignment),
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByAbsoluteRemoteDp(alignment: RemoteAlignment.Vertical) {
+        RemoteCollapsibleColumn(
+            modifier = RemoteModifier.size(DefaultContainerSize),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = Absolute.spacedBy(space = 5.rdp, alignment = alignment),
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByAbsoluteRemoteFloat(alignment: RemoteAlignment.Vertical) {
+        RemoteCollapsibleColumn(
+            modifier = RemoteModifier.size(DefaultContainerSize),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = Absolute.spacedBy(space = 10f.rf, alignment = alignment),
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.height(20.rdp).fillMaxWidth().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
 }

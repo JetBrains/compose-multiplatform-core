@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import android.os.Build
@@ -3192,11 +3189,12 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.mainClock.advanceTimeBy(100L)
 
         // swipe outer list
+        val velocity = with(rule.density) { 2000.dp.toPx() }
         rule.onNodeWithTag(LazyListTag).performTouchInput {
             if (vertical) {
-                swipeWithVelocity(center, topCenter, 5000f)
+                swipeWithVelocity(center, topCenter, velocity)
             } else {
-                swipeWithVelocity(center, centerLeft, 5000f)
+                swipeWithVelocity(center, centerLeft, velocity)
             }
         }
 

@@ -20,33 +20,39 @@ package androidx.room3
  * Marks a function as a DAO function return type converter.
  *
  * This annotation is used on functions within a converter class (which is registered via the
- * [DaoReturnTypeConverters] annotation on the `@Database` or `@Dao` annotated definitions).
+ * [DaoReturnTypeConverters] annotation on the [Database] or [Dao] annotated definitions).
  *
  * This function intercepts the result of a DAO function and wraps or transforms it into a custom
  * type (e.g., `Result<T>`).
  *
- * ### Strict Rules for All Converter Functions
+ * The [operations] parameter is required and defines whether this converter applies to read
+ * operations, write operations, or both.
  *
- * All functions marked with this annotation must adhere to the following rules for Room to
- * correctly integrate and validate them:
- * 1. Suspending: If the DAO function is suspending, the converter function must be `suspend`.
- * 2. Lambda Parameter: The function MUST include a final lambda parameter (e.g.
- *    `executeAndConvert`), which MUST be a `suspend` lambda and have at most one parameter.
- * 3. The converter function can have optional parameters to provide a `database: RoomDatabase` and
- *    `tableNames: Array<String>` to be used during the conversion.
- * 4. The converter function can have a parameter of type `RoomRawQuery` to be used by the
- *    `executeAndConvert` lambda in the case a query transformation is needed.
+ * ### Converter Functions Rules
+ * 1. Converters that are `suspend` functions can only match with suspend DAO functions.
+ * 2. **Lambda Parameter:** The function MUST include a functional parameter (e.g.
+ *    `executeAndConvert`), which MUST be a `suspend` lambda and have at most one
+ *    [androidx.room3.RoomRawQuery] parameter.
+ * 3. **Additional Parameters:** The function can have optional parameters for `database:
+ *    RoomDatabase`, `inTransaction: Boolean` and `tableNames: List<String>`.
+ *
+ * ### Lambda Parameter Rules (`executeAndConvert`)
+ * The lambda can have a parameter of type [androidx.room3.RoomRawQuery] to be used if query
+ * transformation is needed. The `executeAndConvert` lambda can return a `List<T>` (e.g. for a
+ * `PagingSource`) or an `Array<T>`.
  *
  * ### Rules for Generics and Return Types
- * * Generic Use Case:
+ * **Generic Use Case:**
  * * If a converter function has a generic type parameter (e.g., `<T>`), its return type must
  *   contain the same generic type parameter by name (e.g., `Result<T>`).
  * * The `executeAndConvert` lambda must return the generic type `T` (i.e., `suspend () -> T`).
- * * Non-Generic Use Case:
+ *
+ * **Non-Generic Use Case:**
  * * If a converter function has no generic type parameter, its return type must have no generic
  *   type argument (e.g., `Int` or `Completable`).
  * * The `executeAndConvert` lambda must return `Unit` (i.e., `suspend () -> Unit`).
- * * Multiple Type Arguments:
+ *
+ * **Multiple Type Arguments:**
  * * When attempting to match a converter with a DAO method's return type, if the DAO method return
  *   type has multiple type arguments (e.g., `MyResult<T, Error>`), only one type argument can be
  *   generic, and this single generic argument must match the generic type parameter on the
@@ -57,27 +63,30 @@ package androidx.room3
  * 1. Generic Example Use-Case
  *
  * ```
- * @DaoReturnTypeConverter
+ * @DaoReturnTypeConverter([OperationType.READ])
  * suspend fun <T> convertGeneric(
  *   database: RoomDatabase,
- *   tableNames: Array<String>,
+ *   tableNames: List<String>,
  *   executeAndConvert: suspend () -> T
  * ): Result<T> {
- *   val result = executeAndConvert.invoke()
- *   return Foo(result)
+ *   runCatching { executeAndConvert.invoke() }
  * }
  * ```
  * 2. Non-Generic Example Use-Case
  *
  * ```
- * @DaoReturnTypeConverter
- *   suspend fun convertNonGeneric(
+ * @DaoReturnTypeConverter([OperationType.WRITE])
+ * suspend fun convertNonGeneric(
  *   database: RoomDatabase,
- *   tableNames: Array<String>,
+ *   tableNames: List<String>,
  *   executeAndConvert: suspend () -> Unit
- * ): Int {
- *   executeAndConvert.invoke() // Execute the operation
- *   return 1 // E.g. return a non-generic status code
+ * ): OperationStatus {
+ *   try {
+ *     executeAndConvert.invoke()
+ *     return OperationStatus.DONE
+ *   } catch(th: Throwable) {
+ *     return OperationStatus.FAILED
+ *   }
  * }
  * ```
  *
@@ -89,17 +98,21 @@ package androidx.room3
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-public annotation class DaoReturnTypeConverter(vararg val operations: OperationType)
+public annotation class DaoReturnTypeConverter(val operations: Array<OperationType>)
 
 /**
- * A DAO return type might need different logic for read ([Query]) vs. write ([Insert], [Update],
- * [Delete] and [Upsert]) operations. To handle this, we introduce the [DaoReturnTypeConverter]
- * annotation that takes in a [READ] and/or [WRITE] enum parameter.
+ * Describes the type of database operation a [DaoReturnTypeConverter] function supports.
  *
- * If no enum is supplied in the annotation, Room will assume the same function will be used for all
- * DAO functions with the same return type for both [READ] and [WRITE] operations.
+ * A converter function defines the operation type it supports to provide distinct logic between
+ * [READ] ([Query]) versus [WRITE] ([Insert], [Update], [Delete], and [Upsert]) operations.
+ *
+ * Note that `INSERT`, `UPDATE`, and `DELETE` statements executed within a [Query] annotation are
+ * also considered write operations.
+ *
+ * If a converter function is used for a write operation, its return type's parameterized types are
+ * limited to those supported by Room's write operations. Write converters can't also have a
+ * `RoomRawQuery` or tables names as parameters.
  */
-// TODO(b/461569414): Implement supporting write operations.
 public enum class OperationType {
     READ,
     WRITE,

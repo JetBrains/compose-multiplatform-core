@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.SoftwareType
@@ -46,16 +45,16 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     defaultConfig {
         minSdk { version = release(28) }
     }
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.tv.integration.playground"

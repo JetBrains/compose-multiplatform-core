@@ -32,13 +32,11 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,10 +56,18 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.kruth.assertThat
+import androidx.navigation3.BlueBox
+import androidx.navigation3.GreenBox
+import androidx.navigation3.RedBox
+import androidx.navigation3.first
+import androidx.navigation3.fourth
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.metadata
 import androidx.navigation3.scene.usecases.ListDetailScene
 import androidx.navigation3.scene.usecases.rememberListDetailSceneStrategy
+import androidx.navigation3.second
+import androidx.navigation3.third
 import androidx.navigation3.ui.CardStackSceneStrategy.Companion.CARD_KEY
 import androidx.navigationevent.NavigationEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -69,7 +75,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -77,7 +82,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavDisplayScreenshotTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("navigation3/navigation3-ui")
 
@@ -220,19 +225,26 @@ class NavDisplayScreenshotTest {
                 transitionSpec = {
                     slideInHorizontally { it / 2 } togetherWith slideOutHorizontally { -it / 2 }
                 },
-                predictivePopTransitionSpec = { swipeEdge ->
-                    if (swipeEdge == NavigationEvent.EDGE_LEFT) {
-                        EnterTransition.None togetherWith slideOutHorizontally { it / 2 }
-                    } else {
-                        EnterTransition.None togetherWith slideOutHorizontally { -it / 2 }
-                    }
-                },
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
                     second ->
-                        NavEntry(second) {
+                        NavEntry(
+                            second,
+                            metadata =
+                                metadata {
+                                    put(NavDisplay.PredictivePopTransitionKey) { swipeEdge: Int ->
+                                        if (swipeEdge == NavigationEvent.EDGE_LEFT) {
+                                            EnterTransition.None togetherWith
+                                                slideOutHorizontally { it / 2 }
+                                        } else {
+                                            EnterTransition.None togetherWith
+                                                slideOutHorizontally { -it / 2 }
+                                        }
+                                    }
+                                },
+                        ) {
                             Box(Modifier.fillMaxSize().background(Color.Blue)) {
                                 Text(second, Modifier.size(50.dp))
                             }
@@ -282,7 +294,7 @@ class NavDisplayScreenshotTest {
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             NavDisplay(
                 backStack = backStack,
-                sceneStrategy = CardStackSceneStrategy(),
+                sceneStrategies = listOf(CardStackSceneStrategy()),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -324,7 +336,7 @@ class NavDisplayScreenshotTest {
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             NavDisplay(
                 backStack = backStack,
-                sceneStrategy = CardStackSceneStrategy(duration),
+                sceneStrategies = listOf(CardStackSceneStrategy(duration)),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -370,7 +382,7 @@ class NavDisplayScreenshotTest {
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             NavDisplay(
                 backStack = backStack,
-                sceneStrategy = CardStackSceneStrategy(),
+                sceneStrategies = listOf(CardStackSceneStrategy()),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -594,9 +606,11 @@ class NavDisplayScreenshotTest {
                             second,
                             // both screens slide right to left, exiting screen should be on top
                             metadata =
-                                NavDisplay.popTransitionSpec {
-                                    slideInHorizontally(tween(duration)) { it / 2 } togetherWith
-                                        slideOutHorizontally(tween(duration)) { -it / 2 }
+                                metadata {
+                                    put(NavDisplay.PopTransitionKey) {
+                                        slideInHorizontally(tween(duration)) { it / 2 } togetherWith
+                                            slideOutHorizontally(tween(duration)) { -it / 2 }
+                                    }
                                 },
                         ) {
                             RedBox(second)
@@ -635,7 +649,7 @@ class NavDisplayScreenshotTest {
                     slideInVertically(tween(duration)) { -it / 2 } togetherWith
                         slideOutVertically(tween(duration)) { it / 2 }
                 },
-                sceneStrategy = TestTwoPaneSceneStrategy(),
+                sceneStrategies = listOf(TestTwoPaneSceneStrategy()),
                 modifier = Modifier.testTag(navHostTag),
             ) { key ->
                 when (key) {
@@ -697,7 +711,7 @@ class NavDisplayScreenshotTest {
                     first -> NavEntry(first) {}
                     second -> NavEntry(second) {}
                     third -> NavEntry(third) { RedBox(third) }
-                    forth -> NavEntry(forth) { BlueBox(forth) }
+                    fourth -> NavEntry(fourth) { BlueBox(fourth) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -706,9 +720,9 @@ class NavDisplayScreenshotTest {
         composeTestRule.waitForIdle()
         assertThat(composeTestRule.onNodeWithText(third).isDisplayed()).isTrue()
 
-        composeTestRule.runOnIdle { backStack.add(forth) }
-        assertThat(composeTestRule.onNodeWithText(forth).isDisplayed()).isTrue()
-        assertThat(backStack).containsExactly(first, second, third, forth).inOrder()
+        composeTestRule.runOnIdle { backStack.add(fourth) }
+        assertThat(composeTestRule.onNodeWithText(fourth).isDisplayed()).isTrue()
+        assertThat(backStack).containsExactly(first, second, third, fourth).inOrder()
 
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.runOnIdle {
@@ -763,13 +777,13 @@ class NavDisplayScreenshotTest {
                                 BasicText(third, Modifier.size(50.dp))
                             }
                         }
-                    forth ->
-                        NavEntry(forth) {
+                    fourth ->
+                        NavEntry(fourth) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Green),
                                 contentAlignment = Alignment.TopEnd,
                             ) {
-                                BasicText(forth, Modifier.size(50.dp))
+                                BasicText(fourth, Modifier.size(50.dp))
                             }
                         }
                     else -> error("Invalid key passed")
@@ -784,14 +798,14 @@ class NavDisplayScreenshotTest {
         composeTestRule.runOnIdle {
             backStack.removeAt(2)
             backStack.removeAt(1)
-            backStack.add(forth)
+            backStack.add(fourth)
         }
 
         composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.mainClock.advanceTimeByFrame()
-        assertThat(composeTestRule.onNodeWithText(forth).isDisplayed()).isTrue()
+        assertThat(composeTestRule.onNodeWithText(fourth).isDisplayed()).isTrue()
 
-        // forth screen should be on top with "forth" text visible
+        // fourth screen should be on top with "fourth" text visible
         composeTestRule
             .onNodeWithTag(navHostTag)
             .captureToImage()
@@ -809,7 +823,7 @@ class NavDisplayScreenshotTest {
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             NavDisplay(
                 backStack = backStack,
-                sceneStrategy = CardStackSceneStrategy(duration),
+                sceneStrategies = listOf(CardStackSceneStrategy(duration)),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -846,7 +860,7 @@ class NavDisplayScreenshotTest {
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             NavDisplay(
                 backStack = backStack,
-                sceneStrategy = CardStackSceneStrategy(),
+                sceneStrategies = listOf(CardStackSceneStrategy()),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -951,9 +965,11 @@ class NavDisplayScreenshotTest {
                             second,
                             // both screens slide right to left, exiting screen should be on top
                             metadata =
-                                NavDisplay.popTransitionSpec {
-                                    slideInHorizontally(tween(duration)) { it / 2 } togetherWith
-                                        slideOutHorizontally(tween(duration)) { -it / 2 }
+                                metadata {
+                                    put(NavDisplay.PopTransitionKey) {
+                                        slideInHorizontally(tween(duration)) { it / 2 } togetherWith
+                                            slideOutHorizontally(tween(duration)) { -it / 2 }
+                                    }
                                 },
                         ) {
                             RedBox(second)
@@ -1005,7 +1021,7 @@ class NavDisplayScreenshotTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(
                 backStack,
-                sceneStrategy = TestAnimatedTwoPaneSceneStrategy(duration),
+                sceneStrategies = listOf(TestAnimatedTwoPaneSceneStrategy(duration)),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -1056,8 +1072,10 @@ class NavDisplayScreenshotTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(
                 backStack,
-                sceneStrategy =
-                    TestAnimatedTwoPaneSceneStrategy(duration, overrideEntryAnimations = true),
+                sceneStrategies =
+                    listOf(
+                        TestAnimatedTwoPaneSceneStrategy(duration, overrideEntryAnimations = true)
+                    ),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -1067,9 +1085,12 @@ class NavDisplayScreenshotTest {
                         NavEntry(
                             third,
                             metadata =
-                                NavDisplay.transitionSpec {
-                                    slideInVertically(animationSpec = tween(duration)) togetherWith
-                                        ExitTransition.KeepUntilTransitionsFinished
+                                metadata {
+                                    put(NavDisplay.TransitionKey) {
+                                        slideInVertically(
+                                            animationSpec = tween(duration)
+                                        ) togetherWith ExitTransition.KeepUntilTransitionsFinished
+                                    }
                                 },
                         ) {
                             GreenBox(third)
@@ -1110,8 +1131,10 @@ class NavDisplayScreenshotTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(
                 backStack,
-                sceneStrategy =
-                    TestAnimatedTwoPaneSceneStrategy(duration, overrideEntryAnimations = false),
+                sceneStrategies =
+                    listOf(
+                        TestAnimatedTwoPaneSceneStrategy(duration, overrideEntryAnimations = false)
+                    ),
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
@@ -1121,9 +1144,12 @@ class NavDisplayScreenshotTest {
                         NavEntry(
                             third,
                             metadata =
-                                NavDisplay.transitionSpec {
-                                    slideInVertically(animationSpec = tween(duration)) togetherWith
-                                        ExitTransition.KeepUntilTransitionsFinished
+                                metadata {
+                                    put(NavDisplay.TransitionKey) {
+                                        slideInVertically(
+                                            animationSpec = tween(duration)
+                                        ) togetherWith ExitTransition.KeepUntilTransitionsFinished
+                                    }
                                 },
                         ) {
                             GreenBox(third)
@@ -1172,9 +1198,13 @@ class NavDisplayScreenshotTest {
                         NavEntry(
                             key = second,
                             metadata =
-                                NavDisplay.transitionSpec {
-                                    slideInHorizontally(tween(testDuration)) { it / 2 } togetherWith
-                                        slideOutHorizontally(tween(testDuration)) { -it / 2 }
+                                metadata {
+                                    put(NavDisplay.TransitionKey) {
+                                        slideInHorizontally(tween(testDuration)) {
+                                            it / 2
+                                        } togetherWith
+                                            slideOutHorizontally(tween(testDuration)) { -it / 2 }
+                                    }
                                 },
                         ) {
                             BlueBox(second)
@@ -1214,7 +1244,7 @@ class NavDisplayScreenshotTest {
                         backStack = backStack,
                         onBack = { backStack.removeAt(backStack.lastIndex) },
                         sharedTransitionScope = this,
-                        sceneStrategy = rememberListDetailSceneStrategy(),
+                        sceneStrategies = listOf(rememberListDetailSceneStrategy()),
                         entryProvider =
                             entryProvider {
                                 entry(first, metadata = ListDetailScene.listPane()) {
@@ -1250,38 +1280,3 @@ class NavDisplayScreenshotTest {
             )
     }
 }
-
-@Composable
-fun BlueBox(text: String) {
-    Box(
-        Modifier.fillMaxSize().background(Color(0.2f, 0.2f, 1.0f, 1.0f)).border(10.dp, Color.Blue),
-        contentAlignment = Alignment.Center,
-    ) {
-        BasicText(text, Modifier.size(50.dp))
-    }
-}
-
-@Composable
-fun RedBox(text: String) {
-    Box(
-        Modifier.fillMaxSize().background(Color(1.0f, 0.3f, 0.3f, 1.0f)).border(10.dp, Color.Red),
-        contentAlignment = Alignment.Center,
-    ) {
-        BasicText(text, Modifier.size(50.dp))
-    }
-}
-
-@Composable
-fun GreenBox(text: String) {
-    Box(
-        Modifier.fillMaxSize().background(Color(0.2f, 0.9f, 0.7f, 1.0f)).border(10.dp, Color.Green),
-        contentAlignment = Alignment.Center,
-    ) {
-        BasicText(text, Modifier.size(50.dp))
-    }
-}
-
-private const val first = "first"
-private const val second = "second"
-private const val third = "third"
-private const val forth = "forth"

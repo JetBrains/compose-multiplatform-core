@@ -16,10 +16,8 @@
 
 package androidx.pdf.testapp
 
-import android.annotation.SuppressLint
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.View
@@ -27,14 +25,13 @@ import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
-import androidx.annotation.RequiresExtension
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.BundleCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentTransaction
 import androidx.pdf.testapp.ui.FeatureFlagListener
 import androidx.pdf.testapp.ui.FeaturePreferencesDialog
@@ -42,13 +39,12 @@ import androidx.pdf.testapp.ui.v2.EditablePdfHostFragment
 import androidx.pdf.testapp.ui.v2.PdfViewerFragmentExtended
 import androidx.pdf.testapp.ui.v2.StyledPdfViewerFragment
 import androidx.pdf.viewer.fragment.PdfViewerFragment
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 
 // TODO(b/386721657): Remove this activity once the switch to V2 completes
 
-@SuppressLint("RestrictedApiAndroidX")
 @Suppress("NewApi")
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.FragmentListener {
 
     private lateinit var pdfViewerFragment: PdfViewerFragment
@@ -56,6 +52,7 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
     private lateinit var searchButton: MaterialButton
     private lateinit var openPdfButton: MaterialButton
     private lateinit var preferenceButton: ImageButton
+    private lateinit var editToolbar: MaterialToolbar
 
     private var currentFileName: String = SAMPLE_PDF_NAME
 
@@ -63,14 +60,16 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         FeaturePreferencesDialog(this, listener = pdfViewerFragment as? FeatureFlagListener)
     }
 
-    // TODO(b/461991220) : Add the save button in toolbar for EditablePdfViewerFragment.
     private lateinit var savePdfButton: MaterialButton
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     @VisibleForTesting
     private var filePicker: ActivityResultLauncher<String> =
         registerForActivityResult(GetContent()) { uri: Uri? ->
             uri?.let {
+                if (pdfViewerFragment.documentUri != uri) {
+                    // Reset the thumbnails if a new uri is loaded.
+                    (pdfViewerFragment as? PdfViewerFragmentExtended)?.resetThumbnails()
+                }
                 pdfViewerFragment.documentUri = uri
                 currentFileName = getFileName(it)
             }
@@ -117,7 +116,6 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         return result ?: SAMPLE_PDF_NAME
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -141,19 +139,21 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun setupViews(pdfViewerFragment: PdfViewerFragment) {
         openPdfButton = findViewById(R.id.launch_button)
         searchButton = findViewById(R.id.search_pdf_button)
         preferenceButton = findViewById(R.id.preference_button)
         savePdfButton = findViewById(R.id.save_pdf_button)
+        editToolbar = findViewById(R.id.pdf_edit_toolbar)
 
         openPdfButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }
-
         searchButton.setOnClickListener { pdfViewerFragment.isTextSearchActive = true }
+        preferenceButton.setOnClickListener { _ -> settingsDialog.show() }
 
-        preferenceButton.setOnClickListener { view -> settingsDialog.show() }
         savePdfButton.setOnClickListener { createDocumentLauncher.launch(currentFileName) }
+        editToolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
+        updateToolbarVisibility(pdfViewerFragment)
     }
 
     private fun setPdfView() {
@@ -169,7 +169,6 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
         }
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun getFragmentForCurrentConfiguration(): PdfViewerFragment {
         val fragmentType = getFragmentTypeFromIntent()
 
@@ -180,6 +179,10 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
                 EditablePdfHostFragment()
             }
         }
+    }
+
+    private fun updateToolbarVisibility(fragment: PdfViewerFragment) {
+        editToolbar.isVisible = fragment is EditablePdfHostFragment
     }
 
     private fun getFragmentTypeFromIntent(): FragmentType {
@@ -197,9 +200,9 @@ internal class MainActivityV2 : AppCompatActivity(), EditablePdfHostFragment.Fra
 
             // Adjust the padding of the container view to accommodate system windows
             view.setPadding(
-                view.paddingLeft,
+                systemBarsInsets.left,
                 systemBarsInsets.top,
-                view.paddingRight,
+                systemBarsInsets.right,
                 systemBarsInsets.bottom,
             )
 

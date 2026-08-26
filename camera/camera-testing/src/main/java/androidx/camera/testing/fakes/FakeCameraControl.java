@@ -36,6 +36,7 @@ import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.InteropConfigurator;
 import androidx.camera.core.Logger;
 import androidx.camera.core.imagecapture.CameraCapturePipeline;
 import androidx.camera.core.impl.CameraCaptureCallback;
@@ -104,6 +105,7 @@ public final class FakeCameraControl implements CameraControlInternal {
     private final SessionConfig.Builder mSessionConfigBuilder = new SessionConfig.Builder();
     @ImageCapture.FlashMode
     private int mFlashMode = FLASH_MODE_OFF;
+    private int mSetFlashModeCallCount = 0;
     private Pair<Executor, OnNewCaptureRequestListener> mOnNewCaptureRequestListener;
     private MutableOptionsBundle mInteropConfig = MutableOptionsBundle.create();
 
@@ -317,7 +319,16 @@ public final class FakeCameraControl implements CameraControlInternal {
     @Override
     public void setFlashMode(@ImageCapture.FlashMode int flashMode) {
         mFlashMode = flashMode;
+        mSetFlashModeCallCount++;
         Logger.d(TAG, "setFlashMode(" + mFlashMode + ")");
+    }
+
+    /**
+     * Gets the number of times {@link #setFlashMode(int)} was called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public int getSetFlashModeCallCount() {
+        return mSetFlashModeCallCount;
     }
 
     @Override
@@ -607,6 +618,14 @@ public final class FakeCameraControl implements CameraControlInternal {
     @Override
     public @NonNull Config getInteropConfig() {
         return MutableOptionsBundle.from(mInteropConfig);
+    }
+
+    @Override
+    public @NonNull ListenableFuture<Void> applyInteropAsync(
+            @NonNull InteropConfigurator<? super CameraControl> configurator) {
+        configurator.configure(this);
+        mControlUpdateCallback.onCameraControlUpdateSessionConfig();
+        return Futures.immediateFuture(null);
     }
 
     /**

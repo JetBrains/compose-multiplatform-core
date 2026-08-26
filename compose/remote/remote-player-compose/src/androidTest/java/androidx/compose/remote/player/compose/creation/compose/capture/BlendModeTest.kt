@@ -17,13 +17,9 @@
 package androidx.compose.remote.player.compose.creation.compose.capture
 
 import android.content.Context
-import android.graphics.BlendMode
-import android.graphics.Paint
-import android.util.Log
-import androidx.compose.remote.core.WireBuffer
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.core.CoreDocument
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
@@ -32,6 +28,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.remote.creation.compose.layout.toAndroidBlendMode
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.padding
@@ -40,23 +37,56 @@ import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import java.io.File
-import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+
+private val BlendMode.Companion.entries: List<BlendMode>
+    get() =
+        listOf(
+            BlendMode.Clear,
+            BlendMode.Src,
+            BlendMode.Dst,
+            BlendMode.SrcOver,
+            BlendMode.DstOver,
+            BlendMode.SrcIn,
+            BlendMode.DstIn,
+            BlendMode.SrcOut,
+            BlendMode.DstOut,
+            BlendMode.SrcAtop,
+            BlendMode.DstAtop,
+            BlendMode.Xor,
+            BlendMode.Plus,
+            BlendMode.Modulate,
+            BlendMode.Screen,
+            BlendMode.Overlay,
+            BlendMode.Darken,
+            BlendMode.Lighten,
+            BlendMode.ColorDodge,
+            BlendMode.ColorBurn,
+            BlendMode.Hardlight,
+            BlendMode.Softlight,
+            BlendMode.Difference,
+            BlendMode.Exclusion,
+            BlendMode.Multiply,
+            BlendMode.Hue,
+            BlendMode.Saturation,
+            BlendMode.Color,
+            BlendMode.Luminosity,
+        )
 
 /**
  * A test for BlendMode in RemoteCanvas, see
@@ -69,51 +99,38 @@ class BlendModeTest {
 
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = TargetPlayer.View,
+            context = ApplicationProvider.getApplicationContext(),
         )
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val saveDocument = false
-
     @Test
     fun all_blend_modes() {
-        runBlocking {
-            remoteComposeTestRule.runScreenshotTest(
-                creationDisplayInfo =
-                    CreationDisplayInfo(2000, 2500, context.resources.displayMetrics.densityDpi)
-            ) {
-                AllBlendModes()
-            }
-
-            if (!saveDocument) return@runBlocking
-            val document = remoteComposeTestRule.captureDocument(context) { AllBlendModes() }
-            val wireBuffer: WireBuffer = document.buffer.buffer
-            val file =
-                File(
-                    "/sdcard/Android/data/androidx.compose.remote.player.compose.test/cache/documents",
-                    "test_blend_mode.rc",
-                )
-            file.parentFile?.mkdirs()
-            try {
-                file.writeBytes(wireBuffer.buffer.copyOf(wireBuffer.size))
-            } catch (e: Exception) {
-                Log.e("BlendModeTest", "Failed to save document: $file", e)
-            }
+        var document: CoreDocument? = null
+        remoteComposeTestRule.setContent(
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(2000f, 2500f)),
+            onCoreDocumentCreated = { document = it },
+        ) {
+            AllBlendModes()
         }
+
+        remoteComposeTestRule.verifyScreenshot()
     }
 
     @RemoteComposable
     @Composable
     private fun AllBlendModes() {
-        val blendModes = BlendMode.entries.toTypedArray()
+        val blendModes = BlendMode.entries
         val chunkedBlendModes = blendModes.toList().chunked(4)
         RemoteColumn {
             for (rowItems in chunkedBlendModes) {
                 RemoteRow {
                     for (blendMode in rowItems) {
-                        RemoteBlendModeVisual(blendMode = blendMode, name = blendMode.name)
+                        RemoteBlendModeVisual(
+                            blendMode = blendMode,
+                            name = blendMode.toAndroidBlendMode().name,
+                        )
                     }
                 }
             }
@@ -124,19 +141,17 @@ class BlendModeTest {
     @Composable
     private fun RemoteBlendModeVisual(blendMode: BlendMode, name: String) {
         RemoteBox(
-            RemoteModifier.size(100.rdp).border(1.rdp, Color.Black.rc).padding(8.dp),
-            horizontalAlignment = RemoteAlignment.Start,
-            verticalArrangement = RemoteArrangement.Top,
+            RemoteModifier.size(100.rdp).border(1.rdp, Color.Black.rc).padding(8.rdp),
+            contentAlignment = RemoteAlignment.TopStart,
         ) {
             RemoteCanvas(RemoteModifier.size(100.rdp)) {
-                val w = remoteWidth
-                val h = remoteHeight
+                val w = width
+                val h = height
 
-                val paint =
-                    RemotePaint().apply {
-                        style = Paint.Style.FILL
-                        this.color = Color.Magenta.toArgb()
-                    }
+                val paint = RemotePaint {
+                    style = PaintingStyle.Fill
+                    color = Color.Magenta.rc
+                }
 
                 // Draw dst
                 drawCircle(
@@ -146,7 +161,7 @@ class BlendModeTest {
                 )
 
                 // Draw src
-                paint.color = Color.Blue.toArgb()
+                paint.color = Color.Blue.rc
                 paint.blendMode = blendMode
                 drawRect(
                     paint = paint,
@@ -154,7 +169,7 @@ class BlendModeTest {
                     size = RemoteSize(w * 2f / 3f, h * 2f / 3f),
                 )
             }
-            RemoteText(name, fontSize = 12f.sp)
+            RemoteText(name.rs, fontSize = 12.rsp)
         }
     }
 }

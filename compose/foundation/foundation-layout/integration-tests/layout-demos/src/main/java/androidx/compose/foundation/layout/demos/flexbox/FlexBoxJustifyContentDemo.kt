@@ -20,7 +20,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexBox
 import androidx.compose.foundation.layout.FlexDirection
 import androidx.compose.foundation.layout.FlexJustifyContent
@@ -88,12 +87,11 @@ fun FlexBoxJustifyContentDemo() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowJustifyContentStartSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            justifyContent = FlexJustifyContent.Start
+            direction(FlexDirection.Row)
+            justifyContent(FlexJustifyContent.Start)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -112,12 +110,11 @@ private fun FlexBoxRowJustifyContentStartSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowJustifyContentCenterSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            justifyContent = FlexJustifyContent.Center
+            direction(FlexDirection.Row)
+            justifyContent(FlexJustifyContent.Center)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -136,12 +133,11 @@ private fun FlexBoxRowJustifyContentCenterSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowJustifyContentSpaceAroundSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            justifyContent = FlexJustifyContent.SpaceAround
+            direction(FlexDirection.Row)
+            justifyContent(FlexJustifyContent.SpaceAround)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -160,12 +156,11 @@ private fun FlexBoxRowJustifyContentSpaceAroundSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowJustifyContentSpaceBetweenSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            justifyContent = FlexJustifyContent.SpaceBetween
+            direction(FlexDirection.Row)
+            justifyContent(FlexJustifyContent.SpaceBetween)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -184,12 +179,11 @@ private fun FlexBoxRowJustifyContentSpaceBetweenSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowJustifyContentEndSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            justifyContent = FlexJustifyContent.End
+            direction(FlexDirection.Row)
+            justifyContent(FlexJustifyContent.End)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -208,12 +202,11 @@ private fun FlexBoxRowJustifyContentEndSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnJustifyContentStartSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            justifyContent = FlexJustifyContent.Start
+            direction(FlexDirection.Column)
+            justifyContent(FlexJustifyContent.Start)
         },
         modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -232,12 +225,11 @@ private fun FlexBoxColumnJustifyContentStartSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnJustifyContentCenterSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            justifyContent = FlexJustifyContent.Center
+            direction(FlexDirection.Column)
+            justifyContent(FlexJustifyContent.Center)
         },
         modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -256,12 +248,11 @@ private fun FlexBoxColumnJustifyContentCenterSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnJustifyContentSpaceAroundSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            justifyContent = FlexJustifyContent.SpaceAround
+            direction(FlexDirection.Column)
+            justifyContent(FlexJustifyContent.SpaceAround)
         },
         modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -280,12 +271,11 @@ private fun FlexBoxColumnJustifyContentSpaceAroundSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnJustifyContentSpaceBetweenSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            justifyContent = FlexJustifyContent.SpaceBetween
+            direction(FlexDirection.Column)
+            justifyContent(FlexJustifyContent.SpaceBetween)
         },
         modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -304,12 +294,11 @@ private fun FlexBoxColumnJustifyContentSpaceBetweenSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnJustifyContentEndSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            justifyContent = FlexJustifyContent.End
+            direction(FlexDirection.Column)
+            justifyContent(FlexJustifyContent.End)
         },
         modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Black),
     ) {

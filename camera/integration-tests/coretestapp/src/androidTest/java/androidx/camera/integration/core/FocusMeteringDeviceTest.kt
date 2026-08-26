@@ -18,6 +18,8 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE
+import android.hardware.camera2.CameraCharacteristics.CONTROL_AWB_LOCK_AVAILABLE
 import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AE
 import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AF
 import android.hardware.camera2.CameraCharacteristics.CONTROL_MAX_REGIONS_AWB
@@ -36,6 +38,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.LabTestRule.Companion.assumeLensFacingEnabledInLabTest
 import androidx.camera.testing.impl.LabTestRule.Companion.isLensFacingEnabledInLabTest
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
@@ -46,7 +49,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.hamcrest.CoreMatchers.equalTo
@@ -103,13 +109,49 @@ class FocusMeteringDeviceTest(
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var captureCallback: Camera2InteropUtil.CaptureCallback
 
+    private val isAfTriggerSupported by lazy {
+        val characteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
+        if (characteristics != null) {
+            characteristics.run {
+                val minFocusDistance = this[CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE]
+                if (minFocusDistance != null) {
+                    minFocusDistance > 0
+                } else {
+                    val availableAfModes =
+                        this[CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES] ?: return@run false
+
+                    availableAfModes.contains(CaptureRequest.CONTROL_AF_MODE_AUTO) ||
+                        availableAfModes.contains(CaptureRequest.CONTROL_AF_MODE_MACRO) ||
+                        availableAfModes.contains(
+                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+                        ) ||
+                        availableAfModes.contains(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                }
+            } && hasMeteringRegion(cameraSelector, FLAG_AF)
+        } else {
+            false
+        }
+    }
+
+    private val isAeLockSupported by lazy {
+        val characteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
+        (characteristics?.get(CONTROL_AE_LOCK_AVAILABLE) ?: false) &&
+            hasMeteringRegion(cameraSelector, FLAG_AE)
+    }
+
+    private val isAwbLockSupported by lazy {
+        val characteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
+        (characteristics?.get(CONTROL_AWB_LOCK_AVAILABLE) ?: false) &&
+            hasMeteringRegion(cameraSelector, FLAG_AWB)
+    }
+
     @Before
     fun setUp(): Unit = runBlocking {
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
 
         ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
-        captureCallback = Camera2InteropUtil.CaptureCallback()
+        captureCallback = Camera2InteropUtil.CaptureCallback(_numOfCaptures = 100)
 
         withContext(Dispatchers.Main) {
             val fakeLifecycleOwner = FakeLifecycleOwner()
@@ -291,6 +333,37 @@ class FocusMeteringDeviceTest(
         assertFutureCompletes(future)
     }
 
+    @Test
+    fun futureCompletes_whenAeAndAwbLocked() {
+        assumeThat(
+            "No AE/AWB region available on this device!",
+            hasMeteringRegion(cameraSelector, FLAG_AE or FLAG_AWB),
+            equalTo(true),
+        )
+        val action =
+            FocusMeteringAction.Builder(validMeteringPoint)
+                .setLockingMode(FLAG_AE or FLAG_AWB)
+                .build()
+
+        val future = camera.cameraControl.startFocusAndMetering(action)
+
+        assertFutureCompletes(future)
+    }
+
+    @Test
+    fun futureCompletes_whenAfLockDisabled() {
+        assumeThat(
+            "No AF/AE/AWB region available on this device!",
+            hasMeteringRegion(cameraSelector),
+            equalTo(true),
+        )
+        val action = FocusMeteringAction.Builder(validMeteringPoint).setLockingMode(0).build()
+
+        val future = camera.cameraControl.startFocusAndMetering(action)
+
+        assertFutureCompletes(future)
+    }
+
     // TODO: set the lab lens facing flag to allow the test to be run correctly.
     /**
      * The following tests check if a device can complete 3A convergence, by setting an auto
@@ -301,7 +374,7 @@ class FocusMeteringDeviceTest(
      * [FocusMeteringAction.mAutoCancelDurationInMillis] in these tests.
      */
     @Test
-    fun resultUpdated_whenFocusMeteringStarted() = runBlocking {
+    fun captureRequestUpdated_whenFocusMeteringStarted() = runBlocking {
         Assume.assumeTrue(
             "Not CameraX lab environment," +
                 " or lensFacing:${cameraSelector.lensFacing!!} camera is not enabled",
@@ -322,7 +395,7 @@ class FocusMeteringDeviceTest(
             cameraCharacteristics.getMaxRegionCount(CONTROL_MAX_REGIONS_AE).coerceAtMost(1)
         val expectedAwbCount =
             cameraCharacteristics.getMaxRegionCount(CONTROL_MAX_REGIONS_AWB).coerceAtMost(1)
-        captureCallback.verifyFor(numOfCaptures = 60) { captureRequests, _ ->
+        captureCallback.verifyFor(numOfCaptures = 100) { captureRequests, _ ->
             val captureRequest = captureRequests.last()
             val afRegions = captureRequest[CaptureRequest.CONTROL_AF_REGIONS] ?: emptyArray()
             val aeRegions = captureRequest[CaptureRequest.CONTROL_AE_REGIONS] ?: emptyArray()
@@ -334,7 +407,7 @@ class FocusMeteringDeviceTest(
     }
 
     @Test
-    fun resultUpdated_whenFocusMeteringCancelled() = runBlocking {
+    fun captureRequestUpdated_whenFocusMeteringCancelled() = runBlocking {
         Assume.assumeTrue(
             "Not CameraX lab environment," +
                 " or lensFacing:${cameraSelector.lensFacing!!} camera is not enabled",
@@ -347,7 +420,7 @@ class FocusMeteringDeviceTest(
 
         camera.cameraControl.startFocusAndMetering(action)
         camera.cameraControl.cancelFocusAndMetering()
-        captureCallback.verifyFor(numOfCaptures = 60) { captureRequests, _ ->
+        captureCallback.verifyFor(numOfCaptures = 100) { captureRequests, _ ->
             val captureRequest = captureRequests.last()
             val afRegions = captureRequest[CaptureRequest.CONTROL_AF_REGIONS] ?: emptyArray()
             val aeRegions = captureRequest[CaptureRequest.CONTROL_AE_REGIONS] ?: emptyArray()
@@ -429,7 +502,7 @@ class FocusMeteringDeviceTest(
     }
 
     @Test
-    fun resultUpdated_whenExposureCompensationSet() = runBlocking {
+    fun captureRequestUpdated_whenExposureCompensationSet() = runBlocking {
         val exposureState = cameraProvider.getCameraInfo(cameraSelector).exposureState
         Assume.assumeTrue(exposureState.isExposureCompensationSupported)
         val upper = exposureState.exposureCompensationRange.upper
@@ -442,6 +515,140 @@ class FocusMeteringDeviceTest(
         captureCallback.verifyLastCaptureRequest(
             mapOf(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION to upper)
         )
+    }
+
+    @Test
+    fun aeAwbLocksAndAfTriggerInCaptureRequest_whenFocusMeteringWithAllLocks() = runBlocking {
+        assumeLensFacingEnabledInLabTest(cameraSelector) // 3A convergence required before 3A locks
+        assumeThat(
+            "No AE/AWB region available on this device!",
+            hasMeteringRegion(cameraSelector, FLAG_AE or FLAG_AF or FLAG_AWB),
+            equalTo(true),
+        )
+        val action =
+            FocusMeteringAction.Builder(validMeteringPoint)
+                .setLockingMode(FLAG_AE or FLAG_AF or FLAG_AWB)
+                .build()
+
+        camera.cameraControl.startFocusAndMetering(action)
+
+        captureCallback.verifyFor(
+            timeout = 5.seconds.inWholeMilliseconds,
+            numOfCaptures = Int.MAX_VALUE,
+        ) { captureRequests, _ ->
+            captureRequests.any {
+                val isAfTriggerValid =
+                    if (isAfTriggerSupported) {
+                        it[CaptureRequest.CONTROL_AF_TRIGGER] ==
+                            CaptureRequest.CONTROL_AF_TRIGGER_START
+                    } else {
+                        it[CaptureRequest.CONTROL_AF_TRIGGER] !=
+                            CaptureRequest.CONTROL_AF_TRIGGER_START
+                    }
+
+                isAfTriggerValid &&
+                    it[CaptureRequest.CONTROL_AE_LOCK] == isAeLockSupported &&
+                    it[CaptureRequest.CONTROL_AWB_LOCK] == isAwbLockSupported
+            }
+        }
+    }
+
+    @Test
+    fun aeAwbLocksClearedInCaptureRequest_whenFocusMeteringCancelled() = runBlocking {
+        assumeLensFacingEnabledInLabTest(cameraSelector) // 3A convergence required before 3A locks
+        assumeThat(
+            "No AE/AWB region available on this device!",
+            hasMeteringRegion(cameraSelector, FLAG_AE or FLAG_AWB),
+            equalTo(true),
+        )
+        val action =
+            FocusMeteringAction.Builder(validMeteringPoint)
+                .setLockingMode(FLAG_AE or FLAG_AWB)
+                .build()
+        camera.cameraControl.startFocusAndMetering(action)[10, TimeUnit.SECONDS]
+
+        camera.cameraControl.cancelFocusAndMetering()
+
+        captureCallback.verifyFor(timeout = 1_000, numOfCaptures = Int.MAX_VALUE) {
+            captureRequests,
+            _ ->
+            captureRequests.any {
+                it[CaptureRequest.CONTROL_AE_LOCK] == false &&
+                    it[CaptureRequest.CONTROL_AWB_LOCK] == false
+            }
+        }
+    }
+
+    @Test
+    fun noAeLockInCaptureRequest_whenAeLockRequestedWithoutAePoint() = runBlocking {
+        assumeLensFacingEnabledInLabTest(cameraSelector) // 3A convergence required before 3A locks
+        val action =
+            FocusMeteringAction.Builder(validMeteringPoint, FLAG_AF)
+                .setLockingMode(FLAG_AF or FLAG_AE)
+                .build()
+
+        camera.cameraControl.startFocusAndMetering(action)
+
+        captureCallback.verifyAlwaysSuccess(timeout = 1_000, numOfCaptures = Int.MAX_VALUE) {
+            captureRequests,
+            _ ->
+            captureRequests.all { it[CaptureRequest.CONTROL_AE_LOCK] != true }
+        }
+    }
+
+    @Test
+    fun aeAwbLocksWithoutAfTriggerInCaptureRequest_whenFocusingWithOnlyAeAwbLocks() = runBlocking {
+        assumeLensFacingEnabledInLabTest(cameraSelector) // 3A convergence required before 3A locks
+        assumeThat(
+            "No AE/AWB region available on this device!",
+            hasMeteringRegion(cameraSelector, FLAG_AE or FLAG_AWB),
+            equalTo(true),
+        )
+        val action =
+            FocusMeteringAction.Builder(validMeteringPoint)
+                .setLockingMode(FLAG_AE or FLAG_AWB)
+                .build()
+
+        camera.cameraControl.startFocusAndMetering(action)
+
+        val job1 = launch {
+            captureCallback.verifyFor(timeout = 1_000, numOfCaptures = Int.MAX_VALUE) {
+                captureRequests,
+                _ ->
+                captureRequests.any {
+                    it[CaptureRequest.CONTROL_AE_LOCK] == isAeLockSupported &&
+                        it[CaptureRequest.CONTROL_AWB_LOCK] == isAwbLockSupported
+                }
+            }
+        }
+
+        val job2 = launch {
+            captureCallback.verifyAlwaysSuccess(timeout = 1_000, numOfCaptures = Int.MAX_VALUE) {
+                captureRequests,
+                _ ->
+                captureRequests.all {
+                    it[CaptureRequest.CONTROL_AF_TRIGGER] != CaptureRequest.CONTROL_AF_TRIGGER_START
+                }
+            }
+        }
+
+        listOf(job1, job2).joinAll()
+    }
+
+    @Test
+    fun noAfTriggerInCaptureRequest_whenAfLockDisabled() = runBlocking {
+        assumeLensFacingEnabledInLabTest(cameraSelector) // 3A convergence required before 3A locks
+        val action = FocusMeteringAction.Builder(validMeteringPoint).setLockingMode(0).build()
+
+        camera.cameraControl.startFocusAndMetering(action)
+
+        captureCallback.verifyAlwaysSuccess(timeout = 1_000, numOfCaptures = Int.MAX_VALUE) {
+            captureRequests,
+            _ ->
+            captureRequests.all {
+                it[CaptureRequest.CONTROL_AF_TRIGGER] != CaptureRequest.CONTROL_AF_TRIGGER_START
+            }
+        }
     }
 
     private fun hasMeteringRegion(

@@ -44,8 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
@@ -56,6 +57,7 @@ import androidx.xr.compose.subspace.layout.height as spatialHeight
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.width as spatialWidth
 import androidx.xr.compose.testapp.ui.components.TestDialog
+import androidx.xr.compose.unit.DpVolumeOffset
 
 class SimpleSpatialFragment : Fragment() {
     override fun onCreateView(
@@ -64,7 +66,7 @@ class SimpleSpatialFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 Subspace {
                     val xOffset = arguments?.getFloat("x_offset") ?: 0f
@@ -81,8 +83,6 @@ class SimpleSpatialFragment : Fragment() {
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
-                                        Text("Strategy 3 & 4 Tests")
-
                                         val context = LocalContext.current
                                         val lifecycleOwner = LocalLifecycleOwner.current
                                         Text(
@@ -108,6 +108,16 @@ class SimpleSpatialFragment : Fragment() {
                                             }
                                         ) {
                                             Text("Go to Video player fragment")
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                (requireActivity()
+                                                        as? FragmentCompatibilityActivity)
+                                                    ?.showMainPanelFragment()
+                                            }
+                                        ) {
+                                            Text("Go to MainPanel fragment")
                                         }
 
                                         TestDialog {
@@ -142,7 +152,14 @@ class SimpleSpatialFragment : Fragment() {
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
                                         Text("Orbiter Host")
-                                        Orbiter(position = ContentEdge.Top, offset = 10.dp) {
+
+                                        Orbiter(
+                                            position =
+                                                OrbiterPosition.TopCenter(
+                                                    EdgeAlignment.Outside,
+                                                    offset = DpVolumeOffset(y = 10.dp),
+                                                )
+                                        ) {
                                             Surface(color = Color.Gray) {
                                                 Text(
                                                     "Orbiter Content",

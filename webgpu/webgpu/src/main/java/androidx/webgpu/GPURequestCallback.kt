@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.webgpu
 
 import kotlin.coroutines.resume
@@ -107,9 +106,9 @@ internal class GPURequestCallbackVoidRunnable(
 
 /** Handles cases where the "Success" payload is actually an Error Code integer. */
 internal class GPURequestCallbackErrorTypeRunnable(
-    callback: GPURequestCallback<@ErrorType Int>,
+    callback: GPURequestCallback<@ErrorType.Type Int>,
     status: Int,
-    private val type: @ErrorType Int,
+    private val type: @ErrorType.Type Int,
     message: String,
 ) : BaseGPURequestRunnable<Int>(callback, status, message) {
 

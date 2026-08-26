@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -30,16 +27,15 @@ import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 /**
  * Layout component to implement an expressive group of buttons in a row.
  *
- * Example of 3 buttons, the middle one bigger [RemoteButtonGroupThreeButtonSample]:
+ * Example of 3 buttons, the middle one bigger:
  *
  * @sample androidx.wear.compose.remote.material3.samples.RemoteButtonGroupThreeButtonSample
  * @param modifier Modifier to be applied to the button group
+ * @param spacing the amount of spacing between buttons
  * @param contentPadding The spacing values to apply internally between the container and the
  *   content
  * @param verticalAlignment the vertical alignment of the button group's children.
@@ -48,30 +44,40 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 @RemoteComposable
-@Suppress("RestrictedApiAndroidX") // RemoteDp.value
 public fun RemoteButtonGroup(
     modifier: RemoteModifier = RemoteModifier,
+    spacing: RemoteDp = RemoteButtonGroupDefaults.Spacing,
     contentPadding: RemotePaddingValues = RemoteButtonGroupDefaults.fullWidthPaddings(),
     verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.CenterVertically,
-    horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.CenterHorizontally,
+    content: @RemoteComposable @Composable (RemoteRowScope.() -> Unit),
+) {
+    RemoteButtonGroupImpl(modifier, spacing, contentPadding, verticalAlignment, content)
+}
+
+@Composable
+@RemoteComposable
+private fun RemoteButtonGroupImpl(
+    modifier: RemoteModifier = RemoteModifier,
+    spacing: RemoteDp = RemoteButtonGroupDefaults.Spacing,
+    contentPadding: RemotePaddingValues = RemoteButtonGroupDefaults.fullWidthPaddings(),
+    verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.CenterVertically,
     content: @RemoteComposable @Composable (RemoteRowScope.() -> Unit),
 ) {
     RemoteRow(
         modifier.padding(contentPadding),
         content = content,
         verticalAlignment = verticalAlignment,
-        horizontalArrangement = horizontalArrangement,
+        horizontalArrangement =
+            RemoteArrangement.spacedBy(spacing, RemoteAlignment.CenterHorizontally),
     )
 }
 
 /** Contains the default values used by [RemoteButtonGroup] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteButtonGroupDefaults {
     /**
      * Return the recommended padding to use as the contentPadding of a [RemoteButtonGroup], when it
      * takes the full width of the screen.
      */
-    @Composable
     public fun fullWidthPaddings(): RemotePaddingValues {
         // TODO(b/466078229): Use expression of the percentage of screen width as padding,
         // currently it's unable to use that since it's too long.
@@ -81,8 +87,8 @@ public object RemoteButtonGroupDefaults {
     /** Spacing between buttons. */
     public val Spacing: RemoteDp = 4.rdp
 
-    internal val minimumInteractiveComponentSize = 48.dp
+    internal val minimumInteractiveComponentSize = 48.rdp
 
     /** Default for the minimum width of buttons in a RemoteButtonGroup */
-    public val MinWidth: Dp = minimumInteractiveComponentSize
+    public val MinWidth: RemoteDp = minimumInteractiveComponentSize
 }

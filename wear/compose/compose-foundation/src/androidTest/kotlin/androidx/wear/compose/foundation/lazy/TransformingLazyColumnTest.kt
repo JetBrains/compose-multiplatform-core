@@ -18,7 +18,9 @@ package androidx.wear.compose.foundation.lazy
 
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -33,13 +35,18 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.testutils.assertPixels
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LocalPinnableContainer
+import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
 import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
@@ -47,6 +54,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -61,16 +70,23 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.TEST_TAG
+import androidx.wear.compose.foundation.WearComposeFoundationFlags
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalWearFoundationApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformingLazyColumnTest {
@@ -78,7 +94,7 @@ class TransformingLazyColumnTest {
     private val lastItemTag = "lastItemTag"
     private val lazyListTag = "LazyListTag"
 
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun firstItemIsDisplayed() {
@@ -1201,6 +1217,142 @@ class TransformingLazyColumnTest {
         assertThat(state.anchorItemScrollOffset).isEqualTo(snapOffsetPx)
     }
 
+    @Test
+    fun scrollItemToEdge_ableToFlingOverEdge() {
+        lateinit var state: TransformingLazyColumnState
+
+        val itemHeight = 50.dp
+        val itemHeightPx = with(rule.density) { itemHeight.toPx() }
+        val itemIndexToCheck = 2
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                state = state,
+                verticalArrangement = Arrangement.spacedBy(space = 0.dp, alignment = Alignment.Top),
+            ) {
+                items(100) {
+                    Box(
+                        Modifier.fillMaxWidth()
+                            .height(itemHeight)
+                            .testTag(if (it == itemIndexToCheck) TEST_TAG else "")
+                    )
+                }
+            }
+        }
+
+        // Distance from top of test item to top edge of TLC.
+        val topDistance = itemIndexToCheck * itemHeightPx
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            // swipeUp's default startY value is bottom,
+            // so scroll distance  = itemHeight + topDistance.
+            // After scrolling, the item's bottom edge must reach at least the top of the TLC.
+            swipeUp(endY = -topDistance)
+        }
+        rule.waitForIdle()
+
+        // With fling, we expect that current item will be scrolled more and disappear. So, first
+        // visible item should be updated to one of next items.
+        assertTrue(state.layoutInfo.visibleItems.first().index > itemIndexToCheck)
+    }
+
+    @Test
+    fun topItemBiggerThanThreshold_itemIsClickable() {
+        assertEdgeClick(isTopEdge = true, isBiggerThanThreshold = true)
+    }
+
+    @Test
+    fun topItemSmallerThanThreshold_itemIsNotClickable() {
+        assertEdgeClick(isTopEdge = true, isBiggerThanThreshold = false)
+    }
+
+    @Test
+    fun bottomItemBiggerThanThreshold_itemIsClickable() {
+        assertEdgeClick(isTopEdge = false, isBiggerThanThreshold = true)
+    }
+
+    @Test
+    fun bottomItemSmallerThanThreshold_itemIsNotClickable() {
+        assertEdgeClick(isTopEdge = false, isBiggerThanThreshold = false)
+    }
+
+    private fun assertEdgeClick(
+        isTopEdge: Boolean,
+        isBiggerThanThreshold: Boolean,
+        visibleThreshold: Dp = 20.dp,
+    ) {
+        lateinit var state: TransformingLazyColumnState
+        lateinit var coroutineScope: CoroutineScope
+        val itemHeightDp = 50
+        var clickedIndex = -1
+        val itemHeightPx = with(rule.density) { itemHeightDp.dp.toPx().toInt() }
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            coroutineScope = rememberCoroutineScope()
+            TransformingLazyColumn(state = state, modifier = Modifier.testTag(lazyListTag)) {
+                items(100) { index ->
+                    Box(
+                        Modifier.height(itemHeightDp.dp)
+                            .clickable(onClick = { clickedIndex = index })
+                    )
+                }
+            }
+        }
+        val expectedClickedIndex =
+            if (isBiggerThanThreshold) {
+                if (isTopEdge) 0 else 99
+            } else {
+                -1
+            }
+        val scrollDistance =
+            with(rule.density) {
+                if (isBiggerThanThreshold) {
+                    (itemHeightDp.dp - visibleThreshold - 1.dp).toPx()
+                } else {
+                    (itemHeightDp.dp - visibleThreshold + 1.dp).toPx()
+                }
+            }
+
+        rule.runOnIdle {
+            coroutineScope.launch {
+                if (isTopEdge) {
+                    // Scroll up until top item is partly visible
+                    state.scrollBy(scrollDistance)
+                } else {
+                    // Scroll up until last item is fully visible in the bottom
+                    state.scrollToItem(
+                        99,
+                        -state.layoutInfo.viewportSize.height / 2 + itemHeightPx / 2,
+                    )
+                    // Scroll down until last item is partly visible
+                    state.scrollBy(-scrollDistance)
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        val clickOffset =
+            with(rule.density) {
+                Offset(
+                    state.layoutInfo.viewportSize.width / 2f,
+                    if (isTopEdge) {
+                        visibleThreshold.toPx() / 2
+                    } else {
+                        state.layoutInfo.viewportSize.height - visibleThreshold.toPx() / 2
+                    },
+                )
+            }
+
+        rule.onNodeWithTag(lazyListTag).performTouchInput {
+            down(clickOffset)
+            move()
+            up()
+        }
+        assertEquals(expectedClickedIndex, clickedIndex)
+    }
+
     @Composable
     fun TransformingLazyColumnWithSnap(state: TransformingLazyColumnState) {
         val itemHeight = 50.dp
@@ -1211,6 +1363,70 @@ class TransformingLazyColumnTest {
             flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(state),
         ) {
             items(100) { Box(Modifier.fillMaxWidth().height(itemHeight)) }
+        }
+    }
+
+    @Test
+    fun minimumVerticalContentPadding_pinnedToStart_appliedToTopPadding() {
+        val padding = 30.dp
+        val state = TransformingLazyColumnState()
+
+        rule.setContent {
+            TransformingLazyColumn(state = state, modifier = Modifier.size(200.dp)) {
+                item {
+                    Box(
+                        Modifier.size(50.dp)
+                            .minimumVerticalContentPadding(top = padding, bottom = 0.dp)
+                            .testTag(firstItemTag)
+                    )
+                }
+                items(10) { Box(Modifier.size(50.dp)) }
+            }
+        }
+
+        rule.onNodeWithTag(firstItemTag).assertTopPositionInRootIsEqualTo(padding)
+    }
+
+    @Test
+    fun minimumVerticalContentPadding_pinnedToEnd_appliedToBottomPadding() {
+        val padding = 30.dp
+        val containerHeight = 200.dp
+        val itemCount = 10
+        val itemSize = 50.dp
+        lateinit var state: TransformingLazyColumnState
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(state = state, modifier = Modifier.size(containerHeight)) {
+                items(itemCount) { Box(Modifier.size(itemSize)) }
+                item {
+                    Box(
+                        Modifier.size(itemSize)
+                            .minimumVerticalContentPadding(top = 0.dp, bottom = padding)
+                            .testTag(lastItemTag)
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(itemCount) } }
+
+        rule
+            .onNodeWithTag(lastItemTag)
+            .assertTopPositionInRootIsEqualTo(
+                containerHeight - padding - itemSize,
+                tolerance = 1.dp,
+            )
+    }
+
+    @Test
+    fun bigPaddingsDontCrash() {
+        rule.setContent {
+            TransformingLazyColumn(
+                modifier = Modifier.size(300.dp),
+                contentPadding = PaddingValues(400.dp),
+            ) {
+                items(10) { Box(Modifier.size(50.dp)) }
+            }
         }
     }
 
@@ -1267,6 +1483,191 @@ class TransformingLazyColumnTest {
         rule.waitForIdle()
 
         assertThat(state.anchorItemIndex).isEqualTo(scrollTarget)
+    }
+
+    @Test
+    fun pinnedItemIsComposedAndPlacedWhenScrolledOut() {
+        assumeTrue(WearComposeFoundationFlags.isTransformingLazyColumnPinnableContainerEnabled)
+        val itemSizeDp = with(rule.density) { 10.toDp() }
+        lateinit var state: TransformingLazyColumnState
+        var pinnableContainer: PinnableContainer? = null
+        val composed = mutableSetOf<Int>()
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                Modifier.size(itemSizeDp * 2).testTag(lazyListTag),
+                state = state,
+                verticalArrangement = Arrangement.Top,
+            ) {
+                items(100, key = { it }) { index ->
+                    if (index == 1) {
+                        pinnableContainer = LocalPinnableContainer.current
+                    }
+                    Box(Modifier.size(itemSizeDp).testTag("$index"))
+                    DisposableEffect(index) {
+                        composed.add(index)
+                        onDispose { composed.remove(index) }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { requireNotNull(pinnableContainer).pin() }
+
+        rule.runOnIdle {
+            assertThat(composed).contains(1)
+            runBlocking { state.scrollToItem(10) }
+        }
+
+        rule.waitUntil {
+            // not visible items were disposed
+            !composed.contains(0)
+        }
+
+        rule.runOnIdle {
+            // item 1 is still pinned
+            assertThat(composed).contains(1)
+        }
+
+        rule.onNodeWithTag("1").assertExists().assertIsNotDisplayed().assertIsPlaced()
+    }
+
+    @Test
+    fun pinnedItemIsDisposedWhenReleased() {
+        assumeTrue(WearComposeFoundationFlags.isTransformingLazyColumnPinnableContainerEnabled)
+        val itemSizeDp = with(rule.density) { 10.toDp() }
+        lateinit var state: TransformingLazyColumnState
+        var pinnableContainer: PinnableContainer? = null
+        val composed = mutableSetOf<Int>()
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                Modifier.size(itemSizeDp * 2).testTag(lazyListTag),
+                state = state,
+                verticalArrangement = Arrangement.Top,
+            ) {
+                items(100, key = { it }) { index ->
+                    if (index == 1) {
+                        pinnableContainer = LocalPinnableContainer.current
+                    }
+                    Box(Modifier.size(itemSizeDp).testTag("$index"))
+                    DisposableEffect(index) {
+                        composed.add(index)
+                        onDispose { composed.remove(index) }
+                    }
+                }
+            }
+        }
+
+        lateinit var handle: PinnableContainer.PinnedHandle
+        rule.runOnIdle { handle = requireNotNull(pinnableContainer).pin() }
+
+        rule.runOnIdle {
+            assertThat(composed).contains(1)
+            runBlocking { state.scrollToItem(10) }
+        }
+
+        rule.runOnIdle { assertThat(composed).contains(1) }
+
+        rule.runOnIdle { handle.release() }
+
+        rule.waitUntil { !composed.contains(1) }
+    }
+
+    @Test
+    fun pinnedItemIsComposedAndPlacedWhenScrolledOut_extraItemsAfter() {
+        assumeTrue(WearComposeFoundationFlags.isTransformingLazyColumnPinnableContainerEnabled)
+        val itemSizeDp = with(rule.density) { 10.toDp() }
+        lateinit var state: TransformingLazyColumnState
+        var pinnableContainer: PinnableContainer? = null
+        val composed = mutableSetOf<Int>()
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                Modifier.size(itemSizeDp * 2).testTag(lazyListTag),
+                state = state,
+                verticalArrangement = Arrangement.Top,
+            ) {
+                items(100, key = { it }) { index ->
+                    if (index == 11) {
+                        pinnableContainer = LocalPinnableContainer.current
+                    }
+                    Box(Modifier.size(itemSizeDp).testTag("$index"))
+                    DisposableEffect(index) {
+                        composed.add(index)
+                        onDispose { composed.remove(index) }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(10) } }
+
+        rule.runOnIdle { assertThat(composed).contains(11) }
+
+        rule.runOnIdle { requireNotNull(pinnableContainer).pin() }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(0) } }
+
+        rule.waitUntil { !composed.contains(10) }
+
+        rule.runOnIdle { assertThat(composed).contains(11) }
+
+        rule.onNodeWithTag("11").assertExists().assertIsNotDisplayed().assertIsPlaced()
+    }
+
+    @Test
+    fun pinnedMultipleItemsAreComposedAndPlaced_mixed() {
+        assumeTrue(WearComposeFoundationFlags.isTransformingLazyColumnPinnableContainerEnabled)
+        val itemSizeDp = with(rule.density) { 10.toDp() }
+        lateinit var state: TransformingLazyColumnState
+        var pinnableContainer1: PinnableContainer? = null
+        var pinnableContainer11: PinnableContainer? = null
+        val composed = mutableSetOf<Int>()
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            TransformingLazyColumn(
+                Modifier.size(itemSizeDp * 2).testTag(lazyListTag),
+                state = state,
+                verticalArrangement = Arrangement.Top,
+            ) {
+                items(100, key = { it }) { index ->
+                    if (index == 1) {
+                        pinnableContainer1 = LocalPinnableContainer.current
+                    }
+                    if (index == 11) {
+                        pinnableContainer11 = LocalPinnableContainer.current
+                    }
+                    Box(Modifier.size(itemSizeDp).testTag("$index"))
+                    DisposableEffect(index) {
+                        composed.add(index)
+                        onDispose { composed.remove(index) }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { requireNotNull(pinnableContainer1).pin() }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(10) } }
+
+        rule.runOnIdle { requireNotNull(pinnableContainer11).pin() }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(5) } }
+
+        rule.waitUntil { !composed.contains(0) && !composed.contains(10) }
+
+        rule.runOnIdle {
+            assertThat(composed).contains(1)
+            assertThat(composed).contains(11)
+        }
+
+        rule.onNodeWithTag("1").assertExists().assertIsNotDisplayed().assertIsPlaced()
+        rule.onNodeWithTag("11").assertExists().assertIsNotDisplayed().assertIsPlaced()
     }
 }
 

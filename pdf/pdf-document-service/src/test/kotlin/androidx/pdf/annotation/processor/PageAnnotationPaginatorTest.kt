@@ -18,9 +18,9 @@ package androidx.pdf.annotation.processor
 
 import android.os.Build
 import androidx.annotation.RequiresExtension
-import androidx.pdf.annotation.KeyedPdfAnnotation
 import androidx.pdf.annotation.PageAnnotationsProvider
 import androidx.pdf.annotation.createKeyedPdfAnnotationList
+import androidx.pdf.annotation.models.KeyedPdfAnnotation
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +64,7 @@ class PageAnnotationPaginatorTest {
 
     @Test
     fun test_getPageAnnotations_multipleBatches_returnsCorrectTotalBatchCount() {
-        val annotationDataList = createKeyedPdfAnnotationList(numAnnots = 2, pathLength = 10000)
+        val annotationDataList = createKeyedPdfAnnotationList(numAnnots = 2, pathLength = 5000)
         val annotationsProvider =
             object : PageAnnotationsProvider {
                 override fun getPageAnnotations(pageNum: Int): List<KeyedPdfAnnotation> =

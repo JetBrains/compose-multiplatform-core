@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -36,8 +35,15 @@ androidXMultiplatform {
         compileSdk { version = release(35) }
         namespace = "androidx.lifecycle.viewmodel.compose"
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -47,9 +53,10 @@ androidXMultiplatform {
             api(project(":lifecycle:lifecycle-viewmodel"))
             api(project(":lifecycle:lifecycle-viewmodel-savedstate"))
             api("androidx.annotation:annotation:1.9.1")
-            api("androidx.compose.runtime:runtime:1.9.0")
-            api("androidx.compose.runtime:runtime-saveable:1.9.0")
+            api("androidx.compose.runtime:runtime:1.11.0")
+            api("androidx.compose.runtime:runtime-saveable:1.11.0")
             api(libs.kotlinSerializationCore)
+            implementation(project(":lifecycle:lifecycle-runtime-compose"))
         }
 
         commonTest.dependencies {
@@ -58,7 +65,9 @@ androidXMultiplatform {
         }
 
         androidMain.dependencies {
-            api("androidx.compose.ui:ui:1.9.0")
+            implementation("androidx.compose.ui:ui:1.11.0") {
+                because("Ensure we are using the Compose-UI 1.11 or above")
+            }
             // Converting `lifecycle-viewmodel-compose` to KMP and including a transitive
             // dependency on `lifecycle-livedata-core` triggered a Gradle bug. Adding the
             // `livedata` dependency directly works around the issue.
@@ -67,6 +76,8 @@ androidXMultiplatform {
         }
 
         androidDeviceTest.dependencies {
+            implementation("androidx.compose.foundation:foundation:1.11.0")
+            implementation("androidx.compose.ui:ui:1.11.0")
             implementation(project(":compose:ui:ui-test-junit4"))
             implementation(project(":compose:test-utils"))
             implementation(libs.testRules)
@@ -83,10 +94,15 @@ androidXMultiplatform {
             implementation(project(":lifecycle:lifecycle-common-java8"))
             implementation("androidx.activity:activity-compose:1.10.1")
         }
+    }
+}
 
-        commonStubsMain.dependsOn(commonMain)
-        jvmStubsMain.dependsOn(commonStubsMain)
-        linuxx64StubsMain.dependsOn(commonStubsMain)
+dependencies.constraints {
+    // Prevents symbols duplication with old versions of JetBrains' fork.
+    // Starting with Compose Multiplatform 1.11.0, this module is published as empty
+    // artifact with dependency to this androidx module.
+    commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0") {
+        because "prevents symbols duplication"
     }
 }
 

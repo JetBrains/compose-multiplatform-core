@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package androidx.xr.runtime.internal
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.interfaces.Service
 
 /** Factory for creating instances of a RenderingRuntime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -25,9 +26,9 @@ public interface RenderingRuntimeFactory : Service {
     /**
      * Creates a RenderingRuntime.
      *
-     * @param runtimes The runtimes for the session which must include an instance that implements
-     *   both SceneRuntime and RenderingEntityFactory.
-     * @param activity The host [Activity] for the session.
+     * @param runtimes the runtimes for the session which must include an instance that implements
+     *   both SceneRuntime and RenderingEntityFactory
+     * @param activity the host [Activity] for the session
      */
     public fun create(runtimes: List<JxrRuntime>, activity: Activity): JxrRuntime
 }

@@ -15,7 +15,6 @@
  */
 package androidx.compose.material3
 
-import android.os.Build.VERSION.SDK_INT
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.VectorConverter
@@ -27,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,10 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,16 +56,9 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class FloatingActionButtonScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
-
-    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
-    @After
-    fun resetTouchMode() =
-        with(InstrumentationRegistry.getInstrumentation()) {
-            if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
-        }
 
     @Test
     fun icon_primary_light_color_scheme() {
@@ -239,7 +229,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_size")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun mediumFab() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -292,7 +281,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_extended_text_and_icon")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun smallExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -302,7 +290,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_extended_text")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun smallExtendedFabTextAndIcon() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -316,7 +303,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_small_extended_text_and_icon")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun mediumExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -326,7 +312,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_medium_extended_text")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun mediumExtendedFabTextAndIcon() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -346,7 +331,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_medium_extended_text_and_icon")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun largeExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -356,7 +340,6 @@ class FloatingActionButtonScreenshotTest {
         assertClickableAgainstGolden("fab_large_extended_text")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun largeExtendedFabTextAndIcon() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -442,7 +425,39 @@ class FloatingActionButtonScreenshotTest {
         assertRootAgainstGolden("fab_focus")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun fab_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
+                    FloatingActionButton(
+                        onClick = {},
+                        modifier = Modifier.focusRequester(focusRequester),
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule.waitForIdle()
+
+        assertRootAgainstGolden("fab_focused_insetFocusRings")
+    }
+
     @Test
     fun extended_fab_half_way_animation() {
         rule.mainClock.autoAdvance = false

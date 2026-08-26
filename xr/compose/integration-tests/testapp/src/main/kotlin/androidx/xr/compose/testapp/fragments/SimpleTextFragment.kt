@@ -45,14 +45,14 @@ class SimpleTextFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 Subspace {
                     val xOffset = arguments?.getFloat("x_offset") ?: 0f
                     val displayText = arguments?.getString("text") ?: "Simple Text Fragment"
                     SpatialPanel(
                         modifier =
-                            SubspaceModifier.width(300.dp).height(200.dp).offset(x = xOffset.dp)
+                            SubspaceModifier.width(400.dp).height(200.dp).offset(x = xOffset.dp)
                     ) {
                         Surface(color = Color.LightGray, modifier = Modifier.fillMaxSize()) {
                             Column(modifier = Modifier.padding(16.dp)) { Text(displayText) }

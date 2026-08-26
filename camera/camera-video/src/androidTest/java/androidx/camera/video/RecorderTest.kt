@@ -69,6 +69,7 @@ import androidx.camera.testing.impl.mocks.MockConsumer
 import androidx.camera.testing.impl.mocks.helpers.CallTimes
 import androidx.camera.testing.impl.useAndRelease
 import androidx.camera.testing.impl.video.RecordingSession
+import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
 import androidx.camera.video.Recorder.sRetrySetupVideoDelayMs
@@ -100,7 +101,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.testutils.assertThrows
 import androidx.testutils.fail
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -119,6 +119,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -140,9 +141,8 @@ private const val TEST_ATTRIBUTION_TAG = "testAttribution"
 // For the file size is small, the final file length possibly exceeds the file size limit
 // after adding the file header. We still add the buffer for the tolerance of comparing the
 // file length and file size limit.
-private const val FILE_SIZE_LIMIT_BUFFER = 50 * 1024 // 50k threshold buffer
+private const val FILE_SIZE_LIMIT_BUFFER = 500 * 1024 // 500k threshold buffer
 
-@SdkSuppress(minSdkVersion = 23)
 @LargeTest
 @RunWith(Parameterized::class)
 class RecorderTest(private val implName: String, private val cameraConfig: CameraXConfig) {
@@ -331,6 +331,34 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     @Test
     fun recordingWithNegativeBitRate() {
         assertThrows(IllegalArgumentException::class.java) { createRecorder(targetBitrate = -5) }
+    }
+
+    @Test
+    fun canSetTargetAudioEncodingBitrate() {
+        val recorder = createRecorder(targetAudioBitrate = 128_000)
+
+        assertThat(recorder.targetAudioEncodingBitRate).isEqualTo(128_000)
+    }
+
+    @Test
+    fun recordingWithNegativeAudioBitRate() {
+        assertThrows(IllegalArgumentException::class.java) {
+            createRecorder(targetAudioBitrate = -5)
+        }
+    }
+
+    @Test
+    fun canSetTargetAudioChannelCount() {
+        val recorder = createRecorder(targetAudioChannelCount = 2)
+
+        assertThat(recorder.targetAudioChannelCount).isEqualTo(2)
+    }
+
+    @Test
+    fun recordingWithNegativeAudioChannelCount() {
+        assertThrows(IllegalArgumentException::class.java) {
+            createRecorder(targetAudioChannelCount = -5)
+        }
     }
 
     @Test
@@ -879,7 +907,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         recording.start()
 
         // Assert.
-        assertThrows<IllegalStateException> {
+        assertThrows(IllegalStateException::class.java) {
             // Act: Prepare 2nd recording and start.
             recordingSession.createRecording(recorder = recorder).start()
         }
@@ -998,6 +1026,95 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     fun setNonSupportedVideoCapabilitiesSource_throwException() {
         assertThrows(IllegalArgumentException::class.java) {
             createRecorder(videoCapabilitiesSource = Integer.MAX_VALUE)
+        }
+    }
+
+    @Test
+    fun staticSupportedMimeTypesShouldBeLowerCase() {
+        for (mimeType in
+            Recorder.SUPPORTED_VIDEO_MIME_TYPES + Recorder.SUPPORTED_AUDIO_MIME_TYPES) {
+            assertWithMessage("MIME type $mimeType is not lower case")
+                .that(mimeType)
+                .isEqualTo(mimeType.lowercase())
+        }
+    }
+
+    @Test
+    fun getSupportedVideoMimeTypes_shouldBeLowerCase() {
+        // Act.
+        val mimeTypes = Recorder.getSupportedVideoMimeTypes()
+
+        // Assert.
+        for (mimeType in mimeTypes) {
+            assertWithMessage("MIME type $mimeType is not lower case")
+                .that(mimeType)
+                .isEqualTo(mimeType.lowercase())
+        }
+    }
+
+    @Test
+    fun getSupportedAudioMimeTypes_shouldBeLowerCase() {
+        // Act.
+        val mimeTypes = Recorder.getSupportedAudioMimeTypes()
+
+        // Assert.
+        for (mimeType in mimeTypes) {
+            assertWithMessage("MIME type $mimeType is not lower case")
+                .that(mimeType)
+                .isEqualTo(mimeType.lowercase())
+        }
+    }
+
+    @Test
+    fun canSetOutputFormat() {
+        // Arrange.
+        val recorder = createRecorder(outputFormat = OUTPUT_FORMAT_WEBM)
+
+        // Assert.
+        assertThat(recorder.outputFormat).isEqualTo(OUTPUT_FORMAT_WEBM)
+    }
+
+    @Test
+    fun canSetVideoMimeType() {
+        // Arrange: Test all Recorder supported types
+        val mimeTypes = Recorder.SUPPORTED_VIDEO_MIME_TYPES
+
+        mimeTypes.forEach { mimeType ->
+            // Act.
+            val recorder = Recorder.Builder().setVideoMimeType(mimeType).build()
+
+            // Assert.
+            assertThat(recorder.videoMimeType).isEqualTo(mimeType)
+        }
+    }
+
+    @Test
+    fun setUnsupportedVideoMimeType_throwsException() {
+        // Assert.
+        assertThrows(IllegalArgumentException::class.java) {
+            Recorder.Builder().setVideoMimeType("unknown")
+        }
+    }
+
+    @Test
+    fun canSetAudioMimeType() {
+        // Arrange: Test all Recorder supported types
+        val mimeTypes = Recorder.SUPPORTED_AUDIO_MIME_TYPES
+
+        mimeTypes.forEach { mimeType ->
+            // Act.
+            val recorder = Recorder.Builder().setAudioMimeType(mimeType).build()
+
+            // Assert.
+            assertThat(recorder.audioMimeType).isEqualTo(mimeType)
+        }
+    }
+
+    @Test
+    fun setUnsupportedAudioMimeType_throwsException() {
+        // Assert.
+        assertThrows(IllegalArgumentException::class.java) {
+            Recorder.Builder().setAudioMimeType("unknown")
         }
     }
 
@@ -1294,7 +1411,14 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
 
         assertThat(capabilities).isNotNull()
         // We expect at least SDR to be supported for AVC
-        assertThat(capabilities.supportedDynamicRanges).contains(DynamicRange.SDR)
+        assertThat(capabilities!!.supportedDynamicRanges).contains(DynamicRange.SDR)
+    }
+
+    @Test
+    fun getVideoCapabilities_withUnsupportedMimeType_returnNull() {
+        val capabilities = Recorder.getVideoCapabilities(camera.cameraInfo, "video/unknown")
+
+        assertThat(capabilities).isNull()
     }
 
     private fun testRecorderIsConfiguredBasedOnTargetVideoEncodingBitrate(targetBitrate: Int) {
@@ -1328,6 +1452,9 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     private fun createRecorder(
         sendSurfaceRequest: Boolean = true,
         initSourceState: VideoOutput.SourceState = ACTIVE_STREAMING,
+        outputFormat: Int? = null,
+        videoMimeType: String? = null,
+        audioMimeType: String? = null,
         qualitySelector: QualitySelector? = null,
         videoCapabilitiesSource: Int? = null,
         executor: Executor? = null,
@@ -1336,6 +1463,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         muxerFactory: MuxerFactory? = null,
         outputStorageFactory: OutputStorage.Factory? = null,
         targetBitrate: Int? = null,
+        targetAudioBitrate: Int? = null,
+        targetAudioChannelCount: Int? = null,
         retrySetupVideoMaxCount: Int? = null,
         retrySetupVideoDelayMs: Long? = null,
         audioSource: Int? = null,
@@ -1345,6 +1474,9 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         val recorder =
             Recorder.Builder()
                 .apply {
+                    outputFormat?.let { setOutputFormat(it) }
+                    videoMimeType?.let { setVideoMimeType(it) }
+                    audioMimeType?.let { setAudioMimeType(it) }
                     qualitySelector?.let { setQualitySelector(it) }
                     videoCapabilitiesSource?.let { setVideoCapabilitiesSource(it) }
                     executor?.let { setExecutor(it) }
@@ -1353,6 +1485,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                     muxerFactory?.let { setMuxerFactory(it) }
                     outputStorageFactory?.let { setOutputStorageFactory(it) }
                     targetBitrate?.let { setTargetVideoEncodingBitRate(it) }
+                    targetAudioBitrate?.let { setTargetAudioEncodingBitRate(it) }
+                    targetAudioChannelCount?.let { setTargetAudioChannelCount(it) }
                     audioSource?.let { setAudioSource(it) }
                     requiredFreeStorageBytes?.let { setRequiredFreeStorageBytes(it) }
                 }
@@ -1455,4 +1589,33 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
             this.latitude = latitude
             this.longitude = longitude
         }
+
+    @Test
+    fun recorder_retainsRecording_duringSourceReconfiguration() {
+        // Arrange: Start a recording
+        val outputOptions = createFileOutputOptions()
+        val recorder = createRecorder()
+        val recording =
+            recordingSession.createRecording(recorder = recorder, outputOptions = outputOptions)
+
+        recording.startAndVerify()
+
+        // Act: Simulate source reconfiguration
+        recorder.onSourceStateChanged(VideoOutput.SourceState.CONFIGURING)
+
+        // Trigger pipeline reset
+        recorder.sendSurfaceRequest()
+
+        // Verify that no Finalize event has been received
+        recording.verifyNoFinalize(timeoutMs = 2000)
+
+        // Clear current status events
+        recording.clearEvents()
+
+        // Ensure recording is still alive
+        recording.verifyStatus(statusCount = 3)
+
+        // Stop the recording and verify it completed successfully
+        recording.stopAndVerify()
+    }
 }

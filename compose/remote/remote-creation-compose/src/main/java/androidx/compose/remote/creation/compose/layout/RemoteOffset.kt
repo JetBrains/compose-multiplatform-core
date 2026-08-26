@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.layout
 
@@ -23,7 +22,16 @@ import androidx.compose.remote.creation.compose.state.RemoteStateScope
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.geometry.Offset
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+/**
+ * An immutable 2D floating-point offset that can be used to represent a point or a vector in a
+ * remote UI context.
+ *
+ * This class is similar to [androidx.compose.ui.geometry.Offset], but uses [RemoteFloat] for its
+ * coordinates to support remote state synchronization.
+ *
+ * @property x The horizontal displacement.
+ * @property y The vertical displacement.
+ */
 public class RemoteOffset {
     public val x: RemoteFloat
     public val y: RemoteFloat
@@ -33,20 +41,26 @@ public class RemoteOffset {
         this.y = y
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(x: Float, y: Float) : this(RemoteFloat(x), RemoteFloat(y))
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(x: Float, y: RemoteFloat) : this(RemoteFloat(x), y)
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(x: RemoteFloat, y: Float) : this(x, RemoteFloat(y))
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(offset: Offset) {
         this.x = offset.x.rf
         this.y = offset.y.rf
     }
 
+    /** The magnitude of the smaller of the two components, [x] and [y]. */
     public val minDimension: RemoteFloat
         get() = x.min(y)
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun asOffset(scope: RemoteStateScope): Offset {
         with(scope) {
             return Offset(x.floatId, y.floatId)
@@ -54,6 +68,7 @@ public class RemoteOffset {
     }
 
     public companion object {
+        /** A [RemoteOffset] with both [x] and [y] set to zero. */
         public val Zero: RemoteOffset = RemoteOffset(0.rf, 0.rf)
     }
 }

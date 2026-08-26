@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -34,12 +35,24 @@ import java.util.List;
 
 /** Operation to deal with Text data */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TextMerge extends Operation implements VariableSupport, Serializable {
+public class TextMerge extends Operation
+        implements VariableSupport, ComponentData, Serializable, VariableProvider {
     private static final int OP_CODE = Operations.TEXT_MERGE;
+    private static final int MAX_TEXT_LENGTH = 16 * 1024;
     private static final String CLASS_NAME = "TextMerge";
     public int mTextId;
     public int mSrcId1;
     public int mSrcId2;
+
+    @Override
+    public int getId() {
+        return mTextId;
+    }
+
+    @Override
+    public void setId(int id) {
+        this.mTextId = id;
+    }
 
     public TextMerge(int textId, int srcId1, int srcId2) {
         this.mTextId = textId;
@@ -99,11 +112,10 @@ public class TextMerge extends Operation implements VariableSupport, Serializabl
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int textId = buffer.readInt();
-        int srcId1 = buffer.readInt();
-        int srcId2 = buffer.readInt();
-
-        operations.add(new TextMerge(textId, srcId1, srcId2));
+        int id = buffer.declareId();
+        int leftId = buffer.readId();
+        int rightId = buffer.readId();
+        operations.add(new TextMerge(id, leftId, rightId));
     }
 
     /**
@@ -123,7 +135,11 @@ public class TextMerge extends Operation implements VariableSupport, Serializabl
     public void apply(@NonNull RemoteContext context) {
         String str1 = context.getText(mSrcId1);
         String str2 = context.getText(mSrcId2);
-        context.loadText(mTextId, str1 + str2);
+        String merge = str1 + str2;
+        if (merge.length() > MAX_TEXT_LENGTH) {
+            throw new RuntimeException("Text too long: " + merge.substring(0, 20) + "...");
+        }
+        context.loadText(mTextId, merge);
     }
 
     @Override

@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Placeable.PlacementScope
@@ -46,9 +46,12 @@ import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.requestRemeasure
 import androidx.compose.ui.platform.AndroidComposeView
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.areWindowInsetsRulersEnabled
+import androidx.compose.ui.platform.disableWindowInsetsRulers
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntRect
@@ -58,6 +61,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.Insets
 import androidx.core.view.DisplayCutoutCompat
+import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat
 import androidx.core.view.WindowInsetsCompat
@@ -66,19 +70,18 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Assume
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.runners.Parameterized
 
 @OptIn(ExperimentalComposeUiApi::class)
 @SdkSuppress(minSdkVersion = 30)
-@RunWith(JUnit4::class)
-class WindowInsetsRulersTest {
-    @get:Rule val rule = createAndroidComposeRule<ActivityWithInsets>(StandardTestDispatcher())
+@RunWith(Parameterized::class)
+class WindowInsetsRulersTest(private val isDelayedWindowInsetsRulersEnabled: Boolean) {
+    @get:Rule val rule = createAndroidComposeRule<ActivityWithInsets>()
 
     private lateinit var composeView: AndroidComposeView
     private var insetsRect: IntRect? = null
@@ -93,14 +96,24 @@ class WindowInsetsRulersTest {
     private var contentWidth = 0
     private var contentHeight = 0
     private val displayCutoutRects = mutableObjectListOf<IntRect?>()
+    private var previousDelayedRulersFlag = false
 
     @Before
     fun setup() {
+        previousDelayedRulersFlag = AndroidComposeUiFlags.isDelayedWindowInsetsRulersEnabled
+        AndroidComposeUiFlags.isDelayedWindowInsetsRulersEnabled =
+            isDelayedWindowInsetsRulersEnabled
         rule.runOnUiThread { rule.activity.enableEdgeToEdge() }
         // Don't let the normal rulers through. We only want the sendOnApplyWindowInsets() to have
         // an effect.
         val contentView = rule.activity.findViewById<View>(android.R.id.content)
         contentView.setOnApplyWindowInsetsListener { _, _ -> android.view.WindowInsets.CONSUMED }
+    }
+
+    @After
+    fun tearDown() {
+        areWindowInsetsRulersEnabled = true
+        AndroidComposeUiFlags.isDelayedWindowInsetsRulersEnabled = previousDelayedRulersFlag
     }
 
     private fun setContent(content: @Composable () -> Unit) {
@@ -153,9 +166,18 @@ class WindowInsetsRulersTest {
         }
     }
 
+    private fun AndroidComposeView.sendInsets(view: View, insets: WindowInsetsCompat) {
+        val listener = (this.insetsWatcher ?: this.insetsListener) as OnApplyWindowInsetsListener
+        listener.onApplyWindowInsets(view, insets)
+    }
+
+    private fun AndroidComposeView.getCallback(): WindowInsetsAnimationCompat.Callback {
+        return (this.insetsWatcher ?: this.insetsListener) as WindowInsetsAnimationCompat.Callback
+    }
+
     private fun sendOnApplyWindowInsets(insets: WindowInsetsCompat) {
         val view = composeView.parent as View
-        rule.runOnIdle { composeView.insetsListener.onApplyWindowInsets(view, insets) }
+        rule.runOnIdle { composeView.sendInsets(view, insets) }
     }
 
     private fun startAnimation(
@@ -167,10 +189,10 @@ class WindowInsetsRulersTest {
     ) {
         val view = composeView.parent as View
         rule.runOnIdle {
-            val insetsListener = composeView.insetsListener
-            insetsListener.onPrepare(animation)
-            insetsListener.onApplyWindowInsets(view, createInsets(type to target))
-            insetsListener.onStart(animation, BoundsCompat(low, high))
+            val callback = composeView.getCallback()
+            callback.onPrepare(animation)
+            composeView.sendInsets(view, createInsets(type to target))
+            callback.onStart(animation, BoundsCompat(low, high))
         }
     }
 
@@ -180,18 +202,18 @@ class WindowInsetsRulersTest {
     ) {
         val view = composeView.parent as View
         rule.runOnIdle {
-            val insetsListener = composeView.insetsListener
-            insetsListener.onProgress(insets, mutableListOf(animation))
-            insetsListener.onApplyWindowInsets(view, insets)
+            val callback = composeView.getCallback()
+            callback.onProgress(insets, mutableListOf(animation))
+            composeView.sendInsets(view, insets)
         }
     }
 
     private fun endAnimation(animation: WindowInsetsAnimationCompat, insets: WindowInsetsCompat) {
         val view = composeView.parent as View
         rule.runOnIdle {
-            val insetsListener = composeView.insetsListener
-            insetsListener.onEnd(animation)
-            insetsListener.onApplyWindowInsets(view, insets)
+            val callback = composeView.getCallback()
+            callback.onEnd(animation)
+            composeView.sendInsets(view, insets)
         }
     }
 
@@ -206,7 +228,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun noRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(CaptionBar)
 
         setSimpleRulerContent(rulerState)
@@ -234,7 +255,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun onlyMaximumRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(CaptionBar)
 
         setSimpleRulerContent(rulerState)
@@ -258,7 +278,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun startAndStopProvidingRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(CaptionBar)
 
         setSimpleRulerContent(rulerState)
@@ -283,7 +302,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun normalRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(CaptionBar)
         setSimpleRulerContent(rulerState)
         val normalRulersList =
@@ -306,7 +324,7 @@ class WindowInsetsRulersTest {
                 rule.runOnIdle {
                     val isRulerVisible =
                         visibleRulers === rulers ||
-                            (rulers === Waterfall && visibleRulers == DisplayCutout)
+                            (rulers === Waterfall && visibleRulers === DisplayCutout)
                     val expectedRect =
                         if (isRulerVisible) {
                             IntRect(1, 2, contentWidth - 3, contentHeight - 5)
@@ -329,7 +347,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun maximum() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(CaptionBar)
         setSimpleRulerContent(rulerState)
         val maximumRulersList =
@@ -363,7 +380,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun waterfallRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(Waterfall)
         setSimpleRulerContent(rulerState)
         rule.waitForIdle()
@@ -389,7 +405,6 @@ class WindowInsetsRulersTest {
     /** Make sure that when the display cutout is set that it includes the rects for each side. */
     @Test
     fun displayCutoutRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
         val insets = createInsets(Type.displayCutout() to Insets.of(1, 2, 3, 5))
@@ -408,8 +423,68 @@ class WindowInsetsRulersTest {
     }
 
     @Test
+    fun singleSideDisplayCutoutRulers() {
+        setSimpleRulerContent(mutableStateOf(DisplayCutout))
+
+        val insets = createInsets(Type.displayCutout() to Insets.of(0, 15, 0, 0))
+        sendOnApplyWindowInsets(insets)
+        rule.runOnIdle {
+            assertThat(displayCutoutRects.size).isEqualTo(1)
+            assertThat(displayCutoutRects.any { it == null }).isFalse()
+            assertThat(displayCutoutRects.asList()).containsExactly(IntRect(0, 0, contentWidth, 15))
+        }
+    }
+
+    @Test
+    fun isRulerProvided_beforeInsets_returnsFalse() {
+        var left = -100f
+        var top = -100f
+        setContent {
+            Box(
+                Modifier.fillMaxSize().layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                        left = StatusBars.current.left.current(Float.NaN)
+                        top = StatusBars.current.top.current(Float.NaN)
+                    }
+                }
+            )
+        }
+        rule.waitForIdle()
+
+        assertThat(left).isNaN()
+        assertThat(top).isNaN()
+    }
+
+    @Test
+    fun onlyWaterfallInsets_initializesRulers() {
+        val rulerState = mutableStateOf(Waterfall)
+        setSimpleRulerContent(rulerState)
+        rule.waitForIdle()
+
+        sendOnApplyWindowInsets(createInsets(WaterfallType to Insets.of(1, 2, 3, 5)))
+        rule.runOnIdle {
+            assertThat(insetsRect).isEqualTo(IntRect(1, 2, contentWidth - 3, contentHeight - 5))
+            assertThat(maximumRect).isEqualTo(IntRect(1, 2, contentWidth - 3, contentHeight - 5))
+            assertThat(isVisible).isTrue()
+        }
+    }
+
+    @Test
+    fun onlyDisplayCutoutBoundingRects_initializesRulers() {
+        setSimpleRulerContent(mutableStateOf(DisplayCutout))
+        rule.waitForIdle()
+
+        sendOnApplyWindowInsets(createInsets(Type.displayCutout() to Insets.of(0, 20, 0, 0)))
+        rule.runOnIdle {
+            assertThat(displayCutoutRects.size).isEqualTo(1)
+            assertThat(displayCutoutRects[0]).isEqualTo(IntRect(0, 0, contentWidth, 20))
+        }
+    }
+
+    @Test
     fun mergedRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val mergedRulersMap =
             mapOf(
                 SafeGestures to
@@ -446,7 +521,7 @@ class WindowInsetsRulersTest {
         val rulerState = mutableStateOf(SafeGestures)
         setSimpleRulerContent(rulerState)
 
-        mergedRulersMap.forEach { gestureRulers, includedTypes ->
+        mergedRulersMap.forEach { (gestureRulers, includedTypes) ->
             rulerState.value = gestureRulers
             rule.waitForIdle()
             InsetsRulerTypes.forEach { (rulers, type) ->
@@ -470,7 +545,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun animatingRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(Ime)
         setSimpleRulerContent(rulerState)
 
@@ -617,7 +691,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun animateMergedRulers() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         // display cutout and waterfall aren't animatable
         val mergedRulersMap =
             mapOf(
@@ -655,7 +728,7 @@ class WindowInsetsRulersTest {
         val rulerState = mutableStateOf(SafeGestures)
         setSimpleRulerContent(rulerState)
 
-        mergedRulersMap.forEach { mergedRulers, includedTypes ->
+        mergedRulersMap.forEach { (mergedRulers, includedTypes) ->
             rulerState.value = mergedRulers
             rule.waitForIdle()
             InsetsRulerTypes.forEach { (rulers, type) ->
@@ -735,7 +808,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun rulersInCenteredDialog() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         var boxInsetsRect: IntRect? = null
         var dialogInsetsRect: IntRect? = null
         lateinit var coordinates: LayoutCoordinates
@@ -777,9 +849,9 @@ class WindowInsetsRulersTest {
                     Type.tappableElement() to Insets.of(0, 0, 0, 13),
                 )
             val view = composeView.parent as View
-            composeView.insetsListener.onApplyWindowInsets(view, insets)
+            composeView.sendInsets(view, insets)
             val dialogView = dialogComposeView.parent as View
-            dialogComposeView.insetsListener.onApplyWindowInsets(dialogView, createInsets())
+            dialogComposeView.sendInsets(dialogView, createInsets())
         }
 
         rule.runOnIdle {
@@ -792,7 +864,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun rulersInFullScreenDialog() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         var boxInsetsRect: IntRect? = null
         var dialogInsetsRect: IntRect? = null
         lateinit var coordinates: LayoutCoordinates
@@ -828,9 +899,9 @@ class WindowInsetsRulersTest {
                     Type.tappableElement() to Insets.of(0, 0, 0, 13),
                 )
             val view = composeView.parent as View
-            composeView.insetsListener.onApplyWindowInsets(view, insets)
+            composeView.sendInsets(view, insets)
             val dialogView = dialogComposeView.parent as View
-            dialogComposeView.insetsListener.onApplyWindowInsets(dialogView, insets)
+            dialogComposeView.sendInsets(dialogView, insets)
         }
 
         rule.runOnIdle {
@@ -925,7 +996,6 @@ class WindowInsetsRulersTest {
 
     @Test
     fun innermostOf() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(WindowInsetsRulers.innermostOf(CaptionBar, NavigationBars))
         setSimpleRulerContent(rulerState)
         rule.waitForIdle()
@@ -973,6 +1043,225 @@ class WindowInsetsRulersTest {
             assertNotAnimating(rulerState.value)
             assertWithMessage(rulerState.value.toString()).that(isVisible).isFalse()
         }
+    }
+
+    @Test
+    fun animateIme_predictiveBack_negativeDuration() {
+        val rulerState = mutableStateOf(Ime)
+        setSimpleRulerContent(rulerState)
+        rule.waitForIdle()
+
+        val type = Type.ime()
+        val sourceInsets = Insets.of(0, 0, 0, 100)
+        sendOnApplyWindowInsets(createInsets(type to sourceInsets))
+
+        rule.runOnIdle {
+            assertThat(isAnimating).isFalse()
+            assertThat(isVisible).isTrue()
+        }
+
+        val animationInterpolator = AccelerateDecelerateInterpolator()
+        val animation = WindowInsetsAnimationCompat(type, animationInterpolator, -1L)
+        val targetInsets = Insets.of(0, 0, 0, 0)
+
+        startAnimation(animation, type, targetInsets, sourceInsets, targetInsets)
+        rule.runOnIdle {
+            assertWithMessage("isAnimating should be true for duration -1")
+                .that(isAnimating)
+                .isTrue()
+            val expectedSourceRect = IntRect(0, 0, contentWidth, contentHeight - 100)
+            val expectedTargetRect = IntRect(0, 0, contentWidth, contentHeight)
+            assertWithMessage("sourceRect").that(sourceRect).isEqualTo(expectedSourceRect)
+            assertWithMessage("targetRect").that(targetRect).isEqualTo(expectedTargetRect)
+            assertWithMessage("durationMillis").that(durationMillis).isEqualTo(-1L)
+        }
+
+        animation.fraction = 0.5f
+        progressAnimation(animation, createInsets(type to lerp(sourceInsets, targetInsets, 0.5f)))
+        rule.runOnIdle {
+            assertWithMessage("isAnimating during progress").that(isAnimating).isTrue()
+            assertWithMessage("fraction").that(fraction).isEqualTo(0.5f)
+        }
+
+        endAnimation(animation, createInsets(type to targetInsets))
+        rule.runOnIdle {
+            assertNotAnimating(Ime)
+            assertThat(isVisible).isFalse()
+            assertThat(insetsRect).isEqualTo(IntRect(0, 0, contentWidth, contentHeight))
+        }
+    }
+
+    @Test
+    fun animateIme_zeroDuration_doesNotAnimate() {
+        val rulerState = mutableStateOf(Ime)
+        setSimpleRulerContent(rulerState)
+        rule.waitForIdle()
+
+        val type = Type.ime()
+        val sourceInsets = Insets.of(0, 0, 0, 100)
+        sendOnApplyWindowInsets(createInsets(type to sourceInsets))
+
+        rule.runOnIdle {
+            assertThat(isAnimating).isFalse()
+            assertThat(isVisible).isTrue()
+        }
+
+        val animationInterpolator = AccelerateDecelerateInterpolator()
+        val animation = WindowInsetsAnimationCompat(type, animationInterpolator, 0L)
+        val targetInsets = Insets.of(0, 0, 0, 0)
+
+        startAnimation(animation, type, targetInsets, sourceInsets, targetInsets)
+        rule.runOnIdle {
+            assertWithMessage("isAnimating should be false for duration 0")
+                .that(isAnimating)
+                .isFalse()
+        }
+
+        endAnimation(animation, createInsets(type to targetInsets))
+        rule.runOnIdle {
+            assertNotAnimating(Ime)
+            assertThat(isVisible).isFalse()
+            assertThat(insetsRect).isEqualTo(IntRect(0, 0, contentWidth, contentHeight))
+        }
+    }
+
+    @Test
+    fun animateMergedRulers_predictiveBack_negativeDuration() {
+        val rulerState = mutableStateOf(SafeDrawing)
+        setSimpleRulerContent(rulerState)
+        rule.waitForIdle()
+
+        val type = Type.ime()
+        val sourceInsets = Insets.of(0, 0, 0, 100)
+        sendOnApplyWindowInsets(createInsets(type to sourceInsets))
+
+        rule.runOnIdle {
+            assertThat(isAnimating).isFalse()
+            assertThat(isVisible).isTrue()
+        }
+
+        val animationInterpolator = AccelerateDecelerateInterpolator()
+        val animation = WindowInsetsAnimationCompat(type, animationInterpolator, -1L)
+        val targetInsets = Insets.of(0, 0, 0, 0)
+
+        startAnimation(animation, type, targetInsets, sourceInsets, targetInsets)
+        rule.runOnIdle {
+            assertWithMessage("SafeDrawing isAnimating should be true for IME duration -1")
+                .that(isAnimating)
+                .isTrue()
+            assertWithMessage("SafeDrawing isVisible should be true").that(isVisible).isTrue()
+        }
+
+        animation.fraction = 0.5f
+        progressAnimation(animation, createInsets(type to lerp(sourceInsets, targetInsets, 0.5f)))
+        rule.runOnIdle {
+            assertWithMessage("SafeDrawing isAnimating during progress").that(isAnimating).isTrue()
+        }
+
+        endAnimation(animation, createInsets(type to targetInsets))
+        rule.runOnIdle {
+            assertNotAnimating(SafeDrawing)
+            assertThat(isVisible).isFalse()
+            assertThat(insetsRect).isEqualTo(IntRect(0, 0, contentWidth, contentHeight))
+        }
+    }
+
+    @Test
+    fun animateIme_sameTargetAsCurrent_doesNotAnimate() {
+        val rulerState = mutableStateOf(Ime)
+        setSimpleRulerContent(rulerState)
+        rule.waitForIdle()
+
+        val type = Type.ime()
+        val sourceInsets = Insets.of(0, 0, 0, 100)
+        sendOnApplyWindowInsets(createInsets(type to sourceInsets))
+
+        val animationInterpolator = AccelerateDecelerateInterpolator()
+        val animation = WindowInsetsAnimationCompat(type, animationInterpolator, -1L)
+        val targetInsets = Insets.of(0, 0, 0, 100)
+
+        startAnimation(animation, type, targetInsets, sourceInsets, targetInsets)
+        rule.runOnIdle {
+            assertWithMessage("isAnimating should be false when target == current")
+                .that(isAnimating)
+                .isFalse()
+        }
+
+        endAnimation(animation, createInsets(type to targetInsets))
+        rule.runOnIdle {
+            assertNotAnimating(Ime)
+            assertThat(isVisible).isTrue()
+            assertThat(insetsRect).isEqualTo(IntRect(0, 0, contentWidth, contentHeight - 100))
+        }
+    }
+
+    @Test
+    fun disableWindowInsetsRulers() {
+        ComposeView.disableWindowInsetsRulers()
+        var left = 0f
+        var top = 0f
+        var right = 0f
+        var bottom = 0f
+        rule.setContent {
+            Box(
+                Modifier.fillMaxSize().layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                        left = StatusBars.current.left.current(Float.NaN)
+                        top = StatusBars.current.top.current(Float.NaN)
+                        right = StatusBars.current.right.current(Float.NaN)
+                        bottom = StatusBars.current.bottom.current(Float.NaN)
+                    }
+                }
+            )
+        }
+        rule.waitForIdle()
+
+        assertThat(left).isNaN()
+        assertThat(top).isNaN()
+        assertThat(right).isNaN()
+        assertThat(bottom).isNaN()
+    }
+
+    @Test
+    fun disableWindowInsetsRulers_withAppliedInsets() {
+        var left = 0f
+        var top = 0f
+        var cutoutCount = -1
+        setContent {
+            Box(
+                Modifier.fillMaxSize().layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                        left = StatusBars.current.left.current(Float.NaN)
+                        top = StatusBars.current.top.current(Float.NaN)
+                        cutoutCount = getDisplayCutoutBounds().size
+                    }
+                }
+            )
+        }
+        val insets =
+            createInsets(
+                Type.statusBars() to Insets.of(0, 50, 0, 0),
+                Type.displayCutout() to Insets.of(0, 20, 0, 0),
+            )
+        sendOnApplyWindowInsets(insets)
+        rule.waitForIdle()
+
+        // Disable window insets rulers directly after applying insets
+        ComposeView.disableWindowInsetsRulers()
+        rule.runOnIdle {
+            composeView.root.requestRemeasure(forceRequest = true)
+            composeView.root.requestRelayout(forceRequest = true)
+            composeView.requestLayout()
+        }
+        rule.waitForIdle()
+
+        assertThat(left).isNaN()
+        assertThat(top).isNaN()
+        assertThat(cutoutCount).isEqualTo(0)
     }
 
     private fun createInsetsIgnoringVisibility(
@@ -1068,6 +1357,10 @@ class WindowInsetsRulersTest {
     }
 
     companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "isDelayedWindowInsetsRulersEnabled={0}")
+        fun data(): List<Boolean> = listOf(false, true)
+
         const val WaterfallType = -1
         val InsetsRulerTypes =
             mapOf(

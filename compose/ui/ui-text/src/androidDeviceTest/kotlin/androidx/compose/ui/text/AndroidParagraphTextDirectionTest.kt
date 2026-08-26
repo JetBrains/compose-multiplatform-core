@@ -19,7 +19,6 @@ package androidx.compose.ui.text
 import androidx.compose.ui.text.android.InternalPlatformTextApi
 import androidx.compose.ui.text.android.LayoutCompat
 import androidx.compose.ui.text.intl.LocaleList
-import androidx.compose.ui.text.platform.resolveTextDirectionHeuristics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -39,7 +38,7 @@ class AndroidParagraphTextDirectionTest {
     private val ltrLocaleList = LocaleList("en")
     private val rtlLocaleList = LocaleList("ar")
     private val ltrLocale = Locale.ENGLISH
-    private val rtlLocale = Locale("ar")
+    private val rtlLocale = Locale.forLanguageTag("ar")
 
     @Before
     fun before() {

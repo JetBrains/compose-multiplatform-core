@@ -16,9 +16,15 @@
 
 package androidx.compose.ui.semantics
 
-object SemanticsPropertiesAndroid {
+import android.credentials.GetCredentialException
+import android.credentials.GetCredentialRequest
+import android.credentials.GetCredentialResponse
+import android.os.OutcomeReceiver
+import androidx.annotation.RequiresApi
+
+public object SemanticsPropertiesAndroid {
     /** @see SemanticsPropertyReceiver.testTagsAsResourceId */
-    val TestTagsAsResourceId =
+    public val TestTagsAsResourceId: SemanticsPropertyKey<Boolean> =
         SemanticsPropertyKey<Boolean>(
             name = "TestTagsAsResourceId",
             isImportantForAccessibility = false,
@@ -26,8 +32,17 @@ object SemanticsPropertiesAndroid {
         )
 
     /** @see SemanticsPropertyReceiver.accessibilityClassName */
-    val AccessibilityClassName =
+    public val AccessibilityClassName: SemanticsPropertyKey<String> =
         AccessibilityKey<String>("AccessibilityClassName") { parentValue, _ -> parentValue }
+
+    /** @see SemanticsPropertyReceiver.credentialRequest */
+    @get:RequiresApi(34)
+    public val CredentialRequest: SemanticsPropertyKey<CredentialRequestData> =
+        SemanticsPropertyKey<CredentialRequestData>(
+            name = "CredentialRequest",
+            isImportantForAccessibility = false,
+            mergePolicy = { parentValue, _ -> parentValue },
+        )
 }
 
 /**
@@ -46,11 +61,11 @@ object SemanticsPropertiesAndroid {
  * @param accessibilityExtraKey The key used to store the value in the extras [android.os.Bundle].
  * @param mergePolicy The merge policy to use when merging descendant semantics.
  */
-fun <T> SemanticsPropertyKey(
+public fun <T> SemanticsPropertyKey(
     name: String,
     accessibilityExtraKey: String,
     mergePolicy: (T?, T) -> T? = { parentValue, _ -> parentValue },
-) =
+): SemanticsPropertyKey<T> =
     SemanticsPropertyKey(
         name = name,
         isImportantForAccessibility = false,
@@ -74,7 +89,7 @@ fun <T> SemanticsPropertyKey(
  * semantics node of the app (and no child nodes set it back to false), then every testTag will be
  * mapped.
  */
-var SemanticsPropertyReceiver.testTagsAsResourceId by
+public var SemanticsPropertyReceiver.testTagsAsResourceId: Boolean by
     SemanticsPropertiesAndroid.TestTagsAsResourceId
 
 /*
@@ -91,5 +106,34 @@ var SemanticsPropertyReceiver.testTagsAsResourceId by
  * constant defined on Android platform. For example, to assign a button classname you would use
  * "android.widget.Button".
  */
-var SemanticsPropertyReceiver.accessibilityClassName by
+public var SemanticsPropertyReceiver.accessibilityClassName: String by
     SemanticsPropertiesAndroid.AccessibilityClassName
+
+/**
+ * Transports a credential request and its callback through the semantics tree.
+ *
+ * @param request credential request containing configuration for retrieving credentials
+ * @param callback callback to receive the credential response or exception
+ */
+@RequiresApi(34)
+public class CredentialRequestData(
+    public val request: GetCredentialRequest,
+    public val callback: OutcomeReceiver<GetCredentialResponse, GetCredentialException>,
+)
+
+/**
+ * Semantics property for defining a pending credential request on a node. When this property is
+ * set, Compose will populate the Android [android.view.ViewStructure] with the provided request to
+ * integrate with the Autofill framework's Credential Manager support.
+ */
+@get:RequiresApi(34)
+@set:RequiresApi(34)
+public var SemanticsPropertyReceiver.credentialRequest: CredentialRequestData
+    get() =
+        throw UnsupportedOperationException(
+            "You cannot retrieve a semantics property directly - " +
+                "use one of the SemanticsConfiguration.getOr* methods instead"
+        )
+    set(value) {
+        set(SemanticsPropertiesAndroid.CredentialRequest, value)
+    }

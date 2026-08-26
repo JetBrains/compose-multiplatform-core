@@ -27,7 +27,6 @@ import androidx.room3.integration.kotlintestapp.testutil.MainThreadCheckSQLiteDr
 import androidx.room3.integration.kotlintestapp.testutil.PagingDb
 import androidx.room3.integration.kotlintestapp.testutil.PagingEntity
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import io.reactivex.rxjava3.core.Single
@@ -62,7 +61,7 @@ class Rx3PagingSourceTest {
         itemStore = ItemStore(coroutineScope)
 
         db =
-            Room.inMemoryDatabaseBuilder<PagingDb>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<PagingDb>()
                 .setDriver(MainThreadCheckSQLiteDriver(AndroidSQLiteDriver()))
                 .build()
     }

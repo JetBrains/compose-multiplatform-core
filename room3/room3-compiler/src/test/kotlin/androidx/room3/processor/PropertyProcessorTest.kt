@@ -19,7 +19,7 @@ package androidx.room3.processor
 import androidx.room3.Entity
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XTypeName
-import androidx.room3.compiler.processing.XFieldElement
+import androidx.room3.compiler.processing.XPropertyElement
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
@@ -85,9 +85,9 @@ class PropertyProcessorTest {
                     val arrayName = it.toString(CodeLanguage.JAVA)
                     val arrayDef = "$arrayName[]"
                     """
-                    |  @TypeConverter
+                    |  @ColumnTypeConverter
                     |  public static String arrayIntoString($arrayDef input) { return null; }
-                    |  @TypeConverter
+                    |  @ColumnTypeConverter
                     |  public static $arrayDef stringIntoArray$arrayName(String input) { return null; }
                     """
                 }
@@ -97,9 +97,9 @@ class PropertyProcessorTest {
                     val arrayName = it.simpleNames.single()
                     val arrayDef = "$arrayName[]"
                     """
-                    |  @TypeConverter
+                    |  @ColumnTypeConverter
                     |  public static String arrayIntoString($arrayDef input) { return null; }
-                    |  @TypeConverter
+                    |  @ColumnTypeConverter
                     |  public static $arrayDef stringIntoArray$arrayName(String input) { return null; }
                     """
                 }
@@ -190,6 +190,43 @@ class PropertyProcessorTest {
     }
 
     @Test
+    fun columnName_fieldSite() {
+        runProcessorTest(
+            sources =
+                listOf(
+                    Source.kotlin(
+                        "MyEntity.kt",
+                        """
+                        import androidx.room3.*
+                        @Entity
+                        class MyEntity {
+                            @PrimaryKey
+                            var id: Int = 0
+                            @field:ColumnInfo(name = "foo_column")
+                            var x: Int = 0
+                        }
+                        """
+                            .trimIndent(),
+                    )
+                )
+        ) { invocation ->
+            val entity = invocation.processingEnv.requireTypeElement("MyEntity")
+            val prop = entity.getDeclaredProperties().single { it.name == "x" }
+            val processedProperty =
+                PropertyProcessor(
+                        baseContext = invocation.context,
+                        containing = entity.type,
+                        element = prop,
+                        bindingScope = PropertyProcessor.BindingScope.BIND_TO_STMT,
+                        propertyParent = null,
+                        onBindingError = { _, _ -> },
+                    )
+                    .process()
+            assertThat(processedProperty.columnName, `is`("foo_column"))
+        }
+    }
+
+    @Test
     fun indexed() {
         singleEntity(
             """
@@ -230,7 +267,7 @@ class PropertyProcessorTest {
     @Test
     fun byteArrayWithEnforcedType() {
         singleEntity(
-            "@TypeConverters(foo.bar.MyConverter.class)" +
+            "@ColumnTypeConverters(foo.bar.MyConverter.class)" +
                 "@ColumnInfo(typeAffinity = ColumnInfo.TEXT) @NonNull byte[] arr;"
         ) { property, invocation ->
             assertThat(
@@ -258,7 +295,7 @@ class PropertyProcessorTest {
     fun primitiveArray() {
         ALL_PRIMITIVES.forEach { primitive ->
             singleEntity(
-                "@TypeConverters(foo.bar.MyConverter.class) @NonNull " +
+                "@ColumnTypeConverters(foo.bar.MyConverter.class) @NonNull " +
                     "${primitive.toString(CodeLanguage.JAVA)}[] arr;"
             ) { property, invocation ->
                 assertThat(
@@ -286,7 +323,7 @@ class PropertyProcessorTest {
     fun boxedArray() {
         ALL_BOXED_PRIMITIVES.forEach { boxedPrimitive ->
             singleEntity(
-                "@TypeConverters(foo.bar.MyConverter.class) " +
+                "@ColumnTypeConverters(foo.bar.MyConverter.class) " +
                     "${boxedPrimitive.toString(CodeLanguage.JAVA)}[] arr;"
             ) { property, invocation ->
                 val expected =
@@ -378,7 +415,7 @@ class PropertyProcessorTest {
     @Test
     fun nameVariations() {
         runProcessorTest {
-            val propertyElement = mock(XFieldElement::class.java)
+            val propertyElement = mock(XPropertyElement::class.java)
             assertThat(
                 Property(
                         propertyElement,
@@ -414,7 +451,7 @@ class PropertyProcessorTest {
 
     @Test
     fun nameVariations_is() {
-        val elm = mock(XFieldElement::class.java)
+        val elm = mock(XPropertyElement::class.java)
         runProcessorTest {
             assertThat(
                 Property(
@@ -461,7 +498,7 @@ class PropertyProcessorTest {
 
     @Test
     fun nameVariations_has() {
-        val elm = mock(XFieldElement::class.java)
+        val elm = mock(XPropertyElement::class.java)
         runProcessorTest {
             assertThat(
                 Property(
@@ -508,7 +545,7 @@ class PropertyProcessorTest {
 
     @Test
     fun nameVariations_m() {
-        val elm = mock(XFieldElement::class.java)
+        val elm = mock(XPropertyElement::class.java)
         runProcessorTest {
             assertThat(
                 Property(
@@ -570,7 +607,7 @@ class PropertyProcessorTest {
 
     @Test
     fun nameVariations_underscore() {
-        val elm = mock(XFieldElement::class.java)
+        val elm = mock(XPropertyElement::class.java)
         runProcessorTest {
             assertThat(
                 Property(
@@ -732,7 +769,7 @@ class PropertyProcessorTest {
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Entity::class.qualifiedName!!)
                     .filterIsInstance<XTypeElement>()
-                    .map { Pair(it, it.getAllFieldsIncludingPrivateSupers().firstOrNull()) }
+                    .map { Pair(it, it.getAllPropertiesIncludingPrivateSupers().firstOrNull()) }
                     .first { it.second != null }
             val entityContext =
                 TableEntityProcessor(baseContext = invocation.context, element = owner).context

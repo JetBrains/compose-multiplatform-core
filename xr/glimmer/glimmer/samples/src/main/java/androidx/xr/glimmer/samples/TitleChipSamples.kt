@@ -32,11 +32,11 @@ import androidx.xr.glimmer.Icon
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.TitleChip
 import androidx.xr.glimmer.TitleChipDefaults
-import androidx.xr.glimmer.list.VerticalList
+import androidx.xr.glimmer.list.GlimmerLazyColumn
 
 @Composable
 fun TitleChipSampleUsage() {
-    VerticalList(
+    GlimmerLazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
     ) {
@@ -63,7 +63,7 @@ fun TitleChipWithLeadingIconSample() {
 fun TitleChipWithCardSample() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         TitleChip { Text("Title Chip") }
-        Spacer(Modifier.height(TitleChipDefaults.AssociatedContentSpacing))
+        Spacer(Modifier.height(TitleChipDefaults.associatedContentSpacing))
         Card(
             title = { Text("Title") },
             subtitle = { Text("Subtitle") },

@@ -58,15 +58,23 @@ import androidx.compose.remote.core.operations.DataMapIds;
 import androidx.compose.remote.core.operations.DrawTextOnCircle;
 import androidx.compose.remote.core.operations.FloatConstant;
 import androidx.compose.remote.core.operations.Header;
+import androidx.compose.remote.core.operations.IncludeReferencedOperations;
 import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.PathAppend;
 import androidx.compose.remote.core.operations.PathCombine;
+import androidx.compose.remote.core.operations.SoundExpression;
 import androidx.compose.remote.core.operations.TextData;
 import androidx.compose.remote.core.operations.TextLength;
 import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout;
+import androidx.compose.remote.core.operations.layout.managers.Custom;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionConstraintsModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
+import androidx.compose.remote.core.operations.loom.PatternArgument;
+import androidx.compose.remote.core.operations.loom.PatternBlock;
+import androidx.compose.remote.core.operations.loom.PatternForEach;
+import androidx.compose.remote.core.operations.loom.PatternInflation;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.core.operations.utilities.ImageScaling;
@@ -83,12 +91,13 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeWriter {
-    private int mApiLevel;
+    protected int mApiLevel;
     protected @NonNull RemoteComposeBuffer mBuffer;
     protected @NonNull RemoteComposeState mState = new RemoteComposeState();
     protected @NonNull RcPlatformServices mPlatform;
@@ -122,6 +131,39 @@ public class RemoteComposeWriter {
         return mWriterCallback;
     }
 
+    public int getApiLevel() {
+        return mApiLevel;
+    }
+
+    private static HTag[] filterAndValidateTags(int apiLevel, HTag[] tags) {
+        if (apiLevel >= 8) {
+            return tags;
+        }
+        Object dbVal = HTag.getValue(tags, Header.DOC_DENSITY_BEHAVIOR);
+        if (dbVal == null) {
+            return tags;
+        }
+        int db = (Integer) dbVal;
+        if (db != CoreDocument.DENSITY_BEHAVIOR_LEGACY) {
+            throw new IllegalArgumentException(
+                    "densityBehavior is only supported in API level 8 or higher");
+        }
+        int count = 0;
+        for (HTag tag : tags) {
+            if (tag.mTag != Header.DOC_DENSITY_BEHAVIOR) {
+                count++;
+            }
+        }
+        HTag[] filteredTags = new HTag[count];
+        int idx = 0;
+        for (HTag tag : tags) {
+            if (tag.mTag != Header.DOC_DENSITY_BEHAVIOR) {
+                filteredTags[idx++] = tag;
+            }
+        }
+        return filteredTags;
+    }
+
     /**
      * Create a RemoteComposeWriter
      *
@@ -140,7 +182,8 @@ public class RemoteComposeWriter {
                 hTag(Header.DOC_HEIGHT, creationDisplayInfo.getHeight()),
                 hTag(Header.DOC_CONTENT_DESCRIPTION,
                         contentDescription != null ? contentDescription : ""),
-                hTag(Header.DOC_PROFILES, profile.getOperationsProfiles()));
+                hTag(Header.DOC_PROFILES, profile.getOperationsProfiles()),
+                hTag(Header.DOC_DENSITY_BEHAVIOR, creationDisplayInfo.getDensityBehavior()));
         this.mWriterCallback = writerCallback;
     }
 
@@ -161,7 +204,8 @@ public class RemoteComposeWriter {
                 hTag(Header.DOC_HEIGHT, creationDisplayInfo.getHeight()),
                 hTag(Header.DOC_CONTENT_DESCRIPTION,
                         contentDescription != null ? contentDescription : ""),
-                hTag(Header.DOC_PROFILES, profile.getOperationsProfiles()));
+                hTag(Header.DOC_PROFILES, profile.getOperationsProfiles()),
+                hTag(Header.DOC_DENSITY_BEHAVIOR, creationDisplayInfo.getDensityBehavior()));
     }
 
     /**
@@ -172,12 +216,13 @@ public class RemoteComposeWriter {
      */
     public RemoteComposeWriter(@NonNull Profile profile, HTag @NonNull ... tags) {
         this.mPlatform = profile.getPlatform();
+        this.mApiLevel = profile.getApiLevel();
+        tags = filterAndValidateTags(mApiLevel, tags);
         mBuffer = new RemoteComposeBuffer(profile.getApiLevel());
 
         Object w = HTag.getValue(tags, Header.DOC_WIDTH);
         Object h = HTag.getValue(tags, Header.DOC_HEIGHT);
         Object d = HTag.getValue(tags, Header.DOC_CONTENT_DESCRIPTION);
-        int profiles = HTag.getProfiles(tags);
 
         if (w instanceof Integer) {
             mOriginalWidth = (int) w;
@@ -190,14 +235,20 @@ public class RemoteComposeWriter {
         }
 
         Set<Integer> supportedOperations = profile.getSupportedOperations();
-        if (supportedOperations != null) {
-            mBuffer.setVersion(profile.getApiLevel(),
-                    profile.getOperationsProfiles(), supportedOperations);
-        } else {
-            mBuffer.setVersion(profile.getApiLevel(), profiles);
-        }
+        mBuffer.setVersion(profile.getApiLevel(),
+                profile.getOperationsProfiles(), supportedOperations);
 
-        mBuffer.addHeader(HTag.getTags(tags), HTag.getValues(tags));
+        // Serialize the profile into the header (DOC_PROFILES) so the document round-trips:
+        // inflation reads the operation map from this tag, and without it profiles default
+        // to baseline (0) and profile-specific ops (e.g. CORE_TEXT) fail with "unknown
+        // operation". The other constructors
+        // add this tag explicitly; do the same here unless the caller already supplied one.
+        HTag[] headerTags = tags;
+        if (HTag.getValue(tags, Header.DOC_PROFILES) == null) {
+            headerTags = java.util.Arrays.copyOf(tags, tags.length + 1);
+            headerTags[tags.length] = hTag(Header.DOC_PROFILES, profile.getOperationsProfiles());
+        }
+        mBuffer.addHeader(HTag.getTags(headerTags), HTag.getValues(headerTags));
     }
 
     /**
@@ -283,7 +334,10 @@ public class RemoteComposeWriter {
             HTag @NonNull ... tags) {
         this.mPlatform = platform;
         this.mApiLevel = apiLevel;
+        tags = filterAndValidateTags(apiLevel, tags);
         mBuffer = new RemoteComposeBuffer(apiLevel);
+
+        java.util.Arrays.sort(tags, (a, b) -> Short.compare(a.mTag, b.mTag));
 
         Object w = HTag.getValue(tags, Header.DOC_WIDTH);
         Object h = HTag.getValue(tags, Header.DOC_HEIGHT);
@@ -300,7 +354,7 @@ public class RemoteComposeWriter {
             mContentDescription = (String) d;
         }
 
-        mBuffer.setVersion(apiLevel, profiles);
+        mBuffer.setVersion(apiLevel, profiles, (Set<Integer>) null);
 
         mBuffer.addHeader(HTag.getTags(tags), HTag.getValues(tags));
         if (apiLevel == 6 && profiles == 0) {
@@ -332,6 +386,8 @@ public class RemoteComposeWriter {
     public RemoteComposeWriter(
             @NonNull Profile profile, @NonNull RemoteComposeBuffer buffer, HTag @NonNull ... tags) {
         this.mPlatform = profile.getPlatform();
+        this.mApiLevel = profile.getApiLevel();
+        tags = filterAndValidateTags(mApiLevel, tags);
         mBuffer = buffer;
 
         Object w = HTag.getValue(tags, Header.DOC_WIDTH);
@@ -348,6 +404,7 @@ public class RemoteComposeWriter {
             mContentDescription = (String) d;
         }
 
+        mBuffer.setVersion(mApiLevel, HTag.getProfiles(tags), profile.getSupportedOperations());
         mBuffer.addHeader(HTag.getTags(tags), HTag.getValues(tags));
     }
 
@@ -454,6 +511,70 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Register raw SC-format PCM sound data as a reusable resource.
+     *
+     * @param data SC-format audio bytes
+     * @return the allocated sound ID
+     */
+    public int addSound(byte @NonNull [] data) {
+        int id = nextId();
+        mBuffer.addSound(id, data);
+        return id;
+    }
+
+    /**
+     * Define a sound synthesis expression as a reusable resource.
+     *
+     * @param type            synthesis type constant (e.g. {@code SoundExpression.TYPE_TONE})
+     * @param frequency       tone frequency in Hz (TYPE_TONE)
+     * @param durationSeconds tone duration in seconds (TYPE_TONE)
+     * @param waveform        waveform kind as float (WAVEFORM_SINE etc.)
+     * @param leftVolume      left-channel volume float (or NaN-encoded variable ref)
+     * @param rightVolume     right-channel volume float (or NaN-encoded variable ref)
+     * @param rate            playback rate float (or NaN-encoded variable ref)
+     * @return the allocated expression ID
+     */
+    public int addSoundExpression(
+            int type,
+            float frequency,
+            float durationSeconds,
+            float waveform,
+            float leftVolume,
+            float rightVolume,
+            float rate) {
+        int id = nextId();
+        float[] params = buildSoundParams(type, frequency, durationSeconds, waveform);
+        mBuffer.addSoundExpression(id, params, leftVolume, rightVolume, rate);
+        return id;
+    }
+
+    private static float @NonNull [] buildSoundParams(
+            int type,  float frequency, float durationSeconds, float waveform) {
+        switch (type) {
+            case SoundExpression.TYPE_TONE:
+                return new float[] {
+                    SoundExpression.TYPE_TONE_NAN,
+                    frequency,
+                    durationSeconds,
+                    waveform
+                };
+            default:
+                return new float[] {
+                    Utils.asNan(type)
+                };
+        }
+    }
+
+    /**
+     * Write a PLAY_SOUND operation to trigger playback of the given sound expression.
+     *
+     * @param soundExpressionId the expression ID returned by {@link #addSoundExpression}
+     */
+    public void playSound(int soundExpressionId) {
+        mBuffer.playSound(soundExpressionId);
+    }
+
+    /**
      * Returns the color attribute
      */
     public float getColorAttribute(int baseColor, short type) {
@@ -503,9 +624,9 @@ public class RemoteComposeWriter {
      * @param glyphSpacing Horizontal spacing adjustment between glyphs in pixels
      * @return float id of the property
      */
-    public float bitmapTextMeasure(int textId, int bmFontId, int measureWidth, float glyphSpacing) {
+    public float bitmapTextMeasure(int textId, int bmFontId, int type, float glyphSpacing) {
         int id = mState.createNextAvailableId();
-        mBuffer.bitmapTextMeasure(id, textId, bmFontId, measureWidth, glyphSpacing);
+        mBuffer.bitmapTextMeasure(id, textId, bmFontId, type, glyphSpacing);
         return Utils.asNan(id);
     }
 
@@ -533,8 +654,12 @@ public class RemoteComposeWriter {
             float matrixId, short type, float @Nullable [] from, float @NonNull [] out) {
         int[] outId = new int[out.length];
         for (int i = 0; i < out.length; i++) {
-            outId[i] = mState.createNextAvailableId();
-            out[i] = Utils.asNan(outId[i]);
+            if (Utils.isVariable(out[i])) {
+                outId[i] = Utils.idFromNan(out[i]);
+            } else {
+                outId[i] = mState.createNextAvailableId();
+                out[i] = Utils.asNan(outId[i]);
+            }
         }
         mBuffer.addMatrixVectorMath(matrixId, type, from, outId);
     }
@@ -642,6 +767,17 @@ public class RemoteComposeWriter {
         public HTag(@NonNull Short tag, @NonNull Object value) {
             mTag = tag;
             mValue = value;
+        }
+
+        /** Returns the tag ID. */
+        public short getTag() {
+            return mTag;
+        }
+
+        /** Returns the tag value. */
+        @NonNull
+        public Object getValue() {
+            return mValue;
         }
 
         /**
@@ -1123,6 +1259,97 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Add a text style
+     *
+     * @param color                the color
+     * @param colorId              the color id
+     * @param fontSize             the font size
+     * @param minFontSize          the minimum font size
+     * @param maxFontSize          the maximum font size
+     * @param fontStyle            the font style
+     * @param fontWeight           the font weight
+     * @param fontFamily           the font family
+     * @param textAlign            the text alignment
+     * @param overflow             the overflow strategy
+     * @param maxLines             the maximum number of lines
+     * @param letterSpacing        the letter spacing
+     * @param lineHeightAdd        the line height addition
+     * @param lineHeightMultiplier the line height multiplier
+     * @param lineBreakStrategy    the line break strategy
+     * @param hyphenationFrequency the hyphenation frequency
+     * @param justificationMode    the justification mode
+     * @param underline            if underlined
+     * @param strikethrough        if strikethrough
+     * @param fontAxis             font axis tags
+     * @param fontAxisValues       font axis values
+     * @param autosize             if autosize
+     * @return the id of the text style
+     */
+    public int addTextStyle(
+            @Nullable Integer color,
+            @Nullable Integer colorId,
+            @Nullable Float fontSize,
+            @Nullable Float minFontSize,
+            @Nullable Float maxFontSize,
+            @Nullable Integer fontStyle,
+            @Nullable Float fontWeight,
+            @Nullable String fontFamily,
+            @Nullable Integer textAlign,
+            @Nullable Integer overflow,
+            @Nullable Integer maxLines,
+            @Nullable Float letterSpacing,
+            @Nullable Float lineHeightAdd,
+            @Nullable Float lineHeightMultiplier,
+            @Nullable Integer lineBreakStrategy,
+            @Nullable Integer hyphenationFrequency,
+            @Nullable Integer justificationMode,
+            @Nullable Boolean underline,
+            @Nullable Boolean strikethrough,
+            @Nullable String @Nullable [] fontAxis,
+            float @Nullable [] fontAxisValues,
+            @Nullable Boolean autosize,
+            int parentId) {
+        int id = mState.createNextAvailableId();
+        Integer fontFamilyId = null;
+        if (fontFamily != null) {
+            fontFamilyId = addText(fontFamily);
+        }
+        int[] fontAxisTags = null;
+        if (fontAxis != null) {
+            fontAxisTags = new int[fontAxis.length];
+            for (int i = 0; i < fontAxis.length; i++) {
+                fontAxisTags[i] = addText(fontAxis[i]);
+            }
+        }
+        mBuffer.addTextStyle(
+                id,
+                color,
+                colorId,
+                fontSize,
+                minFontSize,
+                maxFontSize,
+                fontStyle,
+                fontWeight,
+                fontFamilyId,
+                textAlign,
+                overflow,
+                maxLines,
+                letterSpacing,
+                lineHeightAdd,
+                lineHeightMultiplier,
+                lineBreakStrategy,
+                hyphenationFrequency,
+                justificationMode,
+                underline,
+                strikethrough,
+                fontAxisTags,
+                fontAxisValues,
+                autosize,
+                parentId);
+        return id;
+    }
+
+    /**
      * This creates text id from text. It can be used with methods that take String or textId.
      *
      * @param text string
@@ -1454,6 +1681,26 @@ public class RemoteComposeWriter {
     public void drawTweenPath(int path1Id, int path2Id, float tween, float start, float stop) {
         mBuffer.addDrawTweenPath(path1Id, path2Id, tween, start, stop);
     }
+    /**
+     * Add an android Path object. (It is converted to internal path)
+     *
+     * @param path Android Path object
+     * @return id of the path object to be used by drawPath, etc.
+     */
+    public int addPathData(float @NonNull [] pathData) {
+        int id = mState.cacheData(pathData);
+        return mBuffer.addPathData(id, pathData);
+    }
+
+    public int addPathData(RcPlatformServices.@NonNull RcPathArrayCreator path) {
+        float[] pathData = mPlatform.pathToFloatArray(path);
+        int id = mState.cacheData(path);
+        if (pathData == null) {
+            throw new IllegalArgumentException("Invalid path data");
+        }
+        return mBuffer.addPathData(id, pathData);
+    }
+
 
     /**
      * Add an android Path object. (It is converted to internal path)
@@ -1537,6 +1784,29 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * append cubic bezier from the last point, approaching control points (x1,y1) and (x2,y2), and
+     * ending at (x3,y3).
+     *
+     * @param pathId the path id
+     * @param x1 The x-coordinate of the 1st control point
+     * @param y1 The y-coordinate of the 1st control point
+     * @param x2 The x-coordinate of the 2nd control point
+     * @param y2 The y-coordinate of the 2nd control point
+     * @param x3 The x-coordinate of the end point
+     * @param y3 The y-coordinate of the end point
+     */
+    public void pathAppendCubicTo(
+            int pathId,
+            float x1,
+            float y1,
+            float x2,
+            float y2,
+            float x3,
+            float y3) {
+        mBuffer.pathAppend(pathId, PathAppend.CUBIC_NAN, 0, 0, x1, y1, x2, y2, x3, y3);
+    }
+
+    /**
      * add a MoveTo to the path
      *
      * @param pathId the path id
@@ -1564,11 +1834,14 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * Add an Svg Path descriptions string. (It is converted to internal path)
+     * Add a Svg Path descriptions string. (It is converted to internal path)
+     * TODO this should be deleted deprecated
      *
      * @param path SVG style Path String
      * @return id of the path object to be used by drawPath, etc.
+     * This is not supported by the writer going forward
      */
+
     public int addPathString(@NonNull String path) {
         return addPathData(mPlatform.parsePath(path));
     }
@@ -1891,6 +2164,40 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Set the name of the variable associated with the id
+     *
+     * @param id   id of the variable
+     * @param name name of the variable
+     * @param type the type of variable NamedVariable.COLOR_TYPE, STRING_TYPE, etc
+     */
+    public void setNamedVariable(int id, @NonNull String name, int type) {
+        mBuffer.setNamedVariable(id, name, type);
+    }
+
+    /**
+     * Create a named variable and return its id as a NaN-encoded float
+     *
+     * @param name name of the variable
+     * @param type the type of variable
+     * @return the id of the variable
+     */
+    public float createNamedVariable(@NonNull String name, int type) {
+        int id = mState.createNextAvailableId();
+        setNamedVariable(id, name, type);
+        return Utils.asNan(id);
+    }
+
+    /**
+     * Set the name of the float associated with the id
+     *
+     * @param id   of the float
+     * @param name name of the float
+     */
+    public void setFloatName(int id, @NonNull String name) {
+        mBuffer.setNamedVariable(id, name, NamedVariable.FLOAT_TYPE);
+    }
+
+    /**
      * @param name         The String representing the name of the Bitmap.
      * @param initialValue the initial Bitmap
      * @return the id of the Bitmap
@@ -1984,6 +2291,119 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Add an include referenced operations operation
+     *
+     * @param id the id of the referenced operations container
+     */
+    public void addIncludeReferencedOperations(int id) {
+        IncludeReferencedOperations.apply(mBuffer.getBuffer(), id);
+    }
+
+    /**
+     * Define a pattern
+     *
+     * @param name     the name of the pattern
+     * @param paramIds the ids of the parameters
+     * @return the id of the pattern (which is the id of the name string)
+     */
+    public int definePattern(@NonNull String name, int @NonNull [] paramIds) {
+        int id = addText(name);
+        return mBuffer.definePattern(id, paramIds);
+    }
+
+    /** Helper to cache raw any data values into state and return unique ID. */
+    public int cacheData(@NonNull Object data) {
+        return mState.cacheData(data);
+    }
+
+    /**
+     * Define a pattern parameter
+     *
+     * @param name the name of the parameter
+     * @return the generated id of the parameter
+     */
+    public int definePatternParameter(@NonNull String name) {
+        return nextId();
+    }
+
+    /**
+     * Inflat a pattern
+     *
+     * @param id     the id of the pattern
+     * @param argIds the ids of the arguments
+     */
+    public void patternInflation(int id, int @NonNull [] argIds) {
+        PatternInflation.apply(mBuffer.getBuffer(), id, argIds);
+    }
+
+    /**
+     * Call a pattern without argument blocks.
+     *
+     * @param id     the pattern id
+     * @param argIds the arguments ids
+     */
+    public void addPatternInflation(int id, int @NonNull [] argIds) {
+        patternInflation(id, argIds);
+        endPatternInflation();
+    }
+
+    /**
+     * Define a pattern argument block
+     *
+     * @param paramIndex the index of the parameter
+     */
+    public void addPatternBlock(int paramIndex) {
+        PatternBlock.apply(mBuffer.getBuffer(), paramIndex);
+    }
+
+    /**
+     * Add a pattern argument placeholder
+     *
+     * @param paramIndex the index of the parameter
+     */
+    public void addPatternArgument(int paramIndex) {
+        PatternArgument.apply(mBuffer.getBuffer(), paramIndex);
+    }
+
+    /**
+     * Add a pattern for-each loop
+     *
+     * @param collectionId the id of the collection to iterate over
+     * @param localItemId  the local id to assign to each item
+     */
+    public void addPatternForEach(int collectionId, int localItemId) {
+        PatternForEach.apply(mBuffer.getBuffer(), collectionId, localItemId);
+    }
+
+    /**
+     * End a macro for-each loop
+     */
+    public void endPatternForEach() {
+        mBuffer.endPatternForEach();
+    }
+
+    /**
+     * End a macro definition
+     */
+    public void endPatternDefine() {
+        mBuffer.endPatternDefine();
+    }
+
+    /**
+     * End a macro call
+     */
+    public void endPatternInflation() {
+        mBuffer.endPatternInflation();
+    }
+
+    /**
+     * End a macro block
+     */
+    public void endPatternBlock() {
+        mBuffer.endPatternBlock();
+    }
+
+    /**
      * Add a color expression that is based on HSV
      *
      * @param hue   the color hue
@@ -2029,7 +2449,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add a light and dark themed color
-     * TODO replace with a operation
      *
      * @param lightName  the name of the light color
      * @param lightValue the value of the light color
@@ -2496,16 +2915,15 @@ public class RemoteComposeWriter {
      */
     public long integerExpression(long @NonNull ... v) {
         int mask = 0;
+        int[] vint = new int[v.length];
         for (int i = 0; i < v.length; i++) {
-            if (v[i] > Integer.MAX_VALUE) {
-                mask |= 1 << i;
+            if (v[i] >= 0x100000000L) {
+                mask |= (1 << i);
+                vint[i] = (int) (v[i] - 0x100000000L);
+            } else {
+                vint[i] = (int) v[i];
             }
         }
-        int[] vint = new int[v.length];
-        for (int i = 0; i < vint.length; i++) {
-            vint[i] = (int) v[i];
-        }
-
         return integerExpression(mask, vint);
     }
 
@@ -2693,6 +3111,15 @@ public class RemoteComposeWriter {
         return mState.createNextAvailableId();
     }
 
+    /**
+     * Allocate a macro-local ID (0x4000-0x4FFF range)
+     *
+     * @return the local ID
+     */
+    public int nextLocalId() {
+        return mState.createNextLocalId();
+    }
+
     public static final long L_ADD = 0x100000000L + I_ADD;
     public static final long L_SUB = 0x100000000L + I_SUB;
     public static final long L_MUL = 0x100000000L + I_MUL;
@@ -2728,7 +3155,9 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void root(@NonNull RemoteComposeWriterInterface content) {
-        mInsertPoint = mBuffer.getBuffer().size();
+        if (mInsertPoint == -1) {
+            mInsertPoint = mBuffer.getBuffer().size();
+        }
         mBuffer.addRootStart();
         content.run();
         mBuffer.addContainerEnd();
@@ -2946,6 +3375,20 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Start the root component
+     */
+    public void startRoot() {
+        mBuffer.addRootStart();
+    }
+
+    /**
+     * End the root component
+     */
+    public void endRoot() {
+        mBuffer.addContainerEnd();
+    }
+
+    /**
      * Start a row layout
      */
     public void startRow(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
@@ -2998,6 +3441,56 @@ public class RemoteComposeWriter {
 
     /** End a collapsible row layout */
     public void endCollapsibleRow() {
+        mBuffer.addContainerEnd();
+        mBuffer.addContainerEnd();
+    }
+
+    /**
+     * Add a Flow layout
+     *
+     * @param modifier          list of modifiers for the layout
+     * @param horizontal        horizontal positioning
+     * @param vertical          vertical positioning
+     * @param maxItemsInEachRow maximum number of items in each row
+     * @param maxLines          maximum number of lines
+     * @param content           content of the layout
+     */
+    public void flow(
+            @NonNull RecordingModifier modifier,
+            int horizontal,
+            int vertical,
+            int maxItemsInEachRow,
+            int maxLines,
+            @NonNull RemoteComposeWriterInterface content) {
+        startFlow(modifier, horizontal, vertical, maxItemsInEachRow, maxLines);
+        content.run();
+        endFlow();
+    }
+
+    /**
+     * Start a flow layout
+     */
+    public void startFlow(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
+        startFlow(modifier, horizontal, vertical, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Start a flow layout
+     */
+    public void startFlow(@NonNull RecordingModifier modifier, int horizontal, int vertical,
+            int maxItemsInEachRow, int maxLines) {
+        int componentId = modifier.getComponentId();
+        float spacedBy = modifier.getSpacedBy();
+        mBuffer.addFlowStart(componentId, -1, horizontal, vertical, spacedBy,
+                maxItemsInEachRow, maxLines);
+        for (RecordingModifier.Element m : modifier.getList()) {
+            m.write(this);
+        }
+        addContentStart();
+    }
+
+    /** End a flow layout */
+    public void endFlow() {
         mBuffer.addContainerEnd();
         mBuffer.addContainerEnd();
     }
@@ -3104,6 +3597,44 @@ public class RemoteComposeWriter {
     public void endBox() {
         mBuffer.addContainerEnd();
         mBuffer.addContainerEnd();
+    }
+
+    /** Start a custom native component layout */
+    public void startCustom(
+            @NonNull RecordingModifier modifier,
+            @NonNull String config,
+            @NonNull List<Custom.CustomProperty> properties) {
+        int configId = textCreateId(config);
+        Custom.apply(mBuffer.getBuffer(), modifier.getComponentId(), -1, configId,
+                properties);
+        for (RecordingModifier.Element m : modifier.getList()) {
+            m.write(this);
+        }
+        mBuffer.addContentStart();
+    }
+
+    /** End a custom native component layout */
+    public void endCustom() {
+        mBuffer.addContainerEnd();
+        mBuffer.addContainerEnd();
+    }
+
+    /**
+     * Add a fitBox layout
+     *
+     * @param modifier   list of modifiers for the layout
+     * @param horizontal horizontal positioning
+     * @param vertical   vertical positioning
+     * @param content    content of the layout
+     */
+    public void fitBox(
+            @NonNull RecordingModifier modifier,
+            int horizontal,
+            int vertical,
+            @NonNull RemoteComposeWriterInterface content) {
+        startFitBox(modifier, horizontal, vertical);
+        content.run();
+        endFitBox();
     }
 
     /**
@@ -3263,6 +3794,7 @@ public class RemoteComposeWriter {
     public void textComponent(
             @NonNull RecordingModifier modifier,
             int textId,
+            int textStyleId,
             int color,
             int colorId,
             float fontSize,
@@ -3290,6 +3822,7 @@ public class RemoteComposeWriter {
         startTextComponent(
                 modifier,
                 textId,
+                textStyleId,
                 color,
                 colorId,
                 fontSize,
@@ -3407,6 +3940,7 @@ public class RemoteComposeWriter {
     public void startTextComponent(
             @NonNull RecordingModifier modifier,
             int textId,
+            int textStyleId,
             int color,
             int colorId,
             float fontSize,
@@ -3448,6 +3982,7 @@ public class RemoteComposeWriter {
                 modifier.getComponentId(),
                 -1,
                 textId,
+                textStyleId,
                 color,
                 colorId,
                 fontSize,
@@ -3481,6 +4016,51 @@ public class RemoteComposeWriter {
     public void endTextComponent() {
         mBuffer.addContainerEnd();
         mBuffer.addContainerEnd();
+    }
+
+    /**
+     * Start a text component with a text style
+     *
+     * @param modifier    the modifier
+     * @param textId      id of the text
+     * @param textStyleId id of the text style
+     * @param flags       flags for configuration
+     */
+    public void startTextComponent(
+            @NonNull RecordingModifier modifier,
+            int textId,
+            int textStyleId,
+            int flags) {
+        mBuffer.addTextComponentStart(
+                modifier.getComponentId(),
+                -1,
+                textId,
+                textStyleId,
+                flags);
+        for (RecordingModifier.Element m : modifier.getList()) {
+            m.write(this);
+        }
+        addContentStart();
+    }
+
+    /**
+     * Add a text component with a text style
+     *
+     * @param modifier    the modifier
+     * @param textId      id of the text
+     * @param textStyleId id of the text style
+     * @param flags       flags for configuration
+     * @param content     the content to run
+     */
+    public void textComponent(
+            @NonNull RecordingModifier modifier,
+            int textId,
+            int textStyleId,
+            int flags,
+            @NonNull RemoteComposeWriterInterface content) {
+        startTextComponent(modifier, textId, textStyleId, flags);
+        content.run();
+        endTextComponent();
     }
 
     /**
@@ -3632,7 +4212,7 @@ public class RemoteComposeWriter {
     /**
      * Ensures the bitmap is stored.
      *
-     * @param image the bitbap to store
+     * @param image the bitmap to store
      * @return the id of the bitmap
      */
     public int storeBitmap(@NonNull Object image) {
@@ -3654,16 +4234,28 @@ public class RemoteComposeWriter {
     /**
      * Ensures the bitmap is stored.
      *
-     * @param url the bitbap to store
+     * @param url the bitmap to store
+     * @param width the bitmap width
+     * @param height the bitmap height
      * @return the id of the bitmap
      */
-    public int addBitmapUrl(@NonNull String url) {
+    public int addBitmapUrl(@NonNull String url, int width, int height) {
         int imageId = mState.dataGetId(url);
         if (imageId == -1) {
             imageId = mState.cacheData(url);
-            mBuffer.storeBitmapUrl(imageId, url);
+            mBuffer.storeBitmapUrl(imageId, url, width, height);
         }
         return imageId;
+    }
+
+    /**
+     * Ensures the bitmap is stored.
+     *
+     * @param url the bitmap to store
+     * @return the id of the bitmap
+     */
+    public int addBitmapUrl(@NonNull String url) {
+        return addBitmapUrl(url, 1, 1);
     }
 
     /**
@@ -4185,15 +4777,37 @@ public class RemoteComposeWriter {
         mBuffer.addRoundClipRectModifier(topStart, topEnd, bottomStart, bottomEnd);
     }
 
+    public static final byte HORIZONTAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.HORIZONTAL_CONSTRAINTS;
+    public static final byte VERTICAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.VERTICAL_CONSTRAINTS;
+    public static final byte REQUIRED_HORIZONTAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.REQUIRED_HORIZONTAL_CONSTRAINTS;
+    public static final byte REQUIRED_VERTICAL_CONSTRAINTS =
+            DimensionConstraintsModifierOperation.REQUIRED_VERTICAL_CONSTRAINTS;
+
     /**
      * Add a width in modifier operation
      *
-     * @param min the minimum width
-     * @param max the maximum width
+     * @param min the min width
+     * @param max the max width
      */
     public void addWidthInModifierOperation(float min, float max) {
         mBuffer.addWidthInModifierOperation(min, max);
     }
+
+    /**
+     * Add a dimension constraints modifier operation
+     *
+     * @param min  the min dimension
+     * @param max  the max dimension
+     * @param type the type of constraint (Horizontal, Vertical, Required Horizontal,
+     *             Required Vertical)
+     */
+    public void addDimensionConstraintsModifierOperation(int type, float min, float max) {
+        mBuffer.addDimensionConstraintsModifierOperation(type, min, max);
+    }
+
 
     /**
      * Add a modifier padding
@@ -4260,6 +4874,15 @@ public class RemoteComposeWriter {
 
     /**
      * Add a click modifier operation
+     *
+     * @param clickType type of click (0=single, 1=long, 2=double)
+     */
+    public void addClickModifierOperation(int clickType) {
+        mBuffer.addClickModifierOperation(clickType);
+    }
+
+    /**
+     * Add a click modifier operation
      */
     public void addClickModifierOperation() {
         mBuffer.addClickModifierOperation();
@@ -4312,7 +4935,11 @@ public class RemoteComposeWriter {
      * @param shapeType     the shape type
      */
     public void addModifierBorder(float width, float roundedCorner, int color, int shapeType) {
-        mBuffer.addModifierBorder(width, roundedCorner, color, shapeType);
+        if (mApiLevel <= 7){
+            mBuffer.addModifierBorder(width, roundedCorner, color, shapeType);
+        } else {
+            mBuffer.addModifierBorder(width, roundedCorner, color, shapeType, false);
+        }
     }
 
     /**
@@ -4328,7 +4955,11 @@ public class RemoteComposeWriter {
             float roundedCorner,
             int colorId,
             int shapeType) {
-        mBuffer.addModifierDynamicBorder(width, roundedCorner, colorId, shapeType);
+        if (mApiLevel <= 7) {
+            mBuffer.addModifierDynamicBorder(width, roundedCorner, colorId, shapeType);
+        } else {
+            mBuffer.addModifierDynamicBorder(width, roundedCorner, colorId, shapeType, false);
+        }
     }
 
     /**
@@ -4384,12 +5015,31 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Start a referenced operations container
+     *
+     * @param id the id of the container
+     */
+    public void startReferencedOperations(int id) {
+        mBuffer.addReferencedOperations(id);
+    }
+
+    /**
+     * End a referenced operations container
+     */
+    public void endReferencedOperations() {
+        mBuffer.addContainerEnd();
+    }
+
+    /**
      * begin a section of global commands.
-     * Theses commands will be moved to before the root
+     * These commands will be moved to before the root
      */
     public void beginGlobal() {
         if (mStartGlobalSection != -1) {
             throw new RuntimeException("Trying to start a global section twice");
+        }
+        if (mInsertPoint == -1) {
+            mInsertPoint = mBuffer.getBuffer().size();
         }
         mStartGlobalSection = mBuffer.getBuffer().size();
     }
@@ -4408,6 +5058,34 @@ public class RemoteComposeWriter {
             mInsertPoint += bytes;
         }
         mStartGlobalSection = -1;
+    }
+
+
+    /**
+     * Add a message to the log
+     * This is for debugging purposes only it is used by debugging software
+     */
+    public void rem(@NonNull String message) {
+        mBuffer.rem(message);
+    }
+
+    /**
+     * This allows you to conditionally skip a segment
+     *
+     * @return number to use in the call to endSkip
+     */
+    public int beginSkip(short type, int value) {
+        return mBuffer.beginSkip(type, value);
+    }
+
+    /**
+     * This defines the section to end skipping
+     * Warning using this with startGlobal endGlobal can be tricky
+     *
+     * @param offset the value returned by the end skip
+     */
+    public void endSkip(int offset) {
+        mBuffer.endSkip(offset);
     }
 
     /**

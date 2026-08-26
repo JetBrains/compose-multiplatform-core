@@ -20,9 +20,9 @@ import androidx.annotation.Sampled
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.AugmentedObject
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.scene
@@ -32,6 +32,10 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
+/**
+ * @param session the [Session] to get the augmented objects from
+ * @param lifecycle the [Lifecycle] to scope the coroutine to
+ */
 @Sampled
 fun getAugmentedObjects(session: Session, lifecycle: Lifecycle) {
     // Use a coroutine to listen to changes to the set of detected objects.

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.test.injectionscope.touch
 
-import android.os.SystemClock.sleep
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Release
@@ -32,7 +31,6 @@ import androidx.compose.ui.test.util.assertTimestampsAreIncreasing
 import androidx.compose.ui.test.util.verify
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +43,7 @@ class UpTest {
         private val downPosition2 = Offset(20f, 20f)
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recorder = MultiPointerInputRecorder()
 
@@ -59,7 +57,7 @@ class UpTest {
     fun onePointer() {
         // When we inject a down event followed by an up event
         rule.performTouchInput { down(downPosition1) }
-        sleep(20) // (with some time in between)
+        rule.mainClock.advanceTimeBy(20) // (with some time in between)
         rule.performTouchInput { up() }
 
         rule.runOnIdle {
@@ -68,11 +66,13 @@ class UpTest {
                 assertTimestampsAreIncreasing()
                 assertThat(events).hasSize(2)
 
-                val t = events[0].getPointer(0).timestamp
+                val t0 = events[0].getPointer(0).timestamp
                 val pointerId = events[0].getPointer(0).id
 
+                val t1 = events[1].getPointer(0).timestamp
+                assertThat(t1).isGreaterThan(t0)
                 assertThat(events[1].pointerCount).isEqualTo(1)
-                events[1].getPointer(0).verify(t, pointerId, false, downPosition1, Touch, Release)
+                events[1].getPointer(0).verify(t1, pointerId, false, downPosition1, Touch, Release)
             }
         }
 
@@ -94,16 +94,20 @@ class UpTest {
                 assertTimestampsAreIncreasing()
                 assertThat(events).hasSize(4)
 
-                val t = events[0].getPointer(0).timestamp
+                val t0 = events[0].getPointer(0).timestamp
                 val pointerId1 = events[0].getPointer(0).id
                 val pointerId2 = events[1].getPointer(1).id
 
+                val t2 = events[2].getPointer(0).timestamp
+                assertThat(t2).isAtLeast(t0)
                 assertThat(events[2].pointerCount).isEqualTo(2)
-                events[2].getPointer(0).verify(t, pointerId1, false, downPosition1, Touch, Release)
-                events[2].getPointer(1).verify(t, pointerId2, true, downPosition2, Touch, Release)
+                events[2].getPointer(0).verify(t2, pointerId1, false, downPosition1, Touch, Release)
+                events[2].getPointer(1).verify(t2, pointerId2, true, downPosition2, Touch, Release)
 
+                val t3 = events[3].getPointer(0).timestamp
+                assertThat(t3).isAtLeast(t2)
                 assertThat(events[3].pointerCount).isEqualTo(1)
-                events[3].getPointer(0).verify(t, pointerId2, false, downPosition2, Touch, Release)
+                events[3].getPointer(0).verify(t3, pointerId2, false, downPosition2, Touch, Release)
             }
         }
 

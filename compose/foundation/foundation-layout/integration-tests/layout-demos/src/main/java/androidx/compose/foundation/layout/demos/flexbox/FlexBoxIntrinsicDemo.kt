@@ -20,7 +20,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexBox
 import androidx.compose.foundation.layout.FlexDirection
 import androidx.compose.foundation.layout.FlexWrap
@@ -39,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 fun FlexBoxIntrinsicDemo() {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)
@@ -51,8 +49,8 @@ fun FlexBoxIntrinsicDemo() {
         Box(modifier = Modifier.width(IntrinsicSize.Min).background(Color.LightGray)) {
             FlexBox(
                 config = {
-                    direction = FlexDirection.Row
-                    wrap = FlexWrap.NoWrap
+                    direction(FlexDirection.Row)
+                    wrap(FlexWrap.NoWrap)
                 },
                 modifier = Modifier.border(2.dp, Color.Red),
             ) {
@@ -70,8 +68,8 @@ fun FlexBoxIntrinsicDemo() {
         Box(modifier = Modifier.width(IntrinsicSize.Min).background(Color.LightGray)) {
             FlexBox(
                 config = {
-                    direction = FlexDirection.Row
-                    wrap = FlexWrap.Wrap
+                    direction(FlexDirection.Row)
+                    wrap(FlexWrap.Wrap)
                 },
                 modifier = Modifier.border(2.dp, Color.Red),
             ) {
@@ -90,8 +88,8 @@ fun FlexBoxIntrinsicDemo() {
         Box(modifier = Modifier.height(IntrinsicSize.Min).background(Color.LightGray)) {
             FlexBox(
                 config = {
-                    direction = FlexDirection.Column
-                    wrap = FlexWrap.NoWrap
+                    direction(FlexDirection.Column)
+                    wrap(FlexWrap.NoWrap)
                 },
                 modifier = Modifier.border(2.dp, Color.Red),
             ) {
@@ -109,8 +107,8 @@ fun FlexBoxIntrinsicDemo() {
         Box(modifier = Modifier.height(IntrinsicSize.Min).background(Color.LightGray)) {
             FlexBox(
                 config = {
-                    direction = FlexDirection.Column
-                    wrap = FlexWrap.Wrap
+                    direction(FlexDirection.Column)
+                    wrap(FlexWrap.Wrap)
                 },
                 modifier = Modifier.border(2.dp, Color.Red),
             ) {

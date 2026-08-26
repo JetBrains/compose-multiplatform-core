@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.FocusedWindowTest
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.PlatformSelectionBehaviorsRule
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
+import androidx.compose.foundation.text.TouchInputModeManager
 import androidx.compose.foundation.text.input.InputMethodInterceptor
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -48,8 +49,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -59,8 +63,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasPerformImeAction
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -82,16 +84,14 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
 @LargeTest
 class TextFieldCursorHandleTest : FocusedWindowTest {
 
-    val testDispatcher = StandardTestDispatcher()
-
-    @get:Rule val rule = createComposeRule(testDispatcher)
+    @get:Rule val rule = createComposeRule()
     @get:Rule val platformSelectionBehaviorsRule = PlatformSelectionBehaviorsRule()
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
@@ -276,6 +276,31 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
         focusAndWait()
 
         rule.onNodeWithTag(TAG).performClick()
+        rule.onNode(isSelectionHandle(Handle.Cursor)).assertDoesNotExist()
+    }
+
+    @Test
+    fun cursorHandle_notVisibleInKeyboardInputMode() {
+        val inputModeManager =
+            object : InputModeManager {
+                override val inputMode = InputMode.Keyboard
+
+                override fun requestInputMode(inputMode: InputMode): Boolean = false
+            }
+
+        state = TextFieldState()
+        rule.setTextFieldTestContent {
+            CompositionLocalProvider(LocalInputModeManager provides inputModeManager) {
+                BasicTextField(
+                    state,
+                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                    modifier = Modifier.testTag(TAG),
+                )
+            }
+        }
+
+        focusAndWait()
+
         rule.onNode(isSelectionHandle(Handle.Cursor)).assertDoesNotExist()
     }
 
@@ -963,6 +988,7 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
 
     // endregion
 
+    @Ignore("b/516627719")
     @Test
     fun cursorHandleHides_whenHardwareKeyboardIsUsed_thenComesBackWithTouch() {
         state = TextFieldState("hello")
@@ -982,11 +1008,11 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
             click(Offset(fontSize.toPx() * 2, fontSize.toPx() / 2))
         }
 
-        rule.onNode(isSelectionHandle(Handle.Cursor)).isDisplayed()
+        rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
 
         state.edit { placeCursorAtEnd() }
 
-        rule.onNode(isSelectionHandle(Handle.Cursor)).isDisplayed()
+        rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
 
         // regular `performKeyInput` scope does not set source to InputDevice.SOURCE_KEYBOARD
         view.dispatchKeyEvent(
@@ -1004,25 +1030,27 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
             )
         )
 
-        rule.onNode(isSelectionHandle(Handle.Cursor)).isNotDisplayed()
+        rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsNotDisplayed()
 
         rule.onNodeWithTag(TAG).performTouchInput {
             click(Offset(fontSize.toPx() * 2, fontSize.toPx() / 2))
         }
 
-        rule.onNode(isSelectionHandle(Handle.Cursor)).isDisplayed()
+        rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
     }
 
     @Test
     fun cursorHandle_disappears_whenInputConnectionSetSelection() {
         state = TextFieldState("hello, world", initialSelection = TextRange(2))
         inputMethodInterceptor.setTextFieldTestContent {
-            Column {
-                BasicTextField(
-                    state,
-                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(100.dp),
-                )
+            CompositionLocalProvider(LocalInputModeManager provides TouchInputModeManager) {
+                Column {
+                    BasicTextField(
+                        state,
+                        textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                        modifier = Modifier.testTag(TAG).width(100.dp),
+                    )
+                }
             }
         }
 
@@ -1042,12 +1070,14 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
     fun cursorHandle_disappears_whenInputConnectionSendKeyEvent() {
         state = TextFieldState("hello, world", initialSelection = TextRange(2))
         inputMethodInterceptor.setTextFieldTestContent {
-            Column {
-                BasicTextField(
-                    state,
-                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier.testTag(TAG).width(300.dp),
-                )
+            CompositionLocalProvider(LocalInputModeManager provides TouchInputModeManager) {
+                Column {
+                    BasicTextField(
+                        state,
+                        textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                        modifier = Modifier.testTag(TAG).width(300.dp),
+                    )
+                }
             }
         }
 
@@ -1115,7 +1145,7 @@ class TextFieldCursorHandleTest : FocusedWindowTest {
 
     private fun CoroutineScope.runBlockingOnIdle(block: suspend CoroutineScope.() -> Unit) {
         val job = rule.runOnIdle { launch(block = block) }
-        testDispatcher.scheduler.runCurrent()
+        rule.mainClock.scheduler.runCurrent()
         runBlocking { job.join() }
     }
 }

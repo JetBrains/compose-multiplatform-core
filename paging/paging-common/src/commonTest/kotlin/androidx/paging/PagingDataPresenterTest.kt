@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -2614,10 +2615,10 @@ class PagingDataPresenterTest {
         }
 
     @Test
-    fun refreshInterrupted_pageStoreResets() {
+    fun refreshInterrupted_pageStoreResets(): TestResult {
         Dispatchers.setMain(UnconfinedTestDispatcher())
 
-        testScope.runTest {
+        return testScope.runTest {
             var refreshCount = 0
             var exceptionDetected = false
             val pager =
@@ -2797,7 +2798,7 @@ private class HintReceiverFake : HintReceiver {
             return result
         }
 
-    override fun accessHint(viewportHint: ViewportHint) {
+    override fun processHint(viewportHint: ViewportHint) {
         _hints.add(viewportHint)
     }
 }
@@ -2827,9 +2828,9 @@ private class TrackableHintReceiverWrapper(private val receiver: HintReceiver? =
             return result
         }
 
-    override fun accessHint(viewportHint: ViewportHint) {
+    override fun processHint(viewportHint: ViewportHint) {
         _hints.add(viewportHint)
-        receiver?.accessHint(viewportHint)
+        receiver?.processHint(viewportHint)
     }
 }
 
@@ -2876,5 +2877,5 @@ internal val dummyUiReceiver =
 
 internal val dummyHintReceiver =
     object : HintReceiver {
-        override fun accessHint(viewportHint: ViewportHint) {}
+        override fun processHint(viewportHint: ViewportHint) {}
     }
