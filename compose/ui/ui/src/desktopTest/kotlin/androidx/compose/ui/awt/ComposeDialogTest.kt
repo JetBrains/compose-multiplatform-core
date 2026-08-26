@@ -383,11 +383,6 @@ class ComposeDialogTest {
         }
 
         try {
-            // The popup is composed after its parent has been placed and published an anchor.
-            dialog.pack()
-            assertThat(dialog.size).isEqualTo(Dimension(100, 100) + dialog.insets)
-
-            dialog.renderImmediately()
             dialog.pack()
             val size = dialog.size
             assertThat(size).isEqualTo(Dimension(500, 500) + dialog.insets)

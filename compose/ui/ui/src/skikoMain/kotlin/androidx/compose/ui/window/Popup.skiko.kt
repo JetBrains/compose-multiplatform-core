@@ -23,7 +23,6 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.currentCompositeKeyHashCode
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -472,10 +471,10 @@ private fun PopupLayout(
     content: @Composable () -> Unit
 ) {
     // Use a MutableState directly to avoid recomposing when the value changes
-    // Use nullable as a marker to wait until the popup scene has a real parent anchor before
-    // composing its content.
     val parentBoundsInWindow: MutableState<IntRect?> = remember { mutableStateOf(null) }
     EmptyLayout(Modifier.onPlaced { childCoordinates ->
+        // For a layer in the same scene, this runs before its popup measure policy calculates a
+        // position, so the policy observes the parent bounds in the first frame.
         childCoordinates.parentCoordinates?.let {
             // Nodes which read layout coordinates (including, e.g., positionInWindow) in
             // layout/placement get invalidated when these coordinates change
@@ -493,11 +492,6 @@ private fun PopupLayout(
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     layer.Content {
-        val canCalculatePosition by remember {
-            derivedStateOf { parentBoundsInWindow.value != null }
-        }
-        if (!canCalculatePosition) return@Content
-
         val platformInsets = properties.platformInsets
         val containerSize = LocalWindowInfo.current.containerSize
         val layoutDirection = LocalLayoutDirection.current
@@ -562,7 +556,11 @@ private fun rememberPopupMeasurePolicy(
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
         val parentRectInWindow = parentBoundsInWindow.value
-            ?: return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
+            ?: run {
+                // Keep an unanchored layer out of the visible window while its content is measured.
+                layer.boundsInWindow = IntRect.Zero
+                return@ComposeSceneLayerMeasurePolicy IntOffset.Zero
+            }
         val positionWithInsets =
             positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
                 // Position provider works in coordinates without insets.

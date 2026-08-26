@@ -1045,11 +1045,6 @@ class ComposePanelTest {
         }
 
         try {
-            // The popup is composed after its parent has been placed and published an anchor.
-            frame.pack()
-            assertThat(frame.size).isEqualTo(Dimension(100, 100) + frame.insets)
-
-            composePanel.renderImmediately()
             frame.pack()
             val size = frame.size
             assertThat(size).isEqualTo(Dimension(500, 500) + frame.insets)

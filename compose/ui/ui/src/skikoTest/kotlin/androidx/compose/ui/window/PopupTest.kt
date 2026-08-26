@@ -837,9 +837,7 @@ class PopupTest : SkikoComposeTestBase() {
     }
 
     @Test
-    fun popupShownAtCorrectCoordinatesImmediatelyInSameScene() = runSkikoComposeUiTest {
-        // CanvasLayersComposeScene measures popup layers in the same scene as their parent, so
-        // the parent's onPlaced callback is observable when the popup is first laid out.
+    fun popupShownAtCorrectCoordinatesImmediately() = runSkikoComposeUiTest {
         val positionProvider = object : PopupPositionProvider {
             override fun calculatePosition(
                 anchorBounds: IntRect,
