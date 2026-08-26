@@ -24,6 +24,7 @@ import platform.UIKit.UISceneConfiguration
 import platform.UIKit.UISceneConnectionOptions
 import platform.UIKit.UISceneDelegateProtocol
 import platform.UIKit.UISceneSession
+import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
@@ -49,17 +50,16 @@ fun main(vararg args: String) {
 }
 
 @Composable
-fun IosDemo(arg: String, makeHostingController: ((Int) -> UIViewController)? = null) {
+fun IosDemo(
+    arg: String,
+    viewControllerFactory: IosDemoViewControllerFactory? = null,
+) {
     val app = remember {
         App(
             extraScreens = listOf(
                 IosBugs,
                 IosSpecificFeatures,
-            ) + listOf(makeHostingController).mapNotNull {
-                it?.let {
-                    SwiftUIInteropExample(it)
-                }
-            }
+            ) + viewControllerFactory?.extraScreens().orEmpty()
         )
     }
     when (arg) {
@@ -69,6 +69,25 @@ fun IosDemo(arg: String, makeHostingController: ((Int) -> UIViewController)? = n
             StartRecompositionCheck.content()
         else -> app.Content()
     }
+}
+
+class IosDemoViewControllerFactory(
+    val makeHostingController: (Int) -> UIViewController,
+    val makeSwiftUISizeThatFitsSizingDemoController: (UIView, SwiftUISizeThatFitsSizingExample) -> UIViewController,
+    val makeSwiftUIIntrinsicSizingDemoController: (UIView, SwiftUIIntrinsicSizingExample) -> UIViewController,
+    val makeUIKitSizingDemoController: (UIView, UIKitSizingExample) -> UIViewController,
+) {
+    internal fun extraScreens(): List<Screen> = listOf(
+        IosSizing(
+            makeSwiftUISizeThatFitsSizingDemoController,
+            makeSwiftUIIntrinsicSizingDemoController,
+            makeUIKitSizingDemoController,
+        ),
+        Screen.Selection(
+            "SwiftUI",
+            SwiftUIInteropExample(makeHostingController),
+        ),
+    )
 }
 
 private lateinit var MakeRootViewController: () -> UIViewController
