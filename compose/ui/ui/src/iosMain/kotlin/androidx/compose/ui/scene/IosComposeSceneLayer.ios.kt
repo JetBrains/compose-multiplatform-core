@@ -115,7 +115,8 @@ internal class IosComposeSceneLayer(
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
-        interfaceOrientationState = interfaceOrientationState
+        interfaceOrientationState = interfaceOrientationState,
+        schedulePendingInteropViewUpdates = layersViewController::invalidateDraw,
     ).also {
         interactionView.embedSubview(it.backgroundView)
         it.isInterceptingOutsideEvents = consumePointerInputOutside
@@ -185,6 +186,10 @@ internal class IosComposeSceneLayer(
     }
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
+
+    fun retrievePendingViewUpdatesInteropTransaction() = mediator.retrievePendingViewUpdatesInteropTransaction()
+
+    val needsComposeSceneDraw: Boolean get() = mediator.needsComposeSceneDraw
 
     val hasInteropViews: Boolean get() = mediator.hasInteropViews
 

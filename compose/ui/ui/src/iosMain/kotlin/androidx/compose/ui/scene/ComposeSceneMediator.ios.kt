@@ -199,6 +199,7 @@ internal class ComposeSceneMediator(
     private val navigationEventInput: IosBackNavigationEventInput,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
+    private val schedulePendingInteropViewUpdates: () -> Unit = {},
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
@@ -227,9 +228,10 @@ internal class ComposeSceneMediator(
     )
 
     /**
-     * Indicates that a draw happened in the current display-link interval so the prefetch scheduler
-     * can tell whether the draw loop was idle when [FrameChoreographer.Listener.onOutOfFrame]
-     * runs.
+     * Indicates that a draw happened in the current display-link interval so
+     * [FrameChoreographer.Listener.onOutOfFrame] can determine whether pending interop view
+     * updates still need a host draw, and the prefetch scheduler can tell whether the draw loop
+     * was idle.
      */
     private var didDrawSinceDisplayLink = false
     private val frameChoreographerListener = object : FrameChoreographer.Listener {
@@ -241,6 +243,10 @@ internal class ComposeSceneMediator(
             lastFrameTimestamp: NSTimeInterval,
             targetTimestamp: NSTimeInterval
         ) {
+            if (!didDrawSinceDisplayLink && interopContainer.hasPendingViewUpdatesOnly) {
+                schedulePendingInteropViewUpdates()
+            }
+
             prefetchScheduler.execute(
                 lastFrameTimestamp = lastFrameTimestamp,
                 targetTimestamp = targetTimestamp,
@@ -373,7 +379,7 @@ internal class ComposeSceneMediator(
     private val interopContainer = IosInteropContainer(
         overlayContainer = _overlayView,
         backgroundContainer = _backgroundView,
-        requestRedraw = frameChoreographer::requestFrame
+        requestRedraw = frameChoreographer::requestFrame,
     )
 
     private val dragAndDropManager = IosDragAndDropManager(
@@ -689,8 +695,14 @@ internal class ComposeSceneMediator(
         scene.draw(canvas)
     }
 
+    val needsComposeSceneDraw: Boolean
+        get() = scene.hasPendingDraw
+
     fun retrieveInteropTransaction(): InteropSyncTransaction =
         interopContainer.retrieveTransaction()
+
+    fun retrievePendingViewUpdatesInteropTransaction(): InteropSyncTransaction =
+        interopContainer.retrievePendingViewUpdatesTransaction()
 
     @OptIn(InternalComposeUiApi::class)
     @Composable
