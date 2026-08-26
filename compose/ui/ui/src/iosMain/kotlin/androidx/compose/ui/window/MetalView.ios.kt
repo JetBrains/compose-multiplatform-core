@@ -79,7 +79,7 @@ private class LegacyMetalView(
 
     val redrawer = LegacyMetalRedrawer(
         metalLayer,
-        retrieveInteropTransaction
+        retrieveInteropTransaction,
     ) { canvas ->
         canvas.clear(canvasBackground)
         draw(canvas)

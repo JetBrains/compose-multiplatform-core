@@ -57,6 +57,7 @@ internal class ComposeContainerView(
     private var onWillMoveToWindow: (UIWindow?) -> Unit = {}
     private var onLayoutSubviews: () -> Unit = {}
     private var onTraitCollectionDidChange: () -> Unit = {}
+    private var onDraw: (needsSynchronousDraw: Boolean) -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
     private var onIntrinsicContentSizeInvalidated: (() -> Unit)? = null
     var onSizeThatFits: (CValue<CGSize>) -> CValue<CGSize>? = { null }
@@ -112,6 +113,7 @@ internal class ComposeContainerView(
         onDidMoveToWindow: (UIWindow?) -> Unit = {},
         onLayoutSubviews: () -> Unit = {},
         onTraitCollectionDidChange: () -> Unit = {},
+        onDraw: (needsSynchronousDraw: Boolean) -> Unit = {},
     ) {
         this.metalView?.dispose()
         this.metalView?.view?.removeFromSuperview()
@@ -121,6 +123,7 @@ internal class ComposeContainerView(
         this.onDidMoveToWindow = onDidMoveToWindow
         this.onLayoutSubviews = onLayoutSubviews
         this.onTraitCollectionDidChange = onTraitCollectionDidChange
+        this.onDraw = onDraw
 
         metalView?.let {
             addSubview(metalView.view)
@@ -178,7 +181,8 @@ internal class ComposeContainerView(
     }
 
     override fun drawRect(rect: CValue<CGRect>) {
-        metalView?.redrawer?.render(waitUntilCompletion = needsSynchronousDraw)
+        onDraw(needsSynchronousDraw)
+
         needsSynchronousDraw = false
 
         if (needsDisablePresentWithTransactionOnNextDraw) {

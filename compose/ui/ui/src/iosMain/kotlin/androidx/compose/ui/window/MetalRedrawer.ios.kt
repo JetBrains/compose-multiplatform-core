@@ -19,7 +19,6 @@ package androidx.compose.ui.window
 import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.InteropSyncAction
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
@@ -32,9 +31,22 @@ import platform.Metal.MTLDeviceProtocol
 
 internal sealed interface MetalRedrawer {
     fun render(waitUntilCompletion: Boolean)
+    fun performTransaction(transaction: InteropSyncTransaction)
     var isForcedToPresentWithTransactionEveryFrame: Boolean
     fun awaitRenderingCompletion()
     fun dispose()
+}
+
+internal inline fun MetalRedrawer.onDraw(
+    needsSynchronousDraw: Boolean,
+    needsComposeSceneDraw: Boolean,
+    retrievePendingViewUpdatesInteropTransaction: () -> InteropSyncTransaction,
+) {
+    if (needsComposeSceneDraw || needsSynchronousDraw) {
+        render(waitUntilCompletion = needsSynchronousDraw)
+    } else {
+        performTransaction(retrievePendingViewUpdatesInteropTransaction())
+    }
 }
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
@@ -118,12 +130,7 @@ internal class LegacyMetalRedrawer(
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
 
-        retrieveInteropTransaction = {
-            object : InteropSyncTransaction {
-                override val isInteropActive: Boolean = false
-                override val actions = emptyList<InteropSyncAction>()
-            }
-        }
+        retrieveInteropTransaction = { InteropSyncTransaction.Empty }
 
         draw = { _ -> }
 
@@ -210,7 +217,7 @@ internal class LegacyMetalRedrawer(
 
                 val presentsWithTransaction =
                     isForcedToPresentWithTransactionEveryFrame
-                        || interopTransaction.actions.isNotEmpty()
+                        || interopTransaction.hasPendingActions
                         || isInteropActive != interopTransaction.isInteropActive
                 metalLayer.presentsWithTransaction = presentsWithTransaction
 
@@ -272,6 +279,11 @@ internal class LegacyMetalRedrawer(
         } finally {
             isDrawRecursiveCall = false
         }
+    }
+
+    override fun performTransaction(transaction: InteropSyncTransaction) {
+        check(NSThread.isMainThread)
+        transaction.performTransaction()
     }
 
     companion object {
