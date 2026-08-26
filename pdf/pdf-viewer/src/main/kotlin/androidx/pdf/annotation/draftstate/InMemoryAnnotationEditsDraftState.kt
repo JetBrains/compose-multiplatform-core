@@ -18,11 +18,12 @@ package androidx.pdf.annotation.draftstate
 
 import androidx.annotation.RestrictTo
 import androidx.pdf.EditsDraft
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.MutableEditsDraft
 import androidx.pdf.annotation.AnnotationHandleIdGenerator
 import androidx.pdf.annotation.AnnotationHandleIdGenerator.composeAnnotationId
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.PdfAnnotation
 import java.util.Collections
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -39,11 +40,11 @@ import kotlin.concurrent.withLock
  * ## Time Complexity
  *
  * The time complexity of the operations is as follows:
- * - [getEdits]: O(k) where k is the number of annotations on the page (due to list creation).
- * - [addEdit]: O(1) on average.
- * - [removeEdit]: O(1) on average.
- * - [updateEdit]: O(1) on average.
- * - [toPdfEdits]: O(N) where N is the total number of edits across all pages.
+ * - [getDraftAnnotations]: O(k) where k is the number of annotations on the page (due to list
+ *   creation).
+ * - [addDraftAnnotation]: O(1) on average.
+ * - [removeAnnotation]: O(1) on average.
+ * - [updateDraftAnnotation]: O(1) on average.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
@@ -67,6 +68,7 @@ public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
         return draftAnnotationsPerPage[pageNum]?.values?.toList() ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun getModificationsSnapshot(): EditsDraft {
         val mutableEditsDraft = MutableEditsDraft()
         draftAnnotationsPerPage.forEach { (_, pageAnnotationsMap) ->

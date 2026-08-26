@@ -22,7 +22,6 @@ import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.vo.Book
 import androidx.room3.useWriterConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import kotlin.concurrent.thread
@@ -41,7 +40,7 @@ class InterruptionTest {
     @Test
     fun noInterruptionException() = runBlocking {
         val database =
-            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<TestDatabase>()
                 .setQueryCoroutineContext(Dispatchers.IO)
                 .setDriver(BundledSQLiteDriver())
                 .build()

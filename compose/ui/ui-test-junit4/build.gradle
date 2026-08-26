@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -32,7 +31,7 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(35) }
+        compileSdk { version = release(37) { minorApiLevel = 1 } }
         namespace = "androidx.compose.ui.test.junit4"
     }
     jvmStubs()
@@ -60,6 +59,7 @@ androidXMultiplatform {
             implementation("androidx.lifecycle:lifecycle-runtime:2.5.1")
             implementation("androidx.test:core:1.5.0")
             implementation("androidx.test:monitor:1.6.1")
+            implementation("androidx.test.espresso:espresso-core:3.5.0")
         }
 
         jvmStubsMain.dependencies {
@@ -103,6 +103,6 @@ androidx {
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2020"
     description = "Compose testing integration with JUnit4"
-    legacyDisableKotlinStrictApiMode = true
     enableRobolectric()
+    samples(project(":compose:ui:ui-test-junit4:ui-test-junit4-samples"))
 }

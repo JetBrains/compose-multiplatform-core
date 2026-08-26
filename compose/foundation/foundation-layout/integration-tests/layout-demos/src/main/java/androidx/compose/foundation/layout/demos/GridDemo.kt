@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalGridApi::class)
-
 package androidx.compose.foundation.layout.demos
 
 import androidx.compose.foundation.background
@@ -23,13 +20,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.GridFlow
 import androidx.compose.foundation.layout.GridScope
+import androidx.compose.foundation.layout.GridScope.Companion.GridIndexUnspecified
 import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,8 +35,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -77,6 +77,24 @@ fun GridDemo() {
         InfiniteConstraintsDemo()
         Spacer(Modifier.height(32.dp))
         MinContentSafetyDemo()
+        Spacer(Modifier.height(32.dp))
+        AutoSizingDemo()
+        Spacer(Modifier.height(32.dp))
+        ResponsiveConstraintsDemo()
+        Spacer(Modifier.height(32.dp))
+        AspectRatioDemo()
+        Spacer(Modifier.height(32.dp))
+        LazyListInGridDemo()
+        Spacer(Modifier.height(32.dp))
+        SpanIntrinsicHeightDemo()
+        Spacer(Modifier.height(32.dp))
+        NamedAreasDemo()
+        Spacer(Modifier.height(32.dp))
+        OneDimensionalAreasDemo()
+        Spacer(Modifier.height(32.dp))
+        OverlappingAreasDemo()
+        Spacer(Modifier.height(32.dp))
+        AdaptiveNamedAreasDemo()
     }
 }
 
@@ -145,7 +163,7 @@ private fun AutoPlacementDemo() {
 
 @Composable
 private fun MixedSizingDemo() {
-    DemoHeader("Mixed Sizing: Fixed vs Fraction vs Flex")
+    DemoHeader("Mixed Sizing: Fixed vs Percentage vs Flex")
     Grid(
         config = {
             columns(
@@ -158,7 +176,7 @@ private fun MixedSizingDemo() {
         modifier = Modifier.demoContainer(),
     ) {
         GridDemoItem(text = "Fixed\n100dp", color = Color.Red, row = 1, column = 1)
-        GridDemoItem(text = "Fraction\n30% of Total", color = Color.Blue, row = 1, column = 2)
+        GridDemoItem(text = "Percentage\n30% of Total", color = Color.Blue, row = 1, column = 2)
         GridDemoItem(text = "Flex\nRest of Space", color = Color.Green, row = 1, column = 3)
     }
 }
@@ -258,7 +276,7 @@ private fun AlignmentDemo() {
     DemoHeader("Cell Content Alignment")
     Grid(
         config = {
-            repeat(3) { column(GridTrackSize.Fixed(100.dp)) }
+            repeat(3) { column(GridTrackSize.Flex(1.fr)) }
             repeat(3) { row(GridTrackSize.Fixed(100.dp)) }
             gap(4.dp)
         },
@@ -361,6 +379,481 @@ private fun MinContentSafetyDemo() {
 }
 
 @Composable
+private fun AutoSizingDemo() {
+    DemoHeader("Auto Track Sizing")
+    Text(
+        "Auto tracks behave as minmax(min-content, max-content).\n" +
+            "They wrap content when constrained, but expand when space is available.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    // 1. Ample Space: Auto expands to fit the text in one line (MaxContent)
+    Text("1. Ample Space (200dp) -> MaxContent", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    Box(Modifier.width(200.dp).border(1.dp, Color.Gray).padding(4.dp)) {
+        Grid(config = { column(GridTrackSize.Auto) }) {
+            GridDemoItem(text = "I am Long Text that behaves like MaxContent", color = Color.Cyan)
+        }
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    // 2. Constrained Space: Auto shrinks and wraps text (approaching MinContent)
+    Text("2. Tight Space (100dp) -> Wraps", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    Box(Modifier.width(100.dp).border(1.dp, Color.Red).padding(4.dp)) {
+        Grid(config = { column(GridTrackSize.Auto) }) {
+            GridDemoItem(text = "I am Long Text that behaves like MinContent", color = Color.Yellow)
+        }
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    // 3. Comparison: MinContent vs Auto
+    Text("3. MinContent vs Auto", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    Grid(
+        config = {
+            column(GridTrackSize.MinContent) // Will crush text to longest word
+            column(GridTrackSize.Auto) // Will wrap comfortably
+            gap(8.dp)
+        },
+        modifier = Modifier.fillMaxWidth().border(1.dp, Color.Blue).padding(4.dp),
+    ) {
+        GridDemoItem(text = "MinContent crushes me", color = Color.Red, row = 1, column = 1)
+        GridDemoItem(text = "Auto wraps me nicely", color = Color.Green, row = 1, column = 2)
+    }
+}
+
+@Composable
+private fun ResponsiveConstraintsDemo() {
+    DemoHeader("Responsive Layout (Constraints)")
+
+    Text(
+        "Resize the slider to change the container width.\n" +
+            "The Grid config reads 'constraints.maxWidth' to determine column count.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    var containerWidth by remember { mutableStateOf(300.dp) }
+
+    Column(Modifier.fillMaxWidth().border(1.dp, Color.LightGray).padding(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Width: ${containerWidth.value.toInt()}dp",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Slider(
+                value = containerWidth.value,
+                onValueChange = { containerWidth = it.dp },
+                valueRange = 200f..500f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            )
+        }
+
+        // 2. Responsive Container
+        Box(
+            modifier =
+                Modifier.width(containerWidth)
+                    .border(2.dp, Color.Blue.copy(alpha = 0.5f))
+                    .padding(4.dp)
+        ) {
+            Grid(
+                config = {
+                    // Accessing 'constraints' from GridConfigurationScope.
+                    val maxWidthDp = constraints.maxWidth.toDp()
+
+                    val columnCount =
+                        when {
+                            maxWidthDp < 300.dp -> 2 // Compact
+                            maxWidthDp < 400.dp -> 3 // Medium
+                            else -> 4 // Expanded
+                        }
+
+                    // Define columns based on calculation
+                    repeat(columnCount) { column(1.fr) }
+                    gap(4.dp)
+                }
+            ) {
+                // Populate plenty of items to show the flow
+                repeat(8) {
+                    val color =
+                        when {
+                            containerWidth < 300.dp -> Color.Red // Compact Theme
+                            containerWidth < 400.dp -> Color.Yellow // Medium Theme
+                            else -> Color.Green // Expanded Theme
+                        }
+                    GridDemoItem(text = "${it + 1}", color = color, measureSize = false)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AspectRatioDemo() {
+    DemoHeader("Aspect Ratio in Flex Tracks")
+    Text(
+        "Aspect ratio modifiers should be respected within flexible tracks without exploding grid bounds.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            column(160.dp)
+            column(1.fr)
+            row(90.dp)
+            row(1.fr)
+            gap(8.dp)
+        },
+        modifier = Modifier.height(300.dp).fillMaxWidth().border(1.dp, Color.Gray).padding(8.dp),
+    ) {
+        val modifier = Modifier.aspectRatio(16f / 9f).fillMaxSize()
+        GridDemoItem("Fixed / Fixed", modifier = modifier, row = 1, column = 1, color = Color.Red)
+        GridDemoItem("Flex / Fixed", modifier = modifier, row = 1, column = 2, color = Color.Blue)
+        GridDemoItem("Fixed / Flex", modifier = modifier, row = 2, column = 1, color = Color.Green)
+        GridDemoItem("Flex / Flex", modifier = modifier, row = 2, column = 2, color = Color.Yellow)
+    }
+}
+
+@Composable
+private fun LazyListInGridDemo() {
+    DemoHeader("Lazy List in Flex Track")
+    Text(
+        "Flex tracks (1.fr) allowing SubcomposeLayouts like LazyColumn to be safely placed inside them.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            column(minmax(0.dp, 1.fr))
+            row(GridTrackSize.Auto)
+            row(minmax(0.dp, 1.fr))
+            gap(8.dp)
+        },
+        // We provide a fixed height so the 1.fr row has a finite boundary
+        // within the vertically scrolling parent Column.
+        modifier = Modifier.height(300.dp).demoContainer(borderColor = Color.Green),
+    ) {
+        // Row 1: Fixed/Auto header
+        GridDemoItem(text = "Header (Auto Row)", color = Color.Yellow)
+
+        // Row 2: LazyColumn in a minmax track
+        LazyColumn(
+            modifier =
+                Modifier.fillMaxSize()
+                    .background(Color.LightGray.copy(alpha = 0.3f))
+                    .border(1.dp, Color.Gray)
+        ) {
+            items(50) { index ->
+                Text(
+                    text = "Lazy Item #${index + 1}",
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    fontSize = 12.sp,
+                )
+            }
+        }
+    }
+}
+
+private enum class AppArea {
+    Header,
+    Sidebar,
+    Content,
+    Footer,
+}
+
+@Composable
+private fun NamedAreasDemo() {
+    DemoHeader("Named Areas")
+    Text(
+        "Semantic grid areas defined with an Enum, mapping identifiers to row/col spans. ",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            // Define a classic Dashboard structure
+            column(100.dp) // Sidebar track
+            column(1.fr) // Main content track
+
+            row(60.dp) // Header track
+            row(1.fr) // Main content track
+            row(50.dp) // Footer track
+
+            gap(8.dp)
+
+            // Map the semantic Enums to physical coordinates
+            area(AppArea.Header, row = 1, column = 1, columnSpan = 2)
+            area(AppArea.Sidebar, row = 2, column = 1)
+            area(AppArea.Content, row = 2, column = 2)
+            area(AppArea.Footer, rows = 3..3, columns = 1..2)
+        },
+        modifier = Modifier.height(300.dp).demoContainer(borderColor = Color.DarkGray),
+    ) {
+        // Place items purely by semantic intent!
+        GridDemoItem("Header", area = AppArea.Header, color = Color.Red)
+        GridDemoItem("Sidebar", area = AppArea.Sidebar, color = Color.Blue)
+        GridDemoItem("Main Content", area = AppArea.Content, color = Color.Green)
+        GridDemoItem("Footer", area = AppArea.Footer, color = Color.Yellow)
+    }
+}
+
+@Composable
+private fun OneDimensionalAreasDemo() {
+    DemoHeader("1D Named Areas")
+    Text(
+        "Define an area for an entire row/col (1D), or a specific cell (2D). " +
+            "Items placed in 1D areas automatically flow into available slots within that track!",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            // 1. Define physical tracks
+            column(100.dp) // Sidebar track
+            column(1.fr) // Main content track
+
+            row(60.dp) // Header track
+            row(1.fr) // Main content track
+            row(60.dp) // Footer track
+
+            gap(8.dp)
+
+            // 2. Define Semantic Areas
+            area(AppArea.Header, row = 1, columnSpan = 2)
+
+            area(AppArea.Sidebar, column = 1)
+
+            // Fully specified 2D area
+            area(AppArea.Content, row = 2, column = 2)
+
+            // Footer
+            area(AppArea.Footer, row = 3, column = GridIndexUnspecified, columnSpan = 2)
+        },
+        modifier = Modifier.height(300.dp).demoContainer(borderColor = Color.DarkGray),
+    ) {
+        // 'Header' is 1D (row=1), items automatically flow into its columns.
+        // Search bar takes the first available slot (row 1, col 1)
+        GridDemoItem("Search bar", area = AppArea.Header, color = Color.Magenta)
+
+        // 'Sidebar' is 1D (col=1), it flows into the next available row down that column.
+        // (Row 1, Col 1 is already taken by the Search bar!)
+        // So it flows to the next available slot -> (Row 2, Col 1).
+        GridDemoItem("Sidebar Menu", area = AppArea.Sidebar, color = Color.Blue)
+
+        // Exact 2D placement
+        GridDemoItem("Main Content", area = AppArea.Content, color = Color.Green)
+
+        // Footer
+        GridDemoItem("Footer", area = AppArea.Footer, color = Color.Red)
+    }
+}
+
+private enum class OverlapArea {
+    TopLeft,
+    BottomRight,
+    Center,
+}
+
+@Composable
+private fun OverlappingAreasDemo() {
+    DemoHeader("Overlapping Areas & Z-Ordering")
+    Text(
+        "Grid natively supports overlapping areas. " +
+            "Z-ordering is naturally determined by composition order (items declared " +
+            "later in the code are drawn on top).",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            repeat(3) { column(1.fr) }
+            repeat(3) { row(60.dp) }
+            gap(4.dp)
+
+            // Define intersecting areas
+            // TopLeft covers rows 1-2, cols 1-2
+            area(OverlapArea.TopLeft, rows = 1..2, columns = 1..2)
+
+            // BottomRight covers rows 2-3, cols 2-3 (overlaps at row 2, col 2)
+            area(OverlapArea.BottomRight, rows = 2..3, columns = 2..3)
+
+            // Center is exactly at the overlapping cell
+            area(OverlapArea.Center, row = 2, column = 2)
+        },
+        modifier = Modifier.height(200.dp).demoContainer(borderColor = Color.DarkGray),
+    ) {
+        // 1. Drawn First (Bottom layer)
+        GridDemoItem(
+            text = "Top Left Area\n(Drawn First)",
+            area = OverlapArea.TopLeft,
+            color = Color.Red,
+        )
+
+        // 2. Drawn Second (Middle layer)
+        // This will visually sit on top of the Red item in the center cell
+        GridDemoItem(
+            text = "Bottom Right Area\n(Drawn Second)",
+            area = OverlapArea.BottomRight,
+            color = Color.Blue,
+        )
+
+        // 3. Drawn Last (Top-most layer)
+        // Placed exactly in the intersection with a smaller size and Center alignment
+        // so you can see all three layers stacking!
+        Box(
+            modifier =
+                Modifier.gridItem(OverlapArea.Center, alignment = Alignment.Center)
+                    .size(48.dp)
+                    .background(Color.Yellow)
+                    .border(2.dp, Color.Black),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Top", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun AdaptiveNamedAreasDemo() {
+    DemoHeader("Adaptive App Layout with Named Areas")
+
+    Text(
+        "Resize the slider." +
+            "The Grid config dynamically adapts by redefining the " +
+            "Named Areas based on the available constraints.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    var containerWidth by remember { mutableStateOf(400.dp) }
+    // Hoist the adaptive state so both the config and the content block can use it
+    val isExpanded = containerWidth >= 350.dp
+
+    Column(Modifier.fillMaxWidth().border(1.dp, Color.LightGray).padding(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Width: ${containerWidth.value.toInt()}dp",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Slider(
+                value = containerWidth.value,
+                onValueChange = { containerWidth = it.dp },
+                valueRange = 200f..600f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            )
+        }
+
+        Box(
+            modifier =
+                Modifier.width(containerWidth)
+                    .height(300.dp)
+                    .border(2.dp, Color.DarkGray.copy(alpha = 0.5f))
+                    .padding(4.dp)
+        ) {
+            Grid(
+                config = {
+                    if (!isExpanded) {
+                        // ==========================================
+                        // COMPACT ADAPTATION (Mobile)
+                        // 1 Column. Sidebar is removed.
+                        // ==========================================
+                        column(1.fr)
+                        row(60.dp) // Header
+                        row(1.fr) // Content
+                        row(60.dp) // Footer
+                        gap(4.dp)
+
+                        area(AppArea.Header, row = 1, column = 1)
+                        area(AppArea.Content, row = 2, column = 1)
+                        area(AppArea.Footer, row = 3, column = 1)
+                    } else {
+                        // ==========================================
+                        // EXPANDED ADAPTATION (Tablet)
+                        // 2 Columns. Header & Footer span both cols.
+                        // ==========================================
+                        column(100.dp) // Sidebar
+                        column(1.fr) // Content
+                        row(60.dp) // Header
+                        row(1.fr) // Content/Sidebar
+                        row(60.dp) // Footer
+                        gap(4.dp)
+
+                        area(AppArea.Header, row = 1, column = 1, columnSpan = 2)
+                        area(AppArea.Sidebar, row = 2, column = 1)
+                        area(AppArea.Content, row = 2, column = 2)
+                        area(AppArea.Footer, row = 3, column = 1, columnSpan = 2)
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                GridDemoItem("Header", area = AppArea.Header, color = Color.Red)
+                if (isExpanded) {
+                    GridDemoItem("Sidebar", area = AppArea.Sidebar, color = Color.Blue)
+                }
+                GridDemoItem("Main Content", area = AppArea.Content, color = Color.Green)
+                GridDemoItem("Footer", area = AppArea.Footer, color = Color.Yellow)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpanIntrinsicHeightDemo() {
+    DemoHeader("Span Intrinsic Height")
+    Text(
+        "Verifies if an item spanning multiple columns in an Auto row calculates " +
+            "its intrinsic height using the full spanned width (columns + gaps) " +
+            "rather than just a single column's width.",
+        fontSize = 12.sp,
+        fontStyle = FontStyle.Italic,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    Grid(
+        config = {
+            column(GridTrackSize.Percentage(0.5f))
+            column(GridTrackSize.Percentage(0.5f))
+            repeat(2) { row(GridTrackSize.Auto) }
+            gap(16.dp)
+        },
+        modifier = Modifier.demoContainer(borderColor = Color.Magenta),
+    ) {
+        // Row 1: The spanning item being tested
+        GridDemoItem(
+            text =
+                "This text spans 2 columns. The row should be short, " +
+                    "but if maxIntrinsicHeight is queried at half the actual width, " +
+                    "it will incorrectly report a much taller height.",
+            color = Color.Red,
+            row = 1,
+            column = 1,
+            columnSpan = 2,
+        )
+
+        // Row 2: Single-column items to visualize the actual column widths
+        GridDemoItem(text = "Column 1\n(Normal)", color = Color.Blue, row = 2, column = 1)
+
+        GridDemoItem(text = "Column 2\n(Normal)", color = Color.Green, row = 2, column = 2)
+    }
+}
+
+@Composable
 private fun DemoHeader(text: String) =
     Text(
         text,
@@ -377,6 +870,7 @@ private fun GridScope.GridDemoItem(
     column: Int? = null,
     rowSpan: Int = 1,
     columnSpan: Int = 1,
+    area: Any? = null,
     color: Color = Color.Green,
     measureSize: Boolean = true,
 ) {
@@ -384,7 +878,9 @@ private fun GridScope.GridDemoItem(
     val density = LocalDensity.current
     var finalModifier = modifier.fillMaxSize()
 
-    if (row != null && column != null) {
+    if (area != null) {
+        finalModifier = finalModifier.gridItem(areaId = area)
+    } else if (row != null && column != null) {
         finalModifier = finalModifier.gridItem(row, column, rowSpan, columnSpan)
     } else if (rowSpan > 1 || columnSpan > 1) {
         finalModifier = finalModifier.gridItem(rowSpan = rowSpan, columnSpan = columnSpan)

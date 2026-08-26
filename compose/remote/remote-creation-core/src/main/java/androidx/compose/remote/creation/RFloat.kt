@@ -201,12 +201,18 @@ open public class RFloat : Number {
         return RFloat(writer, floatArrayOf(*toArray(this), *toArray(v), Rc.FloatExpression.DIV))
     }
 
-    public operator fun get(v: RFloat): RFloat {
-        return RFloat(writer, floatArrayOf(*toArray(v), *toArray(this), Rc.FloatExpression.A_DEREF))
+    public operator fun get(index: RFloat): RFloat {
+        return RFloat(
+            writer,
+            floatArrayOf(*toArray(this), *toArray(index), Rc.FloatExpression.A_DEREF),
+        )
     }
 
-    public operator fun get(v: Int): RFloat {
-        return RFloat(writer, floatArrayOf(v.toFloat(), *toArray(this), Rc.FloatExpression.A_DEREF))
+    public operator fun get(index: Int): RFloat {
+        return RFloat(
+            writer,
+            floatArrayOf(*toArray(this), index.toFloat(), Rc.FloatExpression.A_DEREF),
+        )
     }
 
     public companion object {
@@ -484,7 +490,7 @@ public fun pingPong(max: Number, x: Number): RFloat {
     val maxr = max as? RFloat ?: RFloat(null, max.toFloat())
     var writer = xr.writer
     if (writer == null) {
-        writer = xr.writer
+        writer = maxr.writer
     }
 
     if (writer == null) {
@@ -609,6 +615,21 @@ public fun arrayMin(a: RFloat): RFloat {
 /** the sum of the values of an array */
 public fun arraySum(a: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_SUM))
+}
+
+/** the sum of the values of an array up to index */
+public fun arraySum(a: RFloat, index: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, *index.array, Rc.FloatExpression.A_SUM_UNTIL))
+}
+
+@Suppress("RestrictedApiAndroidX")
+public fun arraySumXY(a: RFloat, b: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, *b.array, Rc.FloatExpression.A_SUM_XY))
+}
+
+@Suppress("RestrictedApiAndroidX")
+public fun arraySumSqr(a: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.A_SUM_SQR))
 }
 
 /** the avg values of an array */
@@ -738,7 +759,7 @@ public fun RemoteComposeWriter.windowWidth(): RFloat {
 
 /** The height of the document on screen */
 public fun RemoteComposeWriter.windowHeight(): RFloat {
-    return RFloat(this, Rc.System.WINDOW_WIDTH)
+    return RFloat(this, Rc.System.WINDOW_HEIGHT)
 }
 
 public val RemoteComposeWriter.var1: RFloat

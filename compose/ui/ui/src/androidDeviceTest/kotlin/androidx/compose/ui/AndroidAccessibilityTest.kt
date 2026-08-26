@@ -40,6 +40,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityManager
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_RENDERING_INFO_KEY
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
@@ -112,6 +113,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.AndroidComposeViewAccessibilityDelegateCompatTest.Companion.AccessibilityEventComparator
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -122,10 +124,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.ClassName
@@ -151,6 +157,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.isSensitiveData
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.pageUp
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
@@ -193,6 +200,7 @@ import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -237,9 +245,9 @@ import java.util.Date
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -261,7 +269,7 @@ import org.mockito.kotlin.verify
 @OptIn(ExperimentalMaterialApi::class)
 @RunWith(AndroidJUnit4::class)
 class AndroidAccessibilityTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val accessibilityEventLoopIntervalMs = 100L
     private lateinit var androidComposeView: AndroidComposeView
@@ -735,12 +743,19 @@ class AndroidAccessibilityTest {
                         AccessibilityActionCompat(ACTION_FOCUS, null),
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
-                if (Build.VERSION.SDK_INT >= 26) {
+
+                if (Build.VERSION.SDK_INT >= 37) {
                     assertThat(availableExtraData)
                         .containsExactly(
                             "androidx.compose.ui.semantics.id",
-                            // TODO(b/272068594): This looks like a bug. This should be
-                            //  AccessibilityNodeInfoCompat.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
+                            "androidx.compose.ui.semantics.testTag",
+                            EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+                            EXTRA_DATA_RENDERING_INFO_KEY,
+                        )
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    assertThat(availableExtraData)
+                        .containsExactly(
+                            "androidx.compose.ui.semantics.id",
                             EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                             "androidx.compose.ui.semantics.testTag",
                         )
@@ -2209,8 +2224,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder)
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val lastButtonId = rule.onNodeWithText(lastButtonText).semanticsId()
@@ -2307,8 +2322,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder) // Check that the View exists
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val thirdButtonId = rule.onNodeWithText(thirdButtonText).semanticsId()
@@ -2774,8 +2789,9 @@ class AndroidAccessibilityTest {
         assertThat(data!!.size).isEqualTo(1)
 
         val rectF = data[0] as RectF // result in screen coordinates
+        val innerCoordinatorPosition = textFieldNode.layoutNode.innerCoordinator.positionInRoot()
         val expectedRectInLocalCoords =
-            textLayoutResult.getBoundingBox(0).translate(textFieldNode.positionInWindow)
+            textLayoutResult.getBoundingBox(0).translate(innerCoordinatorPosition)
         val expectedTopLeftInScreenCoords =
             androidComposeView.localToScreen(expectedRectInLocalCoords.topLeft)
         assertThat(rectF.left).isEqualTo(expectedTopLeftInScreenCoords.x)
@@ -2786,6 +2802,48 @@ class AndroidAccessibilityTest {
         val testTagKey = "androidx.compose.ui.semantics.testTag"
         provider.addExtraDataToAccessibilityNodeInfo(textFieldNode.id, info, testTagKey, argument)
         assertThat(info.extras.getCharSequence(testTagKey)).isEqualTo(tag)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Suppress("DEPRECATION")
+    fun testCharacterLocations_withSemanticsBeforePadding_reportsCorrectBoundingBoxes() {
+        val padding = 24
+        setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                // An outer semantics modifier before padding can cause getBoundingBoxes
+                // to use the wrong position if it picks this coordinator over the inner
+                // text layout coordinator. This is the scenario being regression-tested.
+                BasicText(
+                    text = "text",
+                    modifier = Modifier.semantics {}.padding(padding.dp).testTag(tag),
+                )
+            }
+        }
+        val textNode =
+            rule.onNodeWithTag(tag).fetchSemanticsNode("couldn't find node with tag $tag")
+        val info = AccessibilityNodeInfoCompat.obtain()
+        val argument =
+            Bundle().apply {
+                putInt(EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX, 0)
+                putInt(EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH, 1)
+            }
+
+        provider.addExtraDataToAccessibilityNodeInfo(
+            textNode.id,
+            info,
+            EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+            argument,
+        )
+
+        val data = info.extras.getParcelableArray(EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY)
+        assertThat(data!!.size).isEqualTo(1)
+
+        val rectF = data[0] as RectF
+        val viewPosition = intArrayOf(0, 0)
+        androidComposeView.getLocationOnScreen(viewPosition)
+        assertThat(rectF.left).isEqualTo(viewPosition[0].toFloat() + padding)
+        assertThat(rectF.top).isEqualTo(viewPosition[1].toFloat() + padding)
     }
 
     @Test
@@ -3793,6 +3851,321 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testSemanticsHitTest_unimportantOverlay() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag)) { BasicText("") }
+                Box(Modifier.fillMaxSize().semantics {})
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantOverlay_firstChild() {
+        setContent {
+            Box {
+                Row {
+                    Box(Modifier.size(100.dp).clickable {}.testTag("child1"))
+                    Box(Modifier.size(100.dp).clickable {}.testTag("child2"))
+                }
+                Column(Modifier.fillMaxSize().semantics {}) {}
+            }
+        }
+        val targetNode = rule.onNodeWithTag("child1")
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantOverlay_secondChild() {
+        setContent {
+            Box {
+                Row {
+                    Box(Modifier.size(100.dp).clickable {}.testTag("child1"))
+                    Box(Modifier.size(100.dp).clickable {}.testTag("child2"))
+                }
+                Column(Modifier.fillMaxSize().semantics {}) {}
+            }
+        }
+        val targetNode = rule.onNodeWithTag("child2")
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_overlayWithExplicitZIndex() {
+        setContent {
+            Box {
+                // Visually on top (Z=1), but unimportant for a11y
+                Box(Modifier.size(100.dp).zIndex(1f).semantics {})
+                // Visually at the bottom (Z=0), but important for a11y (clickable)
+                Box(Modifier.size(100.dp).zIndex(0f).clickable {}.testTag(tag))
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_doubleOverlay() {
+        setContent {
+            Box {
+                Box {
+                    Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+                    Box(Modifier.size(100.dp).semantics {})
+                }
+                Box(Modifier.size(100.dp).semantics {})
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_sandwichedTarget() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).semantics {})
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+                Box(Modifier.size(100.dp).semantics {})
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_offsetOverlap() {
+        // Two overlapping boxes offset from each other. We hit-test the intersection.
+        setContent {
+            Box {
+                // Important clickable at (0,0)
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+                // Unimportant overlay at (50,50), overlaps the bottom-right of the clickable
+                Box(Modifier.offset(50.dp, 50.dp).size(100.dp).semantics {})
+            }
+        }
+        val targetNodeId = rule.onNodeWithTag(tag).semanticsId()
+        // We pick a point inside the intersection of the two boxes (e.g., 75, 75).
+        val intersectionX = with(rule.density) { 75.dp.toPx() }
+        val intersectionY = with(rule.density) { 75.dp.toPx() }
+
+        dispatchTouchToExploreMotionEventAt(Offset(x = intersectionX, y = intersectionY))
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_importantOverlay() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable {})
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+            }
+        }
+        val overlayNode = rule.onNodeWithTag(tag)
+        val overlayNodeId = overlayNode.semanticsId()
+        val clickTarget = with(rule.density) { overlayNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(overlayNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_hiddenFromAccessibilityOverlay() {
+        setContent {
+            Box {
+                // Bottom: important (target)
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+                // Top: clickable, but explicitly hidden from a11y
+                Box(Modifier.size(100.dp).clickable {}.semantics { hideFromAccessibility() })
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_clearAndSetSemanticsOverlay() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+                // Because the overlay is not interactive, it is unimportant for accessibility.
+                Box(Modifier.size(100.dp).clearAndSetSemantics {})
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantOverlayWithImportantChild_clickOutsideChild() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable {}.testTag(tag))
+                // Unimportant overlay, but has an important child
+                Box(Modifier.size(100.dp).semantics {}) {
+                    // Important child is only 50dp, so the bottom-right 50dp of the overlay parent
+                    // is empty
+                    Box(Modifier.size(50.dp).clickable {})
+                }
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        // Target a point (75, 75) which is outside the important child, but inside the unimportant
+        // overlay parent and bottom clickable.
+        val clickTargetX = with(rule.density) { 75.dp.toPx() }
+        val clickTargetY = with(rule.density) { 75.dp.toPx() }
+
+        dispatchTouchToExploreMotionEventAt(Offset(x = clickTargetX, y = clickTargetY))
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantOverlayWithImportantChild_clickInsideChild() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable {})
+                // Unimportant overlay, but has an important child
+                Box(Modifier.size(100.dp).semantics {}) {
+                    // Important child is only 50dp, top-left
+                    Box(Modifier.size(50.dp).clickable {}.testTag(tag))
+                }
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantOverlayWithImportantMinTouchTargetSibling() {
+        setContent {
+            Box {
+                // Small important node (10x10 dp).
+                // Relies on the minimum touch target (48x48 dp) to be hit.
+                Box(Modifier.size(10.dp).clickable {}.testTag(tag))
+                Box(Modifier.size(100.dp).semantics {})
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+
+        // Dispatch touch at (20dp, 20dp), which is outside the 10dp target bounds, but inside its
+        // 48dp minimum touch target. It's also directly inside the 100dp overlay bounds.
+        val clickTarget = with(rule.density) { Offset(20.dp.toPx(), 20.dp.toPx()) }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_mergeDescendantsOverlay_hitsOverlay() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable {})
+                // An overlay that declares it merges descendants, but has no actionable semantics
+                // of its own.
+                Box(Modifier.size(100.dp).semantics(mergeDescendants = true) {}.testTag(tag))
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_pointerInputSharedWithSiblings_hitsTopNode() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).pointerInputSharedWithSiblings().clickable(onClick = {}))
+                Box(
+                    Modifier.size(100.dp)
+                        .pointerInputSharedWithSiblings()
+                        .clickable(onClick = {})
+                        .testTag(tag)
+                )
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantOverlayWithSharedPointerInput_fallsThrough() {
+        setContent {
+            Box {
+                Box(Modifier.size(100.dp).clickable(onClick = {}).testTag(tag))
+                Box(Modifier.size(100.dp).pointerInputSharedWithSiblings().semantics {})
+            }
+        }
+        val targetNode = rule.onNodeWithTag(tag)
+        val targetNodeId = targetNode.semanticsId()
+        val clickTarget = with(rule.density) { targetNode.getBoundsInRoot().toRect().center }
+
+        dispatchTouchToExploreMotionEventAt(clickTarget)
+
+        verifyHoverEnterAccessibilityEventSentFor(targetNodeId)
+    }
+
+    @Test
     fun testHideFromAccessibilityMatchers() {
         // Arrange.
         setContent {
@@ -3946,8 +4319,9 @@ class AndroidAccessibilityTest {
         val androidView =
             rule.onNodeWithTag(tag).fetchSemanticsNode("can't find node with tag $tag")
         val viewGroup =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[androidView.layoutNode]!!.view
-                as ViewGroup
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[androidView.layoutNode]!!
+                .view as ViewGroup
         val getAccessibilityViewIdMethod =
             View::class.java.getDeclaredMethod("getAccessibilityViewId")
         getAccessibilityViewIdMethod.isAccessible = true
@@ -3983,8 +4357,8 @@ class AndroidAccessibilityTest {
         // Act.
         val buttonHolder =
             rule.runOnIdle {
-                androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                        colSemanticsNode.replacedChildren[0].layoutNode]
+                androidComposeView.androidViewsHandler
+                    ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[0].layoutNode]
             }
         checkNotNull(buttonHolder)
 
@@ -4055,6 +4429,47 @@ class AndroidAccessibilityTest {
                     eq(androidComposeView),
                     argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_EXIT }),
                 )
+        }
+    }
+
+    @Test
+    fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled() {
+        val hoverableBoxTag = "hoverable"
+        val unhoverableBoxTag = "unhoverable"
+
+        setContent {
+            Column {
+                Box(
+                    Modifier.testTag(hoverableBoxTag).size(100.dp).semantics {
+                        contentDescription = "Hoverable Box"
+                    }
+                )
+                Box(Modifier.testTag(unhoverableBoxTag).size(100.dp))
+            }
+        }
+
+        val hoverableBounds =
+            with(rule.density) { rule.onNodeWithTag(hoverableBoxTag).getBoundsInRoot().toRect() }
+        rule.runOnUiThread {
+            val hoverEnter =
+                createHoverMotionEvent(
+                    action = ACTION_HOVER_ENTER,
+                    x = (hoverableBounds.left + hoverableBounds.right) / 2f,
+                    y = (hoverableBounds.top + hoverableBounds.bottom) / 2f,
+                )
+            assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isTrue()
+        }
+
+        val unhoverableBounds =
+            with(rule.density) { rule.onNodeWithTag(unhoverableBoxTag).getBoundsInRoot().toRect() }
+        rule.runOnUiThread {
+            val hoverEnter =
+                createHoverMotionEvent(
+                    action = ACTION_HOVER_ENTER,
+                    x = (unhoverableBounds.left + unhoverableBounds.right) / 2f,
+                    y = (unhoverableBounds.top + unhoverableBounds.bottom) / 2f,
+                )
+            assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
         }
     }
 
@@ -4176,6 +4591,40 @@ class AndroidAccessibilityTest {
         val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId()
         val overlappedChildOneNodeId = rule.onNodeWithTag(childOneTag).semanticsId()
         val overlappedChildTwoNodeId = rule.onNodeWithTag(childTwoTag).semanticsId()
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(createAccessibilityNodeInfo(parentNodeId).childCount).isEqualTo(1)
+            assertThat(createAccessibilityNodeInfo(overlappedChildOneNodeId).text.toString())
+                .isEqualTo("Child One")
+            assertThat(provider.createAccessibilityNodeInfo(overlappedChildTwoNodeId)).isNull()
+        }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun testAccessibilityNodeInfoTreePruned_completelyCovered_whenInMergingContainer() {
+        Assume.assumeTrue(ComposeUiFlags.isAccessibilityShouldIncludeOffscreenChildrenEnabled)
+        // Arrange.
+        val parentTag = "ParentForOverlappedChildren"
+        val childOneTag = "OverlappedChildOne"
+        val childTwoTag = "OverlappedChildTwo"
+        setContent {
+            Box(Modifier.testTag(parentTag).semantics(true) {}) {
+                with(LocalDensity.current) {
+                    BasicText(
+                        "Child One",
+                        Modifier.zIndex(1f).testTag(childOneTag).requiredSize(50.toDp()),
+                    )
+                    BasicText("Child Two", Modifier.testTag(childTwoTag).requiredSize(50.toDp()))
+                }
+            }
+        }
+        val parentNodeId = rule.onNodeWithTag(parentTag, useUnmergedTree = true).semanticsId()
+        val overlappedChildOneNodeId =
+            rule.onNodeWithTag(childOneTag, useUnmergedTree = true).semanticsId()
+        val overlappedChildTwoNodeId =
+            rule.onNodeWithTag(childTwoTag, useUnmergedTree = true).semanticsId()
 
         // Assert.
         rule.runOnIdle {
@@ -4536,6 +4985,43 @@ class AndroidAccessibilityTest {
         info.getBoundsInScreen(rect)
         assertThat(rect.width()).isEqualTo(150)
         assertThat(rect.height()).isEqualTo(150)
+    }
+
+    // Regression test for b/479577752
+    @Test
+    fun testChildBounds_clippedToParentBounds_whenParentLargerThanMinTouchTarget() {
+        // When parent's size (100) is larger than minimum touch target (48),
+        // and the child bounds are larger than the parent's (200),
+        // child bounds should be clipped to parent's actual bounds (100),
+        // not parent bounds + half min touch target (100 + 24 = 124).
+        setContent {
+            // density = 1f so that we don't have to convert at all.
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box(Modifier.size(200.dp).background(Color.Black.copy(alpha = 0.1f))) {
+                    // Constraining and clipping parent
+                    Box(Modifier.requiredSize(100.dp).clipToBounds()) {
+                        // Semantically clickable and clipped child
+                        Box(
+                            Modifier.wrapContentSize(Alignment.TopStart, unbounded = true)
+                                .requiredSize(200.dp)
+                                .background(Color.Blue)
+                                // onClick needed to go down the touch bounds path.
+                                .semantics { onClick { true } }
+                                .testTag(tag)
+                        )
+                    }
+                }
+            }
+        }
+
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
+        val rect = Rect().also { info.getBoundsInScreen(it) }
+
+        // Child should be clipped to parent's 100px.
+        // The regression size for 48 minTouchTarget would be 124.
+        assertThat(rect.width()).isEqualTo(100)
+        assertThat(rect.height()).isEqualTo(100)
     }
 
     @Test
@@ -5867,6 +6353,63 @@ class AndroidAccessibilityTest {
         container.setContent(content)
         rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
         clearInvocations(container)
+    }
+
+    /**
+     * Dispatch a hover enter motion event, which is the event dispatched on TalkBack's
+     * touch-to-explore tap.
+     */
+    private fun dispatchTouchToExploreMotionEventAt(offset: Offset) {
+        rule.runOnUiThread {
+            val hoverEnter =
+                createHoverMotionEvent(action = ACTION_HOVER_ENTER, x = offset.x, y = offset.y)
+            assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isTrue()
+        }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+    }
+
+    private fun verifyHoverEnterAccessibilityEventSentFor(semanticsNodeId: Int) {
+        rule.runOnIdle {
+            verify(container, times(1))
+                .requestSendAccessibilityEvent(
+                    eq(androidComposeView),
+                    argThat(
+                        ArgumentMatcher {
+                            it.eventType == TYPE_VIEW_HOVER_ENTER &&
+                                getAccessibilityEventSourceSemanticsNodeId(it) == semanticsNodeId
+                        }
+                    ),
+                )
+        }
+    }
+
+    private fun Modifier.pointerInputSharedWithSiblings(onPointerEvent: () -> Unit = {}): Modifier =
+        this.then(PointerInputSharedWithSiblingsElement(onPointerEvent))
+
+    private data class PointerInputSharedWithSiblingsElement(val onPointerEvent: () -> Unit) :
+        ModifierNodeElement<PointerInputSharedWithSiblingsNode>() {
+        override fun create(): PointerInputSharedWithSiblingsNode {
+            return PointerInputSharedWithSiblingsNode(onPointerEvent)
+        }
+
+        override fun update(node: PointerInputSharedWithSiblingsNode) {
+            node.onPointerEvent = onPointerEvent
+        }
+    }
+
+    private class PointerInputSharedWithSiblingsNode(var onPointerEvent: () -> Unit) :
+        Modifier.Node(), PointerInputModifierNode {
+        override fun onPointerEvent(
+            pointerEvent: PointerEvent,
+            pass: PointerEventPass,
+            bounds: IntSize,
+        ) {
+            onPointerEvent.invoke()
+        }
+
+        override fun onCancelPointerInput() {}
+
+        override fun sharePointerInputWithSiblings() = true
     }
 }
 

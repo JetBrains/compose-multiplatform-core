@@ -22,12 +22,13 @@ import androidx.compose.remote.core.RcPlatformServices
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.BitmapFontData
-import androidx.compose.remote.core.operations.DrawTextOnCircle
 import androidx.compose.remote.core.operations.TouchExpression
+import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
 import androidx.compose.remote.core.operations.layout.managers.TextLayout
+import androidx.compose.remote.core.operations.layout.managers.TextStyle
 import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.actions.Action
@@ -119,6 +120,7 @@ public open class RemoteComposeContext {
         content: RemoteComposeContext.() -> Unit,
     ) {
         mRemoteWriter = RemoteComposeWriter(platform, *tags)
+        content()
     }
 
     /** Create a new matrix expression. */
@@ -131,6 +133,24 @@ public open class RemoteComposeContext {
 
     public val writer: RemoteComposeWriter
         get() = mRemoteWriter
+
+    public fun stateLayout(
+        modifier: RecordingModifier = Modifier,
+        indexId: Int,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        mRemoteWriter.startStateLayout(modifier, indexId)
+        content()
+        mRemoteWriter.endStateLayout()
+    }
+
+    public fun stateLayout(
+        modifier: RecordingModifier = Modifier,
+        indexId: Long,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        stateLayout(modifier, Utils.idFromLong(indexId).toInt(), content)
+    }
 
     public val TIME_IN_SEC: Float = RemoteContext.FLOAT_CONTINUOUS_SEC
     public val FONT_TYPE_DEFAULT: Int = PaintBundle.FONT_TYPE_DEFAULT
@@ -156,6 +176,19 @@ public open class RemoteComposeContext {
         mRemoteWriter.row(modifier, horizontal, vertical) { content() }
     }
 
+    public fun flow(
+        modifier: RecordingModifier = Modifier,
+        horizontal: Int = RowLayout.START,
+        vertical: Int = RowLayout.TOP,
+        maxItemsInEachRow: Int = Int.MAX_VALUE,
+        maxLines: Int = Int.MAX_VALUE,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        mRemoteWriter.flow(modifier, horizontal, vertical, maxItemsInEachRow, maxLines) {
+            content()
+        }
+    }
+
     public fun box(
         modifier: RecordingModifier = Modifier,
         horizontal: Int = BoxLayout.START,
@@ -163,6 +196,15 @@ public open class RemoteComposeContext {
         content: RemoteComposeContext.() -> Unit,
     ) {
         mRemoteWriter.box(modifier, horizontal, vertical) { content() }
+    }
+
+    public fun fitBox(
+        modifier: RecordingModifier = Modifier,
+        horizontal: Int = BoxLayout.START,
+        vertical: Int = BoxLayout.TOP,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        mRemoteWriter.fitBox(modifier, horizontal, vertical) { content() }
     }
 
     public val Modifier: RecordingModifier
@@ -238,7 +280,7 @@ public open class RemoteComposeContext {
     }
 
     public fun buffer(): ByteArray {
-        return mRemoteWriter.buffer()
+        return mRemoteWriter.encodeToByteArray()
     }
 
     public fun bufferSize(): Int {
@@ -432,6 +474,75 @@ public open class RemoteComposeContext {
         return ret
     }
 
+    public fun definePattern(
+        name: String,
+        vararg paramIds: Int,
+        content: RemoteComposeContext.() -> Unit,
+    ): Int {
+        val id = mRemoteWriter.definePattern(name, paramIds)
+        content()
+        mRemoteWriter.endPatternDefine()
+        return id
+    }
+
+    public fun definePatternParameter(name: String): Int {
+        return mRemoteWriter.definePatternParameter(name)
+    }
+
+    public fun inflatePattern(
+        id: Int,
+        vararg argIds: Int,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        mRemoteWriter.patternInflation(id, argIds)
+        content()
+        mRemoteWriter.endPatternInflation()
+    }
+
+    public fun patternBlock(paramIndex: Int, content: RemoteComposeContext.() -> Unit) {
+        mRemoteWriter.addPatternBlock(paramIndex)
+        content()
+        mRemoteWriter.endPatternBlock()
+    }
+
+    public fun patternArgument(paramIndex: Int) {
+        mRemoteWriter.addPatternArgument(paramIndex)
+    }
+
+    public fun patternForEach(
+        collectionId: Int,
+        localItemId: Int,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        mRemoteWriter.addPatternForEach(collectionId, localItemId)
+        content()
+        mRemoteWriter.endPatternForEach()
+    }
+
+    public fun textId(text: String): Int {
+        return mRemoteWriter.textCreateId(text)
+    }
+
+    public fun floatId(id: Int): Float {
+        return Utils.asNan(id)
+    }
+
+    /**
+     * Allocate a macro-local ID (Tier 2, 0x4000-0x4FFF range). These IDs are automatically
+     * unique-ified for every macro expansion.
+     */
+    public fun localId(): Int {
+        return mRemoteWriter.nextLocalId()
+    }
+
+    public fun addDataListIds(ids: IntArray): Int {
+        return Utils.idFromNan(mRemoteWriter.addList(ids))
+    }
+
+    public fun addFloat(value: Float): Int {
+        return Utils.idFromNan(mRemoteWriter.addFloatConstant(value))
+    }
+
     public fun drawTextOnPath(text: String, path: Any, hOffset: Float, vOffset: Float) {
         mRemoteWriter.drawTextOnPath(text, path, hOffset, vOffset)
     }
@@ -444,6 +555,7 @@ public open class RemoteComposeContext {
         mRemoteWriter.drawTextOnPath(textId, pathId, hOffset, vOffset)
     }
 
+    /*
     public fun drawTextOnCircle(
         textId: Int,
         centerX: Float,
@@ -465,6 +577,7 @@ public open class RemoteComposeContext {
             placement,
         )
     }
+    */
 
     public fun drawTextRun(
         text: String,
@@ -618,6 +731,7 @@ public open class RemoteComposeContext {
         mRemoteWriter.pathAppendReset(pathId)
     }
 
+    /** The writer will not support this operation. */
     public fun addPathString(path: String): Int {
         return mRemoteWriter.addPathString(path)
     }
@@ -761,6 +875,10 @@ public open class RemoteComposeContext {
 
     public fun setStringName(id: Int, name: String) {
         mRemoteWriter.setStringName(id, name)
+    }
+
+    public fun setFloatName(id: Int, name: String) {
+        mRemoteWriter.setFloatName(id, name)
     }
 
     public fun addNamedString(name: String, initialValue: String): Int {
@@ -1072,6 +1190,21 @@ public open class RemoteComposeContext {
         mRemoteWriter.loop(indexId, from, step, until, content)
     }
 
+    public fun ifElse(positive: Number, trueOps: RemoteComposeWriterInterface) {
+        conditionalOperations(Rc.Condition.GT, positive.toFloat(), 0f, trueOps)
+    }
+
+    public fun ifElse(
+        positive: Number,
+        trueOps: RemoteComposeWriterInterface,
+        elseOps: RemoteComposeWriterInterface?,
+    ) {
+        conditionalOperations(Rc.Condition.GT, positive.toFloat(), 0f, trueOps)
+        if (elseOps != null) {
+            conditionalOperations(Rc.Condition.LTE, positive.toFloat(), 0f, elseOps)
+        }
+    }
+
     public fun conditionalOperations(
         type: Byte,
         a: Float,
@@ -1163,6 +1296,11 @@ public open class RemoteComposeContext {
 
     public fun drawComponentContent() {
         mRemoteWriter.drawComponentContent()
+    }
+
+    /** Alias for [drawComponentContent] to match Compose API. */
+    public fun drawContent() {
+        drawComponentContent()
     }
 
     public fun startCanvas(modifier: RecordingModifier) {
@@ -1281,6 +1419,7 @@ public open class RemoteComposeContext {
     public fun startTextComponent(
         modifier: RecordingModifier,
         textId: Int,
+        textStyleId: Int,
         color: Int,
         colorId: Int,
         fontSize: Float,
@@ -1308,6 +1447,7 @@ public open class RemoteComposeContext {
         mRemoteWriter.startTextComponent(
             modifier,
             textId,
+            textStyleId,
             color,
             colorId,
             fontSize,
@@ -1332,6 +1472,77 @@ public open class RemoteComposeContext {
             autosize,
             flags,
         )
+    }
+
+    public fun addTextStyle(
+        color: Int? = null,
+        colorId: Int? = null,
+        fontSize: Float? = null,
+        minFontSize: Float? = null,
+        maxFontSize: Float? = null,
+        fontStyle: Int? = null,
+        fontWeight: Float? = null,
+        fontFamily: String? = null,
+        textAlign: Int? = null,
+        overflow: Int? = null,
+        maxLines: Int? = null,
+        letterSpacing: Float? = null,
+        lineHeightAdd: Float? = null,
+        lineHeightMultiplier: Float? = null,
+        lineBreakStrategy: Int? = null,
+        hyphenationFrequency: Int? = null,
+        justificationMode: Int? = null,
+        underline: Boolean? = null,
+        strikethrough: Boolean? = null,
+        fontAxis: Array<String>? = null,
+        fontAxisValues: FloatArray? = null,
+        autosize: Boolean? = null,
+        parentId: Int = -1,
+    ): Int {
+        return mRemoteWriter.addTextStyle(
+            color,
+            colorId,
+            fontSize,
+            minFontSize,
+            maxFontSize,
+            fontStyle,
+            fontWeight,
+            fontFamily,
+            textAlign,
+            overflow,
+            maxLines,
+            letterSpacing,
+            lineHeightAdd,
+            lineHeightMultiplier,
+            lineBreakStrategy,
+            hyphenationFrequency,
+            justificationMode,
+            underline,
+            strikethrough,
+            fontAxis,
+            fontAxisValues,
+            autosize,
+            parentId,
+        )
+    }
+
+    public fun startTextComponent(
+        modifier: RecordingModifier,
+        textId: Int,
+        textStyleId: Int,
+        flags: Int = 0,
+    ) {
+        mRemoteWriter.startTextComponent(modifier, textId, textStyleId, flags)
+    }
+
+    public fun textComponent(
+        modifier: RecordingModifier,
+        textId: Int,
+        textStyleId: Int,
+        flags: Int = 0,
+        content: RemoteComposeWriterInterface,
+    ) {
+        mRemoteWriter.textComponent(modifier, textId, textStyleId, flags, content)
     }
 
     public fun endTextComponent() {
@@ -1587,9 +1798,9 @@ public open class RemoteComposeContext {
         stringId: Int,
         modifier: RecordingModifier = RecordingModifier(),
         color: Int = 0xFF000000.toInt(),
-        fontSize: Float = 36f,
+        fontSize: Float = TextStyle.DEFAULT_FONT_SIZE,
         fontStyle: Int = 0,
-        fontWeight: Float = 400f,
+        fontWeight: Float = TextStyle.DEFAULT_FONT_WEIGHT,
         fontFamily: String? = null,
         textAlign: Int = TextLayout.TEXT_ALIGN_LEFT,
         overflow: Int = TextLayout.OVERFLOW_CLIP,
@@ -1614,11 +1825,12 @@ public open class RemoteComposeContext {
         modifier: RecordingModifier = RecordingModifier(),
         color: Int = 0xFF000000.toInt(),
         colorId: Int = -1,
-        fontSize: Float = 36f,
+        textStyleId: Int = -1,
+        fontSize: Float = TextStyle.DEFAULT_FONT_SIZE,
         minFontSize: Float = -1f,
         maxFontSize: Float = -1f,
         fontStyle: Int = 0,
-        fontWeight: Float = 400f,
+        fontWeight: Float = TextStyle.DEFAULT_FONT_WEIGHT,
         fontFamily: String? = null,
         textAlign: Int = TextLayout.TEXT_ALIGN_LEFT,
         overflow: Int = TextLayout.OVERFLOW_CLIP,
@@ -1638,6 +1850,7 @@ public open class RemoteComposeContext {
         text(
             textId,
             modifier,
+            textStyleId,
             color,
             colorId,
             fontSize,
@@ -1665,13 +1878,14 @@ public open class RemoteComposeContext {
     public fun text(
         textId: Int,
         modifier: RecordingModifier = RecordingModifier(),
+        textStyleId: Int = -1,
         color: Int = 0xFF000000.toInt(),
-        colorId: Int = 0,
-        fontSize: Float = 36f,
+        colorId: Int = -1,
+        fontSize: Float = TextStyle.DEFAULT_FONT_SIZE,
         minFontSize: Float = -1f,
         maxFontSize: Float = -1f,
         fontStyle: Int = 0,
-        fontWeight: Float = 400f,
+        fontWeight: Float = TextStyle.DEFAULT_FONT_WEIGHT,
         fontFamily: String? = null,
         textAlign: Int = TextLayout.TEXT_ALIGN_LEFT,
         overflow: Int = TextLayout.OVERFLOW_CLIP,
@@ -1683,7 +1897,7 @@ public open class RemoteComposeContext {
         hyphenationFrequency: Int = 0,
         justificationMode: Int = 0,
         underline: Boolean = false,
-        striketrough: Boolean = false,
+        strikethrough: Boolean = false,
         autosize: Boolean = false,
         fontAxis: List<Pair<String, Float>>? = null,
         flags: Int = 0,
@@ -1697,6 +1911,7 @@ public open class RemoteComposeContext {
         mRemoteWriter.textComponent(
             modifier,
             textId,
+            textStyleId,
             color,
             colorId,
             fontSize,
@@ -1715,7 +1930,7 @@ public open class RemoteComposeContext {
             hyphenationFrequency,
             justificationMode,
             underline,
-            striketrough,
+            strikethrough,
             explicitStringArray,
             explicitFloatArray,
             autosize,
@@ -1731,6 +1946,65 @@ public open class RemoteComposeContext {
     /** The height of the document on screen */
     public fun windowHeight(): RFloat {
         return mRemoteWriter.windowHeight()
+    }
+
+    /**
+     * Define a set of operations that can be referenced later.
+     *
+     * @param id the id of the container
+     * @param block the block of operations
+     */
+    public fun referencedOperations(id: Int, block: RemoteComposeContext.() -> Unit) {
+        mRemoteWriter.startReferencedOperations(id)
+        block()
+        mRemoteWriter.endReferencedOperations()
+    }
+
+    /**
+     * Define a set of operations that can be referenced later.
+     *
+     * @param block the block of operations
+     * @return the id of the container
+     */
+    public fun referencedOperations(block: RemoteComposeContext.() -> Unit): Int {
+        val id = nextId()
+        mRemoteWriter.startReferencedOperations(id)
+        block()
+        mRemoteWriter.endReferencedOperations()
+        return id
+    }
+
+    /**
+     * Include a set of operations previously defined.
+     *
+     * @param id the id of the container to include
+     */
+    public fun include(id: Int) {
+        mRemoteWriter.addIncludeReferencedOperations(id)
+    }
+
+    /**
+     * Define a set of modifiers that can be referenced later.
+     *
+     * @param modifier the modifiers to include
+     */
+    public fun referencedModifiers(modifier: RecordingModifier): Int {
+        val id = nextId()
+        mRemoteWriter.startReferencedOperations(id)
+        modifier(modifier)
+        mRemoteWriter.endReferencedOperations()
+        return id
+    }
+
+    /**
+     * Emit the modifiers directly into the current container.
+     *
+     * @param modifier the modifiers to emit
+     */
+    public fun modifier(modifier: RecordingModifier) {
+        for (m in modifier.getList()) {
+            m.write(mRemoteWriter)
+        }
     }
 }
 
@@ -1889,4 +2163,23 @@ public fun RecordingModifier.computePosition(
     block: ComponentLayoutChanges.() -> Unit
 ): RecordingModifier {
     return then(ComponentLayoutComputeModifier(LayoutComputeOperation.TYPE_POSITION, block))
+}
+
+/**
+ * Creates a [RecordingModifier] that allows drawing with the component's content.
+ *
+ * @param onDraw The drawing block that provides access to [RemoteComposeContext].
+ */
+public fun RecordingModifier.drawWithContent(
+    onDraw: RemoteComposeContext.() -> Unit
+): RecordingModifier = then(DrawWithContentModifier(onDraw))
+
+internal class DrawWithContentModifier(private val onDraw: RemoteComposeContext.() -> Unit) :
+    RecordingModifier.Element {
+    override fun write(writer: RemoteComposeWriter) {
+        val context = RemoteComposeContext(writer)
+        context.mRemoteWriter.startCanvasOperations()
+        context.onDraw()
+        context.mRemoteWriter.endCanvasOperations()
+    }
 }

@@ -48,22 +48,29 @@ public class ResizeEvent(
         return result
     }
 
-    public class ResizeState private constructor(private val name: String) {
+    public class ResizeState private constructor(private val value: Int) {
 
         public companion object {
             /** The resize state is unknown. */
-            @JvmField public val UNKNOWN: ResizeState = ResizeState("UNKNOWN")
+            @JvmField public val UNKNOWN: ResizeState = ResizeState(1)
 
             /** The user has started dragging the resize handles. */
-            @JvmField public val START: ResizeState = ResizeState("START")
+            @JvmField public val START: ResizeState = ResizeState(2)
 
             /** The user is continuing to drag the resize handles. */
-            @JvmField public val ONGOING: ResizeState = ResizeState("ONGOING")
+            @JvmField public val ONGOING: ResizeState = ResizeState(3)
 
             /** The user has stopped dragging the resize handles. */
-            @JvmField public val END: ResizeState = ResizeState("END")
+            @JvmField public val END: ResizeState = ResizeState(4)
         }
 
-        override fun toString(): String = name
+        override fun toString(): String =
+            when (this) {
+                UNKNOWN -> "UNKNOWN"
+                START -> "START"
+                ONGOING -> "ONGOING"
+                END -> "END"
+                else -> "UNKNOWN ($value)"
+            }
     }
 }

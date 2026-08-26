@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.xr.arcore.samples
 
 import androidx.annotation.Sampled
 import androidx.xr.arcore.Anchor
-import androidx.xr.arcore.AnchorCreateResult
+import androidx.xr.arcore.AnchorResult
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
 import androidx.xr.arcore.hitTest
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
@@ -28,6 +30,11 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
 
+/**
+ * @param session the [Session] to use for the hit test
+ * @param hitOrigin the [Vector3] origin of the hit test ray
+ * @param hitDirection the [Vector3] direction of the hit test ray
+ */
 @Sampled
 fun callHitTest(session: Session, hitOrigin: Vector3, hitDirection: Vector3) {
     val arDevice = ArDevice.getInstance(session)
@@ -52,7 +59,7 @@ fun callHitTest(session: Session, hitOrigin: Vector3, hitDirection: Vector3) {
 
     hitTest(session, ray)
         // Use a valid plane label as a test to filter out any unreliable hits.
-        .firstOrNull { (it.trackable as? Plane?)?.state?.value?.label != Plane.Label.UNKNOWN }
+        .firstOrNull { (it.trackable as? Plane?)?.state?.value?.label != PlaneLabel.UNKNOWN }
         ?.let { hitResult ->
             // Do something with the hit result, like create an anchor representing where the ray
             // intersected the plane. The hitResult.hitPose is in Perception Space.
@@ -73,6 +80,6 @@ fun callHitTest(session: Session, hitOrigin: Vector3, hitDirection: Vector3) {
         }
 }
 
-private fun yourAnchorResultHandler(result: AnchorCreateResult) {}
+private fun yourAnchorResultHandler(result: AnchorResult) {}
 
 private fun renderSomething(pose: Pose) {}

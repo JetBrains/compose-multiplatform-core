@@ -22,25 +22,36 @@ package androidx.room3.util
 import androidx.annotation.RestrictTo
 import androidx.room3.PooledConnection
 import androidx.room3.RoomDatabase
+import androidx.room3.RoomExternalOperationElement
 import androidx.room3.Transactor
+import androidx.room3.coroutines.RawConnectionAccessor
+import androidx.room3.executeSQL
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.executeSQL
-import androidx.sqlite.prepare
-import androidx.sqlite.step
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import kotlinx.coroutines.withContext
 
 /** Performs a database operation. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public expect suspend fun <R> performSuspending(
+public suspend fun <R> performSuspending(
     db: RoomDatabase,
     isReadOnly: Boolean,
     inTransaction: Boolean,
     block: suspend (SQLiteConnection) -> R,
-): R
+): R =
+    withContext(db.getCoroutineContext(inTransaction)) {
+        db.internalPerform(isReadOnly, inTransaction) { connection ->
+            (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
+                block.invoke(rawConnection)
+            }
+        }
+    }
 
 internal suspend inline fun <R> RoomDatabase.internalPerform(
     isReadOnly: Boolean,
@@ -81,14 +92,16 @@ internal expect suspend fun RoomDatabase.getCoroutineContext(
  * Utility function to wrap a suspend block in Room's transaction coroutine.
  *
  * This function should only be invoked from generated code and is needed to support `@Transaction`
- * delegates in Java and Kotlin. It is preferred to use the other 'perform' functions.
+ * delegate DAO functions.
  */
-// TODO(b/309996304): Replace with proper suspending transaction API for common.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public expect suspend fun <R> performInTransactionSuspending(
-    db: RoomDatabase,
-    block: suspend () -> R,
-): R
+public suspend fun <R> performInTransactionSuspending(db: RoomDatabase, block: suspend () -> R): R =
+    // The external operation marker is used since this wraps user code that might change
+    // dispatchers and on a passthrough pool with thread local connections (AndroidSQLiteDriver)
+    // the confined transaction thread behavior must be used at the cost of some thread hops.
+    withContext(RoomExternalOperationElement + db.getCoroutineContext(inTransaction = true)) {
+        db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
+    }
 
 /**
  * Drops all FTS content sync triggers created by Room.
@@ -167,6 +180,30 @@ private suspend fun processForeignKeyCheckFailure(stmt: SQLiteStatement): String
             append(value)
             append(", Foreign Key Constraint Index = ")
             append(key).append("\n")
+        }
+    }
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+public suspend fun performClear(
+    db: RoomDatabase,
+    hasForeignKeys: Boolean,
+    vararg tableNames: String,
+) {
+    db.useConnection(isReadOnly = false) { connection ->
+        if (!connection.inTransaction()) {
+            db.invalidationTracker.sync()
+        }
+        connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
+            if (hasForeignKeys) {
+                executeSQL("PRAGMA defer_foreign_keys = TRUE")
+            }
+            tableNames.forEach { tableName -> executeSQL("DELETE FROM `$tableName`") }
+        }
+        if (!connection.inTransaction()) {
+            connection.executeSQL("PRAGMA wal_checkpoint(FULL)")
+            connection.executeSQL("VACUUM")
+            db.invalidationTracker.refreshAsync()
         }
     }
 }

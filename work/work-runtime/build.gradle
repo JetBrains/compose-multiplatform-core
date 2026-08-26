@@ -15,15 +15,15 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 import androidx.build.KotlinTarget
 import androidx.build.ProjectLayoutType
 import androidx.build.SoftwareType
+import com.android.build.api.variant.HasAndroidTest
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 
@@ -44,7 +44,6 @@ android {
         }
     }
     defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
@@ -56,10 +55,13 @@ android {
         }
     }
     compileSdk { version = release(35) }
-    sourceSets {
-        androidTest.assets.srcDirs += files("$projectDir/src/schemas".toString())
-    }
     namespace = "androidx.work"
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        (variant as HasAndroidTest).androidTest.sources.assets.addStaticSourceDirectory("src/schemas")
+    }
 }
 
 dependencies {
@@ -86,12 +88,14 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.mockitoKotlin)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.testCoreKtx)
     testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(libs.mockitoCore)
     lintPublish(project(":work:work-runtime-lint"))
 }
 
@@ -118,7 +122,6 @@ kotlin {
 androidx {
     name = "WorkManager Runtime"
     type = SoftwareType.PUBLISHED_LIBRARY
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2018"
     description = "Android WorkManager runtime library"
     failOnDeprecationWarnings = false

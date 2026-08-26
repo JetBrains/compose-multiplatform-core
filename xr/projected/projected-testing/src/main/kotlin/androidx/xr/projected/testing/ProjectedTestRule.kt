@@ -19,6 +19,7 @@ package androidx.xr.projected.testing
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
+import android.app.PendingIntent
 import android.companion.virtual.VirtualDeviceManager
 import android.content.ComponentName
 import android.content.Context
@@ -30,34 +31,50 @@ import android.content.pm.PackageInfo
 import android.content.pm.ServiceInfo
 import android.hardware.display.VirtualDisplay
 import android.hardware.display.VirtualDisplayConfig
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.util.SparseIntArray
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.xr.projected.BatteryState
 import androidx.xr.projected.ProjectedDeviceController.Capability
+import androidx.xr.projected.ProjectedDisplayController
 import androidx.xr.projected.ProjectedDisplayController.ProjectedLayoutParamsFlags
 import androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import androidx.xr.projected.platform.BatteryState as PlatformBatteryState
+import androidx.xr.projected.platform.IBatteryStateListener
+import androidx.xr.projected.platform.IEngagementModeCallback
+import androidx.xr.projected.platform.IEngagementModeService
+import androidx.xr.projected.platform.IProjectedDeviceStateListener
 import androidx.xr.projected.platform.IProjectedInputEventListener
+import androidx.xr.projected.platform.IProjectedPermissionRequestCallback
 import androidx.xr.projected.platform.IProjectedService
+import androidx.xr.projected.platform.ProjectedDeviceState
 import androidx.xr.projected.platform.ProjectedInputEvent
+import androidx.xr.projected.platform.ProjectedPermissionRequestState
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
-import java.util.concurrent.Executor
+import java.util.Collections
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.firstValue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowVirtualDeviceManager
+import org.robolectric.util.ReflectionHelpers
 
 /**
  * Test rule for the Projected clients.
@@ -97,7 +114,6 @@ import org.robolectric.shadows.ShadowVirtualDeviceManager
  * be controlled via the [isDeviceConnected] property.
  */
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @ExperimentalProjectedApi
 public class ProjectedTestRule : TestRule {
 
@@ -120,12 +136,15 @@ public class ProjectedTestRule : TestRule {
      * [androidx.xr.projected.ProjectedDeviceController.create] throw an [IllegalStateException]
      * when called. By default, the exception is not being thrown.
      */
-    public var throwIllegalStateExceptionWhenCreatingControllers: Boolean = false
+    @get:JvmName("shouldThrowIllegalStateExceptionWhenCreatingControllers")
+    public var shouldThrowIllegalStateExceptionWhenCreatingControllers: Boolean = false
         set(value) {
             if (value) {
                 disableProjectedService()
+                disableEngagementModeService()
             } else {
                 enableProjectedService()
+                enableEngagementModeService()
             }
             field = value
         }
@@ -145,6 +164,19 @@ public class ProjectedTestRule : TestRule {
         }
 
     /**
+     * This property can be used to control the Projected audio devices, as returned by
+     * [androidx.xr.projected.ProjectedDeviceController.audioDevices]. By default, the list of audio
+     * devices includes a single input and a single output audio device.
+     */
+    public var audioDevices: List<AudioDeviceInfo> =
+        listOf(INPUT_PROJECTED_AUDIO_DEVICE_INFO, OUTPUT_PROJECTED_AUDIO_DEVICE_INFO)
+        set(value) {
+            whenever(mockProjectedService.audioDeviceIds)
+                .thenReturn(value.map { it.id }.toIntArray())
+            field = value
+        }
+
+    /**
      * Returns the currently set Projected layout param flags, reflecting the state after calls to
      * [androidx.xr.projected.ProjectedDisplayController.addLayoutParamsFlags] and
      * [androidx.xr.projected.ProjectedDisplayController.removeLayoutParamsFlags].
@@ -153,9 +185,75 @@ public class ProjectedTestRule : TestRule {
     public var projectedLayoutParamFlags: Int = 0
         private set
 
+    /**
+     * This property can be used to control the
+     * [androidx.xr.projected.ProjectedDisplayController.PresentationMode] flags. By default, all
+     * the presentation mode flags are set.
+     */
+    public var presentationModeFlags: Set<ProjectedDisplayController.PresentationMode> =
+        setOf(
+            ProjectedDisplayController.PresentationMode.AUDIO_ON,
+            ProjectedDisplayController.PresentationMode.VISUALS_ON,
+        )
+        set(value) {
+            val callbackCaptor = argumentCaptor<IEngagementModeCallback>()
+            verify(mockEngagementModeService).registerCallback(callbackCaptor.capture())
+
+            var engagementModeFlags = 0
+            if (value.contains(ProjectedDisplayController.PresentationMode.AUDIO_ON)) {
+                engagementModeFlags =
+                    engagementModeFlags or IEngagementModeService.ENGAGEMENT_STATE_FLAG_AUDIO_ON
+            }
+            if (value.contains(ProjectedDisplayController.PresentationMode.VISUALS_ON)) {
+                engagementModeFlags =
+                    engagementModeFlags or IEngagementModeService.ENGAGEMENT_STATE_FLAG_VISUALS_ON
+            }
+
+            callbackCaptor.firstValue.onEngagementModeChanged(engagementModeFlags)
+            field = value
+        }
+
+    /**
+     * This property can be used to control the lifecycle state of the Projected device. By default,
+     * the Projected device is in the [Lifecycle.State.INITIALIZED] state.
+     */
+    public var lifecycleState: Lifecycle.State = Lifecycle.State.INITIALIZED
+        set(value) {
+            val projectedDeviceState =
+                when (value) {
+                    Lifecycle.State.INITIALIZED,
+                    Lifecycle.State.CREATED -> ProjectedDeviceState.INACTIVE
+                    Lifecycle.State.STARTED,
+                    Lifecycle.State.RESUMED -> ProjectedDeviceState.ACTIVE
+                    Lifecycle.State.DESTROYED -> ProjectedDeviceState.DESTROYED
+                }
+            val deviceStateListenerArgumentCaptor = argumentCaptor<IProjectedDeviceStateListener>()
+            verify(mockProjectedService)
+                .registerProjectedDeviceStateListener(deviceStateListenerArgumentCaptor.capture())
+            deviceStateListenerArgumentCaptor.firstValue.onProjectedDeviceStateChanged(
+                projectedDeviceState,
+                /* data= */ null,
+            )
+            field = value
+        }
+
+    /**
+     * Retrieves the [PendingIntent] most recently registered by the application as the input
+     * receiver, or null if none is registered.
+     *
+     * Reflects the current state resulting from calls to
+     * [androidx.xr.projected.ProjectedActivityCompat.setActivityAsInputReceiver] and
+     * [androidx.xr.projected.ProjectedActivityCompat.clearActivityAsInputReceiver].
+     */
+    public var registeredInputReceiver: PendingIntent? = null
+        private set
+
     private val context: Application = ApplicationProvider.getApplicationContext()
     private val virtualDeviceManager =
         context.getSystemService(Context.VIRTUAL_DEVICE_SERVICE) as VirtualDeviceManager
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val batteryStateListeners =
+        Collections.synchronizedList(mutableListOf<IBatteryStateListener>())
     private val mockProjectedService: IProjectedService =
         mock<IProjectedService> {
             on { addWindowFlags(any()) } doAnswer
@@ -168,18 +266,71 @@ public class ProjectedTestRule : TestRule {
                     val flag = invocation.arguments[0] as Int
                     projectedLayoutParamFlags = projectedLayoutParamFlags and flag.inv()
                 }
+            on { registerBatteryStateListener(any()) } doAnswer
+                { invocation ->
+                    val listener = invocation.arguments[0] as IBatteryStateListener
+                    batteryStateListeners.add(listener)
+                    null
+                }
+            on { unregisterBatteryStateListener(any()) } doAnswer
+                { invocation ->
+                    val listener = invocation.arguments[0] as IBatteryStateListener
+                    batteryStateListeners.remove(listener)
+                    null
+                }
+            on { launchProjectedPermissionRequest(any(), any()) } doAnswer
+                { invocation ->
+                    val callback = invocation.arguments[1] as IProjectedPermissionRequestCallback
+                    val pendingIntent =
+                        PendingIntent.getActivity(
+                            context,
+                            0,
+                            Intent(),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        )
+                    callback.onProjectedPermissionRequestStateChanged(
+                        ProjectedPermissionRequestState.ALLOWED,
+                        pendingIntent,
+                    )
+                    null
+                }
+            on { finishProjectedPermissionRequest() } doAnswer { null }
+            on { setActivityAsInputReceiver(any()) } doAnswer
+                { invocation ->
+                    val intent = invocation.arguments[0] as PendingIntent
+                    registeredInputReceiver = intent
+                    null
+                }
+            on { clearActivityAsInputReceiver() } doAnswer
+                {
+                    registeredInputReceiver = null
+                    null
+                }
         }
     private val mockProjectedServiceStub =
         mock<IProjectedService.Stub> {
             on { queryLocalInterface(any()) }.thenReturn(mockProjectedService)
         }
+    private val mockEngagementModeService = mock<IEngagementModeService>()
+    private val mockEngagementModeServiceStub =
+        mock<IEngagementModeService.Stub> {
+            on { queryLocalInterface(any()) }.thenReturn(mockEngagementModeService)
+        }
 
     override fun apply(base: Statement?, description: Description?): Statement =
         object : Statement() {
             override fun evaluate() {
-                throwIllegalStateExceptionWhenCreatingControllers = false
+                shouldThrowIllegalStateExceptionWhenCreatingControllers = false
                 isDeviceConnected = true
                 capabilities = setOf(Capability.CAPABILITY_VISUAL_UI)
+                audioDevices =
+                    listOf(INPUT_PROJECTED_AUDIO_DEVICE_INFO, OUTPUT_PROJECTED_AUDIO_DEVICE_INFO)
+                shadowOf(audioManager).apply {
+                    setInputDevices(listOf(INPUT_PROJECTED_AUDIO_DEVICE_INFO))
+                    setOutputDevices(listOf(OUTPUT_PROJECTED_AUDIO_DEVICE_INFO))
+                }
+                batteryStateListeners.clear()
+                registeredInputReceiver = null
                 base?.evaluate()
             }
         }
@@ -196,6 +347,21 @@ public class ProjectedTestRule : TestRule {
         inputEventListenerCaptor.firstValue.onProjectedInputEvent(
             ProjectedInputEvent().apply { action = projectedInputAction.code }
         )
+    }
+
+    /**
+     * Updates battery state to the one provided. Calling this function notifies listeners
+     * registered using the [ProjectedDeviceController.addBatteryStateChangedListener()] API.
+     */
+    public fun setBatteryState(batteryState: BatteryState) {
+        val aidlState =
+            PlatformBatteryState().apply {
+                isCharging = batteryState.isCharging
+                batteryLevel = batteryState.batteryLevel
+            }
+        synchronized(batteryStateListeners) {
+            batteryStateListeners.forEach { listener -> listener.onBatteryStateChanged(aidlState) }
+        }
     }
 
     /**
@@ -273,37 +439,19 @@ public class ProjectedTestRule : TestRule {
         }
     }
 
-    // TODO: b/476403759 - Replace reflection with the shadow APIs when they are available.
-    @SuppressLint("BanUncheckedReflection")
-    private fun createVirtualDisplayForDevice(virtualDevice: Any): VirtualDisplay {
-        val virtualDisplayConfig =
-            VirtualDisplayConfig.Builder(
-                    PROJECTED_DISPLAY_NAME,
-                    DISPLAY_WIDTH,
-                    DISPLAY_HEIGHT,
-                    DISPLAY_DENSITY,
-                )
-                .build()
-
-        try {
-            val method: Method =
-                virtualDevice::class
-                    .java
-                    .getMethod(
-                        "createVirtualDisplay",
-                        VirtualDisplayConfig::class.java,
-                        Executor::class.java,
-                        VirtualDisplay.Callback::class.java,
+    private fun createVirtualDisplayForDevice(virtualDevice: Any): VirtualDisplay =
+        Shadow.extract<ShadowVirtualDeviceManager.ShadowVirtualDevice>(virtualDevice)
+            .createVirtualDisplay(
+                VirtualDisplayConfig.Builder(
+                        PROJECTED_DISPLAY_NAME,
+                        DISPLAY_WIDTH,
+                        DISPLAY_HEIGHT,
+                        DISPLAY_DENSITY,
                     )
-            // Note: The cast to VirtualDisplay might be unsafe if the method returns null
-            // or a different type. Consider adding checks.
-            return method.invoke(virtualDevice, virtualDisplayConfig, null, null) as VirtualDisplay
-        } catch (e: NoSuchMethodException) {
-            throw RuntimeException("Failed to find createVirtualDisplay method", e)
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to call createVirtualDisplay method", e)
-        }
-    }
+                    .build(),
+                /* executor= */ null,
+                /* callback= */ null,
+            )
 
     private fun enableProjectedService() {
         shadowOf(context.packageManager).apply {
@@ -316,7 +464,11 @@ public class ProjectedTestRule : TestRule {
         }
 
         shadowOf(context).apply {
-            setComponentNameAndServiceForBindService(
+            setComponentNameAndServiceForBindServiceForIntent(
+                Intent().apply {
+                    action = PROJECTED_ACTION_BIND
+                    component = PROJECTED_SERVICE_COMPONENT_NAME
+                },
                 PROJECTED_SERVICE_COMPONENT_NAME,
                 mockProjectedServiceStub,
             )
@@ -327,6 +479,34 @@ public class ProjectedTestRule : TestRule {
     private fun disableProjectedService() {
         shadowOf(context.packageManager).apply {
             clearIntentFilterForService(PROJECTED_SERVICE_COMPONENT_NAME)
+        }
+    }
+
+    private fun enableEngagementModeService() {
+        shadowOf(context.packageManager).apply {
+            addServiceIfNotPresent(ENGAGEMENT_MODE_SERVICE_COMPONENT_NAME)
+            addIntentFilterForService(
+                ENGAGEMENT_MODE_SERVICE_COMPONENT_NAME,
+                IntentFilter(ENGAGEMENT_MODE_ACTION_BIND),
+            )
+            installPackage(ENGAGEMENT_MODE_PACKAGE_INFO)
+        }
+        shadowOf(context).apply {
+            setComponentNameAndServiceForBindServiceForIntent(
+                Intent().apply {
+                    action = ENGAGEMENT_MODE_ACTION_BIND
+                    `package` = ENGAGEMENT_MODE_SYSTEM_PACKAGE_NAME
+                },
+                ENGAGEMENT_MODE_SERVICE_COMPONENT_NAME,
+                mockEngagementModeServiceStub,
+            )
+            setBindServiceCallsOnServiceConnectedDirectly(true)
+        }
+    }
+
+    private fun disableEngagementModeService() {
+        shadowOf(context.packageManager).apply {
+            clearIntentFilterForService(ENGAGEMENT_MODE_SERVICE_COMPONENT_NAME)
         }
     }
 
@@ -345,7 +525,11 @@ public class ProjectedTestRule : TestRule {
         }
     }
 
-    private companion object {
+    internal companion object {
+        internal val INPUT_PROJECTED_AUDIO_DEVICE_INFO: AudioDeviceInfo =
+            AudioDeviceInfoBuilder().setId(17).build()
+        internal val OUTPUT_PROJECTED_AUDIO_DEVICE_INFO: AudioDeviceInfo =
+            AudioDeviceInfoBuilder().setId(18).build()
         private const val PROJECTED_DEVICE_NAME = "ProjectionDevice"
         private const val PROJECTED_DISPLAY_NAME = "ProjectionDisplay"
         private const val ASSOCIATION_ID = 1
@@ -354,20 +538,77 @@ public class ProjectedTestRule : TestRule {
         private const val DISPLAY_DENSITY = 10
 
         private const val PROJECTED_ACTION_BIND = "androidx.xr.projected.ACTION_BIND"
-        private const val SYSTEM_PACKAGE_NAME = "com.system.service"
+        private const val ENGAGEMENT_MODE_ACTION_BIND: String =
+            "androidx.xr.projected.ACTION_ENGAGEMENT_BIND"
+        private const val PROJECTED_SERVICE_PACKAGE_NAME = "com.system.service"
+        private const val ENGAGEMENT_MODE_SYSTEM_PACKAGE_NAME = "com.system.service1"
         private const val PROJECTED_SERVICE_CLASS_NAME = "com.system.service.ProjectedService"
+        private const val ENGAGEMENT_MODE_SYSTEM_CLASS_NAME =
+            "com.system.service.EngagementModeService"
         private val PROJECTED_SERVICE_COMPONENT_NAME: ComponentName =
-            ComponentName(SYSTEM_PACKAGE_NAME, PROJECTED_SERVICE_CLASS_NAME)
+            ComponentName(PROJECTED_SERVICE_PACKAGE_NAME, PROJECTED_SERVICE_CLASS_NAME)
+        private val ENGAGEMENT_MODE_SERVICE_COMPONENT_NAME =
+            ComponentName(ENGAGEMENT_MODE_SYSTEM_PACKAGE_NAME, ENGAGEMENT_MODE_SYSTEM_CLASS_NAME)
         private val PROJECTED_SERVICE_INFO =
             ServiceInfo().apply {
-                packageName = SYSTEM_PACKAGE_NAME
+                packageName = PROJECTED_SERVICE_PACKAGE_NAME
                 name = PROJECTED_SERVICE_CLASS_NAME
+            }
+        private val ENGAGEMENT_MODE_SERVICE_INFO =
+            ServiceInfo().apply {
+                packageName = ENGAGEMENT_MODE_SYSTEM_PACKAGE_NAME
+                name = ENGAGEMENT_MODE_SYSTEM_CLASS_NAME
             }
         private val PROJECTED_PACKAGE_INFO =
             PackageInfo().apply {
-                packageName = SYSTEM_PACKAGE_NAME
+                packageName = PROJECTED_SERVICE_PACKAGE_NAME
                 services = arrayOf(PROJECTED_SERVICE_INFO)
                 applicationInfo = ApplicationInfo().apply { flags = ApplicationInfo.FLAG_SYSTEM }
             }
+
+        private val ENGAGEMENT_MODE_PACKAGE_INFO =
+            PackageInfo().apply {
+                packageName = ENGAGEMENT_MODE_SYSTEM_PACKAGE_NAME
+                services = arrayOf(ENGAGEMENT_MODE_SERVICE_INFO)
+                applicationInfo = ApplicationInfo().apply { flags = ApplicationInfo.FLAG_SYSTEM }
+            }
+    }
+
+    private class AudioDeviceInfoBuilder {
+
+        private var id = 0
+
+        fun setId(id: Int): AudioDeviceInfoBuilder {
+            this.id = id
+            return this
+        }
+
+        fun build(): AudioDeviceInfo {
+            val port: Any = Shadow.newInstanceOf("android.media.AudioDevicePort")
+            ReflectionHelpers.setField(
+                port,
+                "mType",
+                externalToInternalType(AudioDeviceInfo.TYPE_BLUETOOTH_A2DP),
+            ) // Assuming type and externalToInternalType are accessible
+            ReflectionHelpers.setField(port, "mAddress", "")
+
+            val handle: Any = Shadow.newInstanceOf("android.media.AudioHandle")
+            ReflectionHelpers.setField(handle, "mId", id)
+            ReflectionHelpers.setField(port, "mHandle", handle)
+
+            return ReflectionHelpers.callConstructor(
+                AudioDeviceInfo::class.java,
+                ReflectionHelpers.ClassParameter.from(port::class.java, port),
+            )
+        }
+
+        private fun externalToInternalType(externalType: Int): Int {
+            val mapping =
+                ReflectionHelpers.getStaticField<SparseIntArray>(
+                    AudioDeviceInfo::class.java,
+                    "EXT_TO_INT_DEVICE_MAPPING",
+                )
+            return mapping.get(externalType)
+        }
     }
 }

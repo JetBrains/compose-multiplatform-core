@@ -18,7 +18,8 @@ package androidx.compose.ui.node
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -34,7 +35,7 @@ import androidx.compose.ui.semantics.getOrNull
  * This is the [androidx.compose.ui.Modifier.Node] equivalent of
  * [androidx.compose.ui.semantics.SemanticsModifier]
  */
-interface SemanticsModifierNode : DelegatableNode {
+public interface SemanticsModifierNode : DelegatableNode {
     /**
      * Clears the semantics of all the descendant nodes and sets new semantics.
      *
@@ -48,7 +49,7 @@ interface SemanticsModifierNode : DelegatableNode {
      * of a group of tiny buttons, and setting equivalent actions on the card containing them.
      */
     @get:Suppress("GetterSetterNames")
-    val shouldClearDescendantSemantics: Boolean
+    public val shouldClearDescendantSemantics: Boolean
         get() = false
 
     /**
@@ -62,7 +63,7 @@ interface SemanticsModifierNode : DelegatableNode {
      * [SemanticsConfiguration.isMergingSemanticsOfDescendants].
      */
     @get:Suppress("GetterSetterNames")
-    val shouldMergeDescendantSemantics: Boolean
+    public val shouldMergeDescendantSemantics: Boolean
         get() = false
 
     /**
@@ -78,7 +79,7 @@ interface SemanticsModifierNode : DelegatableNode {
      * padding.
      */
     @get:Suppress("GetterSetterNames")
-    val isImportantForBounds: Boolean
+    public val isImportantForBounds: Boolean
         get() = true
 
     /**
@@ -104,7 +105,7 @@ interface SemanticsModifierNode : DelegatableNode {
      * semantic actions. Don't call applySemantics() from within applySemantics(). It will result in
      * an infinite loop.
      */
-    fun SemanticsPropertyReceiver.applySemantics()
+    public fun SemanticsPropertyReceiver.applySemantics()
 }
 
 /**
@@ -120,18 +121,27 @@ interface SemanticsModifierNode : DelegatableNode {
  * semantics to ensure that [SemanticsModifierNode.applySemantics] will be called the next time the
  * [SemanticsConfiguration] is read.
  */
-fun SemanticsModifierNode.invalidateSemantics() = requireLayoutNode().invalidateSemantics()
+public fun SemanticsModifierNode.invalidateSemantics(): Unit =
+    requireLayoutNode().invalidateSemantics()
 
 internal val SemanticsConfiguration.useMinimumTouchTarget: Boolean
     get() = getOrNull(SemanticsActions.OnClick) != null
 
-internal fun Modifier.Node.touchBoundsInRoot(useMinimumTouchTarget: Boolean): Rect {
+/** Returns bounds in root taking touch target size and clipping into consideration */
+internal fun Modifier.Node.effectiveBoundsInRoot(
+    useMinimumTouchTarget: Boolean,
+    clipBounds: Boolean,
+): Rect {
     if (!node.isAttached) {
         return Rect.Zero
     }
     if (!useMinimumTouchTarget) {
-        return requireCoordinator(Nodes.Semantics).boundsInRoot()
+        return requireCoordinator(Nodes.Semantics).boundsInRoot(clipBounds)
     }
 
     return requireCoordinator(Nodes.Semantics).touchBoundsInRoot()
 }
+
+/** The boundaries of this layout inside the root. */
+internal fun LayoutCoordinates.boundsInRoot(clipBounds: Boolean): Rect =
+    findRootCoordinates().localBoundingBoxOf(this, clipBounds)

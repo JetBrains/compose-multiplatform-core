@@ -18,16 +18,27 @@ package androidx.xr.compose.testing
 
 import android.app.Activity
 import android.view.View
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.util.fastForEach
 import androidx.xr.compose.R
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SubspaceTestContext(private val testRule: AndroidComposeTestRule<*, *>) {
+/**
+ * Provides the testing context used for retrieving and interacting with 3D Semantics nodes present
+ * within a Subspace spatial compose hierarchy.
+ *
+ * This context wraps an [AndroidComposeTestRule] and allows [SubspaceSemanticsNodeInteraction] to
+ * extract spatial layout semantics, perform layout assertions, and filter specific elements in XR
+ * environments.
+ *
+ * @sample androidx.xr.compose.testing.samples.subspacePanelRenderedAndInteractive
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
+ */
+// TODO(b/b510815023): Add ComposeTestRule Support for Compose for XR Testing Infra.
+public class SubspaceTestContext
+internal constructor(private val testRule: AndroidComposeTestRule<*, *>) {
     /**
-     * Collects all [SubspaceSemanticsNode]s from all compose hierarchies.
+     * Collects all [SubspaceSemanticsInfo]s from all compose hierarchies.
      *
      * Can crash in case it hits time out. This is not supposed to be handled as it surfaces only in
      * incorrect tests.
@@ -57,7 +68,7 @@ private fun SubspaceSemanticsInfo.getAllSemanticsNodes(): Iterable<SubspaceSeman
 
     fun findAllSemanticNodesRecursive(currentNode: SubspaceSemanticsInfo) {
         nodes.add(currentNode)
-        currentNode.semanticsChildren.fastForEach { child -> findAllSemanticNodesRecursive(child) }
+        currentNode.childrenInfo.fastForEach { child -> findAllSemanticNodesRecursive(child) }
     }
 
     findAllSemanticNodesRecursive(this)

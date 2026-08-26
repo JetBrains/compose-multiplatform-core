@@ -16,6 +16,8 @@
 
 package androidx.wear.watchface.complications.data.parser
 
+import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
 import android.content.res.Resources
 import android.content.res.XmlResourceParser
@@ -52,18 +54,23 @@ import androidx.wear.watchface.complications.data.WeightedElementsComplicationDa
 import androidx.wear.watchface.complications.data.formatting.ComplicationTextFormatting
 import java.io.IOException
 import java.time.Instant
+import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 /** A container for parsed static complication preview data. */
-class PreviewData internal constructor(private val data: Map<ComplicationType, ComplicationData>) {
+public class PreviewData
+internal constructor(private val data: Map<ComplicationType, ComplicationData>) {
     /** Returns the [ComplicationData] for the given type, or `null` if not found. */
-    operator fun get(type: ComplicationType): ComplicationData? = data[type]
+    public operator fun get(type: ComplicationType): ComplicationData? = data[type]
 
     internal companion object {
         private const val TAG = "PreviewData"
+        private const val MAX_FORMAT_STRING_LEN = 1024
+        // Reject any conversion with an explicit width/precision ≥ 5 digits.
+        private val INVALID_FORMAT_WIDTH = Regex("%[-#+ 0,(]*\\d{5,}")
 
         // XML Tags
         private const val TAG_COMPLICATION = "complication"
@@ -87,8 +94,10 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private const val ATTR_MAX = "max"
         private const val ATTR_VALUE_TYPE = "valueType"
         private const val ATTR_MONOCHROMATIC_IMAGE = "monochromaticImage"
+        private const val ATTR_MONOCHROMATIC_IMAGE_TINT = "monochromaticImageTint"
         private const val ATTR_SMALL_IMAGE = "smallImage"
         private const val ATTR_SMALL_IMAGE_TYPE = "smallImageType"
+        private const val ATTR_SMALL_IMAGE_TINT = "smallImageTint"
         private const val ATTR_FORMAT = "format"
         private const val ATTR_INSTANT = "instant"
         private const val ATTR_TARGET_INSTANT = "targetInstant"
@@ -106,6 +115,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private const val ATTR_WEIGHT = "weight"
         private const val ATTR_COLOR = "color"
         private const val ATTR_BACKGROUND_COLOR = "backgroundColor"
+        private const val ATTR_TIME_COMPONENT = "timeComponent"
 
         // Complication Type Strings
         private const val TYPE_STR_GOAL_PROGRESS = "GOAL_PROGRESS"
@@ -126,6 +136,10 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private const val PLAIN_TEXT_TYPE_LONG = "long"
         private const val PLAIN_TEXT_TYPE_FLOAT = "float"
 
+        // Time component types
+        private const val TIME_COMPONENT_TIME_ONLY = "timeOnly"
+        private const val TIME_COMPONENT_AM_PM_ONLY = "amPmOnly"
+
         /**
          * Inflates a [PreviewData] object from an XML resource.
          *
@@ -142,12 +156,19 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             // This preserves the old (slightly broken) behavior for external callers.
             // TODO(471212833): Amend the parsing API (inflate) to take both provider and parser
             // contexts, so that we can access resources using the parser ID space
-            return inflate(providerContext, providerContext, parser)
+            return inflateInternal(
+                providerComponent = null,
+                providerContext,
+                providerContext,
+                parser,
+            )
         }
 
         /**
          * Inflates a [PreviewData] object from an XML resource.
          *
+         * @param providerComponent The component name of the complication provider. If not passed,
+         *   datasource field of the generated complication data will be null.
          * @param parserContext The context of the parsing application.
          * @param providerContext The context of the complication provider application.
          * @param parser The [XmlResourceParser] for the preview data XML.
@@ -158,6 +179,30 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @Throws(XmlPullParserException::class, IOException::class)
         @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         internal fun inflate(
+            providerComponent: ComponentName,
+            parserContext: Context,
+            providerContext: Context,
+            parser: XmlResourceParser,
+        ): PreviewData {
+            return inflateInternal(providerComponent, parserContext, providerContext, parser)
+        }
+
+        /**
+         * Inflates a [PreviewData] object from an XML resource.
+         *
+         * @param providerComponent The component name of the complication provider application. if
+         *   not set, datasource field of the generated complication data will be empty.
+         * @param parserContext The context of the parsing application.
+         * @param providerContext The context of the complication provider application.
+         * @param parser The [XmlResourceParser] for the preview data XML.
+         * @return A [PreviewData] object containing the parsed complication data.
+         */
+        @JvmStatic
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        @Throws(XmlPullParserException::class, IOException::class)
+        @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
+        private fun inflateInternal(
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             parser: XmlResourceParser,
@@ -172,6 +217,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                         parseComplicationTag(
                             parser,
                             type,
+                            providerComponent,
                             parserContext,
                             providerContext,
                             textUtils,
@@ -191,29 +237,56 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private fun parseComplicationTag(
             parser: XmlResourceParser,
             type: ComplicationType,
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
         ): ComplicationData? {
             return when (type) {
                 ComplicationType.SHORT_TEXT ->
-                    parseShortTextComplication(parser, parserContext, providerContext, textUtils)
+                    parseShortTextComplication(
+                        parser,
+                        providerComponent,
+                        parserContext,
+                        providerContext,
+                        textUtils,
+                    )
                 ComplicationType.LONG_TEXT ->
-                    parseLongTextComplication(parser, parserContext, providerContext, textUtils)
+                    parseLongTextComplication(
+                        parser,
+                        providerComponent,
+                        parserContext,
+                        providerContext,
+                        textUtils,
+                    )
                 ComplicationType.RANGED_VALUE ->
-                    parseRangedValueComplication(parser, parserContext, providerContext, textUtils)
+                    parseRangedValueComplication(
+                        parser,
+                        providerComponent,
+                        parserContext,
+                        providerContext,
+                        textUtils,
+                    )
                 ComplicationType.GOAL_PROGRESS ->
-                    parseGoalProgressComplication(parser, parserContext, providerContext, textUtils)
+                    parseGoalProgressComplication(
+                        parser,
+                        providerComponent,
+                        parserContext,
+                        providerContext,
+                        textUtils,
+                    )
                 ComplicationType.WEIGHTED_ELEMENTS ->
                     parseWeightedElementsComplication(
                         parser,
+                        providerComponent,
                         parserContext,
                         providerContext,
                         textUtils,
                     )
                 ComplicationType.MONOCHROMATIC_IMAGE ->
-                    parseMonochromaticImageComplication(parser, providerContext)
-                ComplicationType.SMALL_IMAGE -> parseSmallImageComplication(parser, providerContext)
+                    parseMonochromaticImageComplication(parser, providerComponent, providerContext)
+                ComplicationType.SMALL_IMAGE ->
+                    parseSmallImageComplication(parser, providerComponent, providerContext)
                 else -> {
                     skip(parser)
                     null
@@ -226,6 +299,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseShortTextComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
@@ -254,6 +328,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
                 .setExtras(extras)
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -262,6 +337,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseLongTextComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
@@ -290,6 +366,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
                 .setExtras(extras)
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -298,6 +375,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseRangedValueComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
@@ -345,6 +423,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setSmallImage(smallImage)
                 .setColorRamp(colorRamp)
                 .setExtras(extras)
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -353,6 +432,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseGoalProgressComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
@@ -393,6 +473,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setSmallImage(smallImage)
                 .setColorRamp(colorRamp)
                 .setExtras(extras)
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -401,6 +482,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @RequiresPermission("com.google.wear.permission.SET_COMPLICATION_EXTRAS")
         private fun parseWeightedElementsComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             parserContext: Context,
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
@@ -459,6 +541,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
                 .setExtras(extras)
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -466,6 +549,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @Throws(IOException::class, XmlPullParserException::class)
         private fun parseMonochromaticImageComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             providerContext: Context,
         ): MonochromaticImageComplicationData {
             val monochromaticImage =
@@ -477,6 +561,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                     monochromaticImage,
                     contentDescription = ComplicationText.EMPTY,
                 )
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -484,6 +569,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         @Throws(IOException::class, XmlPullParserException::class)
         private fun parseSmallImageComplication(
             parser: XmlResourceParser,
+            providerComponent: ComponentName?,
             providerContext: Context,
         ): SmallImageComplicationData {
             val smallImage =
@@ -495,6 +581,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                     smallImage,
                     contentDescription = ComplicationText.EMPTY,
                 )
+                .setDataSource(providerComponent)
                 .build()
         }
 
@@ -521,7 +608,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             onNonCommonTag: ((XmlResourceParser) -> Boolean)? = null,
             onTextResolved: (String, String) -> Unit,
         ) {
-            while (parser.next() != XmlPullParser.END_TAG || parser.name != TAG_COMPLICATION) {
+            while (parser.isBeforeEndTag(TAG_COMPLICATION)) {
                 if (parser.eventType != XmlPullParser.START_TAG) {
                     continue
                 }
@@ -564,7 +651,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
 
             if (dictionaryKey != null) {
                 val replacements = PersistableBundle()
-                while (parser.next() != XmlPullParser.END_TAG || parser.name != TAG_EXTENDED_DATA) {
+                while (parser.isBeforeEndTag(TAG_EXTENDED_DATA)) {
                     if (parser.eventType != XmlPullParser.START_TAG) {
                         continue
                     }
@@ -591,6 +678,8 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             }
         }
 
+        @SuppressLint("NewApi")
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         private fun parseMonochromaticImage(
             parser: XmlResourceParser,
             providerContext: Context,
@@ -598,13 +687,26 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             val imageResId =
                 getResourceIdFromAttribute(parser, ATTR_MONOCHROMATIC_IMAGE, providerContext)
             return if (imageResId != 0) {
-                MonochromaticImage.Builder(Icon.createWithResource(providerContext, imageResId))
-                    .build()
+                val icon =
+                    Icon.createWithResource(providerContext, imageResId).apply {
+                        val tintColorResId =
+                            getResourceIdFromAttribute(
+                                parser,
+                                ATTR_MONOCHROMATIC_IMAGE_TINT,
+                                providerContext,
+                            )
+                        if (tintColorResId != 0) {
+                            setTint(providerContext.getColor(tintColorResId))
+                        }
+                    }
+                MonochromaticImage.Builder(icon).build()
             } else {
                 null
             }
         }
 
+        @SuppressLint("NewApi")
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         private fun parseSmallImage(
             parser: XmlResourceParser,
             providerContext: Context,
@@ -612,11 +714,20 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             val imageResId = getResourceIdFromAttribute(parser, ATTR_SMALL_IMAGE, providerContext)
             val imageType = parser.getAttributeValue(null, ATTR_SMALL_IMAGE_TYPE)
             return if (imageResId != 0 && imageType != null) {
-                SmallImage.Builder(
-                        Icon.createWithResource(providerContext, imageResId),
-                        mapSmallImageType(imageType),
-                    )
-                    .build()
+                val icon =
+                    Icon.createWithResource(providerContext, imageResId).apply {
+                        val tintColorResId =
+                            getResourceIdFromAttribute(
+                                parser,
+                                ATTR_SMALL_IMAGE_TINT,
+                                providerContext,
+                            )
+                        if (tintColorResId != 0) {
+                            val color = providerContext.getColor(tintColorResId)
+                            setTint(color)
+                        }
+                    }
+                SmallImage.Builder(icon, mapSmallImageType(imageType)).build()
             } else {
                 null
             }
@@ -646,7 +757,7 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             parentTagName: String,
         ): String? {
             var text: String? = null
-            while (parser.next() != XmlPullParser.END_TAG || parser.name != parentTagName) {
+            while (parser.isBeforeEndTag(parentTagName)) {
                 if (parser.eventType != XmlPullParser.START_TAG) {
                     continue
                 }
@@ -656,8 +767,9 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                         TAG_FORMATTED ->
                             parseFormattedText(parser, parserContext, providerContext, textUtils)
                         TAG_TIME -> parseTimeText(parser, parserContext, providerContext, textUtils)
-                        TAG_DATE -> parseDateText(parser, parserContext, textUtils)
-                        TAG_TIME_DIFFERENCE -> parseTimeDifferenceText(parser, parserContext)
+                        TAG_DATE -> parseDateText(parser, parserContext, providerContext, textUtils)
+                        TAG_TIME_DIFFERENCE ->
+                            parseTimeDifferenceText(parser, parserContext, providerContext)
                         else -> null
                     }
             }
@@ -745,29 +857,38 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 )
 
             val params = mutableListOf<Any>()
-            var eventType: Int
-            while (
-                parser.next().also { eventType = it } != XmlPullParser.END_TAG ||
-                    parser.name != TAG_FORMATTED
-            ) {
-                if (eventType == XmlPullParser.START_TAG && parser.name == TAG_PARAM) {
-                    parser.nextTag() // Move to the param's type tag
+            while (parser.isBeforeEndTag(TAG_FORMATTED)) {
+                if (parser.eventType == XmlPullParser.START_TAG && parser.name == TAG_PARAM) {
+                    // Advance to the <param>'s single child; bail out on empty <param/>.
+                    if (parser.nextTag() == XmlPullParser.END_TAG) {
+                        continue
+                    }
                     when (parser.name) {
                         TAG_TIME ->
                             parseTimeText(parser, parserContext, providerContext, textUtils)?.let {
                                 params.add(it)
                             }
                         TAG_DATE ->
-                            parseDateText(parser, parserContext, textUtils)?.let { params.add(it) }
+                            parseDateText(parser, parserContext, providerContext, textUtils)?.let {
+                                params.add(it)
+                            }
                         TAG_PLAIN ->
                             parsePlainTextToAny(parser, providerContext)?.let { params.add(it) }
                         TAG_TIME_DIFFERENCE ->
-                            parseTimeDifferenceText(parser, parserContext)?.let { params.add(it) }
+                            parseTimeDifferenceText(parser, parserContext, providerContext)?.let {
+                                params.add(it)
+                            }
                     }
                     parser.nextTag() // Move to the param type's end tag
                 }
             }
-            return String.format(formatString, *params.toTypedArray())
+            if (
+                formatString.length > MAX_FORMAT_STRING_LEN ||
+                    INVALID_FORMAT_WIDTH.containsMatchIn(formatString)
+            ) {
+                throw XmlPullParserException("Rejected invalid format string")
+            }
+            return String.format(Locale.getDefault(), formatString, *params.toTypedArray())
         }
 
         private fun parseTimeText(
@@ -776,11 +897,17 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
         ): String? {
-            val instantStr = parser.getAttributeValue(null, ATTR_INSTANT) ?: return null
             try {
-                val instant = Instant.ofEpochSecond(instantStr.toLong())
+                val instantSeconds =
+                    getInstantSeconds(parser, ATTR_INSTANT, providerContext) ?: return null
+                val instant = Instant.ofEpochSecond(instantSeconds)
                 val shouldShorten =
                     parser.getAttributeValue(null, ATTR_SHOULD_SHORTEN_AM_PM)?.toBoolean() ?: false
+                val timeComponent = parser.getAttributeValue(null, ATTR_TIME_COMPONENT)
+
+                require(timeComponent == null || !shouldShorten) {
+                    "shouldShortenAmPm should not be used when timeComponent is specified"
+                }
 
                 val timePattern =
                     if (shouldShorten) {
@@ -797,9 +924,33 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                         }
                     }
 
-                return TimeFormatComplicationText.Builder(
-                        requireNotNull(timePattern) { "Invalid time pattern" }
-                    )
+                val format = requireNotNull(timePattern) { "Invalid time pattern" }
+
+                if (timeComponent != null) {
+                    return when (timeComponent) {
+                        TIME_COMPONENT_TIME_ONLY -> {
+                            val timeOnlyFormat = format.replace("a", "").trim()
+                            DateFormat.format(timeOnlyFormat, Date.from(instant)).toString()
+                        }
+                        TIME_COMPONENT_AM_PM_ONLY -> {
+                            if (DateFormat.is24HourFormat(providerContext)) {
+                                ""
+                            } else {
+                                DateFormat.format("a", Date.from(instant)).toString()
+                            }
+                        }
+                        else -> {
+                            Log.w(TAG, "Unknown timeComponent: $timeComponent")
+                            TimeFormatComplicationText.Builder(format)
+                                .setTimeZone(TimeZone.GMT_ZONE)
+                                .build()
+                                .getTextAt(parserContext.resources, instant)
+                                .toString()
+                        }
+                    }
+                }
+
+                return TimeFormatComplicationText.Builder(format)
                     .setTimeZone(TimeZone.GMT_ZONE)
                     .build()
                     .getTextAt(parserContext.resources, instant)
@@ -813,11 +964,13 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private fun parseDateText(
             parser: XmlResourceParser,
             parserContext: Context,
+            providerContext: Context,
             textUtils: ComplicationTextFormatting,
         ): String? {
-            val targetInstantStr = parser.getAttributeValue(null, ATTR_INSTANT) ?: return null
             try {
-                val instant = Instant.ofEpochSecond(targetInstantStr.toLong())
+                val instantSeconds =
+                    getInstantSeconds(parser, ATTR_INSTANT, providerContext) ?: return null
+                val instant = Instant.ofEpochSecond(instantSeconds)
                 val formatsStr = parser.getAttributeValue(null, ATTR_FORMATS)
                 val fallback = parser.getAttributeValue(null, ATTR_FALLBACK)
 
@@ -845,21 +998,21 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
         private fun parseTimeDifferenceText(
             parser: XmlResourceParser,
             parserContext: Context,
+            providerContext: Context,
         ): String? {
-            val typeStr = parser.getAttributeValue(null, ATTR_TYPE)
-            val targetInstantStr = parser.getAttributeValue(null, ATTR_TARGET_INSTANT)
-            val currentInstantStr = parser.getAttributeValue(null, ATTR_CURRENT_INSTANT)
-            val minUnitStr = parser.getAttributeValue(null, ATTR_MIN_UNIT)
-            val displayAsNow =
-                parser.getAttributeValue(null, ATTR_DISPLAY_AS_NOW)?.toBoolean() ?: false
-
-            if (typeStr == null || targetInstantStr == null || currentInstantStr == null) {
-                return null
-            }
-
             try {
-                val instant = Instant.ofEpochSecond(targetInstantStr.toLong())
-                val currentInstant = Instant.ofEpochSecond(currentInstantStr.toLong())
+                val typeStr = parser.getAttributeValue(null, ATTR_TYPE) ?: return null
+                val targetInstantSeconds =
+                    getInstantSeconds(parser, ATTR_TARGET_INSTANT, providerContext) ?: return null
+                val currentInstantSeconds =
+                    getInstantSeconds(parser, ATTR_CURRENT_INSTANT, providerContext) ?: return null
+
+                val minUnitStr = parser.getAttributeValue(null, ATTR_MIN_UNIT)
+                val displayAsNow =
+                    parser.getAttributeValue(null, ATTR_DISPLAY_AS_NOW)?.toBoolean() ?: false
+
+                val instant = Instant.ofEpochSecond(targetInstantSeconds)
+                val currentInstant = Instant.ofEpochSecond(currentInstantSeconds)
                 val style = TimeDifferenceStyle.valueOf(typeStr)
                 val minUnit =
                     if (minUnitStr != null) {
@@ -881,6 +1034,24 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 Log.e(TAG, "Invalid attribute in <time-difference> tag", e)
                 return null
             }
+        }
+
+        @Throws(NumberFormatException::class)
+        private fun getInstantSeconds(
+            parser: XmlResourceParser,
+            attributeName: String,
+            providerContext: Context,
+        ): Long? {
+            val attrValue = parser.getAttributeValue(null, attributeName) ?: return null
+            if (attrValue.startsWith("@")) {
+                val resolvedValue = resolveTextResource(providerContext, attrValue)
+                if (resolvedValue is Number) {
+                    return resolvedValue.toLong()
+                } else if (resolvedValue is String) {
+                    return resolvedValue.toLong()
+                }
+            }
+            return attrValue.toLong()
         }
 
         private fun parseColorRampFromAttribute(
@@ -946,27 +1117,28 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
             providerContext: Context,
         ): Int {
             val resValue = parser.getAttributeValue(null, attrName) ?: return 0
+
+            if (resValue.startsWith("@")) {
+                val idString = resValue.substring(1)
+                val numericId = idString.toIntOrNull()
+                if (numericId != null) return numericId
+            }
+
             val resources = providerContext.resources
             val packageName = providerContext.packageName
 
             return when {
-                resValue.startsWith("@") ->
+                resValue.startsWith("@") -> {
                     resources.getIdentifier(resValue.substring(1), null, packageName)
+                }
                 resValue.startsWith("?") -> {
-                    val attrFullName = resValue.substring(1)
-                    val attrNameOnly =
-                        if (attrFullName.startsWith("attr/")) {
-                            attrFullName.substring(5)
-                        } else {
-                            attrFullName
-                        }
+                    val attrNameOnly = resValue.substring(1).removePrefix("attr/")
                     val attrResId = resources.getIdentifier(attrNameOnly, "attr", packageName)
-                    if (attrResId == 0) {
-                        return 0
-                    }
+                    if (attrResId == 0) return 0
                     val typedValue = TypedValue()
-                    providerContext.theme.resolveAttribute(attrResId, typedValue, true)
-                    typedValue.resourceId
+                    if (providerContext.theme.resolveAttribute(attrResId, typedValue, true)) {
+                        typedValue.resourceId
+                    } else 0
                 }
                 else -> 0
             }
@@ -982,8 +1154,21 @@ class PreviewData internal constructor(private val data: Map<ComplicationType, C
                 when (parser.next()) {
                     XmlPullParser.END_TAG -> depth--
                     XmlPullParser.START_TAG -> depth++
+                    XmlPullParser.END_DOCUMENT -> return
                 }
             }
+        }
+
+        @Throws(XmlPullParserException::class, IOException::class)
+        private fun XmlResourceParser.isBeforeEndTag(targetTagName: String): Boolean {
+            val event = next()
+            if (event == XmlPullParser.END_DOCUMENT) {
+                return false
+            }
+            if (event == XmlPullParser.END_TAG && name == targetTagName) {
+                return false
+            }
+            return true
         }
     }
 }

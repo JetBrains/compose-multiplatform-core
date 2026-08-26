@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.lazy.layout
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
@@ -26,13 +28,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.ParentDataModifierNode
-import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -43,9 +40,9 @@ internal class LazyLayoutItemAnimation(
     private val graphicsContext: GraphicsContext? = null,
     private val onLayerPropertyChanged: () -> Unit = {},
 ) {
-    var fadeInSpec: FiniteAnimationSpec<Float>? = null
+    var enterTransition: EnterTransition? = null
+    var exitTransition: ExitTransition? = null
     var placementSpec: FiniteAnimationSpec<IntOffset>? = null
-    var fadeOutSpec: FiniteAnimationSpec<Float>? = null
 
     var isRunningMovingAwayAnimation = false
         private set
@@ -57,17 +54,35 @@ internal class LazyLayoutItemAnimation(
     var isPlacementAnimationInProgress by mutableStateOf(false)
         private set
 
-    /** Returns true when the appearance animation is currently in progress. */
-    var isAppearanceAnimationInProgress by mutableStateOf(false)
-        private set
+    /** Returns true when the fade in animation is currently in progress. */
+    private var isFadeInAnimationInProgress by mutableStateOf(false)
 
-    /** Returns true when the disappearance animation is currently in progress. */
-    var isDisappearanceAnimationInProgress by mutableStateOf(false)
-        private set
+    /**
+     * Returns true when the appearance animations are in progress. That is to say when any enter
+     * transition is in progress.
+     */
+    val isAppearanceAnimationInProgress
+        get() = isFadeInAnimationInProgress
 
-    /** Returns true when the disappearance animation has been finished. */
-    var isDisappearanceAnimationFinished by mutableStateOf(false)
-        private set
+    /** Returns true when the fade out animation is currently in progress. */
+    private var isFadeOutAnimationInProgress by mutableStateOf(false)
+
+    /**
+     * Returns true when the disappearance animations are in progress. That is to say when any exit
+     * transition is in progress.
+     */
+    val isDisappearanceAnimationInProgress
+        get() = isFadeOutAnimationInProgress
+
+    /** Returns true when the fade out animation has been finished. */
+    private var isFadeOutAnimationFinished by mutableStateOf(false)
+
+    /**
+     * Returns true when the disappearance animation has been finished. That is to say when all exit
+     * transition have finished.
+     */
+    val isDisappearanceAnimationFinished
+        get() = isFadeOutAnimationFinished
 
     /**
      * This property is managed by the animation manager and is not directly used by this class. It
@@ -76,13 +91,19 @@ internal class LazyLayoutItemAnimation(
      * not because of the scroll event in order to start the animation. When there is an active
      * animation it represents the final/target offset.
      */
-    var rawOffset: IntOffset = NotInitialized
+    var targetOffset: IntOffset = NotInitialized
 
     /**
      * The final offset the placeable associated with this animations was placed at. Unlike
-     * [rawOffset] it takes into account things like reverse layout and content padding.
+     * [targetOffset] it takes into account things like reverse layout and content padding.
      */
-    var finalOffset: IntOffset = IntOffset.Zero
+    var placementOffset: IntOffset = IntOffset.Zero
+
+    /**
+     * Tracks the offset of the item in the lookahead pass. When set, this is the animation target
+     * that placementDelta should be applied to.
+     */
+    var lookaheadOffset: IntOffset = NotInitialized
 
     /** Current [GraphicsLayer]. It will be set to null in [release]. */
     var layer: GraphicsLayer? = graphicsContext?.createGraphicsLayer()
@@ -90,7 +111,7 @@ internal class LazyLayoutItemAnimation(
 
     private val placementDeltaAnimation = Animatable(IntOffset.Zero, IntOffset.VectorConverter)
 
-    private val visibilityAnimation = Animatable(1f, Float.VectorConverter)
+    private val fadeAnimation = Animatable(1f, Float.VectorConverter)
 
     /**
      * Current delta to apply for a placement offset. Updates every animation frame. The settled
@@ -98,6 +119,10 @@ internal class LazyLayoutItemAnimation(
      */
     var placementDelta by mutableStateOf(IntOffset.Zero)
         private set
+
+    fun applyScrollOffset(offset: IntOffset) {
+        targetOffset += offset
+    }
 
     /** Cancels the ongoing placement animation if there is one. */
     fun cancelPlacementAnimation() {
@@ -109,12 +134,6 @@ internal class LazyLayoutItemAnimation(
             }
         }
     }
-
-    /**
-     * Tracks the offset of the item in the lookahead pass. When set, this is the animation target
-     * that placementDelta should be applied to.
-     */
-    var lookaheadOffset: IntOffset = NotInitialized
 
     /** Animate the placement by the given [delta] offset. */
     fun animatePlacementDelta(delta: IntOffset, isMovingAway: Boolean) {
@@ -128,11 +147,7 @@ internal class LazyLayoutItemAnimation(
                 val finalSpec =
                     if (placementDeltaAnimation.isRunning) {
                         // when interrupted, use the default spring, unless the spec is a spring.
-                        if (spec is SpringSpec<IntOffset>) {
-                            spec
-                        } else {
-                            InterruptionSpec
-                        }
+                        spec as? SpringSpec<IntOffset> ?: InterruptionSpec
                     } else {
                         spec
                     }
@@ -160,54 +175,62 @@ internal class LazyLayoutItemAnimation(
         }
     }
 
-    fun animateAppearance() {
-        val layer = layer
-        val spec = fadeInSpec
-        if (isAppearanceAnimationInProgress || spec == null || layer == null) {
-            if (isDisappearanceAnimationInProgress) {
-                // we have an active disappearance, and then appearance was requested, but the user
-                // provided null spec for the appearance. we need to immediately switch to 1f
-                layer?.alpha = 1f
-                coroutineScope.launch { visibilityAnimation.snapTo(1f) }
+    fun animateEnterTransition() {
+        layer?.let { layer -> animateFadeIn(layer) }
+    }
+
+    private fun animateFadeIn(layer: GraphicsLayer) {
+        if (isFadeInAnimationInProgress) return
+
+        val fadeInConfig = enterTransition?.config?.fade
+        if (fadeInConfig == null) {
+            if (isFadeOutAnimationInProgress) {
+                layer.alpha = 1f
+                coroutineScope.launch { fadeAnimation.snapTo(1f) }
             }
             return
         }
-        isAppearanceAnimationInProgress = true
-        val shouldResetValue = !isDisappearanceAnimationInProgress
-        if (shouldResetValue) {
-            layer.alpha = 0f
+
+        isFadeInAnimationInProgress = true
+        val isFadeOutAnimationInProgress = isFadeOutAnimationInProgress
+
+        if (!isFadeOutAnimationInProgress) {
+            layer.alpha = fadeInConfig.alpha
         }
+
         coroutineScope.launch {
             try {
-                if (shouldResetValue) {
-                    visibilityAnimation.snapTo(0f)
+                if (!isFadeOutAnimationInProgress) {
+                    fadeAnimation.snapTo(fadeInConfig.alpha)
                 }
-                visibilityAnimation.animateTo(1f, spec) {
+                fadeAnimation.animateTo(1f, fadeInConfig.animationSpec) {
                     layer.alpha = value
                     onLayerPropertyChanged()
                 }
             } finally {
-                isAppearanceAnimationInProgress = false
+                isFadeInAnimationInProgress = false
             }
         }
     }
 
-    fun animateDisappearance() {
-        val layer = layer
-        val spec = fadeOutSpec
-        if (layer == null || isDisappearanceAnimationInProgress || spec == null) {
-            return
-        }
-        isDisappearanceAnimationInProgress = true
+    fun animateExitTransition() {
+        layer?.let { layer -> animateFadeOut(layer) }
+    }
+
+    private fun animateFadeOut(layer: GraphicsLayer) {
+        val fadeOutConfig = exitTransition?.config?.fade ?: return
+        if (isFadeOutAnimationInProgress) return
+
+        isFadeOutAnimationInProgress = true
         coroutineScope.launch {
             try {
-                visibilityAnimation.animateTo(0f, spec) {
+                fadeAnimation.animateTo(fadeOutConfig.alpha, fadeOutConfig.animationSpec) {
                     layer.alpha = value
                     onLayerPropertyChanged()
                 }
-                isDisappearanceAnimationFinished = true
+                isFadeOutAnimationFinished = true
             } finally {
-                isDisappearanceAnimationInProgress = false
+                isFadeOutAnimationInProgress = false
             }
         }
     }
@@ -217,59 +240,27 @@ internal class LazyLayoutItemAnimation(
             isPlacementAnimationInProgress = false
             coroutineScope.launch { placementDeltaAnimation.stop() }
         }
-        if (isAppearanceAnimationInProgress) {
-            isAppearanceAnimationInProgress = false
-            coroutineScope.launch { visibilityAnimation.stop() }
+        if (isFadeInAnimationInProgress) {
+            isFadeInAnimationInProgress = false
+            coroutineScope.launch { fadeAnimation.stop() }
         }
-        if (isDisappearanceAnimationInProgress) {
-            isDisappearanceAnimationInProgress = false
-            coroutineScope.launch { visibilityAnimation.stop() }
+        if (isFadeOutAnimationInProgress) {
+            isFadeOutAnimationInProgress = false
+            coroutineScope.launch { fadeAnimation.stop() }
         }
         isRunningMovingAwayAnimation = false
         placementDelta = IntOffset.Zero
-        rawOffset = NotInitialized
+        targetOffset = NotInitialized
         layer?.let { graphicsContext?.releaseGraphicsLayer(it) }
         layer = null
-        fadeInSpec = null
-        fadeOutSpec = null
+        enterTransition = null
+        exitTransition = null
         placementSpec = null
     }
 
     companion object {
         val NotInitialized = IntOffset(Int.MAX_VALUE, Int.MAX_VALUE)
     }
-}
-
-internal data class LazyLayoutAnimateItemElement(
-    private val fadeInSpec: FiniteAnimationSpec<Float>?,
-    private val placementSpec: FiniteAnimationSpec<IntOffset>?,
-    private val fadeOutSpec: FiniteAnimationSpec<Float>?,
-) : ModifierNodeElement<LazyLayoutAnimationSpecsNode>() {
-
-    override fun create(): LazyLayoutAnimationSpecsNode =
-        LazyLayoutAnimationSpecsNode(fadeInSpec, placementSpec, fadeOutSpec)
-
-    override fun update(node: LazyLayoutAnimationSpecsNode) {
-        node.fadeInSpec = fadeInSpec
-        node.placementSpec = placementSpec
-        node.fadeOutSpec = fadeOutSpec
-    }
-
-    override fun InspectorInfo.inspectableProperties() {
-        name = "animateItem"
-        properties["fadeInSpec"] = fadeInSpec
-        properties["placementSpec"] = placementSpec
-        properties["fadeOutSpec"] = fadeOutSpec
-    }
-}
-
-internal class LazyLayoutAnimationSpecsNode(
-    var fadeInSpec: FiniteAnimationSpec<Float>?,
-    var placementSpec: FiniteAnimationSpec<IntOffset>?,
-    var fadeOutSpec: FiniteAnimationSpec<Float>?,
-) : Modifier.Node(), ParentDataModifierNode {
-
-    override fun Density.modifyParentData(parentData: Any?): Any = this@LazyLayoutAnimationSpecsNode
 }
 
 /** We switch to this spec when a duration based animation is being interrupted. */

@@ -27,7 +27,6 @@ import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomTypeNames
-import androidx.room3.ext.SQLiteDriverMemberNames
 import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 
@@ -36,7 +35,7 @@ class CoroutineFlowResultBinder(
     val typeArg: XType,
     val tableNames: Set<String>,
     adapter: QueryResultAdapter?,
-) : BaseObservableQueryResultBinder(adapter) {
+) : QueryResultBinder(adapter) {
 
     override fun convertAndReturn(
         sqlQueryVar: String,
@@ -68,9 +67,8 @@ class CoroutineFlowResultBinder(
                             addLocalVal(
                                 statementVar,
                                 SQLiteDriverTypeNames.STATEMENT,
-                                "%L.%M(%L)",
+                                "%L.prepare(%L)",
                                 connectionVar,
-                                SQLiteDriverMemberNames.CONNECTION_PREPARE,
                                 sqlQueryVar,
                             )
                             beginControlFlow("try")

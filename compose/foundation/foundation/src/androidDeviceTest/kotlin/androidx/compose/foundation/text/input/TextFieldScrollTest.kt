@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
+import androidx.compose.foundation.text.ForceTouchInputMode
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
@@ -92,7 +93,6 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -112,7 +112,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu " +
             "fugiat nulla pariatur."
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var testScope: CoroutineScope
 
@@ -215,6 +215,21 @@ class TextFieldScrollTest : FocusedWindowTest {
     }
 
     @Test
+    fun textFieldScroll_horizontal_setsContentSize() {
+        val scrollState = ScrollState(0)
+
+        rule.setupHorizontallyScrollableContent(
+            state = TextFieldState("text"),
+            scrollState = scrollState,
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
+        )
+
+        rule.runOnIdle {
+            assertThat(scrollState.scrollIndicatorState?.contentSize).isGreaterThan(0)
+        }
+    }
+
+    @Test
     fun textFieldScroll_vertical_setsViewportSize() {
         val scrollState = ScrollState(0)
 
@@ -225,6 +240,21 @@ class TextFieldScrollTest : FocusedWindowTest {
         )
 
         rule.runOnIdle { assertThat(scrollState.viewportSize).isGreaterThan(0) }
+    }
+
+    @Test
+    fun textFieldScroll_vertical_setsContentSize() {
+        val scrollState = ScrollState(0)
+
+        rule.setupVerticallyScrollableContent(
+            state = TextFieldState("text"),
+            scrollState = scrollState,
+            modifier = Modifier.size(width = 300.dp, height = 100.dp),
+        )
+
+        rule.runOnIdle {
+            assertThat(scrollState.scrollIndicatorState?.contentSize).isGreaterThan(0)
+        }
     }
 
     @Test
@@ -553,14 +583,18 @@ class TextFieldScrollTest : FocusedWindowTest {
         val columnScrollState = ScrollState(0)
 
         rule.setContent {
-            Column(Modifier.size(containerSize).padding(8.dp).verticalScroll(columnScrollState)) {
-                Box(Modifier.size(topItemSize))
-                ScrollableContent(
-                    modifier = Modifier.fillMaxWidth(),
-                    state = state,
-                    scrollState = textFieldScrollState,
-                    lineLimits = MultiLine(),
-                )
+            ForceTouchInputMode {
+                Column(
+                    Modifier.size(containerSize).padding(8.dp).verticalScroll(columnScrollState)
+                ) {
+                    Box(Modifier.size(topItemSize))
+                    ScrollableContent(
+                        modifier = Modifier.fillMaxWidth(),
+                        state = state,
+                        scrollState = textFieldScrollState,
+                        lineLimits = MultiLine(),
+                    )
+                }
             }
         }
 
@@ -619,14 +653,16 @@ class TextFieldScrollTest : FocusedWindowTest {
         val rowScrollState = ScrollState(0)
 
         rule.setContent {
-            Row(Modifier.size(containerSize).padding(8.dp).horizontalScroll(rowScrollState)) {
-                Box(Modifier.size(startItemSize))
-                ScrollableContent(
-                    modifier = Modifier.fillMaxHeight(),
-                    state = state,
-                    scrollState = textFieldScrollState,
-                    lineLimits = SingleLine,
-                )
+            ForceTouchInputMode {
+                Row(Modifier.size(containerSize).padding(8.dp).horizontalScroll(rowScrollState)) {
+                    Box(Modifier.size(startItemSize))
+                    ScrollableContent(
+                        modifier = Modifier.fillMaxHeight(),
+                        state = state,
+                        scrollState = textFieldScrollState,
+                        lineLimits = SingleLine,
+                    )
+                }
             }
         }
 

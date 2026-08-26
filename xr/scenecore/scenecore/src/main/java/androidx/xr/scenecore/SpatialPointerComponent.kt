@@ -25,7 +25,7 @@ import androidx.xr.scenecore.runtime.SceneRuntime
  * Component will set the Entity's pointer back to the default icon.
  */
 public class SpatialPointerComponent private constructor(private val sceneRuntime: SceneRuntime) :
-    Component {
+    Component() {
 
     private val rtComponent by lazy { sceneRuntime.createSpatialPointerComponent() }
 
@@ -37,14 +37,16 @@ public class SpatialPointerComponent private constructor(private val sceneRuntim
      * icon should be used.
      */
     public var spatialPointerIcon: SpatialPointerIcon
-        get() = rtComponent.getSpatialPointerIcon().toSpatialPointerIcon()
-        set(value) = rtComponent.setSpatialPointerIcon(value.toRtSpatialPointerIcon())
+        get() = rtComponent.spatialPointerIcon.toSpatialPointerIcon()
+        set(value) {
+            rtComponent.spatialPointerIcon = value.toRtSpatialPointerIcon()
+        }
 
     override fun onAttach(entity: Entity): Boolean {
         if (this.entity != null) {
             return false
         }
-        if ((entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)) {
+        if (entity.rtEntity.addComponent(rtComponent)) {
             this.entity = entity
             spatialPointerIcon = SpatialPointerIcon.DEFAULT
             return true
@@ -55,7 +57,7 @@ public class SpatialPointerComponent private constructor(private val sceneRuntim
 
     override fun onDetach(entity: Entity) {
         spatialPointerIcon = SpatialPointerIcon.DEFAULT
-        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
+        entity.rtEntity.removeComponent(rtComponent)
         this.entity = null
     }
 

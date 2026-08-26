@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
@@ -41,17 +40,13 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.elementFor
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,10 +54,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusTargetModifierNodeTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
-
-    @After
-    fun resetTouchMode() = InstrumentationRegistry.getInstrumentation().resetInTouchModeCompat()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun requestFocus() {
@@ -123,16 +115,8 @@ class FocusTargetModifierNodeTest {
             focusTargetModifierNode.requestFocus()
         }
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
-            rule.runOnIdle {
-                assertThat(focusTargetModifierNode.focusState).isEqualTo(ActiveParent)
-            }
-            rule.onNodeWithTag("focusableChild").assertIsFocused()
-        } else {
-            rule.runOnIdle { assertThat(focusTargetModifierNode.focusState).isEqualTo(Inactive) }
-            rule.onNodeWithTag("focusableChild").assertIsNotFocused()
-        }
+        rule.runOnIdle { assertThat(focusTargetModifierNode.focusState).isEqualTo(ActiveParent) }
+        rule.onNodeWithTag("focusableChild").assertIsFocused()
     }
 
     @Test

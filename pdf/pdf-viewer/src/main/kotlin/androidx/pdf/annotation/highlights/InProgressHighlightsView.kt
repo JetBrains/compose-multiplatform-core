@@ -22,34 +22,40 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.RemoteException
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.os.HandlerCompat
-import androidx.pdf.PdfDocument
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.R
+import androidx.pdf.annotation.AnnotationsView.OnAnnotationEditListener
+import androidx.pdf.annotation.AnnotationsView.OnGestureClaimListener
 import androidx.pdf.annotation.PageInfoProvider
+import androidx.pdf.annotation.TextBoundsProvider
+import androidx.pdf.annotation.content.StampAnnotation
 import androidx.pdf.annotation.highlights.models.HighlightState
 import androidx.pdf.annotation.highlights.models.InProgressHighlightId
-import androidx.pdf.annotation.highlights.utils.calculateHighlightRects
 import androidx.pdf.annotation.highlights.utils.computeBoundingBox
+import androidx.pdf.annotation.highlights.utils.createTextBoundsRequestFailedException
 import androidx.pdf.annotation.highlights.utils.toPathPdfObjects
-import androidx.pdf.annotation.models.StampAnnotation
-import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 /** A [View] that renders in-progress "wet" text highlights over PDF content. */
+@OptIn(ExperimentalPdfApi::class)
 internal class InProgressHighlightsView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     View(context, attrs, defStyleAttr) {
 
-    /** The PDF document used to query text boundaries. */
-    var pdfDocument: PdfDocument? = null
+    /** A provider interface that abstracts the retrieval of text boundary information. */
+    var textBoundsProvider: TextBoundsProvider? = null
         set(value) {
             if (field == value) return
             field = value
@@ -68,9 +74,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
     private var viewScope: CoroutineScope? = null
     private var touchHandler: WetHighlightsViewTouchHandler? = null
-    private val inProgressTextHighlightsListeners =
-        mutableListOf<InProgressTextHighlightsListener>()
+
+    private var onGestureClaimListener: OnGestureClaimListener? = null
+    private val onAnnotationEditListeners = mutableListOf<OnAnnotationEditListener>()
+
     private val activeHighlights = mutableMapOf<InProgressHighlightId, HighlightState>()
+    private val updateRequests = Channel<HighlightRequest>(Channel.CONFLATED)
 
     private val paint = Paint().apply { style = Paint.Style.FILL }
 
@@ -80,6 +89,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             CoroutineScope(
                 SupervisorJob() + HandlerCompat.createAsync(handler.looper).asCoroutineDispatcher()
             )
+        viewScope?.launch {
+            for (request in updateRequests) {
+                processRequest(request.pageNum, request.block)
+            }
+        }
     }
 
     override fun onDetachedFromWindow() {
@@ -102,14 +116,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         }
     }
 
-    /** Adds a listener to be notified of highlight gesture events. */
-    fun addInProgressTextHighlightsListener(listener: InProgressTextHighlightsListener) {
-        inProgressTextHighlightsListeners.add(listener)
+    /** Sets a listener for generic gesture coordination events. */
+    fun setOnGestureClaimListener(listener: OnGestureClaimListener?) {
+        onGestureClaimListener = listener
     }
 
-    /** Removes a listener that was previously added via [addInProgressTextHighlightsListener]. */
-    fun removeInProgressTextHighlightsListener(listener: InProgressTextHighlightsListener) {
-        inProgressTextHighlightsListeners.remove(listener)
+    /** Adds a listener for annotation result events. */
+    fun addOnAnnotationEditListener(listener: OnAnnotationEditListener) {
+        onAnnotationEditListeners.add(listener)
+    }
+
+    /** Removes a listener for annotation result events. */
+    fun removeOnAnnotationEditListener(listener: OnAnnotationEditListener) {
+        onAnnotationEditListeners.remove(listener)
     }
 
     /** Starts a highlight gesture. Invokes callbacks based on whether text is found. */
@@ -117,16 +136,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         id: InProgressHighlightId,
         pageNum: Int,
         startPdfPoint: PointF,
-        startViewPoint: PointF,
         pageToViewTransform: Matrix,
     ) {
-        val doc = pdfDocument ?: return
+        val localTextBoundsProvider = textBoundsProvider ?: return
 
         activeHighlights[id] =
             HighlightState(pageNum, highlightColor, pageToViewTransform, startPdfPoint, emptyList())
 
-        tryHighlighting {
-            val pageRects = doc.calculateHighlightRects(pageNum, startPdfPoint, startPdfPoint)
+        tryHighlighting(pageNum) {
+            val pageRects =
+                localTextBoundsProvider.getTextBoundsBetweenPoints(
+                    pageNum,
+                    startPdfPoint,
+                    startPdfPoint,
+                )
 
             if (pageRects.isNotEmpty()) {
                 val viewRects =
@@ -136,53 +159,56 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
                 // If the gesture hasn't been canceled, update its state and notify listeners.
                 activeHighlights[id]?.let { currentState ->
-                    activeHighlights[id] = currentState.copy(selectionRects = viewRects)
-                    inProgressTextHighlightsListeners.forEach {
-                        it.onTextHighlightStarted(startViewPoint, id)
-                    }
+                    activeHighlights[id] =
+                        currentState.copy(selectionRects = viewRects, isClaimed = true)
+                    onGestureClaimListener?.onGestureClaimed()
                 }
                 invalidate()
             } else {
                 activeHighlights.remove(id)
-                inProgressTextHighlightsListeners.forEach {
-                    it.onTextHighlightRejected(startViewPoint)
-                }
+                onGestureClaimListener?.onGestureAbandoned()
             }
         }
     }
 
     /** Updates an existing highlight gesture. */
     fun addToTextHighlight(id: InProgressHighlightId, currentPdfPoint: PointF) {
-        val doc = pdfDocument ?: return
+        val localTextBoundsProvider = textBoundsProvider ?: return
         activeHighlights[id]?.let { currentState ->
-            tryHighlighting {
-                val pageRects =
-                    doc.calculateHighlightRects(
-                        currentState.pageNum,
-                        currentState.startPdfPoint,
-                        currentPdfPoint,
-                    )
-                val newViewRects =
-                    pageRects.map { pageRect ->
-                        RectF().apply { currentState.pageToViewTransform.mapRect(this, pageRect) }
-                    }
+            if (!currentState.isClaimed) return
 
-                // Check if the highlight is still active before updating the viewRects.
-                if (activeHighlights.contains(id)) {
-                    activeHighlights[id] = currentState.copy(selectionRects = newViewRects)
-                    invalidate()
+            updateRequests.trySend(
+                HighlightRequest(currentState.pageNum) {
+                    val pageRects =
+                        localTextBoundsProvider.getTextBoundsBetweenPoints(
+                            currentState.pageNum,
+                            currentState.startPdfPoint,
+                            currentPdfPoint,
+                        )
+                    val newViewRects =
+                        pageRects.map { pageRect ->
+                            RectF().apply {
+                                currentState.pageToViewTransform.mapRect(this, pageRect)
+                            }
+                        }
+
+                    // Check if the highlight is still active before updating the viewRects.
+                    if (activeHighlights.contains(id)) {
+                        activeHighlights[id] = currentState.copy(selectionRects = newViewRects)
+                        invalidate()
+                    }
                 }
-            }
+            )
         }
     }
 
     /** Finalizes the highlight gesture, converting it to a stamp annotation. */
     fun finishTextHighlight(id: InProgressHighlightId, finalPdfPoint: PointF) {
-        val doc = pdfDocument ?: return
-        activeHighlights.remove(id)?.let { currentState ->
-            tryHighlighting {
+        val localTextBoundsProvider = textBoundsProvider ?: return
+        activeHighlights[id]?.let { currentState ->
+            tryHighlighting(currentState.pageNum) {
                 val pageRects =
-                    doc.calculateHighlightRects(
+                    localTextBoundsProvider.getTextBoundsBetweenPoints(
                         currentState.pageNum,
                         currentState.startPdfPoint,
                         finalPdfPoint,
@@ -196,12 +222,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                             bounds = boundingBox,
                             pdfObjects = pathObjects,
                         )
-                    inProgressTextHighlightsListeners.forEach {
-                        it.onTextHighlightFinished(mapOf(id to annotation))
-                    }
+                    onAnnotationEditListeners.forEach { it.onAnnotationCreated(annotation) }
                 }
+                activeHighlights.remove(id)
+                invalidate()
             }
-            invalidate()
         }
     }
 
@@ -211,13 +236,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         }
     }
 
-    private fun tryHighlighting(block: suspend () -> Unit) {
-        viewScope?.launch {
-            try {
-                block()
-            } catch (e: RequestFailedException) {
-                inProgressTextHighlightsListeners.forEach { it.onTextHighlightError(e) }
-            }
+    private fun tryHighlighting(pageNum: Int, block: suspend () -> Unit) {
+        viewScope?.launch { processRequest(pageNum, block) }
+    }
+
+    private suspend fun processRequest(pageNum: Int, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: RemoteException) {
+            if (!e.isHandledRemoteException) throw e
+
+            val errorToNotify = createTextBoundsRequestFailedException(pageNum, e)
+            onAnnotationEditListeners.forEach { it.onAnnotationError(errorToNotify) }
         }
     }
+
+    private data class HighlightRequest(val pageNum: Int, val block: suspend () -> Unit)
 }

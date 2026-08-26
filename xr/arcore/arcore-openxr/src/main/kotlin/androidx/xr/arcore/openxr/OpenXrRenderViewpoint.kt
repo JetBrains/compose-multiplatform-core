@@ -16,14 +16,17 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.RenderViewpoint
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 
-/** Wraps the device tracking data. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrRenderViewpoint internal constructor() : RenderViewpoint {
+/**
+ * Wraps the device tracking data.
+ *
+ * @property pose the [Pose] of the render viewpoint
+ * @property fieldOfView the [FieldOfView] of the render viewpoint
+ */
+internal class OpenXrRenderViewpoint() : RenderViewpoint {
 
     override var pose: Pose = Pose()
         private set
@@ -33,6 +36,12 @@ public class OpenXrRenderViewpoint internal constructor() : RenderViewpoint {
 
     internal fun update(state: ViewCameraState) {
         pose = state.pose
-        fieldOfView = state.fieldOfView
+        fieldOfView =
+            FieldOfView(
+                state.fieldOfView.angleLeft,
+                state.fieldOfView.angleRight,
+                state.fieldOfView.angleUp,
+                state.fieldOfView.angleDown,
+            )
     }
 }

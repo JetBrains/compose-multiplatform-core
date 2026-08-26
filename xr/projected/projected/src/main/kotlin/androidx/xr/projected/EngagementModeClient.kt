@@ -169,7 +169,6 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
             }
 
             override fun onServiceDisconnected(className: ComponentName?) {
-                var callbacksToNotify: MutableMap<Consumer<Int>, Executor>? = null
                 synchronized(mLock) {
                     mService = null
                     mIsBound = false
@@ -212,6 +211,8 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
                     executor.execute { callback.accept(updatedFlags) }
                 }
             }
+
+            override fun getInterfaceVersion(): Int = VERSION
         }
 
     private fun verifyProviderIsSystemApp(packageName: String): Boolean {

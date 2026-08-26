@@ -101,6 +101,8 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                 "updateRootConstraints called while measuring"
             }
             rootConstraints = constraints
+            if (!root.isAttached) return
+
             if (root.lookaheadRoot != null) {
                 root.markLookaheadMeasurePending()
             }
@@ -797,7 +799,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
     }
 
     /**
-     * Dispatch [OnPositionedModifier] callbacks for the nodes affected by the previous
+     * Dispatch [OnPositionedDispatcher] callbacks for the nodes affected by the previous
      * [measureAndLayout] execution.
      *
      * @param forceDispatch true means the whole tree should dispatch the callback (for example when

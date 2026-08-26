@@ -18,12 +18,13 @@ package androidx.compose.ui.tooling.animation
 
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.tooling.ComposeAnimationType
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.tooling.animation.InfiniteTransitionComposeAnimation.Companion.parse
+import androidx.compose.ui.tooling.animation.search.InfiniteTransitionSearchInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -37,16 +38,19 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class InfiniteTransitionComposeAnimationTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun apiAvailable() {
         assertTrue(InfiniteTransitionComposeAnimation.apiAvailable)
         rule.setContent {
             val composeAnimation =
-                AnimationSearch.InfiniteTransitionSearchInfo(
+                InfiniteTransitionSearchInfo(
                         rememberInfiniteTransition(),
-                        remember { ToolingState(0L) },
+                        ToolingOverride(
+                            remember { mutableStateOf(null) },
+                            remember { ToolingState(0L) },
+                        ),
                     )
                     .parse()
             assertNotNull(composeAnimation)
@@ -64,9 +68,12 @@ class InfiniteTransitionComposeAnimationTest {
         assertFalse(InfiniteTransitionComposeAnimation.apiAvailable)
         rule.setContent {
             val composeAnimation =
-                AnimationSearch.InfiniteTransitionSearchInfo(
+                InfiniteTransitionSearchInfo(
                         rememberInfiniteTransition(),
-                        remember { ToolingState(0L) },
+                        ToolingOverride(
+                            remember { mutableStateOf(null) },
+                            remember { ToolingState(0L) },
+                        ),
                     )
                     .parse()
             assertNull(composeAnimation)

@@ -16,21 +16,34 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.ArDevice
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 
-/** Wraps the device tracking data. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrDevice internal constructor() : ArDevice, Updatable {
+/**
+ * Wraps the device tracking data.
+ *
+ * @property devicePose the [Pose] of the device
+ */
+internal class OpenXrDevice() : ArDevice, Updatable {
 
     override var devicePose: Pose = Pose()
         private set
 
+    override var trackingState: TrackingState = TrackingState.STOPPED
+        private set
+
+    /**
+     * Updates the entity retrieving its state at [xrTime].
+     *
+     * @param xrTime the number of nanoseconds since the start of the OpenXR epoch
+     */
     override fun update(xrTime: Long) {
-        // Keep the device pose as the previous one if native returns null.
-        devicePose = nativeGetHeadPose(xrTime) ?: devicePose
+        val deviceState = nativeGetDeviceState(xrTime)
+
+        devicePose = deviceState.pose ?: devicePose
+        trackingState = deviceState.trackingState
     }
 
-    private external fun nativeGetHeadPose(timestampNs: Long): Pose?
+    private external fun nativeGetDeviceState(monotonicTimeNs: Long): DeviceState
 }

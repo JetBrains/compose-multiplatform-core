@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,7 +65,7 @@ class TextActionsTest {
 
     private val fieldTag = "Field"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Composable
     fun TextFieldUi(
@@ -198,7 +197,7 @@ class TextActionsTest {
 
     @Test
     fun sendText_whenReadOnly_isNotAllowed() {
-        var lastSeenText = ""
+        val lastSeenText = ""
         rule.setContent { TextFieldUi(readOnly = true) }
 
         expectError<AssertionError> { rule.onNodeWithTag(fieldTag).performTextInput("hi") }
@@ -370,7 +369,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf1Selection { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
@@ -383,7 +382,7 @@ class TextActionsTest {
 
         rule.onNodeWithTag(fieldTag).performTextInputSelection(TextRange(start = 9, end = 5))
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
     }
 
@@ -392,7 +391,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf1Selection(readOnly = true) { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
@@ -464,7 +463,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf2Selection { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
@@ -477,7 +476,7 @@ class TextActionsTest {
 
         rule.onNodeWithTag(fieldTag).performTextInputSelection(TextRange(start = 9, end = 5))
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }
     }
 
@@ -486,7 +485,7 @@ class TextActionsTest {
         var actualSelectionRange = TextRange.Zero
         rule.setContent { Btf2Selection(readOnly = true) { actualSelectionRange = it } }
 
-        var expectedRange = TextRange(start = 5, end = 9)
+        val expectedRange = TextRange(start = 5, end = 9)
         rule.onNodeWithTag(fieldTag).performTextInputSelection(expectedRange)
 
         rule.runOnIdle { assertThat(actualSelectionRange).isEqualTo(expectedRange) }

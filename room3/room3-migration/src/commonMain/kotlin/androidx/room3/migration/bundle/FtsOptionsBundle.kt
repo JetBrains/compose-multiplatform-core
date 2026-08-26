@@ -32,6 +32,9 @@ public class FtsOptionsBundle(
     @SerialName("notIndexedColumns") public val notIndexedColumns: List<String>,
     @SerialName("prefixSizes") public val prefixSizes: List<Int>,
     @SerialName("preferredOrder") public val preferredOrder: String,
+    @SerialName("contentRowId") public val contentRowId: String? = null,
+    @SerialName("columnSize") public val columnSize: Boolean? = null,
+    @SerialName("detail") public val detail: String? = null,
 ) : SchemaEquality<FtsOptionsBundle> {
 
     override fun isSchemaEqual(other: FtsOptionsBundle): Boolean {
@@ -42,6 +45,9 @@ public class FtsOptionsBundle(
             matchInfo == other.matchInfo &&
             notIndexedColumns == other.notIndexedColumns &&
             prefixSizes == other.prefixSizes &&
-            preferredOrder == other.preferredOrder
+            preferredOrder == other.preferredOrder &&
+            contentRowId == other.contentRowId &&
+            columnSize == other.columnSize &&
+            detail == other.detail
     }
 }

@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 
 internal data class FaceState(
     val trackingState: TrackingState = TrackingState.PAUSED,

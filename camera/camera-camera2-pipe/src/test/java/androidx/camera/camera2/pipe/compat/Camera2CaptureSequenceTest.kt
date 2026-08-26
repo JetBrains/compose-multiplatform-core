@@ -29,6 +29,8 @@ import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.CaptureSequence
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
+import androidx.camera.camera2.pipe.MemoryEstimator
+import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.Request.Listener
@@ -42,6 +44,7 @@ import androidx.camera.camera2.pipe.StrictMode
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -55,7 +58,8 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Config.ALL_SDKS])
 internal class Camera2CaptureSequenceTest {
     private val cameraId: CameraId = CameraId("1")
-    private val fakeMetadata = FakeCameraMetadata(cameraId = cameraId)
+    private val fakeMetadata =
+        FakeCameraMetadata.fromTemplate(template = HighEndDeviceTemplate, cameraId = cameraId)
     private val captureSession: CameraCaptureSession = mock()
     private val captureRequest: CaptureRequest = mock()
     private val listener: FakeRequestListener = FakeRequestListener()
@@ -66,7 +70,8 @@ internal class Camera2CaptureSequenceTest {
 
     private val streamConfig = CameraStream.Config.create(Size(1280, 720), StreamFormat.PRIVATE)
     private val graphConfig = CameraGraph.Config(camera = cameraId, streams = listOf(streamConfig))
-    private val streamGraph = StreamGraphImpl(fakeMetadata, graphConfig, mock(), mock())
+    private val streamGraph =
+        StreamGraphImpl(fakeMetadata, graphConfig, mock(), mock(), MemoryEstimator.create())
     private val streamId = streamGraph.streams.single().id
     private val outputId = streamGraph.outputs.single().id
 
@@ -157,6 +162,7 @@ internal class Camera2CaptureSequenceTest {
         )
         assertThat(listener.lastFrameNumber?.value).isEqualTo(frameNumber)
         assertThat(listener.lastStreamId).isEqualTo(streamId)
+        assertThat(listener.lastOutputId).isEqualTo(outputId)
     }
 
     @Test
@@ -165,7 +171,8 @@ internal class Camera2CaptureSequenceTest {
         val outputConfig2 = OutputStream.Config.create(Size(1920, 1080), StreamFormat.PRIVATE)
         val streamConfig = CameraStream.Config.create(listOf(outputConfig1, outputConfig2))
         val graphConfig = CameraGraph.Config(camera = cameraId, streams = listOf(streamConfig))
-        val streamGraph = StreamGraphImpl(fakeMetadata, graphConfig, mock(), mock())
+        val streamGraph =
+            StreamGraphImpl(fakeMetadata, graphConfig, mock(), mock(), MemoryEstimator.create())
         val stream = checkNotNull(streamGraph[streamConfig])
         val output1 = stream.outputs[0]
         val output2 = stream.outputs[1]
@@ -198,6 +205,7 @@ internal class Camera2CaptureSequenceTest {
         )
         assertThat(listener.lastFrameNumber?.value).isEqualTo(frameNumber1)
         assertThat(listener.lastStreamId).isEqualTo(stream.id)
+        assertThat(listener.lastOutputId).isEqualTo(output1.id)
 
         camera2CaptureSequence.onCaptureBufferLost(
             captureSession,
@@ -207,6 +215,7 @@ internal class Camera2CaptureSequenceTest {
         )
         assertThat(listener.lastFrameNumber?.value).isEqualTo(frameNumber2)
         assertThat(listener.lastStreamId).isEqualTo(stream.id)
+        assertThat(listener.lastOutputId).isEqualTo(output2.id)
     }
 
     private class FakeRequestListener : Listener {
@@ -217,6 +226,7 @@ internal class Camera2CaptureSequenceTest {
         var lastRequestFailure: RequestFailure? = null
         var lastSensorTimeStamp: SensorTimestamp? = null
         var lastStreamId: StreamId? = null
+        var lastOutputId: OutputId? = null
 
         override fun onStarted(
             requestMetadata: RequestMetadata,
@@ -257,10 +267,12 @@ internal class Camera2CaptureSequenceTest {
         override fun onBufferLost(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            stream: StreamId,
+            streamId: StreamId,
+            outputId: OutputId,
         ) {
             lastFrameNumber = frameNumber
-            lastStreamId = stream
+            lastStreamId = streamId
+            lastOutputId = outputId
         }
     }
 }

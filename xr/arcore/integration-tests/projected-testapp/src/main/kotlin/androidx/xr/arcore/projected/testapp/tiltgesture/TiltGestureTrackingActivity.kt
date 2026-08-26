@@ -37,14 +37,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.arcore.ExperimentalGesturesApi
 import androidx.xr.arcore.TiltGesture
 import androidx.xr.glimmer.Button
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Icon
 import androidx.xr.glimmer.Text
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateSuccess
@@ -62,8 +63,10 @@ class TiltGestureTrackingActivity : ComponentActivity() {
 
     private lateinit var session: Session
     private val sessionInitialized = CompletableDeferred<Unit>()
+    @OptIn(ExperimentalGesturesApi::class)
     private var tiltFlow by mutableStateOf<Flow<TiltGesture.State>?>(null)
 
+    @OptIn(ExperimentalGesturesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch(Dispatchers.IO) {
@@ -86,6 +89,7 @@ class TiltGestureTrackingActivity : ComponentActivity() {
             }
     }
 
+    @OptIn(ExperimentalGesturesApi::class)
     @Composable
     private fun TiltDemoApp(state: TiltGesture.State) {
         Column(
@@ -114,24 +118,20 @@ class TiltGestureTrackingActivity : ComponentActivity() {
         }
     }
 
-    private fun tryCreateSession() {
+    private suspend fun tryCreateSession() {
         Log.i(TAG, "Session.create($this)")
-        when (val result = Session.create(this)) {
+        // TODO(b/510012792): Use Projected Device Context after 1.55.
+        when (val result = Session.create(context = this, lifecycleOwner = this)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
-                    when (
+                    val configResult =
                         session.configure(
-                            Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN)
+                            Config.Builder()
+                                .setDeviceTracking(createInertialDeviceTrackingMode())
+                                .build()
                         )
-                    ) {
-                        is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                            Log.e(
-                                TAG,
-                                "Google Play Services Location Library is not linked, this should not happen.",
-                            )
-                        }
-
+                    when (configResult) {
                         is SessionConfigureSuccess -> {
                             Log.i(TAG, "Session created successfully!!")
                         }
@@ -153,6 +153,19 @@ class TiltGestureTrackingActivity : ComponentActivity() {
                 Log.e(TAG, "Can't create session, unsupported device")
                 finish()
             }
+
+            else -> {
+                Log.e(TAG, "Unexpected ${result::class.simpleName}")
+            }
         }
+    }
+
+    private fun createInertialDeviceTrackingMode(): androidx.xr.runtime.DeviceTrackingMode {
+        val constructor =
+            androidx.xr.runtime.DeviceTrackingMode::class
+                .java
+                .getDeclaredConstructor(Int::class.javaPrimitiveType!!)
+        constructor.isAccessible = true
+        return constructor.newInstance(2)
     }
 }

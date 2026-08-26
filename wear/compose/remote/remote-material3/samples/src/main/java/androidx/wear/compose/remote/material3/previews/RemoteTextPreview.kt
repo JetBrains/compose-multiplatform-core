@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 @file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3.previews
 
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.creation.compose.state.rsp
+import androidx.compose.remote.creation.compose.text.RemoteTextStyle
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material3.LocalTextStyle
 import androidx.wear.compose.remote.material3.RemoteText
+import androidx.wear.compose.remote.material3.previews.utils.ProfilePreviewParameterProvider
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @WearPreviewDevices
@@ -42,12 +43,13 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 private fun RemoteTextStylePreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) =
-    RemotePreview(profile = profile) {
+    RemoteContentPreview(profile = profile) {
         Container {
-            val text = rememberRemoteString { "textWithStyle" }
+            val text = "textWithStyle".rs
+
             RemoteText(
                 text,
-                style = LocalTextStyle.current.copy(fontStyle = FontStyle.Italic, fontSize = 32.sp),
+                style = RemoteTextStyle(fontStyle = FontStyle.Italic, fontSize = 32.rsp),
             )
         }
     }
@@ -57,16 +59,17 @@ private fun RemoteTextStylePreview(
 private fun RemoteTextOverflowPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) =
-    RemotePreview(profile = profile) {
+    RemoteContentPreview(profile = profile) {
         Container {
-            val text = rememberRemoteString {
+            val text =
                 "a piece of writing in which the expression of feelings and ideas is given intensity by particular attention to diction (sometimes involving rhyme), rhythm, and imagery."
-            }
+                    .rs
+
             val color = RemoteColor(Color.Green)
 
             RemoteText(
                 text = text,
-                fontSize = 18.sp,
+                fontSize = 18.rsp,
                 color = color,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -80,10 +83,5 @@ private fun Container(
     modifier: RemoteModifier = RemoteModifier.fillMaxSize(),
     content: @Composable @RemoteComposable () -> Unit,
 ) {
-    RemoteBox(
-        modifier,
-        horizontalAlignment = RemoteAlignment.CenterHorizontally,
-        verticalArrangement = RemoteArrangement.Center,
-        content = content,
-    )
+    RemoteBox(modifier, contentAlignment = RemoteAlignment.Center, content = content)
 }

@@ -255,6 +255,15 @@ public open class ComponentActivity() :
 
     private var hasPictureInPictureSystemFeature: Boolean = false
 
+    private val isExported: Boolean by lazy {
+        try {
+            val info = packageManager.getActivityInfo(componentName, 0)
+            info.exported
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
     /**
      * Default constructor for ComponentActivity. All Activities must have a default constructor for
      * API 27 and lower devices or when using the default [android.app.AppComponentFactory].
@@ -448,8 +457,8 @@ public open class ComponentActivity() :
      *
      * Any listener added here will receive a callback as part of `super.onCreate()`, but
      * importantly **before** any other logic is done (including calling through to the framework
-     * [Activity.onCreate] with the exception of restoring the state of the [savedStateRegistry] for
-     * use in your listener.
+     * [Activity.onCreate]) with the exception of restoring the state of the [savedStateRegistry]
+     * for use in your listener.
      */
     final override fun addOnContextAvailableListener(listener: OnContextAvailableListener) {
         contextAwareHelper.addOnContextAvailableListener(listener)
@@ -470,7 +479,7 @@ public open class ComponentActivity() :
     override fun onCreatePanelMenu(featureId: Int, menu: Menu): Boolean {
         if (featureId == Window.FEATURE_OPTIONS_PANEL) {
             super.onCreatePanelMenu(featureId, menu)
-            menuHostHelper.onCreateMenu(menu, getMenuInflater())
+            menuHostHelper.onCreateMenu(menu, menuInflater)
         }
         return true
     }
@@ -561,8 +570,23 @@ public open class ComponentActivity() :
         }
     }
 
+    /**
+     * The default arguments [Bundle] to pass to [DEFAULT_ARGS_KEY] in
+     * [defaultViewModelCreationExtras].
+     *
+     * For exported activities (activities that can be launched by external applications), this
+     * returns `null` by default to prevent untrusted intent extras from populating ViewModel saved
+     * state. For non-exported activities, this returns `intent?.extras`.
+     *
+     * Override this property to explicitly pass or validate intent extras for ViewModels created by
+     * this Activity.
+     */
+    public open val defaultViewModelArgs: Bundle?
+        @Suppress("NullableCollection") /* align with Intent.extras */
+        get() = if (USE_DEFAULT_VIEW_MODEL_ARGS && isExported) null else intent?.extras
+
     override val defaultViewModelProviderFactory: ViewModelProvider.Factory by lazy {
-        SavedStateViewModelFactory(application, this, if (intent != null) intent.extras else null)
+        SavedStateViewModelFactory(application, this, defaultViewModelArgs)
     }
 
     @get:CallSuper
@@ -580,7 +604,7 @@ public open class ComponentActivity() :
             }
             extras[SAVED_STATE_REGISTRY_OWNER_KEY] = this
             extras[VIEW_MODEL_STORE_OWNER_KEY] = this
-            val intentExtras = intent?.extras
+            val intentExtras = defaultViewModelArgs
             if (intentExtras != null) {
                 extras[DEFAULT_ARGS_KEY] = intentExtras
             }
@@ -654,16 +678,21 @@ public open class ComponentActivity() :
      *
      * This dispatcher acts as the central point for back navigation events. When a navigation event
      * occurs (e.g., a back gesture), it safely invokes [ComponentActivity.onBackPressed].
+     *
+     * ### Not stable for override
+     *
+     * **This property is not intended for override.** It is technically `open` for binary
+     * compatibility with previous versions, but overriding this property is unsupported.
      */
     override val navigationEventDispatcher: NavigationEventDispatcher
-        get() = onBackPressedDispatcher.eventDispatcher
+        get() = onBackPressedDispatcher.asNavigationEventDispatcher()
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun addObserverForBackInvoker(dispatcher: OnBackPressedDispatcher) {
         lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_CREATE) {
-                    dispatcher.setOnBackInvokedDispatcher(getOnBackInvokedDispatcher())
+                    dispatcher.setOnBackInvokedDispatcher(onBackInvokedDispatcher)
                 }
             }
         )
@@ -1100,13 +1129,13 @@ public open class ComponentActivity() :
         override fun viewCreated(view: View) {
             if (!onDrawScheduled) {
                 onDrawScheduled = true
-                view.getViewTreeObserver().addOnDrawListener(this)
+                view.viewTreeObserver.addOnDrawListener(this)
             }
         }
 
         override fun activityDestroyed() {
             window.decorView.removeCallbacks(this)
-            window.decorView.getViewTreeObserver().removeOnDrawListener(this)
+            window.decorView.viewTreeObserver.removeOnDrawListener(this)
         }
 
         /**
@@ -1125,7 +1154,7 @@ public open class ComponentActivity() :
                     decorView.postInvalidate()
                 }
             } else {
-                // We've already gotten past the 10 second timeout and dropped the
+                // We've already gotten past the 10-second timeout and dropped the
                 // OnPreDrawListener, so we just run on the next frame.
                 decorView.postOnAnimation {
                     if (currentRunnable != null) {
@@ -1158,11 +1187,34 @@ public open class ComponentActivity() :
          * within the onDraw() method.
          */
         override fun run() {
-            window.decorView.getViewTreeObserver().removeOnDrawListener(this)
+            window.decorView.viewTreeObserver.removeOnDrawListener(this)
         }
     }
 
-    private companion object {
+    public companion object {
         private const val ACTIVITY_RESULT_TAG = "android:support:activity-result"
+
+        @get:JvmSynthetic internal var USE_DEFAULT_VIEW_MODEL_ARGS: Boolean = true
+
+        /**
+         * Control whether [ComponentActivity] uses the new defaultViewModelArgs solution that
+         * prevents untrusted intent extras from populating ViewModel saved state in exported
+         * activities.
+         *
+         * This should be set before ViewModels are created or [defaultViewModelArgs] is accessed
+         * (e.g., in your [android.app.Application] class or prior to `super.onCreate()` in your
+         * activity).
+         *
+         * @param enabled Whether the new defaultViewModelArgs solution should be enabled.
+         */
+        @ExportedActivityDefaultArgControl
+        @Deprecated(
+            "To pass default arguments to the exported Activity override " +
+                "[defaultViewModelArgs]."
+        )
+        @JvmStatic
+        public fun enableExportedActivityDefaultArgs(enabled: Boolean) {
+            USE_DEFAULT_VIEW_MODEL_ARGS = enabled
+        }
     }
 }

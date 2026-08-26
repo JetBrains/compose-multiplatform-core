@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -69,8 +66,6 @@ import androidx.compose.ui.graphics.Color
  */
 @Composable
 @RemoteComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public fun RemoteIconButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -92,18 +87,17 @@ public fun RemoteIconButton(
         content =
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
-                LocalRemoteTypography.current.typography.labelMedium,
+                RemoteMaterialTheme.typography.labelMedium,
                 content,
             ),
     )
 }
 
 /** Contains the default values used by [RemoteIconButton]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteIconButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteIconButton]. */
     public val shape: RemoteRoundedCornerShape
-        @Composable get() = RemoteCircleShape
+        get() = RemoteCircleShape
 
     /** Recommended alpha to apply to an IconButton with Image content with disabled */
     public val DisabledImageOpacity: RemoteFloat = DisabledContentAlpha.rf
@@ -152,14 +146,9 @@ public object RemoteIconButtonDefaults {
      * @param buttonSize The size of the icon button
      */
     public fun iconSizeFor(buttonSize: RemoteDp): RemoteDp =
-        RemoteDp(
-            buttonSize.value
-                .gt(LargeButtonSize.value)
-                .select(
-                    ifTrue = LargeIconSize.value,
-                    ifFalse = max(SmallIconSize.value, buttonSize.value / 2f),
-                )
-        )
+        buttonSize
+            .isGreaterThan(LargeButtonSize)
+            .select(ifTrue = LargeIconSize, ifFalse = max(SmallIconSize, buttonSize / 2f.rf))
 
     /**
      * The recommended size of an icon when used inside an icon button with size [SmallButtonSize]
@@ -211,8 +200,6 @@ public object RemoteIconButtonDefaults {
  * @param disabledContentColor the content color of this text button when not enabled.
  */
 @Immutable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public class RemoteIconButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,

@@ -9,11 +9,12 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            optimization {
+                enable = true
+            }
         }
     }
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) }
 }
 
 dependencies {

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.camera.camera2.impl
 
 import android.graphics.SurfaceTexture
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_ALWAYS_FLASH
 import android.hardware.camera2.CaptureRequest
@@ -28,6 +28,7 @@ import android.media.Image
 import android.os.Build
 import android.os.Looper
 import android.view.Surface
+import androidx.camera.camera2.adapter.CameraSessionLifecycleAdapter
 import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.adapter.CaptureResultAdapter
@@ -41,7 +42,7 @@ import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.compat.workaround.NotUseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
-import androidx.camera.camera2.config.UseCaseGraphContext
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.AeMode
@@ -60,6 +61,7 @@ import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
 import androidx.camera.camera2.pipe.testing.FakeRequestFailure
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.testing.FakeCameraGraph
 import androidx.camera.camera2.testing.FakeCameraGraphSession
 import androidx.camera.camera2.testing.FakeCameraProperties
@@ -240,12 +242,10 @@ class CapturePipelineTest {
             template = RequestTemplate(CameraDevice.TEMPLATE_STILL_CAPTURE),
         )
     private val fakeCameraProperties =
-        FakeCameraProperties(
-            FakeCameraMetadata(mapOf(CameraCharacteristics.FLASH_INFO_AVAILABLE to true))
-        )
-    private val cameraStateAdapter = CameraStateAdapter()
-    private val fakeUseCaseGraphContext =
-        UseCaseGraphContext(
+        FakeCameraProperties(FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate))
+    private val cameraStateAdapter = CameraStateAdapter(CameraSessionLifecycleAdapter())
+    private val fakeUseCaseCameraContext =
+        UseCaseCameraContext(
             cameraGraphProvider = {
                 FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
             },
@@ -298,7 +298,7 @@ class CapturePipelineTest {
     private val fakeCaptureConfigAdapter =
         CaptureConfigAdapter(
             fakeCameraProperties,
-            fakeUseCaseGraphContext,
+            fakeUseCaseCameraContext,
             fakeZslControl,
             fakeUseCaseThreads,
             NoOpTemplateParamsOverride,
@@ -342,7 +342,7 @@ class CapturePipelineTest {
 
         fakeUseCaseCameraState =
             UseCaseCameraState(
-                fakeUseCaseGraphContext,
+                fakeUseCaseCameraContext,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
 
@@ -609,7 +609,7 @@ class CapturePipelineTest {
         runTest {
             capturePipeline =
                 createCapturePipeline(useTorchAsFlash = createUseTorchAsFlash(forceEnable = true))
-            val initialListenerSize = comboRequestListener.listeners.size
+            val initialListenerSize = comboRequestListener.listenerHolders.size
 
             withFlashTypeTorch_shouldLock3AAsNeeded(
                 capturePipeline,
@@ -619,7 +619,7 @@ class CapturePipelineTest {
                 simulate3aConvergence = false,
             )
 
-            assertThat(comboRequestListener.listeners.size).isEqualTo(initialListenerSize)
+            assertThat(comboRequestListener.listenerHolders.size).isEqualTo(initialListenerSize)
         }
 
     @Test
@@ -1311,7 +1311,7 @@ class CapturePipelineTest {
             requestListener = comboRequestListener,
             threads = fakeUseCaseThreads,
             torchControl = torchControl,
-            useCaseGraphContext = fakeUseCaseGraphContext,
+            useCaseCameraContext = fakeUseCaseCameraContext,
             useCaseCameraStateProvider = { fakeUseCaseCameraState },
             useTorchAsFlash = useTorchAsFlash,
             flashControl = flashControl,

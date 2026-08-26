@@ -17,6 +17,7 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.RectRulers
@@ -35,30 +36,33 @@ import kotlin.math.roundToInt
  *
  * @see paneMargins
  */
+@ExperimentalMaterial3AdaptiveApi
 @Immutable
-sealed interface PaneMargins {
-    fun Placeable.PlacementScope.getPaneLeft(measuredLeft: Int) = measuredLeft
+public sealed interface PaneMargins {
+    public fun Placeable.PlacementScope.getPaneLeft(measuredLeft: Int): Int = measuredLeft
 
-    fun Placeable.PlacementScope.getPaneTop(measuredTop: Int) = measuredTop
+    public fun Placeable.PlacementScope.getPaneTop(measuredTop: Int): Int = measuredTop
 
-    fun Placeable.PlacementScope.getPaneRight(measuredRight: Int, parentRight: Int) = measuredRight
+    public fun Placeable.PlacementScope.getPaneRight(measuredRight: Int, parentRight: Int): Int =
+        measuredRight
 
-    fun Placeable.PlacementScope.getPaneBottom(measuredBottom: Int, parentBottom: Int) =
+    public fun Placeable.PlacementScope.getPaneBottom(measuredBottom: Int, parentBottom: Int): Int =
         measuredBottom
 
     private class Unspecified : PaneMargins
 
-    companion object {
+    public companion object {
         /**
          * Represents no margins being set.
          *
          * When set to [Unspecified], the pane's position will not be affected by margins. The edges
          * of the pane may touch the edges of the scaffold.
          */
-        val Unspecified: PaneMargins = Unspecified()
+        public val Unspecified: PaneMargins = Unspecified()
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Immutable
 internal class PaneMarginsImpl(
     fixedMargins: PaddingValues = PaddingValues(),

@@ -20,8 +20,8 @@ import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeSpec
 import androidx.room3.compiler.processing.XElement
-import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.XProcessingEnv.Platform
+import androidx.room3.compiler.processing.XPropertyElement
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
@@ -81,6 +81,7 @@ object COMMON {
     val LIVE_DATA by lazy {
         loadJavaCode("common/input/LiveData.java", LifecyclesTypeNames.LIVE_DATA.canonicalName)
     }
+    val FLOW_LIVE_DATA by lazy { loadKotlinCode("common/input/FlowLiveData.kt") }
     val COMPUTABLE_LIVE_DATA by lazy {
         loadJavaCode(
             "common/input/ComputableLiveData.java",
@@ -191,7 +192,7 @@ object COMMON {
 
 fun testCodeGenScope(): CodeGenScope {
     return CodeGenScope(
-        object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true)) {
+        object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true, 500)) {
             override val packageName = "test"
 
             override fun createTypeSpecBuilder(): XTypeSpec.Builder {
@@ -251,8 +252,8 @@ fun XTestInvocation.getEntities(): List<androidx.room3.vo.Entity> {
  * Create mocks of [XElement] and [XType] so that they can be used for instantiating a fake
  * [androidx.room3.vo.Property].
  */
-fun mockElementAndType(): Pair<XFieldElement, XType> {
-    val element = mock(XFieldElement::class.java)
+fun mockElementAndType(): Pair<XPropertyElement, XType> {
+    val element = mock(XPropertyElement::class.java)
     val type = mock(XType::class.java)
     doReturn(type).`when`(element).type
     return element to type

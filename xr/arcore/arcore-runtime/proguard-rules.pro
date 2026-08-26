@@ -1,4 +1,0 @@
--keep class androidx.xr.arcore.runtime.** { *; }
--keep class androidx.xr.arcore.runtime.**$* { *; }
--keep class * extends androidx.xr.arcore.runtime.** { *; }
--keep class * extends androidx.xr.arcore.runtime.**$* { *; }

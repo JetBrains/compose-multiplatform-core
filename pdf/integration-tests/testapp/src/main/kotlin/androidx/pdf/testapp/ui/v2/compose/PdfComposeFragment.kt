@@ -16,21 +16,20 @@
 
 package androidx.pdf.testapp.ui.v2.compose
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.compose.PdfViewer
-import androidx.pdf.compose.PdfViewerState
+import androidx.pdf.compose.rememberPdfViewerState
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.databinding.FragmentComposeBinding
 import com.google.android.material.snackbar.Snackbar
@@ -42,7 +41,6 @@ import com.google.android.material.snackbar.Snackbar
  * [View]s to exist in the layout. This will follow the recommended UDF architecture for Compose-
  * based UIs. The Fragment is simply a container for Compose in an otherwise View-based app.
  */
-@SuppressLint("RestrictedApiAndroidX")
 class PdfComposeFragment() : Fragment() {
     private lateinit var composeView: ComposeView
 
@@ -53,6 +51,7 @@ class PdfComposeFragment() : Fragment() {
 
     private val CommentKey = Any()
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -66,7 +65,7 @@ class PdfComposeFragment() : Fragment() {
                     ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
                 )
                 setContent {
-                    val pdfViewerState = remember { PdfViewerState() }
+                    val pdfViewerState = rememberPdfViewerState()
                     PdfViewer(
                         state = pdfViewerState,
                         pdfDocument =

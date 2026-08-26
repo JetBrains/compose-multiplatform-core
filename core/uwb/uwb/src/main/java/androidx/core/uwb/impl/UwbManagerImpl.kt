@@ -94,21 +94,30 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
         private val mRangingCapabilities = AtomicReference<android.ranging.RangingCapabilities?>()
     }
 
-    init {
-        val connection =
-            object : ServiceConnection {
-                override fun onServiceConnected(className: ComponentName, service: IBinder) {
-                    iUwb = IUwb.Stub.asInterface(service)
-                    Log.i(TAG, "iUwb service created successfully.")
-                }
-
-                override fun onServiceDisconnected(p0: ComponentName?) {
-                    iUwb = null
-                }
+    private val connection =
+        object : ServiceConnection {
+            override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                iUwb = IUwb.Stub.asInterface(service)
+                Log.i(TAG, "iUwb service created successfully.")
             }
+
+            override fun onServiceDisconnected(p0: ComponentName?) {
+                iUwb = null
+            }
+        }
+
+    init {
         val intent = Intent("androidx.core.uwb.backend.service")
         intent.setPackage("androidx.core.uwb.backend")
-        context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        context.applicationContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
+
+    override fun close() {
+        try {
+            context.applicationContext.unbindService(connection)
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "Service already unbound or connection not registered", e)
+        }
     }
 
     @Deprecated("Renamed to controleeSessionScope")
@@ -388,6 +397,8 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
                         override fun onUwbStateChanged(isAvailable: Boolean, reason: Int) {
                             executor.execute { observer.onUwbStateChanged(isAvailable, reason) }
                         }
+
+                        override fun getInterfaceVersion(): Int = VERSION
                     }
                 aospAvailabilityClient = iUwb?.controllerClient
                 aospAvailabilityClient?.subscribeToAvailability(availabilityObserver)

@@ -27,7 +27,9 @@ import android.widget.RadioGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -36,6 +38,8 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorPlacement
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.EntityMoveListener
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PlaneOrientation
@@ -45,7 +49,9 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
+import java.nio.file.Paths
 import java.util.concurrent.Executors
+import kotlinx.coroutines.launch
 
 /**
  * A simple activity that creates a panel and attaches a movable component to it.
@@ -78,8 +84,8 @@ class MovableActivity : AppCompatActivity() {
 
     private var movableComponent: MovableComponent? = null
     private val executor = Executors.newSingleThreadExecutor()
-    private var planeOrientationFilter: MutableSet<Int> = mutableSetOf()
-    private var planeSemanticFilter: MutableSet<Int> = mutableSetOf()
+    private var planeOrientationFilter: MutableSet<PlaneOrientation> = mutableSetOf()
+    private var planeSemanticFilter: MutableSet<PlaneSemanticType> = mutableSetOf()
 
     companion object {
         private const val TAG = "MovableActivity"
@@ -89,21 +95,26 @@ class MovableActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.common_test_panel)
 
-        if (!setupSession()) return
-        initializeUI()
-        val stationaryPanelEntity = createStationaryPanel()
-        setupMovablePanel(stationaryPanelEntity)
+        lifecycleScope.launch {
+            if (!setupSession()) return@launch
+            initializeUI()
+            val stationaryPanelEntity = createStationaryPanel()
+            setupMovablePanel(stationaryPanelEntity)
+            createAnchorableGltfEntity()
+        }
     }
 
-    private fun setupSession(): Boolean {
-        session = SessionManager(this).createSession()
+    private suspend fun setupSession(): Boolean {
+        session = SessionManager(this@MovableActivity).createSession()
         if (session == null) {
             Log.e(TAG, "Failed to create a session. Finishing activity.")
             finish()
             return false
         }
-        session!!.configure(Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-        session!!.scene.keyEntity = session!!.scene.mainPanelEntity
+        session!!.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
+        session!!.scene.keyEntity = null
 
         // Enable passthrough by default to allow interaction with the real world,
         // which is necessary for testing anchoring functionality.
@@ -142,8 +153,8 @@ class MovableActivity : AppCompatActivity() {
                 IntSize2d(640, 550),
                 "stationaryPanel",
                 Pose(Vector3(0.9f, 0f, 0f)),
+                parent = session!!.scene.mainPanelEntity,
             )
-        stationaryPanelEntity.parent = session!!.scene.keyEntity
         return stationaryPanelEntity
     }
 
@@ -167,8 +178,8 @@ class MovableActivity : AppCompatActivity() {
                 IntSize2d(750, 1200),
                 "panel",
                 Pose(Vector3(0f, 0f, 0.1f)),
+                parent = session!!.scene.mainPanelEntity,
             )
-        movablePanelEntity.parent = session!!.scene.keyEntity
         val enableMovableSwitch =
             movablePanelContentView.findViewById<MaterialSwitch>(R.id.enable_movable_switch)
         val movableOptionsContainer =
@@ -213,7 +224,7 @@ class MovableActivity : AppCompatActivity() {
         parentSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             when (isChecked) {
                 true -> movablePanelEntity.parent = stationaryPanelEntity
-                false -> movablePanelEntity.parent = session!!.scene.keyEntity
+                false -> movablePanelEntity.parent = session!!.scene.mainPanelEntity
             }
             movablePanelEntity.setPose(Pose(Vector3(0f, 0f, 0.1f)))
         }
@@ -224,6 +235,7 @@ class MovableActivity : AppCompatActivity() {
             movablePanelContentView.findViewById<RadioGroup>(R.id.custom_behavior_group)
     }
 
+    @Suppress("RestrictedApiAndroidX", "DEPRECATION")
     private fun setupAnchorPlacementCheckboxes(view: View, movablePanelEntity: Entity) {
         val planeOrientationCheckboxMap =
             mapOf(
@@ -326,5 +338,41 @@ class MovableActivity : AppCompatActivity() {
                 )
         }
         movablePanelEntity.addComponent(movableComponent!!)
+    }
+
+    @Suppress("ExceptionMessage", "RestrictedApiAndroidX", "DEPRECATION")
+    private fun createAnchorableGltfEntity() {
+        lifecycleScope.launch {
+            val gltfModel =
+                GltfModel.create(
+                    session = checkNotNull(session),
+                    path = Paths.get("models", "Dragon_Evolved.gltf"),
+                )
+
+            val anchorPlacementSet: Set<AnchorPlacement> =
+                setOf(
+                    AnchorPlacement.createForPlanes(
+                        anchorablePlaneOrientations = setOf(PlaneOrientation.ANY),
+                        anchorablePlaneSemanticTypes = setOf(PlaneSemanticType.ANY),
+                    )
+                )
+            val movableComponent =
+                MovableComponent.createAnchorable(
+                    session = checkNotNull(session),
+                    anchorPlacement = anchorPlacementSet,
+                    disposeParentOnReAnchor = true,
+                )
+
+            val gltfModelEntity =
+                GltfModelEntity.create(
+                    session = checkNotNull(session),
+                    model = gltfModel,
+                    pose = Pose(Vector3(-2f, -1.5f, -2f)),
+                    parent = session!!.scene.activitySpace,
+                )
+
+            gltfModelEntity.setScale(0.5f)
+            gltfModelEntity.addComponent(component = movableComponent)
+        }
     }
 }

@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -55,24 +54,11 @@ androidXMultiplatform {
     androidLibrary {
         withJava()
         namespace = "androidx.room3"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(
-                    new File(project.projectDir, "src/androidMain/proguard-rules.pro")
-            )
-        }
         stableAidl {
             version = 1
         }
         compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
             it.returnDefaultValues = true
-        }
-
-        // Needed for api tasks and docs generation
-        sourceSets {
-            androidMain {
-                kotlin.srcDirs += 'src/androidMain/java'
-            }
         }
     }
     ios() {
@@ -95,7 +81,8 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":room3:room3-common"))
-                api(project(":sqlite:sqlite"))
+                api("androidx.sqlite:sqlite:2.7.0-rc01")
+                implementation("androidx.sqlite:sqlite-async:2.7.0-rc01")
                 api("androidx.collection:collection:1.5.0")
                 api("androidx.annotation:annotation:1.9.1")
                 api(libs.kotlinCoroutinesCore)
@@ -122,7 +109,7 @@ androidXMultiplatform {
         }
         jvmTest {
             dependencies {
-                implementation(project(":sqlite:sqlite-bundled"))
+                implementation("androidx.sqlite:sqlite-bundled:2.7.0-rc01")
                 implementation(libs.kotlinTestJunit)
             }
         }
@@ -133,11 +120,11 @@ androidXMultiplatform {
             dependsOn(nonWebTest)
         }
         androidMain {
+            kotlin.srcDirs += "src/androidMain/java"
             dependencies {
                 api(libs.jspecify)
-                api(project(":sqlite:sqlite-framework"))
+                api("androidx.sqlite:sqlite-framework:2.7.0-rc01")
                 api(libs.kotlinCoroutinesAndroid)
-                compileOnly("androidx.lifecycle:lifecycle-livedata:2.9.4")
                 implementation("androidx.annotation:annotation-experimental:1.5.0")
             }
         }
@@ -148,7 +135,6 @@ androidXMultiplatform {
                 implementation(libs.byteBuddy)
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
-                implementation("androidx.lifecycle:lifecycle-livedata-core:2.0.0")
                 implementation(libs.testRunner) // Needed for @FlakyTest and @Ignore
             }
         }
@@ -171,7 +157,6 @@ androidXMultiplatform {
             dependsOn(nonWebMain)
             dependsOn(jvmNativeWebMain)
             dependencies {
-                api(project(":sqlite:sqlite-framework"))
                 implementation(libs.atomicFu)
             }
         }
@@ -213,27 +198,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Runtime"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
-tasks.withType(AndroidLintAnalysisTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
-tasks.withType(LintModelWriterTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
-}
-
-// TODO(b/430983364): Workaround KSP incremental issue
-tasks.withType(KotlinCompile).configureEach {
-    incremental = false
-}
-tasks.withType(KspAATask).configureEach {
-    it.kspConfig.incremental.set(false)
 }
 
 // b/446711395

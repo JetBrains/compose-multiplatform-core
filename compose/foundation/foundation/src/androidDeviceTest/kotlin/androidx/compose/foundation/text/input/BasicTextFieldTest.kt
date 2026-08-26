@@ -109,6 +109,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextAlign
@@ -126,7 +127,6 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -139,7 +139,7 @@ import org.mockito.kotlin.verify
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val immRule = ComposeInputMethodManagerTestRule()
 
@@ -1219,7 +1219,6 @@ internal class BasicTextFieldTest {
                         style = textStyle,
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
-                        maxLines = 1,
                     )
                     .width
 
@@ -1256,7 +1255,6 @@ internal class BasicTextFieldTest {
                         style = textStyle,
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
-                        maxLines = 1,
                     )
                     .width
 
@@ -1293,7 +1291,6 @@ internal class BasicTextFieldTest {
                     density = density,
                     enabled = true,
                     readOnly = false,
-                    isFocused = false,
                     isPassword = false,
                     toolbarRequester = FakeToolbarRequester(),
                     coroutineScope = CoroutineScope(EmptyCoroutineContext),
@@ -1308,7 +1305,7 @@ internal class BasicTextFieldTest {
 
     @Test
     fun changingInputTransformation_doesNotRestartInput() {
-        var inputTransformation by mutableStateOf(InputTransformation.maxLength(10))
+        var inputTransformation by mutableStateOf(InputTransformation.maxLengthTrim(10))
         inputMethodInterceptor.setTextFieldTestContent {
             val state = remember { TextFieldState() }
             BasicTextField(
@@ -1322,7 +1319,7 @@ internal class BasicTextFieldTest {
         inputMethodInterceptor.assertSessionActive()
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(1)
 
-        inputTransformation = InputTransformation.maxLength(15)
+        inputTransformation = InputTransformation.maxLengthTrim(15)
 
         inputMethodInterceptor.assertSessionActive()
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(1)
@@ -1581,7 +1578,7 @@ internal class BasicTextFieldTest {
     fun whenWindowFocusGained_unfocusedTextFieldStateIsNotRecomposed() {
         val state = TextFieldState("Hello")
         var isWindowFocused by mutableStateOf(false)
-        var windowInfo =
+        val windowInfo =
             object : WindowInfo {
                 override val isWindowFocused: Boolean
                     get() = isWindowFocused
@@ -1726,6 +1723,84 @@ internal class BasicTextFieldTest {
         // Session count should still be 2.
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(2)
         rule.onNodeWithTag(Tag).assertTextEquals("Hello Compose")
+    }
+
+    @Test
+    fun whenCursorOutOfView_bringCursorIntoView() {
+        val state = TextFieldState("")
+        val tag = "textField"
+        val scrollState = ScrollState(0)
+
+        inputMethodInterceptor.setTextFieldTestContent {
+            Column(Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                repeat(100) { Box(Modifier.size(100.dp)) }
+                BasicTextField(state, Modifier.testTag(tag))
+                repeat(100) { Box(Modifier.size(100.dp)) }
+            }
+        }
+        rule.onNodeWithTag(tag).requestFocus()
+        val initialScroll = rule.runOnIdle { scrollState.value }
+        inputMethodInterceptor.withInputConnection { commitText("\n") }
+        rule.runOnIdle { assertThat(scrollState.value).isNotEqualTo(initialScroll) }
+    }
+
+    @Test
+    fun whenCursorOutOfView_bringCursorIntoView_withCoreTextField() {
+        val tag = "textField"
+        val scrollState = ScrollState(0)
+        var textFieldValue by mutableStateOf(TextFieldValue(""))
+
+        inputMethodInterceptor.setTextFieldTestContent {
+            Column(Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                repeat(100) { Box(Modifier.size(100.dp)) }
+                BasicTextField(
+                    value = textFieldValue,
+                    onValueChange = { textFieldValue = it },
+                    modifier = Modifier.testTag(tag),
+                )
+                repeat(100) { Box(Modifier.size(100.dp)) }
+            }
+        }
+        rule.onNodeWithTag(tag).requestFocus()
+        val initialScroll = rule.runOnIdle { scrollState.value }
+        inputMethodInterceptor.withInputConnection { commitText("\n") }
+        rule.runOnIdle { assertThat(scrollState.value).isNotEqualTo(initialScroll) }
+    }
+
+    @Test
+    fun textField_multiLine_minLinesOneAndMaxLinesOne_doesSoftWrap() {
+        var getTLR: (() -> TextLayoutResult?)? = null
+        rule.setContent {
+            BasicTextField(
+                rememberTextFieldState(),
+                onTextLayout = { getTLR = it },
+                lineLimits = TextFieldLineLimits.MultiLine(1, 1),
+            )
+        }
+
+        rule.runOnIdle {
+            val tlr = getTLR?.invoke()
+            assertThat(tlr).isNotNull()
+            assertThat(tlr!!.layoutInput.softWrap).isTrue()
+        }
+    }
+
+    @Test
+    fun textField_singleLine_doesNotSoftWrap() {
+        var getTLR: (() -> TextLayoutResult?)? = null
+        rule.setContent {
+            BasicTextField(
+                rememberTextFieldState(),
+                onTextLayout = { getTLR = it },
+                lineLimits = TextFieldLineLimits.SingleLine,
+            )
+        }
+
+        rule.runOnIdle {
+            val tlr = getTLR?.invoke()
+            assertThat(tlr).isNotNull()
+            assertThat(tlr!!.layoutInput.softWrap).isFalse()
+        }
     }
 
     private fun requestFocus(tag: String) = rule.onNodeWithTag(tag).requestFocus()

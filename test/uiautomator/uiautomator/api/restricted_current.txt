@@ -192,7 +192,7 @@ package androidx.test.uiautomator {
   }
 
   public interface Condition<T, U> {
-    method public U! apply(T!);
+    method public U apply(T);
   }
 
   public final class Configurator {
@@ -235,7 +235,7 @@ package androidx.test.uiautomator {
 
   public abstract class EventCondition<U> implements android.app.UiAutomation.AccessibilityEventFilter {
     ctor public EventCondition();
-    method public abstract U! getResult();
+    method public abstract U getResult();
   }
 
   public interface IAutomationSupport {
@@ -248,7 +248,7 @@ package androidx.test.uiautomator {
     method public void reportToInstrumentation();
   }
 
-  public abstract class SearchCondition<U> implements androidx.test.uiautomator.Condition<androidx.test.uiautomator.Searchable!,U!> {
+  public abstract class SearchCondition<U> implements androidx.test.uiautomator.Condition<androidx.test.uiautomator.Searchable!,U> {
     ctor public SearchCondition();
   }
 
@@ -392,7 +392,7 @@ package androidx.test.uiautomator {
     method public boolean isScreenOn() throws android.os.RemoteException;
     method public boolean openNotification();
     method public boolean openQuickSettings();
-    method public <U> U! performActionAndWait(Runnable, androidx.test.uiautomator.EventCondition<U!>, long);
+    method public <U> U performActionAndWait(Runnable, androidx.test.uiautomator.EventCondition<U>, long);
     method public boolean pressBack();
     method public boolean pressDPadCenter();
     method public boolean pressDPadDown();
@@ -433,8 +433,8 @@ package androidx.test.uiautomator {
     method public boolean takeScreenshot(java.io.File, float, int);
     method public void unfreezeRotation() throws android.os.RemoteException;
     method @RequiresApi(30) public void unfreezeRotation(int);
-    method public <U> U! wait(androidx.test.uiautomator.Condition<? super androidx.test.uiautomator.UiDevice!,U!>, long);
-    method public <U> U! wait(androidx.test.uiautomator.SearchCondition<U!>, long);
+    method public <U> U wait(androidx.test.uiautomator.Condition<? super androidx.test.uiautomator.UiDevice!,U>, long);
+    method public <U> U wait(androidx.test.uiautomator.SearchCondition<U>, long);
     method public void waitForIdle();
     method public void waitForIdle(long);
     method public boolean waitForWindowUpdate(String?, long);
@@ -533,8 +533,8 @@ package androidx.test.uiautomator {
     method public void click(android.graphics.Point);
     method public void click(android.graphics.Point, long);
     method public void click(long);
-    method public <U> U! clickAndWait(android.graphics.Point, androidx.test.uiautomator.EventCondition<U!>, long);
-    method public <U> U! clickAndWait(androidx.test.uiautomator.EventCondition<U!>, long);
+    method public <U> U clickAndWait(android.graphics.Point, androidx.test.uiautomator.EventCondition<U>, long);
+    method public <U> U clickAndWait(androidx.test.uiautomator.EventCondition<U>, long);
     method public void drag(android.graphics.Point);
     method public void drag(android.graphics.Point, int);
     method public androidx.test.uiautomator.UiObject2! findObject(androidx.test.uiautomator.BySelector);
@@ -548,7 +548,7 @@ package androidx.test.uiautomator {
     method public String! getClassName();
     method public String! getContentDescription();
     method public int getDisplayId();
-    method @RequiresApi(24) public int getDrawingOrder();
+    method public int getDrawingOrder();
     method @RequiresApi(26) public String? getHint();
     method public androidx.test.uiautomator.UiObject2! getParent();
     method public String! getResourceName();
@@ -573,8 +573,8 @@ package androidx.test.uiautomator {
     method public void recycle();
     method public boolean scroll(androidx.test.uiautomator.Direction, float);
     method public boolean scroll(androidx.test.uiautomator.Direction, float, int);
-    method public <U> U! scrollUntil(androidx.test.uiautomator.Direction, androidx.test.uiautomator.Condition<? super androidx.test.uiautomator.UiObject2!,U!>);
-    method public <U> U! scrollUntil(androidx.test.uiautomator.Direction, androidx.test.uiautomator.EventCondition<U!>);
+    method public <U> U scrollUntil(androidx.test.uiautomator.Direction, androidx.test.uiautomator.Condition<? super androidx.test.uiautomator.UiObject2!,U>);
+    method public <U> U scrollUntil(androidx.test.uiautomator.Direction, androidx.test.uiautomator.EventCondition<U>);
     method public void setGestureMargin(int);
     method public void setGestureMarginPercentage(@FloatRange(from=0.0f, to=0.5f) float);
     method public void setGestureMargins(int, int, int, int);
@@ -582,12 +582,12 @@ package androidx.test.uiautomator {
     method public void setText(String?);
     method public void swipe(androidx.test.uiautomator.Direction, float);
     method public void swipe(androidx.test.uiautomator.Direction, float, int);
-    method public <U> U! wait(androidx.test.uiautomator.Condition<? super androidx.test.uiautomator.UiObject2!,U!>, long);
-    method public <U> U! wait(androidx.test.uiautomator.SearchCondition<U!>, long);
-    method public <U> U! wait(androidx.test.uiautomator.UiObject2Condition<U!>, long);
+    method public <U> U wait(androidx.test.uiautomator.Condition<? super androidx.test.uiautomator.UiObject2!,U>, long);
+    method public <U> U wait(androidx.test.uiautomator.SearchCondition<U>, long);
+    method public <U> U wait(androidx.test.uiautomator.UiObject2Condition<U>, long);
   }
 
-  public abstract class UiObject2Condition<U> implements androidx.test.uiautomator.Condition<androidx.test.uiautomator.UiObject2!,U!> {
+  public abstract class UiObject2Condition<U> implements androidx.test.uiautomator.Condition<androidx.test.uiautomator.UiObject2!,U> {
     ctor public UiObject2Condition();
   }
 
@@ -608,9 +608,9 @@ package androidx.test.uiautomator {
     method public static androidx.test.uiautomator.UiObject2 scrollToElement(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public static androidx.test.uiautomator.UiObject2 scrollToElement(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, optional long pollIntervalMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method @BytecodeOnly public static androidx.test.uiautomator.UiObject2! scrollToElement$default(androidx.test.uiautomator.UiObject2!, androidx.test.uiautomator.Direction!, long, long, kotlin.jvm.functions.Function1!, int, Object!);
-    method public static androidx.test.uiautomator.UiObject2 scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
-    method public static androidx.test.uiautomator.UiObject2 scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
-    method public static androidx.test.uiautomator.UiObject2 scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, optional long pollIntervalMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
+    method public static androidx.test.uiautomator.UiObject2? scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
+    method public static androidx.test.uiautomator.UiObject2? scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
+    method public static androidx.test.uiautomator.UiObject2? scrollToElementOrNull(androidx.test.uiautomator.UiObject2, androidx.test.uiautomator.Direction direction, optional long timeoutMs, optional long pollIntervalMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method @BytecodeOnly public static androidx.test.uiautomator.UiObject2! scrollToElementOrNull$default(androidx.test.uiautomator.UiObject2!, androidx.test.uiautomator.Direction!, long, long, kotlin.jvm.functions.Function1!, int, Object!);
     method public static android.graphics.Bitmap takeScreenshot(androidx.test.uiautomator.UiObject2);
     method public static androidx.test.uiautomator.StableResult waitForStable(androidx.test.uiautomator.UiObject2);
@@ -661,7 +661,7 @@ package androidx.test.uiautomator {
     method public androidx.test.uiautomator.UiSelector checkable(boolean);
     method public androidx.test.uiautomator.UiSelector checked(boolean);
     method public androidx.test.uiautomator.UiSelector childSelector(androidx.test.uiautomator.UiSelector);
-    method public <T> androidx.test.uiautomator.UiSelector className(Class<T!>);
+    method public <T> androidx.test.uiautomator.UiSelector className(Class<T>);
     method public androidx.test.uiautomator.UiSelector className(String);
     method public androidx.test.uiautomator.UiSelector classNameMatches(String);
     method public androidx.test.uiautomator.UiSelector clickable(boolean);

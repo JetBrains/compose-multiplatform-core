@@ -106,6 +106,16 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
 
     @Override
+    public boolean isNightModeIndicatorSupported() {
+        return mCameraInfoInternal.isNightModeIndicatorSupported();
+    }
+
+    @Override
+    public @NonNull LiveData<Integer> getNightModeIndicator() {
+        return mCameraInfoInternal.getNightModeIndicator();
+    }
+
+    @Override
     public @NonNull LiveData<ZoomState> getZoomState() {
         return mCameraInfoInternal.getZoomState();
     }
@@ -165,6 +175,12 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     }
 
     @Override
+    @ExperimentalZeroShutterLag
+    public boolean canSupportZsl(@NonNull List<Size> sizes) {
+        return mCameraInfoInternal.canSupportZsl(sizes);
+    }
+
+    @Override
     public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges() {
         return mCameraInfoInternal.getSupportedFrameRateRanges();
     }
@@ -199,6 +215,17 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public void removeSessionCaptureCallback(@NonNull CameraCaptureCallback callback) {
         mCameraInfoInternal.removeSessionCaptureCallback(callback);
+    }
+
+    @Override
+    public void addSessionLifecycleCallback(@NonNull Executor executor,
+            @NonNull CameraSessionLifecycleCallback callback) {
+        mCameraInfoInternal.addSessionLifecycleCallback(executor, callback);
+    }
+
+    @Override
+    public void removeSessionLifecycleCallback(@NonNull CameraSessionLifecycleCallback callback) {
+        mCameraInfoInternal.removeSessionLifecycleCallback(callback);
     }
 
     @Override

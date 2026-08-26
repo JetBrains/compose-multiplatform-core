@@ -18,35 +18,23 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteComposeBuffer
-import androidx.compose.remote.core.RemoteContext.FLOAT_CONTINUOUS_SEC
-import androidx.compose.remote.core.RemoteContext.FLOAT_DAY_OF_MONTH
-import androidx.compose.remote.core.RemoteContext.FLOAT_OFFSET_TO_UTC
-import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_HR
-import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN
-import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_SEC
-import androidx.compose.remote.core.RemoteContext.FLOAT_WEEK_DAY
 import androidx.compose.remote.core.operations.Utils
-import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.state.AnimatedRemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.remoteSpring
 
 /**
  * A class that provides access to remote-specific utilities.
  *
  * @param scope The scope instance.
- * @param underlyingDrawScope The underlying Compose DrawScope.
- * @param remoteComposeCreationState The current remote creation state.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteAccess(
-    private val scope: RemoteDrawScope,
-    public val remoteComposeCreationState: RemoteComposeCreationState,
-) {
+public class RemoteAccess(private val scope: RemoteDrawScope) {
     /** Access to remote time information. */
     public val time: RemoteTime = RemoteTime()
 
     /** Access to remote component information. */
-    public val component: RemoteComponent = RemoteComponent()
+    public val component: RemoteComponent = RemoteComponent(scope)
 
     /** Wraps a constant value as a [RemoteFloat]. */
     public fun value(v: Float): RemoteFloat = RemoteFloat(v)
@@ -60,7 +48,6 @@ public class RemoteAccess(
         initialValue: Float = Float.NaN,
         wrap: Float = Float.NaN,
     ): RemoteFloat {
-        remoteComposeCreationState.time.value
         val anim = RemoteComposeBuffer.packAnimation(duration, type, spec, initialValue, wrap)
         return AnimatedRemoteFloat(rf, anim)
     }
@@ -77,6 +64,46 @@ public class RemoteAccess(
         return animateFloat(content(), duration, type, spec, initialValue, wrap)
     }
 
+    /**
+     * Animates a [RemoteFloat] using a physics-based Spring engine.
+     *
+     * @param rf The target RemoteFloat to animate.
+     * @param stiffness The spring stiffness/tension.
+     * @param dampingRatio The damping ratio (1.0 = critically damped, < 1.0 = bouncy).
+     * @param stopThreshold The threshold at which the spring is considered at rest.
+     * @param boundaryMode Engine boundary mode (0 = standard/no bounds).
+     */
+    public fun animateSpring(
+        rf: RemoteFloat,
+        stiffness: Float = 50f,
+        dampingRatio: Float = 1f,
+        stopThreshold: Float = 0.001f,
+        boundaryMode: Int = 0,
+    ): RemoteFloat =
+        remoteSpring(
+                stiffness = stiffness,
+                dampingRatio = dampingRatio,
+                stopThreshold = stopThreshold,
+                boundaryMode = boundaryMode,
+            )
+            .animate(rf)
+
+    /** Animates a [RemoteFloat] created in [content] using a physics-based Spring engine. */
+    public fun animateSpring(
+        stiffness: Float = 50f,
+        dampingRatio: Float = 1f,
+        stopThreshold: Float = 0.001f,
+        boundaryMode: Int = 0,
+        content: () -> RemoteFloat,
+    ): RemoteFloat =
+        animateSpring(
+            rf = content(),
+            stiffness = stiffness,
+            dampingRatio = dampingRatio,
+            stopThreshold = stopThreshold,
+            boundaryMode = boundaryMode,
+        )
+
     /** Runs [content] in a loop. */
     public fun loop(
         until: Float,
@@ -84,10 +111,11 @@ public class RemoteAccess(
         step: Float = 1f,
         content: RemoteDrawScope.(RemoteFloat) -> Unit,
     ) {
-        val loopIndex = remoteComposeCreationState.document.addFloatConstant(0f)
-        remoteComposeCreationState.document.startLoop(Utils.idFromNan(loopIndex), from, step, until)
+        val document = scope.remoteComposeCreationState.document
+        val loopIndex = document.addFloatConstant(0f)
+        document.startLoop(Utils.idFromNan(loopIndex), from, step, until)
         content.invoke(scope, RemoteFloat(loopIndex))
-        remoteComposeCreationState.document.endLoop()
+        document.endLoop()
     }
 
     /** Runs [content] in a loop. */
@@ -98,40 +126,5 @@ public class RemoteAccess(
         content: RemoteDrawScope.(RemoteFloat) -> Unit,
     ) {
         loop(until.toFloat(), from.toFloat(), step.toFloat(), content)
-    }
-
-    /** A class that provides access to remote time information. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public inner class RemoteTime {
-        public fun Hour(): RemoteFloat = RemoteFloat(FLOAT_TIME_IN_HR)
-
-        public fun Minutes(): RemoteFloat = RemoteFloat(FLOAT_TIME_IN_MIN)
-
-        public fun Seconds(): RemoteFloat = RemoteFloat(FLOAT_TIME_IN_SEC)
-
-        public fun ContinuousSec(): RemoteFloat = RemoteFloat(FLOAT_CONTINUOUS_SEC)
-
-        public fun UtcOffset(): RemoteFloat = RemoteFloat(FLOAT_OFFSET_TO_UTC)
-
-        public fun DayOfWeek(): RemoteFloat = RemoteFloat(FLOAT_WEEK_DAY)
-
-        public fun DayOfMonth(): RemoteFloat = RemoteFloat(FLOAT_DAY_OF_MONTH)
-    }
-
-    /** A class that provides access to remote component information. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public inner class RemoteComponent {
-
-        public val width: RemoteFloat
-            get() = remoteComponentWidth(remoteComposeCreationState)
-
-        public val height: RemoteFloat
-            get() = remoteComponentHeight(remoteComposeCreationState)
-
-        public val centerX: RemoteFloat
-            get() = remoteComponentCenterX(remoteComposeCreationState)
-
-        public val centerY: RemoteFloat
-            get() = remoteComponentCenterY(remoteComposeCreationState)
     }
 }

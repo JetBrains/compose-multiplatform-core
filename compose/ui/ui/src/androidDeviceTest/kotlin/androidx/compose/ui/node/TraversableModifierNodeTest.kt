@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ComposeUiFlags.isTraversableDelegatesFixEnabled
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAction
@@ -35,8 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +41,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class TraversableModifierNodeTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var parentNode: ClassOneWithSharedKeyTraversalNode
 
@@ -297,10 +293,8 @@ class TraversableModifierNodeTest {
         rule.runOnIdle { Truth.assertThat(nearestAncestorNode).isEqualTo(parentNode) }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun findNearestAncestor_delegateWithDifferentKeyAsRootNode_useDelegateKey() {
-        Assume.assumeTrue(isTraversableDelegatesFixEnabled)
         var nearestAncestorNode: TraversableNode? = null
 
         // Child E (key=delegatableA) has a delegate to delegatableB. grandChildNodeH has the same
@@ -312,10 +306,8 @@ class TraversableModifierNodeTest {
         rule.runOnIdle { Truth.assertThat(nearestAncestorNode).isEqualTo(delegatableB) }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun findNearestAncestor_delegateWithDifferentKeyAsRootNode_useGrandChildDelegateKey() {
-        Assume.assumeTrue(isTraversableDelegatesFixEnabled)
         var nearestAncestorNode: TraversableNode? = null
 
         // Child E (key=delegatableA) has a delegate to delegatableB. grandChildNodeH has the same
@@ -331,10 +323,8 @@ class TraversableModifierNodeTest {
         rule.runOnIdle { Truth.assertThat(nearestAncestorNode).isEqualTo(childE) }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun findNearestAncestor_delegateWithSameKeyAsRootNode_useDelegateKey() {
-        Assume.assumeTrue(isTraversableDelegatesFixEnabled)
         var nearestAncestorNode: TraversableNode? = null
 
         // Child F (key=delegatableA) has a delegate to delegatableA. grandChildNodeI has a
@@ -347,10 +337,8 @@ class TraversableModifierNodeTest {
         rule.runOnIdle { Truth.assertThat(nearestAncestorNode).isEqualTo(childF) }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun findNearestAncestor_delegateWithSameKeyAsRootNode_useGrandChildDelegateKey() {
-        Assume.assumeTrue(isTraversableDelegatesFixEnabled)
         var nearestAncestorNode: TraversableNode? = null
 
         // Starts at grandchild I

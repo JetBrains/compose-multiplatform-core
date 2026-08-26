@@ -30,7 +30,6 @@ import androidx.room3.integration.kotlintestapp.testutil.PagingEntityDao
 import androidx.room3.paging.LimitOffsetPagingSource
 import androidx.room3.useWriterConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
 import androidx.testutils.FilteringCoroutineContext
@@ -622,7 +621,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
 }
 
 private fun buildAndReturnDb(queryContext: FilteringCoroutineContext): PagingDb {
-    return Room.inMemoryDatabaseBuilder<PagingDb>(ApplicationProvider.getApplicationContext())
+    return Room.inMemoryDatabaseBuilder<PagingDb>()
         .setDriver(MainThreadCheckSQLiteDriver(AndroidSQLiteDriver()))
         .setQueryCoroutineContext(queryContext)
         .build()

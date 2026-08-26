@@ -52,7 +52,6 @@ import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Rule
 import org.junit.Test
@@ -62,7 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class TransitionTest {
-    private val rule = createComposeRule(StandardTestDispatcher())
+    private val rule = createComposeRule()
 
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
@@ -364,7 +363,6 @@ class TransitionTest {
         assertTrue(playTime >= 800 * MillisToNanos)
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Test
     fun testMutableTransitionStateIsIdle() {
         val mutableTransitionState = MutableTransitionState(false)
@@ -404,7 +402,7 @@ class TransitionTest {
         assertTrue(mutableTransitionState.isIdle)
     }
 
-    @OptIn(ExperimentalTransitionApi::class, InternalAnimationApi::class)
+    @OptIn(InternalAnimationApi::class)
     @Test
     fun testCreateChildTransition() {
         val intState = mutableStateOf(1)
@@ -467,7 +465,6 @@ class TransitionTest {
         }
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Test
     fun addAnimationToCompletedChildTransition() {
         rule.mainClock.autoAdvance = false
@@ -657,7 +654,6 @@ class TransitionTest {
         }
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Test
     fun childTransitionStartsUninterrupted_usingTransitionState() {
 
@@ -753,7 +749,6 @@ class TransitionTest {
         rule.onNodeWithTag("currentStateText").assertTextEquals("3")
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Test
     fun childTransitionStartsUninterrupted_usingSeekableTransition() {
         val transitionState = SeekableTransitionState(0)

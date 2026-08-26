@@ -18,22 +18,24 @@ package androidx.wear.compose.remote.material3
 
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
+import androidx.compose.remote.creation.compose.modifier.role
+import androidx.compose.remote.creation.compose.modifier.semantics
 import androidx.compose.remote.creation.compose.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.Role
 
 /** Single-slot base button for [RemoteTextButton] and [RemoteIconButton]. */
 @Composable
 @RemoteComposable
-@Suppress("RestrictedApiAndroidX")
 internal fun RemoteRoundButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -45,8 +47,7 @@ internal fun RemoteRoundButton(
     content: @Composable @RemoteComposable () -> Unit,
 ) {
     RemoteBox(
-        horizontalAlignment = RemoteAlignment.CenterHorizontally,
-        verticalArrangement = RemoteArrangement.Center,
+        contentAlignment = RemoteAlignment.Center,
         modifier =
             modifier
                 .drawWithContent {
@@ -57,11 +58,13 @@ internal fun RemoteRoundButton(
                         containerPainter = null,
                         disabledContainerPainter = null,
                         borderColor = borderColor,
-                        borderStrokeWidth = border?.value,
+                        borderStrokeWidth = border,
                     )
                     drawContent()
                 }
-                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false),
+                .clip(shape = shape)
+                .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
+                .semantics(mergeDescendants = true) { role = Role.Button },
         content = content,
     )
 }

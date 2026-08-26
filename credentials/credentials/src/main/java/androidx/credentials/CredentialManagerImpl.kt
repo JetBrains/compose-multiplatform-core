@@ -36,6 +36,7 @@ import androidx.credentials.exceptions.publickeycredential.SignalCredentialSecur
 import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateProviderConfigurationException
 import androidx.credentials.internal.FormFactorHelper
+import androidx.credentials.internal.MutableContextTracker
 import java.util.concurrent.Executor
 
 /**
@@ -110,8 +111,9 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * The execution potentially launches framework UI flows for a user to view available
      * credentials, consent to using one of them, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for getting the credential
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -124,10 +126,12 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         executor: Executor,
         callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
     ) {
+        val wrappedCallback =
+            MutableContextTracker.wrapCallback(context, cancellationSignal, callback)
         val provider: CredentialProvider? =
             CredentialProviderFactory(context).getBestAvailableProvider(request)
         if (provider == null) {
-            callback.onError(
+            wrappedCallback.onError(
                 GetCredentialProviderConfigurationException(
                     "getCredentialAsync no provider dependencies found - please ensure " +
                         "the desired provider dependencies are added"
@@ -135,7 +139,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             )
             return
         }
-        provider.onGetCredential(context, request, cancellationSignal, executor, callback)
+        provider.onGetCredential(context, request, cancellationSignal, executor, wrappedCallback)
     }
 
     /**
@@ -152,8 +156,9 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * The execution can potentially launch UI flows to collect user consent to using a credential,
      * display a picker when multiple credentials exist, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param pendingGetCredentialHandle the handle representing the pending operation to resume
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -167,11 +172,13 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         executor: Executor,
         callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
     ) {
+        val wrappedCallback =
+            MutableContextTracker.wrapCallback(context, cancellationSignal, callback)
         val provider: CredentialProvider? =
             CredentialProviderFactory(context)
                 .getBestAvailableProvider(shouldFallbackToPreU = false)
         if (provider == null) {
-            callback.onError(
+            wrappedCallback.onError(
                 GetCredentialProviderConfigurationException("No Credential Manager provider found")
             )
             return
@@ -181,7 +188,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             pendingGetCredentialHandle,
             cancellationSignal,
             executor,
-            callback,
+            wrappedCallback,
         )
     }
 
@@ -229,8 +236,9 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * The execution potentially launches framework UI flows for a user to view their registration
      * options, grant consent, etc.
      *
-     * @param context the context used to launch any UI needed; use an activity context to make sure
-     *   the UI will be launched within the same task stack
+     * @param context the context used to launch any UI needed; wrap the activity context with a
+     *   [android.content.MutableContextWrapper] to avoid memory leaks and ensure the UI will be
+     *   launched within the same task stack
      * @param request the request for creating the credential
      * @param cancellationSignal an optional signal that allows for cancelling this call
      * @param executor the callback will take place on this executor
@@ -243,10 +251,12 @@ internal class CredentialManagerImpl internal constructor(private val context: C
         executor: Executor,
         callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
     ) {
+        val wrappedCallback =
+            MutableContextTracker.wrapCallback(context, cancellationSignal, callback)
         val provider: CredentialProvider? =
             CredentialProviderFactory(this.context).getBestAvailableProvider(request)
         if (provider == null) {
-            callback.onError(
+            wrappedCallback.onError(
                 CreateCredentialProviderConfigurationException(
                     "createCredentialAsync no provider dependencies found - please ensure the " +
                         "desired provider dependencies are added"
@@ -257,7 +267,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
 
         // Check if this is a Wearable device, creation is not supported.
         if (FormFactorHelper.isWear(context)) {
-            callback.onError(
+            wrappedCallback.onError(
                 CreateCredentialUnsupportedException(
                     "createCredential is not supported on this device"
                 )
@@ -265,7 +275,7 @@ internal class CredentialManagerImpl internal constructor(private val context: C
             return
         }
 
-        provider.onCreateCredential(context, request, cancellationSignal, executor, callback)
+        provider.onCreateCredential(context, request, cancellationSignal, executor, wrappedCallback)
     }
 
     /**
@@ -335,6 +345,8 @@ internal class CredentialManagerImpl internal constructor(private val context: C
                     "Must have android.permissions.CREDENTIAL_MANAGER_SET_ORIGIN " + "permission"
                 )
             )
+            // Return to prevent continuing execution after a security check failure
+            return
         }
         val provider: CredentialProvider? =
             CredentialProviderFactory(context).getBestAvailableProvider(request)

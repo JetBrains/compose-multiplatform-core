@@ -19,41 +19,55 @@ package androidx.ink.nativeloader
 import androidx.annotation.RestrictTo
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.util.Locale
 
-/** Native code loader for JVM. */
+/**
+ * Native code loader for Android and JVM.
+ *
+ * Supporting both in a single loader is helpful because Android code is run on JVM for Android host
+ * tests.
+ */
+@InkInternalOnlyApi
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 actual public object NativeLoader {
     private var loaded = false
 
+    private val osName: String
+        get() = System.getProperty("os.name")?.lowercase(Locale.US) ?: error("Cannot read osName")
+
+    private val osArch: String
+        get() = System.getProperty("os.arch")?.lowercase(Locale.US) ?: error("Cannot read osArch")
+
+    private val platform: String
+        get() =
+            when {
+                osName.contains("linux") && osArch == "amd64" -> "linux-x86_64"
+                osName.contains("mac") && osArch == "aarch64" -> "macos-arm64"
+                else -> error("Unsupported platform: $osName, $osArch")
+            }
+
     actual public fun load() {
         // Fast bail-out before grabbing a lock if we don't need to.
         if (loaded) return
-        loadSynchronous()
-    }
 
-    // JVM synchronized to avoid an extra dependency for Kotlin concurrency.
-    @Synchronized
-    @SuppressWarnings("BanSynchronizedMethods")
-    private fun loadSynchronous() {
-        // Double-check in the synchronized block in case something got there after first check.
-        if (loaded) return
-        // On the JVM we need to find the correct libink library file in the JAR resources, copy it
-        // out to a tempfile, and load it directly.
-        //
-        // See
-        // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:sqlite/sqlite-bundled/src/jvmMain/kotlin/androidx/sqlite/driver/bundled/NativeLibraryLoader.jvm.kt;l=24;drc=a70f25f13b00141438854309a0de47d537904522
-        // for a similar system.
-        val tempFile = Files.createTempFile("libink.so", null).apply { toFile().deleteOnExit() }
-        NativeLoader::class
-            .java
-            .classLoader!!
-            // If additional architectures need to be supported, construct the correct resource
-            // prefix for that platform.
-            .getResourceAsStream("linux-x86_64/libink.so")
-            .use { resourceStream ->
-                Files.copy(resourceStream, tempFile, StandardCopyOption.REPLACE_EXISTING)
-            }
-        System.load(tempFile.toFile().canonicalPath)
-        loaded = true
+        synchronized(this) {
+            // Double-check in the synchronized block in case something got there after first check.
+            if (loaded) return
+            // On the JVM we need to find the correct libink library file in the JAR resources, copy
+            // it
+            // out to a tempfile, and load it directly.
+            //
+            // See NativeLibraryLoader under sqlite/sqlite-bundled for a similar system.
+            val tempFile = Files.createTempFile("libink.so", null).apply { toFile().deleteOnExit() }
+            val resourcePath = "$platform/libink.so"
+            checkNotNull(NativeLoader::class.java.classLoader!!.getResourceAsStream(resourcePath)) {
+                    "Could not find resource $resourcePath"
+                }
+                .use { resourceStream ->
+                    Files.copy(resourceStream, tempFile, StandardCopyOption.REPLACE_EXISTING)
+                }
+            System.load(tempFile.toFile().canonicalPath)
+            loaded = true
+        }
     }
 }

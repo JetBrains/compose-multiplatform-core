@@ -266,6 +266,7 @@ private class BaselineProfileConsumerAgpPlugin(private val project: Project) :
         // Adds the custom dependencies for baseline profiles. Note that dependencies
         // for global, build type, flavor and variant specific are all merged.
         variantDependencies.forEach {
+            @Suppress("DEPRECATION")
             val targetProjectDependency = project.dependencyFactory.create(it)
             baselineProfileConfiguration.dependencies.add(targetProjectDependency)
         }
@@ -407,7 +408,7 @@ private class BaselineProfileConsumerAgpPlugin(private val project: Project) :
                 // output is src/main/baseline-prof.txt.
                 if (!forceOutputInSrcMain) {
 
-                    val srcOutputDirPath = srcOutputDir.asFile.apply { mkdirs() }.absolutePath
+                    val srcOutputDirPath = srcOutputDir.asFile.absolutePath
                     fun applySourceSets(variant: Variant) {
                         variant.sources.baselineProfiles?.addStaticSourceDirectory(srcOutputDirPath)
                     }

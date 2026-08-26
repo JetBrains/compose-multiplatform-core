@@ -58,6 +58,8 @@ abstract interface androidx.compose.ui.text.font/Font { // androidx.compose.ui.t
         abstract fun <get-weight>(): androidx.compose.ui.text.font/FontWeight // androidx.compose.ui.text.font/Font.weight.<get-weight>|<get-weight>(){}[0]
     open val loadingStrategy // androidx.compose.ui.text.font/Font.loadingStrategy|{}loadingStrategy[0]
         open fun <get-loadingStrategy>(): androidx.compose.ui.text.font/FontLoadingStrategy // androidx.compose.ui.text.font/Font.loadingStrategy.<get-loadingStrategy>|<get-loadingStrategy>(){}[0]
+    open val variationSettings // androidx.compose.ui.text.font/Font.variationSettings|{}variationSettings[0]
+        open fun <get-variationSettings>(): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/Font.variationSettings.<get-variationSettings>|<get-variationSettings>(){}[0]
 
     abstract interface ResourceLoader { // androidx.compose.ui.text.font/Font.ResourceLoader|null[0]
         abstract fun load(androidx.compose.ui.text.font/Font): kotlin/Any // androidx.compose.ui.text.font/Font.ResourceLoader.load|load(androidx.compose.ui.text.font.Font){}[0]
@@ -288,6 +290,8 @@ final class androidx.compose.ui.text.font/LoadedFontFamily : androidx.compose.ui
 }
 
 final class androidx.compose.ui.text.font/ResourceFont : androidx.compose.ui.text.font/Font { // androidx.compose.ui.text.font/ResourceFont|null[0]
+    final val loadingStrategy // androidx.compose.ui.text.font/ResourceFont.loadingStrategy|{}loadingStrategy[0]
+        final fun <get-loadingStrategy>(): androidx.compose.ui.text.font/FontLoadingStrategy // androidx.compose.ui.text.font/ResourceFont.loadingStrategy.<get-loadingStrategy>|<get-loadingStrategy>(){}[0]
     final val resId // androidx.compose.ui.text.font/ResourceFont.resId|{}resId[0]
         final fun <get-resId>(): kotlin/Int // androidx.compose.ui.text.font/ResourceFont.resId.<get-resId>|<get-resId>(){}[0]
     final val style // androidx.compose.ui.text.font/ResourceFont.style|{}style[0]
@@ -298,6 +302,7 @@ final class androidx.compose.ui.text.font/ResourceFont : androidx.compose.ui.tex
         final fun <get-weight>(): androidx.compose.ui.text.font/FontWeight // androidx.compose.ui.text.font/ResourceFont.weight.<get-weight>|<get-weight>(){}[0]
 
     final fun copy(kotlin/Int = ..., androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ...): androidx.compose.ui.text.font/ResourceFont // androidx.compose.ui.text.font/ResourceFont.copy|copy(kotlin.Int;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle){}[0]
+    final fun copy(kotlin/Int = ..., androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ..., androidx.compose.ui.text.font/FontLoadingStrategy = ..., androidx.compose.ui.text.font/FontVariation.Settings = ...): androidx.compose.ui.text.font/ResourceFont // androidx.compose.ui.text.font/ResourceFont.copy|copy(kotlin.Int;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;androidx.compose.ui.text.font.FontLoadingStrategy;androidx.compose.ui.text.font.FontVariation.Settings){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.font/ResourceFont.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.compose.ui.text.font/ResourceFont.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // androidx.compose.ui.text.font/ResourceFont.toString|toString(){}[0]
@@ -594,6 +599,10 @@ final class androidx.compose.ui.text.intl/LocaleList : kotlin.collections/Collec
     }
 }
 
+final class androidx.compose.ui.text.platform/SynchronizedObject { // androidx.compose.ui.text.platform/SynchronizedObject|null[0]
+    constructor <init>() // androidx.compose.ui.text.platform/SynchronizedObject.<init>|<init>(){}[0]
+}
+
 final class androidx.compose.ui.text.style/LineHeightStyle { // androidx.compose.ui.text.style/LineHeightStyle|null[0]
     constructor <init>(androidx.compose.ui.text.style/LineHeightStyle.Alignment, androidx.compose.ui.text.style/LineHeightStyle.Trim) // androidx.compose.ui.text.style/LineHeightStyle.<init>|<init>(androidx.compose.ui.text.style.LineHeightStyle.Alignment;androidx.compose.ui.text.style.LineHeightStyle.Trim){}[0]
     constructor <init>(androidx.compose.ui.text.style/LineHeightStyle.Alignment, androidx.compose.ui.text.style/LineHeightStyle.Trim, androidx.compose.ui.text.style/LineHeightStyle.Mode) // androidx.compose.ui.text.style/LineHeightStyle.<init>|<init>(androidx.compose.ui.text.style.LineHeightStyle.Alignment;androidx.compose.ui.text.style.LineHeightStyle.Trim;androidx.compose.ui.text.style.LineHeightStyle.Mode){}[0]
@@ -612,6 +621,9 @@ final class androidx.compose.ui.text.style/LineHeightStyle { // androidx.compose
 
     final value class Alignment { // androidx.compose.ui.text.style/LineHeightStyle.Alignment|null[0]
         constructor <init>(kotlin/Float) // androidx.compose.ui.text.style/LineHeightStyle.Alignment.<init>|<init>(kotlin.Float){}[0]
+
+        final val topRatio // androidx.compose.ui.text.style/LineHeightStyle.Alignment.topRatio|{}topRatio[0]
+            final fun <get-topRatio>(): kotlin/Float // androidx.compose.ui.text.style/LineHeightStyle.Alignment.topRatio.<get-topRatio>|<get-topRatio>(){}[0]
 
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Alignment.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.ui.text.style/LineHeightStyle.Alignment.hashCode|hashCode(){}[0]
@@ -647,6 +659,8 @@ final class androidx.compose.ui.text.style/LineHeightStyle { // androidx.compose
     final value class Trim { // androidx.compose.ui.text.style/LineHeightStyle.Trim|null[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Trim.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.ui.text.style/LineHeightStyle.Trim.hashCode|hashCode(){}[0]
+        final fun isTrimFirstLineTop(): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Trim.isTrimFirstLineTop|isTrimFirstLineTop(){}[0]
+        final fun isTrimLastLineBottom(): kotlin/Boolean // androidx.compose.ui.text.style/LineHeightStyle.Trim.isTrimLastLineBottom|isTrimLastLineBottom(){}[0]
         final fun toString(): kotlin/String // androidx.compose.ui.text.style/LineHeightStyle.Trim.toString|toString(){}[0]
 
         final object Companion { // androidx.compose.ui.text.style/LineHeightStyle.Trim.Companion|null[0]
@@ -764,7 +778,12 @@ final class androidx.compose.ui.text/AnnotatedString : kotlin/CharSequence { // 
     final fun subSequence(kotlin/Int, kotlin/Int): androidx.compose.ui.text/AnnotatedString // androidx.compose.ui.text/AnnotatedString.subSequence|subSequence(kotlin.Int;kotlin.Int){}[0]
     final fun toString(): kotlin/String // androidx.compose.ui.text/AnnotatedString.toString|toString(){}[0]
 
-    sealed interface Annotation // androidx.compose.ui.text/AnnotatedString.Annotation|null[0]
+    sealed interface Annotation { // androidx.compose.ui.text/AnnotatedString.Annotation|null[0]
+        final object Companion { // androidx.compose.ui.text/AnnotatedString.Annotation.Companion|null[0]
+            final val Saver // androidx.compose.ui.text/AnnotatedString.Annotation.Companion.Saver|{}Saver[0]
+                final fun <get-Saver>(): androidx.compose.runtime.saveable/Saver<androidx.compose.ui.text/AnnotatedString.Annotation, kotlin/Any> // androidx.compose.ui.text/AnnotatedString.Annotation.Companion.Saver.<get-Saver>|<get-Saver>(){}[0]
+        }
+    }
 
     final class <#A1: kotlin/Any?> Range { // androidx.compose.ui.text/AnnotatedString.Range|null[0]
         constructor <init>(#A1, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Range.<init>|<init>(1:0;kotlin.Int;kotlin.Int){}[0]
@@ -930,6 +949,7 @@ final class androidx.compose.ui.text/MultiParagraph { // androidx.compose.ui.tex
 final class androidx.compose.ui.text/MultiParagraphIntrinsics : androidx.compose.ui.text/ParagraphIntrinsics { // androidx.compose.ui.text/MultiParagraphIntrinsics|null[0]
     constructor <init>(androidx.compose.ui.text/AnnotatedString, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>>, androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/Font.ResourceLoader) // androidx.compose.ui.text/MultiParagraphIntrinsics.<init>|<init>(androidx.compose.ui.text.AnnotatedString;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.Font.ResourceLoader){}[0]
     constructor <init>(androidx.compose.ui.text/AnnotatedString, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>>, androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/FontFamily.Resolver) // androidx.compose.ui.text/MultiParagraphIntrinsics.<init>|<init>(androidx.compose.ui.text.AnnotatedString;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.FontFamily.Resolver){}[0]
+    constructor <init>(androidx.compose.ui.text/AnnotatedString, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>>, androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/FontFamily.Resolver, kotlin/Boolean) // androidx.compose.ui.text/MultiParagraphIntrinsics.<init>|<init>(androidx.compose.ui.text.AnnotatedString;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.FontFamily.Resolver;kotlin.Boolean){}[0]
 
     final val annotatedString // androidx.compose.ui.text/MultiParagraphIntrinsics.annotatedString|{}annotatedString[0]
         final fun <get-annotatedString>(): androidx.compose.ui.text/AnnotatedString // androidx.compose.ui.text/MultiParagraphIntrinsics.annotatedString.<get-annotatedString>|<get-annotatedString>(){}[0]
@@ -1418,20 +1438,52 @@ final value class androidx.compose.ui.text.input/KeyboardType { // androidx.comp
     final object Companion { // androidx.compose.ui.text.input/KeyboardType.Companion|null[0]
         final val Ascii // androidx.compose.ui.text.input/KeyboardType.Companion.Ascii|{}Ascii[0]
             final fun <get-Ascii>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Ascii.<get-Ascii>|<get-Ascii>(){}[0]
+        final val Date // androidx.compose.ui.text.input/KeyboardType.Companion.Date|{}Date[0]
+            final fun <get-Date>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Date.<get-Date>|<get-Date>(){}[0]
+        final val DateTime // androidx.compose.ui.text.input/KeyboardType.Companion.DateTime|{}DateTime[0]
+            final fun <get-DateTime>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.DateTime.<get-DateTime>|<get-DateTime>(){}[0]
         final val Decimal // androidx.compose.ui.text.input/KeyboardType.Companion.Decimal|{}Decimal[0]
             final fun <get-Decimal>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Decimal.<get-Decimal>|<get-Decimal>(){}[0]
+        final val DecimalPassword // androidx.compose.ui.text.input/KeyboardType.Companion.DecimalPassword|{}DecimalPassword[0]
+            final fun <get-DecimalPassword>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.DecimalPassword.<get-DecimalPassword>|<get-DecimalPassword>(){}[0]
+        final val DecimalPasswordSigned // androidx.compose.ui.text.input/KeyboardType.Companion.DecimalPasswordSigned|{}DecimalPasswordSigned[0]
+            final fun <get-DecimalPasswordSigned>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.DecimalPasswordSigned.<get-DecimalPasswordSigned>|<get-DecimalPasswordSigned>(){}[0]
+        final val DecimalSigned // androidx.compose.ui.text.input/KeyboardType.Companion.DecimalSigned|{}DecimalSigned[0]
+            final fun <get-DecimalSigned>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.DecimalSigned.<get-DecimalSigned>|<get-DecimalSigned>(){}[0]
         final val Email // androidx.compose.ui.text.input/KeyboardType.Companion.Email|{}Email[0]
             final fun <get-Email>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Email.<get-Email>|<get-Email>(){}[0]
+        final val EmailSubject // androidx.compose.ui.text.input/KeyboardType.Companion.EmailSubject|{}EmailSubject[0]
+            final fun <get-EmailSubject>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.EmailSubject.<get-EmailSubject>|<get-EmailSubject>(){}[0]
+        final val Filter // androidx.compose.ui.text.input/KeyboardType.Companion.Filter|{}Filter[0]
+            final fun <get-Filter>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Filter.<get-Filter>|<get-Filter>(){}[0]
+        final val LongMessage // androidx.compose.ui.text.input/KeyboardType.Companion.LongMessage|{}LongMessage[0]
+            final fun <get-LongMessage>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.LongMessage.<get-LongMessage>|<get-LongMessage>(){}[0]
         final val Number // androidx.compose.ui.text.input/KeyboardType.Companion.Number|{}Number[0]
             final fun <get-Number>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Number.<get-Number>|<get-Number>(){}[0]
         final val NumberPassword // androidx.compose.ui.text.input/KeyboardType.Companion.NumberPassword|{}NumberPassword[0]
             final fun <get-NumberPassword>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.NumberPassword.<get-NumberPassword>|<get-NumberPassword>(){}[0]
+        final val NumberPasswordSigned // androidx.compose.ui.text.input/KeyboardType.Companion.NumberPasswordSigned|{}NumberPasswordSigned[0]
+            final fun <get-NumberPasswordSigned>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.NumberPasswordSigned.<get-NumberPasswordSigned>|<get-NumberPasswordSigned>(){}[0]
+        final val NumberSigned // androidx.compose.ui.text.input/KeyboardType.Companion.NumberSigned|{}NumberSigned[0]
+            final fun <get-NumberSigned>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.NumberSigned.<get-NumberSigned>|<get-NumberSigned>(){}[0]
         final val Password // androidx.compose.ui.text.input/KeyboardType.Companion.Password|{}Password[0]
             final fun <get-Password>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Password.<get-Password>|<get-Password>(){}[0]
+        final val PasswordVisible // androidx.compose.ui.text.input/KeyboardType.Companion.PasswordVisible|{}PasswordVisible[0]
+            final fun <get-PasswordVisible>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.PasswordVisible.<get-PasswordVisible>|<get-PasswordVisible>(){}[0]
+        final val PersonName // androidx.compose.ui.text.input/KeyboardType.Companion.PersonName|{}PersonName[0]
+            final fun <get-PersonName>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.PersonName.<get-PersonName>|<get-PersonName>(){}[0]
         final val Phone // androidx.compose.ui.text.input/KeyboardType.Companion.Phone|{}Phone[0]
             final fun <get-Phone>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Phone.<get-Phone>|<get-Phone>(){}[0]
+        final val Phonetic // androidx.compose.ui.text.input/KeyboardType.Companion.Phonetic|{}Phonetic[0]
+            final fun <get-Phonetic>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Phonetic.<get-Phonetic>|<get-Phonetic>(){}[0]
+        final val PostalAddress // androidx.compose.ui.text.input/KeyboardType.Companion.PostalAddress|{}PostalAddress[0]
+            final fun <get-PostalAddress>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.PostalAddress.<get-PostalAddress>|<get-PostalAddress>(){}[0]
+        final val ShortMessage // androidx.compose.ui.text.input/KeyboardType.Companion.ShortMessage|{}ShortMessage[0]
+            final fun <get-ShortMessage>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.ShortMessage.<get-ShortMessage>|<get-ShortMessage>(){}[0]
         final val Text // androidx.compose.ui.text.input/KeyboardType.Companion.Text|{}Text[0]
             final fun <get-Text>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Text.<get-Text>|<get-Text>(){}[0]
+        final val Time // androidx.compose.ui.text.input/KeyboardType.Companion.Time|{}Time[0]
+            final fun <get-Time>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Time.<get-Time>|<get-Time>(){}[0]
         final val Unspecified // androidx.compose.ui.text.input/KeyboardType.Companion.Unspecified|{}Unspecified[0]
             final fun <get-Unspecified>(): androidx.compose.ui.text.input/KeyboardType // androidx.compose.ui.text.input/KeyboardType.Companion.Unspecified.<get-Unspecified>|<get-Unspecified>(){}[0]
         final val Uri // androidx.compose.ui.text.input/KeyboardType.Companion.Uri|{}Uri[0]
@@ -1687,6 +1739,9 @@ sealed class androidx.compose.ui.text.font/SystemFontFamily : androidx.compose.u
 sealed class androidx.compose.ui.text/TtsAnnotation : androidx.compose.ui.text/AnnotatedString.Annotation // androidx.compose.ui.text/TtsAnnotation|null[0]
 
 final object androidx.compose.ui.text.font/FontVariation { // androidx.compose.ui.text.font/FontVariation|null[0]
+    final val Empty // androidx.compose.ui.text.font/FontVariation.Empty|{}Empty[0]
+        final fun <get-Empty>(): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Empty.<get-Empty>|<get-Empty>(){}[0]
+
     final fun Setting(kotlin/String, kotlin/Float): androidx.compose.ui.text.font/FontVariation.Setting // androidx.compose.ui.text.font/FontVariation.Setting|Setting(kotlin.String;kotlin.Float){}[0]
     final fun Settings(androidx.compose.ui.text.font/FontWeight, androidx.compose.ui.text.font/FontStyle, kotlin/Array<out androidx.compose.ui.text.font/FontVariation.Setting>...): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Settings|Settings(androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;kotlin.Array<out|androidx.compose.ui.text.font.FontVariation.Setting>...){}[0]
     final fun grade(kotlin/Int): androidx.compose.ui.text.font/FontVariation.Setting // androidx.compose.ui.text.font/FontVariation.grade|grade(kotlin.Int){}[0]
@@ -1713,6 +1768,9 @@ final object androidx.compose.ui.text.font/FontVariation { // androidx.compose.u
 
         final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text.font/FontVariation.Settings.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // androidx.compose.ui.text.font/FontVariation.Settings.hashCode|hashCode(){}[0]
+        final fun merge(androidx.compose.ui.text.font/FontVariation.Settings?): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Settings.merge|merge(androidx.compose.ui.text.font.FontVariation.Settings?){}[0]
+        final fun merge(kotlin/Array<out androidx.compose.ui.text.font/FontVariation.Setting>...): androidx.compose.ui.text.font/FontVariation.Settings // androidx.compose.ui.text.font/FontVariation.Settings.merge|merge(kotlin.Array<out|androidx.compose.ui.text.font.FontVariation.Setting>...){}[0]
+        final fun toString(): kotlin/String // androidx.compose.ui.text.font/FontVariation.Settings.toString|toString(){}[0]
     }
 }
 
@@ -1775,7 +1833,6 @@ final val androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Buil
 final val androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Builder_BulletScope$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Builder_BulletScope$stableprop|#static{}androidx_compose_ui_text_AnnotatedString_Builder_BulletScope$stableprop[0]
 final val androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Range$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Range$stableprop|#static{}androidx_compose_ui_text_AnnotatedString_Range$stableprop[0]
 final val androidx.compose.ui.text/androidx_compose_ui_text_Bullet$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_Bullet$stableprop|#static{}androidx_compose_ui_text_Bullet$stableprop[0]
-final val androidx.compose.ui.text/androidx_compose_ui_text_ComposeUiTextFlags$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_ComposeUiTextFlags$stableprop|#static{}androidx_compose_ui_text_ComposeUiTextFlags$stableprop[0]
 final val androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation$stableprop|#static{}androidx_compose_ui_text_LinkAnnotation$stableprop[0]
 final val androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Clickable$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Clickable$stableprop|#static{}androidx_compose_ui_text_LinkAnnotation_Clickable$stableprop[0]
 final val androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Url$stableprop // androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Url$stableprop|#static{}androidx_compose_ui_text_LinkAnnotation_Url$stableprop[0]
@@ -1821,6 +1878,7 @@ final fun (kotlin/String).androidx.compose.ui.text/toUpperCase(androidx.compose.
 final fun (kotlin/String).androidx.compose.ui.text/toUpperCase(androidx.compose.ui.text.intl/LocaleList): kotlin/String // androidx.compose.ui.text/toUpperCase|toUpperCase@kotlin.String(androidx.compose.ui.text.intl.LocaleList){}[0]
 final fun androidx.compose.ui.text.font/Font(kotlin/Int, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.font/Font|Font(kotlin.Int;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle){}[0]
 final fun androidx.compose.ui.text.font/Font(kotlin/Int, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ..., androidx.compose.ui.text.font/FontLoadingStrategy = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.font/Font|Font(kotlin.Int;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;androidx.compose.ui.text.font.FontLoadingStrategy){}[0]
+final fun androidx.compose.ui.text.font/Font(kotlin/Int, androidx.compose.ui.text.font/FontWeight = ..., androidx.compose.ui.text.font/FontStyle = ..., androidx.compose.ui.text.font/FontLoadingStrategy = ..., androidx.compose.ui.text.font/FontVariation.Settings = ...): androidx.compose.ui.text.font/Font // androidx.compose.ui.text.font/Font|Font(kotlin.Int;androidx.compose.ui.text.font.FontWeight;androidx.compose.ui.text.font.FontStyle;androidx.compose.ui.text.font.FontLoadingStrategy;androidx.compose.ui.text.font.FontVariation.Settings){}[0]
 final fun androidx.compose.ui.text.font/FontFamily(androidx.compose.ui.text.font/Typeface): androidx.compose.ui.text.font/FontFamily // androidx.compose.ui.text.font/FontFamily|FontFamily(androidx.compose.ui.text.font.Typeface){}[0]
 final fun androidx.compose.ui.text.font/FontFamily(kotlin.collections/List<androidx.compose.ui.text.font/Font>): androidx.compose.ui.text.font/FontFamily // androidx.compose.ui.text.font/FontFamily|FontFamily(kotlin.collections.List<androidx.compose.ui.text.font.Font>){}[0]
 final fun androidx.compose.ui.text.font/FontFamily(kotlin/Array<out androidx.compose.ui.text.font/Font>...): androidx.compose.ui.text.font/FontFamily // androidx.compose.ui.text.font/FontFamily|FontFamily(kotlin.Array<out|androidx.compose.ui.text.font.Font>...){}[0]
@@ -1880,6 +1938,7 @@ final fun androidx.compose.ui.text/Paragraph(kotlin/String, androidx.compose.ui.
 final fun androidx.compose.ui.text/ParagraphIntrinsics(kotlin/String, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/SpanStyle>> = ..., kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>> = ..., androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/Font.ResourceLoader): androidx.compose.ui.text/ParagraphIntrinsics // androidx.compose.ui.text/ParagraphIntrinsics|ParagraphIntrinsics(kotlin.String;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>>;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.Font.ResourceLoader){}[0]
 final fun androidx.compose.ui.text/ParagraphIntrinsics(kotlin/String, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/SpanStyle>> = ..., kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>> = ..., androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/FontFamily.Resolver): androidx.compose.ui.text/ParagraphIntrinsics // androidx.compose.ui.text/ParagraphIntrinsics|ParagraphIntrinsics(kotlin.String;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>>;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.FontFamily.Resolver){}[0]
 final fun androidx.compose.ui.text/ParagraphIntrinsics(kotlin/String, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<out androidx.compose.ui.text/AnnotatedString.Annotation>>, androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/FontFamily.Resolver, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>> = ...): androidx.compose.ui.text/ParagraphIntrinsics // androidx.compose.ui.text/ParagraphIntrinsics|ParagraphIntrinsics(kotlin.String;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<out|androidx.compose.ui.text.AnnotatedString.Annotation>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.FontFamily.Resolver;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>){}[0]
+final fun androidx.compose.ui.text/ParagraphIntrinsics(kotlin/String, androidx.compose.ui.text/TextStyle, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<out androidx.compose.ui.text/AnnotatedString.Annotation>>, androidx.compose.ui.unit/Density, androidx.compose.ui.text.font/FontFamily.Resolver, kotlin.collections/List<androidx.compose.ui.text/AnnotatedString.Range<androidx.compose.ui.text/Placeholder>>, kotlin/Boolean): androidx.compose.ui.text/ParagraphIntrinsics // androidx.compose.ui.text/ParagraphIntrinsics|ParagraphIntrinsics(kotlin.String;androidx.compose.ui.text.TextStyle;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<out|androidx.compose.ui.text.AnnotatedString.Annotation>>;androidx.compose.ui.unit.Density;androidx.compose.ui.text.font.FontFamily.Resolver;kotlin.collections.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>>;kotlin.Boolean){}[0]
 final fun androidx.compose.ui.text/TextRange(kotlin/Int): androidx.compose.ui.text/TextRange // androidx.compose.ui.text/TextRange|TextRange(kotlin.Int){}[0]
 final fun androidx.compose.ui.text/TextRange(kotlin/Int, kotlin/Int): androidx.compose.ui.text/TextRange // androidx.compose.ui.text/TextRange|TextRange(kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString$stableprop_getter|androidx_compose_ui_text_AnnotatedString$stableprop_getter(){}[0]
@@ -1887,7 +1946,6 @@ final fun androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Buil
 final fun androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Builder_BulletScope$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Builder_BulletScope$stableprop_getter|androidx_compose_ui_text_AnnotatedString_Builder_BulletScope$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Range$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_AnnotatedString_Range$stableprop_getter|androidx_compose_ui_text_AnnotatedString_Range$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_Bullet$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_Bullet$stableprop_getter|androidx_compose_ui_text_Bullet$stableprop_getter(){}[0]
-final fun androidx.compose.ui.text/androidx_compose_ui_text_ComposeUiTextFlags$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_ComposeUiTextFlags$stableprop_getter|androidx_compose_ui_text_ComposeUiTextFlags$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation$stableprop_getter|androidx_compose_ui_text_LinkAnnotation$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Clickable$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Clickable$stableprop_getter|androidx_compose_ui_text_LinkAnnotation_Clickable$stableprop_getter(){}[0]
 final fun androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Url$stableprop_getter(): kotlin/Int // androidx.compose.ui.text/androidx_compose_ui_text_LinkAnnotation_Url$stableprop_getter|androidx_compose_ui_text_LinkAnnotation_Url$stableprop_getter(){}[0]

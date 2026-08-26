@@ -26,8 +26,8 @@
     android:versionName="1.0">
 
   <uses-sdk
-      android:minSdkVersion="23"
-      android:targetSdkVersion="34" />
+      android:minSdkVersion="24"
+      android:targetSdkVersion="36" />
 
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -83,6 +83,7 @@
 
     <service
         android:name=".common.screens.navigationdemos.NavigationNotificationService"
+        android:foregroundServiceType="location"
         android:exported="true">
     </service>
 

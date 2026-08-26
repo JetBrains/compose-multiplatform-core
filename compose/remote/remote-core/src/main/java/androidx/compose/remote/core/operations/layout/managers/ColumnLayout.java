@@ -19,6 +19,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.FLO
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -30,7 +31,7 @@ import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.measure.Size;
-import androidx.compose.remote.core.operations.layout.modifiers.HeightInModifierOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.DimensionInModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
 import androidx.compose.remote.core.operations.layout.utils.DebugLog;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -57,6 +58,8 @@ public class ColumnLayout extends LayoutManager {
     int mHorizontalPositioning;
     int mVerticalPositioning;
     float mSpacedBy = 0f;
+
+    private static final boolean DIRECT_WEIGHT_CALCULATION = true;
 
     public ColumnLayout(
             @Nullable Component parent,
@@ -129,8 +132,10 @@ public class ColumnLayout extends LayoutManager {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
-            float minWidth, float maxWidth,
-            float minHeight, float maxHeight,
+            float minWidth,
+            float maxWidth,
+            float minHeight,
+            float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
             @NonNull MeasurePass measure,
@@ -178,7 +183,6 @@ public class ColumnLayout extends LayoutManager {
                 float childWeight = ((LayoutComponent) c).getHeightModifier().getValue();
                 float childMinHeight = (childWeight * currentMaxHeight) / totalWeights;
                 float childMaxHeight = childMinHeight;
-
                 c.measure(context, 0f, maxWidth, childMinHeight, childMaxHeight, measure);
                 ComponentMeasure m = measure.get(c);
                 if (!m.isGone()) {
@@ -200,7 +204,11 @@ public class ColumnLayout extends LayoutManager {
             }
         }
         if (!mChildrenComponents.isEmpty()) {
-            size.setHeight(size.getHeight() + (mSpacedBy * (visibleChildrens - 1)));
+            float spacedBy = mSpacedBy;
+            if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+                spacedBy *= context.getDensity();
+            }
+            size.setHeight(size.getHeight() + (spacedBy * (visibleChildrens - 1)));
         }
         DebugLog.e();
     }
@@ -214,20 +222,65 @@ public class ColumnLayout extends LayoutManager {
             float maxHeight,
             @NonNull MeasurePass measure) {
         DebugLog.s(() -> "COMPUTE SIZE in " + this + " (" + mComponentId + ")");
-        float mh = maxHeight;
-        for (Component child : mChildrenComponents) {
-            child.measure(context, minWidth, maxWidth, minHeight, mh, measure);
-            ComponentMeasure m = measure.get(child);
-            if (!m.isGone()) {
-                mh -= m.getH();
+
+        // Check for weights
+        float totalHeightsNoWeights = 0f;
+        float totalWeights = 0f;
+        boolean hasWeights = false;
+        float maxh = maxHeight;
+        if (DIRECT_WEIGHT_CALCULATION) {
+            for (Component child : mChildrenComponents) {
+                ComponentMeasure childMeasure = measure.get(child);
+                if (childMeasure.isGone()) {
+                    continue;
+                }
+                if (child instanceof LayoutComponent
+                        && ((LayoutComponent) child).getHeightModifier().hasWeight()) {
+                    hasWeights = true;
+                    totalWeights += ((LayoutComponent) child).getHeightModifier().getValue();
+                } else {
+                    child.measure(context, minWidth, maxWidth, minHeight, maxh, measure);
+                    ComponentMeasure m = measure.get(child);
+                    maxh -= m.getH();
+                    totalHeightsNoWeights += m.getH();
+                }
+            }
+        }
+
+        if (hasWeights && DIRECT_WEIGHT_CALCULATION) {
+            float minh = minHeight;
+            maxh = maxHeight;
+            for (Component child : mChildrenComponents) {
+                if (child instanceof LayoutComponent
+                        && ((LayoutComponent) child).getHeightModifier().hasWeight()
+                        && !child.isGone()) {
+                    float weight = ((LayoutComponent) child).getHeightModifier().getValue();
+                    float childHeight = (maxHeight - totalHeightsNoWeights) * weight / totalWeights;
+                    child.measure(context, minWidth, maxWidth, childHeight, childHeight, measure);
+                } else {
+                    child.measure(context, minWidth, maxWidth, minh, maxh, measure);
+                }
+                ComponentMeasure m = measure.get(child);
+                if (!m.isGone()) {
+                    maxh -= m.getH();
+                }
+            }
+        } else {
+            float mh = maxHeight;
+            for (Component child : mChildrenComponents) {
+                child.measure(context, minWidth, maxWidth, minHeight, mh, measure);
+                ComponentMeasure m = measure.get(child);
+                if (!m.isGone()) {
+                    mh -= m.getH();
+                }
             }
         }
         DebugLog.e();
     }
 
     @Override
-    public float minIntrinsicHeight(@Nullable RemoteContext context) {
-        float height = computeModifierDefinedHeight(context);
+    public float minIntrinsicHeight(@NonNull RemoteContext context) {
+        float height = computeModifierDefinedHeight(context, true);
         float componentHeights = 0f;
         for (Component c : mChildrenComponents) {
             componentHeights += c.minIntrinsicHeight(context);
@@ -301,7 +354,7 @@ public class ColumnLayout extends LayoutManager {
                         }
                         float weight = ((LayoutComponent) child).getHeightModifier().getValue();
                         float childHeight = (weight * availableSpace) / totalWeights;
-                        HeightInModifierOperation heightInConstraints =
+                        DimensionInModifierOperation heightInConstraints =
                                 ((LayoutComponent) child).getHeightModifier().getHeightIn();
                         if (heightInConstraints != null) {
                             float min = heightInConstraints.getMin();
@@ -341,7 +394,11 @@ public class ColumnLayout extends LayoutManager {
             childrenHeight += childMeasure.getH();
             visibleChildrens++;
         }
-        childrenHeight += mSpacedBy * (visibleChildrens - 1);
+        float spacedBy = mSpacedBy;
+        if (context.getDensityBehavior() == CoreDocument.DENSITY_BEHAVIOR_DP) {
+            spacedBy *= context.getDensity();
+        }
+        childrenHeight += spacedBy * (visibleChildrens - 1);
 
         float tx = 0f;
         float ty = 0f;
@@ -421,19 +478,21 @@ public class ColumnLayout extends LayoutManager {
                     || mVerticalPositioning == SPACE_EVENLY) {
                 ty += verticalGap;
             }
-            ty += mSpacedBy;
+            ty += spacedBy;
         }
         DebugLog.e();
     }
 
     @Override
-    public void getLocationInWindow(float @NonNull [] value, boolean forSelf) {
-        super.getLocationInWindow(value, forSelf);
+    public void getLocationInWindow(
+            @NonNull RemoteContext context, float @NonNull [] value, boolean forSelf) {
+        super.getLocationInWindow(context, value, forSelf);
+        if (context.getTouchVersion() != LayoutManager.FIX_TOUCH_EVENT) {
+            if (!forSelf && mVerticalScrollDelegate instanceof ScrollModifierOperation) {
+                ScrollModifierOperation smo = (ScrollModifierOperation) mVerticalScrollDelegate;
 
-        if (!forSelf && mVerticalScrollDelegate instanceof ScrollModifierOperation) {
-            ScrollModifierOperation smo = (ScrollModifierOperation) mVerticalScrollDelegate;
-
-            value[1] += smo.getScrollY();
+                value[1] += smo.getScrollY();
+            }
         }
     }
 
@@ -488,8 +547,8 @@ public class ColumnLayout extends LayoutManager {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int componentId = buffer.readInt();
-        int animationId = buffer.readInt();
+        int componentId = buffer.declareId();
+        int animationId = buffer.declareId();
         int horizontalPositioning = buffer.readInt();
         int verticalPositioning = buffer.readInt();
         float spacedBy = buffer.readFloat();
@@ -509,7 +568,8 @@ public class ColumnLayout extends LayoutManager {
      * @param doc to append the description to.
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
-        doc.operation("Layout Operations", id(), name())
+        doc.operation("Layout Managers", id(), name())
+                .additionalDocumentation("column")
                 .description(
                         "Column layout implementation, positioning components one"
                                 + " after the other vertically.\n\n"
@@ -522,10 +582,7 @@ public class ColumnLayout extends LayoutManager {
                 .exampleImage("SpaceAround", "layout-ColumnLayout-start-space-around.png")
                 .exampleImage("SpaceBetween", "layout-ColumnLayout-start-space-between.png")
                 .field(INT, "componentId", "Unique ID for this component")
-                .field(
-                        INT,
-                        "animationId",
-                        "ID used to match components for animation purposes")
+                .field(INT, "animationId", "ID used to match components for animation purposes")
                 .field(INT, "horizontalPositioning", "Horizontal positioning value")
                 .possibleValues("START", START)
                 .possibleValues("CENTER", CENTER)
@@ -538,6 +595,16 @@ public class ColumnLayout extends LayoutManager {
                 .possibleValues("SPACE_EVENLY", SPACE_EVENLY)
                 .possibleValues("SPACE_AROUND", SPACE_AROUND)
                 .field(FLOAT, "spacedBy", "Horizontal spacing between components");
+    }
+
+    @Override
+    public float maxIntrinsicHeight(@Nullable RemoteContext context) {
+        float height = computeModifierDefinedHeight(context);
+        float childrenHeight = 0f;
+        for (Component c : mChildrenComponents) {
+            childrenHeight += c.maxIntrinsicHeight(context);
+        }
+        return Math.max(height, childrenHeight);
     }
 
     @Override

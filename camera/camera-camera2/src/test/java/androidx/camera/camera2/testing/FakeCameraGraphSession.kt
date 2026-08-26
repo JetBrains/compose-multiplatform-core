@@ -21,6 +21,9 @@ import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.Converge3ABehavior
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameMetadata
@@ -47,6 +50,7 @@ open class FakeCameraGraphSession : CameraGraph.Session {
     val repeatingRequests = mutableListOf<Request>()
     var repeatingRequestSemaphore = Semaphore(0)
     var stopRepeatingSemaphore = Semaphore(0)
+    override var repeatingRequest = repeatingRequests.lastOrNull()
 
     enum class RequestStatus {
         TOTAL_CAPTURE_DONE,
@@ -136,13 +140,13 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         submittedRequests.addAll(requests)
     }
 
-    override fun capture(request: Request): FrameCapture {
+    fun capture(request: Request): FrameCapture {
         val capture = FakeFrameCapture(request)
         submit(request)
         return capture
     }
 
-    override fun capture(requests: List<Request>): List<FrameCapture> {
+    fun capture(requests: List<Request>): List<FrameCapture> {
         val captures = requests.map { FakeFrameCapture(it) }
         submit(requests)
         return captures
@@ -155,6 +159,20 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
+    ): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun converge3A(
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeBehavior: Converge3ABehavior?,
+        afBehavior: Converge3ABehavior?,
+        awbBehavior: Converge3ABehavior?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int?,
+        timeLimitNs: Long?,
     ): Deferred<Result3A> {
         throw NotImplementedError("Not used in testing")
     }
@@ -178,9 +196,12 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
+        controlMode: ControlMode?,
+        flashMode: FlashMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
+        retainLocks: Boolean,
     ): Deferred<Result3A> {
         return CompletableDeferred(Result3A(Result3A.Status.OK))
     }

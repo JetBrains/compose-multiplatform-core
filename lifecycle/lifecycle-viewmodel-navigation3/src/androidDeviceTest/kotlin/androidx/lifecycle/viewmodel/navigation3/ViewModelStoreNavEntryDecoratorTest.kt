@@ -25,9 +25,18 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.defaultViewModelCreationExtras
+import androidx.lifecycle.defaultViewModelProviderFactory
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
@@ -36,14 +45,13 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ViewModelStoreNavEntryDecoratorTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testViewModelProvided() {
@@ -103,14 +111,14 @@ class ViewModelStoreNavEntryDecoratorTest {
                 }
             }
         } catch (e: Exception) {
-            assertThat(e)
-                .hasMessageThat()
-                .isEqualTo(
-                    "The Lifecycle state is already beyond INITIALIZED. The " +
-                        "ViewModelStoreNavEntryDecorator requires adding the " +
-                        "SavedStateNavEntryDecorator to ensure support for " +
-                        "SavedStateHandles."
+            with(assertThat(e.message)) {
+                // Assert the static parts of the new error message
+                contains("Failed to enable `SavedStateHandle` for `")
+                contains("`. The `Lifecycle.State` must be `INITIALIZED` or `CREATED`, but was `")
+                contains(
+                    "`. You must call `enableSavedStateHandles()` before the `Lifecycle.State` moves to `STARTED`."
                 )
+            }
         }
     }
 
@@ -202,9 +210,8 @@ class ViewModelStoreNavEntryDecoratorTest {
     }
 
     @Test
-    fun testChangeRemoveViewModelStoreOnPop() {
+    fun testViewModelRemovedOnPop() {
         val viewModels = mutableMapOf<Int, MyViewModel>()
-        var removeViewModelStoreOnPop by mutableStateOf(true)
 
         fun createNaveEntry(key: Int) = NavEntry(key) { viewModels[key] = viewModel<MyViewModel>() }
 
@@ -220,14 +227,7 @@ class ViewModelStoreNavEntryDecoratorTest {
                     entryDecorators =
                         listOf(
                             rememberSaveableStateHolderNavEntryDecorator(),
-                            rememberViewModelStoreNavEntryDecorator(
-                                removeViewModelStoreOnPop =
-                                    if (removeViewModelStoreOnPop) {
-                                        { true }
-                                    } else {
-                                        { false }
-                                    }
-                            ),
+                            rememberViewModelStoreNavEntryDecorator(),
                         ),
                 )
 
@@ -242,11 +242,153 @@ class ViewModelStoreNavEntryDecoratorTest {
         assertThat(viewModels.mapValues { (_, viewModel) -> viewModel.isCleared })
             .isEqualTo(mapOf(1 to false, 2 to false, 3 to true))
 
-        removeViewModelStoreOnPop = false
         backStack.removeAt(backStack.lastIndex)
         composeTestRule.waitForIdle()
         assertThat(viewModels.mapValues { (_, viewModel) -> viewModel.isCleared })
-            .isEqualTo(mapOf(1 to false, 2 to false, 3 to true))
+            .isEqualTo(mapOf(1 to false, 2 to true, 3 to true))
+    }
+
+    @Test
+    fun testHasDefaultViewModelProviderFactoryPropagation() {
+        lateinit var actualExtras: CreationExtras
+
+        val expectedKey = CreationExtras.Key<String>()
+        val expectedValue = "customValue"
+        val expectedExtras = CreationExtras { set(expectedKey, expectedValue) }
+        val expectedFactory = viewModelFactory {
+            initializer {
+                actualExtras = this
+                MyViewModel()
+            }
+        }
+        val expectedOwner =
+            ViewModelStoreOwner(
+                viewModelStore = ViewModelStore(),
+                defaultCreationExtras = expectedExtras,
+                defaultFactory = expectedFactory,
+            )
+
+        val entry =
+            NavEntry("key") {
+                // This will trigger the default factory from the LocalViewModelStoreOwner.
+                viewModel<MyViewModel>()
+            }
+
+        composeTestRule.setContent {
+            val decorated =
+                rememberDecoratedNavEntries(
+                    entries = listOf(entry),
+                    entryDecorators =
+                        listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(expectedOwner),
+                        ),
+                )
+
+            decorated.forEach { entry -> entry.Content() }
+        }
+
+        composeTestRule.runOnIdle {
+            val actualOwner = actualExtras[VIEW_MODEL_STORE_OWNER_KEY]
+            assertThat(actualOwner.defaultViewModelProviderFactory).isEqualTo(expectedFactory)
+            assertThat(actualOwner.defaultViewModelCreationExtras[expectedKey])
+                .isEqualTo(expectedValue)
+
+            assertThat(actualExtras[expectedKey]).isEqualTo(expectedValue)
+        }
+    }
+
+    @Test
+    fun testHoistedViewModelStoreProviders_isolateStateAndSurviveNavDisplaySwap() {
+        var viewModelA: MyViewModel? = null
+        var viewModelB: MyViewModel? = null
+        var isBackstackActive by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            // Multiple back stacks containing the same entry key, but requiring separate state.
+            // Hoisting separate providers ensures state isolation between back stacks, while
+            // allowing the ViewModels to persist during back stack swaps.
+            val hoistedProviderA = rememberViewModelStoreProvider(key = "A")
+            val hoistedProviderB = rememberViewModelStoreProvider(key = "B")
+
+            // Both back stacks use the exact same entry key.
+            val backStackA = remember { mutableStateListOf("SharedScreen") }
+            val backStackB = remember { mutableStateListOf("SharedScreen") }
+
+            if (isBackstackActive) {
+                NavDisplay(
+                    backStack = backStackA,
+                    entryDecorators =
+                        listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(hoistedProviderA),
+                        ),
+                ) { key ->
+                    NavEntry(key) {
+                        viewModelA = viewModel<MyViewModel>()
+                        viewModelA.myArg = "state_a"
+                    }
+                }
+            } else {
+                NavDisplay(
+                    backStack = backStackB,
+                    entryDecorators =
+                        listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(hoistedProviderB),
+                        ),
+                ) { key ->
+                    NavEntry(key) {
+                        viewModelB = viewModel<MyViewModel>()
+                        viewModelB.myArg = "state_b"
+                    }
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            checkNotNull(viewModelA)
+
+            assertWithMessage("ViewModel A should have correct initial state")
+                .that(viewModelA.myArg)
+                .isEqualTo("state_a")
+
+            // Swap to backstack B. NavDisplay A leaves composition.
+            isBackstackActive = false
+        }
+
+        composeTestRule.runOnIdle {
+            checkNotNull(viewModelB)
+
+            assertWithMessage("ViewModel B should have correct initial state")
+                .that(viewModelB.myArg)
+                .isEqualTo("state_b")
+
+            assertWithMessage(
+                    "Separate hoisted providers must yield different ViewModel instances for the same key"
+                )
+                .that(viewModelA)
+                .isNotSameInstanceAs(viewModelB)
+
+            // Swap back to backstack A. NavDisplay B leaves composition.
+            isBackstackActive = true
+        }
+
+        composeTestRule.runOnIdle {
+            checkNotNull(viewModelA)
+
+            assertWithMessage("ViewModel A state must be preserved after backstack swap")
+                .that(viewModelA.myArg)
+                .isEqualTo("state_a")
+
+            assertWithMessage("ViewModel A must not be cleared")
+                .that(viewModelA.isCleared)
+                .isFalse()
+
+            assertWithMessage("ViewModel B must not be cleared")
+                .that(viewModelB?.isCleared)
+                .isFalse()
+        }
     }
 }
 

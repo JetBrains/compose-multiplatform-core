@@ -19,7 +19,7 @@ package androidx.xr.arcore.playservices
 import android.hardware.HardwareBuffer
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion

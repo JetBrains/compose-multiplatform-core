@@ -16,6 +16,8 @@
 
 package androidx.tracing
 
+import androidx.collection.MutableLongIntMap
+import androidx.collection.mutableLongIntMapOf
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
@@ -23,35 +25,47 @@ import kotlin.coroutines.CoroutineContext
  * We use the [PlatformThreadContextElement] construct to know when a coroutine has suspended, and
  * about to resume on a `Thread`.
  */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
-public abstract class PlatformThreadContextElement<S>
+public abstract class PlatformThreadContextElement
 internal constructor(
+    /**
+     * The [Tracer] instance that can use this [PropagationToken] for context propagation when the
+     * coroutine suspends and resumes.
+     */
+    internal open val tracer: PerfettoTracer,
+    /** The `category` that a trace section belongs to. */
     public open var category: String,
+    /** The `name` of the code section as it appears in a trace. */
     public open var name: String,
+    /**
+     * The underlying Perfetto flow ids that can be used to determine the causality for a given
+     * trace section.
+     */
     public open val flowIds: List<Long>,
 ) : AbstractCoroutineContextElement(key = KEY), PropagationToken, AutoCloseable {
-    // Always starts in a begin state.
-    @JvmField internal var started: Int = STATE_BEGIN
 
-    // Default to an empty thread track to ensure that this is non-null.
-    // We will always swap this with the real owner.
-    @JvmField internal var owner: ThreadTrack = EmptyTraceContext.thread
+    // Calls to update and restore will happen concurrently on multiple threads, if we happen
+    // to jump threads between suspends and resumes. Therefore, it's important for us to track
+    // begin and end per thread id. For more information refer to the `Reentrancy and thread-safety`
+    // section in the documentation for `CopyableThreadContextElement`.
+    @JvmField internal val started: MutableLongIntMap = mutableLongIntMapOf()
 
-    /**
-     * This method is called **before a coroutine is resumed** on a thread that belongs to a
-     * dispatcher.
-     */
-    internal abstract fun updateThreadContext(context: CoroutineContext): S
-
-    /** This method is called **after** a coroutine is suspend on the current thread. */
-    internal abstract fun restoreThreadContext(context: CoroutineContext, oldState: S)
+    init {
+        synchronized(this) {
+            // Always starts in a `begin` state.
+            started[currentJavaThreadId()] = STATE_BEGIN
+        }
+    }
 
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun synchronizedCompareAndSet(expected: Int, newValue: Int): Boolean {
         return synchronized(this) {
-            if (started == expected) {
-                started = newValue
+            // Treat the absence of an entry here as `STATE_END` given we have not emitted a
+            // trace packet yet on this Thread. This is true for every child coroutine, but
+            // **not** for the coroutine that kicked things off (handled by the init block).
+            val id = currentJavaThreadId()
+            val current = started.getOrDefault(key = id, defaultValue = STATE_END)
+            if (current == expected) {
+                started[id] = newValue
                 true
             } else {
                 false
@@ -64,26 +78,39 @@ internal constructor(
         return this
     }
 
+    public override fun close() {
+        if (synchronizedCompareAndSet(expected = STATE_BEGIN, newValue = STATE_END)) {
+            tracer.process.currentThreadTrack().endSection()
+        }
+    }
+
     @PublishedApi
     internal companion object {
         // Used to represent that the current slice has begun.
         @PublishedApi internal const val STATE_BEGIN: Int = 1
+
         // Used to represent that the current slice has ended.
         @PublishedApi internal const val STATE_END: Int = 0
+
         @PublishedApi
         @JvmField
-        internal val KEY: CoroutineContext.Key<PlatformThreadContextElement<*>> =
-            object : CoroutineContext.Key<PlatformThreadContextElement<*>> {}
+        internal val KEY: CoroutineContext.Key<PlatformThreadContextElement> =
+            object : CoroutineContext.Key<PlatformThreadContextElement> {}
     }
 }
 
 /** Builds an instance of the Platform specific [PlatformThreadContextElement]. */
-@PublishedApi
-internal expect fun buildThreadContextElement(
+internal expect fun buildPropagationElement(
+    tracer: PerfettoTracer,
     category: String,
     name: String,
     flowIds: List<Long>,
-    updateThreadContextBlock: (context: CoroutineContext) -> Unit,
-    restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
-    close: (platformThreadContextElement: PlatformThreadContextElement<*>) -> Unit,
-): PlatformThreadContextElement<Unit>
+): PlatformThreadContextElement
+
+/** Builds an instance of the Platform specific [PlatformThreadContextElement]. */
+internal expect fun buildCoroutinePropagationElement(
+    tracer: PerfettoTracer,
+    category: String,
+    name: String,
+    flowIds: List<Long>,
+): PlatformThreadContextElement

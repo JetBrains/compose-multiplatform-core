@@ -17,7 +17,6 @@
 package androidx.room3.compiler.processing.ksp
 
 import androidx.kruth.assertThat
-import androidx.kruth.assertThrows
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.asClassName
@@ -166,7 +165,7 @@ class KspTypeTest {
                 assertThat(type.isError()).isFalse()
                 assertThat(type.typeArguments).hasSize(1)
                 type.typeArguments.single().let { typeArg ->
-                    assertThat(typeArg.isError()).isTrue()
+                    assertThat(typeArg.type.isError()).isTrue()
                     assertThat(typeArg.asTypeName()).isEqualTo(iDontExist)
                 }
             }
@@ -194,9 +193,9 @@ class KspTypeTest {
                 assertThat(type.typeArguments).hasSize(1)
                 assertThat(type.typeElement!!.asClassName()).isEqualTo(List::class.asClassName())
                 type.typeArguments.single().let { typeArg ->
-                    assertThat(typeArg.nullability).isEqualTo(NULLABLE)
+                    assertThat(typeArg.type.nullability).isEqualTo(NULLABLE)
                     assertThat(
-                            typeArg.isAssignableFrom(
+                            typeArg.type.isAssignableFrom(
                                 invocation.processingEnv.requireType(String::class)
                             )
                         )
@@ -209,9 +208,9 @@ class KspTypeTest {
                 assertThat(type.nullability).isEqualTo(NONNULL)
                 assertThat(type.typeArguments).hasSize(1)
                 type.typeArguments.single().let { typeArg ->
-                    assertThat(typeArg.nullability).isEqualTo(NONNULL)
+                    assertThat(typeArg.type.nullability).isEqualTo(NONNULL)
                     assertThat(
-                            typeArg.isAssignableFrom(
+                            typeArg.type.isAssignableFrom(
                                 invocation.processingEnv.requireType(Int::class)
                             )
                         )
@@ -256,10 +255,10 @@ class KspTypeTest {
 
             val nullableString = subject.getField("nullableString").type
             val nonNullString = subject.getField("nonNullString").type
-            assertThat(nullableString).isEqualTo(nullableStringList.typeArguments.single())
-            assertThat(nullableString).isNotEqualTo(nonNullStringList.typeArguments.single())
-            assertThat(nonNullString).isEqualTo(nonNullStringList.typeArguments.single())
-            assertThat(nonNullString).isNotEqualTo(nullableStringList.typeArguments.single())
+            assertThat(nullableString).isEqualTo(nullableStringList.typeArguments.single().type)
+            assertThat(nullableString).isNotEqualTo(nonNullStringList.typeArguments.single().type)
+            assertThat(nonNullString).isEqualTo(nonNullStringList.typeArguments.single().type)
+            assertThat(nonNullString).isNotEqualTo(nullableStringList.typeArguments.single().type)
         }
     }
 
@@ -505,7 +504,7 @@ class KspTypeTest {
                 if (invocation.isKsp) {
                     assertThat(typeArgument.asTypeName().kotlin).isEqualTo(typeArgumentKClassName)
                 }
-                assertThat(typeArgument.nullability).isEqualTo(nullability)
+                assertThat(typeArgument.type.nullability).isEqualTo(nullability)
             }
             checkTypeElement(
                 typeElement = invocation.processingEnv.requireTypeElement("Bar"),
@@ -552,7 +551,7 @@ class KspTypeTest {
                 if (invocation.isKsp) {
                     assertThat(typeArgument.asTypeName().kotlin).isEqualTo(typeArgumentKClassName)
                 }
-                assertThat(typeArgument.nullability).isEqualTo(nullability)
+                assertThat(typeArgument.type.nullability).isEqualTo(nullability)
             }
             val foo = invocation.processingEnv.requireTypeElement("Foo")
             checkType(
@@ -603,40 +602,9 @@ class KspTypeTest {
                     assertThat(arg1.extendsBound()?.asTypeName()?.kotlin)
                         .isEqualTo(numberKClassName)
                 }
-                assertThat(arg1.extendsBound()?.extendsBound()).isNull()
             }
             assertParamType(method.parameters.first().type)
             assertParamType(asMember.parameterTypes.first())
-        }
-    }
-
-    @Test
-    fun oneSuperClass() {
-        val src =
-            Source.java(
-                "foo.bar.Baz",
-                """
-                package foo.bar;
-                class A {}
-                interface B {}
-                class Baz extends A implements B, C {}
-                """
-                    .trimIndent(),
-            )
-        runKspTest(
-            listOf(src),
-            kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
-        ) { invocation ->
-            val typeElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
-            val exception =
-                assertThrows(IllegalStateException::class) { typeElement.type.superTypes }
-            exception
-                .hasMessageThat()
-                .isEqualTo(
-                    "Class foo.bar.Baz should have only one super class. Found 2 (foo.bar.A, C)."
-                )
-            invocation.assertCompilationResult { compilationDidFail() }
         }
     }
 }

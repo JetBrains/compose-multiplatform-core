@@ -17,13 +17,15 @@ package androidx.camera.video.internal.config
 
 import android.media.MediaCodecInfo
 import android.media.MediaFormat.MIMETYPE_AUDIO_AAC
+import android.media.MediaFormat.MIMETYPE_AUDIO_VORBIS
 import android.util.Rational
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy
 import androidx.camera.core.impl.Timebase
 import androidx.camera.video.AudioSpec
-import androidx.camera.video.MediaSpec
-import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy
+import androidx.camera.video.MediaConstants.MIME_TYPE_UNSPECIFIED
+import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
+import androidx.camera.video.MediaSpec.OutputFormat
 import androidx.camera.video.internal.audio.AudioSettings
 import androidx.camera.video.internal.audio.AudioSource
 import androidx.camera.video.internal.encoder.AudioEncoderConfig
@@ -49,12 +51,16 @@ public object AudioConfigUtil {
 
     private const val AAC_DEFAULT_PROFILE = MediaCodecInfo.CodecProfileLevel.AACObjectLC
 
+    private const val AUDIO_ENCODER_MIME_MPEG4_DEFAULT = MIMETYPE_AUDIO_AAC
+
+    private const val AUDIO_ENCODER_MIME_WEBM_DEFAULT = MIMETYPE_AUDIO_VORBIS
+
     /**
      * Resolves a compatible [AudioProfileProxy] from a list based on the provided MIME type.
      *
      * This method attempts to find the first profile in the provided list that matches the
      * requested [audioMime] and its corresponding codec profile. If the [audioMime] is set to
-     * [AudioSpec.MIME_TYPE_UNSPECIFIED], it will return the first available profile in the list.
+     * [MIME_TYPE_UNSPECIFIED], it will return the first available profile in the list.
      *
      * @param audioMime The desired audio MIME type.
      * @param audioProfiles A list of available [AudioProfileProxy]s.
@@ -66,8 +72,21 @@ public object AudioConfigUtil {
     ): AudioProfileProxy? {
         val audioCodecProfile = audioMimeToAudioProfile(audioMime)
         return audioProfiles.firstOrNull {
-            audioMime == AudioSpec.MIME_TYPE_UNSPECIFIED ||
+            audioMime == MIME_TYPE_UNSPECIFIED ||
                 (it.mediaType == audioMime && it.profile == audioCodecProfile)
+        }
+    }
+
+    /**
+     * Maps a given [OutputFormat] to its default audio MIME type.
+     *
+     * @param outputFormat The video recording output format.
+     * @return The default audio MIME type string associated with the output format.
+     */
+    public fun outputFormatToAudioMime(@OutputFormat outputFormat: Int): String {
+        return when (outputFormat) {
+            OUTPUT_FORMAT_WEBM -> AUDIO_ENCODER_MIME_WEBM_DEFAULT
+            else -> AUDIO_ENCODER_MIME_MPEG4_DEFAULT
         }
     }
 
@@ -84,101 +103,154 @@ public object AudioConfigUtil {
         }
 
     /**
-     * Resolves the audio mime information into a [AudioMimeInfo].
-     *
-     * @param mediaSpec the media spec to resolve the mime info.
-     * @param encoderProfiles the encoder profiles to resolve the mime info. It can be null if there
-     *   is no relevant encoder profiles.
-     * @return the audio MimeInfo.
-     */
-    @JvmStatic
-    public fun resolveAudioMimeInfo(
-        mediaSpec: MediaSpec,
-        encoderProfiles: VideoValidatedEncoderProfilesProxy?,
-    ): AudioMimeInfo {
-        val mediaSpecAudioMime = MediaSpec.outputFormatToAudioMime(mediaSpec.outputFormat)
-        val mediaSpecAudioProfile = MediaSpec.outputFormatToAudioProfile(mediaSpec.outputFormat)
-        var resolvedAudioMime = mediaSpecAudioMime
-        var resolvedAudioProfile = mediaSpecAudioProfile
-        var compatibleAudioProfile: AudioProfileProxy? = null
-        encoderProfiles?.defaultAudioProfile?.let { audioProfile ->
-            val encoderProfileAudioMime = audioProfile.mediaType
-            val encoderProfileAudioProfile = audioProfile.profile
-            if (encoderProfileAudioMime == AudioProfileProxy.MEDIA_TYPE_NONE) {
-                Logger.d(
-                    TAG,
-                    "EncoderProfiles contains undefined AUDIO mime type so cannot be " +
-                        "used. May rely on fallback defaults to derive settings [chosen mime " +
-                        "type: $resolvedAudioMime(profile: $resolvedAudioProfile)]",
-                )
-            } else if (mediaSpec.outputFormat == MediaSpec.OUTPUT_FORMAT_UNSPECIFIED) {
-                compatibleAudioProfile = audioProfile
-                resolvedAudioMime = encoderProfileAudioMime
-                resolvedAudioProfile = encoderProfileAudioProfile
-                Logger.d(
-                    TAG,
-                    "MediaSpec contains OUTPUT_FORMAT_UNSPECIFIED. Using EncoderProfiles " +
-                        "to derive AUDIO settings [mime type: $resolvedAudioMime(profile: " +
-                        "$resolvedAudioProfile)]",
-                )
-            } else if (
-                mediaSpecAudioMime == encoderProfileAudioMime &&
-                    mediaSpecAudioProfile == encoderProfileAudioProfile
-            ) {
-                compatibleAudioProfile = audioProfile
-                resolvedAudioMime = encoderProfileAudioMime
-                Logger.d(
-                    TAG,
-                    "MediaSpec audio mime/profile matches EncoderProfiles. " +
-                        "Using EncoderProfiles to derive AUDIO settings [mime type: " +
-                        "$resolvedAudioMime(profile: $resolvedAudioProfile)]",
-                )
-            } else {
-                Logger.d(
-                    TAG,
-                    "MediaSpec audio mime or profile does not match EncoderProfiles, so " +
-                        "EncoderProfiles settings cannot be used. May rely on fallback defaults" +
-                        " to derive AUDIO settings [EncoderProfiles mime type: " +
-                        "$encoderProfileAudioMime(profile: $encoderProfileAudioProfile), " +
-                        "chosen mime type: $resolvedAudioMime(profile: $resolvedAudioProfile)]",
-                )
-            }
-        }
-        return AudioMimeInfo(
-            mimeType = resolvedAudioMime,
-            profile = resolvedAudioProfile,
-            compatibleAudioProfile = compatibleAudioProfile,
-        )
-    }
-
-    /**
      * Resolves the audio source settings into an [AudioSettings].
      *
-     * @param audioMimeInfo the audio mime info.
      * @param audioSpec the audio spec.
+     * @param compatibleAudioProfile the compatible audio profile.
      * @param captureToEncodeRatio the capture to encode sample rate ratio.
      * @return an AudioSettings.
      */
     @JvmStatic
     public fun resolveAudioSettings(
-        audioMimeInfo: AudioMimeInfo,
         audioSpec: AudioSpec,
-        captureToEncodeRatio: Rational?,
+        compatibleAudioProfile: AudioProfileProxy? = null,
+        captureToEncodeRatio: Rational? = null,
     ): AudioSettings {
-        val settingsSupplier =
-            if (audioMimeInfo.compatibleAudioProfile != null) {
-                AudioSettingsAudioProfileResolver(
+        return if (compatibleAudioProfile != null) {
+                resolveAudioSettings(
                     audioSpec = audioSpec,
-                    audioProfile = audioMimeInfo.compatibleAudioProfile,
+                    baseChannelCount = compatibleAudioProfile.channels,
+                    baseSampleRate = compatibleAudioProfile.sampleRate,
+                    channelCountFallbacks =
+                        listOf(compatibleAudioProfile.channels, AUDIO_CHANNEL_COUNT_DEFAULT),
                     captureToEncodeRatio = captureToEncodeRatio,
                 )
             } else {
-                AudioSettingsDefaultResolver(
+                resolveAudioSettings(
                     audioSpec = audioSpec,
+                    baseChannelCount = AUDIO_CHANNEL_COUNT_DEFAULT,
+                    baseSampleRate = AUDIO_SAMPLE_RATE_DEFAULT,
+                    channelCountFallbacks = listOf(AUDIO_CHANNEL_COUNT_DEFAULT),
                     captureToEncodeRatio = captureToEncodeRatio,
                 )
             }
-        return settingsSupplier.get()
+            .also {
+                Logger.d(
+                    TAG,
+                    "Resolved AUDIO settings: $it " +
+                        "[audioSpec: $audioSpec, compatibleAudioProfile: $compatibleAudioProfile, " +
+                        "captureToEncodeRatio: $captureToEncodeRatio]",
+                )
+            }
+    }
+
+    /**
+     * Resolves the audio source settings with a priority order.
+     *
+     * ##### Direct Resolution
+     * * Audio Source: Resolved directly from [audioSpec] or defaults to [AUDIO_SOURCE_DEFAULT].
+     * * Source Format: Resolved directly from [audioSpec] or defaults to
+     *   [AUDIO_SOURCE_FORMAT_DEFAULT].
+     *
+     * ##### Priority-Based Resolution
+     * For hardware compatibility, Channel Count and Sample Rate are resolved using a prioritized
+     * fallback mechanism:
+     * 1. **Channel Count (Priority 1)**: Determined by [audioSpec]. If unspecified, uses
+     *    [baseChannelCount]. If a valid sample rate cannot be found for this count, the resolver
+     *    iterates through [channelCountFallbacks].
+     * 2. **Sample Rate (Priority 2)**: Determined by [audioSpec] or [baseSampleRate]. The final
+     *    rate is validated against the [AudioSource] and the already-resolved channel count to
+     *    ensure a supported combination.
+     *
+     * @param audioSpec The user-provided audio requirements.
+     * @param baseChannelCount The initial channel count to use if unspecified in [audioSpec].
+     * @param baseSampleRate The initial sample rate to use if unspecified in [audioSpec].
+     * @param channelCountFallbacks A list of fallback channel counts to attempt if the primary
+     *   combination is unsupported by the hardware.
+     * @param captureToEncodeRatio The ratio used to calculate capture vs. encode sample rates.
+     * @return A fully resolved [AudioSettings] object.
+     */
+    private fun resolveAudioSettings(
+        audioSpec: AudioSpec,
+        baseChannelCount: Int,
+        baseSampleRate: Int,
+        channelCountFallbacks: List<Int>,
+        captureToEncodeRatio: Rational?,
+    ): AudioSettings {
+        // Resolve audio source
+        val resolvedAudioSource = resolveAudioSource(audioSpec)
+
+        // Resolve source format
+        val resolvedSourceFormat = resolveAudioSourceFormat(audioSpec)
+
+        // Resolve channel count and sample rate
+        val targetChannelCount =
+            if (audioSpec.channelCount != AudioSpec.CHANNEL_COUNT_UNSPECIFIED) {
+                audioSpec.channelCount
+            } else {
+                baseChannelCount
+            }
+
+        val targetSampleRate =
+            if (audioSpec.sampleRate != AudioSpec.SAMPLE_RATE_UNSPECIFIED) {
+                audioSpec.sampleRate
+            } else {
+                baseSampleRate
+            }
+
+        // List of channel counts to try
+        val channelCountsToTry = mutableListOf<Int>()
+        channelCountsToTry.add(targetChannelCount)
+        for (fallback in channelCountFallbacks) {
+            if (!channelCountsToTry.contains(fallback)) {
+                channelCountsToTry.add(fallback)
+            }
+        }
+
+        var resolvedChannelCount = -1
+        var resolvedSampleRates: CaptureEncodeRates? = null
+        for (channelCount in channelCountsToTry) {
+            resolvedSampleRates =
+                resolveSampleRates(
+                    targetEncodeSampleRate = targetSampleRate,
+                    channelCount = channelCount,
+                    sourceFormat = resolvedSourceFormat,
+                    captureToEncodeRatio = captureToEncodeRatio,
+                )
+            if (resolvedSampleRates != null) {
+                resolvedChannelCount = channelCount
+                break
+            }
+        }
+
+        if (resolvedSampleRates == null) {
+            // No supported sample rate found. The default sample rate should work on most devices.
+            // May consider throw an exception or have other way to notify users that the specified
+            // sample rate can not be satisfied.
+            Logger.w(
+                TAG,
+                "No sample rate found or supported by audio source. Falling" +
+                    " back to default channel count $AUDIO_CHANNEL_COUNT_DEFAULT and" +
+                    " sample rate of $AUDIO_SAMPLE_RATE_DEFAULT Hz",
+            )
+            resolvedChannelCount = AUDIO_CHANNEL_COUNT_DEFAULT
+            val captureRate = AUDIO_SAMPLE_RATE_DEFAULT
+            val encodeRate =
+                if (captureToEncodeRatio == null) {
+                    captureRate
+                } else {
+                    toEncodeRate(captureRate, captureToEncodeRatio)
+                }
+            resolvedSampleRates = CaptureEncodeRates(captureRate, encodeRate)
+        }
+
+        return AudioSettings.builder()
+            .setAudioSource(resolvedAudioSource)
+            .setAudioFormat(resolvedSourceFormat)
+            .setChannelCount(resolvedChannelCount)
+            .setCaptureSampleRate(resolvedSampleRates.captureRate)
+            .setEncodeSampleRate(resolvedSampleRates.encodeRate)
+            .build()
     }
 
     /**
@@ -247,7 +319,7 @@ public object AudioConfigUtil {
         channelCount: Int,
         sourceFormat: Int,
         initialTargetSampleRate: Int,
-    ): Int {
+    ): Int? {
         var selectedSampleRate = initialTargetSampleRate
         // Sample rates sorted by proximity to initial target.
         var sortedCommonSampleRates: List<Int>? = null
@@ -295,15 +367,7 @@ public object AudioConfigUtil {
             }
         } while (true)
 
-        // No supported sample rate found. The default sample rate should work on most devices. May
-        // consider throw an exception or have other way to notify users that the specified
-        // sample rate can not be satisfied.
-        Logger.d(
-            TAG,
-            "No sample rate found or supported by audio source. Falling" +
-                " back to default sample rate of $AUDIO_SAMPLE_RATE_DEFAULT Hz",
-        )
-        return AUDIO_SAMPLE_RATE_DEFAULT
+        return null
     }
 
     public fun scaleBitrate(
@@ -335,7 +399,7 @@ public object AudioConfigUtil {
         channelCount: Int,
         sourceFormat: Int,
         captureToEncodeRatio: Rational?,
-    ): CaptureEncodeRates {
+    ): CaptureEncodeRates? {
         val resolvedCaptureSampleRate: Int
         val resolvedEncodeSampleRate: Int
         if (captureToEncodeRatio == null) {
@@ -344,7 +408,7 @@ public object AudioConfigUtil {
                     channelCount,
                     sourceFormat,
                     targetEncodeSampleRate,
-                )
+                ) ?: return null
             resolvedEncodeSampleRate = resolvedCaptureSampleRate
         } else {
             val scaledInitialTargetEncodeSampleRate =
@@ -357,7 +421,7 @@ public object AudioConfigUtil {
                     channelCount,
                     sourceFormat,
                     scaledInitialTargetEncodeSampleRate,
-                )
+                ) ?: return null
             resolvedEncodeSampleRate =
                 toEncodeRate(
                     captureRate = resolvedCaptureSampleRate,

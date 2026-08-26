@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime.snapshots
 
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.SnapshotFlowManager
 import androidx.compose.runtime.internal.AtomicBoolean
 import androidx.compose.runtime.mutableIntStateOf
@@ -50,14 +51,15 @@ class SnapshotFlowTestsJvm {
      * the [SnapshotFlowManager] backing the [snapshotFlow] are determined by
      * [snapshotFlowManagerKind].
      */
+    @OptIn(ExperimentalComposeRuntimeApi::class)
     private fun snapshotFlowManagerRaceTestsImpl(snapshotFlowManagerKind: SnapshotFlowManagerKind) =
         runBlocking {
             (0 until 100).forEach { _ ->
                 val numStateObjects = 10
                 val stateObjects = List(numStateObjects) { mutableIntStateOf(1) }
 
-                var firstValueReceived = AtomicBoolean(false)
-                var lastValueReceived = AtomicBoolean(false)
+                val firstValueReceived = AtomicBoolean(false)
+                val lastValueReceived = AtomicBoolean(false)
                 lateinit var job: Job
                 // When [SnapshotFlowManagerKind.MULTI_SUBSCRIPTION] is specified as the
                 // [snapshotFlowManagerKind] argument, [manager] is made to manage subscriptions
@@ -206,6 +208,7 @@ class SnapshotFlowTestsJvm {
 
     companion object {
         // Like `snapshotFlow`, but with a nullable `manager` parameter.
+        @OptIn(ExperimentalComposeRuntimeApi::class)
         fun <T> snapshotFlowFactory(manager: SnapshotFlowManager?, block: () -> T): Flow<T> {
             return if (manager == null) {
                 snapshotFlow(block)

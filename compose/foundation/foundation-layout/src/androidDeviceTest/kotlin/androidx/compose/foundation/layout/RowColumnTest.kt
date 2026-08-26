@@ -904,7 +904,6 @@ class RowColumnTest : LayoutTest() {
     fun testRow_withCustomVerticalAlignModifier() {
         with(density) {
             val rowHeight = 200.dp
-            val centerAt = 50.dp.roundToPx()
             val boxSize = 20.dp
             var boxOffset = 0f
             val drawLatch = CountDownLatch(1)
@@ -941,6 +940,74 @@ class RowColumnTest : LayoutTest() {
             assertEquals(expectedOffset, boxOffset)
             assertEquals(boxSize.roundToPx(), capturedSize)
             assertEquals(rowHeight.roundToPx(), capturedSpace)
+        }
+    }
+
+    @Test
+    fun testRow_withColumnAlignModifier_usesCorrectCrossAxisSize() {
+        with(density) {
+            val childWidth = 20.toDp()
+            val childHeight = 50.toDp()
+            val rowHeight = 100.toDp()
+
+            val drawLatch = CountDownLatch(1)
+            var childPosition = Offset.Zero
+
+            show {
+                Column {
+                    val columnModifier = Modifier.align(Alignment.End) // Horizontal.End
+
+                    // Row under test (Cross axis is Vertical)
+                    Row(Modifier.height(rowHeight)) {
+                        Box(
+                            modifier =
+                                columnModifier.size(childWidth, childHeight).onGloballyPositioned {
+                                    childPosition = it.positionInRoot()
+                                    drawLatch.countDown()
+                                }
+                        )
+                    }
+                }
+            }
+
+            assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+
+            val expectedY = (rowHeight.toPx() - childHeight.toPx()).roundToInt().toFloat()
+            assertEquals(Offset(0f, expectedY), childPosition)
+        }
+    }
+
+    @Test
+    fun testColumn_withRowAlignModifier_usesCorrectCrossAxisSize() {
+        with(density) {
+            val childWidth = 50.toDp()
+            val childHeight = 20.toDp()
+            val colWidth = 100.toDp()
+
+            val drawLatch = CountDownLatch(1)
+            var childPosition = Offset.Zero
+
+            show {
+                Row {
+                    val rowModifier = Modifier.align(Alignment.Bottom) // Vertical.Bottom
+
+                    // Column under test (Cross axis is Horizontal)
+                    Column(Modifier.width(colWidth)) {
+                        Box(
+                            modifier =
+                                rowModifier.size(childWidth, childHeight).onGloballyPositioned {
+                                    childPosition = it.positionInRoot()
+                                    drawLatch.countDown()
+                                }
+                        )
+                    }
+                }
+            }
+
+            assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+
+            val expectedX = (colWidth.toPx() - childWidth.toPx()).roundToInt().toFloat()
+            assertEquals(Offset(expectedX, 0f), childPosition)
         }
     }
 
@@ -3135,6 +3202,60 @@ class RowColumnTest : LayoutTest() {
                             Box(
                                 Modifier.requiredSize(size).onGloballyPositioned {
                                     assertEquals(bufferPx, it.positionInParent().x)
+                                    latch.countDown()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+        }
+
+    @Test
+    fun testRow_withSpacedByArrangement_insufficientSpace_rtl() =
+        with(density) {
+            val spacePx = 15f
+            val space = spacePx.toDp()
+            val sizePx = 20f
+            val size = sizePx.toDp()
+            val rowSizePx = 50f
+            val rowSize = rowSizePx.toDp()
+            val latch = CountDownLatch(4)
+            show {
+                DeviceConfigurationOverride(
+                    DeviceConfigurationOverride.LayoutDirection(LayoutDirection.Rtl)
+                ) {
+                    Column {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(space),
+                            modifier =
+                                Modifier.requiredSize(rowSize).onGloballyPositioned {
+                                    assertEquals(rowSizePx.roundToInt(), it.size.width)
+                                    latch.countDown()
+                                },
+                        ) {
+                            Box(
+                                Modifier.size(size).onGloballyPositioned {
+                                    assertEquals(rowSizePx - sizePx, it.positionInParent().x)
+                                    assertEquals(sizePx.roundToInt(), it.size.width)
+                                    latch.countDown()
+                                }
+                            )
+                            Box(
+                                Modifier.size(size).onGloballyPositioned {
+                                    assertEquals(0f, it.positionInParent().x)
+                                    assertEquals(
+                                        (rowSizePx - spacePx - sizePx).roundToInt(),
+                                        it.size.width,
+                                    )
+                                    latch.countDown()
+                                }
+                            )
+                            Box(
+                                Modifier.size(size).onGloballyPositioned {
+                                    assertEquals(0f, it.positionInParent().x)
+                                    assertEquals(0, it.size.width)
                                     latch.countDown()
                                 }
                             )

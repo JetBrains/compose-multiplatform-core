@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -32,11 +29,11 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.creation.compose.text.RemoteTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.wear.compose.material3.TextButtonColors
 import androidx.wear.compose.material3.TextButtonDefaults
 
@@ -70,7 +67,6 @@ import androidx.wear.compose.material3.TextButtonDefaults
  */
 @Composable
 @RemoteComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteTextButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -92,18 +88,17 @@ public fun RemoteTextButton(
         content =
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
-                LocalRemoteTypography.current.typography.labelMedium,
+                RemoteMaterialTheme.typography.labelMedium,
                 content,
             ),
     )
 }
 
 /** Contains the default values used by [RemoteTextButton]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteTextButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteTextButton]. */
     public val shape: RemoteRoundedCornerShape
-        @Composable get() = RemoteCircleShape
+        get() = RemoteCircleShape
 
     /**
      * Returns a [TextButtonColors] for a text button - by default, a transparent background with
@@ -148,16 +143,16 @@ public object RemoteTextButtonDefaults {
     public val LargeButtonSize: RemoteDp = 60.rdp
 
     /** The recommended text style for a small button. */
-    public val smallButtonTextStyle: TextStyle
-        @Composable get() = RemoteMaterialTheme.typography.typography.labelMedium
+    public val smallButtonTextStyle: RemoteTextStyle
+        @Composable get() = RemoteMaterialTheme.typography.labelMedium
 
     /** The default text style applied for buttons. */
-    public val defaultButtonTextStyle: TextStyle
-        @Composable get() = RemoteMaterialTheme.typography.typography.labelMedium
+    public val defaultButtonTextStyle: RemoteTextStyle
+        @Composable get() = RemoteMaterialTheme.typography.labelMedium
 
     /** The recommended text style for a large button. */
-    public val largeButtonTextStyle: TextStyle
-        @Composable get() = RemoteMaterialTheme.typography.typography.labelLarge
+    public val largeButtonTextStyle: RemoteTextStyle
+        @Composable get() = RemoteMaterialTheme.typography.labelLarge
 
     private val RemoteColorScheme.defaultTextButtonColors: RemoteTextButtonColors
         @Composable
@@ -184,8 +179,6 @@ public object RemoteTextButtonDefaults {
  * @param disabledContentColor the content color of this text button when not enabled.
  */
 @Immutable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("RestrictedApiAndroidX")
 public class RemoteTextButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,

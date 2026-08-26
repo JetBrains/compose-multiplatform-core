@@ -61,9 +61,9 @@ public abstract class EmittableLazyItemWithChildren : EmittableWithChildren() {
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class EmittableWithText : Emittable {
-    public var text: String = ""
+    public open var text: String = ""
     public var style: TextStyle? = null
-    public var maxLines: Int = Int.MAX_VALUE
+    public open var maxLines: Int = Int.MAX_VALUE
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,96 +16,64 @@
 
 package androidx.room3.compiler.processing.ksp
 
-import androidx.room3.compiler.processing.XAnnotated
+import androidx.room3.compiler.processing.InternalXAnnotated
 import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.XHasModifiers
+import androidx.room3.compiler.processing.XMemberContainer
 import androidx.room3.compiler.processing.XType
+import androidx.room3.compiler.processing.ksp.KspAnnotated.Companion.plus
 import androidx.room3.compiler.processing.ksp.KspAnnotated.UseSiteFilter.NO_USE_SITE_OR_FIELD
-import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
-import com.google.devtools.ksp.isPrivate
-import com.google.devtools.ksp.symbol.KSPropertyAccessor
+import androidx.room3.compiler.processing.ksp.KspAnnotated.UseSiteFilter.NO_USE_SITE_OR_PROPERTY
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
-import com.google.devtools.ksp.symbol.Modifier
 
 internal class KspFieldElement(
     env: KspProcessingEnv,
     override val declaration: KSPropertyDeclaration,
+    override val owner: KspPropertyElement,
 ) :
     KspElement(env, declaration),
     XFieldElement,
-    XHasModifiers by KspHasModifiers.create(declaration),
-    XAnnotated by KspAnnotated.create(env, declaration, NO_USE_SITE_OR_FIELD) {
-
-    override val enclosingElement: KspMemberContainer by lazy {
-        declaration.requireEnclosingMemberContainer(env)
-    }
-
-    override val closestMemberContainer: KspMemberContainer by lazy { enclosingElement }
-
-    override val name: String by lazy { declaration.simpleName.asString() }
-
-    override val type: KspType by lazy { createAsMemberOf(closestMemberContainer.type) }
+    XHasModifiers by KspHasModifiers.createFieldModifiers(declaration),
+    InternalXAnnotated by createInternalAnnotated(env, declaration) {
 
     override val jvmDescriptor: String
         get() = this.jvmDescriptor()
 
-    val syntheticAccessors: List<KspSyntheticPropertyMethodElement> by lazy {
-        listOfNotNull(getter, setter)
-    }
+    override val name: String
+        get() = owner.name
 
-    val syntheticStaticAccessors: List<KspSyntheticPropertyMethodElement> by lazy {
-        syntheticAccessors.mapNotNull { it.syntheticStaticAccessor }
-    }
+    override val fallbackLocationText: String
+        get() = owner.fallbackLocationText
 
-    override val getter: KspSyntheticPropertyMethodElement? by lazy {
-        declaration.getter?.let { createSyntheticMethod(it) }
-    }
+    override val docComment: String?
+        get() = owner.docComment
 
-    override val setter: KspSyntheticPropertyMethodElement? by lazy {
-        declaration.setter?.let { createSyntheticMethod(it) }
-    }
+    override val closestMemberContainer: XMemberContainer
+        get() = owner.closestMemberContainer
 
-    private fun createSyntheticMethod(
-        accessor: KSPropertyAccessor
-    ): KspSyntheticPropertyMethodElement? {
-        return if (
-            // jvm fields cannot have accessors but KSP generates synthetic accessors for
-            // them. We check for JVM field first before checking the getter
-            declaration.hasJvmFieldAnnotation() ||
-                declaration.isPrivate() ||
-                // No accessors are needed for const properties:
-                // https://kotlinlang.org/docs/java-to-kotlin-interop.html#static-fields
-                declaration.modifiers.contains(Modifier.CONST) ||
-                accessor.modifiers.contains(Modifier.PRIVATE)
-        ) {
-            null
-        } else {
-            KspSyntheticPropertyMethodElement.create(env = env, field = this, accessor = accessor)
-        }
-    }
+    override val enclosingElement: KspMemberContainer
+        get() = owner.enclosingElement
 
-    override fun asMemberOf(other: XType): KspType {
-        return if (closestMemberContainer.type?.isSameType(other) != false) {
-            type
-        } else {
-            return createAsMemberOf(other)
-        }
-    }
+    override val type: XType
+        get() = owner.type
 
-    private fun createAsMemberOf(container: XType?): KspType {
-        check(container is KspType?)
-        return env.wrap(
-                originatingReference = declaration.type,
-                ksType = declaration.typeAsMemberOf(container?.ksType),
-            )
-            .copyWithScope(
-                KSTypeVarianceResolverScope.PropertyType(field = this, asMemberOf = container)
-            )
+    override fun asMemberOf(other: XType): XType {
+        return owner.asMemberOf(other)
     }
 
     companion object {
-        fun create(env: KspProcessingEnv, declaration: KSPropertyDeclaration): KspFieldElement {
-            return KspFieldElement(env, declaration)
+        private fun createInternalAnnotated(
+            env: KspProcessingEnv,
+            declaration: KSPropertyDeclaration,
+        ): KspAnnotated {
+            val fieldAnnotated = KspAnnotated.create(env, declaration, NO_USE_SITE_OR_FIELD)
+            return if (env.config.includePropertyAnnotationsInFields) {
+                val propertyAnnotated =
+                    KspAnnotated.create(env, declaration, NO_USE_SITE_OR_PROPERTY)
+                propertyAnnotated + fieldAnnotated
+            } else {
+                fieldAnnotated
+            }
         }
     }
 }

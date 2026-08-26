@@ -25,16 +25,22 @@ import androidx.camera.core.Logger
 import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
-import androidx.camera.video.AudioSpec
+import androidx.camera.video.MediaConstants.MIME_TYPE_UNSPECIFIED
 import androidx.camera.video.MediaSpec
 import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_MPEG_4
 import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_UNSPECIFIED
 import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
 import androidx.camera.video.MediaSpec.OutputFormat
+import androidx.camera.video.internal.config.AudioConfigUtil.outputFormatToAudioMime
+import androidx.camera.video.internal.config.VideoConfigUtil.getDynamicRangeDefaultMime
+import androidx.camera.video.internal.config.VideoConfigUtil.outputFormatToVideoMime
+import androidx.camera.video.internal.muxer.Muxer
 import androidx.camera.video.internal.utils.CodecUtil
 
 public object MediaConfigUtil {
     private const val TAG = "MediaConfigUtil"
+
+    private const val OUTPUT_FORMAT_DEFAULT = OUTPUT_FORMAT_MPEG_4
 
     private var supportedVideoEncoderMimesOverride: List<String>? = null
     private var supportedAudioEncoderMimesOverride: List<String>? = null
@@ -56,7 +62,7 @@ public object MediaConfigUtil {
         mediaSpec: MediaSpec,
         dynamicRange: DynamicRange,
         encoderProfiles: EncoderProfilesProxy?,
-    ): MediaInfo? {
+    ): MediaInfo {
         Logger.d(
             TAG,
             "Resolving MediaInfo for MediaSpec: $mediaSpec, " +
@@ -66,6 +72,49 @@ public object MediaConfigUtil {
         val videoMime = mediaSpec.videoSpec.mimeType
         val audioMime = mediaSpec.audioSpec.mimeType
 
+        // Step 1: Trust EncoderProfiles if it fully matches requirements
+        // If all formats are UNSPECIFIED and encoderProfiles exists, it is definitely fully
+        // compatible.
+        resolveByEncoderProfiles(
+                encoderProfiles = encoderProfiles,
+                dynamicRange = dynamicRange,
+                outputFormat = outputFormat,
+                videoMime = videoMime,
+                audioMime = audioMime,
+            )
+            ?.let {
+                return it
+            }
+
+        // Step 2: Fall back to the FormatComboRegistry mapping
+        resolveByFormatCombo(
+                encoderProfiles = encoderProfiles,
+                dynamicRange = dynamicRange,
+                outputFormat = outputFormat,
+                videoMime = videoMime,
+                audioMime = audioMime,
+            )
+            ?.let {
+                return it
+            }
+
+        // Step 3: Fallback to the default
+        return resolveByDefault(
+            encoderProfiles = encoderProfiles,
+            dynamicRange = dynamicRange,
+            outputFormat = outputFormat,
+            videoMime = videoMime,
+            audioMime = audioMime,
+        )
+    }
+
+    private fun resolveByEncoderProfiles(
+        encoderProfiles: EncoderProfilesProxy?,
+        dynamicRange: DynamicRange,
+        @OutputFormat outputFormat: Int,
+        videoMime: String,
+        audioMime: String,
+    ): MediaInfo? {
         val compatibleProfiles =
             resolveCompatibleProfiles(
                     encoderProfiles = encoderProfiles,
@@ -75,19 +124,23 @@ public object MediaConfigUtil {
                     audioMime = audioMime,
                 )
                 .also { Logger.d(TAG, "Resolved CompatibleProfiles: $it") }
+                .takeIf { it.isFullyCompatible } ?: return null
 
-        // Step 1: Trust EncoderProfiles if it fully matches requirements
-        // If all formats are UNSPECIFIED and encoderProfiles exists, it is definitely fully
-        // compatible.
-        if (compatibleProfiles.isFullyCompatible) {
-            return compatibleProfiles.toMediaInfo().also {
-                Logger.d(TAG, "Resolved MediaInfo by fully CompatibleProfiles: $it")
-            }
+        return compatibleProfiles.toMediaInfo().also {
+            Logger.d(TAG, "Resolved MediaInfo by CompatibleProfiles: $it")
         }
+    }
 
-        // Step 2: Fall back to the FormatComboRegistry mapping
+    private fun resolveByFormatCombo(
+        encoderProfiles: EncoderProfilesProxy?,
+        dynamicRange: DynamicRange,
+        @OutputFormat outputFormat: Int,
+        videoMime: String,
+        audioMime: String,
+    ): MediaInfo? {
         val supportedVideoMimes = getSupportedVideoEncoderMimes()
         val supportedAudioMimes = getSupportedAudioEncoderMimes()
+
         val formatCombo =
             resolveFormatCombo(
                     dynamicRange = dynamicRange,
@@ -99,38 +152,60 @@ public object MediaConfigUtil {
                 )
                 .also { Logger.d(TAG, "Resolved FormatCombo: $it") } ?: return null
 
-        // Step 3: Find compatible profiles based on resolved formatCombo
-        val formatComboCompatibleProfiles =
+        val compatibleProfiles =
             resolveCompatibleProfiles(
-                    encoderProfiles = encoderProfiles,
-                    dynamicRange = dynamicRange,
-                    outputFormat = formatCombo.container,
-                    videoMime = formatCombo.videoMime!!,
-                    audioMime = formatCombo.audioMime ?: AudioSpec.MIME_TYPE_UNSPECIFIED,
-                )
-                .also { Logger.d(TAG, "Resolved FormatCombo CompatibleProfiles: $it") }
+                encoderProfiles = encoderProfiles,
+                dynamicRange = dynamicRange,
+                outputFormat = formatCombo.container,
+                videoMime = formatCombo.videoMime!!,
+                audioMime = formatCombo.audioMime ?: MIME_TYPE_UNSPECIFIED,
+            )
 
         return MediaInfo(
                 containerInfo =
                     ContainerInfo(
                         outputFormat = formatCombo.container,
-                        compatibleEncoderProfiles = formatComboCompatibleProfiles.encoderProfiles,
+                        compatibleEncoderProfiles = compatibleProfiles.encoderProfiles,
                     ),
                 videoMimeInfo =
                     VideoMimeInfo(
                         mimeType = formatCombo.videoMime,
-                        compatibleVideoProfile = formatComboCompatibleProfiles.videoProfile,
+                        compatibleVideoProfile = compatibleProfiles.videoProfile,
                     ),
                 audioMimeInfo =
                     formatCombo.audioMime?.let {
                         AudioMimeInfo(
                             mimeType = it,
                             profile = AudioConfigUtil.audioMimeToAudioProfile(it),
-                            compatibleAudioProfile = formatComboCompatibleProfiles.audioProfile,
+                            compatibleAudioProfile = compatibleProfiles.audioProfile,
                         )
                     },
             )
             .also { Logger.d(TAG, "Resolved MediaInfo by FormatCombo: $it") }
+    }
+
+    /**
+     * Returns whether the output video format supports orientation metadata.
+     *
+     * According to [android.media.MediaMuxer.setOrientationHint] documentation, orientation hints
+     * (composition matrices) are only supported for the MPEG-4 output format. CameraX can record
+     * the video in the camera's native orientation and simply add a metadata tag to tell the player
+     * to rotate the frames during playback.
+     *
+     * If the format does not support this metadata (e.g., WebM), the video frames must be
+     * physically rotated in the buffer before reaching the encoder to ensure the output has the
+     * correct orientation.
+     *
+     * @param outputFormat The video output format as defined in [MediaSpec].
+     * @return true if the format supports orientation tags in its header/metadata.
+     */
+    @JvmStatic
+    public fun canWriteOrientationMetadata(@OutputFormat outputFormat: Int): Boolean {
+        return when (outputFormat) {
+            OUTPUT_FORMAT_MPEG_4 -> true
+            OUTPUT_FORMAT_WEBM -> false
+            else -> false
+        }
     }
 
     private fun resolveFormatCombo(
@@ -141,23 +216,89 @@ public object MediaConfigUtil {
         supportedVideoEncoderMimes: List<String>,
         supportedAudioEncoderMimes: List<String>,
     ): FormatCombo? {
+        Logger.d(
+            TAG,
+            "resolveFormatCombo - supportedVideoEncoderMimes: $supportedVideoEncoderMimes" +
+                ", supportedAudioEncoderMimes: $supportedAudioEncoderMimes",
+        )
         val registry = DynamicRangeFormatComboRegistry.getRegistry(dynamicRange) ?: return null
 
-        return registry
-            .getCombos(outputFormat = outputFormat, videoMime = videoMime, audioMime = audioMime)
-            .filter { combo ->
-                // Remove Audio-Only combos since currently CameraX doesn't support Audio-Only
-                // recording
-                combo.videoMime != null
+        val eligibleFormatCombos =
+            registry
+                .getCombos(
+                    outputFormat = outputFormat,
+                    videoMime = videoMime,
+                    audioMime = audioMime,
+                )
+                .filter { combo ->
+                    // Remove Audio-Only combos since currently CameraX doesn't support Audio-Only
+                    // recording
+                    combo.videoMime != null
+                }
+                .also { Logger.d(TAG, "eligibleFormatCombos: $it") }
+
+        if (eligibleFormatCombos.isEmpty()) return null
+
+        // Define selection priority
+        return eligibleFormatCombos.firstOrNull { combo ->
+            // Priority 1: Both Video and Audio encoders are supported
+            supportedVideoEncoderMimes.contains(combo.videoMime) &&
+                supportedAudioEncoderMimes.contains(combo.audioMime)
+        }
+            ?: eligibleFormatCombos.firstOrNull { combo ->
+                // Priority 2: Video is supported and combo is Video-Only
+                supportedVideoEncoderMimes.contains(combo.videoMime) && combo.audioMime == null
             }
-            .firstOrNull { combo ->
-                // Note: The registry appends the 'Video-Only' variant (i.e. audioMime == null)
-                // after the mixed (Video + Audio) combos, which ensures that the mixed combo is
-                // prioritized.
-                supportedVideoEncoderMimes.contains(combo.videoMime) &&
-                    (supportedAudioEncoderMimes.contains(combo.audioMime) ||
-                        combo.audioMime == null)
-            }
+            ?: eligibleFormatCombos.firstOrNull() // Priority 3: Fallback to first available
+    }
+
+    private fun resolveByDefault(
+        encoderProfiles: EncoderProfilesProxy?,
+        dynamicRange: DynamicRange,
+        @OutputFormat outputFormat: Int,
+        videoMime: String,
+        audioMime: String,
+    ): MediaInfo {
+        val resolvedOutputFormat =
+            outputFormat.takeIf { it != OUTPUT_FORMAT_UNSPECIFIED } ?: OUTPUT_FORMAT_DEFAULT
+
+        val resolvedVideoMime =
+            videoMime.takeIf { it != MIME_TYPE_UNSPECIFIED }
+                ?: getDynamicRangeDefaultMime(dynamicRange)
+                ?: outputFormatToVideoMime(outputFormat)
+
+        val resolvedAudioMime =
+            audioMime.takeIf { it != MIME_TYPE_UNSPECIFIED }
+                ?: outputFormatToAudioMime(outputFormat)
+
+        val compatibleProfiles =
+            resolveCompatibleProfiles(
+                encoderProfiles = encoderProfiles,
+                dynamicRange = dynamicRange,
+                outputFormat = resolvedOutputFormat,
+                videoMime = resolvedVideoMime,
+                audioMime = resolvedAudioMime,
+            )
+
+        return MediaInfo(
+                containerInfo =
+                    ContainerInfo(
+                        outputFormat = resolvedOutputFormat,
+                        compatibleEncoderProfiles = compatibleProfiles.encoderProfiles,
+                    ),
+                videoMimeInfo =
+                    VideoMimeInfo(
+                        mimeType = resolvedVideoMime,
+                        compatibleVideoProfile = compatibleProfiles.videoProfile,
+                    ),
+                audioMimeInfo =
+                    AudioMimeInfo(
+                        mimeType = resolvedAudioMime,
+                        profile = AudioConfigUtil.audioMimeToAudioProfile(resolvedAudioMime),
+                        compatibleAudioProfile = compatibleProfiles.audioProfile,
+                    ),
+            )
+            .also { Logger.d(TAG, "Resolved MediaInfo by Default: $it") }
     }
 
     private fun resolveCompatibleProfiles(
@@ -200,6 +341,14 @@ public object MediaConfigUtil {
         return encoderProfiles.takeIf {
             outputFormat == OUTPUT_FORMAT_UNSPECIFIED ||
                 outputFormat == mediaRecorderFormatToOutputFormat(it.recommendedFileFormat)
+        }
+    }
+
+    @JvmStatic
+    public fun outputFormatToMuxerFormat(@OutputFormat outputFormat: Int): Int {
+        return when (outputFormat) {
+            OUTPUT_FORMAT_WEBM -> Muxer.MUXER_FORMAT_WEBM
+            else -> Muxer.MUXER_FORMAT_MPEG_4
         }
     }
 

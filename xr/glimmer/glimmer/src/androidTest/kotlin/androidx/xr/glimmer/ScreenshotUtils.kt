@@ -33,22 +33,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.MSSIMMatcher
 import androidx.xr.glimmer.testutils.captureToImage
+import androidx.xr.glimmer.testutils.setContentWithDensity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 
 internal const val GOLDEN_DIRECTORY = "xr/glimmer/glimmer"
 
 internal fun ComposeContentTestRule.setGlimmerThemeContent(
+    colors: Colors = Colors(),
     addInitialFocusInterceptor: Boolean = false,
+    density: Density = this.density,
     content: @Composable () -> Unit,
 ) {
-    setContent {
-        GlimmerTheme {
-            Column(Modifier.background(GlimmerTheme.colors.surface)) {
+    setContentWithDensity(density) {
+        GlimmerTheme(colors = colors) {
+            Column(Modifier.background(GlimmerTheme.colors.background)) {
                 if (addInitialFocusInterceptor) {
                     Box(Modifier.size(1.dp).focusable())
                 }

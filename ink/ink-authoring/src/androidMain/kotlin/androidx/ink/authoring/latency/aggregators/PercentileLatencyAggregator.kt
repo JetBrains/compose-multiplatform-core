@@ -20,7 +20,7 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.latency.aggregators.internal.ConcurrentIntervalQueue
 import androidx.ink.authoring.latency.aggregators.internal.runEvery
 import java.util.concurrent.Executor
@@ -61,20 +61,20 @@ import kotlinx.coroutines.runBlocking
  * }
  * ```
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-@ExperimentalLatencyDataApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkLatencyDataApi
 public class PercentileLatencyAggregator
 private constructor(private val implementationHelper: ImplementationHelper) : LatencyAggregator {
 
     public fun interface Callback {
         /**
-         * Callback invoked at most once per [window] in the [CoroutineScope] (or, for Java clients,
-         * the [Executor]) passed to [create].
+         * Callback invoked at most once per [ImplementationHelper.window] in the [CoroutineScope]
+         * (or, for Java clients, the [Executor]) passed to [create].
          *
-         * @param latencyPercentileNanos Nanosecond latency durations for each of the [percentiles],
-         *   computed over the last aggregation window. Do not hold a reference to this [List] after
-         *   returning from the callback; it will be recycled (overwritten in place) immediately for
-         *   use in a future callback.
+         * @param latencyPercentileNanos Nanosecond latency durations for each of the
+         *   [ImplementationHelper.percentilesToReport], computed over the last aggregation window.
+         *   Do not hold a reference to this [List] after returning from the callback; it will be
+         *   recycled (overwritten in place) immediately for use in a future callback.
          * @param sampleCount Count of samples in this window. Will always be positive; if there are
          *   no samples, the callback does not get called.
          */
@@ -85,11 +85,14 @@ private constructor(private val implementationHelper: ImplementationHelper) : La
     }
 
     @UiThread
-    public override fun aggregate(startNanos: Long, endNanos: Long): Unit =
+    public override fun aggregate(startNanos: Long, endNanos: Long) {
         implementationHelper.aggregate(startNanos, endNanos)
+    }
 
     @UiThread
-    public override fun reportSynchronously(): Unit = implementationHelper.reportSynchronously()
+    public override fun reportSynchronously() {
+        implementationHelper.reportSynchronously()
+    }
 
     public override fun job(): Job = implementationHelper.job
 
@@ -100,10 +103,11 @@ private constructor(private val implementationHelper: ImplementationHelper) : La
     internal fun numLatePercentileListAllocations() =
         implementationHelper.numLatePercentileListAllocations
 
+    @ExperimentalInkLatencyDataApi
     public companion object {
         /**
          * Returns a new [PercentileLatencyAggregator]. For use by Kotlin clients. [callback] will
-         * be called in the given [scope], using its default [CoroutineContext].
+         * be called in the given [scope], using its default [kotlin.coroutines.CoroutineContext].
          *
          * @param window The length of the consecutive time windows in which to compute and report
          *   percentiles.
@@ -118,6 +122,8 @@ private constructor(private val implementationHelper: ImplementationHelper) : La
          * @param callback The [Callback] with which to report latency percentiles.
          */
         @JvmStatic
+        @JvmName("createFromDuration")
+        @Suppress("ExecutorRegistration") // Takes a CouroutineScope instead
         public fun create(
             window: Duration,
             percentiles: List<Float>,

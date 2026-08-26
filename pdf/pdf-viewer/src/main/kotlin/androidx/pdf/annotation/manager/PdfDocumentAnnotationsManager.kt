@@ -17,10 +17,11 @@
 package androidx.pdf.annotation.manager
 
 import androidx.pdf.EditsDraft
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.annotation.AnnotationHandleIdGenerator.decomposeAnnotationId
-import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.PdfAnnotation
 import androidx.pdf.annotation.draftstate.AnnotationEditsDraftState
-import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.operations.AnnotationOperationsTracker
 import androidx.pdf.annotation.operations.KeyedAnnotationOperation
 import androidx.pdf.annotation.registry.AnnotationHandleRegistry
@@ -55,10 +56,35 @@ internal class PdfDocumentAnnotationsManager(
         return reconciledAnnotations + draftAnnotations
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getAnnotationModifications(): EditsDraft {
         val draftModificationsSnapshot = draftState.getModificationsSnapshot()
         val persistedModificationsSnapshot = operationsTracker.getModificationsSnapshot()
-        return persistedModificationsSnapshot + draftModificationsSnapshot
+        return (persistedModificationsSnapshot + draftModificationsSnapshot).sortedByPage()
+    }
+
+    override suspend fun clearAppliedEdits(appliedCount: Int) {
+        val (persisted, drafts) =
+            operationsTracker.getSnapshot().partition {
+                handleRegistry.getSourceId(it.keyedAnnotation.key) != null
+            }
+
+        // Clear the successfully processed operations from the session state.
+        (persisted + drafts)
+            .sortedBy { it.keyedAnnotation.annotation.pageNum }
+            .take(appliedCount)
+            .forEach { operation ->
+                val handleId = operation.keyedAnnotation.key
+                val pageNum = operation.keyedAnnotation.annotation.pageNum
+
+                if (draftState.getDraftAnnotation(pageNum, handleId) != null) {
+                    draftState.removeAnnotation(pageNum, handleId)
+                }
+
+                operationsTracker.removeEntry(handleId)
+            }
+
+        annotationsRepository.clear()
     }
 
     override fun addAnnotation(annotation: PdfAnnotation): String {

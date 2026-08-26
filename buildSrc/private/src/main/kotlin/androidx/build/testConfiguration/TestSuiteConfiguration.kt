@@ -55,6 +55,7 @@ private fun Project.createTestConfigurationGenerationTask(
     artifacts: Artifacts,
     minSdk: Int,
     testRunner: Provider<String>,
+    useOrchestrator: Provider<Boolean>,
     instrumentationRunnerArgs: Provider<Map<String, String>>,
     variant: Variant?,
     projectIsolationEnabled: Boolean,
@@ -68,6 +69,7 @@ private fun Project.createTestConfigurationGenerationTask(
         copyTestApksTask.flatMap { it.outputTestApk },
         minSdk,
         testRunner,
+        useOrchestrator,
         instrumentationRunnerArgs,
         variant,
         projectIsolationEnabled,
@@ -106,6 +108,7 @@ private fun Project.registerGenerateTestConfigurationTask(
     testApk: Provider<RegularFile>,
     minSdk: Int,
     testRunner: Provider<String>,
+    useOrchestrator: Provider<Boolean>,
     instrumentationRunnerArgs: Provider<Map<String, String>>,
     variant: Variant?,
     projectIsolationEnabled: Boolean,
@@ -121,6 +124,7 @@ private fun Project.registerGenerateTestConfigurationTask(
             task.outputXml.set(getFileInTestConfigDirectory(xmlName))
             jsonName?.let { task.outputJson.set(getFileInTestConfigDirectory(it)) }
             task.presubmit.set(project.providers.isPresubmitBuild())
+            task.useOrchestrator.set(useOrchestrator)
             task.instrumentationArgs.putAll(instrumentationRunnerArgs)
             task.minSdk.set(minSdk)
             task.hasBenchmarkPlugin.set(hasBenchmarkPlugin())
@@ -240,7 +244,9 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                         )
                         it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
                     }
-                    config.dependencies.add(project.dependencyFactory.create(targetAppProject))
+                    config.dependencies.add(
+                        project.dependencyFactory.createProjectDependency(targetAppProject.path)
+                    )
                 }
 
             addAppApkFromArtifactsToTestConfigGeneration(
@@ -292,6 +298,7 @@ fun Project.configureTestConfigGeneration(
                             androidXExtension.deviceTests.minSdkForFtlOverride
                                 ?: deviceTest.minSdk.apiLevel,
                             deviceTest.instrumentationRunner,
+                            androidXExtension.deviceTests.useOrchestrator,
                             deviceTest.instrumentationRunnerArguments,
                             variant,
                             projectIsolationEnabled,
@@ -305,6 +312,7 @@ fun Project.configureTestConfigGeneration(
                         variant.artifacts,
                         variant.minSdk.apiLevel,
                         provider { testExtension.defaultConfig.testInstrumentationRunner!! },
+                        androidXExtension.deviceTests.useOrchestrator,
                         provider { testExtension.defaultConfig.testInstrumentationRunnerArguments },
                         variant,
                         projectIsolationEnabled,

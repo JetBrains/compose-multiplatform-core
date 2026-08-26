@@ -61,17 +61,29 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.FullScreenProgressIndicatorSample
  *
+ *   ![FullScreenProgressIndicatorSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_FullScreenProgressIndicatorSample_CompositeImage.png)
+ *
  * Example of progress showing overflow value (more than 1) by [CircularProgressIndicator]:
  *
  * @sample androidx.wear.compose.material3.samples.OverflowProgressIndicatorSample
+ *
+ *   ![OverflowProgressIndicatorSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_OverflowProgressIndicatorSample_CompositeImage.png)
  *
  * Example of progress indicator wrapping media control by [CircularProgressIndicator]:
  *
  * @sample androidx.wear.compose.material3.samples.MediaButtonProgressIndicatorSample
  *
+ *   ![MediaButtonProgressIndicatorSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_MediaButtonProgressIndicatorSample_CompositeImage.png)
+ *
  * Example of a [CircularProgressIndicator] with small progress values:
  *
  * @sample androidx.wear.compose.material3.samples.SmallValuesProgressIndicatorSample
+ *
+ *   ![SmallValuesProgressIndicatorSample Composite
+ *   Image](https://developer.android.com/wear/images/design/WearComposeM3_SmallValuesProgressIndicatorSample_CompositeImage.png)
  *
  * Progress indicators express the proportion of completion of an ongoing task.
  *
@@ -146,6 +158,11 @@ public fun CircularProgressIndicator(
  * Example of indeterminate circular progress indicator:
  *
  * @sample androidx.wear.compose.material3.samples.IndeterminateProgressIndicatorSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_IndeterminateProgressIndicatorSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param modifier Modifier to be applied to the CircularProgressIndicator.
  * @param colors [ProgressIndicatorColors] that will be used to resolve the indicator and track
  *   color for this progress indicator.
@@ -222,6 +239,11 @@ public fun CircularProgressIndicator(
  * Example of a circular progress indicator with custom progress animation:
  *
  * @sample androidx.wear.compose.material3.samples.CircularProgressIndicatorCustomAnimationSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_CircularProgressIndicatorCustomAnimationSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
  *   represents completion.
  * @param colors [ProgressIndicatorColors] that will be used to resolve the indicator and track
@@ -317,6 +339,11 @@ public fun DrawScope.drawCircularProgressIndicator(
  * Example of a circular progress indicator with custom progress animation:
  *
  * @sample androidx.wear.compose.material3.samples.CircularProgressIndicatorCustomAnimationSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_CircularProgressIndicatorCustomAnimationSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
  *   represents completion.
  * @param colors [ProgressIndicatorColors] that will be used to resolve the indicator and track

@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.HandlerExecutor
 import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakePanelEntity
 import androidx.xr.scenecore.testing.FakeSceneRuntime
+import androidx.xr.scenecore.testing.MemoryUtils
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
+import java.lang.ref.WeakReference
 import java.util.function.Consumer
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
@@ -49,13 +55,14 @@ class MainPanelEntityTest {
     lateinit var session: Session
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         val testDispatcher = StandardTestDispatcher()
         val result = Session.create(activity, testDispatcher)
 
         assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
 
         session = (result as SessionCreateSuccess).session
+        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
         sceneRuntime = session.sceneRuntime
     }
 
@@ -85,7 +92,7 @@ class MainPanelEntityTest {
     @Test
     fun addPerceivedResolutionChangedListener_withoutDeviceTracking_throwsIllegalStateException() {
         // Disable head tracking
-        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
+        session.configure(Config.Builder().setDeviceTracking(DeviceTrackingMode.DISABLED).build())
 
         val listener = Consumer<IntSize2d> {}
         val exception =
@@ -95,7 +102,7 @@ class MainPanelEntityTest {
 
         assertThat(exception)
             .hasMessageThat()
-            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
+            .isEqualTo("Config.DeviceTrackingMode is not set to Spatial.")
     }
 
     @Test
@@ -171,7 +178,7 @@ class MainPanelEntityTest {
     }
 
     @Test
-    fun dispose_removesPerceivedResolutionChangedListener() {
+    fun disposeInternal_removesPerceivedResolutionChangedListener() {
         val listener = Consumer<IntSize2d> {}
         val executor = directExecutor()
         val mainPanelEntity = session.scene.mainPanelEntity
@@ -181,16 +188,15 @@ class MainPanelEntityTest {
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(1)
 
-        mainPanelEntity.dispose()
+        mainPanelEntity.disposeInternal()
 
         assertThat(fakeSceneRuntime.perceivedResolutionChangedMap).hasSize(0)
     }
 
     @Test
-    @OptIn(ExperimentalPanelCoordinateApi::class)
-    fun transformPixelCoordinatesToPose_callsRuntime() {
+    fun transformPixelCoordinatesToLocalPosition_callsRuntime() {
         val input = Vector2(100f, 100f)
-        val result = session.scene.mainPanelEntity.transformPixelCoordinatesToPose(input)
+        val result = session.scene.mainPanelEntity.transformPixelCoordinatesToLocalPosition(input)
 
         val sizeInPixels = (session.scene.mainPanelEntity.rtEntity as FakePanelEntity).sizeInPixels
         val u = input.x / sizeInPixels.width
@@ -199,22 +205,40 @@ class MainPanelEntityTest {
         val size = (session.scene.mainPanelEntity.rtEntity as FakePanelEntity).size
         val xInLocal3DSpace = coordinates.x * size.width / 2f
         val yInLocal3DSpace = coordinates.y * size.height / 2f
-        val expected = Pose(Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f))
+        val expected = Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f)
 
         assertThat(result).isEqualTo(expected)
     }
 
     @Test
-    @OptIn(ExperimentalPanelCoordinateApi::class)
-    fun transformNormalizedCoordinatesToPose_callsRuntime() {
+    fun transformNormalizedCoordinatesToLocalPosition_callsRuntime() {
         val input = Vector2(0.5f, 0.5f)
-        val result = session.scene.mainPanelEntity.transformNormalizedCoordinatesToPose(input)
+        val result =
+            session.scene.mainPanelEntity.transformNormalizedCoordinatesToLocalPosition(input)
 
         val size = (session.scene.mainPanelEntity.rtEntity as FakePanelEntity).size
         val xInLocal3DSpace = input.x * size.width / 2f
         val yInLocal3DSpace = input.y * size.height / 2f
-        val expected = Pose(Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f))
+        val expected = Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f)
 
         assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun garbageCollection_disposesEntity() {
+        fun createMainPanelEntity(): WeakReference<MainPanelEntity> {
+            val entity =
+                MainPanelEntity.create(
+                    session.sceneRuntime,
+                    session.scene.perceptionSpace,
+                    session.scene.entityRegistry,
+                )
+            return WeakReference(entity)
+        }
+
+        val entityRef = createMainPanelEntity()
+        assertThat(entityRef.get()).isNotNull()
+
+        MemoryUtils.assertGarbageCollected(entityRef)
     }
 }

@@ -21,9 +21,11 @@ import androidx.kruth.assertThrows
 import androidx.room3.RoomRawQuery
 import androidx.room3.executeSQL
 import androidx.room3.immediateTransaction
+import androidx.room3.integration.multiplatformtestapp.library.LibraryEntity
 import androidx.room3.useReaderConnection
 import androidx.room3.useWriterConnection
-import androidx.sqlite.step
+import androidx.room3.withWriteTransaction
+import androidx.sqlite.async.step
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -132,6 +134,9 @@ abstract class BaseQueryTest {
         dao.insertItem(3)
         assertThat(channel.receive())
             .containsExactly(SampleEntity(1), SampleEntity(2), SampleEntity(3))
+
+        dao.deleteList(listOf(1, 2, 3))
+        assertThat(channel.receive()).isEmpty()
 
         channel.cancel()
     }
@@ -443,5 +448,22 @@ abstract class BaseQueryTest {
         assertThrows<IllegalStateException> { db.dao().getSingleItemRaw(query) }
             .hasMessageThat()
             .contains("Only bind*() calls are allowed")
+    }
+
+    @Test
+    fun libraryEntityAndDao() = runTest {
+        val items = List(10) { LibraryEntity(it.toLong(), "test$it") }
+        db.withWriteTransaction { items.forEach { db.libraryDao().insert(it) } }
+        val result = db.libraryDao().getAll()
+        assertThat(result).containsExactlyElementsIn(items)
+    }
+
+    @Test
+    fun clearTables() = runTest {
+        val dao = db.dao()
+        repeat(10) { dao.insertItem(it.toLong()) }
+        assertThat(dao.getItemList().size).isEqualTo(10)
+        db.clearAllTables()
+        assertThat(dao.getItemList()).isEmpty()
     }
 }

@@ -19,7 +19,7 @@ package androidx.ink.authoring.latency.aggregators
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import kotlin.random.Random
@@ -82,8 +82,8 @@ import kotlinx.coroutines.plus
  * so the result is valid only for values of `t` that are multiples of `1/r` seconds. In particular,
  * the result is negative if `t < 1/r`, but the actual probability is 0.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-@ExperimentalLatencyDataApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkLatencyDataApi
 public class FixedProbabilityLatencyAggregator
 private constructor(
     private val sampleProbability: Float,
@@ -115,10 +115,12 @@ private constructor(
 
     public override fun job(): Job = supervisorJob
 
+    @ExperimentalInkLatencyDataApi
     public companion object {
         /**
          * Returns a new [FixedProbabilityLatencyAggregator]. For use by Kotlin clients. [callback]
-         * will be called in the given [scope], using its default [CoroutineContext].
+         * will be called in the given [scope], using its default
+         * [kotlin.coroutines.CoroutineContext].
          *
          * [callback] runs immediately when a sample is selected for reporting. See the
          * documentation on the [FixedProbabilityLatencyAggregator] class itself for cautions about

@@ -51,7 +51,7 @@ import kotlinx.coroutines.yield
  * [PagingData] for custom logic on how to present Loads, Drops, and other Paging events.
  *
  * For implementation examples, refer to [AsyncPagingDataDiffer] for RecyclerView, or
- * [LazyPagingItems] for Compose.
+ * [androidx.paging.compose.LazyPagingItems] for Compose.
  *
  * @param [mainContext] The coroutine context that core Paging operations will run on. Defaults to
  *   [Dispatchers.Main]. Main operations executed within this context include but are not limited
@@ -209,8 +209,8 @@ public abstract class PagingDataPresenter<T : Any>(
                                             pageStore.placeholdersBefore + pageStore.dataCount
 
                                 if (shouldResendHint) {
-                                    hintReceiver?.accessHint(
-                                        pageStore.accessHintForPresenterIndex(lastAccessedIndex)
+                                    hintReceiver?.processHint(
+                                        pageStore.createAccessHintForIndex(lastAccessedIndex)
                                     )
                                 } else {
                                     // lastIndex fulfilled, so reset lastAccessedIndexUnfulfilled.
@@ -272,7 +272,7 @@ public abstract class PagingDataPresenter<T : Any>(
         lastAccessedIndex = index
 
         log(VERBOSE) { "Accessing item index[$index]" }
-        hintReceiver?.accessHint(pageStore.accessHintForPresenterIndex(index))
+        hintReceiver?.processHint(pageStore.createAccessHintForIndex(index))
         return pageStore.get(index).also { inGetItem.update { false } }
     }
 
@@ -497,7 +497,7 @@ public abstract class PagingDataPresenter<T : Any>(
                 // which would prevent a ViewportHint.Access from ever getting sent since there are
                 // no items to bind from initial load. Without this hint, paging would stall on
                 // an empty list because prepend/append would be not triggered.
-                hintReceiver?.accessHint(newPageStore.initializeHint())
+                hintReceiver?.processHint(newPageStore.initializeHint())
             }
         } catch (cancellationException: CancellationException) {
             // If presentPagingDataEvent throws CancellationException, it means

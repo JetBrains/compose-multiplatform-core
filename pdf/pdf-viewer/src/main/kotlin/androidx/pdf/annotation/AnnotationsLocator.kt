@@ -18,17 +18,22 @@ package androidx.pdf.annotation
 
 import android.content.Context
 import android.graphics.Path
+import android.graphics.PointF
 import android.graphics.RectF
 import android.graphics.Region
 import android.util.SparseArray
 import android.view.MotionEvent
 import android.view.ViewConfiguration
-import androidx.pdf.annotation.AnnotationsView.PageAnnotationsData
-import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.PdfAnnotation
-import androidx.pdf.annotation.models.StampAnnotation
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.HighlightAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.PathPdfObject.PathInput
+import androidx.pdf.annotation.content.PdfAnnotation
+import androidx.pdf.annotation.content.StampAnnotation
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.hypot
 
 /**
  * Handles touch events to detect hits on existing annotations.
@@ -41,6 +46,8 @@ internal class AnnotationsLocator(
     private val pageInfoProvider: PageInfoProvider,
 ) {
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    // Track the starting point of the current gesture
+    private var startingPoint: PointF? = null
 
     /** Handles the touch event to perform hit detection. */
     internal fun findAnnotations(
@@ -48,12 +55,26 @@ internal class AnnotationsLocator(
         event: MotionEvent,
     ): List<KeyedPdfAnnotation> {
         return when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN,
-            MotionEvent.ACTION_MOVE -> {
-                val pageInfo = pageInfoProvider.getPageInfoFromViewCoordinates(event.x, event.y)
-                pageInfo?.let { findAnnotationsAtPoint(it, annotations, event) } ?: emptyList()
+            MotionEvent.ACTION_DOWN -> {
+                // Start tracking the gesture
+                startingPoint = PointF(event.x, event.y)
+                findAnnotationsAtPoint(annotations, event)
             }
-
+            MotionEvent.ACTION_MOVE -> {
+                val start = startingPoint
+                // Perform hit detection if the gesture start was missed or if moved beyond slop.
+                if (start == null || hypot(start.x - event.x, start.y - event.y) > touchSlop) {
+                    findAnnotationsAtPoint(annotations, event)
+                } else {
+                    emptyList()
+                }
+            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> {
+                // Reset the state
+                startingPoint = null
+                emptyList()
+            }
             else -> emptyList()
         }
     }
@@ -63,10 +84,12 @@ internal class AnnotationsLocator(
      * using precise path intersection.
      */
     private fun findAnnotationsAtPoint(
-        pageInfo: PageInfoProvider.PageInfo,
         annotations: SparseArray<PageAnnotationsData>,
         event: MotionEvent,
     ): List<KeyedPdfAnnotation> {
+        val pageInfo =
+            pageInfoProvider.getPageInfoFromViewCoordinates(event.x, event.y) ?: return emptyList()
+
         val touchRectView =
             RectF(
                 event.x - touchSlop,
@@ -92,6 +115,7 @@ internal class AnnotationsLocator(
     /**
      * Determines if the given touch point (as a Region and RectF) intersects with an annotation.
      */
+    @OptIn(ExperimentalPdfApi::class)
     private fun isAnnotationHit(
         annotation: PdfAnnotation,
         touchRegion: Region,
@@ -105,9 +129,12 @@ internal class AnnotationsLocator(
                         if (pdfObject is PathPdfObject) {
                             val path =
                                 Path().apply {
-                                    pdfObject.inputs.forEachIndexed { index, input ->
-                                        if (index == 0) moveTo(input.x, input.y)
-                                        else lineTo(input.x, input.y)
+                                    pdfObject.inputs.forEach { pathInput ->
+                                        if (pathInput.command == PathInput.MOVE_TO) {
+                                            moveTo(pathInput.x, pathInput.y)
+                                        } else if (pathInput.command == PathInput.LINE_TO) {
+                                            lineTo(pathInput.x, pathInput.y)
+                                        }
                                     }
                                 }
 
@@ -125,6 +152,7 @@ internal class AnnotationsLocator(
                 }
                 false
             }
+            is HighlightAnnotation -> annotation.bounds.any { RectF.intersects(it, touchRectPdf) }
             else -> false
         }
     }

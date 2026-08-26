@@ -26,6 +26,7 @@ class ConfigBuilder {
     var isMicrobenchmark: Boolean = false
     var isMacrobenchmark: Boolean = false
     var isPostsubmit: Boolean = true
+    var useOrchestrator: Boolean = false
     lateinit var minSdk: String
     val tags = mutableListOf<String>()
     lateinit var testApkName: String
@@ -90,6 +91,7 @@ class ConfigBuilder {
                 "appApkSha256" to appApk?.sha256,
                 "instrumentationArgs" to instrumentationArgsList,
                 "additionalApkKeys" to additionalApkKeys,
+                "useOrchestrator" to useOrchestrator,
             )
         return gson.toJson(values)
     }
@@ -156,6 +158,11 @@ class ConfigBuilder {
         sb.append(TEST_BLOCK_OPEN)
             .append(RUNNER_OPTION.replace("TEST_RUNNER", testRunner))
             .append(PACKAGE_OPTION.replace("APPLICATION_ID", applicationId))
+            .apply {
+                if (useOrchestrator) {
+                    sb.append(ORCHESTRATOR_OPTION)
+                }
+            }
             .apply {
                 if (isPostsubmit) {
                     // These listeners should be unified eventually (b/331974955)
@@ -364,5 +371,11 @@ private val FLAKY_TEST_OPTION =
     """
     <option name="instrumentation-arg" key="notAnnotation" value="androidx.test.filters.FlakyTest" />
 
+    """
+        .trimIndent()
+
+private val ORCHESTRATOR_OPTION =
+    """
+    <option name="orchestrator" value="true" />
     """
         .trimIndent()

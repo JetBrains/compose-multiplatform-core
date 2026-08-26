@@ -16,10 +16,16 @@
 
 package androidx.appfunctions.internal
 
+import android.app.appfunctions.AppFunctionRegistration
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.appfunctions.AppFunctionActivityState
 import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.RegisterAppFunctionRequest
 import androidx.appfunctions.metadata.AppFunctionMetadata
 
 /** Provides the backend to the [android.app.appfunctions.AppFunctionManager] API. */
@@ -56,4 +62,51 @@ public interface AppFunctionManagerApi {
         functionId: String,
         @AppFunctionManager.EnabledState newEnabledState: Int,
     )
+
+    /** Returns the [AppFunctionActivityState]s for the specified activities. */
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    public suspend fun getAppFunctionActivityStates(
+        activityIds: Set<android.app.appfunctions.AppFunctionActivityId>
+    ): List<AppFunctionActivityState>
+
+    /** Registers multiple callback-based runtime implementations of app functions. */
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    public fun registerAppFunctions(
+        requests: List<RegisterAppFunctionRequest>
+    ): AppFunctionRegistration
+
+    public companion object {
+        /**
+         * When the AppSearch indexer has finished but the AppFunction metadata adapter is still
+         * running, apps calling isAppFunctionEnabled or setAppFunctionEnabled would encounter a
+         * runtime exception with [RUNTIME_METADATA_MISSING_ERROR_MESSAGE] as error message.
+         * However, that should have been returned as IllegalArgumentException according to the
+         * public API documentation.
+         */
+        public fun applyMissingRuntimeMetadataExceptionFix(
+            functionId: String,
+            error: Exception,
+        ): Exception {
+            if (
+                error is RuntimeException &&
+                    error !is IllegalArgumentException &&
+                    error.message?.contains(RUNTIME_METADATA_MISSING_ERROR_MESSAGE) == true
+            ) {
+                Log.d(Constants.APP_FUNCTIONS_TAG, "Apply missing runtime metadata exception fix")
+                return IllegalArgumentException(
+                    "Runtime metadata for $functionId is not yet created."
+                )
+            }
+            return error
+        }
+
+        /**
+         * The RuntimeException error message return by
+         * [android.app.appfunctions.AppFunctionManager.isAppFunctionEnabled] and
+         * [android.app.appfunctions.AppFunctionManager.setAppFunctionEnabled] when the runtime
+         * metadata is not yet created.
+         */
+        private const val RUNTIME_METADATA_MISSING_ERROR_MESSAGE: String =
+            "Expected 1 GenericDocument for runtimeMetadata, found 0"
+    }
 }

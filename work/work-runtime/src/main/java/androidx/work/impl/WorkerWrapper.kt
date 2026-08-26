@@ -23,9 +23,11 @@ import androidx.work.Clock
 import androidx.work.Configuration
 import androidx.work.Data
 import androidx.work.DirectExecutor
+import androidx.work.ExecutionEventListener
 import androidx.work.ListenableWorker
 import androidx.work.ListenableWorker.Result.Failure
 import androidx.work.Logger
+import androidx.work.ScheduleEventListener
 import androidx.work.WorkInfo
 import androidx.work.WorkInfo.Companion.STOP_REASON_NOT_STOPPED
 import androidx.work.WorkerExceptionInfo
@@ -36,8 +38,12 @@ import androidx.work.impl.model.WorkGenerationalId
 import androidx.work.impl.model.WorkSpec
 import androidx.work.impl.model.WorkSpecDao
 import androidx.work.impl.model.generationalId
+import androidx.work.impl.model.getAllDependentWork
+import androidx.work.impl.model.getWorkInfos
 import androidx.work.impl.utils.WorkForegroundUpdater
 import androidx.work.impl.utils.WorkProgressUpdater
+import androidx.work.impl.utils.dispatchEvent
+import androidx.work.impl.utils.dispatchEvents
 import androidx.work.impl.utils.safeAccept
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import androidx.work.impl.utils.workForeground
@@ -51,7 +57,6 @@ import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
-import kotlin.collections.removeLast as removeLastKt
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CancellableContinuation
@@ -86,6 +91,8 @@ public class WorkerWrapper internal constructor(builder: Builder) {
     private val workerJob = Job()
 
     private var startedWork = false
+    private var unblockedDependents = mutableListOf<String>()
+    private var failedDependents = mutableListOf<String>()
 
     public val workGenerationalId: WorkGenerationalId
         get() = workSpec.generationalId()
@@ -107,43 +114,55 @@ public class WorkerWrapper internal constructor(builder: Builder) {
                     loge(TAG, throwable) { "Unexpected error in WorkerWrapper" }
                     Resolution.WorkerWrapperFailure(recoverable = false)
                 }
-            val needsReschedule =
-                workDatabase.runInTransaction(
-                    Callable {
-                        when (resolution) {
-                            is Resolution.Finished -> onWorkFinished(resolution.result)
-                            is Resolution.Failed -> onWorkFailed(Failure())
-                            is Resolution.Stopped -> resetWorkerStatus(resolution.reason)
-                            is Resolution.WorkerWrapperFailure ->
-                                if (resolution.recoverable)
-                                    resetWorkerStatus(STOP_REASON_NOT_STOPPED)
-                                else onWorkFailed(Failure())
-                        }
+            // Only need to dispatch execution finish events if we actually started work
+            val executionListener =
+                if (startedWork) configuration.getExecutionEventListener() else null
+            var needsReschedule = false
+            workDatabase.runInTransaction {
+                when (resolution) {
+                    is Resolution.Finished -> {
+                        needsReschedule = onWorkFinished(resolution.result)
+                        executionListener?.dispatchEvent(
+                            workTaskExecutor,
+                            resolution.result,
+                            getWorkInfoSnapshot(),
+                            ExecutionEventListener::onFinished,
+                        )
                     }
-                )
-            val workExecutionListener = configuration.getExecutionEventListener()
-            if (workExecutionListener != null && startedWork) {
-                val workInfoSnapshot = workSpecDao.getWorkStatusPojoForId(workSpecId)?.toWorkInfo()
-                if (workInfoSnapshot != null) {
-                    when (resolution) {
-                        is Resolution.Finished -> {
-                            workExecutionListener.onFinished(resolution.result, workInfoSnapshot)
-                        }
-                        is Resolution.Failed -> {
-                            workExecutionListener.onException(
-                                resolution.throwable,
-                                workInfoSnapshot,
-                            )
-                        }
-                        is Resolution.Stopped -> {
-                            workExecutionListener.onStopped(resolution.reason, workInfoSnapshot)
-                        }
-                        is Resolution.WorkerWrapperFailure -> {
-                            // Should theoretically not run since a WorkerWrapper exception
-                            // should occur before startWork
-                        }
+                    is Resolution.Failed -> {
+                        needsReschedule = onWorkFailed(Failure())
+                        executionListener?.dispatchEvent(
+                            workTaskExecutor,
+                            resolution.throwable,
+                            getWorkInfoSnapshot(),
+                            ExecutionEventListener::onException,
+                        )
                     }
+                    is Resolution.Stopped -> {
+                        needsReschedule = resetWorkerStatus(resolution.reason)
+                        executionListener?.dispatchEvent(
+                            workTaskExecutor,
+                            resolution.reason,
+                            getWorkInfoSnapshot(),
+                            ExecutionEventListener::onStopped,
+                        )
+                    }
+                    is Resolution.WorkerWrapperFailure ->
+                        needsReschedule =
+                            if (resolution.recoverable) resetWorkerStatus(STOP_REASON_NOT_STOPPED)
+                            else onWorkFailed(Failure())
                 }
+                val scheduleListener = configuration.getScheduleEventListener()
+                scheduleListener?.dispatchEvents(
+                    workTaskExecutor,
+                    workSpecDao.getWorkInfos(unblockedDependents),
+                    ScheduleEventListener::onUnblocked,
+                )
+                scheduleListener?.dispatchEvents(
+                    workTaskExecutor,
+                    workSpecDao.getWorkInfos(failedDependents),
+                    ScheduleEventListener::onPrerequisiteFailed,
+                )
             }
             needsReschedule
         }
@@ -338,14 +357,6 @@ public class WorkerWrapper internal constructor(builder: Builder) {
         val foregroundUpdater = params.foregroundUpdater
         val mainDispatcher = workTaskExecutor.getMainThreadExecutor().asCoroutineDispatcher()
         try {
-            val workExecutionListener = configuration.getExecutionEventListener()
-            if (workExecutionListener != null) {
-                val workInfoSnapshot = workSpecDao.getWorkStatusPojoForId(workSpecId)?.toWorkInfo()
-                if (workInfoSnapshot != null) {
-                    workExecutionListener.onStarted(workInfoSnapshot)
-                }
-            }
-            startedWork = true
             val result =
                 withContext(mainDispatcher) {
                     workForeground(
@@ -469,6 +480,14 @@ public class WorkerWrapper internal constructor(builder: Builder) {
                     workSpecDao.setState(WorkInfo.State.RUNNING, workSpecId)
                     workSpecDao.incrementWorkSpecRunAttemptCount(workSpecId)
                     workSpecDao.setStopReason(workSpecId, STOP_REASON_NOT_STOPPED)
+                    configuration
+                        .getExecutionEventListener()
+                        ?.dispatchEvent(
+                            workTaskExecutor,
+                            getWorkInfoSnapshot(),
+                            ExecutionEventListener::onStarted,
+                        )
+                    startedWork = true
                     true
                 } else false
             }
@@ -489,14 +508,16 @@ public class WorkerWrapper internal constructor(builder: Builder) {
     }
 
     private fun iterativelyFailWorkAndDependents(workSpecId: String) {
-        val idsToProcess = mutableListOf(workSpecId)
-        while (idsToProcess.isNotEmpty()) {
-            val id = idsToProcess.removeLastKt()
+        val idsToFail = mutableListOf(workSpecId)
+        idsToFail.addAll(dependencyDao.getAllDependentWork(workSpecId))
+        for (id in idsToFail) {
             // Don't fail already cancelled work.
             if (workSpecDao.getState(id) !== WorkInfo.State.CANCELLED) {
                 workSpecDao.setState(WorkInfo.State.FAILED, id)
+                if (id != workSpecId) {
+                    failedDependents.add(id)
+                }
             }
-            idsToProcess.addAll(dependencyDao.getDependentWorkIds(id))
         }
     }
 
@@ -547,13 +568,31 @@ public class WorkerWrapper internal constructor(builder: Builder) {
                 logi(TAG) { "Setting status to enqueued for $dependentWorkId" }
                 workSpecDao.setState(WorkInfo.State.ENQUEUED, dependentWorkId)
                 workSpecDao.setLastEnqueueTime(dependentWorkId, currentTimeMillis)
+                unblockedDependents.add(dependentWorkId)
             }
         }
         return false
     }
 
+    /**
+     * Retrieves a snapshot of [WorkInfo] for the current execution attempt, pinning the generation
+     * to `workGenerationalId.generation`.
+     *
+     * Specifically, if `WorkManager.updateWork` is called while the worker is actively running, the
+     * database record's generation is incremented mid-execution. Overriding the generation here
+     * guarantees that all execution lifecycle event hooks (`onStarted`, `onStopped`, `onFinished`,
+     * `onException`) receive a snapshot that accurately preserves the generation that initiated
+     * this execution attempt.
+     */
+    private fun getWorkInfoSnapshot(): WorkInfo =
+        workSpecDao
+            .getWorkStatusPojoForId(workSpecId)!!
+            .copy(generation = workGenerationalId.generation)
+            .toWorkInfo()
+
     private fun createWorkDescription(tags: List<String>) =
-        "Work [ id=$workSpecId, tags={ ${tags.joinToString(",")} } ]"
+        "Work [ id=$workSpecId, class=${workSpec.workerClassName}, " +
+            "tags={ ${tags.joinToString(",")} } ]"
 
     /** Builder class for [WorkerWrapper] */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

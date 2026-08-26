@@ -46,7 +46,8 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkHandoffApi
 import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.InProgressShapesCompletedListener
 import androidx.ink.authoring.InProgressShapesView
@@ -82,7 +83,7 @@ import java.util.concurrent.TimeUnit
  * [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer].
  *
  * @param customShapeWorkflow A [ShapeWorkflow] to be used as an alternative to the standard Ink
- *   behavior provided by [InProgressStrokesView].
+ *   behavior provided by [androidx.ink.authoring.InProgressStrokesView].
  * @param defaultShapeSpec Specification for the shape being started. If this is `null`, nothing
  *   will be drawn, but the internal rendering resources will be preserved to avoid paying the cost
  *   for reinitialization when drawing is needed again. If different [ShapeSpecT] values are needed
@@ -132,7 +133,7 @@ import java.util.concurrent.TimeUnit
  *   from producer to consumer, and even if the final consumer is on the UI thread, it may not be in
  *   the same UI thread run loop and lead to a flicker.
  */
-@ExperimentalCustomShapeWorkflowApi
+@ExperimentalInkCustomShapeWorkflowApi
 @Composable
 public fun <
     ShapeSpecT : Any,
@@ -158,7 +159,7 @@ public fun <
     )
 }
 
-@OptIn(ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkCustomShapeWorkflowApi::class, ExperimentalInkHandoffApi::class)
 @VisibleForTesting
 @Composable
 internal fun <

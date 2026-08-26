@@ -766,7 +766,7 @@ class ExerciseClientTest {
         batchingMode.add(BatchingMode.HEART_RATE_5_SECONDS)
         client.setUpdateCallback(callback)
 
-        var deferred = async { client.overrideBatchingModesForActiveExercise(batchingMode) }
+        val deferred = async { client.overrideBatchingModesForActiveExercise(batchingMode) }
         advanceMainLooperIdle()
         deferred.await()
 
@@ -1161,6 +1161,8 @@ class ExerciseClientTest {
         fun setException() {
             throwException = true
         }
+
+        override fun getInterfaceVersion(): Int = VERSION
     }
 
     enum class TestExerciseStates {

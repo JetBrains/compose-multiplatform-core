@@ -16,44 +16,64 @@
 
 package androidx.xr.compose.material3.integration.testapp
 
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.material3.integration.testapp.OrbiterTokens.NavigationBarOrbiterDefaultHeight
-import androidx.xr.compose.material3.integration.testapp.OrbiterTokens.NavigationRailOrbiterDefaultWidth
-import androidx.xr.compose.material3.integration.testapp.OrbiterTokens.NavigationSuiteOrbiterDefaultSpacing
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition as XrOrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
+import androidx.xr.compose.unit.DpVolumeOffset
 
-internal fun OrbiterPosition.getOffsetType(): OrbiterOffsetType =
+private val NavigationSuiteOrbiterDefaultSpacing = 24.dp
+
+internal fun OrbiterPosition.toHorizontalAlignment(): XrOrbiterPosition =
     when (this) {
-        OrbiterPosition.Outside -> OrbiterOffsetType.InnerEdge
-        OrbiterPosition.Overlapping -> OrbiterOffsetType.OuterEdge
-        OrbiterPosition.Inside -> OrbiterOffsetType.Overlap
+        OrbiterPosition.Outside ->
+            XrOrbiterPosition.BottomCenter(
+                EdgeAlignment.Outside,
+                offset =
+                    DpVolumeOffset(
+                        y = -NavigationSuiteOrbiterDefaultSpacing,
+                        z = OrbiterDefaults.Elevation,
+                    ),
+            )
+        OrbiterPosition.Overlapping ->
+            XrOrbiterPosition.BottomCenter(
+                EdgeAlignment.Center,
+                offset = DpVolumeOffset(y = 0.dp, z = OrbiterDefaults.Elevation),
+            )
+        OrbiterPosition.Inside ->
+            XrOrbiterPosition.BottomCenter(
+                EdgeAlignment.Inside,
+                offset =
+                    DpVolumeOffset(
+                        y = NavigationSuiteOrbiterDefaultSpacing,
+                        z = OrbiterDefaults.Elevation,
+                    ),
+            )
     }
 
-internal fun NavigationSuiteType?.calculateOffsetForPosition(position: OrbiterPosition): Dp {
-    val containerSize =
-        when (this) {
-            NavigationSuiteType.NavigationRail -> NavigationRailOrbiterDefaultWidth
-            NavigationSuiteType.NavigationBar,
-            NavigationSuiteType.ShortNavigationBarCompact,
-            NavigationSuiteType.ShortNavigationBarMedium -> NavigationBarOrbiterDefaultHeight
-            else -> NavigationRailOrbiterDefaultWidth
-        }
-    return when (position) {
-        OrbiterPosition.Outside -> NavigationSuiteOrbiterDefaultSpacing
-        OrbiterPosition.Overlapping -> {
-            containerSize / 2
-        }
-        OrbiterPosition.Inside -> {
-            containerSize + NavigationSuiteOrbiterDefaultSpacing
-        }
+internal fun OrbiterPosition.toVerticalAlignment(): XrOrbiterPosition =
+    when (this) {
+        OrbiterPosition.Outside ->
+            XrOrbiterPosition.CenterStart(
+                EdgeAlignment.Outside,
+                offset =
+                    DpVolumeOffset(
+                        x = -NavigationSuiteOrbiterDefaultSpacing,
+                        z = OrbiterDefaults.Elevation,
+                    ),
+            )
+        OrbiterPosition.Overlapping ->
+            XrOrbiterPosition.CenterStart(
+                EdgeAlignment.Center,
+                offset = DpVolumeOffset(x = 0.dp, z = OrbiterDefaults.Elevation),
+            )
+        OrbiterPosition.Inside ->
+            XrOrbiterPosition.CenterStart(
+                EdgeAlignment.Inside,
+                offset =
+                    DpVolumeOffset(
+                        x = NavigationSuiteOrbiterDefaultSpacing,
+                        z = OrbiterDefaults.Elevation,
+                    ),
+            )
     }
-}
-
-private object OrbiterTokens {
-    val NavigationBarOrbiterDefaultHeight = 80.dp
-    val NavigationRailOrbiterDefaultWidth = 96.dp
-
-    val NavigationSuiteOrbiterDefaultSpacing = 24.dp
-}

@@ -19,14 +19,10 @@ package androidx.room3.integration.multiplatformtestapp.test
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.platform.app.InstrumentationRegistry
 
 class TypeConverterTest : BaseTypeConverterTest() {
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
-
     override fun getDatabaseBuilder(): RoomDatabase.Builder<TestDatabase> {
-        return Room.inMemoryDatabaseBuilder<TestDatabase>(context = instrumentation.targetContext)
-            .setDriver(BundledSQLiteDriver())
+        return Room.inMemoryDatabaseBuilder<TestDatabase>().setDriver(BundledSQLiteDriver())
     }
 }

@@ -16,27 +16,31 @@
 
 package androidx.room3
 
+import androidx.annotation.RestrictTo
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.sqlite.SQLiteDriver
 import kotlin.coroutines.CoroutineContext
 
 /** Configuration class for a [RoomDatabase]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public actual class DatabaseConfiguration(
     /* The name of the database file or null if it is an in-memory database. */
     public actual val name: String?,
     /* Collection of available migrations. */
     public actual val migrationContainer: RoomDatabase.MigrationContainer,
     /* Database callbacks. */
-    public actual val callbacks: List<RoomDatabase.Callback>?,
+    public actual val callbacks: List<RoomDatabase.Callback>,
     /* The journal mode for this database. */
     public actual val journalMode: RoomDatabase.JournalMode,
     /* Whether Room should throw an exception for missing migrations. */
-    public actual val requireMigration: Boolean,
+    public actual val isMigrationRequired: Boolean,
     /* Whether Room will fallback to destructive migrations on downgrades only .*/
     public actual val allowDestructiveMigrationOnDowngrade: Boolean,
     internal actual val migrationNotRequiredFrom: Set<Int>?,
-    /* List of provided type converters. */
-    public actual val typeConverters: List<Any>,
+    /* List of provided column type converters. */
+    public actual val columnTypeConverters: List<Any>,
+    /* List of provided DAO return type converters. */
+    public actual val daoReturnTypeConverters: List<Any>,
     /* List of provided auto migration specs. */
     public actual val autoMigrationSpecs: List<AutoMigrationSpec>,
     /* Whether Room will delete all tables or only known tables during destructive migrations. */
@@ -45,4 +49,6 @@ public actual class DatabaseConfiguration(
     public actual val sqliteDriver: SQLiteDriver,
     /* The Coroutine context for the database. */
     public actual val queryCoroutineContext: CoroutineContext,
+    /* The connection pool configuration. */
+    public actual val connectionPoolConfiguration: ConnectionPoolConfiguration,
 )

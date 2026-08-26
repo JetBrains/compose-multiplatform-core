@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.interop
 
 import android.hardware.camera2.CameraCharacteristics
@@ -25,8 +27,18 @@ import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.impl.AdapterCameraInfo
 
-/** An interface for retrieving Camera2-related camera information. */
+/**
+ * An interface for retrieving Camera2-related camera information.
+ *
+ * @deprecated Use [Camera2Interop.getCameraId] or [Camera2Interop.getCameraCharacteristics] in
+ *   Java, or [CameraInfo.cameraId] / [CameraInfo.cameraCharacteristics] in Kotlin instead.
+ */
 @ExperimentalCamera2Interop
+@Deprecated(
+    message =
+        "Use the CameraInfo extension properties instead, e.g., 'cameraInfo.cameraId' or " +
+            "'cameraInfo.cameraCharacteristics'."
+)
 public class Camera2CameraInfo
 private constructor(
     private val cameraProperties: CameraProperties,
@@ -51,7 +63,8 @@ private constructor(
                 return it.second as T
             }
         }
-        return cameraProperties.metadata.getSafely(key)
+        @Suppress("UNCHECKED_CAST")
+        return cameraProperties.metadata.getSafely(key as CameraCharacteristics.Key<Any>) as T?
     }
 
     /**
@@ -89,7 +102,7 @@ private constructor(
          */
         @JvmStatic
         public fun from(cameraInfo: CameraInfo): Camera2CameraInfo {
-            var camera2CameraInfo = cameraInfo.unwrapAs(Camera2CameraInfo::class)
+            var camera2CameraInfo = cameraInfo.unwrapAs<Camera2CameraInfo>()
             requireNotNull(camera2CameraInfo) {
                 "Could not unwrap $cameraInfo as Camera2CameraInfo!"
             }

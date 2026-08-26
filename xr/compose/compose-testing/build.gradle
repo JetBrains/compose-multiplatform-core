@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -33,23 +32,19 @@ plugins {
 
 dependencies {
     api(project(":xr:compose:compose"))
-    api(project(":xr:runtime:runtime"))
-    api(project(":xr:runtime:runtime-testing"))
-    api(project(":xr:scenecore:scenecore"))
-    api(project(":xr:scenecore:scenecore-testing"))
+    api("androidx.xr.runtime:runtime:1.0.0-beta01")
+    api("androidx.xr.scenecore:scenecore:1.0.0-beta01")
 
-    implementation(project(":xr:scenecore:scenecore-spatial-core"))
-    implementation(libs.mockitoKotlin)
-    implementation(libs.robolectric)
-    implementation(libs.testExtTruth)
+    implementation("androidx.xr.scenecore:scenecore-spatial-core:1.0.0-beta01")
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.compose.runtime:runtime:1.7.5")
     implementation("androidx.compose.ui:ui:1.7.5")
     implementation("androidx.compose.ui:ui-unit:1.7.5")
     implementation("androidx.compose.ui:ui-util:1.7.5")
     implementation("androidx.compose.ui:ui-test-junit4:1.7.5")
-    implementation("com.google.ar:impress:0.0.11")
+    implementation("com.google.ar:impress:1.0.0-beta01")
 
+    compileOnly("com.google.errorprone:error_prone_annotations:2.30.0")
     compileOnly(libs.androidExtensionsXr)
     compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }
@@ -57,6 +52,7 @@ dependencies {
 android {
     defaultConfig {
         minSdk { version = release(24) }
+        compileSdk { version = release(36) }
     }
     namespace = "androidx.xr.compose.testing"
 }
@@ -66,4 +62,5 @@ androidx {
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Libraries to aid in unit testing Compose for XR clients."
+    samples(project(":xr:compose:compose-testing:compose-testing-samples"))
 }

@@ -30,6 +30,7 @@ import androidx.collection.IntObjectMap
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.intObjectMapOf
 import androidx.collection.mutableIntObjectMapOf
+import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.platform.AndroidComposeView
@@ -38,9 +39,9 @@ import androidx.compose.ui.platform.coreshims.ViewCompatShims
 import androidx.compose.ui.platform.coreshims.ViewStructureCompat
 import androidx.compose.ui.platform.getTextLayoutResult
 import androidx.compose.ui.platform.toLegacyClassName
+import androidx.compose.ui.semantics.AdjustedSemanticsNode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
-import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
@@ -94,15 +95,31 @@ internal class AndroidContentCaptureManager(
 
     private var currentSemanticsNodesInvalidated = true
     private val boundsUpdateChannel = Channel<Unit>(1)
-    internal val handler = Handler(Looper.getMainLooper())
+
+    // TODO remove with b/486998514
+    private val legacyMainHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * Handler returns non-null ONLY when [view] is attached.
+     *
+     * Callers should not cache this value. Null means that we are not attached and don't need to
+     * process.
+     */
+    @OptIn(ExperimentalComposeUiApi::class)
+    internal val handler: Handler?
+        get() =
+            if (AndroidComposeUiFlags.isViewBasedSemanticsHandlerEnabled) {
+                view.handler
+            } else {
+                legacyMainHandler
+            }
 
     /**
      * Up to date semantics nodes in pruned semantics tree. It always reflects the current semantics
      * tree. They key is the virtual view id(the root node has a key of
      * AccessibilityNodeProviderCompat.HOST_VIEW_ID and other node has a key of its id).
      */
-    internal var currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds> =
-        intObjectMapOf()
+    internal var currentSemanticsNodes: IntObjectMap<AdjustedSemanticsNode> = intObjectMapOf()
         get() {
             if (currentSemanticsNodesInvalidated) { // first instance of retrieving all nodes
                 currentSemanticsNodesInvalidated = false
@@ -130,6 +147,10 @@ internal class AndroidContentCaptureManager(
 
     private val contentCaptureChangeChecker = Runnable {
         if (!isEnabled) return@Runnable
+        if (!view.isAttachedToWindow) {
+            checkingForSemanticsChanges = false
+            return@Runnable
+        }
 
         trace("ContentCapture:changeChecker") {
             // TODO(mnuzen): there might be a case where `view.measureAndLayout()` is called twice
@@ -158,7 +179,9 @@ internal class AndroidContentCaptureManager(
     override fun onViewAttachedToWindow(v: View) {}
 
     override fun onViewDetachedFromWindow(v: View) {
-        handler.removeCallbacks(contentCaptureChangeChecker)
+        // TODO: b/498432814 - Handler shouldn't be null on detach; investigate re-entrant
+        //  detachment to see if handler? can be removed.
+        handler?.removeCallbacks(contentCaptureChangeChecker)
         contentCaptureSession = null
     }
 
@@ -188,9 +211,10 @@ internal class AndroidContentCaptureManager(
             if (isEnabled) {
                 notifyContentCaptureChanges()
             }
-            if (!checkingForSemanticsChanges) {
+            val localHandler = handler
+            if (!checkingForSemanticsChanges && localHandler != null) {
                 checkingForSemanticsChanges = true
-                handler.post(contentCaptureChangeChecker)
+                localHandler.post(contentCaptureChangeChecker)
             }
 
             delay(SendRecurringContentCaptureEventsIntervalMillis)
@@ -203,10 +227,11 @@ internal class AndroidContentCaptureManager(
         // later, we can refresh currentSemanticsNodes if currentSemanticsNodes is stale.
         currentSemanticsNodesInvalidated = true
 
-        if (isEnabled && !checkingForSemanticsChanges) {
+        val localHandler = handler
+        if (isEnabled && !checkingForSemanticsChanges && localHandler != null) {
             checkingForSemanticsChanges = true
 
-            handler.post(contentCaptureChangeChecker)
+            localHandler.post(contentCaptureChangeChecker)
         }
     }
 
@@ -255,7 +280,7 @@ internal class AndroidContentCaptureManager(
 
     // Analogous to `sendSemanticsPropertyChangeEvents`
     private fun checkForContentCapturePropertyChanges(
-        newSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>
+        newSemanticsNodes: IntObjectMap<AdjustedSemanticsNode>
     ) {
         newSemanticsNodes.forEachKey { id ->
             // We do doing this search because the new configuration is set as a whole, so we

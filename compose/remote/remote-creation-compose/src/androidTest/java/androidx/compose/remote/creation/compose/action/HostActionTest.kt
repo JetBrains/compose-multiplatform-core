@@ -16,7 +16,6 @@
 
 package androidx.compose.remote.creation.compose.action
 
-import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
@@ -30,13 +29,13 @@ import androidx.compose.remote.creation.compose.state.RemoteFloat.Companion.crea
 import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteState
 import androidx.compose.remote.creation.compose.state.RemoteString
-import androidx.compose.remote.creation.compose.state.rememberRemoteInt
-import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteString
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.ri
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteInteractionTestRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.uiautomator.uiAutomator
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -45,12 +44,8 @@ import org.junit.Test
 class HostActionTest {
 
     @get:Rule
-    val remoteComposeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
-            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = TargetPlayer.View,
-        )
-    }
+    val remoteComposeTestRule: RemoteInteractionTestRule =
+        RemoteInteractionTestRule(context = ApplicationProvider.getApplicationContext())
 
     @Test
     fun hostActionWithConstantName() {
@@ -62,7 +57,7 @@ class HostActionTest {
     @Test
     fun hostActionWithVariableName() {
         val value = 1.ri
-        val name = "a".rs + createNamedRemoteFloat("abc", 3f).toRemoteString(0, 0)
+        val name = "a".rs + createNamedRemoteFloat("abc", 3f).toRemoteString()
 
         runActionTest(value = value, expected = 1)
     }
@@ -95,20 +90,20 @@ class HostActionTest {
 
     private fun runActionTest(value: RemoteState<*>?, expected: Any?) {
 
-        remoteComposeTestRule.runTest {
+        remoteComposeTestRule.setContent {
             val valueString =
                 when (value) {
-                    is RemoteInt -> value.toRemoteString(2)
-                    is RemoteFloat -> value.toRemoteString(2, 2)
+                    is RemoteInt -> value.toRemoteString()
+                    is RemoteFloat -> value.toRemoteString()
                     is RemoteString -> value
                     else -> "null".rs
                 }
 
             val mutableValue =
                 when (value) {
-                    is RemoteInt -> rememberRemoteInt { value }
+                    is RemoteInt -> rememberMutableRemoteInt(value.constantValue)
                     is RemoteFloat -> value
-                    is RemoteString -> rememberRemoteString { value.constantValue!! }
+                    is RemoteString -> rememberMutableRemoteString(value.constantValue)
                     else -> "null".rs
                 }
 
@@ -129,7 +124,7 @@ class HostActionTest {
                 horizontalAlignment = RemoteAlignment.CenterHorizontally,
                 verticalArrangement = RemoteArrangement.Center,
             ) {
-                RemoteText("Hello World")
+                RemoteText("Hello World".rs)
                 RemoteText("Value: ".rs + valueString)
             }
         }

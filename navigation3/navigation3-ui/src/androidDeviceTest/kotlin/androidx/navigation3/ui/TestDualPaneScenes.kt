@@ -26,14 +26,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.metadata
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
-import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import kotlin.collections.plus
 
 /** Regular un-animated Dual pane scene */
-class TestTwoPaneScene<T : Any>(
+data class TestTwoPaneScene<T : Any>(
     override val key: Any,
     override val entries: List<NavEntry<T>>,
     override val previousEntries: List<NavEntry<T>>,
@@ -78,7 +78,7 @@ class TestAnimatedTwoPaneSceneStrategy<T : Any>(
     }
 }
 
-class TestAnimatedTwoPaneScene<T : Any>(
+data class TestAnimatedTwoPaneScene<T : Any>(
     val durationMillis: Int,
     val overrideEntryAnimations: Boolean,
     override val key: Any,
@@ -101,9 +101,10 @@ class TestAnimatedTwoPaneScene<T : Any>(
                 slideInHorizontally(tween(durationMillis)) { it / 2 } togetherWith
                     slideOutHorizontally { -it / 2 }
             // build scene metadata map
-            val newMetadata =
-                NavDisplay.transitionSpec({ sceneTransition }) +
-                    popTransitionSpec({ sceneTransition })
+            val newMetadata = metadata {
+                put(NavDisplay.TransitionKey) { sceneTransition }
+                put(NavDisplay.PopTransitionKey) { sceneTransition }
+            }
             // override NavEntry transitions if necessary
             return if (overrideEntryAnimations) {
                 entries.last().metadata + newMetadata

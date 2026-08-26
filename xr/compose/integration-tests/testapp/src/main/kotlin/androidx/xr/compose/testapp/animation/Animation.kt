@@ -41,8 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
@@ -60,6 +61,7 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple80
+import androidx.xr.compose.unit.DpVolumeOffset
 
 class Animation : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,7 +116,7 @@ class Animation : ComponentActivity() {
                             .offset(z = zOffset * 2)
                             .alpha(animatedAlpha.value)
                 ) {
-                    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+                    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
                     PanelContent(
                         "Faded in content",
                         "Show side Panel",
@@ -137,7 +139,7 @@ class Animation : ComponentActivity() {
                                 .offset(z = zOffset)
                                 .scale(sidePanelAnimatedScale.value)
                     ) {
-                        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+                        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
                         PanelContent(
                             "Grown content",
                             "Hide side panel",
@@ -172,6 +174,7 @@ class Animation : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     @SubspaceComposable
@@ -181,7 +184,7 @@ class Animation : ComponentActivity() {
         showButton: Boolean,
         buttonOnClick: () -> Unit,
     ) {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
         Box(modifier = Modifier.background(Purple80).fillMaxSize()) {
             Column {
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -193,7 +196,13 @@ class Animation : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Orbiter(position = ContentEdge.Top, offset = 5.dp) {
+                        Orbiter(
+                            position =
+                                OrbiterPosition.TopCenter(
+                                    EdgeAlignment.Outside,
+                                    offset = DpVolumeOffset(y = 5.dp),
+                                )
+                        ) {
                             Text(
                                 text = text,
                                 fontSize = 20.sp,

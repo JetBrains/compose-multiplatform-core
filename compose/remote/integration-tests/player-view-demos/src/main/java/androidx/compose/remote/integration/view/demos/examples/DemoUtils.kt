@@ -16,10 +16,14 @@
 
 package androidx.compose.remote.integration.view.demos.examples
 
+import androidx.compose.remote.core.RcPlatformServices
+import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.Rc.TextFromFloat.PAD_PRE_SPACE
 import androidx.compose.remote.creation.Rc.TextFromFloat.PAD_PRE_ZERO
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
+import androidx.compose.remote.creation.RemoteComposeWriter.hTag
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 
 private var mTime: Int = -1
 
@@ -56,4 +60,43 @@ fun RemoteComposeContextAndroid.backgroundColor(): Short {
         endGlobal()
     }
     return mBackground
+}
+
+@Suppress("RestrictedApiAndroidX", "PrimitiveInCollection")
+val params =
+    hashMapOf(
+        Header.DOC_WIDTH to hTag(Header.DOC_WIDTH, 400),
+        Header.DOC_HEIGHT to hTag(Header.DOC_HEIGHT, 400),
+        Header.DOC_CONTENT_DESCRIPTION to hTag(Header.DOC_CONTENT_DESCRIPTION, "Activity Rings"),
+    )
+
+@Suppress("RestrictedApiAndroidX")
+fun addHeaderParam(tag: Short, value: Any) {
+    params[tag] = hTag(tag, value)
+}
+
+@Suppress("RestrictedApiAndroidX")
+fun clearParams() {
+    params.clear()
+    params[Header.DOC_WIDTH] = hTag(Header.DOC_WIDTH, 400)
+    params[Header.DOC_HEIGHT] = hTag(Header.DOC_HEIGHT, 400)
+    params[Header.DOC_CONTENT_DESCRIPTION] = hTag(Header.DOC_CONTENT_DESCRIPTION, "Activity Rings")
+}
+
+@Suppress("RestrictedApiAndroidX")
+@JvmOverloads
+fun demo7(
+    platform: RcPlatformServices = AndroidxRcPlatformServices(),
+    content: RemoteComposeContextAndroid.() -> Unit,
+): RemoteComposeContextAndroid {
+    val array = params.values.toTypedArray()
+    array.sortBy { it.tag }
+    val rc =
+        RemoteComposeContextAndroid(platform = platform, apiLevel = 7, *array) {
+            beginGlobal()
+            content()
+            endGlobal()
+            print("") // to satisfy lint
+        }
+    return rc
 }

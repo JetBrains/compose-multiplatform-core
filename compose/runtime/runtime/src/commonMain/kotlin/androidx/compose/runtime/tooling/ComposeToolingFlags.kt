@@ -47,13 +47,15 @@ import kotlin.jvm.JvmField
  *          public static int SomeFeatureEnabled return true
  *      }
  */
+@Suppress("FeatureFlagSetup") // These are not normal, temporary feature flags, so exempt them
 @ComposeToolingApi
 public object ComposeToolingFlags {
 
     /**
      * Enables verbose tracing blocks in coroutines launched from @Composable context, measure /
-     * layout and other Compose phases. These tracing blocks are intended to accurately measure each
-     * phase in macrobenchmarks through Perfetto trace metrics.
+     * layout, composition effect lifecycle callbacks, and other Compose phases. These tracing
+     * blocks are intended for targeted debugging and investigation, and can also be used to
+     * accurately measure Compose work in macrobenchmarks through Perfetto trace metrics.
      *
      * The verbose trace blocks might have a negative impact on performance and thus should be
      * disabled by default.

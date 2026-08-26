@@ -16,7 +16,7 @@
 package androidx.build.binarycompatibilityvalidator
 
 import androidx.binarycompatibilityvalidator.BinaryCompatibilityChecker
-import androidx.binarycompatibilityvalidator.KlibDumpParser
+import androidx.binarycompatibilityvalidator.MergedKlibDumpParser
 import androidx.build.Version
 import androidx.build.metalava.shouldFreezeApis
 import java.io.File
@@ -91,8 +91,8 @@ private interface IgnoreChangesParameters : WorkParameters {
 private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters> {
     @OptIn(ExperimentalLibraryAbiReader::class)
     override fun execute() {
-        val previousDump = KlibDumpParser(parameters.previousApiDump.get().asFile).parse()
-        val currentDump = KlibDumpParser(parameters.currentApiDump.get().asFile).parse()
+        val previousDump = MergedKlibDumpParser(parameters.previousApiDump.get().asFile).parse()
+        val currentDump = MergedKlibDumpParser(parameters.currentApiDump.get().asFile).parse()
         val shouldFreeze =
             shouldFreezeApis(
                 Version(parameters.referenceVersion.get()),

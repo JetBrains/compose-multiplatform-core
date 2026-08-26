@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.testapp.surfaceimage
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -63,7 +64,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.DeviceTrackingMode
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize2d
@@ -76,7 +77,6 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.EntityMoveListener
 import androidx.xr.scenecore.ExperimentalSurfaceEntityPixelDimensionsApi
-import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
@@ -99,6 +99,7 @@ object VideoButtonColors {
     val DefaultButton = Color(0xFF42A5F5) // Blue 400
 }
 
+@SuppressLint("RestrictedApiAndroidX") // using MediaBlendingMode & Shape.Quad
 class SurfaceEntityImageActivity : ComponentActivity() {
     private val activity = this
 
@@ -112,7 +113,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     private var imageShowing by mutableStateOf<Boolean>(false)
     private var controlPanelEntity: PanelEntity? = null
     private var alphaMaskTexture: Texture? = null
-    private var movieParent: GroupEntity? = null
+    private var movieParent: Entity? = null
 
     // This is a custom move listener which moves the movieParent instead of the surfaceEntity
     // directly. This allows for the SurfaceEntity to be independently rotated without impacting
@@ -128,7 +129,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 check(entity == surfaceEntity) {
                     "Listener should only be attached to surfaceEntity."
                 }
-                var curParentPose = movieParent!!.getPose()
+                val curParentPose = movieParent!!.getPose()
                 // Apply the currentPose to the movieParent to move the surfaceEntity.
                 movieParent?.setPose(curParentPose.compose(currentPose))
             }
@@ -188,28 +189,41 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(deviceTracking = DeviceTrackingMode.LAST_KNOWN))
-        val arDevice = ArDevice.getInstance(session)
-        session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-        session.scene.keyEntity = session.scene.mainPanelEntity
-
-        checkExternalStoragePermission()
-
-        // Set up the MoveableComponent so the user can move the Main Panel out of the way of
-        // video canvases which appear behind it.
-        if (movableComponentMP == null) {
-            movableComponentMP = MovableComponent.createSystemMovable(session)
-            session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
-        }
-
-        // This will be re-used throughout the life of the Activity.
-        movieParent = GroupEntity.create(session, "movieParent")
-
         lifecycleScope.launch {
-            alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
+            val sessionResult = Session.create(context = this@SurfaceEntityImageActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                val session = sessionResult.session
+                session.configure(
+                    Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                )
+                val arDevice = ArDevice.getInstance(session)
+                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                session.scene.keyEntity = session.scene.mainPanelEntity
+
+                checkExternalStoragePermission()
+
+                // Set up the MoveableComponent so the user can move the Main Panel out of the way
+                // of
+                // video canvases which appear behind it.
+                if (movableComponentMP == null) {
+                    movableComponentMP = MovableComponent.createSystemMovable(session)
+                    session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
+                }
+
+                // This will be re-used throughout the life of the Activity.
+                movieParent =
+                    Entity.create(
+                        session,
+                        name = "movieParent",
+                        parent = session.scene.activitySpace,
+                    )
+
+                alphaMaskTexture = Texture.create(session, Paths.get("textures", "alpha_mask.png"))
+                setContent { HelloWorld(session, arDevice, activity) }
+            } else {
+                finish()
+            }
         }
-        setContent { HelloWorld(session, arDevice, activity) }
     }
 
     override fun onDestroy() {
@@ -269,7 +283,8 @@ class SurfaceEntityImageActivity : ComponentActivity() {
 
     private fun setupControlPanel(session: Session, arDevice: ArDevice) {
         // Dispose previous control panel if it exists
-        controlPanelEntity?.dispose()
+        controlPanelEntity?.removeAllComponents()
+        controlPanelEntity?.parent = null
         controlPanelEntity = null
 
         // Technically this leaks, but it's a sample / test app.
@@ -290,6 +305,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                 IntSize2d(640, 480),
                 "playerControls",
                 Pose.Identity,
+                parent = session.scene.activitySpace,
             )
 
         // TODO: b/413478924 - Use controlPanelEntity.view when the api is available.
@@ -306,10 +322,12 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     fun destroySurfaceEntity() {
         imageShowing = false
 
-        surfaceEntity?.dispose()
+        surfaceEntity?.removeAllComponents()
+        surfaceEntity?.parent = null
         surfaceEntity = null
 
-        controlPanelEntity?.dispose()
+        controlPanelEntity?.removeAllComponents()
+        controlPanelEntity?.parent = null
         controlPanelEntity = null
 
         currentImageSize = null
@@ -360,6 +378,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         return view
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     fun VideoPlayerControls(session: Session, arDevice: ArDevice) {
         var featherRadiusX by remember { mutableFloatStateOf(0.0f) }
@@ -498,9 +517,9 @@ class SurfaceEntityImageActivity : ComponentActivity() {
         var controlOffsetY: Float = 0.0f
         var controlOffsetZ: Float = 0.0f
 
-        var rotation =
+        val rotation =
             Quaternion.fromAxisAngle(Vector3.Forward, currentVideoRotationDegrees.toFloat())
-        var newPose = surfaceEntity!!.getPose().compose(Pose(Vector3.Zero, rotation))
+        val newPose = surfaceEntity!!.getPose().compose(Pose(Vector3.Zero, rotation))
         surfaceEntity!!.setPose(newPose)
         controlPanelEntity!!.parent = movieParent!!
 
@@ -612,6 +631,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
                             mediaBlendingMode = SurfaceEntity.MediaBlendingMode.TRANSPARENT,
                             superSampling = superSamplingMode,
                             surfaceProtection = surfaceContentLevel,
+                            parent = session.scene.activitySpace,
                         )
 
                     surfaceEntity?.parent = movieParent!!

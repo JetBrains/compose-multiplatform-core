@@ -1,8 +1,7 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -20,10 +19,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.savedstate"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
         androidResources.enable = true
     }
     desktop()
@@ -52,6 +47,7 @@ androidXMultiplatform {
             implementation(project(":kruth:kruth"))
             implementation(libs.kotlinTest)
             implementation(libs.kotlinCoroutinesTest)
+            implementation(libs.kotlinSerializationJson)
         }
 
         androidMain.dependencies {
@@ -69,8 +65,8 @@ androidXMultiplatform {
             implementation(libs.truth)
         }
 
-        nonAndroidMain.dependsOn(commonMain)
-        nonAndroidTest.dependsOn(commonTest)
+        create("nonAndroidMain").dependsOn(commonMain)
+        create("nonAndroidTest").dependsOn(commonTest)
 
         nonJvmMain.dependsOn(nonAndroidMain)
         nonJvmTest.dependsOn(nonAndroidTest)

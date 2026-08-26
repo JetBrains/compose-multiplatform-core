@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.impl
 
 import android.content.Context
@@ -24,33 +26,28 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.OptIn
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.adapter.CameraStateAdapter
-import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.adapter.ZslControl
 import androidx.camera.camera2.config.CameraScope
 import androidx.camera.camera2.config.UseCaseCameraComponent
 import androidx.camera.camera2.config.UseCaseCameraConfig
-import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.internal.DynamicRangeResolver
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
 import androidx.camera.core.concurrent.CameraCoordinator
-import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.MutableOptionsBundle
-import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.ValidatingBuilder
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SurfaceConfig
@@ -96,7 +93,7 @@ public class UseCaseManager
 constructor(
     private val cameraPipe: CameraPipe,
     @GuardedBy("lock") private val cameraCoordinator: CameraCoordinator,
-    private val builder: UseCaseCameraComponent.Builder,
+    private val builder: Provider<UseCaseCameraComponent.Builder>,
     private val zslControl: ZslControl,
     private val lowLightBoostControl: LowLightBoostControl,
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // Java version required for Dagger
@@ -110,6 +107,7 @@ constructor(
     private val cameraProperties: CameraProperties,
     private val cameraXConfig: CameraXConfig,
     private val cameraGraphConfigProvider: CameraGraphConfigProvider,
+    private val supportedSurfaceCombination: SupportedSurfaceCombination,
     context: Context,
     displayInfoManager: DisplayInfoManager,
 ) {
@@ -140,16 +138,6 @@ constructor(
     private val meteringRepeating =
         MeteringRepeating.Builder(cameraProperties, displayInfoManager).build()
 
-    private val supportedSurfaceCombination =
-        SupportedSurfaceCombination(
-            context,
-            cameraProperties.metadata,
-            encoderProfilesProvider,
-            // TODO: b/406367951 - Create and use a proper impl. of FeatureCombinationQuery in
-            //   order to handle MeteringRepeating scenarios
-            FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY,
-        )
-
     private val dynamicRangeResolver = DynamicRangeResolver(cameraProperties.metadata)
     private val defaultCameraGraphFactory: (CameraGraph.Config) -> CameraGraph = { config ->
         cameraPipe.createCameraGraph(config)
@@ -158,9 +146,6 @@ constructor(
     @Volatile private var _activeComponent: UseCaseCameraComponent? = null
     public val camera: UseCaseCamera?
         get() = _activeComponent?.getUseCaseCamera()
-
-    public val useCaseGraphContext: UseCaseGraphContext?
-        get() = _activeComponent?.getUseCaseGraphContext()
 
     private val closingCameraJobs = mutableListOf<Job>()
 
@@ -203,7 +188,7 @@ constructor(
             if (attachedUseCases.addAll(useCases)) {
                 if (!addOrRemoveRepeatingUseCase(getRunningUseCases())) {
                     updateZslDisabledByUseCaseConfigStatus()
-                    updateLowLightBoostDisabledByUseCaseSessionConfigStatus()
+                    lowLightBoostControl.onSessionConfigChanged(attachedUseCases.toList())
                     refreshAttachedUseCases(attachedUseCases)
                 }
             }
@@ -254,10 +239,10 @@ constructor(
 
                 if (attachedUseCases.isEmpty()) {
                     zslControl.setZslDisabledByUserCaseConfig(false)
-                    lowLightBoostControl.setLowLightBoostDisabledByUseCaseSessionConfig(false)
+                    lowLightBoostControl.onSessionConfigChanged(emptyList())
                 } else {
                     updateZslDisabledByUseCaseConfigStatus()
-                    updateLowLightBoostDisabledByUseCaseSessionConfigStatus()
+                    lowLightBoostControl.onSessionConfigChanged(attachedUseCases.toList())
                 }
                 refreshAttachedUseCases(attachedUseCases)
             }
@@ -379,21 +364,23 @@ constructor(
             }
         }
 
-        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
-        val useCamera2Extension =
-            sessionProcessor?.implementationType?.first == SessionProcessor.TYPE_CAMERA2_EXTENSION
-        val sessionConfigAdapter = SessionConfigAdapter(useCases, isPrimary = isPrimary)
-
+        val extensionMode =
+            sessionProcessor?.implementationType?.let { implType ->
+                if (implType.first == SessionProcessor.TYPE_CAMERA2_EXTENSION) {
+                    implType.second
+                } else {
+                    null
+                }
+            }
         // Enables extensions with the Camera2 Extensions approach if extension mode is requested.
-        if (useCamera2Extension) {
+        if (extensionMode != null) {
             Camera2Logger.debug { "Setting up UseCaseManager with OperatingMode.EXTENSION" }
             sessionProcessor!!.initSession(cameraInfoInternal.get(), null)
         }
         tryResumeUseCaseManager(
             createUseCaseCameraConfig(
-                graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-                sessionConfigAdapter = sessionConfigAdapter,
-                isExtensions = useCamera2Extension,
+                sessionConfigAdapter = SessionConfigAdapter(useCases, isPrimary = isPrimary),
+                extensionMode = extensionMode,
             )
         )
     }
@@ -401,16 +388,15 @@ constructor(
     @VisibleForTesting
     internal fun createUseCaseCameraConfig(
         sessionConfigAdapter: SessionConfigAdapter,
-        graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
-        isExtensions: Boolean = false,
+        extensionMode: Int?,
     ): UseCaseCameraConfig {
         return UseCaseCameraConfig.create(
             cameraGraphConfigProvider = cameraGraphConfigProvider,
             sessionConfigAdapter = sessionConfigAdapter,
-            graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
             cameraGraphFactory = defaultCameraGraphFactory,
+            cameraStateAdapter = cameraStateAdapter,
             sessionProcessor = sessionProcessor,
-            isExtensions = isExtensions,
+            extensionMode = extensionMode,
         )
     }
 
@@ -428,6 +414,7 @@ constructor(
             }
         }
         sessionProcessor?.deInitSession()
+        deferredUseCaseCameraConfig = null
     }
 
     @GuardedBy("lock")
@@ -453,7 +440,7 @@ constructor(
     @GuardedBy("lock")
     private fun beginComponentCreation(useCaseCameraConfig: UseCaseCameraConfig) {
         // Create and configure the new camera component.
-        _activeComponent = builder.config(useCaseCameraConfig).build()
+        _activeComponent = builder.get().config(useCaseCameraConfig).build()
 
         val newUseCaseCamera = checkNotNull(camera)
         newUseCaseCamera.start()
@@ -701,11 +688,13 @@ constructor(
     private fun Collection<UseCase>.getSessionSurfacesConfigs(): List<SurfaceConfig> =
         mutableListOf<SurfaceConfig>().apply {
             this@getSessionSurfacesConfigs.forEach { useCase ->
-                useCase.sessionConfig.surfaces.forEach { deferrableSurface ->
+                val inputFormats = useCase.inputFormats
+                useCase.sessionConfig.surfaces.forEachIndexed { index, deferrableSurface ->
+                    val format = inputFormats.getOrElse(index) { inputFormats.first() }
                     add(
                         supportedSurfaceCombination.transformSurfaceConfig(
                             getCameraMode(),
-                            useCase.currentConfig.inputFormat,
+                            format,
                             deferrableSurface.prescribedSize,
                             useCase.currentConfig.streamUseCase,
                         )
@@ -726,23 +715,6 @@ constructor(
         val disableZsl = attachedUseCases.any { it.currentConfig.isZslDisabled(false) }
         zslControl.setZslDisabledByUserCaseConfig(disableZsl)
     }
-
-    private fun updateLowLightBoostDisabledByUseCaseSessionConfigStatus() {
-        if (!cameraProperties.metadata.supportsLowLightBoost) {
-            return
-        }
-
-        // Low-light boost should be disabled when expected frame rate range exceeds 30.
-        if (attachedUseCases.getSessionConfig().expectedFrameRateRange.upper > 30) {
-            lowLightBoostControl.setLowLightBoostDisabledByUseCaseSessionConfig(true)
-            return
-        }
-
-        lowLightBoostControl.setLowLightBoostDisabledByUseCaseSessionConfig(false)
-    }
-
-    private fun Collection<UseCase>.getSessionConfig(): SessionConfig =
-        ValidatingBuilder().apply { forEach { useCase -> add(useCase.sessionConfig) } }.build()
 
     /**
      * This interface defines a listener that is notified when the set of running UseCases changes.

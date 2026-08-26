@@ -16,25 +16,16 @@
 
 package androidx.ink.authoring
 
-import android.graphics.Canvas
 import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.Path
 import android.view.MotionEvent
 import android.view.MotionEvent.PointerCoords
 import android.view.MotionEvent.PointerProperties
-import androidx.ink.authoring.testing.InputStreamBuilder
-import androidx.ink.authoring.testing.MultiTouchInputBuilder
+import androidx.ink.authoring.testing.InputStreamCreator
+import androidx.ink.authoring.testing.MultiTouchInputCreator
 import androidx.ink.brush.Brush
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
-import androidx.ink.geometry.AffineTransform
-import androidx.ink.geometry.BoxAccumulator
-import androidx.ink.geometry.toMatrix
-import androidx.ink.geometry.toRectF
-import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
-import androidx.ink.strokes.InProgressStroke
+import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
@@ -43,21 +34,26 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Emulator-based test of [InProgressStrokesView]. */
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkHandoffApi::class)
 class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
+
+    private val testBrush = basicBrush(TestColors.AVOCADO_GREEN)
 
     @Test
     fun startStroke_showsStrokeWithNoCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         val downEvent = stylusInputStream.getDownEvent()
         activityScenarioRule.scenario.onActivity { activity ->
             @Suppress("UNUSED_VARIABLE")
@@ -65,7 +61,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
         }
 
@@ -76,14 +72,14 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndAddToStroke_showsStrokeWithNoCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         activityScenarioRule.scenario.onActivity { activity ->
             val downEvent = stylusInputStream.getDownEvent()
             val strokeId =
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
             val moveEvent = stylusInputStream.getNextMoveEvent()
             activity.inProgressStrokesView.addToStroke(
@@ -101,14 +97,14 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndFinishStroke_showsStrokeAndSendsCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         activityScenarioRule.scenario.onActivity { activity ->
             val downEvent = stylusInputStream.getDownEvent()
             val strokeId =
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
             val upEvent = stylusInputStream.getUpEvent()
             activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
@@ -128,7 +124,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndFinishStroke_strokeUnitLengthFactorsInViewScale() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         activityScenarioRule.scenario.onActivity { activity ->
             activity.inProgressStrokesView.scaleX = 0.5f
             activity.inProgressStrokesView.scaleY = 0.5f
@@ -137,7 +133,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
             val upEvent = stylusInputStream.getUpEvent()
             activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
@@ -161,7 +157,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndFinishStroke_withNonIdentityTransforms() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25f, startY = 25f, endX = 105f, endY = 205f)
+            InputStreamCreator.stylusLine(startX = 25f, startY = 25f, endX = 105f, endY = 205f)
         activityScenarioRule.scenario.onActivity { activity ->
             val metrics = activity.resources.displayMetrics
             val downEvent = stylusInputStream.getDownEvent()
@@ -198,14 +194,14 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndFinishStroke_withNonInvertibleTransforms() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25f, startY = 25f, endX = 105f, endY = 205f)
+            InputStreamCreator.stylusLine(startX = 25f, startY = 25f, endX = 105f, endY = 205f)
         activityScenarioRule.scenario.onActivity { activity ->
             val downEvent = stylusInputStream.getDownEvent()
             assertThrows(IllegalArgumentException::class.java) {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                     motionEventToWorldTransform = Matrix().apply { setScale(0f, 0f) },
                 )
             }
@@ -213,7 +209,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                     strokeToWorldTransform = Matrix().apply { setScale(0f, 0f) },
                 )
             }
@@ -223,7 +219,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndCancelStroke_hidesStrokeWithNoCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(
+            InputStreamCreator.stylusLine(
                 startX = 25F,
                 startY = 25F,
                 endX = 105F,
@@ -237,7 +233,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
         }
         assertThatTakingScreenshotMatchesGolden("start_and_cancel_before_cancel")
@@ -297,11 +293,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
         activityScenarioRule.scenario.onActivity { activity ->
             // Two strokes get started with different pointerIds.
             @Suppress("CheckReturnValue")
-            activity.inProgressStrokesView.startStroke(
-                downEvent,
-                9,
-                basicBrush(TestColors.AVOCADO_GREEN),
-            )
+            activity.inProgressStrokesView.startStroke(downEvent, 9, testBrush)
             @Suppress("CheckReturnValue")
             activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
         }
@@ -366,11 +358,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
         activityScenarioRule.scenario.onActivity { activity ->
             // Two strokes get started with different pointerIds.
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isFalse()
-            activity.inProgressStrokesView.startStroke(
-                downEvent,
-                9,
-                basicBrush(TestColors.AVOCADO_GREEN),
-            )
+            activity.inProgressStrokesView.startStroke(downEvent, 9, testBrush)
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
         }
@@ -409,14 +397,14 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndAddToAndFinishStroke_showsStrokeAndSendsCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         activityScenarioRule.scenario.onActivity { activity ->
             val downEvent = stylusInputStream.getDownEvent()
             val strokeId =
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
             val moveEvent = stylusInputStream.getNextMoveEvent()
             activity.inProgressStrokesView.addToStroke(
@@ -436,7 +424,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun startAndAddToAndFinishStroke_withNoStrokeId_showsStrokeAndSendsCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         activityScenarioRule.scenario.onActivity { activity ->
             val downEvent = stylusInputStream.getDownEvent()
             // Don't keep the resulting InProgressStrokeId. Instead, rely on the pointer ID to
@@ -445,7 +433,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.startStroke(
                 downEvent,
                 downEvent.getPointerId(0),
-                basicBrush(TestColors.AVOCADO_GREEN),
+                testBrush,
             )
             val moveEvent = stylusInputStream.getNextMoveEvent()
             activity.inProgressStrokesView.addToStroke(moveEvent, moveEvent.getPointerId(0))
@@ -469,7 +457,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                         elapsedTimeMillis = 0,
                         toolType = InputToolType.STYLUS,
                     ),
-                    brush = basicBrush(TestColors.AVOCADO_GREEN),
+                    brush = testBrush,
                 )
             activity.inProgressStrokesView.addToStroke(
                 MutableStrokeInputBatch().apply {
@@ -519,7 +507,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                         elapsedTimeMillis = 0,
                         toolType = InputToolType.STYLUS,
                     ),
-                    brush = basicBrush(TestColors.AVOCADO_GREEN),
+                    brush = testBrush,
                     strokeToViewTransform =
                         Matrix().apply {
                             postScale(2F, 3F)
@@ -648,7 +636,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.startStroke(
                 event = downEvent,
                 pointerId = 9,
-                brush = basicBrush(TestColors.AVOCADO_GREEN),
+                brush = testBrush,
             )
 
             // Updates for pointers that are not part of a started stroke are ignored.
@@ -682,7 +670,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun motionEventToViewAndStartAddFinishStroke_showsRepositionedStrokeAndSendsCallback() {
         val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+            InputStreamCreator.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
         activityScenarioRule.scenario.onActivity { activity ->
             activity.inProgressStrokesView.motionEventToViewTransform =
                 Matrix().apply {
@@ -695,7 +683,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    testBrush,
                 )
             val moveEvent = stylusInputStream.getNextMoveEvent()
             activity.inProgressStrokesView.addToStroke(
@@ -716,7 +704,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun twoSimultaneousStrokes_bothFinish_showsStrokesAndSendsCallbackAfterBothFinish() {
         val inputStream =
-            MultiTouchInputBuilder.rotate90DegreesClockwise(centerX = 200F, centerY = 300F)
+            MultiTouchInputCreator.rotate90DegreesClockwise(centerX = 200F, centerY = 300F)
         runMultiTouchGesture(inputStream)
 
         assertThatTakingScreenshotMatchesGolden("two_simultaneous_both_finish")
@@ -727,7 +715,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun twoSimultaneousStrokes_cancelThenFinish_showsFinishedStrokeAndSendsCallback() {
         val inputStream =
-            MultiTouchInputBuilder.rotate90DegreesClockwise(centerX = 200F, centerY = 300F)
+            MultiTouchInputCreator.rotate90DegreesClockwise(centerX = 200F, centerY = 300F)
         runMultiTouchGesture(inputStream, actionToCancel = MotionEvent.ACTION_POINTER_UP)
 
         assertThatTakingScreenshotMatchesGolden("two_simultaneous_cancel_then_finish")
@@ -738,7 +726,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     @Test
     fun twoSimultaneousStrokes_finishThenCancel_showsFinishedStrokeAndSendsCallback() {
         val inputStream =
-            MultiTouchInputBuilder.rotate90DegreesClockwise(centerX = 200F, centerY = 300F)
+            MultiTouchInputCreator.rotate90DegreesClockwise(centerX = 200F, centerY = 300F)
         runMultiTouchGesture(inputStream, actionToCancel = MotionEvent.ACTION_UP)
 
         assertThatTakingScreenshotMatchesGolden("two_simultaneous_finish_then_cancel")
@@ -763,7 +751,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
         repeat(BRUSH_COLORS.size) { strokeIndex ->
             val strokeCount = strokeIndex + 1
             val stylusInputStream =
-                InputStreamBuilder.stylusLine(
+                InputStreamCreator.stylusLine(
                     startX = 15F * strokeCount,
                     startY = 45F * strokeCount,
                     endX = 400F - 10F * strokeCount,
@@ -825,7 +813,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
         val stylusInputStreams =
             BRUSH_COLORS.indices.mapIndexed { i, strokeIndex ->
                 val strokeCount = strokeIndex + 1
-                InputStreamBuilder.stylusLine(
+                InputStreamCreator.stylusLine(
                     startX = 15F * strokeCount,
                     startY = 45F * strokeCount,
                     endX = 400F - 10F * strokeCount,
@@ -891,7 +879,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             repeat(BRUSH_COLORS.size) { strokeIndex ->
                 val strokeCount = strokeIndex + 1
                 val stylusInputStream =
-                    InputStreamBuilder.stylusLine(
+                    InputStreamCreator.stylusLine(
                         startX = 15F * strokeCount,
                         startY = 45F * strokeCount,
                         endX = 400F - 10F * strokeCount,
@@ -938,98 +926,156 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
     }
 
     @Test
-    fun setRendererFactory_usesCustomRenderer() {
-        /** Draws in-progress strokes as ovals, and finished strokes as rectangles. */
-        class CustomRenderer : CanvasStrokeRenderer {
-            @ExperimentalInkCustomBrushApi
-            override fun draw(
-                canvas: Canvas,
-                stroke: Stroke,
-                strokeToScreenTransform: AffineTransform,
-                textureAnimationProgress: Float,
-            ) = draw(canvas, stroke, strokeToScreenTransform.toMatrix(), textureAnimationProgress)
-
-            @ExperimentalInkCustomBrushApi
-            override fun draw(
-                canvas: Canvas,
-                stroke: Stroke,
-                strokeToScreenTransform: Matrix,
-                textureAnimationProgress: Float,
-            ) {
-                val androidRect = stroke.shape.computeBoundingBox()?.toRectF() ?: return
-                canvas.drawRect(androidRect, Paint().apply { color = stroke.brush.colorIntArgb })
-            }
-
-            @ExperimentalInkCustomBrushApi
-            override fun draw(
-                canvas: Canvas,
-                inProgressStroke: InProgressStroke,
-                strokeToScreenTransform: AffineTransform,
-                textureAnimationProgress: Float,
-            ) =
-                draw(
-                    canvas,
-                    inProgressStroke,
-                    strokeToScreenTransform.toMatrix(),
-                    textureAnimationProgress,
-                )
-
-            @ExperimentalInkCustomBrushApi
-            override fun draw(
-                canvas: Canvas,
-                inProgressStroke: InProgressStroke,
-                strokeToScreenTransform: Matrix,
-                textureAnimationProgress: Float,
-            ) {
-                val bounds =
-                    BoxAccumulator().apply {
-                        for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
-                            val coatBounds = BoxAccumulator()
-                            inProgressStroke.populateMeshBounds(coatIndex, coatBounds)
-                            add(coatBounds)
-                        }
-                    }
-                val androidRect = bounds.box?.toRectF() ?: return
-                val brushColor = inProgressStroke.brush?.colorIntArgb ?: return
-                canvas.drawPath(
-                    Path().apply { addOval(androidRect, Path.Direction.CCW) },
-                    Paint().apply { color = brushColor },
-                )
-            }
-        }
-
-        val stylusInputStream =
-            InputStreamBuilder.stylusLine(startX = 15F, startY = 45F, endX = 400F, endY = 600F)
-        lateinit var strokeId: InProgressStrokeId
+    fun flush_whenNoStrokesInProgress_returnsWithoutCallingStrokesFinishedListener() {
         activityScenarioRule.scenario.onActivity { activity ->
-            @Suppress("DEPRECATION") // Testing deprecated API.
-            activity.inProgressStrokesView.rendererFactory = {
-                CustomRenderer()
-            }
-
-            val downEvent = stylusInputStream.getDownEvent()
-            strokeId =
-                activity.inProgressStrokesView.startStroke(
-                    downEvent,
-                    downEvent.getPointerId(0),
-                    basicBrush(TestColors.LIGHT_ORANGE),
+            assertThat(
+                    activity.inProgressStrokesView.flush(
+                        1000,
+                        TimeUnit.MILLISECONDS,
+                        cancelAllInProgress = false,
+                    )
                 )
-            val moveEvent = stylusInputStream.getNextMoveEvent()
-            activity.inProgressStrokesView.addToStroke(
-                moveEvent,
-                moveEvent.getPointerId(0),
-                strokeId,
-                prediction = null,
+                .isTrue()
+            assertThat(finishedStrokeCohorts).isEmpty()
+        }
+    }
+
+    @Test
+    fun flush_whenUnfinishedStrokesFinished_shouldFinishAllAndCallStrokesFinishedListener() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            if (!activity.inProgressStrokesView.canSynchronouslyWaitForFlush()) {
+                return@onActivity
+            }
+            val downEvent = MotionEvent.obtain(321, 321, MotionEvent.ACTION_DOWN, 10f, 20f, 0)
+            val inProgressStrokeId1 =
+                activity.inProgressStrokesView.startStroke(downEvent, 0, testBrush)
+            val inProgressStrokeId2 =
+                activity.inProgressStrokesView.startStroke(downEvent, 0, testBrush)
+
+            assertThat(
+                    activity.inProgressStrokesView.flush(
+                        1000,
+                        TimeUnit.MILLISECONDS,
+                        cancelAllInProgress = false,
+                    )
+                )
+                .isTrue()
+
+            assertThat(finishedStrokeCohorts.flatMap { it.keys })
+                .containsExactly(inProgressStrokeId1, inProgressStrokeId2)
+        }
+    }
+
+    @Test
+    fun flush_whenUnfinishedStrokesCanceled_shouldCancelAllAndNotCallStrokesFinishedListener() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            val downEvent = MotionEvent.obtain(321, 321, MotionEvent.ACTION_DOWN, 10f, 20f, 0)
+            val unused1 = activity.inProgressStrokesView.startStroke(downEvent, 0, testBrush)
+            val unused2 = activity.inProgressStrokesView.startStroke(downEvent, 0, testBrush)
+
+            assertThat(
+                    activity.inProgressStrokesView.flush(
+                        1000,
+                        TimeUnit.MILLISECONDS,
+                        cancelAllInProgress = true,
+                    )
+                )
+                .isTrue()
+
+            assertThat(finishedStrokeCohorts).isEmpty()
+        }
+    }
+
+    @Test
+    fun flush_whenFinishedStrokesAreDebounced_shouldCallStrokesFinishedListener() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            if (!activity.inProgressStrokesView.canSynchronouslyWaitForFlush()) {
+                return@onActivity
+            }
+            activity.inProgressStrokesView.handoffDebounceTimeMs = 100000
+            val downEvent = MotionEvent.obtain(321, 321, MotionEvent.ACTION_DOWN, 10f, 20f, 0)
+            val inProgressStrokeId1 =
+                activity.inProgressStrokesView.startStroke(downEvent, 0, testBrush)
+            val inProgressStrokeId2 =
+                activity.inProgressStrokesView.startStroke(downEvent, 0, testBrush)
+            val upEvent = MotionEvent.obtain(321, 333, MotionEvent.ACTION_UP, 12f, 22f, 0)
+            activity.inProgressStrokesView.finishStroke(upEvent, 0, inProgressStrokeId1)
+            activity.inProgressStrokesView.finishStroke(upEvent, 0, inProgressStrokeId2)
+
+            // These strokes aren't still in progress, they just haven't been handed off yet, so
+            // they
+            // shouldn't be canceled.
+            assertThat(
+                    activity.inProgressStrokesView.flush(
+                        1000,
+                        TimeUnit.MILLISECONDS,
+                        cancelAllInProgress = true,
+                    )
+                )
+                .isTrue()
+
+            assertThat(finishedStrokeCohorts.flatMap { it.keys })
+                .containsExactly(inProgressStrokeId1, inProgressStrokeId2)
+        }
+    }
+
+    @Test
+    fun flush_whenFinishedStrokesButHandoffsPaused_shouldCallStrokesFinishedListener() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            if (!activity.inProgressStrokesView.canSynchronouslyWaitForFlush()) {
+                return@onActivity
+            }
+            val event = MotionEvent.obtain(321, 321, MotionEvent.ACTION_DOWN, 10f, 20f, 0)
+            val inProgressStrokeId1 =
+                activity.inProgressStrokesView.startStroke(event, 0, testBrush)
+            val inProgressStrokeId2 =
+                activity.inProgressStrokesView.startStroke(event, 0, testBrush)
+
+            // These strokes aren't still in progress, they just haven't been handed off yet, so
+            // they
+            // shouldn't be canceled. It does need to wait for handoffs to be unpaused to attempt
+            // another
+            // handoff, though.
+            activity.inProgressStrokesView.countDownWhenFlushInProgressTestLatch = CountDownLatch(1)
+            activity.inProgressStrokesView.awaitAfterStartOfHandoffTestLatch = CountDownLatch(1)
+            val coordinationExecutor = Executors.newSingleThreadExecutor()
+            coordinationExecutor.execute {
+                // As soon as flush starts, continue the handoff.
+                assertThat(
+                        activity.inProgressStrokesView.countDownWhenFlushInProgressTestLatch!!
+                            .await(5, TimeUnit.SECONDS)
+                    )
+                    .isTrue()
+                // When this gets here, flush has started, the handoff has just started, the render
+                // thread
+                // is blocked, and there is an action that needs to be processed on the next draw
+                // (the
+                // StartCohortAction which is supposed to resume after the handoff).
+                activity.inProgressStrokesView.awaitAfterStartOfHandoffTestLatch!!.countDown()
+            }
+            val upEvent = MotionEvent.obtain(321, 333, MotionEvent.ACTION_UP, 12f, 22f, 0)
+            activity.inProgressStrokesView.finishStroke(
+                upEvent,
+                upEvent.getPointerId(0),
+                inProgressStrokeId1,
             )
-        }
-        assertThatTakingScreenshotMatchesGolden("custom_renderer_start_and_add")
+            activity.inProgressStrokesView.finishStroke(
+                upEvent,
+                upEvent.getPointerId(0),
+                inProgressStrokeId2,
+            )
 
-        activityScenarioRule.scenario.onActivity { activity ->
-            val upEvent = stylusInputStream.getUpEvent()
-            activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
+            // Flush works when unpause happens during flush.
+            assertThat(
+                    activity.inProgressStrokesView.flush(
+                        1000,
+                        TimeUnit.MILLISECONDS,
+                        cancelAllInProgress = true,
+                    )
+                )
+                .isTrue()
+            assertThat(finishedStrokeCohorts.flatMap { it.keys })
+                .containsExactly(inProgressStrokeId1, inProgressStrokeId2)
         }
-        assertThatTakingScreenshotMatchesGolden("custom_renderer_finished")
-        assertThat(finishedStrokeCohorts).hasSize(1)
-        assertThat(finishedStrokeCohorts[0]).hasSize(1)
     }
 }

@@ -17,18 +17,16 @@
 package androidx.room3
 
 import androidx.annotation.RestrictTo
-import androidx.room3.RoomDatabase.JournalMode.TRUNCATE
 import androidx.room3.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
-import androidx.room3.concurrent.ExclusiveLock
 import androidx.room3.coroutines.ConnectionFactory
-import androidx.room3.util.findMigrationPath
+import androidx.room3.coroutines.ExclusiveMutex
 import androidx.room3.util.isMigrationRequired
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.executeSQL
-import androidx.sqlite.open
-import androidx.sqlite.prepare
-import androidx.sqlite.step
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.async.open
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
 
 /** Expect implementation declaration of Room's connection manager. */
 internal expect class RoomConnectionManager
@@ -69,7 +67,7 @@ public abstract class BaseRoomConnectionManager {
     /* Open and configure a connection. Called from the connection factory. */
     private suspend fun openLocked(delegate: SQLiteDriver, filename: String): SQLiteConnection {
         val resolvedFileName = resolveFileName(filename)
-        return ExclusiveLock(
+        return ExclusiveMutex(
                 filename = resolvedFileName,
                 useFileLock = !isConfigured && !isInitializing && resolvedFileName != ":memory:",
             )
@@ -81,17 +79,23 @@ public abstract class BaseRoomConnectionManager {
                             "callbacks?"
                     }
                     val connection = delegate.open(resolvedFileName)
-                    if (!isConfigured) {
-                        // Perform initial connection configuration
-                        try {
-                            isInitializing = true
-                            configureDatabase(connection)
-                        } finally {
-                            isInitializing = false
+                    try {
+                        if (!isConfigured) {
+                            // Perform initial connection configuration
+                            try {
+                                isInitializing = true
+                                configureDatabase(connection)
+                            } finally {
+                                isInitializing = false
+                            }
+                        } else {
+                            // Perform other non-initial connection configuration
+                            configurationConnection(connection)
                         }
-                    } else {
-                        // Perform other non-initial connection configuration
-                        configurationConnection(connection)
+                    } catch (th: Throwable) {
+                        // Close connection if anything goes wrong during configuration, avoids leak
+                        connection.close()
+                        throw th
                     }
                     return@withLock connection
                 },
@@ -336,22 +340,6 @@ public abstract class BaseRoomConnectionManager {
                     "WHERE type = 'table' AND name = '${RoomMasterTable.TABLE_NAME}'"
             )
             .use { it.step() && it.getLong(0) != 0L }
-
-    @Suppress("REDUNDANT_ELSE_IN_WHEN") // Redundant in common but not in Android
-    protected fun RoomDatabase.JournalMode.getMaxNumberOfReaders(): Int =
-        when (this) {
-            TRUNCATE -> 1
-            WRITE_AHEAD_LOGGING -> 4
-            else -> error("Can't get max number of reader for journal mode '$this'")
-        }
-
-    @Suppress("REDUNDANT_ELSE_IN_WHEN") // Redundant in common but not in Android
-    protected fun RoomDatabase.JournalMode.getMaxNumberOfWriters(): Int =
-        when (this) {
-            TRUNCATE -> 1
-            WRITE_AHEAD_LOGGING -> 1
-            else -> error("Can't get max number of writers for journal mode '$this'")
-        }
 
     private suspend fun invokeCreateCallback(connection: SQLiteConnection) {
         callbacks.forEach { it.onCreate(connection) }

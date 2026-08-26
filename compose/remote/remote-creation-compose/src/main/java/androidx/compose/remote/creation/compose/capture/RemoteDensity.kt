@@ -18,36 +18,55 @@ package androidx.compose.remote.creation.compose.capture
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteContext
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.asRdp
+import androidx.compose.remote.creation.compose.state.asRemoteTextUnit
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 
 /**
  * Represents the screen density and font scale factor used for unit conversions in a remote
- * composition context. Similar to Compoes Density.
+ * composition context. Similar to Compose Density.
  *
  * @property density The logical density of the display, used to convert DP to pixels.
  * @property fontScale The current user preference for the scaling factor for fonts.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteDensity(public val density: RemoteFloat, public val fontScale: RemoteFloat) {
+    /** Converts a [TextUnit] to pixels using this [RemoteDensity]. */
+    public fun TextUnit.toPx(): RemoteFloat = asRemoteTextUnit().toPx(this@RemoteDensity)
+
+    /** Converts a [Dp] to pixels using this [RemoteDensity]. */
+    public fun Dp.toPx(): RemoteFloat = asRdp().toPx(this@RemoteDensity)
+
     public companion object {
+        private const val DEFAULT_FONT_SIZE = 14f
+
         /**
-         * Creates a [RemoteDensity] instance from the provided [CreationDisplayInfo].
+         * Creates a [RemoteDensity] instance from the provided [RemoteCreationDisplayInfo].
          *
-         * @param creationDisplayInfo The display information containing the screen density.
-         * @return A [RemoteDensity] instance with the density from the display info and a default
-         *   font scale of 1.0.
+         * @param creationDisplayInfo The display information containing the screen density and font
+         *   scale.
+         * @return A [RemoteDensity] instance with the density and font scale from the display info.
          */
-        public fun from(creationDisplayInfo: CreationDisplayInfo): RemoteDensity {
-            return RemoteDensity(creationDisplayInfo.density.rf, 1.rf)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun from(creationDisplayInfo: RemoteCreationDisplayInfo): RemoteDensity {
+            return RemoteDensity(
+                creationDisplayInfo.density.density.rf,
+                creationDisplayInfo.density.fontScale.rf,
+            )
         }
 
         /**
-         * A [RemoteDensity] instance that represents the host's screen density and a default font
-         * scale of 1.0.
+         * A [RemoteDensity] instance that represents the host's screen density, with font scale
+         * derived from the host's system font size and density settings.
          */
-        public val HOST: RemoteDensity =
-            RemoteDensity(RemoteFloat(RemoteContext.FLOAT_DENSITY), 1.rf)
+        public val Host: RemoteDensity
+            get() {
+                val density = RemoteFloat(RemoteContext.FLOAT_DENSITY)
+                val fontScale = RemoteFloat(Rc.System.FONT_SIZE) / DEFAULT_FONT_SIZE / density
+                return RemoteDensity(density, fontScale)
+            }
     }
 }

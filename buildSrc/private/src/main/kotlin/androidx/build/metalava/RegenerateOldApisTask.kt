@@ -186,10 +186,10 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
                 ApiLintMode.Skip,
                 generateRestrictToLibraryGroupAPIs,
                 emptyList(),
-                false,
                 kotlinSourceLevel.get(),
                 workerExecutor,
                 multiplatform = false,
+                hasJvmOrAndroidTarget = true,
             )
         } else {
             logger.warn("No API file for $mavenId")

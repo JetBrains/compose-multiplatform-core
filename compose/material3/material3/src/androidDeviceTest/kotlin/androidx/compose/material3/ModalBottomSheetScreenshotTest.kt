@@ -16,13 +16,10 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -34,7 +31,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +41,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ModalBottomSheetScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -98,13 +94,10 @@ class ModalBottomSheetScreenshotTest {
     @Composable
     private fun ModalBottomSheetPredictiveBack(progress: Float) {
         Box(Modifier.fillMaxSize(), propagateMinConstraints = true) {
-            ModalBottomSheetContent(
+            BottomSheetImpl(
                 modifier = Modifier.testTag(testTag),
-                predictiveBackProgress = remember { Animatable(initialValue = progress) },
-                scope = rememberCoroutineScope(),
-                sheetState = rememberSheetState(initialValue = SheetValue.Expanded),
-                onDismissRequest = {},
-                animateToDismiss = {},
+                predictiveBackProgress = progress,
+                state = rememberBottomSheetState(initialValue = SheetValue.Expanded),
             ) {
                 Text(
                     "Modal Bottom Sheet Predictive Back\nProgress: $progress",

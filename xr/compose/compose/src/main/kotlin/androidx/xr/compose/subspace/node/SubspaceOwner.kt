@@ -21,8 +21,8 @@ import kotlin.coroutines.CoroutineContext
 /**
  * Owner interface that defines the connection to the underlying element system.
  *
- * On Android, this connects to Android [elements][androidx.xr.subspace.Element] and all layout,
- * draw, input, and accessibility is hooked through them.
+ * On Android, this connects to Android [elements][SubspaceLayoutNode] and all layout, draw, input,
+ * and accessibility is hooked through them.
  *
  * See [androidx.compose.ui.node.Owner]
  */
@@ -65,4 +65,10 @@ internal interface SubspaceOwner {
      * trigger a recomposition.
      */
     public fun requestLayout(node: SubspaceLayoutNode, forceRequest: Boolean = false)
+
+    /**
+     * Called by [SubspaceLayoutNode] when it needs its
+     * [androidx.xr.compose.subspace.layout.CoreEntity] updated.
+     */
+    fun requestEntityUpdate(node: SubspaceLayoutNode, forceRequest: Boolean = false)
 }

@@ -17,18 +17,21 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
-/** Describes the interface for Geospatial localization and tracking. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Describes the interface for Geospatial localization and tracking.
+ *
+ * @property state the current [State] of Geospatial
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Geospatial {
 
     /**
-     * Describes the state of Geospatial. The State must be [Running] to use Geospatial
-     * functionality. If Geospatial has entered an error state other than [ERROR_APP_PREEMPTED],
+     * Describes the state of Geospatial. The State must be [RUNNING] to use Geospatial
+     * functionality. If Geospatial has entered an error state other than [ERROR_INTERNAL],
      * Geospatial must be disabled and re-enabled to use Geospatial again.
      */
     public class State private constructor(private val value: Int) {
@@ -96,6 +99,12 @@ public interface Geospatial {
         }
     }
 
+    /**
+     * @property geospatialPose the [GeospatialPose] that was created
+     * @property horizontalAccuracy the estimated horizontal accuracy in meters
+     * @property verticalAccuracy the estimated altitude accuracy in meters
+     * @property orientationYawAccuracy the estimated orientation yaw angle accuracy in degrees
+     */
     public class GeospatialPoseResult(
         public val geospatialPose: GeospatialPose,
         public val horizontalAccuracy: Double,
@@ -121,24 +130,45 @@ public interface Geospatial {
         }
     }
 
-    /** The current state of Geospatial. */
     public val state: State
 
+    /** The current [GeospatialPose] of the device/camera. */
+    public val geospatialPose: GeospatialPose
+
+    /** The estimated horizontal accuracy in meters. */
+    public val horizontalAccuracy: Double
+
+    /** The estimated altitude accuracy in meters. */
+    public val verticalAccuracy: Double
+
+    /** The estimated orientation yaw angle accuracy in degrees. */
+    public val orientationYawAccuracy: Double
+
     /**
-     * Converts the input [androidx.xr.runtime.math.GeospatialPose] to a
-     * [androidx.xr.runtime.math.Pose] in the same position.
+     * Converts the input [GeospatialPose] to a [Pose] in the same position.
+     *
+     * @param geospatialPose the [GeospatialPose] to convert
+     * @return the converted [Pose]
      */
     public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose
 
     /**
-     * Converts the input [androidx.xr.runtime.math.Pose] to a
-     * [androidx.xr.runtime.math.GeospatialPose] in the same position.
+     * Converts the input [Pose] to a [GeospatialPose] in the same position.
+     *
+     * @param pose the [Pose] to convert
+     * @return the converted [GeospatialPoseResult]
      */
     public fun createGeospatialPoseFromPose(pose: Pose): GeospatialPoseResult
 
     /**
      * Creates an anchor at the specified geospatial location and orientation relative to
      * Geospatial.
+     *
+     * @param latitude the latitude of the anchor
+     * @param longitude the longitude of the anchor
+     * @param altitude the altitude of the anchor
+     * @param eastUpSouthQuaternion the rotation of the anchor
+     * @return the created [Anchor]
      */
     public fun createAnchor(
         latitude: Double,
@@ -148,8 +178,14 @@ public interface Geospatial {
     ): Anchor
 
     /**
-     * Creates an anchor at a specified geospatial location and altitude relative to the horizontal
-     * position's surface (Terrain or Rooftop).
+     * Creates an [Anchor] at a specified geospatial location.
+     *
+     * @param latitude the latitude of the anchor
+     * @param longitude the longitude of the anchor
+     * @param altitudeAboveSurface the altitude of the anchor above the surface
+     * @param eastUpSouthQuaternion the rotation of the anchor
+     * @param surface the [Surface] to create the anchor on
+     * @return the created [Anchor]
      */
     public suspend fun createAnchorOnSurface(
         latitude: Double,
@@ -161,8 +197,16 @@ public interface Geospatial {
 
     /**
      * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
-     * position. The availability of VPS in a given location helps to improve the quality of
-     * Geospatial localization and tracking accuracy.
+     * position.
+     *
+     * The Visual Positioning System (VPS) provides highly accurate global localization by matching
+     * features from the device's camera against Google's global database of 3D imagery. The
+     * availability of VPS in a given location helps to improve the quality of Geospatial
+     * localization and tracking accuracy.
+     *
+     * @param latitude the latitude to check
+     * @param longitude the longitude to check
+     * @return the [VpsAvailabilityResult]
      */
     public suspend fun checkVpsAvailability(
         latitude: Double,

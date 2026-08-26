@@ -17,20 +17,51 @@
 package androidx.camera.camera2.pipe.framegraph
 
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.FrameCapture
 import androidx.camera.camera2.pipe.FrameGraph
+import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.config.FrameGraphScope
+import androidx.camera.camera2.pipe.graph.Controller3A
+import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
+import kotlinx.atomicfu.atomic
+
+internal val frameGraphSessionIds = atomic(0)
 
 @FrameGraphScope
 internal class FrameGraphSessionImpl(
     private val cameraGraphSession: CameraGraph.Session,
     private val frameGraphBuffers: FrameGraphBuffers,
+    private val controller3A: Controller3A,
+    private val frameCaptureQueue: FrameCaptureQueue,
 ) : FrameGraph.Session, CameraGraph.Session by cameraGraphSession {
+
+    override fun capture(request: Request): FrameCapture {
+        val frameCapture = frameCaptureQueue.enqueue(request)
+        cameraGraphSession.submit(request)
+        return frameCapture
+    }
+
+    override fun capture(requests: List<Request>): List<FrameCapture> {
+        val frameCaptures = frameCaptureQueue.enqueue(requests)
+        cameraGraphSession.submit(requests)
+        return frameCaptures
+    }
+
+    private val debugId = frameGraphSessionIds.incrementAndGet()
+    private val state3ASnapshot = controller3A.state3ASnapshot()
+    private val closed = atomic(false)
+
     /**
      * Closes and invalidates the session, reverting it to the state it was before the session was
      * acquired.
      */
     override fun close() {
-        cameraGraphSession.close()
-        frameGraphBuffers.invalidate()
+        if (closed.compareAndSet(expect = false, update = true)) {
+            controller3A.reset3A(state3ASnapshot)
+            frameGraphBuffers.flush(cameraGraphSession)
+            cameraGraphSession.close()
+        }
     }
+
+    override fun toString(): String = "FrameGraph.Session-$debugId"
 }

@@ -1,14 +1,13 @@
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 
 plugins {
     id("AndroidXPlugin")
@@ -18,16 +17,9 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.lifecycle.runtime"
         withJava()
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
         androidResources.enable = true
-        // Needed for api tasks and docs generation
-        sourceSets {
-            androidMain {
-                kotlin.srcDirs += 'src/androidMain/java'
-            }
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
         }
     }
     desktop()
@@ -62,18 +54,22 @@ androidXMultiplatform {
 
         jvmAndAndroidMain.dependencies {
             api("androidx.arch.core:core-common:2.2.0")
+            implementation("androidx.tracing:tracing:2.0.0")
         }
 
         desktopTest.dependencies {
             implementation(libs.kotlinCoroutinesSwing)
         }
 
-        androidMain.dependencies {
-            api(libs.kotlinCoroutinesAndroid)
-            api(libs.jspecify)
-            implementation("androidx.core:core-viewtree:1.0.0")
-            implementation("androidx.arch.core:core-runtime:2.2.0")
-            implementation("androidx.profileinstaller:profileinstaller:1.4.0")
+        androidMain {
+            kotlin.srcDirs += "src/androidMain/java"
+            dependencies {
+                api(libs.kotlinCoroutinesAndroid)
+                api(libs.jspecify)
+                implementation("androidx.core:core-viewtree:1.0.0")
+                implementation("androidx.arch.core:core-runtime:2.2.0")
+                implementation("androidx.profileinstaller:profileinstaller:1.4.0")
+            }
         }
 
         androidHostTest.dependencies {

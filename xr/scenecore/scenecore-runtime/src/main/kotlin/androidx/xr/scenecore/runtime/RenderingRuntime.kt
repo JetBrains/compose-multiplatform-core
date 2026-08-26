@@ -18,10 +18,12 @@ package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.JxrRuntime
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
+import java.nio.ByteBuffer
 
 /**
  * RenderingRuntime encapsulates all the platform-specific rendering-related operations. Its
@@ -34,7 +36,7 @@ import androidx.xr.runtime.math.Vector4
  *
  * This API is not intended to be used by applications.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RenderingRuntime : JxrRuntime {
     /**
      * Loads glTF Asset for the given asset name from the assets folder. The Coroutine returned by
@@ -624,4 +626,104 @@ public interface RenderingRuntime : JxrRuntime {
         superSampling: Int,
         parentEntity: Entity?,
     ): SurfaceEntity
+
+    /**
+     * Creates a MeshBuffer resource.
+     *
+     * @param attributeIds The attribute IDs for each vertex attribute.
+     * @param attributeTypes The attribute types for each vertex attribute.
+     * @param bufferIndices The buffer indices for each vertex attribute.
+     * @param byteOffsets The byte offsets for each vertex attribute.
+     * @param byteStrides The byte strides for each buffer.
+     * @param maxVertices The maximum number of vertices.
+     * @param maxIndices The maximum number of indices.
+     * @param vertexData The vertex data arrays.
+     * @param vertexDataSizes The sizes of the vertex data arrays.
+     * @param indexData The index data.
+     * @param indexDataSize The size of the index data.
+     * @return A MeshBuffer resource.
+     */
+    public fun createMeshBuffer(
+        attributeIds: IntArray,
+        attributeTypes: IntArray,
+        bufferIndices: ByteArray,
+        byteOffsets: IntArray,
+        byteStrides: IntArray,
+        maxVertices: Int,
+        maxIndices: Int,
+        vertexData: Array<ByteBuffer>?,
+        vertexDataOffsets: IntArray?,
+        vertexDataSizes: IntArray?,
+        indexData: ByteBuffer?,
+        indexDataOffset: Int,
+        indexDataSize: Int,
+    ): MeshBufferResource
+
+    /**
+     * Destroys the given MeshBuffer resource.
+     *
+     * @param meshBuffer The MeshBuffer resource to destroy.
+     */
+    public fun destroyMeshBuffer(meshBuffer: MeshBufferResource)
+
+    /**
+     * Creates a CustomMesh resource.
+     *
+     * @param meshBuffer The MeshBuffer resource.
+     * @param subsetOffsets The subset offsets.
+     * @param subsetCounts The subset counts.
+     * @param subsetTopologies The subset topologies.
+     * @param centerX The x coordinate of the center of the bounding box.
+     * @param centerY The y coordinate of the center of the bounding box.
+     * @param centerZ The z coordinate of the center of the bounding box.
+     * @param halfExtentX The half extent of the bounding box along the x axis.
+     * @param halfExtentY The half extent of the bounding box along the y axis.
+     * @param halfExtentZ The half extent of the bounding box along the z axis.
+     * @return A CustomMesh resource.
+     */
+    public fun createCustomMesh(
+        meshBuffer: MeshBufferResource,
+        subsetOffsets: IntArray,
+        subsetCounts: IntArray,
+        subsetTopologies: IntArray,
+        centerX: Float,
+        centerY: Float,
+        centerZ: Float,
+        halfExtentX: Float,
+        halfExtentY: Float,
+        halfExtentZ: Float,
+    ): CustomMeshResource
+
+    /**
+     * Gets the bounding box of the given CustomMesh resource.
+     *
+     * @param customMesh The CustomMesh resource.
+     * @return The BoundingBox of the CustomMesh.
+     */
+    public fun getCustomMeshBoundingBox(customMesh: CustomMeshResource): BoundingBox
+
+    /**
+     * Destroys the given CustomMesh resource.
+     *
+     * @param customMesh The CustomMesh resource to destroy.
+     */
+    public fun destroyCustomMesh(customMesh: CustomMeshResource)
+
+    /**
+     * Creates a MeshEntity.
+     *
+     * @param customMesh The CustomMesh resource.
+     * @param materials The list of materials.
+     * @param boneCount The number of bones.
+     * @param pose The initial pose.
+     * @param parent The parent entity.
+     * @return A MeshEntity.
+     */
+    public fun createMeshEntity(
+        customMesh: CustomMeshResource,
+        materials: List<MaterialResource>,
+        boneCount: Int,
+        pose: Pose,
+        parent: Entity?,
+    ): MeshEntity
 }

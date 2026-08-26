@@ -17,8 +17,8 @@
 package androidx.build
 
 import androidx.build.clang.AndroidXClang
+import androidx.build.clang.ClangBuildService
 import androidx.build.clang.CombineObjectFilesTask
-import androidx.build.clang.KonanBuildService
 import androidx.build.clang.MultiTargetNativeCompilation
 import androidx.build.clang.NativeLibraryBundler
 import androidx.build.clang.configureCinterop
@@ -89,10 +89,9 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      * Sets the `kotlin.stdlib.klib.dir` property which can be accessed inside the tests
      */
     fun provideKlibStdLibForTests() {
-        val konanBuildService = KonanBuildService.obtain(project)
+        val clangBuildService = ClangBuildService.obtain(project)
         // directory format of stdlib klib for use during tests
-        val stdLibKlibDir =
-            konanBuildService.map { it.parameters.konanHome.dir("klib/common/stdlib") }
+        val stdLibKlibDir = clangBuildService.map { it.stdlibKlibDir() }
         project.tasks.withType(Test::class.java).configureEach { task ->
             task.inputs
                 .dir(stdLibKlibDir)
@@ -109,15 +108,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
 
     // Kotlin multiplatform plugin is only applied if at least one target / sourceset is added.
     private val kotlinExtensionDelegate = lazy {
-        project.afterEvaluate {
-            // Workaround for KT-77732
-            project.tasks
-                .named { it == "commonizeNativeDistribution" }
-                .configureEach { it.dependsOn("downloadKotlinNativeDistribution") }
-            project.tasks
-                .named { it == "downloadKotlinNativeDistribution" }
-                .configureEach { it.outputs.cacheIf { false } }
-        }
         project.validateMultiplatformPluginHasNotBeenApplied()
         project.plugins.apply(KotlinMultiplatformPluginWrapper::class.java)
         project.multiplatformExtension!!.also { it.applyAndroidXDefaultHierarchyTemplate() }
@@ -276,8 +266,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     ) {
         createCinterop(
             kotlinNativeCompilation =
-                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
-                    as KotlinNativeCompilation,
+                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME),
             nativeCompilation = nativeCompilation,
             cinteropName = cinteropName,
         )
@@ -424,6 +413,11 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                 project.tasks.named("jvmStubsTest").configure {
                     // don't try running common tests for stubs target if disabled
                     it.enabled = runTests
+                }
+                kotlinExtension.sourceSets.apply {
+                    val commonStubsMain = maybeCreate("commonStubsMain")
+                    commonStubsMain.dependsOn(getByName("commonMain"))
+                    getByName("jvmStubsMain").dependsOn(commonStubsMain)
                 }
             }
         } else {
@@ -667,6 +661,11 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                     // don't try running common tests for stubs target
                     it.enabled = false
                 }
+                kotlinExtension.sourceSets.apply {
+                    val commonStubsMain = maybeCreate("commonStubsMain")
+                    commonStubsMain.dependsOn(getByName("commonMain"))
+                    getByName("linuxx64StubsMain").dependsOn(commonStubsMain)
+                }
             }
         } else {
             null
@@ -717,7 +716,19 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
         createTarget: (KotlinJsTargetDsl.() -> Unit) -> T,
         block: Action<KotlinJsTargetDsl>? = null,
     ): T? {
-        if (buildFeatures.isIsolatedProjectsEnabled()) return null
+        if (buildFeatures.isIsolatedProjectsEnabled()) {
+            if (platform == PlatformIdentifier.JS) {
+                kotlinExtension.sourceSets.create("jsMain")
+                kotlinExtension.sourceSets.create("jsTest")
+            }
+            if (platform == PlatformIdentifier.WASM_JS) {
+                kotlinExtension.sourceSets.create("wasmJsMain")
+                kotlinExtension.sourceSets.create("wasmJsTest")
+            }
+            kotlinExtension.sourceSets.maybeCreate("webMain")
+            kotlinExtension.sourceSets.maybeCreate("webTest")
+            return null
+        }
         supportedPlatforms.add(platform)
         return if (isEnabled) {
             createTarget {
@@ -814,7 +825,7 @@ internal fun Project.configureNode() {
         plugins.withType<WasmYarnPlugin>().configureEach {
             the<WasmYarnRootEnvSpec>().let {
                 it.version.set(getVersionByName("yarn"))
-                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.yarnLockMismatchReport.set(yarnLockMisMatchReportSetting())
                 it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
             }
         }
@@ -822,12 +833,19 @@ internal fun Project.configureNode() {
         plugins.withType<YarnPlugin>().configureEach {
             the<YarnRootEnvSpec>().let {
                 it.version.set(getVersionByName("yarn"))
-                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.yarnLockMismatchReport.set(yarnLockMisMatchReportSetting())
                 it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
             }
         }
     }
 }
+
+private fun Project.yarnLockMisMatchReportSetting() =
+    if (allowLockfileMismatch()) {
+        YarnLockMismatchReport.WARNING
+    } else {
+        YarnLockMismatchReport.FAIL
+    }
 
 @OptIn(ExperimentalWasmDsl::class)
 private fun Project.configureBinaryen() {
@@ -903,3 +921,8 @@ fun Project.validatePublishedMultiplatformHasDefault() {
         )
     }
 }
+
+fun KotlinMultiplatformExtension.nativeTargets() =
+    targets.withType(KotlinNativeTarget::class.java).matching {
+        it.platformType == KotlinPlatformType.native
+    }

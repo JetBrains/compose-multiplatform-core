@@ -18,14 +18,10 @@ package androidx.room3
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.RestrictTo
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import androidx.room3.autoclose.AutoCloser
 import androidx.room3.concurrent.AtomicInt
-import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteConnection
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -38,8 +34,7 @@ import kotlinx.coroutines.flow.onStart
  * starts being collected, if a database operation changes one of the tables that the [Flow] was
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
-@Suppress("KmpModifierMismatch") // expect is not open
-public actual open class InvalidationTracker
+public actual class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual constructor(
     internal val database: RoomDatabase,
@@ -119,6 +114,7 @@ actual constructor(
      * @see refreshAsync
      */
     internal actual suspend fun sync() {
+        database.throwIfClosed()
         implementation.syncTriggers()
     }
 
@@ -133,6 +129,7 @@ actual constructor(
      * function manually to trigger invalidation.
      */
     public actual fun refreshAsync() {
+        if (database.closeBarrier.isClosed) return
         implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -145,6 +142,7 @@ actual constructor(
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual suspend fun refresh(vararg tables: String): Boolean {
+        database.throwIfClosed()
         return implementation.refreshInvalidation(tables, onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -189,6 +187,7 @@ actual constructor(
         vararg tables: String,
         emitInitialState: Boolean,
     ): Flow<Set<String>> {
+        database.throwIfClosed()
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         val trackerFlow = implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
         val multiInstanceFlow = multiInstanceInvalidationClient?.createFlow(resolvedTableNames)
@@ -215,29 +214,6 @@ actual constructor(
             emitInitialState = false,
             canSync = false,
         )
-    }
-
-    /**
-     * Creates a LiveData that computes the given function once and for every other invalidation of
-     * the database.
-     *
-     * @param tableNames The list of tables to observe
-     * @param inTransaction True if the computeFunction will be done in a transaction, false
-     *   otherwise.
-     * @param computeFunction The function that calculates the value
-     * @param T The return type
-     * @return A new LiveData that computes the given function when the given list of tables
-     *   invalidates.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public fun <T> createLiveData(
-        tableNames: Array<out String>,
-        inTransaction: Boolean,
-        computeFunction: suspend (SQLiteConnection) -> T,
-    ): LiveData<T> {
-        return createFlow(*tableNames, emitInitialState = true)
-            .map { performSuspending(database, true, inTransaction, computeFunction) }
-            .asLiveData(database.getQueryContext())
     }
 
     internal fun initMultiInstanceInvalidation(

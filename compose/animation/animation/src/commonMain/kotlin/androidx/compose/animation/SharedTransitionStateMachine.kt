@@ -16,6 +16,7 @@
 
 package androidx.compose.animation
 
+import androidx.annotation.EmptySuper
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -28,6 +29,12 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 
 internal const val SharedTransitionDebug = false
+
+internal inline fun sharedTransitionDebug(message: () -> String) {
+    if (SharedTransitionDebug) {
+        println("SharedTransition: " + message())
+    }
+}
 
 /**
  * This StateMachine manages the shared element's state in terms of finding match and setting up
@@ -71,7 +78,7 @@ internal class SharedTransitionStateMachine(val sharedElement: SharedElement) {
         open val matchIsOrHasBeenConfigured
             get() = false
 
-        open fun updateBounds(bounds: Rect) {}
+        @EmptySuper open fun updateBounds(bounds: Rect) {}
 
         abstract fun onMatchFound(previousTargetBoundsProvider: BoundsProvider?): State
 
@@ -107,9 +114,7 @@ internal class SharedTransitionStateMachine(val sharedElement: SharedElement) {
 
     /** Resets matchState to NoMatchFound. */
     fun resetState() {
-        if (SharedTransitionDebug) {
-            println("SharedTransition StateMachine, reset state machine to NoMatchFound")
-        }
+        sharedTransitionDebug { "StateMachine, reset state machine to NoMatchFound" }
         requestToBeHandled = StateChangeRequest.NoRequest
         lastHandledRequestId = requestId
         state = NoMatchFound
@@ -142,10 +147,8 @@ internal class SharedTransitionStateMachine(val sharedElement: SharedElement) {
      * pauses in animation because we do not animate in ActiveMatchFoundConfigPending state.
      */
     fun deferRequest(request: StateChangeRequest) {
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition StateMachine: new request posted: $request for current state: $state"
-            )
+        sharedTransitionDebug {
+            "StateMachine: new request posted: $request for current state: $state"
         }
         requestToBeHandled = request
         requestId = lastHandledRequestId + 1
@@ -161,9 +164,7 @@ internal class SharedTransitionStateMachine(val sharedElement: SharedElement) {
      */
     fun processPendingRequest() {
         if (requestId != lastHandledRequestId) {
-            if (SharedTransitionDebug) {
-                println("SharedTransition StateMachine: handle request: $requestToBeHandled")
-            }
+            sharedTransitionDebug { "StateMachine: handle request: $requestToBeHandled" }
             lastHandledRequestId = requestId
             state =
                 when (requestToBeHandled) {
@@ -263,11 +264,9 @@ internal class SharedTransitionStateMachine(val sharedElement: SharedElement) {
     fun tryInitializingCurrentBounds(): Rect? {
         processPendingRequest()
         return state.initializeCurrentBounds(sharedElement).also {
-            if (SharedTransitionDebug) {
-                println(
-                    "SharedTransition, try initializing current bounds. state = $state, key =" +
-                        " ${sharedElement.key}. Current bounds: $it"
-                )
+            sharedTransitionDebug {
+                "try initializing current bounds. state = $state, key =" +
+                    " ${sharedElement.key}. Current bounds: $it"
             }
         }
     }
@@ -343,11 +342,9 @@ internal object NoMatchFound : SharedTransitionStateMachine.State() {
     override fun onMatchFound(
         previousTargetBoundsProvider: BoundsProvider?
     ): SharedTransitionStateMachine.State {
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition StateMachine: Transitioning from NoMatch to ActiveMatchPending," +
-                    " previous target bounds provider: $previousTargetBoundsProvider"
-            )
+        sharedTransitionDebug {
+            "StateMachine: Transitioning from NoMatch to ActiveMatchPending," +
+                " previous target bounds provider: $previousTargetBoundsProvider"
         }
         return ActiveMatchFoundConfigPending(previousTargetBoundsProvider)
     }
@@ -425,18 +422,12 @@ internal class ActiveMatchFoundConfigPending(
     }
 
     override fun updateBounds(bounds: Rect) {
-        if (SharedTransitionDebug) {
-            println("SharedTransition, updating currentBounds to $bounds for state $this")
-        }
+        sharedTransitionDebug { "updating currentBounds to $bounds for state $this" }
         currentBounds = bounds
     }
 
     override fun onVisibleContentRemovedDuringTransition(): SharedTransitionStateMachine.State {
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition StateMachine: Transitioning from ActiveMatchPending to NoMatch"
-            )
-        }
+        sharedTransitionDebug { "StateMachine: Transitioning from ActiveMatchPending to NoMatch" }
         return NoMatchFound
     }
 }
@@ -487,11 +478,9 @@ internal class ActiveMatchConfigured(
     }
 
     override fun onVisibleContentRemovedDuringTransition(): SharedTransitionStateMachine.State {
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition StateMachine: Transitioning from ActiveMatchConfigured to" +
-                    " ActiveMatchRemovedDuringTransition"
-            )
+        sharedTransitionDebug {
+            "StateMachine: Transitioning from ActiveMatchConfigured to" +
+                " ActiveMatchRemovedDuringTransition"
         }
         val lastTarget =
             Rect(targetData.currentMfrOffset + targetData.targetStructuralOffset, targetData.size)
@@ -514,9 +503,7 @@ internal class ActiveMatchConfigured(
     }
 
     override fun updateBounds(bounds: Rect) {
-        if (SharedTransitionDebug) {
-            println("SharedTransition, updating currentBounds to $bounds for state $this")
-        }
+        sharedTransitionDebug { "updating currentBounds to $bounds for state $this" }
         currentBounds = bounds
     }
 }
@@ -536,11 +523,9 @@ internal class ActiveMatchRemovedDuringTransition(
     override fun onMatchFound(
         previousTargetBoundsProvider: BoundsProvider?
     ): SharedTransitionStateMachine.State {
-        if (SharedTransitionDebug) {
-            println(
-                "SharedTransition StateMachine: Transitioning from" +
-                    " ActiveMatchRemovedDuringTransition to ActiveMatchPending"
-            )
+        sharedTransitionDebug {
+            "StateMachine: Transitioning from" +
+                " ActiveMatchRemovedDuringTransition to ActiveMatchPending"
         }
         return ActiveMatchFoundConfigPending(
             previousTargetBoundsProvider,
@@ -550,9 +535,7 @@ internal class ActiveMatchRemovedDuringTransition(
     }
 
     override fun updateBounds(bounds: Rect) {
-        if (SharedTransitionDebug) {
-            println("SharedTransition, updating currentBounds to $bounds for state $this")
-        }
+        sharedTransitionDebug { "updating currentBounds to $bounds for state $this" }
         currentBounds = bounds
     }
 

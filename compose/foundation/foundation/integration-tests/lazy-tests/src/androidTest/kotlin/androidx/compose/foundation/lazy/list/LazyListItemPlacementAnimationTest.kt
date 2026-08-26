@@ -47,6 +47,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -73,10 +74,12 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -95,7 +98,7 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
     private val isInLookaheadScope: Boolean
         get() = config.isInLookaheadScope
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     // the numbers should be divisible by 8 to avoid the rounding issues as we run 4 or 8 frames
     // of the animation.
@@ -1374,6 +1377,28 @@ class LazyListAnimateItemPlacementTest(private val config: Config) {
                     }
                 }
             assertPositions(expected = expected.toTypedArray(), fraction = fraction)
+        }
+    }
+
+    @Ignore // b/497014394
+    @Test
+    fun animateScrollToItem_withReorder_doNotAnimatePlacement() {
+        var list by mutableStateOf(listOf(0, 1, 2, 4, 5))
+        lateinit var scope: CoroutineScope
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            LazyList { items(list, key = { it }) { Item(it) } }
+        }
+
+        assertPositions(0 to 0f, 1 to itemSize)
+
+        rule.runOnIdle {
+            scope.launch { state.animateScrollToItem(2) }
+            list = listOf(1, 0, 2, 4, 5)
+        }
+
+        onAnimationFrame { fraction ->
+            assertPositions(0 to itemSize, 1 to 0f, fraction = fraction)
         }
     }
 

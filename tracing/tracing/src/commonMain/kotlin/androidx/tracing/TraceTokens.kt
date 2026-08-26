@@ -18,103 +18,45 @@
 
 package androidx.tracing
 
-import androidx.tracing.PlatformThreadContextElement.Companion.STATE_BEGIN
-import androidx.tracing.PlatformThreadContextElement.Companion.STATE_END
+import kotlin.coroutines.CoroutineContext
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun CoroutineContext.platformThreadContextElement(): PlatformThreadContextElement? {
+    return this[PlatformThreadContextElement.KEY]
+}
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun inheritedPropagationToken(
-    parent: PlatformThreadContextElement<*>?,
-    track: ThreadTrack,
-): PlatformThreadContextElement<*> {
+    parent: PlatformThreadContextElement?,
+    tracer: PerfettoTracer,
+): PlatformThreadContextElement {
     val token =
-        buildThreadContextElement(
+        buildPropagationElement(
             // Placeholder to be filled in by beginSection* APIs.
             // Start off with the parent category and names so we have something consistent
             // when using the PlatformThreadContextElement for explicit trace propagation.
+            tracer = tracer,
             category = parent?.category ?: DEFAULT_STRING,
             name = parent?.name ?: DEFAULT_STRING,
             flowIds = parent?.flowIds ?: listOf(monotonicId()),
-            updateThreadContextBlock = {}, // Not used
-            restoreThreadContextBlock = {}, // Not used
-            close = { element ->
-                if (
-                    element.synchronizedCompareAndSet(expected = STATE_BEGIN, newValue = STATE_END)
-                ) {
-                    element.owner.endSection()
-                }
-            },
         )
-    token.owner = track
     return token
 }
 
 @Suppress("NOTHING_TO_INLINE")
-internal fun inheritedCoroutinePropagationToken(
-    parent: PlatformThreadContextElement<*>?,
-    track: ThreadTrack,
-): PlatformThreadContextElement<*> {
+internal inline fun inheritedCoroutinePropagationToken(
+    parent: PlatformThreadContextElement?,
+    tracer: PerfettoTracer,
+): PlatformThreadContextElement {
     val token =
-        buildThreadContextElement(
+        buildCoroutinePropagationElement(
             // Placeholder to be filled in by beginSection* APIs.
             // Start off with the parent category and names so we have something consistent
             // when using the PlatformThreadContextElement for explicit trace propagation.
+            tracer = tracer,
             category = parent?.category ?: DEFAULT_STRING,
             name = parent?.name ?: DEFAULT_STRING,
             flowIds = parent?.flowIds ?: listOf(monotonicId()),
-            // This method is called before a coroutine is resumed on a thread that
-            // belongs to a dispatcher. This can be called more than once. So avoid creating
-            // slices unless we transition to `STATE_END`.
-            updateThreadContextBlock = { context ->
-                val contextElement = context[PlatformThreadContextElement.KEY]
-                val category = contextElement?.category
-                val name = contextElement?.name
-                if (
-                    contextElement != null &&
-                        category != null &&
-                        name != null &&
-                        contextElement.synchronizedCompareAndSet(
-                            expected = STATE_END,
-                            newValue = STATE_BEGIN,
-                        )
-                ) {
-                    val result =
-                        contextElement.owner.beginCoroutineSection(
-                            category = category,
-                            name = name,
-                            token = contextElement,
-                        )
-                    result.metadata.dispatchToTraceSink()
-                }
-            },
-            // This method is called **after** a coroutine is suspended on the current thread.
-            // This method might be called more than once as well. So we want to be
-            // idempotent.
-            restoreThreadContextBlock = { context ->
-                val contextElement = context[PlatformThreadContextElement.KEY]
-                val name = contextElement?.name
-                if (
-                    contextElement != null &&
-                        name != null &&
-                        contextElement.synchronizedCompareAndSet(
-                            expected = STATE_BEGIN,
-                            newValue = STATE_END,
-                        )
-                ) {
-                    contextElement.owner.endSection()
-                }
-            },
-            close = { platformThreadContextElement ->
-                // Only close if the threadContextElement is still in STATE_BEGIN
-                if (
-                    platformThreadContextElement.synchronizedCompareAndSet(
-                        expected = STATE_BEGIN,
-                        newValue = STATE_END,
-                    )
-                ) {
-                    platformThreadContextElement.owner.endSection()
-                }
-            },
         )
-    token.owner = track
     return token
 }

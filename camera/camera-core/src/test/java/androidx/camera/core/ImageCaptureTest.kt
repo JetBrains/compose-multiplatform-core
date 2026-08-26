@@ -83,6 +83,7 @@ import java.io.File
 import java.util.Collections
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -124,6 +125,8 @@ class ImageCaptureTest {
                 captureError = exception
             }
         }
+    private val onImageSavedCallback = mock(ImageCapture.OnImageSavedCallback::class.java)
+
     private val testImplementationOption: androidx.camera.core.impl.Config.Option<Int> =
         androidx.camera.core.impl.Config.Option.create(
             "test.testOption",
@@ -170,9 +173,17 @@ class ImageCaptureTest {
     @Throws(ExecutionException::class, InterruptedException::class)
     fun tearDown() {
         capturedImage?.close()
-        CameraXUtil.shutdown().get()
+        if (::cameraUseCaseAdapter.isInitialized) {
+            cameraUseCaseAdapter.removeAllUseCases()
+        }
+        CameraXUtil.shutdown().get(10, TimeUnit.SECONDS)
         fakeImageReaderProxy = null
+
+        // Drain tasks before quitting the callback thread to avoid RejectedExecutionException
+        flushAll()
+
         callbackThread.quitSafely()
+        callbackThread.join()
     }
 
     @Test
@@ -258,7 +269,6 @@ class ImageCaptureTest {
         // Arrange.
         val imageCapture = createImageCapture()
         val options = ImageCapture.OutputFileOptions.Builder(File("fake_path")).build()
-        val onImageSavedCallback = mock(ImageCapture.OnImageSavedCallback::class.java)
 
         // Act.
         imageCapture.takePicture(options, executor, onImageSavedCallback)
@@ -734,6 +744,12 @@ class ImageCaptureTest {
     }
 
     @Test
+    fun constructor_initializesFlashModeFromConfig() {
+        val imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_AUTO).build()
+        assertThat(imageCapture.flashMode).isEqualTo(ImageCapture.FLASH_MODE_AUTO)
+    }
+
+    @Test
     fun throwException_whenFlashModeScreenSetWithoutScreenFlashInstanceSet() {
         val imageCapture = ImageCapture.Builder().build()
 
@@ -1131,6 +1147,79 @@ class ImageCaptureTest {
         assertThat(imageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
     }
 
+    @Test
+    fun takePictureInMemoryWithRawJpeg_doesNotThrowException() {
+        // Arrange.
+        val imageCapture = bindImageCaptureWithRawJpegSupport()
+
+        // Act & Assert.
+        // Should not throw IllegalArgumentException for in-memory RAW_JPEG capture
+        imageCapture.takePicture(executor, onImageCapturedCallback)
+    }
+
+    @Test
+    fun takePictureToFileWithRawJpegButOnlyOneOption_throwException() {
+        // Arrange.
+        val imageCapture = bindImageCaptureWithRawJpegSupport()
+        val options = ImageCapture.OutputFileOptions.Builder(File("fake_path")).build()
+
+        // Act & Assert.
+        assertThrows(IllegalArgumentException::class.java) {
+            imageCapture.takePicture(options, executor, onImageSavedCallback)
+        }
+    }
+
+    @Test
+    fun takePictureToFileWithJpegButTwoOptions_throwException() {
+        // Arrange.
+        // Default format is JPEG
+        val imageCapture = bindImageCapture()
+        val options1 = ImageCapture.OutputFileOptions.Builder(File("fake_path1")).build()
+        val options2 = ImageCapture.OutputFileOptions.Builder(File("fake_path2")).build()
+
+        // Act & Assert.
+        assertThrows(IllegalArgumentException::class.java) {
+            imageCapture.takePicture(options1, options2, executor, onImageSavedCallback)
+        }
+    }
+
+    private fun bindImageCaptureWithRawJpegSupport(): ImageCapture {
+        val imageCapture = ImageCapture.Builder().setOutputFormat(OUTPUT_FORMAT_RAW_JPEG).build()
+
+        val fakeManager = FakeCameraDeviceSurfaceManager()
+        fakeManager.setValidSurfaceCombos(
+            setOf(
+                listOf(
+                    INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+                    ImageFormat.JPEG,
+                    ImageFormat.RAW_SENSOR,
+                )
+            )
+        )
+        val fakeCameraInfo =
+            FakeCameraInfoInternal(
+                    StreamSpecsCalculatorImpl(FakeUseCaseConfigFactory(), fakeManager)
+                )
+                .apply {
+                    setSupportedResolutions(ImageFormat.PRIVATE, listOf())
+                    setSupportedResolutions(ImageFormat.JPEG, listOf())
+                    setSupportedResolutions(ImageFormat.RAW_SENSOR, listOf())
+                    setAvailableCapabilities(
+                        setOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
+                    )
+                }
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
+        cameraUseCaseAdapter =
+            CameraUseCaseAdapter(
+                FakeCamera(FakeCameraControl(), fakeCameraInfo),
+                FakeCameraCoordinator(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
+            )
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+        return imageCapture
+    }
+
     private fun bindImageCapture(
         captureMode: Int = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
         viewPort: ViewPort? = null,
@@ -1154,6 +1243,45 @@ class ImageCaptureTest {
         cameraUseCaseAdapter.setViewPort(viewPort)
         cameraUseCaseAdapter.addUseCases(Collections.singleton<UseCase>(imageCapture))
         return imageCapture
+    }
+
+    @Test
+    fun setFlashMode_sameValueDoesNotCallControl() {
+        // Arrange
+        val fakeCameraControl = FakeCameraControl()
+        val fakeCameraInfo = FakeCameraInfoInternal()
+        val fakeManager = FakeCameraDeviceSurfaceManager()
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
+
+        val fakeCamera = FakeCamera(fakeCameraControl, fakeCameraInfo)
+        cameraUseCaseAdapter =
+            CameraUseCaseAdapter(
+                fakeCamera,
+                FakeCameraCoordinator(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
+            )
+
+        // Default flash mode in createImageCapture is ImageCapture.FLASH_MODE_OFF
+        val imageCapture = createImageCapture()
+
+        // Act: bind use case
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+
+        // Assert: initial set of flash mode (should be called exactly once during bind)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(1)
+
+        // Act: set same flash mode again
+        imageCapture.setFlashMode(ImageCapture.FLASH_MODE_OFF)
+
+        // Assert: should still be called exactly once (no redundant calls)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(1)
+
+        // Act: set a different flash mode
+        imageCapture.setFlashMode(ImageCapture.FLASH_MODE_ON)
+
+        // Assert: should be called again (total count 2)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(2)
     }
 
     private fun createImageCapture(

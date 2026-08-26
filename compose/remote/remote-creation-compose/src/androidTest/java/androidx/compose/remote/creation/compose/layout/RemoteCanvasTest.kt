@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
+package androidx.compose.remote.creation.compose.layout
+
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.compose.remote.creation.compose.layout.RemoteAlignment
-import androidx.compose.remote.creation.compose.layout.RemoteArrangement
-import androidx.compose.remote.creation.compose.layout.RemoteBox
-import androidx.compose.remote.creation.compose.layout.RemoteCanvas
-import androidx.compose.remote.creation.compose.layout.RemoteColumn
-import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.layout.RemoteOffset
-import androidx.compose.remote.creation.compose.layout.RemoteRow
-import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
+import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.size
@@ -39,35 +33,30 @@ import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.matchers.MSSIMMatcher
-import com.google.testing.junit.testparameterinjector.TestParameter
-import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-@RunWith(TestParameterInjector::class)
+@RunWith(AndroidJUnit4::class)
 class RemoteCanvasTest {
-    @TestParameter private lateinit var targetPlayer: TargetPlayer
-
     @get:Rule
-    val remoteComposeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
+    val remoteComposeTestRule =
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = targetPlayer,
+            context = ApplicationProvider.getApplicationContext(),
             matcher = MSSIMMatcher(threshold = 0.9995),
         )
-    }
 
     private val tests =
         listOf<@Composable () -> Unit>(
@@ -77,6 +66,7 @@ class RemoteCanvasTest {
             ::TestClipRect_intersect,
             ::TestClipRect_difference,
             ::TestDrawPrimitives,
+            ::TestRotate,
         )
 
     @Test
@@ -102,15 +92,15 @@ class RemoteCanvasTest {
     fun TestDrawAnchoredText_colorAndTextSize() {
         val text = "Hello".rs
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
                 anchorY = 40f.rf,
                 paint =
-                    RemotePaint().apply {
-                        color = Color.Red.toArgb()
-                        textSize = SMALL_FONT_SIZE
+                    RemotePaint {
+                        color = Color.Red.rc
+                        textSize = SMALL_FONT_SIZE.rf
                     },
             )
             drawAnchoredText(
@@ -118,9 +108,9 @@ class RemoteCanvasTest {
                 anchorX = w / 2f,
                 anchorY = 80f.rf,
                 paint =
-                    RemotePaint().apply {
-                        color = Color.Green.toArgb()
-                        textSize = MEDIUM_FONT_SIZE
+                    RemotePaint {
+                        color = Color.Green.rc
+                        textSize = MEDIUM_FONT_SIZE.rf
                     },
             )
             drawAnchoredText(
@@ -128,9 +118,9 @@ class RemoteCanvasTest {
                 anchorX = w / 2f,
                 anchorY = 120f.rf,
                 paint =
-                    RemotePaint().apply {
-                        color = Color.Blue.toArgb()
-                        textSize = LARGE_FONT_SIZE
+                    RemotePaint {
+                        color = Color.Blue.rc
+                        textSize = LARGE_FONT_SIZE.rf
                     },
             )
         }
@@ -140,15 +130,15 @@ class RemoteCanvasTest {
     @Composable
     fun TestDrawPrimitives() {
         RemoteCanvas(modifier = RemoteModifier.size(100.rdp)) {
-            val paint = RemotePaint().apply { color = Color.Red.toArgb() }
+            val paint = RemotePaint { color = Color.Red.rc }
             drawRect(paint = paint)
             drawCircle(
-                paint = RemotePaint().apply { color = Color.Blue.toArgb() },
+                paint = RemotePaint { color = Color.Blue.rc },
                 center = RemoteOffset(50f.rf, 50f.rf),
                 radius = 40f.rf,
             )
             drawArc(
-                paint = RemotePaint().apply { color = Color.Green.toArgb() },
+                paint = RemotePaint { color = Color.Green.rc },
                 startAngle = 0f.rf,
                 sweepAngle = 90f.rf,
                 useCenter = true,
@@ -157,9 +147,9 @@ class RemoteCanvasTest {
             )
             drawLine(
                 paint =
-                    RemotePaint().apply {
-                        color = Color.Yellow.toArgb()
-                        strokeWidth = 5f
+                    RemotePaint {
+                        color = Color.Yellow.rc
+                        strokeWidth = 5f.rf
                     },
                 start = RemoteOffset(0f.rf, 0f.rf),
                 end = RemoteOffset(100f.rf, 100f.rf),
@@ -169,18 +159,49 @@ class RemoteCanvasTest {
 
     @RemoteComposable
     @Composable
+    fun TestRotate() {
+        RemoteCanvas(
+            modifier =
+                RemoteModifier.size(100.rdp).drawWithContent {
+                    rotate(45.rf, pivot = RemoteOffset(width / 2f, height / 2f)) { drawContent() }
+                }
+        ) {
+            val w = width
+            drawAnchoredText(
+                text = "Rotated by Canvas 45°".rs,
+                anchorX = 150f.rf,
+                anchorY = 80f.rf,
+                panX = 1f.rf,
+                paint = RemotePaint(),
+            )
+            rotate((-45).rf) {
+                drawAnchoredText(
+                    text = "Rotated -45° then by canvas".rs,
+                    anchorX = 10f.rf,
+                    anchorY = 100f.rf,
+                    panX = 1f.rf,
+                    paint = RemotePaint(),
+                )
+            }
+        }
+    }
+
+    @RemoteComposable
+    @Composable
     fun TestDrawAnchoredText_brushAndTextSize() {
         val text = RemoteString("Hello")
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
                 anchorY = 40f.rf,
                 paint =
-                    RemotePaint().apply {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Red.rc), remoteSize)
-                        textSize = SMALL_FONT_SIZE
+                    RemotePaint {
+                        with(RemoteBrush.solidColor(Color.Red.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
+                        textSize = SMALL_FONT_SIZE.rf
                     },
             )
             drawAnchoredText(
@@ -188,9 +209,11 @@ class RemoteCanvasTest {
                 anchorX = w / 2f,
                 anchorY = 80f.rf,
                 paint =
-                    RemotePaint().apply {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Green.rc), remoteSize)
-                        textSize = MEDIUM_FONT_SIZE
+                    RemotePaint {
+                        with(RemoteBrush.solidColor(Color.Green.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
+                        textSize = MEDIUM_FONT_SIZE.rf
                     },
             )
             drawAnchoredText(
@@ -198,9 +221,11 @@ class RemoteCanvasTest {
                 anchorX = w / 2f,
                 anchorY = 120f.rf,
                 paint =
-                    RemotePaint().apply {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Blue.rc), remoteSize)
-                        textSize = LARGE_FONT_SIZE
+                    RemotePaint {
+                        with(RemoteBrush.solidColor(Color.Blue.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
+                        textSize = LARGE_FONT_SIZE.rf
                     },
             )
         }
@@ -209,18 +234,25 @@ class RemoteCanvasTest {
     @RemoteComposable
     @Composable
     fun TestDrawAnchoredText_colorExpression() {
-        val color = RemoteColor.fromARGB(0.9f.rf.createReference(), 0.8f.rf, 0.9f.rf, 0.9f.rf)
+        val textColor =
+            RemoteColor.rgb(
+                red = 0.8f.rf,
+                green = 0.9f.rf,
+                blue = 0.9f.rf,
+                // Force a non const expression with createReference
+                alpha = 0.9f.rf.createReference(),
+            )
         val text = "Visible Hello".rs
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
                 anchorY = 40f.rf,
                 paint =
-                    RemotePaint().apply {
-                        remoteColor = color
-                        textSize = SMALL_FONT_SIZE
+                    RemotePaint {
+                        color = textColor
+                        textSize = SMALL_FONT_SIZE.rf
                     },
             )
         }
@@ -266,7 +298,7 @@ class RemoteCanvasTest {
                     bottom = clipRect2Bottom,
                     clipOp = clipOp,
                 ) {
-                    drawRect(paint = RemotePaint().apply { color = Color.Red.toArgb() })
+                    drawRect(paint = RemotePaint { color = Color.Red.rc })
                 }
             }
         }
@@ -280,8 +312,7 @@ class RemoteCanvasTest {
     ) {
         RemoteBox(
             modifier = modifier.size(ContainerSize).background(ContainerColor),
-            horizontalAlignment = RemoteAlignment.CenterHorizontally,
-            verticalArrangement = RemoteArrangement.Center,
+            contentAlignment = RemoteAlignment.Center,
             content = content,
         )
     }

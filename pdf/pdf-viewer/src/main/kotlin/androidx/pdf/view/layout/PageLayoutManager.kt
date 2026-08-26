@@ -19,7 +19,7 @@ package androidx.pdf.view.layout
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.Range
 import android.util.SparseArray
 import androidx.pdf.PdfDocument
@@ -27,7 +27,9 @@ import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
+import androidx.pdf.util.compatContentEquals
 import androidx.pdf.view.PdfFormFillingState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +49,6 @@ import kotlinx.coroutines.withContext
 internal class PageLayoutManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    private val topPageMarginPx: Float = 0f,
     pagesPerRow: Int = SINGLE_PAGE,
     horizontalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     verticalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
@@ -58,12 +59,11 @@ internal class PageLayoutManager(
             pagesPerRow,
             horizontalPageSpacingPx,
             verticalPageSpacingPx,
-            topPageMarginPx,
         ),
     internal val pdfFormFillingState: PdfFormFillingState =
         PdfFormFillingState(pdfDocument.pageCount),
     private val errorFlow: MutableSharedFlow<Throwable>,
-    private val isFormFillingEnabled: Boolean = false,
+    internal var isFormFillingEnabled: () -> Boolean = { false },
 ) {
     /** The 0-indexed maximum page number whose dimensions are known to this model */
     val reach
@@ -160,7 +160,6 @@ internal class PageLayoutManager(
                 pagesPerRow,
                 horizontalPageSpacingPx,
                 verticalPageSpacingPx,
-                topPageMarginPx,
             )
 
         for (pageNum in 0..paginationModel.reach) {
@@ -349,7 +348,7 @@ internal class PageLayoutManager(
             pageLocations.put(i, calculatePageLocation(i, viewport))
         }
         this.pageLocations = pageLocations
-        return !prevLocations.contentEquals(this@PageLayoutManager.pageLocations)
+        return !prevLocations.compatContentEquals(this@PageLayoutManager.pageLocations)
     }
 
     /**
@@ -374,7 +373,7 @@ internal class PageLayoutManager(
             visibleAreas.put(i, area)
         }
         visiblePageAreas = visibleAreas
-        return !prevAreas.contentEquals(visiblePageAreas)
+        return !prevAreas.compatContentEquals(visiblePageAreas)
     }
 
     /** Waits for any outstanding dimensions to be loaded, then loads dimensions for [pageNum] */
@@ -387,7 +386,7 @@ internal class PageLayoutManager(
                 try {
                     val pageInfoFlags =
                         if (
-                            isFormFillingEnabled and
+                            isFormFillingEnabled() and
                                 (pdfDocument.formType != PdfDocument.PDF_FORM_TYPE_NONE)
                         )
                             PdfDocument.PAGE_INFO_INCLUDE_FORM_WIDGET
@@ -409,7 +408,8 @@ internal class PageLayoutManager(
                 // TODO(b/409465579): Propagate custom exception from SandboxedPdfDocument to
                 // decouple
                 // it from service specific exceptions
-                catch (e: DeadObjectException) {
+                catch (e: RemoteException) {
+                    if (!e.isHandledRemoteException) throw e
                     // An exception happened above because of service disconnection. Our marked
                     // requestedReach is no longer correct. In subsequent calls the missed value
                     // will be approximated by the next known value.
@@ -439,17 +439,11 @@ internal class PageLayoutManager(
             pagesPerRow: Int,
             horizontalPageSpacingPx: Float,
             verticalPageSpacingPx: Float,
-            topPageMarginPx: Float,
         ): LayoutStrategy {
             return if (pagesPerRow == TWO_PAGE) {
-                TwoPageLayoutStrategy(
-                    pageCount,
-                    verticalPageSpacingPx,
-                    horizontalPageSpacingPx,
-                    topPageMarginPx,
-                )
+                TwoPageLayoutStrategy(pageCount, verticalPageSpacingPx, horizontalPageSpacingPx)
             } else {
-                SinglePageLayoutStrategy(pageCount, verticalPageSpacingPx, topPageMarginPx)
+                SinglePageLayoutStrategy(pageCount, verticalPageSpacingPx)
             }
         }
     }

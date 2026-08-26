@@ -205,8 +205,7 @@ fun maze(): RemoteComposeWriter {
                 .setStyle(Style.FILL)
                 .setShader(0)
                 .commit()
-            val event = ContinuousSec().toFloat()
-            impulse(20000f, event) {
+            impulse(20000f, 0f) {
                 val variables: Array<RFloat> = Array<RFloat>(6, { RFloat(this, 0f) })
                 val pi = (Math.PI).toFloat()
                 val ps =
@@ -498,8 +497,8 @@ fun psMaze2(
                 .setStyle(Style.FILL)
                 .setShader(0)
                 .commit()
-            val event = ContinuousSec().toFloat()
-            impulse(20000f, event) {
+
+            impulse(20000f, 4f) {
                 val variables: Array<RFloat> = Array<RFloat>(5, { RFloat(this, 0f) })
                 val ps =
                     createParticles(
@@ -707,6 +706,6 @@ fun RemoteComposeWriterAndroid.lookup2(
     )
 }
 
-@Preview @Composable private fun BallPreview() = RemoteDocPreview(ball())
+@Preview @Composable private fun BallPreview() = RemoteDocumentPreview(ball())
 
-@Preview @Composable private fun MazePreview() = RemoteDocPreview(maze())
+@Preview @Composable private fun MazePreview() = RemoteDocumentPreview(maze())

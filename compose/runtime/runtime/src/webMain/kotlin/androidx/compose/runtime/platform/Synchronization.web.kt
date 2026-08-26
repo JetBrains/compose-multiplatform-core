@@ -16,6 +16,9 @@
 
 package androidx.compose.runtime.platform
 
+// Suppress the warning that's flagging Any as missing the @PublishedApi annotation;
+// it's already visible enough to be inlined.
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 internal actual typealias SynchronizedObject = Any
 
 @Suppress("NOTHING_TO_INLINE")
@@ -23,13 +26,3 @@ internal actual inline fun makeSynchronizedObject(ref: Any?) = ref ?: Synchroniz
 
 @PublishedApi
 internal actual inline fun <R> synchronized(lock: SynchronizedObject, block: () -> R): R = block()
-
-internal actual class Monitor {
-    actual fun wait() {}
-
-    actual fun notifyAll() {}
-}
-
-@Suppress("NOTHING_TO_INLINE") internal actual inline fun makeMonitor(ref: Any?) = Monitor()
-
-internal actual inline fun <R> synchronized(monitor: Monitor, block: () -> R): R = block()

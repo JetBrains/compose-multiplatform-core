@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
@@ -28,6 +30,7 @@ import androidx.xr.scenecore.testing.FakePointerCaptureComponent
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
@@ -63,7 +66,7 @@ class PointerCaptureComponentTest {
         }
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         val testDispatcher = StandardTestDispatcher()
         val result = Session.create(activity, testDispatcher)
 
@@ -75,21 +78,22 @@ class PointerCaptureComponentTest {
 
     @Test
     fun addComponent_addsRuntimeComponent() {
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
+        val rtEntity = entity.rtEntity
         assertThat(entity).isNotNull()
 
         val pointerCaptureComponent =
             PointerCaptureComponent.create(session, directExecutor(), stateListener, inputListener)
 
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
-        assertThat(entity.rtEntity?.getComponents()).hasSize(1)
-        assertThat(entity.rtEntity?.getComponents()[0])
+        assertThat(rtEntity?.getComponents()).hasSize(1)
+        assertThat(rtEntity?.getComponents()[0])
             .isInstanceOf(FakePointerCaptureComponent::class.java)
     }
 
     @Test
     fun addComponent_failsIfAlreadyAttached() {
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val pointerCaptureComponent =
@@ -100,18 +104,18 @@ class PointerCaptureComponentTest {
 
     @Test
     fun stateListener_propagatesCorrectlyFromRuntime() {
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
+        val rtEntity = entity.rtEntity
         val pointerCaptureComponent =
             PointerCaptureComponent.create(session, directExecutor(), stateListener, inputListener)
 
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
-        assertThat(entity.rtEntity?.getComponents()).hasSize(1)
-        assertThat(entity.rtEntity?.getComponents()[0])
+        assertThat(rtEntity?.getComponents()).hasSize(1)
+        assertThat(rtEntity?.getComponents()[0])
             .isInstanceOf(FakePointerCaptureComponent::class.java)
 
         // Verify all states are properly converted and propagated.
-        val stateListenerCaptured =
-            entity.rtEntity?.getComponents()[0] as FakePointerCaptureComponent
+        val stateListenerCaptured = rtEntity?.getComponents()[0] as FakePointerCaptureComponent
         stateListenerCaptured.onStateChanged(
             RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_ACTIVE
         )
@@ -133,13 +137,14 @@ class PointerCaptureComponentTest {
 
     @Test
     fun inputEventListener_propagatesFromRuntime() {
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
+        val rtEntity = entity.rtEntity
         val pointerCaptureComponent =
             PointerCaptureComponent.create(session, directExecutor(), stateListener, inputListener)
 
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
-        assertThat(entity.rtEntity?.getComponents()).hasSize(1)
-        assertThat(entity.rtEntity?.getComponents()[0])
+        assertThat(rtEntity?.getComponents()).hasSize(1)
+        assertThat(rtEntity?.getComponents()[0])
             .isInstanceOf(FakePointerCaptureComponent::class.java)
 
         val inputEvent =
@@ -150,7 +155,7 @@ class PointerCaptureComponentTest {
                 Vector3(),
                 Vector3(0f, 0f, 1f),
                 RtInputEvent.Action.DOWN,
-                listOf(RtInputEvent.HitInfo(entity.rtEntity!!, Vector3.One, Matrix4.Identity)),
+                listOf(RtInputEvent.HitInfo(entity.rtEntity, Vector3.One, Matrix4.Identity)),
             )
         val rtPointerCaptureComponent =
             entity.rtEntity?.getComponents()[0] as FakePointerCaptureComponent
@@ -175,17 +180,28 @@ class PointerCaptureComponentTest {
 
     @Test
     fun removeComponent_removesRuntimeComponent() {
-        val entity = GroupEntity.create(session, "test")
+        val entity = Entity.create(session, "test")
+        val rtEntity = entity.rtEntity
         assertThat(entity).isNotNull()
 
         val pointerCaptureComponent =
             PointerCaptureComponent.create(session, directExecutor(), stateListener, inputListener)
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
-        assertThat(entity.rtEntity?.getComponents()).hasSize(1)
-        assertThat(entity.rtEntity?.getComponents()[0])
+        assertThat(rtEntity?.getComponents()).hasSize(1)
+        assertThat(rtEntity?.getComponents()[0])
             .isInstanceOf(FakePointerCaptureComponent::class.java)
 
         entity.removeComponent(pointerCaptureComponent)
-        assertThat(entity.rtEntity?.getComponents()).hasSize(0)
+        assertThat(rtEntity?.getComponents()).hasSize(0)
+    }
+
+    @Test
+    fun pointerCaptureState_toString() {
+        assertThat(PointerCaptureComponent.PointerCaptureState.PAUSED.toString())
+            .isEqualTo("PAUSED")
+        assertThat(PointerCaptureComponent.PointerCaptureState.ACTIVE.toString())
+            .isEqualTo("ACTIVE")
+        assertThat(PointerCaptureComponent.PointerCaptureState.STOPPED.toString())
+            .isEqualTo("STOPPED")
     }
 }

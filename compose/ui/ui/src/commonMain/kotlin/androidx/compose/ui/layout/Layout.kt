@@ -74,7 +74,7 @@ import kotlin.jvm.JvmName
 @Suppress("ComposableLambdaParameterPosition")
 @UiComposable
 @Composable
-inline fun Layout(
+public inline fun Layout(
     content: @Composable @UiComposable () -> Unit,
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy,
@@ -87,7 +87,7 @@ inline fun Layout(
         update = {
             set(measurePolicy, SetMeasurePolicy)
             set(localMap, SetResolvedCompositionLocals)
-            init(compositeKeyHash, SetCompositeKeyHash)
+            set(compositeKeyHash, SetCompositeKeyHash)
             reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
         },
@@ -121,7 +121,7 @@ inline fun Layout(
 @Suppress("NOTHING_TO_INLINE")
 @Composable
 @UiComposable
-inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
+public inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val materialized = currentComposer.materialize(modifier)
     val localMap = currentComposer.currentCompositionLocalMap
@@ -132,7 +132,7 @@ inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
             set(localMap, SetResolvedCompositionLocals)
             reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
-            init(compositeKeyHash, SetCompositeKeyHash)
+            set(compositeKeyHash, SetCompositeKeyHash)
         },
     )
 }
@@ -162,7 +162,7 @@ inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
 @Suppress("ComposableLambdaParameterPosition", "NOTHING_TO_INLINE")
 @UiComposable
 @Composable
-inline fun Layout(
+public inline fun Layout(
     contents: List<@Composable @UiComposable () -> Unit>,
     modifier: Modifier = Modifier,
     measurePolicy: MultiContentMeasurePolicy,
@@ -182,7 +182,7 @@ internal fun combineAsVirtualLayouts(
         val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
         ReusableComposeNode<ComposeUiNode, Applier<Any>>(
             factory = ComposeUiNode.VirtualConstructor,
-            update = { init(compositeKeyHash, SetCompositeKeyHash) },
+            update = { set(compositeKeyHash, SetCompositeKeyHash) },
             content = content,
         )
     }
@@ -202,7 +202,7 @@ internal fun materializerOf(
     val materialized = currentComposer.materialize(modifier)
     update {
         set(materialized, SetModifier)
-        init(compositeKeyHash, SetCompositeKeyHash)
+        set(compositeKeyHash, SetCompositeKeyHash)
     }
 }
 
@@ -224,7 +224,7 @@ internal fun materializerOfWithCompositionLocalInjection(
     val materialized = currentComposer.materializeWithCompositionLocalInjectionInternal(modifier)
     update {
         set(materialized, SetModifier)
-        init(compositeKeyHash, SetCompositeKeyHash)
+        set(compositeKeyHash, SetCompositeKeyHash)
     }
 }
 
@@ -235,7 +235,7 @@ internal fun materializerOfWithCompositionLocalInjection(
     "This API is unsafe for UI performance at scale - using it incorrectly will lead " +
         "to exponential performance issues. This API should be avoided whenever possible."
 )
-fun MultiMeasureLayout(
+public fun MultiMeasureLayout(
     modifier: Modifier = Modifier,
     content: @Composable @UiComposable () -> Unit,
     measurePolicy: MeasurePolicy,
@@ -252,7 +252,7 @@ fun MultiMeasureLayout(
             @Suppress("DEPRECATION") init { this.canMultiMeasure = true }
             reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
-            init(compositeKeyHash, SetCompositeKeyHash)
+            set(compositeKeyHash, SetCompositeKeyHash)
         },
         content = content,
     )

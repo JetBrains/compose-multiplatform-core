@@ -28,12 +28,14 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
+import androidx.compose.remote.core.CustomContext
 import androidx.compose.remote.core.PaintContext
 import androidx.compose.remote.core.RcPlatformServices
 import androidx.compose.remote.core.operations.ClipPath
 import androidx.compose.remote.core.operations.layout.managers.TextLayout
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation
 import androidx.compose.remote.core.operations.paint.PaintBundle
+import androidx.compose.remote.player.compose.custom.ComposeCustomSupport
 import androidx.compose.remote.player.compose.utils.FloatsToPath
 import androidx.compose.remote.player.compose.utils.copy
 import androidx.compose.remote.player.compose.utils.getPath
@@ -55,12 +57,13 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * A [PaintContext] implementation for [androidx.compose.remote.player.compose.RemoteComposePlayer].
+ * A [PaintContext] implementation for
+ * [androidx.compose.remote.player.compose.impl.RemoteComposePlayer].
  */
 internal class ComposePaintContext(
     remoteContext: ComposeRemoteContext,
     private var canvas: Canvas,
-) : PaintContext(remoteContext) {
+) : PaintContext(remoteContext), CustomContext {
 
     var paint = Paint()
     var paintList: MutableList<Paint> = mutableListOf()
@@ -72,6 +75,11 @@ internal class ComposePaintContext(
     private var cachedFontMetrics: android.graphics.Paint.FontMetrics? = null
     private val cachedPaintChanges =
         ComposePaintChanges(remoteContext = remoteContext, getPaint = { this.paint })
+    private var customSupport: ComposeCustomSupport? = null
+
+    private val matrixStack = mutableListOf(Matrix())
+    private val currentMatrix: Matrix
+        get() = matrixStack.last()
 
     override fun drawBitmap(
         imageId: Int,
@@ -89,15 +97,56 @@ internal class ComposePaintContext(
         if (androidContext.mRemoteComposeState.containsId(imageId)) {
             val bitmap = androidContext.mRemoteComposeState.getFromId(imageId) as Bitmap?
             bitmap?.let {
+                @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
                 nativeCanvas()
                     .drawBitmap(
                         bitmap,
                         Rect(srcLeft, srcTop, srcRight, srcBottom),
                         Rect(dstLeft, dstTop, dstRight, dstBottom),
-                        paint.asFrameworkPaint(),
+                        nativePaint,
                     )
             }
         }
+    }
+
+    override fun setCustomSupport(customSupport: CustomContext) {
+        this.customSupport = customSupport as? ComposeCustomSupport
+        this.customSupport?.setRemoteContext(mContext)
+        this.customSupport?.setCanvas(this.canvas)
+    }
+
+    override fun createCustom(id: Int, config: String) {
+        customSupport?.createCustom(id, config)
+    }
+
+    override fun configureCustom(id: Int, type: Int, value: String) {
+        customSupport?.configureCustom(id, type, value)
+    }
+
+    override fun configureCustom(id: Int, type: Int, value: Int) {
+        customSupport?.configureCustom(id, type, value)
+    }
+
+    override fun configureCustom(id: Int, type: Int, value: Float) {
+        customSupport?.configureCustom(id, type, value)
+    }
+
+    override fun measureCustom(id: Int, bounds: FloatArray) {
+        customSupport?.measureCustom(id, bounds)
+    }
+
+    override fun layoutCustom(id: Int, bounds: FloatArray) {
+        customSupport?.layoutCustom(id, bounds)
+    }
+
+    override fun touchCustom(id: Int, type: Int, x: Float, y: Float): Boolean {
+        return customSupport?.touchCustom(id, type, x, y) ?: false
+    }
+
+    override fun drawCustom(id: Int) {
+        val origin = currentMatrix.map(Offset.Zero)
+        customSupport?.updateBounds(id, origin.x, origin.y)
+        customSupport?.drawCustom(id)
     }
 
     override fun scale(scaleX: Float, scaleY: Float) {
@@ -106,6 +155,7 @@ internal class ComposePaintContext(
 
     override fun translate(translateX: Float, translateY: Float) {
         canvas.translate(translateX, translateY)
+        currentMatrix.translate(translateX, translateY)
     }
 
     override fun drawArc(
@@ -136,7 +186,8 @@ internal class ComposePaintContext(
             val bitmap = androidContext.mRemoteComposeState.getFromId(id) as Bitmap?
             val src = Rect(0, 0, bitmap!!.getWidth(), bitmap.getHeight())
             val dst = RectF(left, top, right, bottom)
-            nativeCanvas().drawBitmap(bitmap, src, dst, paint.asFrameworkPaint())
+            @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+            nativeCanvas().drawBitmap(bitmap, src, dst, nativePaint)
         }
     }
 
@@ -169,7 +220,8 @@ internal class ComposePaintContext(
     }
 
     override fun replacePaint(paint: PaintBundle) {
-        this.paint.asFrameworkPaint().reset()
+        @Suppress("DEPRECATION") val nativePaint = this.paint.asFrameworkPaint()
+        nativePaint.reset()
         applyPaint(paint)
     }
 
@@ -185,13 +237,14 @@ internal class ComposePaintContext(
     }
 
     override fun drawTextOnPath(textId: Int, pathId: Int, hOffset: Float, vOffset: Float) {
+        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
         nativeCanvas()
             .drawTextOnPath(
                 getText(textId)!!,
                 getNativePath(pathId, 0f, 1f),
                 hOffset,
                 vOffset,
-                paint.asFrameworkPaint(),
+                nativePaint,
             )
     }
 
@@ -203,7 +256,7 @@ internal class ComposePaintContext(
                 str!!.length
             } else end
 
-        val paint = paint.asFrameworkPaint()
+        @Suppress("DEPRECATION") val paint = paint.asFrameworkPaint()
         if (cachedFontMetrics == null) {
             cachedFontMetrics = paint.getFontMetrics()
         }
@@ -260,7 +313,8 @@ internal class ComposePaintContext(
             } else end
 
         val textPaint = TextPaint()
-        textPaint.set(paint.asFrameworkPaint())
+        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        textPaint.set(nativePaint)
         val staticLayoutBuilder =
             StaticLayout.Builder.obtain(str, start, endSanitized, textPaint, maxWidth.toInt())
         when (alignment) {
@@ -289,11 +343,31 @@ internal class ComposePaintContext(
         staticLayoutBuilder.setIncludePad(false)
 
         val staticLayout = staticLayoutBuilder.build()
+        val lineCount = staticLayout.lineCount
+        var minLeft = Float.MAX_VALUE
+        var maxRight = 0f
+        for (i in 0 until lineCount) {
+            val lineLeft = staticLayout.getLineLeft(i)
+            val lineRight = staticLayout.getLineRight(i)
+            if (lineLeft < minLeft) {
+                minLeft = lineLeft
+            }
+            if (lineRight > maxRight) {
+                maxRight = lineRight
+            }
+        }
+        if (minLeft == Float.MAX_VALUE) {
+            minLeft = 0f
+        }
+        val left = minLeft
+        val width = kotlin.math.ceil(maxRight - minLeft)
+
         return AndroidComputedTextLayout(
             staticLayout,
-            staticLayout.width.toFloat(),
+            left,
+            width,
             staticLayout.height.toFloat(),
-            staticLayout.getLineCount(),
+            staticLayout.lineCount,
             false,
         )
     }
@@ -322,15 +396,24 @@ internal class ComposePaintContext(
             textToPaint = textToPaint.substring(start, end)
         }
 
-        nativeCanvas().drawText(textToPaint, x, y, paint.asFrameworkPaint())
+        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        nativeCanvas().drawText(textToPaint, x, y, nativePaint)
     }
 
     override fun drawComplexText(computedTextLayout: RcPlatformServices.ComputedTextLayout?) {
         if (computedTextLayout == null) {
             return
         }
-        val staticLayout = (computedTextLayout as AndroidComputedTextLayout).get()
-        staticLayout.draw(nativeCanvas())
+        val androidLayout = computedTextLayout as AndroidComputedTextLayout
+        val staticLayout = androidLayout.get()
+        val left = androidLayout.left
+        if (left != 0f) {
+            nativeCanvas().translate(-left, 0f)
+            staticLayout.draw(nativeCanvas())
+            nativeCanvas().translate(left, 0f)
+        } else {
+            staticLayout.draw(nativeCanvas())
+        }
     }
 
     override fun drawTweenPath(
@@ -380,6 +463,7 @@ internal class ComposePaintContext(
 
     override fun matrixTranslate(translateX: Float, translateY: Float) {
         canvas.translate(translateX, translateY)
+        currentMatrix.translate(translateX, translateY)
     }
 
     override fun matrixSkew(skewX: Float, skewY: Float) {
@@ -396,10 +480,14 @@ internal class ComposePaintContext(
 
     override fun matrixSave() {
         canvas.save()
+        matrixStack.add(Matrix(currentMatrix.values.clone()))
     }
 
     override fun matrixRestore() {
         canvas.restore()
+        if (matrixStack.size > 1) {
+            matrixStack.removeAt(matrixStack.lastIndex)
+        }
     }
 
     override fun clipRect(left: Float, top: Float, right: Float, bottom: Float) {
@@ -440,7 +528,8 @@ internal class ComposePaintContext(
     }
 
     override fun reset() {
-        with(paint.asFrameworkPaint()) {
+        @Suppress("DEPRECATION") val nativePaint = paint.asFrameworkPaint()
+        with(nativePaint) {
             // With out calling setTypeface before or after paint is reset()
             // Variable type fonts corrupt memory resulting in a
             // segmentation violation

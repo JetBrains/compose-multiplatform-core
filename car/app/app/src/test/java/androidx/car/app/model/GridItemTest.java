@@ -202,7 +202,7 @@ public class GridItemTest {
     public void create_setImagewithTypeAndBadge() {
         Badge b = new Badge.Builder().setHasDot(true).build();
         GridItem gridItem = new GridItem.Builder().setTitle("Title")
-                .setImage(BACK, GridItem.IMAGE_TYPE_ICON, b).build();
+                .setImage(BACK, GridItem.IMAGE_TYPE_SMALL, b).build();
 
         assertThat(gridItem.getBadge()).isEqualTo(b);
     }
@@ -296,16 +296,14 @@ public class GridItemTest {
     }
 
     @Test
-    public void textAndProgressBarSet_textIgnored() {
+    public void textAndProgressBarSet_throws() {
         CarProgressBar bar = new CarProgressBar.Builder(0.5f).build();
-        GridItem gridItem = new GridItem.Builder()
-                .setTitle("Title")
-                .setImage(BACK)
-                .setText("Text")
-                .setProgressBar(bar)
-                .build();
-
-        assertThat(gridItem.getProgressBar()).isEqualTo(bar);
-        assertThat(gridItem.getText()).isNull();
+        assertThrows(IllegalStateException.class,
+                () -> new GridItem.Builder()
+                        .setTitle("Title")
+                        .setImage(BACK)
+                        .setText("Text")
+                        .setProgressBar(bar)
+                        .build());
     }
 }

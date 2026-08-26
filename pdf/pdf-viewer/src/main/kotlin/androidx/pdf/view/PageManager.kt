@@ -24,12 +24,16 @@ import android.util.SparseArray
 import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
+import androidx.pdf.Highlight
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.ocr.OcrContextRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 
 /**
  * Manages a collection of [Page]s, each representing a single PDF page. Receives events to update
@@ -50,7 +54,18 @@ internal class PageManager(
     /** Error flow for propagating error occurred while processing to [PdfView]. */
     private val errorFlow: MutableSharedFlow<Throwable>,
     isAccessibilityEnabled: Boolean,
+    ocrContextRepository: OcrContextRepository? = null,
 ) {
+    private var _ocrContextRepository: OcrContextRepository? = ocrContextRepository
+
+    /** Sets the [OcrContextRepository] and updates all existing pages. */
+    internal fun setOcrContextRepository(value: OcrContextRepository?) {
+        _ocrContextRepository = value
+        for (page in pages.valueIterator()) {
+            page.setOcrContextRepository(value)
+        }
+    }
+
     /**
      * Replay at least 1 value in case of an invalidation signal issued while [PdfView] is not
      * collecting
@@ -73,7 +88,20 @@ internal class PageManager(
     val pageTextReadyFlow: SharedFlow<Int>
         get() = _pageTextReadyFlow
 
-    private val _bitmapUpdatedFlow = MutableSharedFlow<PageBitmapState>(extraBufferCapacity = 1)
+    /**
+     * [REPLAY_COUNT_FOR_BITMAP_STATUS] is set to 1 to ensure that if [PdfView] starts collecting
+     * late, it immediately receives the status of the most recently processed page.
+     *
+     * [BUFFER_CAPACITY_FOR_BITMAP_STATUS] provides a cushion so that [MutableSharedFlow.emit] calls
+     * from background threads don't suspend immediately if the UI thread is busy with a layout
+     * pass.
+     */
+    private var _bitmapUpdatedFlow: MutableSharedFlow<PageBitmapState> =
+        MutableSharedFlow(
+            replay = REPLAY_COUNT_FOR_BITMAP_STATUS,
+            extraBufferCapacity = BUFFER_CAPACITY_FOR_BITMAP_STATUS,
+            onBufferOverflow = BufferOverflow.SUSPEND,
+        )
 
     /**
      * This [SharedFlow] signals [PdfView] that bitmaps are either ready or cleared for the page.
@@ -145,7 +173,7 @@ internal class PageManager(
         for (pageNum in pages.keyIterator()) {
             if (pageNum < nearPages.lower || pageNum > nearPages.upper) {
                 pages[pageNum]?.setInvisible()
-            } else if (!visiblePageAreas.contains(pageNum)) {
+            } else if (visiblePageAreas.indexOfKey(pageNum) < 0) {
                 pages[pageNum]?.setNearlyVisible()
             }
         }
@@ -163,6 +191,7 @@ internal class PageManager(
         currentZoom: Float,
         areasToUpdate: List<RectF>,
     ) {
+        if (areasToUpdate.isEmpty()) return
         val invalidatedArea = areasToUpdate.union()
         if (invalidatedArea.intersect(visibleArea)) {
             // If there is some intersection in the visible area and the invalidated area,
@@ -185,7 +214,7 @@ internal class PageManager(
         pdfFormFillingConfig: PdfFormFillingConfig,
         formWidgetInfos: List<FormWidgetInfo>? = null,
     ) {
-        if (pages.contains(pageNum)) return
+        if (pages.indexOfKey(pageNum) >= 0) return
         val page =
             Page(
                     pageNum,
@@ -194,7 +223,9 @@ internal class PageManager(
                     backgroundScope,
                     maxBitmapSizePx,
                     onBitmapReady = {
-                        _bitmapUpdatedFlow.tryEmit(PageBitmapState.PageBitmapReady(pageNum))
+                        backgroundScope.launch {
+                            _bitmapUpdatedFlow.emit(PageBitmapState.PageBitmapReady(pageNum))
+                        }
                         _invalidationSignalFlow.tryEmit(Unit)
                     },
                     onFormWidgetReady = { _invalidationSignalFlow.tryEmit(Unit) },
@@ -204,8 +235,11 @@ internal class PageManager(
                     pdfFormFillingConfig = pdfFormFillingConfig,
                     formWidgetInfos = formWidgetInfos,
                     onBitmapCleared = {
-                        _bitmapUpdatedFlow.tryEmit(PageBitmapState.PageBitmapCleared(pageNum))
+                        backgroundScope.launch {
+                            _bitmapUpdatedFlow.emit(PageBitmapState.PageBitmapCleared(pageNum))
+                        }
                     },
+                    ocrContextRepository = _ocrContextRepository,
                 )
                 .apply {
                     // If the page is visible, let it know
@@ -247,7 +281,7 @@ internal class PageManager(
 
     /** Draws the [Page] at [pageNum] to the canvas at [locationInView] */
     fun drawPage(pageNum: Int, canvas: Canvas, locationInView: RectF) {
-        val highlightsForPage = highlights.getOrDefault(pageNum, EMPTY_HIGHLIGHTS)
+        val highlightsForPage = highlights[pageNum] ?: EMPTY_HIGHLIGHTS
         pages.get(pageNum)?.draw(canvas, locationInView, highlightsForPage)
     }
 
@@ -276,6 +310,11 @@ internal class PageManager(
             unionRect.union(rect)
         }
         return unionRect
+    }
+
+    companion object {
+        private const val BUFFER_CAPACITY_FOR_BITMAP_STATUS = 64
+        private const val REPLAY_COUNT_FOR_BITMAP_STATUS = 1
     }
 }
 

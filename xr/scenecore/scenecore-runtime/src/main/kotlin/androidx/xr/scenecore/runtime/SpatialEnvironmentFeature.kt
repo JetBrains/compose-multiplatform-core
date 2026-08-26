@@ -19,7 +19,7 @@ package androidx.xr.scenecore.runtime
 import androidx.annotation.RestrictTo
 
 /** Provide the rendering implementation for [SpatialEnvironment] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SpatialEnvironmentFeature {
     /**
      * The preferred spatial environment for the application.
@@ -41,6 +41,10 @@ public interface SpatialEnvironmentFeature {
      */
     public var preferredSpatialEnvironment: SpatialEnvironment.SpatialEnvironmentPreference?
 
-    /** Clean up any resources used by this feature. */
+    /**
+     * Disposes system resources held by this feature.
+     *
+     * Once disposed, this [SpatialEnvironmentFeature] must not be used.
+     */
     public fun dispose()
 }

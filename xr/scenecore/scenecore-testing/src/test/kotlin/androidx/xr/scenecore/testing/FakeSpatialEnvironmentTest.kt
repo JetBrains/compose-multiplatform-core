@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.os.Build
@@ -150,17 +152,7 @@ class FakeSpatialEnvironmentTest {
     fun setPreferredSpatialEnvironment_setsCorrectValue() {
         val rtImage = FakeExrImageResource(0)
         val rtModel = FakeGltfModelResource(0)
-        val rtMaterial = FakeResource()
-        val rtNodeName = "nodeName"
-        val rtAnimationName = "animationName"
-        val rtPreference =
-            SpatialEnvironment.SpatialEnvironmentPreference(
-                rtImage,
-                rtModel,
-                rtMaterial,
-                rtNodeName,
-                rtAnimationName,
-            )
+        val rtPreference = SpatialEnvironment.SpatialEnvironmentPreference(rtImage, rtModel, null)
 
         underTest.preferredSpatialEnvironment = rtPreference
 

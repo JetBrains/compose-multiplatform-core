@@ -103,8 +103,8 @@ import androidx.input.motionprediction.MotionEventPredictor
  * @param isRestrictedToSingleShape If `true`, then only the first pointer should be treated as a
  *   shape.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-@ExperimentalCustomShapeWorkflowApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkCustomShapeWorkflowApi
 public class ShapeGestureCallback<ShapeSpecT : Any>(
     private val inProgressShapesView: InProgressShapesView<ShapeSpecT, *, *>,
     public var shapeSpecForNewShapes: ShapeSpecT,
@@ -239,7 +239,8 @@ public class ShapeGestureCallback<ShapeSpecT : Any>(
  * @param isRestrictedToSingleStroke If `true`, then only the first pointer should be treated as a
  *   stroke.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkCustomShapeWorkflowApi
 public class StrokeGestureCallback(
     private val inProgressStrokesView: InProgressStrokesView,
     public var brushForNewStrokes: Brush,

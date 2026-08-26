@@ -43,7 +43,7 @@ import androidx.room3.processor.ProcessorErrors.cannotFindQueryResultAdapter
 import androidx.room3.processor.ProcessorErrors.mayNeedMapColumn
 import androidx.room3.solver.query.result.DataClassRowAdapter
 import androidx.room3.solver.query.result.ListQueryResultAdapter
-import androidx.room3.solver.query.result.LiveDataQueryResultBinder
+import androidx.room3.solver.query.result.PairTripleRowAdapter
 import androidx.room3.solver.query.result.SingleColumnRowAdapter
 import androidx.room3.solver.query.result.SingleItemQueryResultAdapter
 import androidx.room3.testing.context
@@ -53,6 +53,7 @@ import androidx.room3.vo.ReadQueryFunction
 import androidx.room3.vo.Warning
 import androidx.room3.vo.WriteQueryFunction
 import createVerifierFromEntitiesAndViews
+import kotlin.collections.listOf
 import mockElementAndType
 import org.junit.AssumptionViolatedException
 import org.junit.Test
@@ -70,6 +71,16 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 import androidx.room3.*;
                 import java.util.*;
                 import com.google.common.collect.*;
+                import androidx.room3.livedata.LiveDataDaoReturnTypeConverter;
+                import androidx.room3.rxjava3.RxDaoReturnTypeConverters;
+                import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConverter;
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter;
+                @DaoReturnTypeConverters(
+                    { LiveDataDaoReturnTypeConverter.class,
+                    ListenableFuturePagingSourceDaoReturnTypeConverter.class,
+                    GuavaDaoReturnTypeConverter.class,
+                    RxDaoReturnTypeConverters.class }
+                )
                 @Dao
                 abstract class MyClass {
                 """
@@ -77,6 +88,10 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
                 package foo.bar
                 import androidx.room3.*
+                import androidx.room3.livedata.LiveDataDaoReturnTypeConverter
+                import androidx.room3.rxjava3.RxDaoReturnTypeConverters
+                import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConverter
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
                 import java.util.*
                 import io.reactivex.*         
                 import io.reactivex.rxjava3.core.*
@@ -84,7 +99,12 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 import com.google.common.util.concurrent.*
                 import org.reactivestreams.*
                 import kotlinx.coroutines.flow.*
-            
+                @DaoReturnTypeConverters(
+                    LiveDataDaoReturnTypeConverter::class,
+                    GuavaDaoReturnTypeConverter::class,
+                    ListenableFuturePagingSourceDaoReturnTypeConverter::class,
+                    RxDaoReturnTypeConverters::class,
+                )
                 @Dao
                 abstract class MyClass {
                 """
@@ -349,36 +369,6 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testLiveDataWithNothingToObserve() {
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @Query("SELECT 1")
-                abstract public ${LifecyclesTypeNames.LIVE_DATA.canonicalName}<Integer> getOne();
-                """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
-            }
-        }
-    }
-
-    @Test
-    fun testLiveDataWithWithClauseAndNothingToObserve() {
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @Query("WITH RECURSIVE tempTable(n, fact) AS (SELECT 0, 1 UNION ALL SELECT n+1,"
-                + " (n+1)*fact FROM tempTable WHERE n < 9) SELECT fact FROM tempTable")
-                abstract public ${LifecyclesTypeNames.LIVE_DATA.canonicalName}<${LIST.canonicalName}<Integer>>
-                getFactorialLiveData();
-                """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
-            }
-        }
-    }
-
-    @Test
     fun testBoundGeneric() {
         singleQueryMethod<ReadQueryFunction>(
             """
@@ -526,24 +516,6 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     )
                 )
             }
-        }
-    }
-
-    @Test
-    fun testLiveDataQuery() {
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @Query("select name from user where uid = :id")
-                abstract ${LifecyclesTypeNames.LIVE_DATA.canonicalName}<String> nameLiveData(String id);
-                """
-        ) { parsedQuery, _ ->
-            assertThat(parsedQuery.returnType.asTypeName())
-                .isEqualTo(
-                    LifecyclesTypeNames.LIVE_DATA.parametrizedBy(STRING.copy(nullable = true))
-                        .copy(nullable = true)
-                )
-
-            assertThat(parsedQuery.queryResultBinder).isInstanceOf<LiveDataQueryResultBinder>()
         }
     }
 
@@ -733,7 +705,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         singleQueryMethod<ReadQueryFunction>(
             """
                 static class Merged extends User {
-                   @Relation(parentColumn = "name", entityColumn = "lastName",
+                   @Relation(parentColumns = {"name"}, entityColumns = {"lastName"},
                              entity = User.class)
                    java.util.List<? extends User> users;
                 }
@@ -763,7 +735,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("name", "lastName as lName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -778,7 +750,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -796,7 +768,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("*"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -932,7 +904,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("MAX(ageColumn)", "name"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -947,7 +919,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("name", "lastName")
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(adapter?.dataClass?.properties)
             invocation.assertCompilationResult {
                 hasErrorContaining(cannotFindQueryResultAdapter("foo.bar.MyClass.DataClass?"))
@@ -997,7 +969,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("uid", "name", "lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("uid")
-            assertThat(adapter?.mapping?.unusedFields).isEmpty()
+            assertThat(adapter?.mapping?.unusedProperties).isEmpty()
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
@@ -1021,7 +993,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(
                     adapter?.dataClass?.properties?.filter { it.name == "name" }
                 )
@@ -1051,7 +1023,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("lastName"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).isEmpty()
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(
                     adapter?.dataClass?.properties?.filter { it.name == "name" }
                 )
@@ -1067,7 +1039,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     )
                 )
                 hasErrorContaining(
-                    ProcessorErrors.dataClassMissingNonNull(
+                    ProcessorErrors.dataClassMissingRequiredColumns(
                         dataClassTypeName = "foo.bar.MyClass.DataClass",
                         missingDataClassProperties = listOf("name"),
                         allQueryColumns = listOf("lastName"),
@@ -1087,7 +1059,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             listOf("uid", "name"),
         ) { adapter, _, invocation ->
             assertThat(adapter?.mapping?.unusedColumns).containsExactly("uid")
-            assertThat(adapter?.mapping?.unusedFields)
+            assertThat(adapter?.mapping?.unusedProperties)
                 .containsExactlyElementsIn(
                     adapter?.dataClass?.properties?.filter { it.name == "lastName" }
                 )
@@ -1159,6 +1131,17 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 COMMON.IMAGE,
                 COMMON.IMAGE_FORMAT,
                 COMMON.CONVERTER,
+                COMMON.RX3_COMPLETABLE,
+                COMMON.RX3_MAYBE,
+                COMMON.RX3_SINGLE,
+                COMMON.RX3_FLOWABLE,
+                COMMON.PUBLISHER,
+                COMMON.RX3_OBSERVABLE,
+                COMMON.LIMIT_OFFSET_PAGING_SOURCE,
+                COMMON.LIMIT_OFFSET_RX3_PAGING_SOURCE,
+                COMMON.RX3_PAGING_SOURCE,
+                COMMON.LIMIT_OFFSET_LISTENABLE_FUTURE_PAGING_SOURCE,
+                COMMON.LISTENABLE_FUTURE_PAGING_SOURCE,
             )
         runKspTest(sources = additionalSources + commonSources + inputSource, options = options) {
             invocation ->
@@ -1183,15 +1166,46 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 } else {
                     null
                 }
+            val forkedContext = invocation.context.fork(owner)
             val parser =
                 QueryFunctionProcessor(
-                    baseContext = invocation.context,
+                    baseContext = forkedContext,
                     containing = owner.type,
                     executableElement = methods.first(),
                     dbVerifier = verifier,
                 )
             val parsedQuery = parser.process()
             @Suppress("UNCHECKED_CAST") handler(parsedQuery as T, invocation)
+        }
+    }
+
+    @Test
+    fun testPairRowAdapter() {
+        singleQueryFunction<ReadQueryFunction>(
+            """
+                @Query("SELECT name, uid from User LIMIT 1")
+                abstract fun getNameAndUid(): Pair<String, Int>
+            """
+        ) { parsedQuery, _ ->
+            val adapter = parsedQuery.queryResultBinder.adapter
+            assertThat(adapter).isInstanceOf<SingleItemQueryResultAdapter>()
+            val rowAdapter = adapter!!.rowAdapters.single()
+            assertThat(rowAdapter).isInstanceOf<PairTripleRowAdapter>()
+        }
+    }
+
+    @Test
+    fun testTripleRowAdapter() {
+        singleQueryFunction<ReadQueryFunction>(
+            """
+                @Query("SELECT name, uid, ageColumn from User LIMIT 1")
+                abstract fun getNameUidAge(): Triple<String, Int, Int>
+            """
+        ) { parsedQuery, _ ->
+            val adapter = parsedQuery.queryResultBinder.adapter
+            assertThat(adapter).isInstanceOf<SingleItemQueryResultAdapter>()
+            val rowAdapter = adapter!!.rowAdapters.single()
+            assertThat(rowAdapter).isInstanceOf<PairTripleRowAdapter>()
         }
     }
 
@@ -1205,21 +1219,28 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             Source.kotlin("MyClass.kt", DAO_PREFIX_KT + input.joinToString("\n") + DAO_SUFFIX)
         val commonSources =
             listOf(
+                COMMON.LIVE_DATA,
+                COMMON.COMPUTABLE_LIVE_DATA,
                 COMMON.USER,
                 COMMON.BOOK,
+                COMMON.PAGE,
                 COMMON.NOT_AN_ENTITY,
+                COMMON.ARTIST,
+                COMMON.SONG,
+                COMMON.IMAGE,
+                COMMON.IMAGE_FORMAT,
+                COMMON.CONVERTER,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
                 COMMON.RX3_FLOWABLE,
-                COMMON.RX3_OBSERVABLE,
-                COMMON.LISTENABLE_FUTURE,
-                COMMON.LIVE_DATA,
-                COMMON.COMPUTABLE_LIVE_DATA,
                 COMMON.PUBLISHER,
-                COMMON.FLOW,
-                COMMON.GUAVA_ROOM,
-                COMMON.RX3_ROOM,
+                COMMON.RX3_OBSERVABLE,
+                COMMON.LIMIT_OFFSET_PAGING_SOURCE,
+                COMMON.LIMIT_OFFSET_RX3_PAGING_SOURCE,
+                COMMON.RX3_PAGING_SOURCE,
+                COMMON.LIMIT_OFFSET_LISTENABLE_FUTURE_PAGING_SOURCE,
+                COMMON.LISTENABLE_FUTURE_PAGING_SOURCE,
             )
 
         runKspTest(sources = additionalSources + commonSources + inputSource, options = options) {
@@ -1245,9 +1266,10 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 } else {
                     null
                 }
+            val forkedContext = invocation.context.fork(owner)
             val parser =
                 QueryFunctionProcessor(
-                    baseContext = invocation.context,
+                    baseContext = forkedContext,
                     containing = owner.type,
                     executableElement = methods.first(),
                     dbVerifier = verifier,
@@ -1364,8 +1386,8 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    "Column specified in the provided @MapColumn " +
-                        "annotation must be present in the query."
+                    "Column specified in the declared @MapColumn " +
+                        "annotation must be present in the query result."
                 )
             }
         }
@@ -1493,7 +1515,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn("kotlin.String?"))
+                hasErrorContaining(mayNeedMapColumn("kotlin.String"))
             }
         }
     }
@@ -1535,7 +1557,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn("kotlin.Long?"))
+                hasErrorContaining(mayNeedMapColumn("kotlin.Long"))
             }
         }
     }
@@ -1544,7 +1566,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
                 ImmutableMap<java.util.Date, Artist> getAlbumDateWithBandActivity();
             """
@@ -1559,7 +1581,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
                 ImmutableMap<Artist, java.util.Date> getAlbumDateWithBandActivity();
             """
@@ -1588,12 +1610,12 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 )
                 hasErrorCount(2)
                 hasErrorContaining(
-                    "Column specified in the provided @MapColumn annotation must " +
-                        "be present in the query. Provided: cat."
+                    "Column specified in the declared @MapColumn annotation must " +
+                        "be present in the query result. Declared column name: cat."
                 )
                 hasErrorContaining(
-                    "Column specified in the provided @MapColumn annotation must " +
-                        "be present in the query. Provided: dog."
+                    "Column specified in the declared @MapColumn annotation must " +
+                        "be present in the query result. Declared column name: dog."
                 )
             }
         }
@@ -1678,7 +1700,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava3TypeNames.COMPLETABLE.canonicalName}",
+                RxJava3TypeNames.COMPLETABLE.canonicalName,
                 "${LifecyclesTypeNames.LIVE_DATA.canonicalName}<Int>",
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
@@ -1772,6 +1794,25 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 hasErrorContaining(
                     ProcessorErrors.invalidQueryForSingleColumnArray("kotlin.LongArray?")
                 )
+            }
+        }
+    }
+
+    @Test
+    fun testAmbiguousDuplicateColumn() {
+        if (!enableVerification) {
+            // No warning without verification, avoiding false positives
+            return
+        }
+        singleQueryMethod<ReadQueryFunction>(
+            """
+                @Query("SELECT User.*, User.uid FROM User")
+                abstract User getUser();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasWarningCount(1)
+                hasWarning(ProcessorErrors.ambiguousDuplicateColumn(listOf("foo.bar.User"), "uid"))
             }
         }
     }

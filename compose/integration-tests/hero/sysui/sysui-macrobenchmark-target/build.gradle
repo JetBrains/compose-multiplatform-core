@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -35,19 +34,16 @@ androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'r
 
 android {
     namespace = "androidx.compose.integration.hero.sysui.macrobenchmark.target"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     defaultConfig {
         minSdk { version = release(31) } // This benchmark does not run below API 31
     }
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
-            )
+            optimization {
+                enable = true
+            }
         }
     }
 }

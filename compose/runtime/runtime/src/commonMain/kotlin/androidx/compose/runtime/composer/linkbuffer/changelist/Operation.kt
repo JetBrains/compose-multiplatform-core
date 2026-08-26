@@ -25,6 +25,7 @@ import androidx.compose.runtime.ControlledComposition
 import androidx.compose.runtime.IntStack
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.InvalidationResult
+import androidx.compose.runtime.LinkRememberObserverHolder
 import androidx.compose.runtime.MovableContentState
 import androidx.compose.runtime.MovableContentStateReference
 import androidx.compose.runtime.OffsetApplier
@@ -435,21 +436,16 @@ internal sealed class Operation(
         }
     }
 
-    object UpdateRememberObserverHolderOrdering : Operation(ints = 1, objects = 1) {
+    object UpdateRememberObserverHolderOrdering : Operation(ints = 0, objects = 2) {
         inline val After
-            get() = 0
+            get() = ObjectParameter<LinkAnchor>(0)
 
         inline val Holder
-            get() = ObjectParameter<RememberObserverHolder>(0)
-
-        override fun intParamName(parameter: IntParameter) =
-            when (parameter) {
-                After -> "after"
-                else -> super.intParamName(parameter)
-            }
+            get() = ObjectParameter<LinkRememberObserverHolder>(1)
 
         override fun objectParamName(parameter: ObjectParameter<*>) =
             when (parameter) {
+                After -> "after"
                 Holder -> "rememberObserverHolder"
                 else -> super.objectParamName(parameter)
             }
@@ -461,9 +457,9 @@ internal sealed class Operation(
             errorContext: OperationErrorContext?,
         ) {
             val holder = getObject(Holder)
-            val after = getInt(After)
+            val after = getObject(After)
 
-            holder.afterGroupIndex = after
+            holder.after = after
         }
     }
 
@@ -1198,6 +1194,7 @@ internal sealed class Operation(
             errorContext: OperationErrorContext?,
         ) {
             val effectiveNodeIndex = getObject(EffectiveNodeIndex)?.element ?: 0
+            val originalLocation = slots.handle()
 
             getObject(Changes)
                 .executeAndFlushAllPendingChanges(
@@ -1211,6 +1208,10 @@ internal sealed class Operation(
                     rememberManager = rememberManager,
                     errorContext = errorContext?.withCurrentStackTrace(slots),
                 )
+
+            if (slots.handle() != originalLocation) {
+                slots.seek(originalLocation)
+            }
         }
     }
 

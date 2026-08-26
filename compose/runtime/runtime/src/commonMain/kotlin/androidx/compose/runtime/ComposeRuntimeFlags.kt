@@ -16,25 +16,15 @@
 
 package androidx.compose.runtime
 
-import kotlin.jvm.JvmField
+import kotlin.jvm.JvmStatic
 
 @ExperimentalComposeApi
 public object ComposeRuntimeFlags {
     /**
-     * A feature flag that can be used to disable detecting nested movable content.
-     *
-     * The way movable is detected was changed to ensure that movable content that is no longer
-     * used, but was nested in other unused movable content, is made a candidate for moving to avoid
-     * state being lost. However, this is a change in behavior may have indirectly been relied on by
-     * an application. This flags allows detecting if any regressions are caused by this change in
-     * behavior and provides a temporary work-around.
-     *
-     * This feature flag will eventually be depreciated and removed. All applications should be
-     * updated to ensure they are compatible with the new behavior.
+     * Constant to control the default value of [isLinkBufferComposerEnabled], extracted for
+     * convenience.
      */
-    @JvmField
-    @field:Suppress("MutableBareField")
-    public var isMovingNestedMovableContentEnabled: Boolean = true
+    @Suppress("FeatureFlagSetup") private const val isLinkBufferComposerEnabledByDefault = false
 
     /**
      * A feature flag than can be used to enable the link-list based slot table implementation
@@ -60,9 +50,13 @@ public object ComposeRuntimeFlags {
      * rules:
      * ```
      * -assumevalues public class androidx.compose.runtime.ComposeRuntimeFlags {
-     *     static boolean isLinkBufferComposerEnabled return true;
+     *     static boolean isLinkBufferComposerEnabled() return true;
      * }
      * ```
+     *
+     * Assigning to this property in a build that has been optimized by R8 will always no-op
+     * regardless of whether you declare the configuration rule in your app. In minified builds,
+     * this flag can only be configured by R8.
      *
      * The Compose runtime ships with a default proguard configuration rule that matches this flag's
      * default (disabled) value that ships with the library. Changing this field programmatically in
@@ -70,7 +64,20 @@ public object ComposeRuntimeFlags {
      * R8 release builds, the proguard configuration always takes precedence and programmatic
      * assignments to this flag become no-ops.
      */
-    @JvmField
-    @field:Suppress("MutableBareField")
-    public var isLinkBufferComposerEnabled: Boolean = false
+    // TODO: b/485957718
+    @JvmStatic
+    @Suppress("FeatureFlagSetup")
+    public var isLinkBufferComposerEnabled: Boolean = isLinkBufferComposerEnabledByDefault
+        get() = if (isMinified) isLinkBufferComposerEnabledByDefault else field
+        set(value) {
+            if (!isMinified) {
+                field = value
+            }
+        }
+
+    /**
+     * Assigned to `true` via proguard rule. When the Runtime is used with an application's release
+     * build, assignments to [isLinkBufferComposerEnabled] are ignored.
+     */
+    @Suppress("FeatureFlagSetup") private var isMinified = false
 }

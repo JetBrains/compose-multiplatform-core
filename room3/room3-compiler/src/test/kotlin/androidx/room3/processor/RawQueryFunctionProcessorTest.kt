@@ -105,32 +105,6 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun observableWithoutEntities() {
-        singleQueryMethod(
-            """
-                @RawQuery(observedEntities = {})
-                abstract public LiveData<User> foo(SupportSQLiteQuery query);
-                """
-        ) { query, invocation ->
-            assertThat(query.element.name, `is`("foo"))
-            assertThat(
-                query.runtimeQueryParam,
-                `is`(
-                    RawQueryFunction.RuntimeQueryParameter(
-                        paramName = "query",
-                        typeName = SupportDbTypeNames.QUERY,
-                        isNonNull = false,
-                    )
-                ),
-            )
-            assertThat(query.observedTableNames, `is`(emptySet()))
-            invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
-            }
-        }
-    }
-
-    @Test
     fun positionalDataSource() {
         singleQueryMethod(
             """
@@ -315,8 +289,8 @@ class RawQueryFunctionProcessorTest {
                 public static class MyDataClass {
                     public String foo;
                     @Relation(
-                        parentColumn = "foo",
-                        entityColumn = "name"
+                        parentColumns = {"foo"},
+                        entityColumns = {"name"}
                     )
                     public java.util.List<User> users;
                 }
@@ -399,7 +373,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.String?"))
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.String"))
             }
         }
     }
@@ -441,7 +415,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.Long?"))
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.Long"))
             }
         }
     }
@@ -450,7 +424,7 @@ class RawQueryFunctionProcessorTest {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @RawQuery
                 ImmutableMap<java.util.Date, Artist> getAlbumDateWithBandActivity(SupportSQLiteQuery query);
             """
@@ -465,7 +439,7 @@ class RawQueryFunctionProcessorTest {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @RawQuery
                 ImmutableMap<Artist, java.util.Date> getAlbumDateWithBandActivity(SupportSQLiteQuery query);
             """
@@ -514,7 +488,7 @@ class RawQueryFunctionProcessorTest {
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava3TypeNames.COMPLETABLE.canonicalName}",
+                RxJava3TypeNames.COMPLETABLE.canonicalName,
                 "${LifecyclesTypeNames.LIVE_DATA.canonicalName}<Int>",
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
@@ -568,6 +542,12 @@ class RawQueryFunctionProcessorTest {
                 COMMON.IMAGE,
                 COMMON.IMAGE_FORMAT,
                 COMMON.CONVERTER,
+                COMMON.RX3_COMPLETABLE,
+                COMMON.RX3_MAYBE,
+                COMMON.RX3_SINGLE,
+                COMMON.RX3_FLOWABLE,
+                COMMON.RX3_OBSERVABLE,
+                COMMON.PUBLISHER,
             )
         runKspTest(sources = commonSources + inputSource) { invocation ->
             val (owner, functions) =
@@ -581,9 +561,10 @@ class RawQueryFunctionProcessorTest {
                         )
                     }
                     .first { it.second.isNotEmpty() }
+            val forkedContext = invocation.context.fork(owner)
             val parser =
                 RawQueryFunctionProcessor(
-                    baseContext = invocation.context,
+                    baseContext = forkedContext,
                     containing = owner.type,
                     executableElement = functions.first(),
                 )
@@ -627,9 +608,10 @@ class RawQueryFunctionProcessorTest {
                         )
                     }
                     .first { it.second.isNotEmpty() }
+            val forkedContext = invocation.context.fork(owner)
             val parser =
                 RawQueryFunctionProcessor(
-                    baseContext = invocation.context,
+                    baseContext = forkedContext,
                     containing = owner.type,
                     executableElement = functions.first(),
                 )
@@ -655,6 +637,8 @@ class RawQueryFunctionProcessorTest {
             """
                 package foo.bar
                 import androidx.room3.*
+                import androidx.room3.guava.GuavaDaoReturnTypeConverter
+                import androidx.sqlite.db.SupportSQLiteQuery
                 import java.util.*
                 import io.reactivex.*         
                 import io.reactivex.rxjava3.core.*
@@ -662,7 +646,7 @@ class RawQueryFunctionProcessorTest {
                 import com.google.common.util.concurrent.*
                 import org.reactivestreams.*
                 import kotlinx.coroutines.flow.*
-                
+                @DaoReturnTypeConverters(GuavaDaoReturnTypeConverter::class)
                 @Dao
                 abstract class MyClass {
                 """

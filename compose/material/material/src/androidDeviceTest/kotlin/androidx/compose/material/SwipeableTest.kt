@@ -58,7 +58,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -71,7 +70,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterialApi::class)
 class SwipeableTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val swipeableTag = "swipeableTag"
 
@@ -1512,6 +1511,7 @@ class SwipeableTest {
         rule.onNodeWithTag(swipeableTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = -1500f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 
@@ -1523,6 +1523,7 @@ class SwipeableTest {
         rule.onNodeWithTag(swipeableTag).performTouchInput {
             down(Offset(x = 10f, y = 10f))
             moveBy(Offset(x = 0f, y = 1500f))
+            advanceEventTime(3000L) // Prevent fling gesture.
             up()
         }
 

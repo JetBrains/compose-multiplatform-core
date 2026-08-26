@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.impl
 
+import androidx.camera.camera2.adapter.CameraSessionLifecycleAdapter
 import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
@@ -24,7 +25,7 @@ import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.compat.workaround.NotUseTorchAsFlash
-import androidx.camera.camera2.config.UseCaseGraphContext
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
@@ -77,11 +78,11 @@ class StillCaptureRequestControlTest {
     }
     private val fakeCameraProperties = FakeCameraProperties()
     private val fakeSurface = FakeSurface()
-    private val cameraStateAdapter = CameraStateAdapter()
+    private val cameraStateAdapter = CameraStateAdapter(CameraSessionLifecycleAdapter())
 
     private lateinit var fakeCameraGraphSession: FakeCameraGraphSession
     private lateinit var fakeCameraGraph: FakeCameraGraph
-    private lateinit var fakeUseCaseGraphContext: UseCaseGraphContext
+    private lateinit var fakeUseCaseCameraContext: UseCaseCameraContext
 
     private lateinit var fakeConfigAdapter: CaptureConfigAdapter
     private lateinit var fakeUseCaseCameraState: UseCaseCameraState
@@ -435,8 +436,8 @@ class StillCaptureRequestControlTest {
     private fun initUseCaseCameraScopeObjects(isSurfaceSetupSuccessful: Deferred<Boolean>) {
         fakeCameraGraphSession = FakeCameraGraphSession()
         fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
-        fakeUseCaseGraphContext =
-            UseCaseGraphContext(
+        fakeUseCaseCameraContext =
+            UseCaseCameraContext(
                 cameraGraphProvider = { fakeCameraGraph },
                 cameraStateAdapter = cameraStateAdapter,
                 graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
@@ -445,7 +446,7 @@ class StillCaptureRequestControlTest {
             )
         fakeConfigAdapter =
             CaptureConfigAdapter(
-                useCaseGraphContext = fakeUseCaseGraphContext,
+                useCaseCameraContext = fakeUseCaseCameraContext,
                 cameraProperties = fakeCameraProperties,
                 zslControl = ZslControlNoOpImpl(),
                 threads = fakeUseCaseThreads,
@@ -453,7 +454,7 @@ class StillCaptureRequestControlTest {
             )
         fakeUseCaseCameraState =
             UseCaseCameraState(
-                useCaseGraphContext = fakeUseCaseGraphContext,
+                useCaseCameraContext = fakeUseCaseCameraContext,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
         val torchControl =
@@ -472,7 +473,7 @@ class StillCaptureRequestControlTest {
                         requestListener = ComboRequestListener(),
                         threads = fakeUseCaseThreads,
                         torchControl = torchControl,
-                        useCaseGraphContext = fakeUseCaseGraphContext,
+                        useCaseCameraContext = fakeUseCaseCameraContext,
                         useCaseCameraStateProvider = { fakeUseCaseCameraState },
                         useTorchAsFlash = NotUseTorchAsFlash,
                         flashControl =
@@ -487,7 +488,7 @@ class StillCaptureRequestControlTest {
                     )
                 },
                 useCaseCameraStateProvider = { fakeUseCaseCameraState },
-                useCaseGraphContext = fakeUseCaseGraphContext,
+                useCaseCameraContext = fakeUseCaseCameraContext,
                 useCaseSurfaceManagerProvider = { useCaseSurfaceManager },
                 threads = fakeUseCaseThreads,
             )

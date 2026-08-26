@@ -118,9 +118,9 @@ public class IdLookup extends Operation implements VariableSupport, Serializable
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int textId = buffer.readInt();
-        int dataSetId = buffer.readInt();
-        float index = buffer.readFloat();
+        int textId = buffer.readId();
+        int dataSetId = buffer.readId();
+        float index = buffer.readNanId();
         operations.add(new IdLookup(textId, dataSetId, index));
     }
 
@@ -131,6 +131,7 @@ public class IdLookup extends Operation implements VariableSupport, Serializable
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Logic & Expressions Operations", OP_CODE, CLASS_NAME)
+                .addedVersion(7)
                 .description("Look up an ID from an ID collection via index")
                 .field(INT, "textId", "The ID of the integer variable to store the result")
                 .field(FLOAT, "dataSet", "The ID of the collection")

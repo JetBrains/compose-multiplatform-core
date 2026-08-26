@@ -17,7 +17,6 @@ package androidx.compose.animation.core
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -59,6 +58,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachReversed
+import androidx.kruth.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -69,7 +69,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
@@ -84,8 +83,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class SeekableTransitionStateTest {
-    val testDispatcher = StandardTestDispatcher()
-    private val rule = createComposeRule(testDispatcher)
+    private val rule = createComposeRule()
 
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
@@ -153,7 +151,7 @@ class SeekableTransitionStateTest {
 
     @Test
     fun animateToTarget() =
-        runTest(testDispatcher) {
+        runTest(rule.mainClock.scheduler) {
             var animatedValue by mutableIntStateOf(-1)
             var duration by mutableLongStateOf(0)
             val seekableTransitionState = SeekableTransitionState(AnimStates.From)
@@ -1011,7 +1009,7 @@ class SeekableTransitionStateTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class, InternalAnimationApi::class)
+    @OptIn(InternalAnimationApi::class)
     @Test
     fun delayedTransition() {
         rule.mainClock.autoAdvance = false
@@ -2118,7 +2116,7 @@ class SeekableTransitionStateTest {
                     seekableTransitionState.animateTo(AnimStates.Other)
                 }
             }
-        testDispatcher.scheduler.runCurrent() // animateOther can cancel the seekOther
+        rule.mainClock.scheduler.runCurrent() // animateOther can cancel the seekOther
         assertTrue(seekOther.isCancelled)
         assertTrue(animateOther.isActive)
         rule.mainClock.advanceTimeByFrame() // advance the animation
@@ -2272,7 +2270,7 @@ class SeekableTransitionStateTest {
             rule.runOnUiThread {
                 coroutineScope.async { seekableTransitionState.animateTo(AnimStates.Other) }
             }
-        testDispatcher.scheduler.runCurrent() // animateOther can cancel the animateTo
+        rule.mainClock.scheduler.runCurrent() // animateOther can cancel the animateTo
         assertTrue(animateTo.isCancelled)
         rule.mainClock.advanceTimeByFrame() // wait for composition
         rule.runOnIdle {
@@ -2318,7 +2316,6 @@ class SeekableTransitionStateTest {
     }
 
     @SdkSuppress(minSdkVersion = 26)
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun animateAfterSeekToZero() {
         rule.mainClock.autoAdvance = false
@@ -2589,23 +2586,22 @@ class SeekableTransitionStateTest {
 
     @Test
     fun testCleanupAfterDispose() {
+
+        val seekableState: SeekableTransitionState<*> = SeekableTransitionState(true)
+        var disposed by mutableStateOf(false)
+
         fun isObserving(): Boolean {
             var active = false
-            SeekableStateObserver.clearIf {
+            seekableState.snapshotStateObserver?.clearIf {
                 active = true
                 false
             }
             return active
         }
 
-        var seekableState: SeekableTransitionState<*>?
-        var disposed by mutableStateOf(false)
-
         rule.setContent {
-            seekableState = remember { SeekableTransitionState(true) }
-
             if (!disposed) {
-                rememberTransition(transitionState = seekableState!!)
+                rememberTransition(transitionState = seekableState)
             }
         }
         rule.waitForIdle()
@@ -2616,7 +2612,6 @@ class SeekableTransitionStateTest {
         assertFalse(isObserving())
     }
 
-    @OptIn(ExperimentalTransitionApi::class)
     @Test
     fun quickAddAndRemove() {
         @Stable
@@ -2698,5 +2693,27 @@ class SeekableTransitionStateTest {
         rule.onNodeWithTag("1").assertIsDisplayed()
         rule.onNodeWithTag("2").assertIsNotDisplayed()
         rule.onNodeWithTag("3").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun exitingContentKillTransition() {
+        val seekableTransitionState = SeekableTransitionState(AnimStates.From)
+        lateinit var coroutineScope: CoroutineScope
+        lateinit var transition: Transition<AnimStates>
+
+        rule.setContent {
+            transition = rememberTransition(seekableTransitionState, label = "Test")
+            transition.AnimatedVisibility(visible = { it == AnimStates.From }) {
+                coroutineScope = rememberCoroutineScope()
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        rule.runOnIdle {
+            coroutineScope.launch { seekableTransitionState.animateTo(AnimStates.To) }
+        }
+
+        rule.waitForIdle()
+        assertThat(transition.playTimeNanos).isEqualTo(0L)
     }
 }

@@ -23,6 +23,7 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.SampleRender
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Shader
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Texture
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.VertexBuffer
+import androidx.xr.arcore.apps.whitebox.mobile.samplerender.maybeThrowGLException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -74,6 +75,19 @@ public class BackgroundRenderer(render: SampleRender) {
                 Texture.WrapMode.CLAMP_TO_EDGE,
                 useMipmaps = false,
             )
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, cameraDepthTexture.textureId)
+        GLES30.glTexParameteri(
+            GLES30.GL_TEXTURE_2D,
+            GLES30.GL_TEXTURE_MIN_FILTER,
+            GLES30.GL_NEAREST,
+        )
+        maybeThrowGLException("Failed to set texture parameter", "glTexParameteri")
+        GLES30.glTexParameteri(
+            GLES30.GL_TEXTURE_2D,
+            GLES30.GL_TEXTURE_MAG_FILTER,
+            GLES30.GL_NEAREST,
+        )
+        maybeThrowGLException("Failed to set texture parameter", "glTexParameteri")
 
         // Create a [Mesh] with three vertex buffers: one for the screen coordinates (normalized
         // device
@@ -176,7 +190,7 @@ public class BackgroundRenderer(render: SampleRender) {
      * Updates the display geometry. This must be called every frame before calling either of
      * BackgroundRenderer's draw methods.
      *
-     * @param transformFunc How to process the display's [FloatBuffer]
+     * @param transformFunc how to process the display's [FloatBuffer]
      */
     public fun updateDisplayGeometry(transformFunc: (FloatBuffer) -> FloatBuffer) {
         // If display rotation changed (also includes view size change), we need to re-query the UV

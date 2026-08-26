@@ -28,14 +28,30 @@ import androidx.navigation3.runtime.NavEntry
  * When processing [overlaidEntries], expect processing of each [SceneStrategy] to restart from the
  * first strategy. This may result in multiple instances of the same [OverlayScene] to be shown
  * simultaneously, making a unique [key] even more important.
+ *
+ * **Important** Implementations of this interface should either be data classes, or implement
+ * equals and hashcode to ensure that the same [Scene] is used when appropriate.
  */
 public interface OverlayScene<T : Any> : Scene<T> {
 
     /**
-     * The [androidx.navigation3.runtime.NavEntry]s that should be handled by another [Scene] that
-     * sits below this Scene.
+     * The [NavEntry]s that should be handled by another [Scene] that sits below this Scene.
      *
      * This *must* always be a non-empty list to correctly display entries below the overlay.
+     *
+     * In general the default value for this should be the same as [previousEntries].
      */
     public val overlaidEntries: List<NavEntry<T>>
+
+    /**
+     * Callback that is invoked after this [OverlayScene] is popped from the backStack, but before
+     * it leaves composition.
+     *
+     * Animations for exiting overlays should be implemented within [onRemove]. This ensures that
+     * any suspending animations or other suspending work completes before the overlay is removed
+     * from composition.
+     *
+     * @sample androidx.navigation3.ui.samples.AnimatedBottomSheetSample
+     */
+    public suspend fun onRemove() {}
 }

@@ -20,7 +20,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexAlignItems
 import androidx.compose.foundation.layout.FlexBox
 import androidx.compose.foundation.layout.FlexDirection
@@ -92,12 +91,11 @@ fun FlexBoxAlignItemsDemo() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsStretchSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItems = FlexAlignItems.Stretch
+            direction(FlexDirection.Row)
+            alignItems(FlexAlignItems.Stretch)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -130,12 +128,11 @@ private fun FlexBoxRowAlignItemsStretchSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsCenterSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItems = FlexAlignItems.Center
+            direction(FlexDirection.Row)
+            alignItems(FlexAlignItems.Center)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -170,12 +167,11 @@ private fun FlexBoxRowAlignItemsCenterSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsStartSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItems = FlexAlignItems.Start
+            direction(FlexDirection.Row)
+            alignItems(FlexAlignItems.Start)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -210,12 +206,11 @@ private fun FlexBoxRowAlignItemsStartSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsEndSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItems = FlexAlignItems.End
+            direction(FlexDirection.Row)
+            alignItems(FlexAlignItems.End)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -250,12 +245,11 @@ private fun FlexBoxRowAlignItemsEndSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsBaselineSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItems = FlexAlignItems.Baseline
+            direction(FlexDirection.Row)
+            alignItems(FlexAlignItems.Baseline)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -293,12 +287,11 @@ private fun FlexBoxRowAlignItemsBaselineSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsToLastBaselineSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItemsToBaseline(LastBaseline)
+            direction(FlexDirection.Row)
+            alignItems(LastBaseline)
         },
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black),
     ) {
@@ -336,12 +329,11 @@ private fun FlexBoxRowAlignItemsToLastBaselineSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxRowAlignItemsToCustomBaselineSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Row
-            alignItemsToBaseline { measured ->
+            direction(FlexDirection.Row)
+            alignItems { measured ->
                 // Custom baseline at the bottom of the item
                 measured.measuredHeight / 2
             }
@@ -382,12 +374,11 @@ private fun FlexBoxRowAlignItemsToCustomBaselineSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignItemsStretchSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            alignItems = FlexAlignItems.Stretch
+            direction(FlexDirection.Column)
+            alignItems(FlexAlignItems.Stretch)
         },
         modifier = Modifier.height(250.dp).border(1.dp, Color.Black),
     ) {
@@ -420,12 +411,11 @@ private fun FlexBoxColumnAlignItemsStretchSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignItemsCenterSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            alignItems = FlexAlignItems.Center
+            direction(FlexDirection.Column)
+            alignItems(FlexAlignItems.Center)
         },
         modifier = Modifier.height(250.dp).border(1.dp, Color.Black),
     ) {
@@ -460,12 +450,11 @@ private fun FlexBoxColumnAlignItemsCenterSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignItemsStartSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            alignItems = FlexAlignItems.Start
+            direction(FlexDirection.Column)
+            alignItems(FlexAlignItems.Start)
         },
         modifier = Modifier.height(250.dp).border(1.dp, Color.Black),
     ) {
@@ -500,12 +489,11 @@ private fun FlexBoxColumnAlignItemsStartSample() {
 }
 
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 private fun FlexBoxColumnAlignItemsEndSample() {
     FlexBox(
         config = {
-            direction = FlexDirection.Column
-            alignItems = FlexAlignItems.End
+            direction(FlexDirection.Column)
+            alignItems(FlexAlignItems.End)
         },
         modifier = Modifier.height(250.dp).border(1.dp, Color.Black),
     ) {

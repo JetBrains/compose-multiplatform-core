@@ -16,10 +16,12 @@
 
 package androidx.room3.integration.kotlintestapp
 
+import androidx.room3.ColumnTypeConverter
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.DaoReturnTypeConverters
 import androidx.room3.Database
 import androidx.room3.RoomDatabase
-import androidx.room3.TypeConverter
-import androidx.room3.TypeConverters
+import androidx.room3.guava.GuavaDaoReturnTypeConverter
 import androidx.room3.integration.kotlintestapp.dao.AbstractDao
 import androidx.room3.integration.kotlintestapp.dao.BooksDao
 import androidx.room3.integration.kotlintestapp.dao.CounterDao
@@ -57,6 +59,11 @@ import androidx.room3.integration.kotlintestapp.vo.School
 import androidx.room3.integration.kotlintestapp.vo.Song
 import androidx.room3.integration.kotlintestapp.vo.Toy
 import androidx.room3.integration.kotlintestapp.vo.User
+import androidx.room3.livedata.LiveDataDaoReturnTypeConverter
+import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
+import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConverter
+import androidx.room3.paging.rxjava3.RxPagingSourceDaoReturnTypeConverter
+import androidx.room3.rxjava3.RxDaoReturnTypeConverters
 import java.nio.ByteBuffer
 import java.util.Date
 import java.util.UUID
@@ -91,7 +98,15 @@ import java.util.UUID
     version = 1,
     exportSchema = false,
 )
-@TypeConverters(TestDatabase.Converters::class)
+@DaoReturnTypeConverters(
+    LiveDataDaoReturnTypeConverter::class,
+    RxDaoReturnTypeConverters::class,
+    GuavaDaoReturnTypeConverter::class,
+    PagingSourceDaoReturnTypeConverter::class,
+    ListenableFuturePagingSourceDaoReturnTypeConverter::class,
+    RxPagingSourceDaoReturnTypeConverter::class,
+)
+@ColumnTypeConverters(TestDatabase.Converters::class)
 abstract class TestDatabase : RoomDatabase() {
 
     abstract fun usersDao(): UsersDao
@@ -123,17 +138,17 @@ abstract class TestDatabase : RoomDatabase() {
     abstract fun withClauseDao(): WithClauseDao
 
     class Converters {
-        @TypeConverter
+        @ColumnTypeConverter
         fun fromTimestamp(value: Long): Date {
             return Date(value)
         }
 
-        @TypeConverter
+        @ColumnTypeConverter
         fun dateToTimestamp(date: Date): Long {
             return date.time
         }
 
-        @TypeConverter
+        @ColumnTypeConverter
         fun decomposeDays(flags: Int): Set<androidx.room3.integration.kotlintestapp.vo.Day> {
             val result: MutableSet<androidx.room3.integration.kotlintestapp.vo.Day> = HashSet()
             for (day in androidx.room3.integration.kotlintestapp.vo.Day.values()) {
@@ -144,7 +159,7 @@ abstract class TestDatabase : RoomDatabase() {
             return result
         }
 
-        @TypeConverter
+        @ColumnTypeConverter
         fun composeDays(days: Set<androidx.room3.integration.kotlintestapp.vo.Day>): Int {
             var result = 0
             for (day in days) {
@@ -153,7 +168,7 @@ abstract class TestDatabase : RoomDatabase() {
             return result
         }
 
-        @TypeConverter
+        @ColumnTypeConverter
         fun asUuid(bytes: ByteArray): UUID {
             val bb = ByteBuffer.wrap(bytes)
             val firstLong = bb.long
@@ -161,7 +176,7 @@ abstract class TestDatabase : RoomDatabase() {
             return UUID(firstLong, secondLong)
         }
 
-        @TypeConverter
+        @ColumnTypeConverter
         fun asBytes(uuid: UUID): ByteArray {
             val bb = ByteBuffer.wrap(ByteArray(16))
             bb.putLong(uuid.mostSignificantBits)

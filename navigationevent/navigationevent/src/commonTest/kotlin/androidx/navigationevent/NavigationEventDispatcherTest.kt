@@ -434,6 +434,51 @@ class NavigationEventDispatcherTest {
     }
 
     @Test
+    fun dispatch_withNoEnabledHandlers_invokesForwardFallback() {
+        var fallbackCalled = false
+        val dispatcher =
+            NavigationEventDispatcher(
+                onBackCompletedFallback = {},
+                onForwardCompletedFallback = { fallbackCalled = true },
+            )
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+        input.forwardCompleted()
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(1)
+        assertThat(fallbackCalled).isFalse()
+
+        // After disabling the only handler, the fallback should be triggered.
+        handler.isForwardEnabled = false
+        input.forwardCompleted()
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(1) // Unchanged
+        assertThat(fallbackCalled).isTrue()
+    }
+
+    @Test
+    fun dispatch_withNoEnabledHandlers_doesNotInvokeForwardFallbackForBack() {
+        var fallbackCalled = false
+        val dispatcher =
+            NavigationEventDispatcher(
+                onBackCompletedFallback = {},
+                onForwardCompletedFallback = { fallbackCalled = true },
+            )
+        val handler = TestNavigationEventHandler()
+        handler.isBackEnabled = false
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+
+        // A back navigation event should not trigger the forward fallback.
+        input.backCompleted()
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(fallbackCalled).isFalse()
+    }
+
+    @Test
     fun dispatch_withOverlayHandler_prioritizesOverlay() {
         val dispatcher = NavigationEventDispatcher()
         val overlayHandler = TestNavigationEventHandler()
@@ -547,6 +592,36 @@ class NavigationEventDispatcherTest {
         input.backCompleted()
 
         assertThat(fallbackCalled).isTrue()
+    }
+
+    @Test
+    fun fallback_propagatesToChildAndClearsOnDispose() {
+        val parentFallback = OnBackCompletedFallback {}
+        val parentDispatcher = NavigationEventDispatcher(onBackCompletedFallback = parentFallback)
+        val childDispatcher = NavigationEventDispatcher(parentDispatcher)
+
+        assertThat(childDispatcher.onBackCompletedFallback === parentFallback).isTrue()
+
+        childDispatcher.dispose()
+
+        assertThat(childDispatcher.onBackCompletedFallback).isNull()
+    }
+
+    @Test
+    fun forwardFallback_propagatesToChildAndClearsOnDispose() {
+        val parentFallback = OnForwardCompletedFallback {}
+        val parentDispatcher =
+            NavigationEventDispatcher(
+                onBackCompletedFallback = {},
+                onForwardCompletedFallback = parentFallback,
+            )
+        val childDispatcher = NavigationEventDispatcher(parentDispatcher)
+
+        assertThat(childDispatcher.onForwardCompletedFallback === parentFallback).isTrue()
+
+        childDispatcher.dispose()
+
+        assertThat(childDispatcher.onForwardCompletedFallback).isNull()
     }
 
     @Test

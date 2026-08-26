@@ -27,33 +27,49 @@ import org.jspecify.annotations.NonNull;
 @RestrictTo(LIBRARY_GROUP)
 public class AndroidComputedTextLayout implements RcPlatformServices.ComputedTextLayout {
     StaticLayout mStaticLayout;
+    float mLeft;
     float mWidth;
     float mHeight;
     int mLineCount;
     boolean mIsHyphenatedText;
 
-    public AndroidComputedTextLayout(@NonNull StaticLayout staticLayout, float width,
-            float height, int lineCount, boolean isHyphenatedText) {
+    public AndroidComputedTextLayout(
+            @NonNull StaticLayout staticLayout,
+            float width,
+            float height,
+            int lineCount,
+            boolean isHyphenatedText) {
+        this(staticLayout, 0f, width, height, lineCount, isHyphenatedText);
+    }
+
+    public AndroidComputedTextLayout(
+            @NonNull StaticLayout staticLayout,
+            float left,
+            float width,
+            float height,
+            int lineCount,
+            boolean isHyphenatedText) {
         mStaticLayout = staticLayout;
+        mLeft = left;
         mWidth = width;
         mHeight = height;
         mLineCount = lineCount;
         mIsHyphenatedText = isHyphenatedText;
     }
 
-    /**
-     * Set a StaticLayout on this container
-     */
+    /** Set a StaticLayout on this container */
     public void set(@NonNull StaticLayout layout) {
         mStaticLayout = layout;
     }
 
-    /**
-     * Retrieve the stored StaticLayout
-     */
+    /** Retrieve the stored StaticLayout */
     @NonNull
     public StaticLayout get() {
         return mStaticLayout;
+    }
+
+    public float getLeft() {
+        return mLeft;
     }
 
     @Override

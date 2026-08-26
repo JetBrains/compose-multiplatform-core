@@ -20,7 +20,7 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.latency.aggregators.internal.runEvery
 import java.util.concurrent.Executor
 import kotlin.collections.ArrayDeque
@@ -71,41 +71,45 @@ import kotlinx.coroutines.sync.withLock
  * }
  * ```
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-@ExperimentalLatencyDataApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkLatencyDataApi
 public class HistogramLatencyAggregator
 private constructor(private val implementationHelper: ImplementationHelper) : LatencyAggregator {
 
     public fun interface Callback {
         /**
-         * Callback invoked at most once per [window] in the [CoroutineScope] (or, for Java clients,
-         * on the [Executor]) passed to [create].
+         * Callback invoked at most once per [ImplementationHelper.window] in the [CoroutineScope]
+         * (or, for Java clients, on the [Executor]) passed to [create].
          *
          * @param bucketCounts An array of counts for each bucket (one more than the size of
-         *   [inclusiveLowerBoundsNanos]), giving the number of latency samples that fell in each
-         *   bucket in the last reporting window. Do not hold a reference to this array after
-         *   returning from the callback; it will be recycled (overwritten in place) immediately for
-         *   use in a future callback.
+         *   [ImplementationHelper.inclusiveLowerBoundsNanos]), giving the number of latency samples
+         *   that fell in each bucket in the last reporting window. Do not hold a reference to this
+         *   array after returning from the callback; it will be recycled (overwritten in place)
+         *   immediately for use in a future callback.
          */
-        public suspend fun onLatencyBuckets(bucketCounts: IntArray): Unit
+        public suspend fun onLatencyBuckets(bucketCounts: IntArray)
     }
 
     @UiThread
-    public override fun aggregate(startNanos: Long, endNanos: Long): Unit =
+    public override fun aggregate(startNanos: Long, endNanos: Long) {
         implementationHelper.aggregate(startNanos, endNanos)
+    }
 
     @UiThread
-    public override fun reportSynchronously(): Unit = implementationHelper.reportSynchronously()
+    public override fun reportSynchronously() {
+        implementationHelper.reportSynchronously()
+    }
 
     public override fun job(): Job = implementationHelper.supervisorJob
 
     @VisibleForTesting
     internal fun numLateHistogramAllocations() = implementationHelper.numLateHistogramAllocations
 
+    @ExperimentalInkLatencyDataApi
     public companion object {
         /**
          * Returns a new [HistogramLatencyAggregator]. For use by Kotlin clients. [callback] will be
-         * called in the given [scope], using its default [CoroutineContext].
+         * called in the given [scope], using its default [kotlin.coroutines.CoroutineContext].
          *
          * @param window The length of the consecutive time windows in which to compute and report a
          *   histogram.
@@ -120,6 +124,8 @@ private constructor(private val implementationHelper: ImplementationHelper) : La
          * @param callback The [Callback] with which to report the histogram.
          */
         @JvmStatic
+        @JvmName("createFromDuration")
+        @Suppress("ExecutorRegistration") // Takes a CouroutineScope instead
         public fun create(
             window: Duration,
             inclusiveLowerBoundsNanos: List<Long>,

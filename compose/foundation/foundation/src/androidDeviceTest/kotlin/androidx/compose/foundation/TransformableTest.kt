@@ -36,8 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -49,11 +47,13 @@ import androidx.compose.ui.test.ScrollWheel
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.pan
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performMultiModalInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTrackpadInput
 import androidx.compose.ui.test.pinch
+import androidx.compose.ui.test.scale
 import androidx.compose.ui.test.withKeysDown
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -72,10 +72,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
-import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -88,7 +85,7 @@ private const val EDGE_FUZZ_FACTOR = 0.2f
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformableTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var scope: CoroutineScope
 
@@ -257,7 +254,7 @@ class TransformableTest {
 
         rule.onNodeWithTag(TEST_TAG).performTrackpadInput {
             moveTo(center)
-            scroll(expected)
+            pan(expected)
         }
 
         rule.runOnIdle {
@@ -293,6 +290,7 @@ class TransformableTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             down(1, center)
             moveBy(1, expected)
+            advanceEventTime(3000L) // Prevent fling gesture.
             up(1)
         }
 
@@ -491,7 +489,7 @@ class TransformableTest {
         rule.onNodeWithTag(TEST_TAG).performTrackpadInput {
             centerOffset = center
             moveTo(center)
-            pinch(scaleFactor = 0.5f)
+            scale(scaleFactor = 0.5f)
         }
 
         rule.runOnIdle {
@@ -525,7 +523,7 @@ class TransformableTest {
         rule.onNodeWithTag(TEST_TAG).performTrackpadInput {
             centerOffset = center
             moveTo(center)
-            pinch(scaleFactor = 2f)
+            scale(scaleFactor = 2f)
         }
 
         rule.runOnIdle {
@@ -998,16 +996,11 @@ class TransformableTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformable_ctrlAndTrackpadScrollUp_doesZoomIn() {
-        assumeTrue(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
 
@@ -1026,7 +1019,7 @@ class TransformableTest {
                 withKeysDown(listOf(Key.CtrlLeft)) {
                     trackpad {
                         moveTo(Offset(20f, 30f))
-                        scroll(Offset(0f, SCROLL_FACTOR * 1.dp.toPx()))
+                        pan(Offset(0f, SCROLL_FACTOR * 1.dp.toPx()))
                     }
                 }
             }
@@ -1043,16 +1036,11 @@ class TransformableTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformable_ctrlAndTrackpadScrollDown_doesZoomOut() {
-        assumeTrue(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
 
@@ -1071,7 +1059,7 @@ class TransformableTest {
                 withKeysDown(listOf(Key.CtrlLeft)) {
                     trackpad {
                         moveTo(Offset(20f, 30f))
-                        scroll(Offset(0f, -SCROLL_FACTOR * 1.dp.toPx()))
+                        pan(Offset(0f, -SCROLL_FACTOR * 1.dp.toPx()))
                     }
                 }
             }
@@ -1135,16 +1123,11 @@ class TransformableTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformableInsideScroll_ctrlAndTrackpadScroll_doesZoomNoScroll_withFlags() {
-        assumeTrue(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
         val scrollState = ScrollState(0)
@@ -1171,7 +1154,7 @@ class TransformableTest {
                 withKeysDown(listOf(Key.CtrlLeft)) {
                     trackpad {
                         moveTo(Offset(20f, 30f))
-                        scroll(Offset(0f, -SCROLL_FACTOR * 1.dp.toPx()))
+                        pan(Offset(0f, -SCROLL_FACTOR * 1.dp.toPx()))
                     }
                 }
             }
@@ -1187,53 +1170,6 @@ class TransformableTest {
             centroids.forEach { centroid ->
                 assertThatOffset(centroid).equalsWithTolerance(assertNotNull(Offset(20f, 30f)))
             }
-        }
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
-    @Test
-    fun transformableInsideScroll_ctrlAndTrackpadScroll_doesPanNoScroll_withoutFlags() {
-        assumeFalse(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
-        var cumulativeScale = 1.0f
-        var cumulativePan = Offset.Zero
-        val scrollState = ScrollState(0)
-
-        rule.setContentAndGetScope {
-            Column(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
-                Box(
-                    Modifier.size(100.dp)
-                        .testTag(TEST_TAG)
-                        .transformable(
-                            state =
-                                rememberTransformableState { _, zoom, pan, _ ->
-                                    cumulativeScale *= zoom
-                                    cumulativePan += pan
-                                }
-                        )
-                )
-                Box(Modifier.size(100.dp))
-            }
-        }
-
-        rule.onNodeWithTag(TEST_TAG).performMultiModalInput {
-            key {
-                withKeysDown(listOf(Key.CtrlLeft)) {
-                    trackpad {
-                        moveTo(Offset(20f, 30f))
-                        scroll(Offset(0f, 100f))
-                    }
-                }
-            }
-        }
-
-        rule.runOnIdle {
-            assertWithMessage("Should not scroll").that(scrollState.value).isEqualTo(0)
-            assertWithMessage("Should not have scaled").that(cumulativeScale).isEqualTo(1f)
-            assertWithMessage("Should have panned").that(cumulativePan).isEqualTo(Offset(0f, 100f))
         }
     }
 
@@ -1293,7 +1229,10 @@ class TransformableTest {
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG).performTrackpadInput { scroll(Offset(0f, 100f)) }
+        rule.onNodeWithTag(TEST_TAG).performTrackpadInput {
+            moveTo(center)
+            pan(Offset(0f, 100f))
+        }
 
         rule.runOnIdle {
             assertWithMessage("Should not scroll").that(scrollState.value).isEqualTo(0)

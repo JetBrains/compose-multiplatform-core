@@ -17,7 +17,6 @@
 package androidx.glance.appwidget.lazy
 
 import android.os.Bundle
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.glance.Emittable
@@ -26,10 +25,11 @@ import androidx.glance.EmittableWithChildren
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceNode
-import androidx.glance.appwidget.remotecompose.components.VerticalSnapScrollMode
+import androidx.glance.GlanceTheme
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.wrapContentHeight
+import androidx.glance.unit.ColorProvider
 
 /**
  * A vertical scrolling list that only lays out the currently visible items. The [content] block
@@ -50,7 +50,7 @@ public fun LazyColumn(
     LazyColumn(
         modifier = modifier,
         horizontalAlignment = horizontalAlignment,
-        rcSnapScrolling = VerticalSnapScrollMode.None,
+        verticalScrollMode = VerticalScrollMode.Normal,
         content = content,
     )
 
@@ -60,26 +60,29 @@ public fun LazyColumn(
  *
  * @param modifier the modifier to apply to this layout
  * @param horizontalAlignment the horizontal alignment applied to the items.
- * @param rcSnapScrolling how to handle snap scrolling when the remote compose backend is in use
+ * @param verticalScrollMode how to handle scrolling. See [VerticalScrollMode]
  * @param content a block which describes the content. Inside this block you can use methods like
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items. If
  *   the item has more than one top-level child, they will be automatically wrapped in a Box.
  */
 @JvmOverloads
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: unrestrict in next CL
 public fun LazyColumn(
-    rcSnapScrolling: VerticalSnapScrollMode,
+    verticalScrollMode: VerticalScrollMode,
     modifier: GlanceModifier = GlanceModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: LazyListScope.() -> Unit,
 ) {
+    val dotPrimary = GlanceTheme.colors.onSurface
+    val dotSecondary = GlanceTheme.colors.outline
     GlanceNode(
         factory = ::EmittableLazyColumn,
         update = {
             this.set(modifier) { this.modifier = it }
-            this.set(rcSnapScrolling) { this.snapScrolling = it }
+            this.set(verticalScrollMode) { this.verticalScrollMode = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
+            this.set(dotPrimary) { this.paginationDotColorPrimary = it }
+            this.set(dotSecondary) { this.paginationDotColorSecondary = it }
         },
         content =
             applyListScope(
@@ -113,7 +116,7 @@ public fun LazyColumn(
         activityOptions = activityOptions,
         modifier = modifier,
         horizontalAlignment = horizontalAlignment,
-        snapScrolling = VerticalSnapScrollMode.None,
+        verticalScrollMode = VerticalScrollMode.Normal,
         content = content,
     )
 }
@@ -123,7 +126,7 @@ private fun LazyColumn(
     activityOptions: Bundle,
     modifier: GlanceModifier,
     horizontalAlignment: Alignment.Horizontal,
-    snapScrolling: VerticalSnapScrollMode,
+    verticalScrollMode: VerticalScrollMode,
     content: LazyListScope.() -> Unit,
 ) {
     GlanceNode(
@@ -132,7 +135,7 @@ private fun LazyColumn(
             this.set(modifier) { this.modifier = it }
             this.set(horizontalAlignment) { this.horizontalAlignment = it }
             this.set(activityOptions) { this.activityOptions = it }
-            this.set(snapScrolling) { this.snapScrolling = it }
+            this.set(verticalScrollMode) { this.verticalScrollMode = it }
         },
         content =
             applyListScope(
@@ -317,14 +320,16 @@ internal abstract class EmittableLazyList : EmittableWithChildren(resetsDepthFor
     override var modifier: GlanceModifier = GlanceModifier
     var horizontalAlignment: Alignment.Horizontal = Alignment.Start
     var activityOptions: Bundle? = null
-    var snapScrolling: VerticalSnapScrollMode = VerticalSnapScrollMode.None
+    var verticalScrollMode: VerticalScrollMode = VerticalScrollMode.Normal
+    var paginationDotColorPrimary: ColorProvider? = null // for snap scrolling
+    var paginationDotColorSecondary: ColorProvider? = null // for snap scrolling
 
     override fun toString() =
         "EmittableLazyList(modifier=$modifier, horizontalAlignment=$horizontalAlignment, " +
-            "activityOptions=$activityOptions, snapScroll=${snapScrolling}, children=[\n${childrenToString()}\n])"
+            "activityOptions=$activityOptions, verticalScrollMode=${verticalScrollMode}, children=[\n${childrenToString()}\n])"
 
     override fun requiresRemoteCompose(): Boolean {
-        return snapScrolling != VerticalSnapScrollMode.None || super.requiresRemoteCompose()
+        return verticalScrollMode != VerticalScrollMode.Normal || super.requiresRemoteCompose()
     }
 }
 
@@ -350,9 +355,11 @@ internal class EmittableLazyColumn : EmittableLazyList() {
     override fun copy(): Emittable =
         EmittableLazyColumn().also {
             it.modifier = modifier
-            it.snapScrolling = snapScrolling
+            it.verticalScrollMode = verticalScrollMode
             it.horizontalAlignment = horizontalAlignment
             it.activityOptions = activityOptions
+            it.paginationDotColorPrimary = paginationDotColorPrimary
+            it.paginationDotColorSecondary = paginationDotColorSecondary
             it.children.addAll(children.map { it.copy() })
         }
 }

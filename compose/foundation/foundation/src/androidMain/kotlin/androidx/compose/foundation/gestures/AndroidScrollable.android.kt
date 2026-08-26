@@ -19,8 +19,6 @@ package androidx.compose.foundation.gestures
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
@@ -31,7 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig =
-    AndroidConfig(android.view.ViewConfiguration.get(requireView().context))
+    platformScrollConfig(requireView().context)
+
+internal fun platformScrollConfig(context: android.content.Context) =
+    AndroidConfig(android.view.ViewConfiguration.get(context))
 
 internal class AndroidConfig(val viewConfiguration: android.view.ViewConfiguration) : ScrollConfig {
     // 64 dp value is taken from ViewConfiguration.java, replace with better solution
@@ -64,20 +65,7 @@ internal class AndroidConfig(val viewConfiguration: android.view.ViewConfigurati
                 .fastFold(Offset.Zero) { acc, c -> acc + c.scrollDelta }
                 .let { Offset(it.x * horizontalScrollFactor, it.y * verticalScrollFactor) }
 
-        @OptIn(ExperimentalFoundationApi::class)
-        val accumulatedGesturePanOffset =
-            if (ComposeFoundationFlags.isTrackpadGestureHandlingEnabled) {
-                event.changes.firstOrNull()?.let {
-                    it.panGestureOffset +
-                        it.historical.fastFold(Offset.Zero) { acc, historicalChange ->
-                            acc + historicalChange.panGestureOffset
-                        }
-                } ?: Offset.Zero
-            } else {
-                Offset.Zero
-            }
-
-        return accumulatedScrollDelta - accumulatedGesturePanOffset
+        return accumulatedScrollDelta
     }
 }
 

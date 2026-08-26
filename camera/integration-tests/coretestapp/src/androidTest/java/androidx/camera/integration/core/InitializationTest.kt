@@ -22,19 +22,16 @@ import androidx.camera.camera2.Camera2Config
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso
-import androidx.test.espresso.IdlingRegistry
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.LocaleTestUtils
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assume
@@ -47,6 +44,13 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class InitializationTest(private val config: TestConfig) {
+
+    @get:Rule
+    val requireForegroundRule = RequireForegroundRule {
+        Assume.assumeTrue(CameraUtil.deviceHasCamera())
+        CoreAppTestUtil.assumeCompatibleDevice()
+    }
+
     @get:Rule
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
@@ -88,25 +92,18 @@ class InitializationTest(private val config: TestConfig) {
 
     @Before
     fun setUp() {
-        Assume.assumeTrue(CameraUtil.deviceHasCamera())
-        CoreAppTestUtil.assumeCompatibleDevice()
-
         localeUtil.setLocale(config.locale)
 
-        // Clear the device UI and check if there is no dialog or lock screen on the top of the
-        // window before start the test.
-        CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
-    }
-
-    @After
-    fun tearDown() {
-        runBlocking {
+        requireForegroundRule.deferCleanup {
             if (providerResult?.hasProvider() == true) {
                 providerResult!!.provider!!.shutdownAsync().await()
                 providerResult = null
             }
         }
+    }
 
+    @After
+    fun tearDown() {
         localeUtil.resetLocale()
     }
 
@@ -118,16 +115,11 @@ class InitializationTest(private val config: TestConfig) {
             Intent(ApplicationProvider.getApplicationContext(), CameraXActivity::class.java)
         with(ActivityScenario.launch<CameraXActivity>(intent)) {
             use {
-                val initIdlingResource = withActivity { initializationIdlingResource }
+                val initIdlingResource = withActivity { initializationIdlingLatch }
 
-                IdlingRegistry.getInstance().register(initIdlingResource)
-                try {
-                    Espresso.onIdle()
-                    providerResult = withActivity { cameraProviderResult!! }
-                } finally {
-                    IdlingRegistry.getInstance().unregister(initIdlingResource)
-                }
+                initIdlingResource.await(60, TimeUnit.SECONDS)
 
+                providerResult = withActivity { cameraProviderResult!! }
                 assertThat(providerResult?.error).isNull()
             }
         }

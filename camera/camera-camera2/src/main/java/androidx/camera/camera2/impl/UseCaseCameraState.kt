@@ -21,20 +21,20 @@ package androidx.camera.camera2.impl
 import android.hardware.camera2.CaptureRequest
 import androidx.annotation.GuardedBy
 import androidx.camera.camera2.compat.workaround.TemplateParamsOverride
+import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.config.UseCaseCameraScope
-import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.common.Metadata
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
@@ -55,7 +55,7 @@ import kotlinx.coroutines.Deferred
 public class UseCaseCameraState
 @Inject
 constructor(
-    private val useCaseGraphContext: UseCaseGraphContext,
+    private val useCaseCameraContext: UseCaseCameraContext,
     private val templateParamsOverride: TemplateParamsOverride,
 ) {
     private val lock = Any()
@@ -210,7 +210,7 @@ constructor(
         var signalToComplete: CompletableDeferred<Unit>? = null
 
         try {
-            useCaseGraphContext.useGraphSession { session ->
+            useCaseCameraContext.useGraphSession { session ->
                 val request: Request?
                 val result: CompletableDeferred<Unit>?
 
@@ -294,7 +294,7 @@ constructor(
         }
     }
 
-    private fun CameraGraph.Session.update3A(parameters: Map<CaptureRequest.Key<*>, Any>?) {
+    private fun CameraGraph.Session.update3A(parameters: Map<CaptureRequest.Key<*>, Any?>?) {
         val aeMode =
             parameters.getIntOrNull(CaptureRequest.CONTROL_AE_MODE)?.let {
                 AeMode.fromIntOrNull(it)
@@ -330,7 +330,7 @@ constructor(
         }
     }
 
-    private fun Map<CaptureRequest.Key<*>, Any>?.getIntOrNull(key: CaptureRequest.Key<*>): Int? =
+    private fun Map<CaptureRequest.Key<*>, Any?>?.getIntOrNull(key: CaptureRequest.Key<*>): Int? =
         this?.get(key) as? Int
 
     public inner class RequestListener : Request.Listener {

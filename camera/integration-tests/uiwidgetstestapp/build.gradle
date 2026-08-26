@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
 
     defaultConfig {
         applicationId = "androidx.camera.integration.uiwidgets"
@@ -42,7 +42,6 @@ dependencies {
     // Internal library
     implementation(project(":camera:camera-core"))
     implementation(project(":camera:camera-camera2"))
-    implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation(project(":camera:camera-lifecycle"))
     implementation(project(":camera:camera-view"))
     implementation(project(":camera:camera-video"))
@@ -135,5 +134,3 @@ dependencies {
     debugImplementation(project(":compose:ui:ui-test-manifest"))
     androidTestImplementation(project(":window:window"))
 }
-
-androidx.deviceTests.minSdkForFtlOverride = 24 // b/437944630

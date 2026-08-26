@@ -21,12 +21,12 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.MemoryEstimator
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -52,17 +52,14 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.P, maxSdk = 29)
+@Config(maxSdk = 29)
 internal class Camera2CaptureSequenceProcessorTest {
-    // TODO: This fails with "Failed to allocate native CameraMetadata" on robolectric prior
-    //  to Android P. Update the test class to include support for older versions when a new
-    //  version of robolectric is dropped into AndroidX.
 
     private val mainLooper = Shadows.shadowOf(Looper.getMainLooper())
     private val cameraId =
-        RobolectricCameras.create(
-            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
-        )
+        RobolectricCameras.create {
+            set(INFO_SUPPORTED_HARDWARE_LEVEL, INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
+        }
     private val testCamera = RobolectricCameras.open(cameraId)
 
     private val stream1Config = CameraStream.Config.create(Size(640, 480), StreamFormat.YUV_420_888)
@@ -97,10 +94,17 @@ internal class Camera2CaptureSequenceProcessorTest {
             sessionMode = CameraGraph.OperatingMode.HIGH_SPEED,
         )
 
-    private val streamGraph = StreamGraphImpl(testCamera.metadata, graphConfig, mock(), mock())
+    private val streamGraph =
+        StreamGraphImpl(testCamera.metadata, graphConfig, mock(), mock(), MemoryEstimator.create())
 
     private val highSpeedStreamGraph =
-        StreamGraphImpl(testCamera.metadata, highSpeedGraphConfig, mock(), mock())
+        StreamGraphImpl(
+            testCamera.metadata,
+            highSpeedGraphConfig,
+            mock(),
+            mock(),
+            MemoryEstimator.create(),
+        )
 
     private val surface1 =
         Surface(
@@ -313,11 +317,11 @@ internal class Camera2CaptureSequenceProcessorTest {
 
         assertThat(captureSequence).isNotNull()
         assertThat(captureSequence!!.captureMetadataList).isNotEmpty()
-        captureSequence.captureMetadataList[0].unwrapAs(CameraCaptureSession::class)
+        captureSequence.captureMetadataList[0].unwrapAs(CameraCaptureSession::class.java)
 
         assertThat(fakeCaptureSessionWrapper.unwrappedClasses.size).isEqualTo(1)
         assertThat(fakeCaptureSessionWrapper.unwrappedClasses[0])
-            .isEqualTo(CameraCaptureSession::class)
+            .isEqualTo(CameraCaptureSession::class.java)
     }
 
     @Test

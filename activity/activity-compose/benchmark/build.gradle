@@ -10,7 +10,7 @@ plugins {
 
 dependencies {
 
-    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
     androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(project(":activity:activity-compose"))
 
@@ -23,7 +23,10 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
     namespace = "androidx.activity.compose.benchmark"
 
     // DO NOT CHECK IN! Enable experimental benchmarking with R8 - for local runs only

@@ -18,9 +18,11 @@ package androidx.compose.runtime.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.SnapshotFlowManager
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.MutableSnapshot
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.test.filters.LargeTest
@@ -70,6 +72,7 @@ class SnapshotFlowBenchmark(
      * A test in which there are [n] [snapshotFlow]s that each watch one of [n] distinct state
      * objects.
      */
+    @OptIn(ExperimentalComposeRuntimeApi::class)
     @Test
     fun eachSnapshotFlowWatchesOneStateObject() {
         benchmarkRule.measureRepeated {
@@ -90,12 +93,20 @@ class SnapshotFlowBenchmark(
 
                 // This test uses a `runTest` single-threaded dispatcher, which means that changes
                 // aren't flushed to `snapshotFlow`s until we `yield()` intentionally.
-                runWithMeasurementDisabled { testScheduler.runCurrent() }
+                runWithMeasurementDisabled {
+                    testScheduler.advanceUntilIdle()
+                    assertEquals(n, count)
+                    Snapshot.notifyObjectsInitialized()
+                }
 
+                lateinit var snapshot: MutableSnapshot
                 stateObjects.forEach {
-                    runWithMeasurementDisabled { it.value = true }
+                    runWithMeasurementDisabled {
+                        snapshot = Snapshot.takeMutableSnapshot()
+                        snapshot.enter { it.value = true }
+                    }
 
-                    Snapshot.sendApplyNotifications()
+                    snapshot.apply()
                 }
 
                 testScheduler.advanceUntilIdle()
@@ -114,6 +125,7 @@ class SnapshotFlowBenchmark(
      * A test with [n] [snapshotFlow]s and [n] distinct state objects, in which each [snapshotFlow]
      * watches 10 state objects, and each state object is watched by 10 [snapshotFlow]s.
      */
+    @OptIn(ExperimentalComposeRuntimeApi::class)
     @Test
     fun eachSnapshotFlowWatchesTenStateObjects() {
         benchmarkRule.measureRepeated {
@@ -146,12 +158,19 @@ class SnapshotFlowBenchmark(
 
                 // This test uses a `runTest` single-threaded dispatcher, which means that changes
                 // aren't flushed to `snapshotFlow`s until we `yield()` intentionally.
-                runWithMeasurementDisabled { testScheduler.runCurrent() }
+                runWithMeasurementDisabled {
+                    testScheduler.advanceUntilIdle()
+                    assertEquals(n, count)
+                }
 
+                lateinit var snapshot: MutableSnapshot
                 stateObjects.forEach {
-                    runWithMeasurementDisabled { it.value = true }
+                    runWithMeasurementDisabled {
+                        snapshot = Snapshot.takeMutableSnapshot()
+                        snapshot.enter { it.value = true }
+                    }
 
-                    Snapshot.sendApplyNotifications()
+                    snapshot.apply()
                 }
 
                 testScheduler.advanceUntilIdle()
@@ -168,6 +187,7 @@ class SnapshotFlowBenchmark(
 
     companion object {
         // Like `snapshotFlow`, but with a nullable `manager` parameter.
+        @OptIn(ExperimentalComposeRuntimeApi::class)
         fun <T> snapshotFlowFactory(manager: SnapshotFlowManager?, block: () -> T): Flow<T> {
             return if (manager == null) {
                 snapshotFlow(block)

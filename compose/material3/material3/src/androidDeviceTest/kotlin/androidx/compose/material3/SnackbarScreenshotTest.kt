@@ -27,7 +27,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,11 +36,14 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SnackbarScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
     private val snackbarTestTag = "snackbarTestTag"
+    private val longText =
+        "Message is very long and long and long and long and long " +
+            "and long and long and long and long and long and long"
 
     @Test
     fun snackbar_lightTheme() {
@@ -83,17 +85,77 @@ class SnackbarScreenshotTest {
         assertAgainstGolden("snackbar_withDismiss_darkTheme")
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun snackbar_withLongMessage_darkTheme() {
+        ComposeMaterial3Flags.isSnackbarStylingFixEnabled = true
+        rule.setMaterialContent(darkColorScheme()) {
+            TestSnackbar(
+                message = longText,
+                showAction = true,
+                duration = SnackbarDuration.Indefinite,
+            )
+        }
+        assertAgainstGolden("snackbar_withLongMessage_darkTheme")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun snackbar_withLongMessage_lightTheme() {
+        ComposeMaterial3Flags.isSnackbarStylingFixEnabled = true
+        rule.setMaterialContent(lightColorScheme()) {
+            TestSnackbar(
+                message = longText,
+                showAction = true,
+                duration = SnackbarDuration.Indefinite,
+            )
+        }
+        assertAgainstGolden("snackbar_withLongMessage_lightTheme")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun snackbar_withLongMessageAndActionOnNewLine_darkTheme() {
+        ComposeMaterial3Flags.isSnackbarStylingFixEnabled = true
+        rule.setMaterialContent(darkColorScheme()) {
+            TestSnackbar(
+                message = longText,
+                showAction = true,
+                duration = SnackbarDuration.Indefinite,
+                actionOnNewLine = true,
+            )
+        }
+        assertAgainstGolden("snackbar_withLongMessageAndActionOnNewLine_darkTheme")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun snackbar_withLongMessageAndActionOnNewLine_lightTheme() {
+        ComposeMaterial3Flags.isSnackbarStylingFixEnabled = true
+        rule.setMaterialContent(lightColorScheme()) {
+            TestSnackbar(
+                message = longText,
+                showAction = true,
+                duration = SnackbarDuration.Indefinite,
+                actionOnNewLine = true,
+            )
+        }
+        assertAgainstGolden("snackbar_withLongMessageAndActionOnNewLine_lightTheme")
+    }
+
     @Composable
     private fun TestSnackbar(
+        message: String = "Snackbar message",
         showAction: Boolean = false,
         duration: SnackbarDuration = SnackbarDuration.Long,
+        actionOnNewLine: Boolean = false,
     ) {
         Snackbar(
             snackbarData =
                 object : SnackbarData {
                     override val visuals: SnackbarVisuals =
                         object : SnackbarVisuals {
-                            override val message: String = "Snackbar message"
+                            override val message = message
                             override val actionLabel: String? = if (showAction) "Undo" else null
                             override val withDismissAction: Boolean =
                                 duration == SnackbarDuration.Indefinite
@@ -108,6 +170,7 @@ class SnackbarScreenshotTest {
                         // no-op
                     }
                 },
+            actionOnNewLine = actionOnNewLine,
             modifier = Modifier.testTag(snackbarTestTag),
         )
     }

@@ -27,7 +27,6 @@ import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.graph.GraphProcessorImpl
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
 import androidx.camera.camera2.pipe.graph.Listener3A
-import androidx.camera.camera2.pipe.graph.SessionLock
 import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
@@ -36,15 +35,14 @@ import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Compani
 import androidx.camera.camera2.pipe.testing.FakeGraphConfigs
 import androidx.camera.camera2.pipe.testing.FakeRequestListener
 import androidx.camera.camera2.pipe.testing.FakeThreads
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import com.google.common.truth.Truth.assertThat
-import junit.framework.TestCase.assertEquals
-import kotlin.test.Test
-import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -58,6 +56,9 @@ import org.robolectric.annotation.Config
 class CameraGraphListenersImplTest {
     private val testScope = TestScope()
     private val graphListener = FakeRequestListener()
+    private val cameraMetadata =
+        FakeCameraMetadata.fromTemplate(template = HighEndDeviceTemplate, cameraId = CameraId("0"))
+
     private val graphProcessor =
         GraphProcessorImpl(
             FakeThreads.fromTestScope(testScope),
@@ -67,9 +68,7 @@ class CameraGraphListenersImplTest {
             listOf(graphListener),
             Camera2Quirks(
                 metadataProvider =
-                    FakeCamera2MetadataProvider(
-                        mapOf(CameraId("0") to FakeCameraMetadata(cameraId = CameraId("0")))
-                    ),
+                    FakeCamera2MetadataProvider(mapOf(cameraMetadata.camera to cameraMetadata)),
                 strictMode = StrictMode(false),
             ),
         )
@@ -90,13 +89,13 @@ class CameraGraphListenersImplTest {
             val newListener: Request.Listener = mock()
 
             val listeners =
-                CameraGraphRequestListenersImpl(SessionLock(), graphProcessor, testScope)
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
             listeners.add(newListener)
             advanceUntilIdle()
 
-            assertEquals(2, csp.events.size)
-            assertTrue(csp.events[1].isRepeating)
-            assertEquals(2, csp.events[1].listeners.size)
+            assertThat(csp.events.size).isEqualTo(2)
+            assertThat(csp.events[1].isRepeating).isTrue()
+            assertThat(csp.events[1].listeners.size).isEqualTo(2)
             assertThat(csp.events[1].listeners).contains(graphListener)
             assertThat(csp.events[1].listeners).contains(newListener)
         }
@@ -110,7 +109,7 @@ class CameraGraphListenersImplTest {
             advanceUntilIdle()
 
             val listeners =
-                CameraGraphRequestListenersImpl(SessionLock(), graphProcessor, testScope)
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
             listeners.add(newListener)
             advanceUntilIdle()
 
@@ -131,7 +130,7 @@ class CameraGraphListenersImplTest {
             advanceUntilIdle()
 
             val listeners =
-                CameraGraphRequestListenersImpl(SessionLock(), graphProcessor, testScope)
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
             listeners.add(newListener1)
             advanceUntilIdle()
             listeners.addAll(listOf(newListener2, newListener3))
@@ -153,7 +152,7 @@ class CameraGraphListenersImplTest {
             advanceUntilIdle()
 
             val listeners =
-                CameraGraphRequestListenersImpl(SessionLock(), graphProcessor, testScope)
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
             listeners.addAll(listOf(newListener1, newListener2))
             advanceUntilIdle()
             listeners.remove(newListener2)
@@ -178,7 +177,7 @@ class CameraGraphListenersImplTest {
             advanceUntilIdle()
 
             val listeners =
-                CameraGraphRequestListenersImpl(SessionLock(), graphProcessor, testScope)
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
             listeners.addAll(listOf(newListener1, newListener2, newListener3))
             advanceUntilIdle()
             listeners.remove(newListener1)
@@ -196,18 +195,68 @@ class CameraGraphListenersImplTest {
     fun updateRequest_listenersContinueToReceiveCallbacks() =
         testScope.runTest {
             graphProcessor.onGraphStarted(grp)
+            graphProcessor.repeatingRequest = request // Initial request
+            val newListener: Request.Listener = mock()
+            advanceUntilIdle()
+
+            val listeners =
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
+            listeners.add(newListener)
+            advanceUntilIdle()
+
+            // Update to a new request
+            graphProcessor.repeatingRequest = request2
+            advanceUntilIdle()
+
+            // requestListener: initial(1) + addListener(2) + updateRequest(3)
+            verify(requestListener, times(3)).onRequestSequenceCreated(any())
+            // newListener: addListener(1) + updateRequest(2)
+            verify(newListener, times(2)).onRequestSequenceCreated(any())
+        }
+
+    @Test
+    fun addExistingListener_doesNotTriggerUpdate() =
+        testScope.runTest {
+            graphProcessor.onGraphStarted(grp)
             graphProcessor.repeatingRequest = request
             val newListener: Request.Listener = mock()
             advanceUntilIdle()
 
             val listeners =
-                CameraGraphRequestListenersImpl(SessionLock(), graphProcessor, testScope)
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
+
             listeners.add(newListener)
             advanceUntilIdle()
 
-            // The request should be invalidated when there's a listener change, trigger a new
-            // callback.
+            // Baseline verification
             verify(requestListener, times(2)).onRequestSequenceCreated(any())
             verify(newListener, times(1)).onRequestSequenceCreated(any())
+
+            // Add the same listener again
+            listeners.add(newListener)
+            advanceUntilIdle()
+
+            // Call counts should not increase because modified is false
+            verify(requestListener, times(2)).onRequestSequenceCreated(any())
+            verify(newListener, times(1)).onRequestSequenceCreated(any())
+        }
+
+    @Test
+    fun removeNonExistentListener_doesNotTriggerUpdate() =
+        testScope.runTest {
+            graphProcessor.onGraphStarted(grp)
+            graphProcessor.repeatingRequest = request
+            val newListener: Request.Listener = mock()
+            advanceUntilIdle()
+
+            val listeners =
+                CameraGraphRequestListenersImpl(GraphSessionLock(), graphProcessor, testScope)
+
+            // Remove a listener that was never added
+            listeners.remove(newListener)
+            advanceUntilIdle()
+
+            // Call count should remain 1 (from the initial graph start)
+            verify(requestListener, times(1)).onRequestSequenceCreated(any())
         }
 }

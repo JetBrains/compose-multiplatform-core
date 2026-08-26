@@ -23,6 +23,7 @@ import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -116,18 +117,14 @@ class AutoFlashAEModeDisablerTest {
     }
 
     private fun createAutoFlashAEModeDisabler(lensFacing: Int): AutoFlashAEModeDisabler {
-        val metadata = FakeCameraMetadata(mapOf(CameraCharacteristics.LENS_FACING to lensFacing))
-        return AutoFlashAEModeDisabler.Bindings.provideAEModeDisabler(
-            CameraQuirks(
-                metadata,
-                StreamConfigurationMapCompat(
-                    StreamConfigurationMapBuilder.newBuilder().build(),
-                    OutputSizesCorrector(
-                        FakeCameraMetadata(),
-                        StreamConfigurationMapBuilder.newBuilder().build(),
-                    ),
-                ),
+        val metadata =
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                lensFacing = lensFacing,
             )
+        val map = StreamConfigurationMapBuilder.newBuilder().build()
+        return AutoFlashAEModeDisabler.Bindings.provideAEModeDisabler(
+            CameraQuirks(metadata, StreamConfigurationMapCompat(map, metadata))
         )
     }
 }

@@ -19,6 +19,8 @@ package androidx.camera.core;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
+import androidx.camera.core.impl.MutableConfig;
+import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -94,17 +96,10 @@ public interface CameraControl {
      * <li>When low-light boost is on, the flash or torch functionality may be unavailable.
      * <li>When frame rate configuration results in an FPS exceeding 30, low-light boost will be
      * disabled and the state will always be ({@link LowLightBoostState#OFF}).
-     * <li>Low-light boost is not currently supported for HDR 10-bit capture sessions. If the
-     * dynamic range configuration results in a 10-bit capture session, low-light boost will be
-     * disabled and the state will always be ({@link LowLightBoostState#OFF}).
      * </ul>
      *
      * <p>Therefore, to use flash or torch functionality, low-light boost mode must be disabled.
-     * To ensure low-light boost mode functions correctly, the following conditions must be met:
-     * <ul>
-     * <li> The frame rate must not exceed 30 FPS.
-     * <li> The dynamic range setting must not be 10-bit.
-     * </ul>
+     * To ensure low-light boost mode functions correctly, the frame rate must not exceed 30 FPS.
      *
      * @param lowLightBoost true to turn on the low-light boost mode, false to turn it off.
      * @return A {@link ListenableFuture} which is successful when the low-light boost mode was
@@ -260,6 +255,51 @@ public interface CameraControl {
                 "Setting torch strength is not supported on the device."));
     }
 
+    /**
+     * Applies interoperability configuration to this camera control.
+     *
+     * <p>To configure Camera2 options, use {@code Camera2Interop.forCameraControl(configurator)}
+     * (from the {@code camera-camera2} artifact) to create a configurator, then pass it to this
+     * method.
+     *
+     * <p>All parameters set within a single {@code configurator} are applied together atomically in
+     * a single repeating capture request update. Subsequent calls to {@code applyInteropAsync} add
+     * to or update the existing parameters incrementally without clearing previously set keys,
+     * unless explicitly cleared via methods such as
+     * {@code CameraControlCamera2Interop.clearCaptureRequestOption} or
+     * {@code CameraControlCamera2Interop.clearAllCaptureRequestOptions}. This overwrites options
+     * set with {@code SessionConfigInterop} via {@link SessionConfig.Builder#setInterop}.
+     *
+     * <p><b>Note:</b> Using Camera2 interop options can override internal CameraX
+     * configurations. If an option configured via interop conflicts with options required by
+     * CameraX internally, the option from Camera2Interop will override, which may result in
+     * unexpected behavior or interfere with 3A routines and camera control APIs.
+     *
+     * <p><b>Warning:</b> Callbacks configured via interop receive raw
+     * {@link android.hardware.camera2.CameraCaptureSession} instances. Directly invoking
+     * state-altering methods on these raw objects (such as
+     * {@link android.hardware.camera2.CameraCaptureSession#close()} or
+     * {@link android.hardware.camera2.CameraCaptureSession#abortCaptures()}) bypasses CameraX
+     * pipeline management and may cause state desynchronization, stream interruption, or
+     * application crashes.
+     *
+     * @param configurator the configurator that sets the interoperability options
+     * @return a {@link ListenableFuture} which completes with a {@code null} result when all the
+     * interoperability options specified in the given configurator have been successfully updated
+     * in the underlying repeating capture request. The future fails with
+     * {@link CameraControl.OperationCanceledException} if a newer configuration is applied before
+     * this operation takes effect or if the camera is closed. Cancellation of this future is a
+     * no-op.
+     */
+    default @NonNull ListenableFuture<Void> applyInteropAsync(
+            @NonNull InteropConfigurator<? super CameraControl> configurator) {
+        return Futures.immediateFailedFuture(new OperationCanceledException("Not supported!"));
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default @NonNull MutableConfig getInteropMutableConfig() {
+        return MutableOptionsBundle.create();
+    }
     /**
      * An exception representing a failure that the operation is canceled which might be caused by
      * a new value is set or camera is closed.

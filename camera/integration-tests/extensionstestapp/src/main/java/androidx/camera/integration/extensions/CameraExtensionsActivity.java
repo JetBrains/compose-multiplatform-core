@@ -206,6 +206,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
 
     private @ImageCapture.OutputFormat int mImageOutputFormat = OUTPUT_FORMAT_JPEG;
     private Button mButtonImageOutputFormat;
+    private boolean mAutoRotationEnabled = true;
 
     void setupButtons() {
         Button btnToggleMode = findViewById(R.id.PhotoToggle);
@@ -239,6 +240,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
                 Log.e(TAG, "Cannot find next camera id that supports the extensions mode");
                 return;
             }
+            mCurrentCameraId = nextCameraId;
             mCurrentCameraSelector = CameraSelectorUtil.createCameraSelectorById(mCurrentCameraId);
         } else {
             mCurrentCameraSelector = (mCurrentCameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
@@ -272,6 +274,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
     }
 
     @OptIn(markerClass = {ExperimentalCamera2Interop.class})
+    @SuppressWarnings("deprecation")
     boolean bindUseCasesWithCurrentExtensionMode() {
         if (!mExtensionsManager.isExtensionAvailable(mCurrentCameraSelector,
                 mCurrentExtensionMode)) {
@@ -355,6 +358,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
                 new ExtensionSessionConfig.Builder(mCurrentExtensionMode, mExtensionsManager);
         extensionSessionConfigBuilder.addUseCase(mPreview);
         extensionSessionConfigBuilder.addUseCase(mImageCapture);
+        extensionSessionConfigBuilder.setAutoRotationEnabled(mAutoRotationEnabled);
         // Setup VideoCapture.
         stopRecording();
         mVideoCapture = null;
@@ -694,6 +698,17 @@ public class CameraExtensionsActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(@Nullable Menu menu) {
+        if (menu != null) {
+            MenuItem item = menu.findItem(R.id.menu_auto_rotation);
+            if (item != null) {
+                item.setChecked(mAutoRotationEnabled);
+            }
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         Intent intent = new Intent();
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -710,6 +725,11 @@ public class CameraExtensionsActivity extends AppCompatActivity
             intent.setClassName(this, CameraValidationResultActivity.class.getName());
             startActivity(intent);
             finish();
+            return true;
+        } else if (itemId == R.id.menu_auto_rotation) {
+            mAutoRotationEnabled = !mAutoRotationEnabled;
+            item.setChecked(mAutoRotationEnabled);
+            bindUseCasesWithCurrentExtensionMode();
             return true;
         }
 

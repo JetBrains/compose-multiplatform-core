@@ -626,7 +626,10 @@ public final class WindowInsetsControllerCompat {
         Impl30(@NonNull Window window,
                 @NonNull WindowInsetsControllerCompat compatController,
                 @NonNull SoftwareKeyboardControllerCompat softwareKeyboardControllerCompat) {
-            this(window.getInsetsController(), compatController, softwareKeyboardControllerCompat);
+            this(
+                    window.getDecorView().getWindowInsetsController(),
+                    compatController,
+                    softwareKeyboardControllerCompat);
             mWindow = window;
         }
 
@@ -814,12 +817,8 @@ public final class WindowInsetsControllerCompat {
                 return;
             }
             WindowInsetsController.OnControllableInsetsChangedListener
-                    fwListener = (controller, typeMask) -> {
-                        if (mInsetsController == controller) {
-                            listener.onControllableInsetsChanged(
-                                    mCompatController, typeMask);
-                        }
-                    };
+                    fwListener = (controller, typeMask) ->
+                            listener.onControllableInsetsChanged(mCompatController, typeMask);
             mListeners.put(listener, fwListener);
             mInsetsController.addOnControllableInsetsChangedListener(fwListener);
         }

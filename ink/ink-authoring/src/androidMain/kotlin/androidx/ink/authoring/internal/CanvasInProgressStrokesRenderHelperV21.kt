@@ -20,19 +20,17 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.UiThread
+import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.withMatrix
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.InProgressShapeRenderer
-import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.geometry.MutableBox
 
@@ -44,7 +42,7 @@ import androidx.ink.geometry.MutableBox
  * higher than it would be with [CanvasInProgressStrokesRenderHelperV29] or
  * [CanvasInProgressStrokesRenderHelperV33].
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 @UiThread
 internal class CanvasInProgressStrokesRenderHelperV21<
     ShapeSpecT : Any,
@@ -52,9 +50,8 @@ internal class CanvasInProgressStrokesRenderHelperV21<
     CompletedShapeT : Any,
 >(
     private val mainView: ViewGroup,
-    private val callback: InProgressStrokesRenderHelper.Callback<CompletedShapeT>,
     private val renderer: InProgressShapeRenderer<InProgressShapeT>,
-) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT> {
+) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT>() {
 
     // View hierarchy rendering does not retain its contents between frames, so all contents must be
     // redrawn on every frame.
@@ -62,9 +59,7 @@ internal class CanvasInProgressStrokesRenderHelperV21<
 
     override val supportsDebounce = false
 
-    override val supportsFlush = false
-
-    override var maskPath: Path? = null
+    override val canSynchronouslyWaitForFlush = false
 
     private val maskPaint =
         Paint().apply {
@@ -78,7 +73,7 @@ internal class CanvasInProgressStrokesRenderHelperV21<
     private val innerView =
         object : View(mainView.context) {
             override fun onDraw(canvas: Canvas) {
-                assertOnUiThread()
+                assertOnRenderThread()
                 // Just in case save/restores get imbalanced among callbacks
                 val originalSaveCount = canvas.saveCount
                 canvasForCurrentDraw = canvas
@@ -98,7 +93,8 @@ internal class CanvasInProgressStrokesRenderHelperV21<
                 callback.handOffAllLatencyData()
 
                 check(canvas.saveCount == originalSaveCount) {
-                    "Unbalanced saves and restores. Expected save count of $originalSaveCount, got ${canvas.saveCount}."
+                    "Unbalanced saves and restores. Expected save count of $originalSaveCount, " +
+                        "got ${canvas.saveCount}."
                 }
             }
         }
@@ -114,32 +110,29 @@ internal class CanvasInProgressStrokesRenderHelperV21<
 
     private val viewListener =
         object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                addInnerToMainView()
-            }
+            override fun onViewAttachedToWindow(v: View) = addInnerToMainView()
 
-            override fun onViewDetachedFromWindow(v: View) {
-                mainView.removeView(innerView)
-            }
+            override fun onViewDetachedFromWindow(v: View) = mainView.removeView(innerView)
         }
 
     init {
         // Not checking that this is used for only pre-Q devices because InProgressStrokesView
         // allows
-        // forcing this implementation as a fallback (with useHighLatencyRenderHelper).
+        // forcing this implementation as a fallback.
         if (mainView.isAttachedToWindow) {
             addInnerToMainView()
         }
         mainView.addOnAttachStateChangeListener(viewListener)
     }
 
-    override fun assertOnRenderThread() = assertOnUiThread()
-
-    private fun assertOnUiThread() {
-        check(Looper.myLooper() == Looper.getMainLooper()) {
-            "Expected to be running on UI thread, but instead running on ${Thread.currentThread()}."
-        }
+    @VisibleForTesting
+    override fun executeOnRenderThread(runnable: Runnable) {
+        // This implementation renders asynchronously on the UI thread.
+        mainView.post(runnable)
     }
+
+    /** This implementation uses UI thread callbacks for rendering. */
+    override fun assertOnRenderThread() = assertOnUiThread()
 
     override fun requestDraw() {
         assertOnUiThread()
@@ -163,17 +156,15 @@ internal class CanvasInProgressStrokesRenderHelperV21<
 
     override fun afterDrawInModifiedRegion() = Unit
 
-    override fun clear() {
+    override fun startCohort() {
         // View hierarchy rendering does not retain its buffer contents between frames (all contents
         // must be redrawn with every frame), so clearing takes place automatically by simply not
         // rendering anything in the next innerView.onDraw.
     }
 
-    override fun requestStrokeCohortHandoffToHwui(
-        handingOff: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>
-    ) {
+    override fun requestStrokeCohortHandoffToHwui(cohort: List<FinishedStroke<CompletedShapeT>>) {
         // The callback will ensure that the handoff data is drawn in HWUI in its next frame.
-        callback.onStrokeCohortHandoffToHwui(handingOff)
+        callback.onStrokeCohortHandoffToHwui(cohort)
         // Ensure that the next innerView.onDraw, when it calls callback.onDraw, will not result in
         // any
         // calls to drawInModifiedRegion - which will ensure that innerView has no content on the

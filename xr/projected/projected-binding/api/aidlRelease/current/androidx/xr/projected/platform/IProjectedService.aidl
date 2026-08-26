@@ -32,7 +32,7 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package androidx.xr.projected.platform;
-@JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX)")
+@JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP)")
 interface IProjectedService {
   void registerProjectedInputEventListener(in androidx.xr.projected.platform.IProjectedInputEventListener listener);
   void unregisterProjectedInputEventListener(in androidx.xr.projected.platform.IProjectedInputEventListener listener);
@@ -41,4 +41,11 @@ interface IProjectedService {
   boolean isDisplayCapable();
   void registerProjectedDeviceStateListener(in androidx.xr.projected.platform.IProjectedDeviceStateListener listener);
   void unregisterProjectedDeviceStateListener(in androidx.xr.projected.platform.IProjectedDeviceStateListener listener);
+  int[] getAudioDeviceIds();
+  void registerBatteryStateListener(in androidx.xr.projected.platform.IBatteryStateListener listener);
+  void unregisterBatteryStateListener(in androidx.xr.projected.platform.IBatteryStateListener listener);
+  void launchProjectedPermissionRequest(in androidx.xr.projected.platform.ProjectedPermissionRequestData data, in androidx.xr.projected.platform.IProjectedPermissionRequestCallback callback);
+  void finishProjectedPermissionRequest();
+  void setActivityAsInputReceiver(in android.app.PendingIntent intent);
+  void clearActivityAsInputReceiver();
 }

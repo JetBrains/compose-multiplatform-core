@@ -15,10 +15,9 @@
  */
 
 /**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
+ * This file was created using the `createProject` gradle task (./gradlew createProject)
  *
- * Please use that script when creating a new project, rather than copying an existing project and
+ * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
 
@@ -35,7 +34,7 @@ plugins {
 
 dependencies {
     api(project(":room3:room3-runtime"))
-    api(project(":sqlite:sqlite"))
+    api("androidx.sqlite:sqlite:2.7.0-rc01")
     implementation(libs.kotlinCoroutinesAndroid)
     implementation("androidx.concurrent:concurrent-futures:1.2.0")
 
@@ -59,13 +58,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Use SupportSQLite APIs backed by a RoomDatabase"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
-}
-
-// TODO(b/430983364): Workaround KSP incremental issues
-tasks.withType(KotlinCompile).configureEach {
-    incremental = false
-}
-tasks.withType(KspAATask).configureEach {
-    it.kspConfig.incremental.set(false)
 }

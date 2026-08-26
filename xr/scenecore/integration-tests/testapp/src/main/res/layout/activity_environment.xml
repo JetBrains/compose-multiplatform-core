@@ -43,7 +43,7 @@
         app:layout_constraintTop_toBottomOf="@id/environment_topAppBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <Button
             android:id="@+id/environment_toggle_hsm_fsm"
@@ -51,6 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:background="@drawable/test_button"
+            android:enabled="false"
             android:textSize="18sp"
             android:textFontWeight="400"
             android:text="Toggle HSM/FSM" />
@@ -64,7 +65,7 @@
         app:layout_constraintTop_toBottomOf="@id/environment_cardRow1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -76,6 +77,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/test_button"
+                android:enabled="false"
                 android:textSize="18sp"
                 android:textFontWeight="400"
                 android:text="Load Skybox Bar (Path)"
@@ -91,6 +93,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/test_button"
+                android:enabled="false"
                 android:textSize="18sp"
                 android:textFontWeight="400"
                 android:text="Load Skybox Blue (Bytes)"
@@ -112,7 +115,7 @@
         app:layout_constraintTop_toBottomOf="@+id/environment_cardRowLoading"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -131,6 +134,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/test_button"
+                android:enabled="false"
                 android:textSize="18sp"
                 android:textFontWeight="400"
                 android:text="Set Skybox Bar"
@@ -147,6 +151,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/test_button"
+                android:enabled="false"
                 android:textSize="18sp"
                 android:textFontWeight="400"
                 android:text="Set Skybox Blue"
@@ -183,7 +188,7 @@
         app:layout_constraintTop_toBottomOf="@+id/environment_cardRow2"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -269,7 +274,7 @@
         app:layout_constraintTop_toBottomOf="@+id/environment_cardRow3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -281,6 +286,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/test_button"
+                android:enabled="false"
                 android:textSize="18sp"
                 android:textFontWeight="400"
                 android:text="Set Geometry and Skybox (Ground, Blue)"
@@ -317,7 +323,7 @@
         app:layout_constraintTop_toBottomOf="@+id/environment_cardRow4"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -368,7 +374,7 @@
         app:layout_constraintTop_toBottomOf="@+id/environment_cardRow5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -426,7 +432,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="6dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/environment_event_log_table_view"

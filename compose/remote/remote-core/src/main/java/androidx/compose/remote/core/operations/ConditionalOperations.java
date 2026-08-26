@@ -42,8 +42,7 @@ public class ConditionalOperations extends PaintOperation
 
     private static final int OP_CODE = Operations.CONDITIONAL_OPERATIONS;
 
-    @NonNull
-    public ArrayList<Operation> mList = new ArrayList<>();
+    @NonNull public ArrayList<Operation> mList = new ArrayList<>();
 
     int mIndexVariableId;
     byte mType;
@@ -51,6 +50,9 @@ public class ConditionalOperations extends PaintOperation
     float mVarB;
     float mVarAOut;
     float mVarBOut;
+    float mVarAOld;
+    float mVarBOld;
+    boolean mDirty;
 
     /** Equality comparison */
     public static final byte TYPE_EQ = 0;
@@ -70,6 +72,9 @@ public class ConditionalOperations extends PaintOperation
     /** Greater than or equal comparison */
     public static final byte TYPE_GTE = 5;
 
+    /** if ether value changed */
+    public static final byte TYPE_CHANGED = 6;
+
     private static final String[] TYPE_STR = {"EQ", "NEQ", "LT", "LTE", "GT", "GTE"};
 
     @Override
@@ -86,6 +91,13 @@ public class ConditionalOperations extends PaintOperation
     public void updateVariables(@NonNull RemoteContext context) {
         mVarAOut = Float.isNaN(mVarA) ? context.getFloat(Utils.idFromNan(mVarA)) : mVarA;
         mVarBOut = Float.isNaN(mVarB) ? context.getFloat(Utils.idFromNan(mVarB)) : mVarB;
+        if (mType == TYPE_CHANGED && (mVarAOld != mVarAOut || mVarBOld != mVarBOut)) {
+            mVarAOld = mVarAOut;
+            mVarBOld = mVarBOut;
+            mDirty = true;
+        } else {
+            mDirty = false;
+        }
         for (Operation op : mList) {
             if (op instanceof VariableSupport && op.isDirty()) {
                 ((VariableSupport) op).updateVariables(context);
@@ -97,8 +109,8 @@ public class ConditionalOperations extends PaintOperation
      * Constructor
      *
      * @param type type of comparison
-     * @param a    first value
-     * @param b    second value
+     * @param a first value
+     * @param b second value
      */
     public ConditionalOperations(byte type, float a, float b) {
         mType = type;
@@ -174,7 +186,11 @@ public class ConditionalOperations extends PaintOperation
             case TYPE_GTE:
                 run = mVarAOut >= mVarBOut;
                 break;
+            case TYPE_CHANGED:
+                run = mDirty;
+                break;
         }
+        mDirty = false;
         if (run) {
             for (Operation op : mList) {
                 remoteContext.incrementOpCount();
@@ -185,6 +201,7 @@ public class ConditionalOperations extends PaintOperation
                 }
             }
         }
+
     }
 
     /**
@@ -200,9 +217,9 @@ public class ConditionalOperations extends PaintOperation
     /**
      * Write the operation on the buffer
      *
-     * @param type   type of operation
-     * @param a      first value
-     * @param b      second value
+     * @param type type of operation
+     * @param a first value
+     * @param b second value
      * @param buffer the buffer to write to
      */
     public static void apply(@NonNull WireBuffer buffer, byte type, float a, float b) {
@@ -215,13 +232,13 @@ public class ConditionalOperations extends PaintOperation
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         byte type = (byte) buffer.readByte();
-        float a = buffer.readFloat();
-        float b = buffer.readFloat();
+        float a = buffer.readNanId();
+        float b = buffer.readNanId();
         operations.add(new ConditionalOperations(type, a, b));
     }
 
@@ -233,7 +250,9 @@ public class ConditionalOperations extends PaintOperation
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Logic & Expressions Operations", OP_CODE, CLASS_NAME)
                 .description("Execute a list of operations if a condition is met")
-                .field(DocumentedOperation.BYTE, "type",
+                .field(
+                        DocumentedOperation.BYTE,
+                        "type",
                         "The type of comparison (EQ, NEQ, LT, etc.)")
                 .possibleValues("TYPE_EQ", TYPE_EQ)
                 .possibleValues("TYPE_NEQ", TYPE_NEQ)

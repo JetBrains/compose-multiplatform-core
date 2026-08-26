@@ -632,7 +632,7 @@ class TouchEventsTest : InputDispatcherTest() {
     }
 
     private fun AndroidInputDispatcher.generateCancelAndCheckPointers() {
-        generateTouchCancelAndCheck()
+        generatePointerCancelAndCheck()
         assertThat(getCurrentTouchPosition(pointer1)).isNull()
         assertThat(getCurrentTouchPosition(pointer2)).isNull()
         assertThat(getCurrentTouchPosition(pointer3)).isNull()
@@ -792,7 +792,7 @@ class TouchEventsTest : InputDispatcherTest() {
 
         // down + press
         var t = 0L
-        var buttonState = BUTTON_PRIMARY
+        val buttonState = BUTTON_PRIMARY
         events.removeFirst(2).let { (downEvent, pressEvent) ->
             downEvent.verifyMouseEvent(ACTION_DOWN, t, Offset.Zero, buttonState)
             pressEvent.verifyMouseEvent(ACTION_BUTTON_PRESS, t, Offset.Zero, buttonState)
@@ -925,7 +925,7 @@ class TouchEventsTest : InputDispatcherTest() {
 
         // down + press
         var t = 0L
-        var buttonState = BUTTON_PRIMARY
+        val buttonState = BUTTON_PRIMARY
         events.removeFirst(2).let { (downEvent, pressEvent) ->
             downEvent.verifyTrackpadEvent(ACTION_DOWN, t, Offset.Zero, buttonState)
             pressEvent.verifyTrackpadEvent(ACTION_BUTTON_PRESS, t, Offset.Zero, buttonState)

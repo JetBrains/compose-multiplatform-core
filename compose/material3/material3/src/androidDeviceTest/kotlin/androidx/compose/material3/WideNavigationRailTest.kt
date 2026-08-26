@@ -18,8 +18,10 @@ package androidx.compose.material3
 
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +33,8 @@ import androidx.compose.material3.tokens.NavigationRailBaselineItemTokens
 import androidx.compose.material3.tokens.NavigationRailCollapsedTokens
 import androidx.compose.material3.tokens.NavigationRailColorTokens
 import androidx.compose.material3.tokens.NavigationRailExpandedTokens
+import androidx.compose.material3.tokens.NavigationRailHorizontalItemTokens
+import androidx.compose.material3.tokens.NavigationRailVerticalItemTokens
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +52,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -70,7 +75,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,7 +82,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class WideNavigationRailTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
     private val restorationTester = StateRestorationTester(rule)
 
     private val collapsedWidth = NavigationRailCollapsedTokens.ContainerWidth
@@ -248,13 +252,31 @@ class WideNavigationRailTest {
     }
 
     @Test
+    fun rail_respectsContentPadding() {
+        rule.setMaterialContentForSizeAssertions {
+            WideNavigationRail(
+                contentPadding = PaddingValues(10.dp, 10.dp),
+                // Zero out windows insets to check only for the content padding.
+                windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+            ) {
+                Box(Modifier.fillMaxSize().testTag("content"))
+            }
+        }
+        rule
+            .onNodeWithTag("content")
+            .assertTopPositionInRootIsEqualTo(10.dp)
+            .assertLeftPositionInRootIsEqualTo(10.dp)
+    }
+
+    @Test
     fun rail_itemsWithCustomColors() {
         rule.setMaterialContent(lightColorScheme()) {
             val customItemColors =
                 WideNavigationRailItemDefaults.colors()
                     .copy(
                         selectedIconColor = Color.Red,
-                        selectedTextColor = Color.Blue,
+                        selectedTextColorTopIconPosition = Color.Blue,
+                        selectedTextColorStartIconPosition = Color.Blue,
                         unselectedIconColor = Color.Green,
                         unselectedTextColor = Color.White,
                         disabledIconColor = Color.Gray,
@@ -470,18 +492,169 @@ class WideNavigationRailTest {
         val iconBounds =
             rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        val itemSize =
+        val itemWidth =
+            WNRItemNoLabelIndicatorPadding +
+                iconBounds.width +
+                WNRItemNoLabelIndicatorPadding +
+                (WNRItemHorizontalPadding * 2)
+        val itemHeight =
             WNRItemNoLabelIndicatorPadding + iconBounds.height + WNRItemNoLabelIndicatorPadding
 
         // Assert the item has its minimal width and height values.
-        Truth.assertThat(itemBounds.width).isEqualTo(itemSize)
-        Truth.assertThat(itemBounds.height).isEqualTo(itemSize)
+        Truth.assertThat(itemBounds.width).isEqualTo(itemWidth)
+        Truth.assertThat(itemBounds.height).isEqualTo(itemHeight)
 
         // The icon should be centered in the item, as there is no text placeable provided
         rule
             .onNodeWithTag("icon", useUnmergedTree = true)
             .assertLeftPositionInRootIsEqualTo((itemBounds.width - iconBounds.width) / 2)
             .assertTopPositionInRootIsEqualTo((itemBounds.height - iconBounds.height) / 2)
+    }
+
+    @Test
+    fun item_topIconPosition_sizeAndPosition() {
+        rule.setMaterialContent(lightColorScheme()) {
+            WideNavigationRailItem(
+                modifier = Modifier.testTag("item"),
+                railExpanded = false,
+                icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
+                label = { Text("Label", modifier = Modifier.testTag("label")) },
+                selected = true,
+                onClick = {},
+            )
+        }
+
+        val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val labelBounds =
+            rule.onNodeWithTag("label", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val indicatorHorizontalPadding =
+            WNRItemHorizontalPadding +
+                (NavigationRailVerticalItemTokens.ActiveIndicatorWidth -
+                    NavigationRailBaselineItemTokens.IconSize) / 2
+        val indicatorVerticalPadding =
+            (NavigationRailVerticalItemTokens.ActiveIndicatorHeight -
+                NavigationRailBaselineItemTokens.IconSize) / 2
+        val iconToLabelPadding =
+            NavigationRailVerticalItemTokens.IconLabelSpace + indicatorVerticalPadding
+
+        (iconBounds.left - itemBounds.left).assertIsEqualTo(
+            indicatorHorizontalPadding,
+            "indicator start paadding",
+        )
+        (iconBounds.top - itemBounds.top).assertIsEqualTo(
+            indicatorVerticalPadding,
+            "indicator top padding",
+        )
+        (itemBounds.right - iconBounds.right).assertIsEqualTo(
+            indicatorHorizontalPadding,
+            "indicator end padding",
+        )
+        (labelBounds.top - iconBounds.bottom).assertIsEqualTo(
+            iconToLabelPadding,
+            "indicator to label padding",
+        )
+    }
+
+    @Test
+    fun item_startIconPosition_sizeAndPosition() {
+        rule.setMaterialContent(lightColorScheme()) {
+            WideNavigationRailItem(
+                modifier = Modifier.testTag("item"),
+                railExpanded = true,
+                icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
+                label = { Text("Label", modifier = Modifier.testTag("label")) },
+                selected = true,
+                onClick = {},
+            )
+        }
+
+        val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val labelBounds =
+            rule.onNodeWithTag("label", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val verticalPadding =
+            (NavigationRailHorizontalItemTokens.ActiveIndicatorHeight -
+                NavigationRailBaselineItemTokens.IconSize) / 2
+        val horizontalPadding = NavigationRailHorizontalItemTokens.FullWidthLeadingSpace
+
+        (iconBounds.left - itemBounds.left).assertIsEqualTo(
+            WNRItemHorizontalPadding + horizontalPadding,
+            "start padding",
+        )
+        (iconBounds.top - itemBounds.top).assertIsEqualTo(verticalPadding, "top padding")
+        (itemBounds.right - labelBounds.right).assertIsEqualTo(horizontalPadding, "end padding")
+        (itemBounds.bottom - iconBounds.bottom).assertIsEqualTo(verticalPadding, "bottom padding")
+        (labelBounds.left - iconBounds.right).assertIsEqualTo(
+            NavigationRailHorizontalItemTokens.IconLabelSpace,
+            "icon to label space",
+        )
+    }
+
+    @Test
+    fun item_topIconPosition_customIndicatorPadding() {
+        rule.setMaterialContent(lightColorScheme()) {
+            WideNavigationRailItem(
+                modifier = Modifier.testTag("item").background(Color.Red),
+                railExpanded = false,
+                icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
+                label = { Text("Label", modifier = Modifier.testTag("label")) },
+                selected = true,
+                onClick = {},
+                indicatorPadding =
+                    WideNavigationRailItemDefaults.indicatorPadding(
+                        collapsedPadding = PaddingValues(horizontal = 5.dp, vertical = 3.dp),
+                        railExpanded = false,
+                    ),
+            )
+        }
+
+        val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val labelBounds =
+            rule.onNodeWithTag("label", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        val horizontalPadding = WNRItemHorizontalPadding + 5.dp
+        val bottomPadding = NavigationRailVerticalItemTokens.IconLabelSpace + 3.dp
+
+        (iconBounds.left - itemBounds.left).assertIsEqualTo(horizontalPadding, "start padding")
+        (iconBounds.top - itemBounds.top).assertIsEqualTo(3.dp, "top padding")
+        (itemBounds.right - iconBounds.right).assertIsEqualTo(horizontalPadding, "end padding")
+        (labelBounds.top - iconBounds.bottom).assertIsEqualTo(bottomPadding, "bottom padding")
+    }
+
+    @Test
+    fun item_startIconPosition_customIndicatorPadding() {
+        rule.setMaterialContent(lightColorScheme()) {
+            WideNavigationRailItem(
+                modifier = Modifier.testTag("item"),
+                railExpanded = true,
+                icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
+                label = { Text("Label", modifier = Modifier.testTag("label")) },
+                selected = true,
+                onClick = {},
+                indicatorPadding =
+                    WideNavigationRailItemDefaults.indicatorPadding(
+                        expandedPadding = PaddingValues(horizontal = 3.dp, vertical = 13.dp),
+                        railExpanded = true,
+                    ),
+            )
+        }
+
+        val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val labelBounds =
+            rule.onNodeWithTag("label", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val horizontalPadding = WNRItemHorizontalPadding + 3.dp
+
+        (iconBounds.left - itemBounds.left).assertIsEqualTo(horizontalPadding, "start padding")
+        (iconBounds.top - itemBounds.top).assertIsEqualTo(13.dp, "top padding")
+        (itemBounds.right - labelBounds.right).assertIsEqualTo(3.dp, "end padding")
+        (itemBounds.bottom - iconBounds.bottom).assertIsEqualTo(13.dp, "bottom padding")
     }
 
     @Test
@@ -630,8 +803,6 @@ class WideNavigationRailTest {
         // Assert item is at the bottom.
         rule
             .onNodeWithTag("item", useUnmergedTree = true)
-            .assertTopPositionInRootIsEqualTo(
-                (railBounds.height - verticalPadding - itemBounds.height)
-            )
+            .assertTopPositionInRootIsEqualTo((railBounds.height - itemBounds.height))
     }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,15 +17,16 @@
 package androidx.xr.scenecore.spatial.rendering
 
 import android.app.Activity
-import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
-import androidx.xr.scenecore.impl.impress.GltfModel
-import androidx.xr.scenecore.impl.impress.ImpressNode
 import androidx.xr.scenecore.runtime.ExrImageResource
+import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.spatial.rendering.impress.FakeImpressApiImpl
+import androidx.xr.scenecore.spatial.rendering.impress.GltfModel
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
 import com.android.extensions.xr.ShadowXrExtensions
+import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.environment.EnvironmentVisibilityState
 import com.android.extensions.xr.environment.PassthroughVisibilityState
 import com.android.extensions.xr.environment.ShadowEnvironmentVisibilityState
@@ -36,7 +37,6 @@ import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,7 +61,7 @@ class SpatialEnvironmentFeatureImplTest {
 
     private val fakeImpressApi = FakeImpressApiImpl()
     private lateinit var activity: Activity
-    private val xrExtensions = XrExtensionsProvider.getXrExtensions()!!
+    private val xrExtensions = XrExtensions()
     private lateinit var expectedSubspace: SubspaceNode
     private lateinit var environment: SpatialEnvironmentFeatureImpl
     private lateinit var splitEngineSubspaceManager: SplitEngineSubspaceManager
@@ -195,49 +195,6 @@ class SpatialEnvironmentFeatureImplTest {
         }
 
     @Test
-    fun setPreferredSpatialEnvWithSkyboxAndGeoWithNodeAndAnimation_doesNotDetachEnvironment() =
-        runBlocking {
-            val exr = fakeLoadEnvironment("fakeEnvironment")
-            val gltf = fakeLoadGltfAsset("fakeGltfAsset")
-            // Create dummy regular version of the water material.
-            val material = fakeLoadMaterial(false)
-            val nodeName = "fakeNode"
-            val animationName = "fakeAnimation"
-
-            // Ensure that an environment is set.
-            environment.preferredSpatialEnvironment =
-                SpatialEnvironmentPreference(exr, gltf, material, nodeName, animationName)
-            runUiThreadTasks()
-
-            val initialSkybox = fakeImpressApi.getCurrentEnvironmentLight()
-            val geometryNodes =
-                fakeImpressApi.getImpressNodesForToken((gltf as GltfModel).nativeHandle)
-            val materials = fakeImpressApi.getMaterials()
-            val animatingNodes = fakeImpressApi.impressNodeAnimatingSize()
-            val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
-
-            assertThat(initialSkybox).isNotEqualTo(INVALID_SPLIT_ENGINE_ID)
-            assertThat(geometryNodes).isNotEmpty()
-            assertThat(fakeImpressApi.impressNodeHasParent(ImpressNode(geometryNodes!![0])))
-                .isTrue()
-            assertThat(materials).isNotEmpty()
-            assertThat(materials.keys.toTypedArray()[0]).isEqualTo(WATER_MATERIAL_ID)
-            assertThat(materials[WATER_MATERIAL_ID]!!.type)
-                .isEqualTo(FakeImpressApiImpl.MaterialData.Type.WATER)
-            assertThat(animatingNodes).isEqualTo(0)
-            assertThat(loopingAnimatingNodes).isEqualTo(1)
-
-            // Ensure environment is not removed if both skybox and geometry are updated to null.
-            environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(null, null)
-
-            val finalSkybox = fakeImpressApi.getCurrentEnvironmentLight()
-
-            assertThat(finalSkybox).isEqualTo(INVALID_SPLIT_ENGINE_ID)
-            assertThat(ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity))
-                .isNotNull()
-        }
-
-    @Test
     fun setPreferredSpatialEnvFromNullPrefToNullSkyboxAndGeometry_doesNotDetachEnvironment() =
         runBlocking {
             val gltf = fakeLoadGltfAsset("fakeGltfAsset")
@@ -314,136 +271,6 @@ class SpatialEnvironmentFeatureImplTest {
     }
 
     @Test
-    fun setPreferredSpatialEnvironmentGeometryWithMaterialAndNodeName_materialIsOverridden() =
-        runTest {
-            val exr = fakeLoadEnvironment("fakeEnvironment")
-            val gltf = fakeLoadGltfAsset("fakeGltfAsset")
-            // Create dummy regular version of the water material.
-            val material = fakeLoadMaterial(false)
-            val nodeName = "fakeNode"
-            val animationName = "fakeAnimation"
-
-            // Ensure that an environment is set.
-            environment.preferredSpatialEnvironment =
-                SpatialEnvironmentPreference(exr, gltf, material, nodeName, animationName)
-            runUiThreadTasks()
-
-            val materials = fakeImpressApi.getMaterials()
-            val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
-
-            assertThat(
-                    fakeImpressApi
-                        .getImpressNodes()
-                        .keys
-                        .stream()
-                        .filter { node ->
-                            node.materialOverride != null &&
-                                node.materialOverride!!.type ==
-                                    FakeImpressApiImpl.MaterialData.Type.WATER
-                        }
-                        .toArray()
-                )
-                .hasLength(1) // 1 glTF node that should be overridden with the water material.
-            assertThat(materials).isNotEmpty()
-            assertThat(materials.keys.toTypedArray()[0]).isEqualTo(WATER_MATERIAL_ID)
-            assertThat(materials[WATER_MATERIAL_ID]!!.type)
-                .isEqualTo(FakeImpressApiImpl.MaterialData.Type.WATER)
-            assertThat(loopingAnimatingNodes).isEqualTo(1)
-        }
-
-    @Test
-    fun setPreferredSpatialEnvGeometryWithMaterialAndNoNodeName_materialIsNotOverridden() =
-        runBlocking {
-            val exr = fakeLoadEnvironment("fakeEnvironment")
-            val gltf = fakeLoadGltfAsset("fakeGltfAsset")
-            // Create dummy regular version of the water material.
-            val material = fakeLoadMaterial(false)
-            val animationName = "fakeAnimation"
-
-            // Ensure that an environment is set.
-            environment.preferredSpatialEnvironment =
-                SpatialEnvironmentPreference(exr, gltf, material, null, animationName)
-
-            val materials = fakeImpressApi.getMaterials()
-            runUiThreadTasks()
-
-            // 2 nodes are subspace (parent) and glTF (child) used for the environment. Both have no
-            // material override so we expect the length of the filter to be 2.
-            assertThat(
-                    fakeImpressApi
-                        .getImpressNodes()
-                        .keys
-                        .stream()
-                        .filter { node -> node.materialOverride == null }
-                        .toArray()
-                )
-                .hasLength(2)
-            assertThat(materials).isNotEmpty()
-            assertThat(materials.keys.toTypedArray()[0]).isEqualTo(WATER_MATERIAL_ID)
-            assertThat(materials[WATER_MATERIAL_ID]!!.type)
-                .isEqualTo(FakeImpressApiImpl.MaterialData.Type.WATER)
-        }
-
-    @Test
-    fun setPreferredSpatialEnvGeometryWithNoMaterialAndNodeName_materialIsNotOverridden() =
-        runBlocking {
-            val exr = fakeLoadEnvironment("fakeEnvironment")
-            val gltf = fakeLoadGltfAsset("fakeGltfAsset")
-            val nodeName = "fakeNode"
-            val animationName = "fakeAnimation"
-
-            // Ensure that an environment is set.
-            environment.preferredSpatialEnvironment =
-                SpatialEnvironmentPreference(exr, gltf, null, nodeName, animationName)
-
-            val materials = fakeImpressApi.getMaterials()
-            runUiThreadTasks()
-
-            // 2 nodes are subspace (parent) and glTF (child) used for the environment. Both have no
-            // material override so we expect the length of the filter to be 2.
-            assertThat(
-                    fakeImpressApi
-                        .getImpressNodes()
-                        .keys
-                        .stream()
-                        .filter { node -> node.materialOverride == null }
-                        .toArray()
-                )
-                .hasLength(2)
-            assertThat(materials).isEmpty()
-        }
-
-    @Test
-    fun setPreferredSpatialEnvironmentGeometryWithNoAnimationName_geometryIsNotAnimating() =
-        runTest {
-            val exr = fakeLoadEnvironment("fakeEnvironment")
-            val gltf = fakeLoadGltfAsset("fakeGltfAsset")
-            val animationName = "fakeAnimation"
-
-            // Ensure that an environment is set.
-            environment.preferredSpatialEnvironment =
-                SpatialEnvironmentPreference(exr, gltf, null, null, animationName)
-            runUiThreadTasks()
-
-            val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
-            val materials = fakeImpressApi.getMaterials()
-
-            assertThat(loopingAnimatingNodes).isEqualTo(1)
-            // 2 nodes are subspace (parent) and glTF (child) used for the environment. Both have no
-            // material override so we expect the length of the filter to be 2.
-            assertThat(
-                    fakeImpressApi
-                        .getImpressNodes()
-                        .keys
-                        .stream()
-                        .filter { node -> node.materialOverride == null }
-                        .toArray()
-                )
-                .hasLength(2)
-            assertThat(materials).isEmpty()
-        }
-
-    @Test
     fun setPreferredSpatialEnvGeometry_setsSubspaceAsParentOfGltfNode() = runBlocking {
         val gltf = fakeLoadGltfAsset("fakeGltfAsset")
 
@@ -456,27 +283,11 @@ class SpatialEnvironmentFeatureImplTest {
         val expectedParentHandle = subspaceHandleCaptor.value
         val geometryNodes = fakeImpressApi.getImpressNodesForToken((gltf as GltfModel).nativeHandle)
         val gltfNode = ImpressNode(geometryNodes!![0])
-        val actualParentHandle = fakeImpressApi.getImpressNodeParent(gltfNode)
+        val actualParentHandle = fakeImpressApi.getImpressNodeParent(gltfNode).handle
 
         assertThat(actualParentHandle).isNotEqualTo(-1)
         assertThat(actualParentHandle).isNotEqualTo(gltfNode.handle)
         assertThat(actualParentHandle).isEqualTo(expectedParentHandle)
-    }
-
-    @Test
-    fun setPreferredSpatialEnvironment_asyncAnimation_startsAnimation() = runBlocking {
-        val exr = fakeLoadEnvironment("fakeEnvironment")
-        val gltf = fakeLoadGltfAsset("fakeGltfAsset")
-        val animationName = "fakeAnimation"
-
-        environment.preferredSpatialEnvironment =
-            SpatialEnvironmentPreference(exr, gltf, null, null, animationName)
-
-        // Will execute animateGltfModel.
-        runUiThreadTasks()
-
-        val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
-        assertThat(loopingAnimatingNodes).isEqualTo(1)
     }
 
     @Test
@@ -574,9 +385,77 @@ class SpatialEnvironmentFeatureImplTest {
         assertThat(environment.preferredSpatialEnvironment).isNull()
     }
 
+    @Test
+    fun setPreferredSpatialEnvironment_withGeometryEntity_retainsGeometryEntity() {
+        val mockEntity = Mockito.mock(GltfEntity::class.java)
+        val preference = SpatialEnvironmentPreference(null, null, mockEntity)
+        environment.preferredSpatialEnvironment = preference
+
+        assertThat(environment.preferredSpatialEnvironment?.geometryEntity).isEqualTo(mockEntity)
+    }
+
+    @Test
+    fun setPreferredSpatialEnvironment_withNestedGeometryEntity_successfullyExtractsFeature() =
+        runBlocking {
+            val mockFeature =
+                TestFeature(
+                    fakeImpressApi,
+                    splitEngineSubspaceManager,
+                    xrExtensions,
+                    expectedSubspace,
+                )
+            val mockEntity = Mockito.mock(GltfEntity::class.java)
+            val childEntity = TestGltfEntity(mockEntity, mockFeature)
+            val parentEntity = TestGltfEntity(mockEntity, otherEntity = childEntity)
+
+            val preference = SpatialEnvironmentPreference(null, null, parentEntity)
+            environment.preferredSpatialEnvironment = preference
+            runUiThreadTasks()
+
+            val environmentNode =
+                ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)
+            assertThat(environmentNode).isNotNull()
+        }
+
+    @Test
+    fun setPreferredSpatialEnvironment_withCircularReference_doesNotInfiniteLoop() = runBlocking {
+        val mockEntity = Mockito.mock(GltfEntity::class.java)
+        val entityA = TestGltfEntity(mockEntity)
+        val entityB = TestGltfEntity(mockEntity, otherEntity = entityA)
+        entityA.setCircular(entityB)
+
+        val preference = SpatialEnvironmentPreference(null, null, entityA)
+        environment.preferredSpatialEnvironment = preference
+        runUiThreadTasks()
+
+        val environmentNode = ShadowXrExtensions.extract(xrExtensions).getEnvironmentNode(activity)
+        assertThat(environmentNode).isNotNull()
+    }
+
     companion object {
         private const val SUBSPACE_ID = 5
         private const val INVALID_SPLIT_ENGINE_ID = -1
         private const val WATER_MATERIAL_ID = 1L
+    }
+}
+
+private class TestFeature(
+    impressApi: androidx.xr.scenecore.spatial.rendering.impress.ImpressApi,
+    splitEngineSubspaceManager: com.google.androidxr.splitengine.SplitEngineSubspaceManager,
+    extensions: com.android.extensions.xr.XrExtensions,
+    subspaceNode: SubspaceNode,
+) : BaseRenderingFeature(impressApi, splitEngineSubspaceManager, extensions) {
+    init {
+        subspace = subspaceNode
+    }
+}
+
+private class TestGltfEntity(
+    private val delegate: GltfEntity,
+    private val gltfFeature: BaseRenderingFeature? = null,
+    private var otherEntity: GltfEntity? = null,
+) : GltfEntity by delegate {
+    fun setCircular(entity: GltfEntity) {
+        otherEntity = entity
     }
 }

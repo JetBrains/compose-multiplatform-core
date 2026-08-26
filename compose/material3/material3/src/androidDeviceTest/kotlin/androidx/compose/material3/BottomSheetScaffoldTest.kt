@@ -21,6 +21,8 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -37,8 +39,10 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SheetValue.Expanded
+import androidx.compose.material3.SheetValue.Hidden
+import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.material3.internal.Strings
-import androidx.compose.material3.internal.Strings.Companion.BottomSheetDragHandleDescription
 import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.SheetBottomTokens
 import androidx.compose.runtime.CompositionLocalProvider
@@ -64,8 +68,8 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.AccessibilityAction
 import androidx.compose.ui.semantics.SemanticsActions
@@ -113,7 +117,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -124,7 +127,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class BottomSheetScaffoldTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
     private val restorationTester = StateRestorationTester(rule)
 
     private val sheetHeight = 256.dp
@@ -136,17 +139,14 @@ class BottomSheetScaffoldTest {
 
     @Test
     fun test_stateSavedAndRestored() {
-        val initialValue = SheetValue.Expanded
-        lateinit var state: BottomSheetScaffoldState
+        val initialValue = Expanded
+        lateinit var state: SheetState
         restorationTester.setContent {
-            state =
-                rememberBottomSheetScaffoldState(
-                    bottomSheetState = rememberStandardBottomSheetState(initialValue)
-                )
+            state = rememberBottomSheetState(initialValue = initialValue)
         }
-        assertThat(state.bottomSheetState.currentValue).isEqualTo(initialValue)
+        assertThat(state.currentValue).isEqualTo(initialValue)
         restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(state.bottomSheetState.currentValue).isEqualTo(initialValue)
+        assertThat(state.currentValue).isEqualTo(initialValue)
     }
 
     @Test
@@ -169,12 +169,13 @@ class BottomSheetScaffoldTest {
     @Test
     fun bottomSheetScaffold_testOffset_whenExpanded() {
         rule.setContent {
+            val sheetState =
+                rememberBottomSheetState(
+                    initialValue = Expanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                )
             BottomSheetScaffold(
-                scaffoldState =
-                    rememberBottomSheetScaffoldState(
-                        bottomSheetState =
-                            rememberStandardBottomSheetState(initialValue = SheetValue.Expanded)
-                    ),
+                scaffoldState = rememberBottomSheetScaffoldState(sheetState),
                 sheetContent = { Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight)) },
                 sheetDragHandle = {
                     Box(Modifier.fillMaxWidth().requiredHeight(dragHandleSize).testTag(sheetTag))
@@ -230,7 +231,11 @@ class BottomSheetScaffoldTest {
                 sheetPeekHeight = peekHeight,
                 scaffoldState =
                     rememberBottomSheetScaffoldState(
-                        bottomSheetState = rememberStandardBottomSheetState(skipHiddenState = false)
+                        bottomSheetState =
+                            rememberBottomSheetState(
+                                initialValue = PartiallyExpanded,
+                                enabledValues = setOf(Hidden, PartiallyExpanded, Expanded),
+                            )
                     ),
             ) {
                 Text("Content")
@@ -257,9 +262,8 @@ class BottomSheetScaffoldTest {
         lateinit var scope: CoroutineScope
         val bottomSheetState =
             SheetState(
-                skipPartiallyExpanded = false,
-                skipHiddenState = true,
-                initialValue = SheetValue.PartiallyExpanded,
+                enabledValues = setOf(Expanded, PartiallyExpanded),
+                initialValue = PartiallyExpanded,
                 positionalThreshold = {
                     with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                 },
@@ -297,7 +301,10 @@ class BottomSheetScaffoldTest {
                 scaffoldState =
                     rememberBottomSheetScaffoldState(
                         bottomSheetState =
-                            rememberStandardBottomSheetState(initialValue = SheetValue.Expanded)
+                            rememberBottomSheetState(
+                                initialValue = Expanded,
+                                enabledValues = setOf(PartiallyExpanded, Expanded),
+                            )
                     ),
                 sheetContent = {
                     Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight).testTag(sheetTag))
@@ -352,7 +359,10 @@ class BottomSheetScaffoldTest {
             lateinit var bottomSheetState: SheetState
             rule.setContent {
                 bottomSheetState =
-                    rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
+                    rememberBottomSheetState(
+                        initialValue = PartiallyExpanded,
+                        enabledValues = setOf(PartiallyExpanded, Expanded),
+                    )
                 BottomSheetScaffold(
                     scaffoldState =
                         rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState),
@@ -392,7 +402,10 @@ class BottomSheetScaffoldTest {
         lateinit var bottomSheetState: SheetState
         rule.setContent {
             bottomSheetState =
-                rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                )
             BottomSheetScaffold(
                 scaffoldState =
                     rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState),
@@ -405,21 +418,17 @@ class BottomSheetScaffoldTest {
             )
         }
 
-        rule.runOnIdle {
-            assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded) }
 
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeUp() }
         rule.waitForIdle()
 
-        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.Expanded) }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(Expanded) }
 
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeDown() }
         rule.waitForIdle()
 
-        rule.runOnIdle {
-            assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded) }
     }
 
     @Test
@@ -427,9 +436,10 @@ class BottomSheetScaffoldTest {
         lateinit var bottomSheetState: SheetState
         rule.setContent {
             bottomSheetState =
-                rememberStandardBottomSheetState(
-                    initialValue = SheetValue.PartiallyExpanded,
-                    confirmValueChange = { it != SheetValue.Expanded },
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                    confirmValueChange = { it != Expanded },
                 )
             BottomSheetScaffold(
                 scaffoldState =
@@ -442,16 +452,12 @@ class BottomSheetScaffoldTest {
             )
         }
 
-        rule.runOnIdle {
-            assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded) }
 
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeUp() }
         rule.waitForIdle()
 
-        rule.runOnIdle {
-            assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded) }
 
         rule
             .onNodeWithTag(sheetTag)
@@ -465,7 +471,10 @@ class BottomSheetScaffoldTest {
         lateinit var bottomSheetState: SheetState
         rule.setContent {
             bottomSheetState =
-                rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                )
             BottomSheetScaffold(
                 scaffoldState =
                     rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState),
@@ -478,15 +487,11 @@ class BottomSheetScaffoldTest {
             )
         }
 
-        rule.runOnIdle {
-            assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded) }
 
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeUp() }
 
-        rule.runOnIdle {
-            assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
-        }
+        rule.runOnIdle { assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded) }
     }
 
     @Test
@@ -586,7 +591,6 @@ class BottomSheetScaffoldTest {
                 }
 
                 @Deprecated("deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -643,7 +647,6 @@ class BottomSheetScaffoldTest {
                 }
 
                 @Deprecated("deprecated")
-                @Suppress("OVERRIDE_DEPRECATION") // b/446706247
                 override fun onLowMemory() {
                     // NO-OP
                 }
@@ -658,8 +661,7 @@ class BottomSheetScaffoldTest {
             latch.await(1500, TimeUnit.MILLISECONDS)
             var screenWidthPx by mutableStateOf(0)
             rule.setContent {
-                val context = LocalContext.current
-                screenWidthPx = context.resources.displayMetrics.widthPixels
+                screenWidthPx = LocalResources.current.displayMetrics.widthPixels
                 BottomSheetScaffold(
                     sheetMaxWidth = Dp.Unspecified,
                     sheetContent = { Box(Modifier.testTag(sheetTag).fillMaxHeight(0.4f)) },
@@ -689,7 +691,11 @@ class BottomSheetScaffoldTest {
         var expectedPostScrolledContainerColor: Color = Color.Unspecified
 
         rule.setContent {
-            sheetState = rememberStandardBottomSheetState()
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                )
             topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
             BottomSheetScaffold(
                 modifier = Modifier.nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
@@ -727,7 +733,7 @@ class BottomSheetScaffoldTest {
 
         // Initial sheetScrollStateValue is at 0 and partially expanded
         assertThat(sheetScrollState.value).isEqualTo(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
 
         // At a partial scroll, sheet expands but sheetScrollStateValue is at 0.
         rule.onNodeWithTag(sheetTag).performTouchInput {
@@ -735,7 +741,7 @@ class BottomSheetScaffoldTest {
         }
         rule.waitForIdle()
         assertThat(sheetScrollState.value).isEqualTo(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
         // Color of TopAppBar has not changed.
         rule
             .onNodeWithTag("AppBar")
@@ -745,14 +751,14 @@ class BottomSheetScaffoldTest {
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeDown(startY = top, endY = bottom) }
         rule.waitForIdle()
         assertThat(sheetScrollState.value).isEqualTo(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
 
         // On content scroll, TopAppBar color updates while sheet state remains PartiallyExpanded
         rule.onNodeWithTag(scaffoldContentTag).performTouchInput {
             swipeUp(startY = bottom / 2, endY = top)
         }
         assertThat(sheetScrollState.value).isEqualTo(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
         assertThat(scaffoldContentScrollState.value).isGreaterThan(0)
         rule
             .onNodeWithTag("AppBar")
@@ -767,7 +773,11 @@ class BottomSheetScaffoldTest {
         lateinit var scope: CoroutineScope
 
         rule.setContent {
-            sheetState = rememberStandardBottomSheetState()
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                )
             scope = rememberCoroutineScope()
             BottomSheetScaffold(
                 scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = sheetState),
@@ -786,31 +796,31 @@ class BottomSheetScaffoldTest {
 
         // Initial scrollState is at 0 and sheetState is partially expanded
         assertThat(sheetContentScrollState.value).isEqualTo(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
 
         // Scrolling up within the sheet causes content to scroll without changing sheet state
         // because swipe gestures are disabled.
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeUp() }
         rule.waitForIdle()
         assertThat(sheetContentScrollState.value).isGreaterThan(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
 
         scope.launch {
-            sheetState.snapTo(SheetValue.Expanded)
+            sheetState.snapTo(Expanded)
             sheetContentScrollState.scrollTo(10)
         }
         rule.waitForIdle()
 
         // Initial scrollState is > 0 and sheetState is fully expanded
         assertThat(sheetContentScrollState.value).isEqualTo(10)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
 
         // Scrolling down within the sheet causes content to scroll without changing sheet state
         // because swipe gestures are disabled.
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeDown() }
         rule.waitForIdle()
         assertThat(sheetContentScrollState.value).isEqualTo(0)
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
     }
 
     @Test
@@ -819,9 +829,8 @@ class BottomSheetScaffoldTest {
         var screenWidth by mutableStateOf(0.dp)
         rule.setContent {
             sheetMaxWidth = remember { mutableStateOf(0.dp) }
-            val context = LocalContext.current
             val density = LocalDensity.current
-            screenWidth = with(density) { context.resources.displayMetrics.widthPixels.toDp() }
+            screenWidth = with(density) { LocalResources.current.displayMetrics.widthPixels.toDp() }
             BottomSheetScaffold(
                 sheetContent = { Box(Modifier.fillMaxSize().testTag(sheetTag)) },
                 sheetPeekHeight = peekHeight,
@@ -898,12 +907,14 @@ class BottomSheetScaffoldTest {
             )
         // Assert sheet content is positioned at the sheet peek height + drag handle height + 22.dp
         // top and bottom padding.
+        val tolerance = maxOf(0.5.dp, with(rule.density) { 1.5f.toDp() })
         rule
             .onNodeWithTag(sheetTag)
             .assertTopPositionInRootIsEqualTo(
                 rule.rootHeight() - peekHeight +
                     (expectedDragHandleVerticalPadding * 2) +
-                    SheetBottomTokens.DockedDragHandleHeight
+                    SheetBottomTokens.DockedDragHandleHeight,
+                tolerance = tolerance,
             )
         // Assert TopBar is placed at the top of the app.
         rule.onNodeWithTag("TopBar").assertTopPositionInRootIsEqualTo(0.dp)
@@ -929,7 +940,7 @@ class BottomSheetScaffoldTest {
         var rootCoords: LayoutCoordinates? = null
         val state =
             SheetState(
-                skipPartiallyExpanded = false,
+                enabledValues = setOf(Expanded, PartiallyExpanded, Hidden),
                 positionalThreshold = {
                     with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                 },
@@ -937,13 +948,13 @@ class BottomSheetScaffoldTest {
                     with(rule.density) { BottomSheetDefaults.VelocityThreshold.toPx() }
                 },
             )
-        var sheetValue by mutableStateOf(SheetValue.Hidden)
+        var sheetValue by mutableStateOf(Hidden)
         rule.setContent {
             Box(Modifier.onGloballyPositioned { rootCoords = it }.offset { offset }) {
                 LaunchedEffect(sheetValue) {
-                    if (sheetValue == SheetValue.Hidden) {
+                    if (sheetValue == Hidden) {
                         state.hide()
-                    } else if (sheetValue == SheetValue.PartiallyExpanded) {
+                    } else if (sheetValue == PartiallyExpanded) {
                         state.partialExpand()
                     } else {
                         state.expand()
@@ -993,7 +1004,7 @@ class BottomSheetScaffoldTest {
         var sheetCoords: LayoutCoordinates? = null
         val state =
             SheetState(
-                skipPartiallyExpanded = false,
+                enabledValues = setOf(Expanded, PartiallyExpanded, Hidden),
                 positionalThreshold = {
                     with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                 },
@@ -1001,12 +1012,12 @@ class BottomSheetScaffoldTest {
                     with(rule.density) { BottomSheetDefaults.VelocityThreshold.toPx() }
                 },
             )
-        var sheetValue by mutableStateOf(SheetValue.Hidden)
+        var sheetValue by mutableStateOf(Hidden)
         rule.setContent {
             LaunchedEffect(sheetValue) {
-                if (sheetValue == SheetValue.Hidden) {
+                if (sheetValue == Hidden) {
                     state.hide()
-                } else if (sheetValue == SheetValue.PartiallyExpanded) {
+                } else if (sheetValue == PartiallyExpanded) {
                     state.partialExpand()
                 } else {
                     state.expand()
@@ -1049,7 +1060,11 @@ class BottomSheetScaffoldTest {
     fun bottomSheetScaffold_testDragHandleClick() {
         lateinit var sheetState: SheetState
         rule.setContent {
-            sheetState = rememberStandardBottomSheetState()
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(PartiallyExpanded, Expanded),
+                )
             BottomSheetScaffold(
                 sheetContent = {
                     Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight).testTag(sheetTag))
@@ -1063,22 +1078,26 @@ class BottomSheetScaffoldTest {
         }
 
         rule.waitForIdle()
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
 
         rule.onNodeWithTag(dragHandleTag, useUnmergedTree = true).performClick()
         rule.waitForIdle()
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
 
         rule.onNodeWithTag(dragHandleTag, useUnmergedTree = true).performClick()
         rule.waitForIdle()
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
     }
 
     @Test
     fun bottomSheetScaffold_testDragHandleClick_hiddenStateAllowed() {
         lateinit var sheetState: SheetState
         rule.setContent {
-            sheetState = rememberStandardBottomSheetState(skipHiddenState = false)
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(Hidden, PartiallyExpanded, Expanded),
+                )
             BottomSheetScaffold(
                 sheetContent = {
                     Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight).testTag(sheetTag))
@@ -1092,24 +1111,23 @@ class BottomSheetScaffoldTest {
         }
 
         rule.waitForIdle()
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
 
         rule.onNodeWithTag(dragHandleTag, useUnmergedTree = true).performClick()
         rule.waitForIdle()
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
 
         rule.onNodeWithTag(dragHandleTag, useUnmergedTree = true).performClick()
         rule.waitForIdle()
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.Hidden)
+        assertThat(sheetState.currentValue).isEqualTo(Hidden)
     }
 
     @Test
     fun bottomSheetScaffold_peekHeightMatchesContentHeight_containsExpandedAnchor() {
         val bottomSheetState =
             SheetState(
-                skipPartiallyExpanded = true,
-                skipHiddenState = true,
-                initialValue = SheetValue.Expanded,
+                enabledValues = setOf(Expanded),
+                initialValue = Expanded,
                 positionalThreshold = {
                     with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
                 },
@@ -1132,52 +1150,7 @@ class BottomSheetScaffoldTest {
         }
         rule.runOnIdle {
             assertThat(bottomSheetState.anchoredDraggableState.anchors.size).isEqualTo(1)
-            assertThat(
-                    bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(
-                        SheetValue.Expanded
-                    )
-                )
-                .isTrue()
-        }
-    }
-
-    @Test
-    fun bottomSheetScaffold_peekHeightZero_providesHiddenAnchor() {
-        val bottomSheetState =
-            SheetState(
-                skipPartiallyExpanded = false,
-                skipHiddenState = false,
-                initialValue = SheetValue.Expanded,
-                positionalThreshold = {
-                    with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
-                },
-                velocityThreshold = {
-                    with(rule.density) { BottomSheetDefaults.VelocityThreshold.toPx() }
-                },
-            )
-        rule.setContent {
-            BottomSheetScaffold(
-                sheetContent = { Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight)) },
-                sheetDragHandle = null,
-                sheetPeekHeight = 0.dp,
-                scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState),
-            ) {
-                Text("Content")
-            }
-        }
-        rule.runOnIdle {
-            assertThat(bottomSheetState.anchoredDraggableState.anchors.size).isEqualTo(2)
-            assertThat(
-                    bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(
-                        SheetValue.Expanded
-                    )
-                )
-                .isTrue()
-            assertThat(
-                    bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(
-                        SheetValue.Hidden
-                    )
-                )
+            assertThat(bottomSheetState.anchoredDraggableState.anchors.hasPositionFor(Expanded))
                 .isTrue()
         }
     }
@@ -1198,9 +1171,9 @@ class BottomSheetScaffoldTest {
 
         rule.setContent {
             bottomSheetState =
-                rememberStandardBottomSheetState(
-                    initialValue = SheetValue.PartiallyExpanded,
-                    skipHiddenState = false,
+                rememberBottomSheetState(
+                    initialValue = PartiallyExpanded,
+                    enabledValues = setOf(Hidden, PartiallyExpanded, Expanded),
                     confirmValueChange = {
                         confirmValueChangeInvocations.add(it)
                         true
@@ -1217,7 +1190,7 @@ class BottomSheetScaffoldTest {
             }
         }
         rule.waitForIdle()
-        assertThat(bottomSheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(bottomSheetState.currentValue).isEqualTo(PartiallyExpanded)
         assertWithMessage("confirmValueChange should not have been invoked")
             .that(confirmValueChangeInvocations)
             .isEmpty()
@@ -1230,7 +1203,7 @@ class BottomSheetScaffoldTest {
         rule.waitForIdle()
         assertWithMessage("confirmValueChange should have been invoked for Expand action")
             .that(confirmValueChangeInvocations)
-            .containsExactly(SheetValue.Expanded)
+            .containsExactly(Expanded)
 
         confirmValueChangeInvocations.clear()
         // The label is called BottomSheetPartialExpandDescription despite describing the Collapse
@@ -1246,7 +1219,7 @@ class BottomSheetScaffoldTest {
         rule.waitForIdle()
         assertWithMessage("confirmValueChange should have been invoked for Collapse action")
             .that(confirmValueChangeInvocations)
-            .containsExactly(SheetValue.PartiallyExpanded)
+            .containsExactly(PartiallyExpanded)
 
         confirmValueChangeInvocations.clear()
         rule
@@ -1260,7 +1233,150 @@ class BottomSheetScaffoldTest {
         rule.waitForIdle()
         assertWithMessage("confirmValueChange should have been invoked for Dismiss action")
             .that(confirmValueChangeInvocations)
-            .containsExactly(SheetValue.Hidden)
+            .containsExactly(Hidden)
+    }
+
+    @Test
+    fun bottomSheetScaffold_peekHeightZero_initialStatePartiallyExpanded() {
+        val sheetState =
+            SheetState(
+                enabledValues = setOf(Expanded, PartiallyExpanded, Hidden),
+                initialValue = PartiallyExpanded,
+                positionalThreshold = { 56f },
+                velocityThreshold = { 125f },
+            )
+
+        rule.setContent {
+            BottomSheetScaffold(
+                scaffoldState =
+                    BottomSheetScaffoldState(
+                        bottomSheetState = sheetState,
+                        snackbarHostState = SnackbarHostState(),
+                    ),
+                sheetPeekHeight = 0.dp, // Ambiguous Anchor Trigger
+                sheetContent = { Box(Modifier.fillMaxWidth().height(100.dp)) },
+            ) {
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
+
+        // Verify we are visually hidden (offset = full height)
+        val layoutHeight = rule.activity.resources.displayMetrics.heightPixels
+        assertThat(sheetState.requireOffset()).isEqualTo(layoutHeight.toFloat())
+    }
+
+    @Test
+    fun bottomSheetScaffold_peekHeightZero_animateToPartiallyExpanded() {
+        lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            sheetState =
+                rememberBottomSheetState(
+                    initialValue = Expanded,
+                    enabledValues = setOf(Hidden, PartiallyExpanded, Expanded),
+                )
+
+            BottomSheetScaffold(
+                scaffoldState =
+                    BottomSheetScaffoldState(
+                        bottomSheetState = sheetState,
+                        snackbarHostState = SnackbarHostState(),
+                    ),
+                sheetPeekHeight = 0.dp, // Ambiguous Anchor Trigger
+                sheetContent = { Box(Modifier.fillMaxWidth().height(100.dp)) },
+            ) {
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
+        scope.launch { sheetState.partialExpand() }
+        rule.waitForIdle()
+
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
+        assertThat(sheetState.targetValue).isEqualTo(PartiallyExpanded)
+    }
+
+    @Test
+    fun bottomSheetScaffold_peekHeightZero_explicitHide() {
+        lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            sheetState =
+                rememberBottomSheetState(
+                    enabledValues = setOf(Hidden, PartiallyExpanded, Expanded),
+                    initialValue = PartiallyExpanded,
+                )
+
+            BottomSheetScaffold(
+                scaffoldState =
+                    BottomSheetScaffoldState(
+                        bottomSheetState = sheetState,
+                        snackbarHostState = SnackbarHostState(),
+                    ),
+                sheetPeekHeight = 0.dp,
+                sheetContent = { Box(Modifier.fillMaxWidth().height(100.dp)) },
+            ) {
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
+
+        scope.launch { sheetState.hide() }
+        rule.waitForIdle()
+
+        assertThat(sheetState.currentValue).isEqualTo(Hidden)
+        assertThat(sheetState.isVisible).isFalse()
+    }
+
+    @Test
+    fun bottomSheetScaffold_peekHeightZero_ambiguousAnchorRemovedAfterExpansion() {
+        lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            sheetState =
+                rememberBottomSheetState(
+                    enabledValues = setOf(Hidden, PartiallyExpanded, Expanded),
+                    initialValue = PartiallyExpanded,
+                )
+
+            BottomSheetScaffold(
+                scaffoldState =
+                    BottomSheetScaffoldState(
+                        bottomSheetState = sheetState,
+                        snackbarHostState = SnackbarHostState(),
+                    ),
+                sheetPeekHeight = 0.dp,
+                sheetContent = { Box(Modifier.fillMaxWidth().height(100.dp)) },
+            ) {
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        assertThat(sheetState.currentValue).isEqualTo(PartiallyExpanded)
+        assertThat(sheetState.hasPartiallyExpandedState).isTrue()
+
+        scope.launch { sheetState.expand() }
+        rule.waitForIdle()
+        assertThat(sheetState.currentValue).isEqualTo(Expanded)
+
+        // Once we left the state, the ambiguity allowance should be revoked.
+        // The PartiallyExpanded anchor should no longer exist.
+        assertThat(sheetState.hasPartiallyExpandedState).isFalse()
+
+        scope.launch { sheetState.hide() }
+        rule.waitForIdle()
+
+        assertThat(sheetState.currentValue).isEqualTo(Hidden)
     }
 
     @Test
@@ -1282,6 +1398,49 @@ class BottomSheetScaffoldTest {
         assertThat(expandAction!!.label).isEqualTo(expectedLabel)
         assertThat(expandAction.action).isNotNull()
         assertThat(expandAction.action!!()).isTrue()
+    }
+
+    @Test
+    fun bottomSheetScaffold_respectsMaterialThemeMotionScheme() {
+        val customSpatialSpec = tween<Float>(durationMillis = 123)
+        val customEffectsSpec = tween<Float>(durationMillis = 456)
+
+        // Mock a MotionScheme that returns our specific specs
+        val customMotionScheme =
+            object : MotionScheme {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> =
+                    customSpatialSpec as FiniteAnimationSpec<T>
+
+                @Suppress("UNCHECKED_CAST")
+                override fun <T> fastEffectsSpec(): FiniteAnimationSpec<T> =
+                    customEffectsSpec as FiniteAnimationSpec<T>
+
+                override fun <T> fastSpatialSpec() = defaultSpatialSpec<T>()
+
+                override fun <T> slowSpatialSpec() = defaultSpatialSpec<T>()
+
+                override fun <T> defaultEffectsSpec() = fastEffectsSpec<T>()
+
+                override fun <T> slowEffectsSpec() = fastEffectsSpec<T>()
+            }
+
+        lateinit var scaffoldState: BottomSheetScaffoldState
+
+        rule.setContent {
+            MaterialTheme(motionScheme = customMotionScheme) {
+                scaffoldState = rememberBottomSheetScaffoldState()
+
+                BottomSheetScaffold(scaffoldState = scaffoldState, sheetContent = {}, content = {})
+            }
+        }
+
+        rule.waitForIdle()
+
+        val sheetState = scaffoldState.bottomSheetState
+        assertThat(sheetState.showMotionSpec).isEqualTo(customSpatialSpec)
+        assertThat(sheetState.anchoredDraggableMotionSpec).isEqualTo(customSpatialSpec)
+        assertThat(sheetState.hideMotionSpec).isEqualTo(customEffectsSpec)
     }
 
     /**

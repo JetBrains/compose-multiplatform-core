@@ -18,23 +18,20 @@ package androidx.pdf.annotation.highlights
 
 import android.graphics.Color
 import android.graphics.Matrix
-import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import androidx.pdf.FakePdfDocument
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PathPdfObject.PathInput
 import androidx.pdf.annotation.highlights.utils.applyTransform
-import androidx.pdf.annotation.highlights.utils.calculateHighlightRects
 import androidx.pdf.annotation.highlights.utils.computeBoundingBox
 import androidx.pdf.annotation.highlights.utils.toPathPdfObjects
-import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.content.PdfPageTextContent
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalPdfApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
 class HighlightUtilsTest {
@@ -114,11 +111,11 @@ class HighlightUtilsTest {
 
         val expectedInputs =
             listOf(
-                PathPdfObject.PathInput(10f, 20f), // left, top
-                PathPdfObject.PathInput(30f, 20f), // right, top
-                PathPdfObject.PathInput(30f, 40f), // right, bottom
-                PathPdfObject.PathInput(10f, 40f), // left, bottom
-                PathPdfObject.PathInput(10f, 20f), // left, top (closed path)
+                PathInput(10f, 20f, PathInput.MOVE_TO), // left, top
+                PathInput(30f, 20f, PathInput.LINE_TO), // right, top
+                PathInput(30f, 40f, PathInput.LINE_TO), // right, bottom
+                PathInput(10f, 40f, PathInput.LINE_TO), // left, bottom
+                PathInput(10f, 20f, PathInput.LINE_TO), // left, top (closed path)
             )
         assertThat(pathObject.inputs).isEqualTo(expectedInputs)
     }
@@ -138,40 +135,13 @@ class HighlightUtilsTest {
 
             val expectedInputs =
                 listOf(
-                    PathPdfObject.PathInput(rect.left, rect.top),
-                    PathPdfObject.PathInput(rect.right, rect.top),
-                    PathPdfObject.PathInput(rect.right, rect.bottom),
-                    PathPdfObject.PathInput(rect.left, rect.bottom),
-                    PathPdfObject.PathInput(rect.left, rect.top),
+                    PathInput(rect.left, rect.top, PathInput.MOVE_TO),
+                    PathInput(rect.right, rect.top, PathInput.LINE_TO),
+                    PathInput(rect.right, rect.bottom, PathInput.LINE_TO),
+                    PathInput(rect.left, rect.bottom, PathInput.LINE_TO),
+                    PathInput(rect.left, rect.top, PathInput.LINE_TO),
                 )
             assertThat(pathObject.inputs).isEqualTo(expectedInputs)
         }
-    }
-
-    @Test
-    fun calculateHighlightRects_withText_returnsCorrectRects() = runTest {
-        val pageText =
-            PdfPageTextContent(bounds = listOf(RectF(10f, 10f, 100f, 100f)), text = "Sample Text")
-        val fakePdfDocument =
-            FakePdfDocument(pages = listOf(Point(500, 500)), textContents = listOf(pageText))
-        val startPoint = PointF(20f, 20f)
-        val endPoint = PointF(80f, 80f)
-
-        val rects = fakePdfDocument.calculateHighlightRects(0, startPoint, endPoint)
-
-        assertThat(rects).hasSize(1)
-        assertThat(rects[0]).isEqualTo(RectF(20f, 20f, 80f, 80f))
-    }
-
-    @Test
-    fun calculateHighlightRects_noText_returnsEmptyList() = runTest {
-        val fakePdfDocument =
-            FakePdfDocument(pages = listOf(Point(500, 500)), textContents = emptyList())
-        val startPoint = PointF(20f, 20f)
-        val endPoint = PointF(80f, 80f)
-
-        val rects = fakePdfDocument.calculateHighlightRects(0, startPoint, endPoint)
-
-        assertThat(rects).isEmpty()
     }
 }

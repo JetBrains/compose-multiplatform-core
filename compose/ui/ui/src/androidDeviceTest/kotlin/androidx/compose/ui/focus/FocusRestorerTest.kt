@@ -16,8 +16,12 @@
 
 package androidx.compose.ui.focus
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,25 +30,38 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component1
+import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component2
+import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component3
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,7 +70,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusRestorerTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun restoresSavedChild() {
@@ -475,5 +492,135 @@ class FocusRestorerTest {
 
         // Assert.
         rule.onNodeWithTag("inside item to restore").assertIsFocused()
+    }
+
+    @Test
+    fun disposedLazyRowWithFocusRestorerRestoresFocusCorrectly_firstRow() {
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(600.dp, 250.dp))
+            ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(50) { outer ->
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.focusRestorer(),
+                        ) {
+                            items(50) { index ->
+                                val interactionSource = remember { MutableInteractionSource() }
+                                val isFocused = interactionSource.collectIsFocusedAsState().value
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier =
+                                        Modifier.testTag("$outer-$index")
+                                            .size(50.dp)
+                                            .focusable(interactionSource = interactionSource)
+                                            .background(if (isFocused) Color.Green else Color.Red),
+                                ) {
+                                    BasicText("$index")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val root = rule.onAllNodes(isRoot())[0]
+
+        rule.onNodeWithTag("0-0").requestFocus()
+        rule.onNodeWithTag("0-0").assertIsFocused()
+
+        root.performKeyInput {
+            // Move to item 0-10, when we come back to this row later this item should again be
+            // focused
+            repeat(10) { count ->
+                pressKey(Key.DirectionRight)
+                rule.onNodeWithTag("0-${count + 1}").assertIsFocused()
+            }
+
+            // Go down to the next row
+            pressKey(Key.DirectionDown)
+            repeat(10) {
+                // Make sure we're at the start of the row now
+                pressKey(Key.DirectionLeft)
+            }
+            rule.onNodeWithTag("1-0").assertIsFocused()
+
+            // Go down 25 rows
+            repeat(25) { count ->
+                pressKey(Key.DirectionDown)
+                rule.onNodeWithTag("${count + 2}-0").assertIsFocused()
+            }
+
+            // Go back up to the second row
+            repeat(25) { count ->
+                pressKey(Key.DirectionUp)
+                rule.onNodeWithTag("${25 - count}-0").assertIsFocused()
+            }
+
+            // Go back to the first row, focus should go back to the previously focused item within
+            // that row (ie. 0-10)
+            pressKey(Key.DirectionUp)
+            rule.onNodeWithTag("0-10").assertIsFocused()
+        }
+    }
+
+    @Test
+    fun disposedLazyRowWithFocusRestorerRestoresFocusCorrectly_allRows() {
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(600.dp, 250.dp))
+            ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(50) { outer ->
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.focusRestorer(),
+                        ) {
+                            items(50) { index ->
+                                val interactionSource = remember { MutableInteractionSource() }
+                                val isFocused = interactionSource.collectIsFocusedAsState().value
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier =
+                                        Modifier.testTag("$outer-$index")
+                                            .size(50.dp)
+                                            .focusable(interactionSource = interactionSource)
+                                            .background(if (isFocused) Color.Green else Color.Red),
+                                ) {
+                                    BasicText("$index")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val root = rule.onAllNodes(isRoot())[0]
+
+        rule.onNodeWithTag("0-0").requestFocus()
+        rule.onNodeWithTag("0-0").assertIsFocused()
+
+        root.performKeyInput {
+            repeat(25) { count ->
+                pressKey(Key.DirectionDown)
+                rule.onNodeWithTag("${count + 1}-0").assertIsFocused()
+            }
+
+            // Go back to the first row, selecting item x-1 in each row as we go up
+            repeat(25) { count ->
+                pressKey(Key.DirectionRight)
+                rule.onNodeWithTag("${25 - count}-1").assertIsFocused()
+                pressKey(Key.DirectionUp)
+                rule.onNodeWithTag("${25 - count - 1}-0").assertIsFocused()
+            }
+            // Go back down, and now item x-1 should be focused
+            repeat(25) { count ->
+                pressKey(Key.DirectionDown)
+                rule.onNodeWithTag("${count + 1}-1").assertIsFocused()
+            }
+        }
     }
 }

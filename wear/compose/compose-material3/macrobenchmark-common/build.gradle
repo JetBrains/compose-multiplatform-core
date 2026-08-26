@@ -7,11 +7,10 @@ plugins {
 
 android {
     namespace = "androidx.wear.compose.material3.macrobenchmark.common"
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
 
     defaultConfig {
         minSdk { version = release(25) }
-        consumerProguardFiles("proguard-rules.pro")
     }
 }
 
@@ -29,6 +28,10 @@ dependencies {
     implementation(project(":wear:compose:compose-material3-samples"))
     implementation(project(":wear:compose:compose-material3-integration-tests"))
     implementation(project(":wear:compose:compose-navigation"))
+    implementation(project(":wear:compose:compose-navigation3"))
+    implementation(project(":wear:compose:compose-navigation3-samples"))
+    implementation(project(":navigation3:navigation3-runtime"))
+    implementation(project(":navigation3:navigation3-ui"))
     implementation("androidx.compose.material:material-icons-core:1.6.0")
     implementation(libs.testRules)
     implementation(libs.testExtJunit)

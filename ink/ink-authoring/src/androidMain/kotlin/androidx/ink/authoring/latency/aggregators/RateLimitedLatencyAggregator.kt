@@ -18,7 +18,7 @@ package androidx.ink.authoring.latency.aggregators
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.latency.aggregators.internal.ConcurrentIntervalQueue
 import androidx.ink.authoring.latency.aggregators.internal.runEvery
 import java.util.concurrent.Executor
@@ -52,37 +52,41 @@ import kotlinx.coroutines.runBlocking
  * }
  * ```
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-@ExperimentalLatencyDataApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkLatencyDataApi
 public class RateLimitedLatencyAggregator
 private constructor(private val implementationHelper: ImplementationHelper) : LatencyAggregator {
 
     public fun interface Callback {
         /**
-         * Callback invoked at most once per [period] to report the latest start and end values
-         * passed to [aggregate]. This callback runs in the [CoroutineScope] (or, for Java clients,
-         * the [Executor]) passed to [create].
+         * Callback invoked at most once per `period` (specified in [create]) to report the latest
+         * start and end values passed to [aggregate]. This callback runs in the [CoroutineScope]
+         * (or, for Java clients, the [Executor]) passed to [create].
          */
         public suspend fun onLatencySample(startNanos: Long, endNanos: Long): Unit
     }
 
     @UiThread
-    public override fun aggregate(startNanos: Long, endNanos: Long): Unit =
+    public override fun aggregate(startNanos: Long, endNanos: Long) {
         implementationHelper.aggregate(startNanos, endNanos)
+    }
 
     /**
      * Reports the latest sample without disrupting the regular cadence of asynchronous reports. If
      * any more samples come in before the next report, one of those will be reported at that time.
      */
     @UiThread
-    public override fun reportSynchronously(): Unit = implementationHelper.reportSynchronously()
+    public override fun reportSynchronously() {
+        implementationHelper.reportSynchronously()
+    }
 
     public override fun job(): Job = implementationHelper.job
 
+    @ExperimentalInkLatencyDataApi
     public companion object {
         /**
          * Returns a new [RateLimitedLatencyAggregator]. For use by Kotlin clients. [callback] will
-         * be called in the given [scope], using its default [CoroutineContext].
+         * be called in the given [scope], using its default [kotlin.coroutines.CoroutineContext].
          *
          * @param period The period of time over which at most one sample will be reported.
          * @param scope The scope in which to aggregate and to call the callback. The scope's
@@ -90,6 +94,8 @@ private constructor(private val implementationHelper: ImplementationHelper) : La
          * @param callback The callback with which to report samples.
          */
         @JvmStatic
+        @JvmName("createFromDuration")
+        @Suppress("ExecutorRegistration") // Takes a CoroutineScope instead
         public fun create(
             period: Duration,
             scope: CoroutineScope,

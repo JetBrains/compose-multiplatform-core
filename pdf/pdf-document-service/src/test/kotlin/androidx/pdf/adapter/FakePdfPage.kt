@@ -31,15 +31,11 @@ import android.graphics.pdf.models.PageMatchBounds
 import android.graphics.pdf.models.selection.PageSelection
 import android.graphics.pdf.models.selection.SelectionBoundary
 import androidx.pdf.RenderParams
-import androidx.pdf.annotation.models.EditOperation
 
 class FakePdfPage(private val pageNum: Int, override val height: Int, override val width: Int) :
     PdfPage {
 
-    internal data class AnnotationOperationRecord(
-        val aospId: Int,
-        val operation: EditOperation.Operation,
-    )
+    override var isClosed = false
 
     // --- Test Configuration ---
     var shouldFailInsert: Boolean = false

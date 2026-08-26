@@ -18,11 +18,11 @@ package androidx.pdf.annotation.processor
 
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.pdf.DraftEditOperation
 import androidx.pdf.DraftEditResult
 import androidx.pdf.EditsDraft
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocumentRemote
 import androidx.pdf.PdfEditApplyException
 
@@ -32,52 +32,73 @@ import androidx.pdf.PdfEditApplyException
  *
  * @property remoteDocument The [PdfDocumentRemote] interface used to apply the annotation edits.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumentRemote) {
+internal class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumentRemote) {
 
     /**
      * Processes a draft of edits by applying them to the remote PDF document in batches.
      *
-     * This method prevents large lists of operations from causing [TransactionTooLargeException]
-     * when sent over an AIDL connection. It splits the list of operations from the [EditsDraft]
-     * into smaller batches based on a maximum size limit and processes each batch individually. The
-     * results from each batch are then combined into a single list of success IDs.
+     * This method prevents large lists of operations from causing
+     * [android.os.TransactionTooLargeException] when sent over an AIDL connection. It splits the
+     * list of operations from the [EditsDraft] into smaller batches based on a maximum size limit
+     * and processes each batch individually. The results from each batch are then combined into a
+     * single list of success IDs.
      *
-     * @param editsDraft The [EditsDraft] containing the operations to be applied.
+     * @param parcelableOperations List of [DraftEditOperation] containing the operations to be
+     *   applied.
+     * @param onBatchedEditsApplied callback method invoked when a batch is applied.
      * @return A list of unique identifiers for the successfully applied edits.
      * @throws PdfEditApplyException if there is an error in applying the edits. The exception
      *   contains details about which operations succeeded before the failure.
      */
-    public fun process(editsDraft: EditsDraft): List<String> =
-        processInBatches(operations = editsDraft.getOperationsSortedByPage())
+    fun process(
+        parcelableOperations: List<DraftEditOperation>,
+        onBatchedEditsApplied: (List<AppliedEdit>) -> Unit,
+    ): List<String> = processInBatches(parcelableOperations, onBatchedEditsApplied)
 
-    private fun processInBatches(operations: List<DraftEditOperation>): List<String> {
+    @OptIn(ExperimentalPdfApi::class)
+    private fun processInBatches(
+        operations: List<DraftEditOperation>,
+        onBatchedEditsApplied: (List<AppliedEdit>) -> Unit,
+    ): List<String> {
         val annotationIds = mutableListOf<String>()
         if (operations.isEmpty()) return annotationIds
 
-        val batchedOperations = operations.unflatten(MAX_BATCH_SIZE_IN_BYTES)
+        val batchedParcelableOperations = operations.unflatten(MAX_BATCH_SIZE_IN_BYTES)
 
         var processedCount = 0
-        batchedOperations.forEach { batch ->
+        batchedParcelableOperations.forEach { batch ->
             when (val result = remoteDocument.applyDraftEdits(batch)) {
                 is DraftEditResult.Success -> {
                     annotationIds += result.ids
                     processedCount += batch.size
+
+                    val appliedEdits =
+                        result.ids.mapIndexed { index, id ->
+                            AppliedEdit(batch[index].getPage(), id)
+                        }
+                    onBatchedEditsApplied(appliedEdits)
                 }
 
-                is DraftEditResult.Failure ->
+                is DraftEditResult.Failure -> {
+                    val appliedEdits =
+                        result.appliedIds.mapIndexed { index, id ->
+                            AppliedEdit(batch[index].getPage(), id)
+                        }
+                    onBatchedEditsApplied(appliedEdits)
                     throw PdfEditApplyException(
                         failureIndex = processedCount + result.failedBatchIndex,
                         appliedEditIds = annotationIds + result.appliedIds,
-                        error = Exception(result.errorMessage),
+                        cause = Exception(result.errorMessage),
                     )
+                }
             }
         }
+
         return annotationIds
     }
 
-    public companion object {
-        public const val MAX_BATCH_SIZE_IN_BYTES: Int = 1000000
+    companion object {
+        const val MAX_BATCH_SIZE_IN_BYTES: Int = 1000000
 
         /**
          * Splits this list of [Parcelable] items into multiple sublists (batches), where the total
@@ -91,10 +112,8 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
          *   each batch.
          * @return A `List<List<T>>` where each inner list represents a batch.
          */
-        public fun <T : Parcelable> List<T>.unflatten(maxSizeInBytes: Int): List<List<T>> {
-            if (isEmpty()) {
-                return emptyList()
-            }
+        fun <T : Parcelable> List<T>.unflatten(maxSizeInBytes: Int): List<List<T>> {
+            if (isEmpty()) return emptyList()
 
             val batches = mutableListOf<List<T>>()
             var currentBatch = mutableListOf<T>()
@@ -102,11 +121,8 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
 
             for (item in this) {
                 val itemSize = item.parcelSizeInBytes()
-
                 // Ignore items that are individually larger than the max size.
-                if (itemSize > maxSizeInBytes) {
-                    continue
-                }
+                if (itemSize > maxSizeInBytes) continue
 
                 // If adding the new item would exceed the max size,
                 // finalize the current batch and start a new one.
@@ -115,15 +131,11 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
                     currentBatch = mutableListOf()
                     currentBatchSize = 0
                 }
-
                 currentBatch.add(item)
                 currentBatchSize += itemSize
             }
-
             // Add the last batch if it has any items.
-            if (currentBatch.isNotEmpty()) {
-                batches.add(currentBatch)
-            }
+            if (currentBatch.isNotEmpty()) batches.add(currentBatch)
 
             return batches
         }
@@ -140,6 +152,31 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
             val size = parcel.dataSize()
             parcel.recycle()
             return size
+        }
+    }
+
+    /**
+     * Represents an edit applied to a document.
+     *
+     * @param pageNum page number of the edit.
+     * @param editId id of the edit.
+     */
+    internal class AppliedEdit(val pageNum: Int, val editId: String) {
+        override fun equals(other: Any?): Boolean {
+            return other != null &&
+                other is AppliedEdit &&
+                other.pageNum == pageNum &&
+                other.editId == editId
+        }
+
+        override fun hashCode(): Int {
+            var result = pageNum
+            result = 31 * result + editId.hashCode()
+            return result
+        }
+
+        override fun toString(): String {
+            return "AppliedEdit(pageNum=$pageNum, editId='$editId')"
         }
     }
 }

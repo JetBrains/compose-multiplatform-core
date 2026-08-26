@@ -18,8 +18,8 @@ package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
 
-/** Regions of a TrackableMesh with meshType TRACKABLE_MESH_TYPE_FACE */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/** Regions of a tracked [Face]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FaceMeshRegion private constructor(private val value: Int) {
     public companion object {
         /** The region at the tip of the nose */
@@ -36,6 +36,11 @@ public class FaceMeshRegion private constructor(private val value: Int) {
         @JvmField public val FOREHEAD_RIGHT: FaceMeshRegion = FaceMeshRegion(2)
     }
 
+    /**
+     * Returns a string representation of [FaceMeshRegion] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
     override fun toString(): String =
         when (value) {
             0 -> "NOSE_TIP"

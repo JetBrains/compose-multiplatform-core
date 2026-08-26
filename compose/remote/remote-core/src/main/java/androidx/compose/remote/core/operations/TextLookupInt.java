@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -34,15 +35,24 @@ import java.util.List;
 
 /** Operation convert int index of a list to text */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class TextLookupInt extends Operation implements VariableSupport, Serializable {
+public class TextLookupInt extends Operation
+        implements VariableSupport, ComponentData, Serializable, VariableProvider {
     private static final int OP_CODE = Operations.TEXT_LOOKUP_INT;
-    private static final String CLASS_NAME = "TextFromINT";
+    private static final String CLASS_NAME = "TextLookupInt";
     public int mTextId;
     public int mDataSetId;
     public int mOutIndex;
     public int mIndex;
 
-    public static final int MAX_STRING_SIZE = 4000;
+    @Override
+    public int getId() {
+        return mTextId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mTextId = id;
+    }
 
     public TextLookupInt(int textId, int dataSetId, int indexId) {
         this.mTextId = textId;
@@ -74,6 +84,7 @@ public class TextLookupInt extends Operation implements VariableSupport, Seriali
     @Override
     public void registerListening(@NonNull RemoteContext context) {
         context.listensTo(mIndex, this);
+        context.listensTo(mDataSetId, this);
     }
 
     /**
@@ -117,10 +128,10 @@ public class TextLookupInt extends Operation implements VariableSupport, Seriali
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int textId = buffer.readInt();
-        int dataSetId = buffer.readInt();
-        int indexId = buffer.readInt();
-        operations.add(new TextLookupInt(textId, dataSetId, indexId));
+        int id = buffer.declareId();
+        int listId = buffer.readId();
+        int indexId = buffer.readId();
+        operations.add(new TextLookupInt(id, listId, indexId));
     }
 
     /**

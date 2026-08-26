@@ -52,7 +52,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.Rule
 import org.junit.Test
@@ -62,7 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class TextInputServiceAndroidCursorAnchorInfoTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule
     val composeImmRule = ComposeInputMethodManagerTestRule().apply { setFactory { composeImm } }
@@ -187,7 +186,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
                 imeOptions = ImeOptions.Default,
                 receiveContentConfiguration = null,
                 onImeAction = null,
-                updateTouchMode = {},
+                updateDirectTouchInteraction = {},
             )
         }
 
@@ -337,7 +336,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
                 imeOptions = ImeOptions.Default,
                 receiveContentConfiguration = null,
                 onImeAction = null,
-                updateTouchMode = {},
+                updateDirectTouchInteraction = {},
             )
         }
 

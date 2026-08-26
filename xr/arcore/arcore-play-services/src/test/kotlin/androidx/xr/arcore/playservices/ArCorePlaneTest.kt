@@ -18,7 +18,7 @@ package androidx.xr.arcore.playservices
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Vector2
 import com.google.ar.core.Plane as ARCore1xPlane

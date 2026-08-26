@@ -44,6 +44,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapIndexed
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.materialcore.screenHeightDp
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -62,9 +63,18 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of 3 buttons, the middle one bigger [ButtonGroup]:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupThreeButtonsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param modifier Modifier to be applied to the button group
  * @param spacing the amount of spacing between buttons
  * @param expansionWidth how much buttons grow when pressed
@@ -210,9 +220,18 @@ public fun ButtonGroup(
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of 3 buttons, the middle one bigger [ButtonGroup]:
  *
  * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ButtonGroupThreeButtonsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param modifier Modifier to be applied to the button group
  * @param spacing the amount of spacing between buttons
  * @param expansionWidth how much buttons grow when pressed
@@ -292,6 +311,18 @@ public object ButtonGroupDefaults {
             vertical = 0.dp,
         )
     }
+
+    /**
+     * The minimum vertical content padding for the list when a [ButtonGroup] is placed at the top
+     * or bottom edge. Recommended for use with
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope]'s
+     * [androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope.minimumVerticalContentPadding],
+     * which allows items to choose a preferred content padding for the list.
+     * [TransformingLazyColumn] takes its contentPadding as the maximum of the preferred content
+     * padding values and its own contentPadding parameter.
+     */
+    public val minimumVerticalListContentPadding: Dp
+        @Composable get() = screenHeightFraction(LARGE_VERTICAL_CONTENT_PADDING_FRACTION)
 
     /** How much buttons grow (and neighbors shrink) when pressed. */
     public val ExpansionWidth: Dp = 24.dp

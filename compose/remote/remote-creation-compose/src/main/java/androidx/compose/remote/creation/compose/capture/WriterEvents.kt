@@ -31,9 +31,9 @@ import androidx.compose.ui.util.fastForEachIndexed
  * composable tree into a desired output format, such as a binary file, a JSON representation, or a
  * network stream.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WriterEvents {
     private val pendingIntentList: MutableList<PendingIntent> = mutableListOf()
+    private val lambdaMap: MutableIntObjectMap<() -> Unit> = MutableIntObjectMap()
 
     public fun storePendingIntent(pendingIntent: PendingIntent): Int {
         val existingIndex = pendingIntentList.indexOfFirst { it === pendingIntent }
@@ -52,4 +52,13 @@ public class WriterEvents {
                     this[index] = pendingIntent
                 }
             }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun storeLambda(id: Int, lambda: () -> Unit) {
+        lambdaMap[id] = lambda
+    }
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val lambdas: IntObjectMap<() -> Unit>
+        get() = lambdaMap
 }

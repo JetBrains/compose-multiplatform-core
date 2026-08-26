@@ -70,9 +70,9 @@ public class AnimationSpec extends Operation implements ModifierOperation {
     public AnimationSpec() {
         this(
                 -1,
-                600,
+                300,
                 GeneralEasing.CUBIC_STANDARD,
-                500,
+                300,
                 GeneralEasing.CUBIC_STANDARD,
                 ANIMATION.FADE_IN,
                 ANIMATION.FADE_OUT);
@@ -168,7 +168,8 @@ public class AnimationSpec extends Operation implements ModifierOperation {
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(buffer,
+        apply(
+                buffer,
                 mAnimationId,
                 mMotionDuration,
                 mMotionEasingType,
@@ -286,7 +287,7 @@ public class AnimationSpec extends Operation implements ModifierOperation {
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int animationId = buffer.readInt();
+        int animationId = buffer.readId();
         float motionDuration = buffer.readFloat();
         int motionEasingType = buffer.readInt();
         float visibilityDuration = buffer.readFloat();
@@ -312,6 +313,7 @@ public class AnimationSpec extends Operation implements ModifierOperation {
      */
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Animation & Particles Operations", OP_CODE, CLASS_NAME)
+                .additionalDocumentation("animation_spec")
                 .description("Define the animation specifications for a component")
                 .field(INT, "animationId", "The ID of the animation")
                 .field(FLOAT, "motionDuration", "Duration of the motion animation in ms")

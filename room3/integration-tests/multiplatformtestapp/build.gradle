@@ -49,12 +49,16 @@ androidXMultiplatform {
     sourceSets {
         commonTest {
             dependencies {
+                implementation(project(":room3:integration-tests:room-testapp-multiplatform-library"))
                 implementation(project(":room3:room3-runtime"))
                 implementation(project(":room3:room3-testing"))
+                implementation(project(":room3:room3-paging"))
+                implementation(project(":sqlite:sqlite-async"))
+                implementation(project(":paging:paging-common"))
                 implementation(project(":kruth:kruth"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
+                implementation(libs.kotlinSerializationCore)
             }
         }
         nonWebTest {
@@ -63,17 +67,8 @@ androidXMultiplatform {
                 implementation(project(":sqlite:sqlite-bundled"))
             }
         }
-        // b/432783733: Test source set dedicating to room-paging since watchOS and tvOS are not
-        // supported targets.
-        pagingCommonTest {
-            dependsOn(nonWebTest)
-            dependencies {
-                implementation(project(":room3:room3-paging"))
-                implementation(project(":paging:paging-common"))
-            }
-        }
         jvmAndAndroidTest {
-            dependsOn(pagingCommonTest)
+            dependsOn(nonWebTest)
         }
         androidDeviceTest.dependencies {
             implementation(libs.kotlinTestJunit)
@@ -87,23 +82,20 @@ androidXMultiplatform {
         nativeTest.dependsOn(nonWebTest)
 
         // Host OSes (Linux and Mac)
-        hostNativeTest {
-            dependsOn(nativeTest)
-            dependsOn(pagingCommonTest)
-
-        }
+        create("hostNativeTest").dependsOn(nativeTest)
         macosTest.dependsOn(hostNativeTest)
         linuxTest.dependsOn(hostNativeTest)
 
         // iOS, watchOS and tvOS families, but not Mac OS
-        appleOsNativeTest.dependsOn(nativeTest)
+        create("appleOsNativeTest").dependsOn(nativeTest)
         tvosTest.dependsOn(appleOsNativeTest)
         watchosTest.dependsOn(appleOsNativeTest)
-
         // iOS family
-        iosTest {
-            dependsOn(appleOsNativeTest)
-            dependsOn(pagingCommonTest)
+        iosTest.dependsOn(appleOsNativeTest)
+
+        webTest.dependencies {
+            implementation(project(":sqlite:sqlite-web"))
+            implementation(project(":sqlite:sqlite-web-worker-test"))
         }
     }
 }
@@ -124,8 +116,10 @@ dependencies {
         add("kspWatchosArm64Test", roomCompilerDependency)
         add("kspWatchosSimulatorArm64Test", roomCompilerDependency)
     }
-    add("kspJsTest", roomCompilerDependency)
-    add("kspWasmJsTest", roomCompilerDependency)
+    if (!androidx.isIsolatedProjectsEnabled()) { // KT-80311
+        add("kspJsTest", roomCompilerDependency)
+        add("kspWasmJsTest", roomCompilerDependency)
+    }
 }
 
 // Copy schema files to the iOS / watchOS / tvOS binary output test directory that will be part of
@@ -161,18 +155,6 @@ room3 {
 
 androidx {
     kotlinTarget = KotlinTarget.KOTLIN_2_2
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
-tasks.withType(AndroidLintAnalysisTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
-}
-
-// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
-tasks.withType(LintModelWriterTask).configureEach {
-    mustRunAfter(tasks.withType(KspAATask))
 }
 
 afterEvaluate {

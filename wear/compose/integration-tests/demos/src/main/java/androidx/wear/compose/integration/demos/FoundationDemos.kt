@@ -57,6 +57,8 @@ import androidx.wear.compose.foundation.samples.SwipeToRevealSample
 import androidx.wear.compose.foundation.samples.SwipeToRevealWithDelayedText
 import androidx.wear.compose.foundation.samples.SwipeToRevealWithExpandables
 import androidx.wear.compose.foundation.samples.TransformingLazyColumnAnimateItemSample
+import androidx.wear.compose.foundation.samples.TransformingLazyColumnFirstLayoutItemProviderSample
+import androidx.wear.compose.foundation.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
 import androidx.wear.compose.foundation.samples.TransformingLazyColumnWithSnapSample
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
@@ -127,6 +129,7 @@ val WearFoundationDemos =
                 listOf(
                     ComposableDemo("Warped Text Demo") { WarpedTextDemo() },
                     ComposableDemo("Warped Text Sample") { CurvedWarpingSample() },
+                    ComposableDemo("Lookahead Demo") { LookaheadDemo() },
                     ComposableDemo("Curved Row") { CurvedWorldDemo() },
                     ComposableDemo("Curved Row and Column") { CurvedRowAndColumn() },
                     ComposableDemo("Curved Box") { CurvedBoxDemo() },
@@ -251,7 +254,13 @@ val WearFoundationDemos =
                     ComposableDemo("Animation Sample") {
                         TransformingLazyColumnAnimateItemSample()
                     },
+                    ComposableDemo("Responsive Padding") {
+                        TransformingLazyColumnMinimumVerticalContentPaddingSample()
+                    },
                     ComposableDemo("Letter Demo") { TransformingLazyColumnLettersDemo() },
+                    ComposableDemo("First Layout Item") {
+                        TransformingLazyColumnFirstLayoutItemProviderSample()
+                    },
                 ),
             ),
         ),

@@ -16,21 +16,28 @@
 
 package androidx.compose.remote.player.compose.creation.compose.state
 
+import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
+import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
-import androidx.compose.remote.creation.compose.state.rememberRemoteString
-import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteFloat
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteString
+import androidx.compose.remote.creation.compose.state.rememberRemoteFloatExpression
+import androidx.compose.remote.creation.compose.state.rs
+import androidx.compose.remote.testing.RemoteContentTestRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.text.DecimalFormat
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,13 +46,19 @@ import org.junit.runners.JUnit4
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(JUnit4::class)
+@OptIn(ExperimentalRemoteCreationComposeApi::class)
 class RemoteStateTest {
-    @get:Rule
-    val composeTestRule =
-        RemoteComposeScreenshotTestRule(
-            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = TargetPlayer.Compose,
-        )
+    @get:Rule val composeTestRule = RemoteContentTestRule()
+
+    @Before
+    fun setup() {
+        RemoteComposeCreationComposeFlags.isEnforceCleanRecompositionEnabled = false
+    }
+
+    @After
+    fun cleanup() {
+        RemoteComposeCreationComposeFlags.isEnforceCleanRecompositionEnabled = true
+    }
 
     @Test
     fun testNamedFloatIdDiffers() {
@@ -53,22 +66,29 @@ class RemoteStateTest {
         var configurableWidthId = 0
         var configurableWidth2Id = 0
 
-        composeTestRule.runTest {
+        composeTestRule.setContent(
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(ApplicationProvider.getApplicationContext())
+        ) {
             RemoteColumn(modifier = RemoteModifier.size(100.rdp)) {
                 val creationState = LocalRemoteComposeCreationState.current
 
-                val width = rememberRemoteFloat { componentWidth() }
+                val width = rememberRemoteFloatExpression { componentWidth() }
 
-                val configurableWidth = rememberRemoteFloat(name = "configurableWidth") { width }
+                val configurableWidth =
+                    rememberNamedRemoteFloat(name = "configurableWidth") { width }
 
-                val configurableWidth2 = rememberRemoteFloat(name = "configurableWidth2") { width }
+                val configurableWidth2 =
+                    rememberNamedRemoteFloat(name = "configurableWidth2") { width }
 
-                RemoteText(RemoteString("Width: ") + width.toRemoteString(3, 0))
+                RemoteText(RemoteString("Width: ") + width.toRemoteString(DecimalFormat("###0")))
                 RemoteText(
-                    RemoteString("Configurable Width: ") + configurableWidth.toRemoteString(3, 0)
+                    RemoteString("Configurable Width: ") +
+                        configurableWidth.toRemoteString(DecimalFormat("###0"))
                 )
                 RemoteText(
-                    RemoteString("Configurable Width2: ") + configurableWidth2.toRemoteString(3, 0)
+                    RemoteString("Configurable Width2: ") +
+                        configurableWidth2.toRemoteString(DecimalFormat("###0"))
                 )
 
                 with(creationState) {
@@ -89,13 +109,16 @@ class RemoteStateTest {
         var namedId1 = 0
         var namedId2 = 0
 
-        composeTestRule.runTest {
+        composeTestRule.setContent(
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(ApplicationProvider.getApplicationContext())
+        ) {
             RemoteColumn(modifier = RemoteModifier.size(100.rdp)) {
-                val valString = rememberRemoteString { "Hello" }
+                val valString = "Hello".rs
 
-                val namedString1 = rememberRemoteString(name = "named1") { "Hello" }
+                val namedString1 = rememberNamedRemoteString(name = "named1", "Hello")
 
-                val namedString2 = rememberRemoteString(name = "named2") { "Hello" }
+                val namedString2 = rememberNamedRemoteString(name = "named2", "Hello")
 
                 RemoteText(RemoteString("val: ") + valString)
                 RemoteText(RemoteString("named1: ") + namedString1)

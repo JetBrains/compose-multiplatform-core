@@ -19,7 +19,6 @@ package androidx.webkit.internal;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.os.Build;
 import android.util.TypedValue;
 
 import org.jspecify.annotations.NonNull;
@@ -151,8 +150,8 @@ public class AssetHelper {
     }
 
     /**
-     * Returns the canonical path for the given directory with a {@code "/"} at the end if doesn't
-     * have one.
+     * Returns the canonical path for the given directory with a {@code "/"} or {@code "\"}
+     * (depending on the file system) at the end if it doesn't have one.
      * <p>
      * Having a slash {@code "/"} at the end of a directory path is important when checking if a
      * directory is a parent of another child directory or a file.
@@ -161,7 +160,7 @@ public class AssetHelper {
      */
     public static @NonNull String getCanonicalDirPath(@NonNull File file) throws IOException {
         String canonicalPath = file.getCanonicalPath();
-        if (!canonicalPath.endsWith("/")) canonicalPath += "/";
+        if (!canonicalPath.endsWith(File.separator)) canonicalPath += File.separator;
         return canonicalPath;
     }
 
@@ -172,13 +171,7 @@ public class AssetHelper {
      * @return data dir {@link File} for that app.
      */
     public static @NonNull File getDataDir(@NonNull Context context) {
-        // Context#getDataDir is only available in APIs >= 24.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return ApiHelperForN.getDataDir(context);
-        } else {
-            // For APIs < 24 cache dir is created under the data dir.
-            return context.getCacheDir().getParentFile();
-        }
+        return context.getDataDir();
     }
 
     /**

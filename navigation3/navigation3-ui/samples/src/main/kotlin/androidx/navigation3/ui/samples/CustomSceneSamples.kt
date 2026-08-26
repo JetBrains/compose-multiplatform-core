@@ -45,14 +45,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.metadata
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigation3.ui.NavDisplay.popTransitionSpec
-import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import kotlinx.serialization.Serializable
 
 @Serializable private object A : NavKey
@@ -74,7 +73,7 @@ fun SceneDefaultTransitionsSample() {
         popTransitionSpec = { slideVertical },
         predictivePopTransitionSpec = { slideVertical },
         // but the Scene provides default transitions that slide horizontally
-        sceneStrategy = DefaultSceneTransitionsSceneStrategy(),
+        sceneStrategies = listOf(DefaultSceneTransitionsSceneStrategy()),
         entryProvider =
             entryProvider {
                 entry<A> { BlueBox("A") { backStack.add(B) } }
@@ -90,7 +89,7 @@ private class DefaultSceneTransitionsSceneStrategy<T : Any>() : SceneStrategy<T>
     }
 }
 
-private class DefaultSceneTransitionsScene<T : Any>(
+private data class DefaultSceneTransitionsScene<T : Any>(
     val currentEntry: NavEntry<T>,
     override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
@@ -110,16 +109,18 @@ fun SceneOverrideEntryTransitionsSample() {
         onBack = { backStack.removeLastOrNull() },
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
         // the Scene overrides the NavEntry's slide vertical with slide horizontal transitions
-        sceneStrategy = SceneOverrideEntryTransitionsSceneStrategy(),
+        sceneStrategies = listOf(SceneOverrideEntryTransitionsSceneStrategy()),
         entryProvider =
             entryProvider {
                 entry<A> { BlueBox("A") { backStack.add(B) } }
                 // the entry defines slide vertical transitions
                 entry<B>(
                     metadata =
-                        NavDisplay.transitionSpec({ slideVertical }) +
-                            popTransitionSpec({ slideVertical }) +
-                            predictivePopTransitionSpec({ slideVertical })
+                        metadata {
+                            put(NavDisplay.TransitionKey) { slideVertical }
+                            put(NavDisplay.PopTransitionKey) { slideVertical }
+                            put(NavDisplay.PredictivePopTransitionKey, { _: Int -> slideVertical })
+                        }
                 ) {
                     RedBox("B")
                 }
@@ -134,7 +135,7 @@ private class SceneOverrideEntryTransitionsSceneStrategy<T : Any>() : SceneStrat
     }
 }
 
-private class SceneOverrideEntryTransitionsScene<T : Any>(
+private data class SceneOverrideEntryTransitionsScene<T : Any>(
     val currentEntry: NavEntry<T>,
     override val previousEntries: List<NavEntry<T>>,
 ) : Scene<T> {
@@ -146,10 +147,11 @@ private class SceneOverrideEntryTransitionsScene<T : Any>(
     override val metadata: Map<String, Any> = super.metadata + sceneTransitions
 }
 
-private val sceneTransitions =
-    NavDisplay.transitionSpec({ slideHorizontal }) +
-        popTransitionSpec({ slideHorizontal }) +
-        predictivePopTransitionSpec({ slideHorizontal })
+private val sceneTransitions = metadata {
+    put(NavDisplay.TransitionKey) { slideHorizontal }
+    put(NavDisplay.PopTransitionKey) { slideHorizontal }
+    put(NavDisplay.PredictivePopTransitionKey) { slideHorizontal }
+}
 
 private val duration = 5000
 private val animSpec: FiniteAnimationSpec<IntOffset> =
@@ -181,5 +183,12 @@ fun RedBox(text: String) {
         contentAlignment = Alignment.Center,
     ) {
         BasicText(text, Modifier.size(50.dp), style = TextStyle(textAlign = TextAlign.Center))
+    }
+}
+
+@Composable
+fun GreenBox(text: String) {
+    Box(Modifier.fillMaxSize().background(Color.Green), contentAlignment = Alignment.Center) {
+        BasicText(text, Modifier.size(300.dp), style = TextStyle(textAlign = TextAlign.Center))
     }
 }
