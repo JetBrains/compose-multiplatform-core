@@ -3008,8 +3008,13 @@ private val KeyEvent.isEnter: Boolean
             else -> false
         }
 
-internal expect val defaultTimePickerLayoutType: TimePickerLayoutType
-    @Composable @ReadOnlyComposable get
+// TODO(https://github.com/JetBrains/compose-multiplatform/issues/3373) fix expect composable getter
+internal val defaultTimePickerLayoutType: TimePickerLayoutType
+    @Composable @ReadOnlyComposable get() = defaultTimePickerLayoutType()
+
+@Composable
+@ReadOnlyComposable
+internal expect fun defaultTimePickerLayoutType(): TimePickerLayoutType
 
 private const val FullCircle: Float = (PI * 2).toFloat()
 private const val HalfCircle: Float = FullCircle / 2f
