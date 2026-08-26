@@ -231,7 +231,7 @@ internal class ComposeWindow(
     )
 
     private val _windowInfo = WindowInfoImpl().apply {
-        isWindowFocused = true
+        isWindowFocused = document.hasFocus()
     }
 
     @VisibleForTesting
@@ -585,10 +585,12 @@ internal class ComposeWindow(
         }
 
         state.globalEvents.addDisposableEvent("focus") {
+            _windowInfo.isWindowFocused = true
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
+            _windowInfo.isWindowFocused = false
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
 
