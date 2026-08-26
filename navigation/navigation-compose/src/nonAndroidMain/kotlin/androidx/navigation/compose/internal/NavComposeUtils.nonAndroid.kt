@@ -18,6 +18,7 @@
 
 package androidx.navigation.compose.internal
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import kotlin.experimental.and
 import kotlin.experimental.or
 import kotlin.random.Random
