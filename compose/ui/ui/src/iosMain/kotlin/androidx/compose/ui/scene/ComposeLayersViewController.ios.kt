@@ -29,6 +29,7 @@ import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.MetalViewHolder
+import androidx.compose.ui.window.onDraw
 import kotlin.coroutines.CoroutineContext
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
@@ -62,7 +63,7 @@ internal class ComposeLayersViewController(
     val metalView: MetalViewHolder = MetalView(
         retrieveInteropTransaction = ::retrieveAndMergeInteropTransactions,
         useSeparateRenderThreadWhenPossible = useSeparateRenderThreadWhenPossible,
-        draw = ::draw
+        draw = ::draw,
     ).apply {
         canBeOpaque = false
     }
@@ -76,6 +77,14 @@ internal class ComposeLayersViewController(
             onWillMoveToWindow = { beginAppearanceTransition(it != null, animated = false) },
             onDidMoveToWindow = { endAppearanceTransition() },
             onLayoutSubviews = ::measureAndLayoutLayers,
+            onDraw = { needsSynchronousDraw ->
+                metalView.redrawer.onDraw(
+                    needsSynchronousDraw = needsSynchronousDraw,
+                    needsComposeSceneDraw = needsComposeSceneDraw(),
+                    retrievePendingViewUpdatesInteropTransaction =
+                        ::retrieveAndMergePendingViewUpdatesInteropTransactions,
+                )
+            },
         )
     }
 
@@ -259,7 +268,7 @@ internal class ComposeLayersViewController(
             // It was the last layer, remove the view and execute the actions immediately
             hide()
 
-            transaction.actions.fastForEach { it.invoke() }
+            transaction.performTransaction()
         } else {
             // It wasn't the last layer, pending transactions should be added to the list
             removedLayersTransactions.add(transaction)
@@ -315,6 +324,27 @@ internal class ComposeLayersViewController(
         return InteropSyncTransaction.merge(
             transactions = transactions
         )
+    }
+
+    private fun retrieveAndMergePendingViewUpdatesInteropTransactions(): InteropSyncTransaction {
+        // A view-update-only transaction cannot bypass actions belonging to a removed layer.
+        if (removedLayersTransactions.any { it.hasPendingActions }) {
+            return InteropSyncTransaction.Empty
+        }
+
+        val transactions = this.layers.map {
+            it.retrievePendingViewUpdatesInteropTransaction()
+        }
+        return InteropSyncTransaction.merge(
+            transactions = transactions
+        )
+    }
+
+    private fun needsComposeSceneDraw(): Boolean {
+        layersCache.withCopy { layers ->
+            return layers.any { it.needsComposeSceneDraw }
+        }
+        return false
     }
 
     private fun draw(canvas: Canvas) {

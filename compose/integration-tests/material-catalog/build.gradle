@@ -27,11 +27,10 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.application")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    compileSdk = 36
+    compileSdk { version = release(37) }
     defaultConfig {
         applicationId = "androidx.compose.material.catalog"
         versionCode 2500
@@ -39,9 +38,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            optimization {
+                enable = true
+            }
         }
     }
     namespace = "androidx.compose.material.catalog"

@@ -151,12 +151,7 @@ internal class SurfaceMetalRedrawer(
         check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
         isDisposed = true
 
-        retrieveInteropTransaction = {
-            object : InteropSyncTransaction {
-                override val isInteropActive: Boolean = false
-                override val actions = emptyList<InteropSyncAction>()
-            }
-        }
+        retrieveInteropTransaction = { InteropSyncTransaction.Empty }
 
         draw = { _ -> }
 
@@ -249,6 +244,15 @@ internal class SurfaceMetalRedrawer(
                 isDrawRecursiveCall = false
             }
         }
+
+    override fun performTransaction(transaction: InteropSyncTransaction) {
+        check(NSThread.isMainThread) {
+            "SurfaceMetalRedrawer.performTransaction() must be called on main thread"
+        }
+        // Preserve ordering with transactions scheduled by previously rendered frames.
+        val index = transactionQueue.scheduleTransaction(transaction)
+        transactionQueue.performScheduledTransactions(index)
+    }
 
     private class Frame(
         val picture: Picture,
@@ -471,7 +475,7 @@ internal class SurfaceMetalRedrawer(
         private val scheduledInteropSyncTransactions = Array<InteropSyncTransaction?>(bufferLength) { null }
 
         fun scheduleTransaction(transaction: InteropSyncTransaction): Long {
-            if (transaction.actions.isEmpty()) {
+            if (!transaction.hasPendingActions) {
                 return lastScheduledIndex - 1
             }
             val index = lastScheduledIndex

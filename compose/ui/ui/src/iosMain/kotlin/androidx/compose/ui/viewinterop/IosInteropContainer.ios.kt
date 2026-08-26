@@ -27,7 +27,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
 internal class IosInteropContainer(
     val overlayContainer: InteropViewGroup,
     val backgroundContainer: InteropViewGroup,
-    private var requestRedraw: () -> Unit
+    private var requestRedraw: () -> Unit,
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
 
@@ -40,6 +40,7 @@ internal class IosInteropContainer(
     private var transaction = InteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
+    val hasPendingViewUpdatesOnly: Boolean get() = transaction.hasPendingViewUpdatesOnly
 
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
@@ -69,11 +70,7 @@ internal class IosInteropContainer(
      */
     fun dispose() {
         requestRedraw = {}
-        val lastTransaction = retrieveTransaction()
-
-        for (action in lastTransaction.actions) {
-            action.invoke()
-        }
+        retrieveTransaction().performTransaction()
 
         // snapshotObserver.stop() is not needed, because unplaceInteropView will be called
         // for all interop views and it will stop observing when the last one is removed.
@@ -88,6 +85,15 @@ internal class IosInteropContainer(
             isInteropActive = interopViews.isNotEmpty()
         )
         return result
+    }
+
+    /**
+     * Returns the pending transaction only when it contains view updates that can run in a UIKit
+     * draw callback without a Compose render.
+     */
+    fun retrievePendingViewUpdatesTransaction(): InteropSyncTransaction {
+        if (!transaction.hasPendingViewUpdatesOnly) return InteropSyncTransaction.Empty
+        return retrieveTransaction()
     }
 
     override fun place(holder: InteropViewHolder) {
@@ -134,11 +140,15 @@ internal class IosInteropContainer(
     }
 
     override fun scheduleUpdate(action: () -> Unit) {
-        requestRedraw()
-
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
-        transaction.add(action)
+        transaction.scheduleFrameSynchronizedAction(action)
+        requestRedraw()
+    }
+
+    override fun scheduleUpdate(holder: InteropViewHolder) {
+        transaction.scheduleViewUpdate(holder)
+        requestRedraw()
     }
 
     // TODO: Should be the same as [Owner.onInteropViewLayoutChange]?

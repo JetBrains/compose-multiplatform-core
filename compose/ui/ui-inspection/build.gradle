@@ -28,7 +28,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("androidx.inspection")
 }
 
@@ -81,10 +80,10 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
         // layout inspection supported starting on Android Q
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 
     externalNativeBuild {

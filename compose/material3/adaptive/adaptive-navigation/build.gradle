@@ -28,30 +28,23 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
-    redirect("androidx.compose.material3.adaptive") {
-        androidLibrary {
-            compileSdk = 35
-            namespace = "org.jetbrains.androidx.compose.material3.adaptive.navigation"
-
-        }
+    androidLibrary {
+        compileSdk { version = release(37) }
+        namespace = "androidx.compose.material3.adaptive.navigation"
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain.dependencies {
             api(project(":compose:material3:adaptive:adaptive-layout"))
-            implementation("org.jetbrains.compose.foundation:foundation:1.10.0")
-            implementation("org.jetbrains.compose.ui:ui-util:1.10.0")
+            implementation("androidx.compose.foundation:foundation:1.9.0")
+            implementation("androidx.compose.ui:ui-util:1.9.0")
         }
 
         androidMain.dependencies {

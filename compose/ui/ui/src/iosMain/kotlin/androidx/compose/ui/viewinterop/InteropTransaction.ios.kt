@@ -25,20 +25,19 @@ import platform.QuartzCore.CATransaction
 internal typealias InteropSyncAction = () -> Unit
 
 /**
- * A transaction containing changes to UIKit objects to be synchronized within [CATransaction] inside a
- * renderer to make sure that changes in UIKit and Compose are visually simultaneous.
- * [actions] contains a list of lambdas that will be executed in the same CATransaction.
+ * A batch of changes to UIKit objects.
+ *
+ * Frame-synchronized changes are performed within the renderer's [CATransaction], so UIKit and
+ * Compose are visually simultaneous. Updates to already attached UIKit views may instead be
+ * performed in an otherwise idle UIKit draw callback.
+ *
  * [isInteropActive] defines if rendering strategy should be changed along with this transaction.
  */
 internal interface InteropSyncTransaction {
-    val actions: List<InteropSyncAction>
+    val hasPendingActions: Boolean
     val isInteropActive: Boolean
 
-    fun performTransaction() {
-        actions.fastForEach {
-            it.invoke()
-        }
-    }
+    fun performTransaction()
 
     companion object {
         /**
@@ -50,9 +49,20 @@ internal interface InteropSyncTransaction {
             transactions: List<InteropSyncTransaction>
         ): InteropSyncTransaction =
             object : InteropSyncTransaction {
-                override val actions = transactions.flatMap { it.actions }
+                override val hasPendingActions = transactions.any { it.hasPendingActions }
                 override val isInteropActive = transactions.any { it.isInteropActive }
+
+                override fun performTransaction() {
+                    transactions.fastForEach { it.performTransaction() }
+                }
             }
+
+        val Empty: InteropSyncTransaction = object : InteropSyncTransaction {
+            override val hasPendingActions: Boolean = false
+            override val isInteropActive: Boolean = false
+
+            override fun performTransaction() = Unit
+        }
     }
 }
 
@@ -65,12 +75,35 @@ internal interface InteropSyncTransaction {
 internal class InteropMutableTransaction(
     override var isInteropActive: Boolean
 ) : InteropSyncTransaction {
-    private val _actions = mutableListOf<InteropSyncAction>()
+    private val actions = mutableListOf<InteropSyncAction>()
+    private val holdersWithPendingViewUpdates = mutableSetOf<InteropViewHolder>()
 
-    override val actions
-        get() = _actions
+    private var requiresFrameSynchronization = false
 
-    fun add(action: InteropSyncAction) {
-        _actions.add(action)
+    override val hasPendingActions: Boolean
+        get() = actions.isNotEmpty()
+
+    val hasPendingViewUpdatesOnly: Boolean
+        get() = hasPendingActions && !requiresFrameSynchronization
+
+    override fun performTransaction() {
+        actions.fastForEach { it.invoke() }
+    }
+
+    /**
+     * Schedules an action that must be applied together with the Compose frame.
+     */
+    fun scheduleFrameSynchronizedAction(action: InteropSyncAction) {
+        actions.add(action)
+        requiresFrameSynchronization = true
+    }
+
+    /**
+     * Schedules a user-provided `UIKitView.update` or `UIKitViewController.update` callback.
+     */
+    fun scheduleViewUpdate(holder: InteropViewHolder) {
+        if (holdersWithPendingViewUpdates.add(holder)) {
+            actions.add { holder.update() }
+        }
     }
 }
