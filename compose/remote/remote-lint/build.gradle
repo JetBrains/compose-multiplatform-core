@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,33 @@
  * limitations under the License.
  */
 
-/**
- * This file was created using the `createProject` gradle task (./gradlew createProject)
- *
- * Please use the task when creating a new project, rather than copying an existing project and
- * modifying its settings.
- */
+import androidx.build.BundleInsideHelper
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
+    id("kotlin")
 }
 
-android {
-    namespace = "androidx.lifecycle.process"
-}
+BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
-    api(project(":lifecycle:lifecycle-runtime"))
-    api("androidx.startup:startup-runtime:1.1.1")
-    api("androidx.annotation:annotation:1.9.1")
+    compileOnly(libs.androidLintApiStableAnalysis)
+    compileOnly(libs.kotlinStdlib)
 
+    bundleInside(project(":compose:lint:common"))
+
+    testImplementation(project(":compose:lint:common-test"))
+    testImplementation(libs.kotlinStdlib)
+    testImplementation(libs.androidLintStableAnalysis)
+    testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.truth)
 }
 
 androidx {
-    name = "Lifecycle Process"
-    type = SoftwareType.PUBLISHED_LIBRARY
-    inceptionYear = "2018"
-    description = "Android Lifecycle Process"
+    name = "Remote Compose Lint Checks"
+    type = SoftwareType.LINT
+    inceptionYear = "2026"
+    description = "Remote Compose Lint Checks"
 }
