@@ -253,8 +253,9 @@ internal fun String.isWhitespaceOrPunctuation(offset: Int): Boolean {
 }
 
 /**
- * CJK scripts and full-width forms use character-level cursor placement on iOS. Applying
- * Cupertino's Latin word adjustment to them can move the cursor to a later whitespace.
+ * Returns whether iOS cursor placement should remain at the character boundary instead of
+ * applying Cupertino's Latin word adjustment. This helper lives in `skikoMain` alongside the
+ * shared Cupertino cursor adjustment, but its production callers are iOS-only.
  */
 internal fun String.requiresCharacterLevelCursorPlacement(index: Int): Boolean {
     if (index !in indices) return false
