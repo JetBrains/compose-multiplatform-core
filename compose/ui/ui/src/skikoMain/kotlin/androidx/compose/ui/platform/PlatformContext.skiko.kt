@@ -232,7 +232,7 @@ interface PlatformContext {
      * using media state remains safe on platforms that do not provide a richer
      * implementation.
      */
-    val mediaEnvironment: UiMediaScope get() = NoOpMediaEnvironment
+    val mediaEnvironment: UiMediaScope get() = EmptyMediaEnvironment
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -412,7 +412,7 @@ private object NoOpHapticFeedback : HapticFeedback {
     }
 }
 
-private object NoOpMediaEnvironment : UiMediaScope {
+private object EmptyMediaEnvironment : UiMediaScope {
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat
     override val windowWidth: Dp
