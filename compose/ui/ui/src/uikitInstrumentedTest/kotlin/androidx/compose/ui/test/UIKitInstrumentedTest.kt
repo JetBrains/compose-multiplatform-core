@@ -989,14 +989,14 @@ internal fun UIKitInstrumentedTest.allSemanticsNodes(): List<SemanticsNode> =
         it.semanticsOwner.getAllSemanticsNodes(mergingEnabled = false)
     }
 
-internal fun UIKitInstrumentedTest.findSemanticsNodeOrNull(tag: String): SemanticsNode? {
+private fun UIKitInstrumentedTest.findSemanticsNodeOrNull(tag: String): SemanticsNode? {
     waitForIdle()
     return allSemanticsNodes().firstOrNull {
         it.config.getOrNull(SemanticsProperties.TestTag) == tag
     }
 }
 
-internal fun UIKitInstrumentedTest.findSemanticsNode(tag: String): SemanticsNode =
+private fun UIKitInstrumentedTest.findSemanticsNode(tag: String): SemanticsNode =
     findSemanticsNodeOrNull(tag) ?: run {
         val knownTags = allSemanticsNodes().mapNotNull { it.config.getOrNull(SemanticsProperties.TestTag) }
         error("No semantics node with testTag \"$tag\". Known tags: $knownTags")
