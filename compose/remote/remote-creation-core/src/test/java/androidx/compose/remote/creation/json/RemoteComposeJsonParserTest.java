@@ -556,6 +556,81 @@ public class RemoteComposeJsonParserTest {
         org.junit.Assert.assertNotNull(result);
     }
 
+    @Test
+    public void testStage2Features() throws JSONException {
+        String json = "{"
+                + "  \"resources\": {"
+                + "    \"variables\": ["
+                + "      { \"name\": \"val\", \"value\": 0.0, \"export\": true }"
+                + "    ]"
+                + "  },"
+                + "  \"root\": {"
+                + "    \"type\": \"box\","
+                + "    \"modifiers\": ["
+                + "      { \"onTouchDown\": { \"type\": \"ValueFloatChange\", \"targetId\":"
+                + " \"@vars.val\", \"value\": 1.0 } },"
+                + "      { \"onTouchUp\": { \"type\": \"ValueFloatChange\", \"targetId\":"
+                + " \"@vars.val\", \"value\": 0.0 } },"
+                + "      { \"onTouchCancel\": { \"type\": \"ValueFloatChange\", \"targetId\":"
+                + " \"@vars.val\", \"value\": 0.0 } }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"performHaptic\", \"constant\": 1 },"
+                + "          { \"type\": \"playSound\", \"id\": \"clickSound\" },"
+                + "          { \"type\": \"textSubtext\", \"text\": \"Full String\","
+                + " \"start\": 0.0, \"len\": 4.0, \"varName\": \"subText\" },"
+                + "          { \"type\": \"textTransform\", \"text\": \"subText\","
+                + " \"start\": 0.0, \"len\": 4.0, \"operation\": \"uppercase\","
+                + " \"varName\": \"upperText\" }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testStage3Features() throws JSONException {
+        String json = "{"
+                + "  \"resources\": {"
+                + "    \"variables\": ["
+                + "      { \"name\": \"x\", \"value\": 0.0 }"
+                + "    ]"
+                + "  },"
+                + "  \"root\": {"
+                + "    \"type\": \"custom\","
+                + "    \"config\": \"testConfig\","
+                + "    \"properties\": ["
+                + "      { \"type\": 1, \"dataType\": 0, \"value\": 10 },"
+                + "      { \"type\": 2, \"dataType\": 1, \"value\": 3.14 }"
+                + "    ],"
+                + "    \"modifiers\": ["
+                + "      { \"drawWithContent\": {} }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"wakeIn\", \"seconds\": 2.5 },"
+                + "          { \"type\": \"particlesComparison\", \"systemId\": 1.0,"
+                + " \"flags\": 0, \"min\": 0.0, \"max\": 10.0, \"condition\": \"x\","
+                + " \"then1\": [\"x\"] }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+        mParser.parse(json);
+        byte[] result = mWriter.encodeToByteArray();
+        org.junit.Assert.assertNotNull(result);
+    }
+
     private static class MockPlatform implements RcPlatformServices {
         @Override
         public float[] pathToFloatArray(Object path) {
