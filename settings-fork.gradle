@@ -21,19 +21,9 @@ skikoSetup.defineSkikoInVersionCatalog(settings)
 
 def supportRootFolder = buildscript.sourceFile.getParentFile()
 
-/* In JetBrains Fork we don't force Android Studio usage.
-// Abort immediately if we're running in Studio, but not a managed instance of Studio.
-if (startParameter.projectProperties.containsKey('android.injected.invoked.from.ide')) {
-    def expectedAgpVersion = System.getenv().get("EXPECTED_AGP_VERSION")
-    if (expectedAgpVersion == null) {
-        throw new Exception("Android Studio must be run from studiow or gradlew studio.")
-    }
-}
-*/
-
-// Makes strong assumptions about the project structure.
+ // TODO remove, it doesn't exist and not used in fork
 def prebuiltsRoot = new File(
-        supportRootFolder.parentFile.parentFile,
+        supportRootFolder,
         "prebuilts"
 ).absolutePath
 def rootProjectRepositories
