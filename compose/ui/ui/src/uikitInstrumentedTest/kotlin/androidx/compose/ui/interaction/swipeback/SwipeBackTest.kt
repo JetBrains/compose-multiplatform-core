@@ -35,9 +35,14 @@ import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.hold
+import androidx.compose.ui.test.utils.leftCenter
+import androidx.compose.ui.test.utils.moveToLocationOnWindow
+import androidx.compose.ui.test.utils.offsetBy
+import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
@@ -129,6 +134,38 @@ internal abstract class SwipeBackTest(
         swipeBack.up()
 
         waitUntil("left edge back swipe should complete in LTR") {
+            backCompletedCount == 1
+        }
+    }
+
+    @Test
+    fun testBackSwipeProgressIsBoundedWhenTouchMovesPastWindowInLtr() = runUIKitInstrumentedTest {
+        var transitionState: NavigationEventTransitionState = NavigationEventTransitionState.Idle
+        var backCompletedCount = -1
+
+        setContent(layoutDirection = UITraitEnvironmentLayoutDirectionLeftToRight) {
+            SwipeBackTestContent(
+                onTransitionStateChanged = { transitionState = it },
+                onBackCompletedCountChanged = { backCompletedCount = it },
+            )
+        }
+
+        val swipeBack = touchDown(screenBounds.leftCenter(), fromEdge = true)
+        swipeBack.moveToLocationOnWindow(screenBounds.leftCenter().offsetBy(dx = 16.dp))
+
+        waitUntil("back swipe should be in progress") {
+            transitionState is InProgress
+        }
+
+        swipeBack.moveToLocationOnWindow(screenBounds.rightCenter().offsetBy(dx = 64.dp))
+
+        waitUntil("back swipe progress should be capped at one") {
+            (transitionState as? InProgress)?.latestEvent?.progress == 1f
+        }
+
+        swipeBack.up()
+
+        waitUntil("back swipe should complete") {
             backCompletedCount == 1
         }
     }

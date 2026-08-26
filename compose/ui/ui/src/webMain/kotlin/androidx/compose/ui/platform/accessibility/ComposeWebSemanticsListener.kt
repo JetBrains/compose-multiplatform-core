@@ -21,7 +21,6 @@ import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -29,7 +28,6 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
-import kotlin.js.js
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +39,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 
@@ -199,7 +196,7 @@ internal class ComposeWebSemanticsListener(
         allNodesIds.clear()
 
         semanticsOwners.fastForEach {
-            syncSemanticsWithWebA11Y(it, allNodesIds)
+            syncSemanticsWithWebA11Y(it)
         }
 
         val removedIds = mutableSetOf<Int>()
@@ -243,10 +240,7 @@ internal class ComposeWebSemanticsListener(
     /**
      * Sync the tree corresponding to the [semanticsOwner] and populate [allNodesIds] - a set of node ids.
      */
-    private fun syncSemanticsWithWebA11Y(
-        semanticsOwner: SemanticsOwner,
-        allNodesIds: MutableIntSet
-    ) {
+    private fun syncSemanticsWithWebA11Y(semanticsOwner: SemanticsOwner) {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
 
         val root = semanticsOwner.rootSemanticsNode
@@ -261,53 +255,80 @@ internal class ComposeWebSemanticsListener(
 
         while (!dfsDeque.isEmpty()) {
             val node = dfsDeque.removeLast()
-            val currentId = node.id
-            allNodesIds.add(currentId)
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
 
-            val children = node.replacedChildren.asReversed()
-            dfsDeque.addAll(children)
-            children.fastForEach { it -> nodeToParent[it.id] = currentId }
+            val reversedChildren = node.replacedChildren.asReversed()
+            dfsDeque.addAll(reversedChildren)
+            reversedChildren.fastForEach { nodeToParent[it.id] = node.id }
 
-            val htmlNode = if (nodes[currentId] != null) {
-                nodes[currentId] = node
-                val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
+            // The parent is known here: it was recorded when this node was pushed to the deque.
+            val htmlParent = nodeToParent[node.id]?.let { webNodes[it] } ?: webSemanticsRoot
 
-                if (children.isNotEmpty()) {
-                    // To ensure the correct order of nested nodes, we remove all of them.
-                    // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
-                    // Also, the code is more simple with this approach.
-                    // They are added below.
-                    removeAllChildrenOf(htmlNode)
-                }
-
-                syncNode(node, config, htmlNode, rootPosition)
-                htmlNode
-            } else {
-                nodes[currentId] = node
-                val htmlNode = document.createElement("div") as HTMLElement
-                htmlNode.style.apply {
-                    position = "fixed"
-                    whiteSpace = "pre"
-                }
-
-                webNodes[currentId] = htmlNode
-                syncNode(node, config, htmlNode, rootPosition, true)
-                htmlNode
-            }
-
-            // find the parent node and attach to it
-            val parentId = nodeToParent[currentId]
-            val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
-            htmlParent.appendChild(htmlNode)
-            elementToSemanticsNode[htmlNode] = node
+            syncNode(
+                semanticsNode = node,
+                config = config,
+                htmlParent = htmlParent,
+                rootPosition = rootPosition,
+                hasChildren = reversedChildren.isNotEmpty()
+            )
         }
     }
 
+    /**
+     * Creates (or reuses) the HTML node corresponding to [semanticsNode], syncs its state and
+     * attaches it to [htmlParent].
+     *
+     * @param hasChildren whether the node has semantics children
+     */
     private fun syncNode(
-        sn: SemanticsNode,
+        semanticsNode: SemanticsNode,
+        config: SemanticsConfiguration,
+        htmlParent: HTMLElement,
+        rootPosition: Offset,
+        hasChildren: Boolean,
+    ) {
+        val currentId = semanticsNode.id
+        allNodesIds.add(currentId)
+
+        val htmlNode = if (nodes[currentId] != null) {
+            nodes[currentId] = semanticsNode
+            val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
+
+            if (hasChildren) {
+                // To ensure the correct order of nested nodes, we remove all of them.
+                // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
+                // Also, the code is more simple with this approach.
+                // They are added back when they are synced.
+                removeAllChildrenOf(htmlNode)
+            }
+
+            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition)
+            htmlNode
+        } else {
+            nodes[currentId] = semanticsNode
+            val htmlNode = document.createElement("div") as HTMLElement
+            htmlNode.style.apply {
+                position = "fixed"
+                whiteSpace = "pre"
+            }
+
+            webNodes[currentId] = htmlNode
+            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, justCreated = true)
+            htmlNode
+        }
+
+        htmlParent.appendChild(htmlNode)
+        elementToSemanticsNode[htmlNode] = semanticsNode
+    }
+
+    /**
+     * Writes the state of [semanticsNode] onto [htmlNode]:
+     * the text, the ARIA attributes and role, the size and the position.
+     */
+    private fun syncNodeProperties(
+        semanticsNode: SemanticsNode,
         config: SemanticsConfiguration,
         htmlNode: HTMLElement,
         rootOffset: Offset,
@@ -329,8 +350,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         if (config.contains(SemanticsProperties.EditableText)) {
-            val text = config[SemanticsProperties.EditableText].text
-            htmlNode.innerText = text
+            htmlNode.innerText = config[SemanticsProperties.EditableText].text
 
             if (justCreated) {
                 htmlNode.setAttribute("contenteditable", "true")
@@ -354,8 +374,8 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-modal")
         }
 
-        val density = sn.layoutNode.density
-        sn.boundsInRoot.let { rect ->
+        val density = semanticsNode.layoutNode.density
+        semanticsNode.boundsInRoot.let { rect ->
             val newPosition = rootOffset + rect.topLeft.div(density.density)
             val width = rect.width.div(density.density)
             val height = rect.height.div(density.density)
@@ -363,7 +383,6 @@ internal class ComposeWebSemanticsListener(
             setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, width, height)
         }
     }
-
 
     internal fun stop() {
         if (!hasStarted || hasStopped) return
@@ -384,170 +403,4 @@ internal class ComposeWebSemanticsListener(
         removeAllChildrenOf(webSemanticsRoot)
         hasStopped = true
     }
-}
-
-private fun setSizeAndPosition(
-    element: HTMLElement, left: Float, top: Float, width: Float, height: Float
-) {
-    // language=javascript
-    js(
-        """
-       element.style.left = "" + left + "px";
-       element.style.top = "" + top + "px";
-       element.style.width = "" + width + "px";
-       element.style.height = "" + height + "px";
-    """
-    )
-}
-
-internal object AriaRoleId {
-    const val Unknown = -1
-
-    // Mapped from [androidx.compose.ui.semantics.Role] values:
-    const val Button = 0
-    const val Checkbox = 1
-    const val Switch = 2
-    const val RadioButton = 3
-    const val Tab = 4
-    const val Image = 5
-    const val DropdownList = 6
-    const val ValuePicker = Unknown // TODO: Any web alternative?
-    const val Carousel = Unknown // TODO: Any web alternative?
-
-    // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
-    // Other ARIA roles not specified explicitly by [androidx.compose.ui.semantics.Role]:
-    const val Heading = 7
-    const val TextBox = 8
-    const val List = 9
-    const val Grid = 10
-    const val Dialog = 11
-}
-
-internal fun SemanticsConfiguration.getRoleId(): Int {
-    // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
-    // Unfortunately, Role value is private, so we map it here:
-    fun Role.toIntId(): Int = when (this) {
-        Role.Button -> AriaRoleId.Button
-        Role.Checkbox -> AriaRoleId.Checkbox
-        Role.Switch -> AriaRoleId.Switch
-        Role.RadioButton -> AriaRoleId.RadioButton
-        Role.Tab -> AriaRoleId.Tab
-        Role.Image -> AriaRoleId.Image
-        Role.DropdownList -> AriaRoleId.DropdownList
-        Role.ValuePicker -> AriaRoleId.Unknown // TODO: Any web alternative?
-        Role.Carousel -> AriaRoleId.Unknown // TODO: Any web alternative?
-        else -> AriaRoleId.Unknown
-    }
-
-    var roleId = -1
-
-    if (this.contains(SemanticsProperties.Role)) {
-        roleId = this[SemanticsProperties.Role].toIntId()
-    }
-
-    if (this.contains(SemanticsActions.OnClick)) {
-        // TODO: Not everything with OnClick is a button!!!
-        roleId = Role.Button.toIntId()
-    }
-
-    if (this.contains(SemanticsProperties.Heading)) {
-        roleId = AriaRoleId.Heading
-    }
-
-    if (this.contains(SemanticsProperties.EditableText)) {
-        roleId = AriaRoleId.TextBox
-    }
-
-    if (this.contains(SemanticsProperties.CollectionInfo)) {
-        val info = this.get(SemanticsProperties.CollectionInfo)
-        roleId = if (info.columnCount > 1 && info.rowCount > 1) {
-            AriaRoleId.Grid
-        } else {
-            AriaRoleId.List
-        }
-    }
-
-    // Checked last: a layer's structural role outranks whatever its content looks like.
-    if (this.contains(SemanticsProperties.IsDialog)) {
-        roleId = AriaRoleId.Dialog
-    }
-
-    return roleId
-}
-
-// To avoid passing a Kotlin string to JS, we pass an int instead and map it to String on the JS side.
-// See https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
-internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
-    // language=javascript
-    js(
-        """
-        var roleValue = "";
-        switch (ariaRoleId) {
-            case 0: // Role.Button
-                roleValue = "button";
-                break;
-            case 1: // Role.Checkbox
-                roleValue = "checkbox";
-                break;
-            case 2: // Role.Switch
-                roleValue = "switch";
-                break;
-            case 3: // Role.RadioButton
-                roleValue = "radio";
-                break;
-            case 4: // Role.Tab
-                roleValue = "tab";
-                break;
-            case 5: // Role.Image
-                roleValue = "img";
-                break;
-            case 6: // Role.DropdownList
-                roleValue = "menu";
-                break;
-            case 7: // heading https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/heading_role
-                roleValue = "heading";
-                break;
-            case 8: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/textbox_role
-                roleValue = "textbox";
-                break;
-            case 9: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/list_role
-                roleValue = "list";
-                break;
-            case 10: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/grid_role
-                roleValue = "grid";
-                break;
-            case 11: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role
-                roleValue = "dialog";
-                break;
-            default:
-                break;
-        }
-        if (roleValue.length > 0) { 
-            element.setAttribute("role", roleValue);
-        } else {
-            element.removeAttribute("role");
-        }
-    """
-    )
-}
-
-private fun removeAllChildrenOf(element: HTMLElement) {
-    // language=javascript
-    js("element.replaceChildren()")
-}
-
-/**
- * https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/inert
- *  When an element is inert, it along with all of the element's descendants,
- *  including normally interactive elements such as links, buttons, and form controls are disabled
- *  because they cannot receive focus or be clicked.
- */
-private fun Element.setInert(inert: Boolean) {
-    val element = this.unsafeCast<CanToggleAttribute>()
-    element.toggleAttribute("inert", inert)
-}
-
-private external interface CanToggleAttribute : JsAny {
-    // https://developer.mozilla.org/en-US/docs/Web/API/Element/toggleAttribute
-    fun toggleAttribute(attributeName: String, force: Boolean): Boolean
 }

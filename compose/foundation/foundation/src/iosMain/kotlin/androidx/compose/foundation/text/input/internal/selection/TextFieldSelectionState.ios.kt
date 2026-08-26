@@ -206,10 +206,10 @@ internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
     textDragObserver: TextDragObserver
 ) {
     val selectionState = this
-    val uiKitTextDragObserver = UIKitTextFieldTextDragObserver(selectionState)
+    val textDragObserver = IosTextFieldTextDragObserver(selectionState)
     pointerInputScope.awaitSelectionGestures(
         mouseSelectionObserver = mouseSelectionObserver,
-        textDragObserver = uiKitTextDragObserver,
+        textDragObserver = textDragObserver,
     )
 }
 
@@ -273,7 +273,7 @@ private fun TextFieldSelectionState.clearSelection(
     textFieldState.selectCharsIn(clearedSelection)
 }
 
-private class UIKitTextFieldTextDragObserver(
+private class IosTextFieldTextDragObserver(
     private val textFieldSelectionState: TextFieldSelectionState,
 ) : TextDragObserver {
     private var dragBeginPosition: Offset = Offset.Unspecified

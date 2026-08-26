@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
@@ -47,7 +47,7 @@ internal sealed interface MetalViewHolder {
 }
 
 internal fun MetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
+    retrieveInteropTransaction: () -> InteropSyncTransaction,
     useSeparateRenderThreadWhenPossible: Boolean,
     draw: (Canvas) -> Unit,
 ): MetalViewHolder = if (useSeparateRenderThreadWhenPossible) {
@@ -60,7 +60,7 @@ internal fun MetalView(
 // Copy of the class SurfaceMetalView with a different layer.
 // All changes made here must also be implemented in the `SurfaceMetalView`.
 private class LegacyMetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
+    retrieveInteropTransaction: () -> InteropSyncTransaction,
     draw: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
@@ -79,7 +79,7 @@ private class LegacyMetalView(
 
     val redrawer = LegacyMetalRedrawer(
         metalLayer,
-        retrieveInteropTransaction
+        retrieveInteropTransaction,
     ) { canvas ->
         canvas.clear(canvasBackground)
         draw(canvas)
