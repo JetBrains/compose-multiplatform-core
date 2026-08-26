@@ -29,6 +29,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.node.WeakReference
+import androidx.compose.ui.platform.EmptyTextEditingDelegate
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.window.ComposeUIView
@@ -542,7 +543,7 @@ class MemoryLeaksTest {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun startFakeTextInputSession(useNativeInput: Boolean = false) {
-        val input = ComposeTextInputView(0)
+        val input = ComposeTextInputView(0, EmptyTextEditingDelegate)
         UIApplication.sharedApplication.keyWindow?.rootViewController?.view?.addSubview(input)
         input.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
         input.becomeFirstResponder()

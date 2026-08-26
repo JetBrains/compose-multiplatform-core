@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
+import androidx.compose.ui.uikit.PreferredSizeReportingStrategy
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.PlistSanityCheck
@@ -93,7 +94,7 @@ import platform.objc.objc_setAssociatedObject
 internal class ComposeContainer(
     private val configuration: ComposeContainerConfiguration,
     private val content: @Composable () -> Unit,
-    private val lifecycleDelegate: ComposeContainerLifecycleDelegate
+    private val lifecycleDelegate: ComposeContainerLifecycleDelegate,
 ) {
     // Register before any property initializer / scene setup below touches the Skiko backend, so
     // every iOS entry point (ComposeHostingView, ComposeHostingViewController) is covered.
@@ -110,6 +111,12 @@ internal class ComposeContainer(
         get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     private var mediator: ComposeSceneMediator? = null
+    private val sceneSizing = ComposeSceneSizing(
+        view = view,
+        measureSceneSize = { constraints -> mediator?.measureSceneSize(constraints) },
+        usesIntrinsicContentSize =
+            configuration.preferredSizeReportingStrategy == PreferredSizeReportingStrategy.IntrinsicContentSize,
+    )
     private val windowContext = WindowContext()
     private var layersHolder: ComposeLayersHolder? = null
     private var layoutDirection = getApplicationLayoutDirection()
@@ -163,6 +170,9 @@ internal class ComposeContainer(
         architectureComponentsOwner.lifecycle.currentState
 
     init {
+        view.onSizeThatFits = sceneSizing::sizeThatFits
+        view.onIntrinsicContentSize = sceneSizing::intrinsicContentSize
+
         if (configuration.enforceStrictPlistSanityCheck) {
             PlistSanityCheck.performIfNeeded()
         }
@@ -197,6 +207,7 @@ internal class ComposeContainer(
         windowContext.updateWindowContainerSize()
 
         mediator?.measureAndLayout()
+        sceneSizing.onLayout()
     }
 
     private fun onTraitCollectionDidChange() {

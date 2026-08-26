@@ -22,7 +22,7 @@ import androidx.compose.mpp.demo.bug.DropdownMenuIssue
 import androidx.compose.mpp.demo.bug.KeyboardIMEActionPopup
 
 val IosBugs = Screen.Selection(
-    "IosBugs",
+    "iOS Bugs",
     UIKitViewAndDropDownMenu,
     UIKitViewMatryoshka,
     KeyboardEmptyWhiteSpace,
