@@ -20,10 +20,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.allSemanticsNodes
 import androidx.compose.ui.test.findFocusedUITextInput
-import androidx.compose.ui.test.findSemanticsNode
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -180,13 +180,14 @@ private fun UIView.descendants(): List<UIView> =
     subviews.flatMap { val view = it as UIView; listOf(view) + view.descendants() }
 
 /**
- * Drags the [handle] selection handle to character [toOffset] of the text field tagged [tag].
+ * Drags the [handle] selection handle to character [toOffset] of the text [node]. Called through
+ * `AccessibilityTestNode.dragSelectionHandle`.
  *
  * The handle is grabbed at its [grabPoint][TestSelectionHandle.grabPoint] — the popup center for a
  * Compose handle, or the lollipop blob for a native one — and from there the two paths differ.
  *
  * A Compose drag moves the grabbed edge by how far the finger travelled rather than to where it
- * stopped, so the finger follows the caret-to-caret vector (see [characterPosition]), stretched by
+ * stopped, so the finger follows the caret-to-caret vector (see `characterPosition`), stretched by
  * [clearingLineBoundary].
  *
  * A native handle cannot be driven that way — UIKit moves it to the next line only after the finger
@@ -198,17 +199,17 @@ private fun UIView.descendants(): List<UIView> =
  * and within a line whenever the edge already sits on a boundary — so an offset inside a word is
  * reachable only while shrinking. UIKit does not snap and lands on the requested offset.
  */
-internal fun UIKitInstrumentedTest.dragSelectionHandle(
+internal fun UIKitInstrumentedTest.dragSelectionHandleImpl(
+    node: AccessibilityTestNode,
     handle: TestHandle,
-    tag: String,
     toOffset: Int,
-    duration: Duration = 0.5.seconds,
+    duration: Duration,
 ) {
     val isNative = composeSelectionHandles() == null
     if (isNative) delay(NativeTapSequenceWindowMillis)
 
-    val target = characterPosition(tag, toOffset)
-    val selection = selectionRange(tag)
+    val target = node.characterPosition(toOffset)
+    val selection = selectionRange(node)
     val grabPoint = selectionHandle(handle).grabPoint
     val touch = touchDown(grabPoint)
     var failure: String? = null
@@ -220,7 +221,7 @@ internal fun UIKitInstrumentedTest.dragSelectionHandle(
     } else if (isNative) {
         failure = stepHandleTo(touch, from = grabPoint, aim = target)
     } else {
-        val vector = (target - characterPosition(tag, selection.edgeOf(handle))).clearingLineBoundary()
+        val vector = (target - node.characterPosition(selection.edgeOf(handle))).clearingLineBoundary()
         touch.dragBy(offset = vector, duration = duration)
         waitForIdle()
     }
@@ -325,9 +326,8 @@ private fun Float.clampedToStep(): Float = coerceIn(-NativeHandleDrag.Step, Nati
 /** Makes the vertical travel 1.5x longer, so touch slop does not stop the drag before the next line. */
 private fun DpOffset.clearingLineBoundary(): DpOffset = DpOffset(x, y * 1.5f)
 
-/** The selection published by the node tagged [tag], or null if it publishes none. */
-private fun UIKitInstrumentedTest.selectionRange(tag: String): TextRange? =
-    findSemanticsNode(tag).config.getOrNull(SemanticsProperties.TextSelectionRange)
+private fun UIKitInstrumentedTest.selectionRange(node: AccessibilityTestNode): TextRange? =
+    node.semanticsNode.config.getOrNull(SemanticsProperties.TextSelectionRange)
 
 private fun TextRange.edgeOf(handle: TestHandle): Int =
     if (handle == TestHandle.SelectionStart) start else end

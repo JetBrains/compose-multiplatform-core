@@ -28,16 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.TestHandle
 import androidx.compose.ui.test.utils.TestSelectionHandleAnchor
-import androidx.compose.ui.test.utils.characterPosition
-import androidx.compose.ui.test.utils.dragSelectionHandle
-import androidx.compose.ui.test.utils.multiTapCharacter
 import androidx.compose.ui.test.utils.selectionHandles
-import androidx.compose.ui.test.utils.tapCharacter
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
@@ -93,6 +91,9 @@ private const val TEXT = "The quick brown fox jumps"
 private const val THREE_LINE_TEXT = "The quick brown fox\njumps over the lazy dog\nand back to the kennel"
 
 private val SECOND_LINE_BREAK_OFFSET = THREE_LINE_TEXT.lastIndexOf('\n')
+
+private fun UIKitInstrumentedTest.getActiveTextFieldNode(): AccessibilityTestNode =
+    findNodeWithTag(FIELD_TAG)
 
 private fun String.rangeOf(word: String, from: Int = 0): TextRange {
     val start = indexOf(word, from)
@@ -163,7 +164,7 @@ private fun UIKitInstrumentedTest.checkSelectionHandlesLtr(btf: BasicTextFieldTy
     val selection = setUpField(TEXT, btf, nativeInput)
     val quick = TEXT.rangeOf("quick")
 
-    multiTapCharacter(FIELD_TAG, offset = quick.middle, count = 2)
+    getActiveTextFieldNode().multiTapCharacter(offset = quick.middle, count = 2)
     waitForIdle()
 
     val handles = assertNotNull(
@@ -181,7 +182,7 @@ private fun UIKitInstrumentedTest.checkSelectionHandlesLtr(btf: BasicTextFieldTy
 private fun UIKitInstrumentedTest.checkNoSelectionHandlesForCaretLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
     val selection = setUpField(TEXT, btf, nativeInput)
 
-    tapCharacter(FIELD_TAG, offset = TEXT.rangeOf("quick").middle)
+    getActiveTextFieldNode().tapCharacter(offset = TEXT.rangeOf("quick").middle)
     waitForIdle()
 
     val caret = selection()
@@ -193,13 +194,13 @@ private fun UIKitInstrumentedTest.checkDragEndSelectionHandleLtr(btf: BasicTextF
     val selection = setUpField(TEXT, btf, nativeInput)
     val fox = TEXT.rangeOf("fox")
 
-    multiTapCharacter(FIELD_TAG, offset = TEXT.rangeOf("quick").middle, count = 2)
+    getActiveTextFieldNode().multiTapCharacter(offset = TEXT.rangeOf("quick").middle, count = 2)
     waitForIdle()
     val before = selection()
     assertTrue(!before.collapsed, "expected a word selection, got $before")
 
     // Aimed at a word boundary — word acceleration, see dragSelectionHandle.
-    dragSelectionHandle(TestHandle.SelectionEnd, FIELD_TAG, toOffset = fox.max)
+    getActiveTextFieldNode().dragSelectionHandle(TestHandle.SelectionEnd, toOffset = fox.max)
     waitForIdle()
 
     val after = selection()
@@ -212,13 +213,13 @@ private fun UIKitInstrumentedTest.checkDragStartSelectionHandleLtr(btf: BasicTex
     val selection = setUpField(TEXT, btf, nativeInput)
     val quick = TEXT.rangeOf("quick")
 
-    multiTapCharacter(FIELD_TAG, offset = TEXT.rangeOf("brown").middle, count = 2)
+    getActiveTextFieldNode().multiTapCharacter(offset = TEXT.rangeOf("brown").middle, count = 2)
     waitForIdle()
     val before = selection()
     assertTrue(!before.collapsed, "expected a word selection, got $before")
 
     // Aimed at a word boundary — word acceleration, see dragSelectionHandle.
-    dragSelectionHandle(TestHandle.SelectionStart, FIELD_TAG, toOffset = quick.min)
+    getActiveTextFieldNode().dragSelectionHandle(TestHandle.SelectionStart, toOffset = quick.min)
     waitForIdle()
 
     val after = selection()
@@ -232,13 +233,13 @@ private fun UIKitInstrumentedTest.checkDragEndSelectionHandleAcrossLinesLtr(btf:
     val quick = THREE_LINE_TEXT.rangeOf("quick")
     val theOnLastLine = THREE_LINE_TEXT.rangeOf("the", from = SECOND_LINE_BREAK_OFFSET)
 
-    multiTapCharacter(FIELD_TAG, offset = quick.middle, count = 2)
+    getActiveTextFieldNode().multiTapCharacter(offset = quick.middle, count = 2)
     waitForIdle()
     val before = selection()
     assertTrue(!before.collapsed, "expected a word selection on the first line, got $before")
 
     // Aimed at a word boundary — word acceleration, see dragSelectionHandle.
-    dragSelectionHandle(TestHandle.SelectionEnd, FIELD_TAG, toOffset = theOnLastLine.max)
+    getActiveTextFieldNode().dragSelectionHandle(TestHandle.SelectionEnd, toOffset = theOnLastLine.max)
     waitForIdle()
 
     val after = selection()
@@ -247,11 +248,11 @@ private fun UIKitInstrumentedTest.checkDragEndSelectionHandleAcrossLinesLtr(btf:
 
     val handles = assertNotNull(selectionHandles(), "expected the selection $after to show handles")
     assertTrue(
-        handles.start.grabPoint.y < characterPosition(FIELD_TAG, offset = quick.middle).y,
+        handles.start.grabPoint.y < getActiveTextFieldNode().characterPosition(offset = quick.middle).y,
         "start handle should sit above the first line, was ${handles.start.grabPoint}",
     )
     assertTrue(
-        handles.end.grabPoint.y > characterPosition(FIELD_TAG, offset = theOnLastLine.max).y,
+        handles.end.grabPoint.y > getActiveTextFieldNode().characterPosition(offset = theOnLastLine.max).y,
         "end handle should sit below the third line, was ${handles.end.grabPoint}",
     )
     if (nativeInput) dropNativeSelection()
@@ -262,13 +263,13 @@ private fun UIKitInstrumentedTest.checkDragStartSelectionHandleAcrossLinesLtr(bt
     val quick = THREE_LINE_TEXT.rangeOf("quick")
     val theOnLastLine = THREE_LINE_TEXT.rangeOf("the", from = SECOND_LINE_BREAK_OFFSET)
 
-    multiTapCharacter(FIELD_TAG, offset = theOnLastLine.middle, count = 2)
+    getActiveTextFieldNode().multiTapCharacter(offset = theOnLastLine.middle, count = 2)
     waitForIdle()
     val before = selection()
     assertTrue(!before.collapsed, "expected a word selection on the third line, got $before")
 
     // Aimed at a word boundary — word acceleration, see dragSelectionHandle.
-    dragSelectionHandle(TestHandle.SelectionStart, FIELD_TAG, toOffset = quick.min)
+    getActiveTextFieldNode().dragSelectionHandle(TestHandle.SelectionStart, toOffset = quick.min)
     waitForIdle()
 
     val after = selection()
@@ -280,13 +281,13 @@ private fun UIKitInstrumentedTest.checkDragStartSelectionHandleAcrossLinesLtr(bt
 private fun UIKitInstrumentedTest.checkCrossSelectionHandlesLtr(btf: BasicTextFieldType, nativeInput: Boolean) {
     val selection = setUpField(TEXT, btf, nativeInput)
 
-    multiTapCharacter(FIELD_TAG, offset = TEXT.rangeOf("brown").middle, count = 2)
+    getActiveTextFieldNode().multiTapCharacter(offset = TEXT.rangeOf("brown").middle, count = 2)
     waitForIdle()
     val before = selection()
     assertTrue(!before.collapsed, "expected a word selection, got $before")
 
     // Past the other edge, into the first word of the text.
-    dragSelectionHandle(TestHandle.SelectionEnd, FIELD_TAG, toOffset = TEXT.rangeOf("The").middle)
+    getActiveTextFieldNode().dragSelectionHandle(TestHandle.SelectionEnd, toOffset = TEXT.rangeOf("The").middle)
     waitForIdle()
 
     val after = selection()

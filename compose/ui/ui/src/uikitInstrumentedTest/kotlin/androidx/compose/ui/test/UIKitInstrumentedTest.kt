@@ -27,14 +27,17 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.scene.ComposeLayersViewController
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllSemanticsNodes
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.utils.TestHandle
 import androidx.compose.ui.test.utils.beginKeyPress
 import androidx.compose.ui.test.utils.beginModifierKeyPress
 import androidx.compose.ui.test.utils.beginPress
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.dragSelectionHandleImpl
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.hold
@@ -49,6 +52,7 @@ import androidx.compose.ui.test.utils.rightCenter
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
@@ -660,6 +664,75 @@ internal class UIKitInstrumentedTest(
             y = frame.top + (frame.bottom - frame.top) * yFraction,
         )
     }
+
+    /**
+     * The semantics node this accessibility node was built from, located by its test tag.
+     */
+    val AccessibilityTestNode.semanticsNode: SemanticsNode
+        get() = findSemanticsNode(
+            identifier ?: error("Accessibility node \"$label\" has no testTag to be found by.")
+        )
+
+    /**
+     * The window-space point (in Dp) of the caret for character [offset] in this text node. Use it
+     * to aim touch gestures at a specific character.
+     *
+     * Caveat — a tap on an iOS field (including the focus-gaining tap) does not leave the caret
+     * mid-word: it snaps to a word boundary, so this point is an aim, not a guaranteed landing offset.
+     * On the Compose path the snap splits at the word's midpoint (first half → word start, second half
+     * → word end; see `determineCursorDesiredOffset`). The native UITextInput path follows the same
+     * idea, but its split point is private to iOS and varies with word length, font and more; treat it
+     * as the Compose path, yet only clearly-leading and clearly-trailing taps are deterministic — a tap
+     * in the start-to-middle zone may snap either way.
+     */
+    fun AccessibilityTestNode.characterPosition(offset: Int): DpOffset {
+        val node = semanticsNode
+        val results = mutableListOf<TextLayoutResult>()
+        node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        val layout = results.firstOrNull()
+            ?: error("Node with testTag \"$identifier\" has no GetTextLayoutResult action (not a text field?).")
+        val caret = layout.getCursorRect(offset)
+        val origin = node.positionInWindow
+        return with(density) {
+            DpOffset(
+                (origin.x + caret.center.x).toDp(),
+                (origin.y + caret.center.y).toDp(),
+            )
+        }
+    }
+
+    fun AccessibilityTestNode.tapCharacter(offset: Int) {
+        tap(characterPosition(offset))
+    }
+
+    fun AccessibilityTestNode.longPressCharacter(offset: Int) {
+        val touch = touchDown(characterPosition(offset))
+        waitUntil("Selection loupe should appear after long press") {
+            findFirstDescendant { it.isLoupeView } != null
+        }
+        touch.up()
+    }
+
+    /** Taps character [offset] in this text node [count] times in a row: 2 = double tap, 3 = triple. */
+    fun AccessibilityTestNode.multiTapCharacter(offset: Int, count: Int) {
+        require(count >= 1) { "count must be >= 1, was $count" }
+        val point = characterPosition(offset)
+        repeat(count) { i ->
+            if (i > 0) delay(50)
+            tap(point)
+        }
+    }
+
+    /**
+     * Drags the [handle] of the selection in this text node until the edge it holds reaches
+     * character [toOffset]. See [dragSelectionHandleImpl] for which offset the edge actually lands
+     * on.
+     */
+    fun AccessibilityTestNode.dragSelectionHandle(
+        handle: TestHandle,
+        toOffset: Int,
+        duration: Duration = 0.5.seconds,
+    ) = dragSelectionHandleImpl(this, handle, toOffset, duration)
 
     /**
      * Simulates a drag gesture on the screen, moving the touch from its current location to a specified position

@@ -32,10 +32,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.BasicTextFieldType
-import androidx.compose.ui.test.utils.longPressCharacter
-import androidx.compose.ui.test.utils.tapCharacter
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -141,7 +140,7 @@ private fun UIKitInstrumentedTest.setUpField(
 
 private fun UIKitInstrumentedTest.checkTapCharacter(btf: BasicTextFieldType, nativeInput: Boolean) {
     val selection = setUpField("The quick brown fox", btf, nativeInput)
-    tapCharacter(FIELD_TAG, offset = 8)
+    findNodeWithTag(FIELD_TAG).tapCharacter(offset = 8)
     waitForIdle()
     val resultSelection = selection()
     assertTrue(resultSelection.collapsed, "expected a collapsed cursor after tap, got $resultSelection")
@@ -150,7 +149,7 @@ private fun UIKitInstrumentedTest.checkTapCharacter(btf: BasicTextFieldType, nat
 
 private fun UIKitInstrumentedTest.checkLongPressCharacter(btf: BasicTextFieldType, nativeInput: Boolean) {
     val selection = setUpField("The quick brown fox", btf, nativeInput)
-    longPressCharacter(FIELD_TAG, offset = 6)
+    findNodeWithTag(FIELD_TAG).longPressCharacter(offset = 6)
     waitForIdle()
     assertEquals(TextRange(6), selection(), "long press at offset 6 should leave the caret there")
 }

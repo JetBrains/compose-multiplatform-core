@@ -29,11 +29,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
+import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.BasicTextFieldType
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.isLoupeView
-import androidx.compose.ui.test.utils.multiTapCharacter
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
@@ -52,7 +52,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun double_tap_selects_word() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
-        multiTapCharacter(TAG, offset = WORD_OFFSET, count = 2)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
         waitForIdle()
         assertEquals(
             WORD_RANGE,
@@ -65,7 +65,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun triple_tap_selects_all_text() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
-        multiTapCharacter(TAG, offset = WORD_OFFSET, count = 3)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 3)
         waitForIdle()
         assertEquals(
             TextRange(0, TEXT.length),
@@ -78,7 +78,7 @@ class TextFieldMultiTapSelectionTest {
     @Test
     fun multitap_does_not_show_magnifier() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
-        multiTapCharacter(TAG, offset = WORD_OFFSET, count = 2) // double tap is enough
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2) // double tap is enough
         delay(200)
         assertEquals(
             findFirstDescendant { it.isLoupeView },
@@ -92,7 +92,7 @@ class TextFieldMultiTapSelectionTest {
     fun BTF2_triple_tap_then_double_tap_selects_word() = runUIKitInstrumentedTest(params = listOf(TextFieldFactory(BasicTextFieldType.V2, nativeInput = false))) { textFieldOption ->
         textFieldOption.setup(this, TEXT, TAG)
 
-        multiTapCharacter(TAG, offset = WORD_OFFSET, count = 3)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 3)
         waitForIdle()
         assertEquals(
             TextRange(0, TEXT.length),
@@ -103,7 +103,7 @@ class TextFieldMultiTapSelectionTest {
         // After triple tap selects all, a subsequent double tap should re-select only a word.
         // This exercises the clearSelection fix that allows selection to be updated by repeated taps.
         delay(400)
-        multiTapCharacter(TAG, offset = WORD_OFFSET, count = 2)
+        findNodeWithTag(TAG).multiTapCharacter(offset = WORD_OFFSET, count = 2)
         waitForIdle()
 
         assertEquals(

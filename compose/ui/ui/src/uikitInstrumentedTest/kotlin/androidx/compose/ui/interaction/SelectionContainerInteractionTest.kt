@@ -42,13 +42,10 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.TestHandle
 import androidx.compose.ui.test.utils.TestSelectionHandleAnchor
-import androidx.compose.ui.test.utils.dragSelectionHandle
 import androidx.compose.ui.test.utils.findFirstDescendant
 import androidx.compose.ui.test.utils.hold
 import androidx.compose.ui.test.utils.isLoupeView
-import androidx.compose.ui.test.utils.multiTapCharacter
 import androidx.compose.ui.test.utils.selectionHandles
-import androidx.compose.ui.test.utils.tapCharacter
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.test.waitForContextMenu
 import androidx.compose.ui.unit.Dp
@@ -127,7 +124,7 @@ class SelectionContainerInteractionTest {
 
         selectWordAt(selectionState, offset = 6, word = "quick")
 
-        dragSelectionHandle(TestHandle.SelectionEnd, FirstTextTag, toOffset = 18)
+        findNodeWithTag(FirstTextTag).dragSelectionHandle(TestHandle.SelectionEnd, toOffset = 18)
         waitForIdle()
 
         // A SelectionContainer publishes no selection to aim a handle drag against, so the edge lands
@@ -355,9 +352,9 @@ class SelectionContainerInteractionTest {
 
     private fun UIKitInstrumentedTest.selectWordAt(state: SelectionState, offset: Int, word: String) {
         awaitNodeLaidOut(FirstTextTag)
-        tapCharacter(FirstTextTag, offset)
+        findNodeWithTag(FirstTextTag).tapCharacter(offset)
         delay(DoubleTapPreparationDelayMillis)
-        multiTapCharacter(FirstTextTag, offset, count = 2)
+        findNodeWithTag(FirstTextTag).multiTapCharacter(offset, count = 2)
         waitUntil("Double tap at $offset should select '$word'") { state.selectedText() == word }
     }
 
