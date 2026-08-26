@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Билдирүүлөр бул жерде болот.\nТексттин калганы экинчи сапта болот."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Кыска билдирүү үлгүлөрүнүн демосу"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Бөлүмдөрү бар нерсенин үлгүсү"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Кыскартылган нерсенин демо версиясы"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Бөлүмдөрү бар нерсенин AlphaJump иштетилген демо версиясы"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Радио баскычы бөлүмү"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Өчүрүү/күйгүзүү бөлүмү"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"2-тизме"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Ар бир тизмеге берилген кошумча текст"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Сүрөт жана аракеттер демосу аяктады"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Чиптин демо версиясы"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Аткаруу көрсөткүчүнүн демосу"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Бөлүмдүн аталышынын демо версиясы"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Spotlight бөлүмүнүн демо версиясы"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Такта үлгүсүнүн демосу"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Орундар тизмесинин үлгүсүнүн демосу"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Жерлерди карап чыгуу"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Соңку функциялар"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Жүктөө иштетилди"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Жүктөө токтотулду"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Колдонмонун темасын колдонуу"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Колдонмонун темасы иштетилди"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Колдонмонун темасы өчүрүлдү"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Жүктөлүп жаткан экран"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Түстү кошуу/өчүрүү которгучу"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Которгучтары бар картанын үлгүсү"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Контент демолору менен карта"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Билдирүү үлгүлөрүнүн демосу менен карта"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Торчо үлгүсүнүн демосу менен карта"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Бөлүмдөргө иреттелген нерселердин тизмеси бар карта"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Көрнөк демосу"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Жакшыртылган аталыш тилкесинин үлгүсү"</string>
 </resources>

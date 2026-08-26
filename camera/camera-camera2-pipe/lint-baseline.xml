@@ -1,22 +1,121 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.0.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha08)" variant="all" version="9.0.0-alpha08">
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
 
     <issue
-        id="UseSdkSuppress"
-        message="Don&apos;t use @RequiresApi from tests; use @SdkSuppress on `cameraDeviceSetupCompatIsCached` instead"
-        errorLine1="    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        testUnlock3APostCaptureAndroidMAndAbove()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/test/java/androidx/camera/camera2/pipe/compat/Camera2DeviceCacheTest.kt"/>
+            file="src/test/java/androidx/camera/camera2/pipe/graph/Controller3AForCaptureTest.kt"/>
     </issue>
 
     <issue
-        id="UseSdkSuppress"
-        message="Don&apos;t use @RequiresApi from tests; use @SdkSuppress on `cameraDeviceSetupWrapperIsCached` instead"
-        errorLine1="    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        testUnlock3APostCaptureAndroidMAndAbove(false)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/test/java/androidx/camera/camera2/pipe/compat/Camera2DeviceCacheTest.kt"/>
+            file="src/test/java/androidx/camera/camera2/pipe/graph/Controller3AForCaptureTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        testScope.runTest {"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="src/test/java/androidx/camera/camera2/pipe/framegraph/FrameBufferImplTest.kt"/>
+    </issue>
+
+    <issue
+        id="KotlinRunTestResultUnused"
+        message="Result of runTest is ignored."
+        errorLine1="        testScope.runTest {"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="src/test/java/androidx/camera/camera2/pipe/graph/GraphLoopTest.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/ApiCompat.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CameraDeviceWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CameraDeviceWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CameraDeviceWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CameraDeviceWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CameraDeviceWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CameraDeviceWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CaptureSessionFactory.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/CaptureSessionFactory.kt"/>
     </issue>
 
     <issue
@@ -26,6 +125,33 @@
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/camera2/pipe/compat/CaptureSessionWrapper.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/Configuration.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/compat/Configuration.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/camera2/pipe/graph/StreamGraphImpl.kt"/>
     </issue>
 
 </issues>

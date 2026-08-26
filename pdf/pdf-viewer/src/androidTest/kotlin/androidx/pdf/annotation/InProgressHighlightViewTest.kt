@@ -22,13 +22,18 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.DeadObjectException
 import android.os.SystemClock
+import android.util.SparseArray
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.PdfDocument
+import androidx.pdf.PdfFeature
+import androidx.pdf.annotation.content.StampAnnotation
 import androidx.pdf.annotation.highlights.InProgressHighlightsView
 import androidx.pdf.annotation.highlights.models.InProgressHighlightId
-import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.content.PdfPageTextContent
+import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.view.FakePdfDocument
 import androidx.pdf.view.PdfViewTestActivity
 import androidx.test.core.app.ActivityScenario
@@ -50,13 +55,13 @@ class InProgressHighlightViewTest {
 
     private val highlightIdlingResource = CountingIdlingResource(HIGHLIGHT_RESOURCE_NAME)
     private lateinit var highlightView: InProgressHighlightsView
-    private lateinit var testHighlightListener: FakeInProgressTextHighlightsListener
+    private lateinit var testHighlightListener: FakeHighlightListeners
     private lateinit var testId: InProgressHighlightId
 
     @Before
     fun setUp() {
         IdlingRegistry.getInstance().register(highlightIdlingResource)
-        testHighlightListener = FakeInProgressTextHighlightsListener(highlightIdlingResource)
+        testHighlightListener = FakeHighlightListeners(highlightIdlingResource)
         testId = InProgressHighlightId.create()
 
         setupActivity()
@@ -79,7 +84,6 @@ class InProgressHighlightViewTest {
                     id = testId,
                     pageNum = 0,
                     startPdfPoint = point,
-                    startViewPoint = point,
                     pageToViewTransform = Matrix(),
                 )
             }
@@ -87,7 +91,6 @@ class InProgressHighlightViewTest {
             Espresso.onIdle()
 
             assertThat(testHighlightListener.isStarted).isTrue()
-            assertThat(testHighlightListener.startedId).isEqualTo(testId)
         }
     }
 
@@ -103,7 +106,6 @@ class InProgressHighlightViewTest {
                     id = testId,
                     pageNum = 0,
                     startPdfPoint = point,
-                    startViewPoint = point,
                     pageToViewTransform = Matrix(),
                 )
             }
@@ -126,7 +128,6 @@ class InProgressHighlightViewTest {
                     id = testId,
                     pageNum = 0,
                     startPdfPoint = point,
-                    startViewPoint = point,
                     pageToViewTransform = Matrix(),
                 )
             }
@@ -143,7 +144,8 @@ class InProgressHighlightViewTest {
             Espresso.onIdle()
 
             // 4. Verify
-            val createdAnnotation = testHighlightListener.finishedAnnotations[testId]
+            assertThat(testHighlightListener.finishedAnnotations).isNotEmpty()
+            val createdAnnotation = testHighlightListener.finishedAnnotations.first()
             assertThat(createdAnnotation).isInstanceOf(StampAnnotation::class.java)
 
             with(createdAnnotation as StampAnnotation) {
@@ -165,7 +167,6 @@ class InProgressHighlightViewTest {
                     id = testId,
                     pageNum = 0,
                     startPdfPoint = point,
-                    startViewPoint = point,
                     pageToViewTransform = Matrix(),
                 )
             }
@@ -177,10 +178,11 @@ class InProgressHighlightViewTest {
                 highlightView.finishTextHighlight(testId, PointF(80f, 80f))
             }
 
-            assertThat(testHighlightListener.finishedAnnotations[testId]).isNull()
+            assertThat(testHighlightListener.finishedAnnotations).isEmpty()
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun textHighlight_withError_invokesErrorCallback() {
         val exception = DeadObjectException()
@@ -196,13 +198,12 @@ class InProgressHighlightViewTest {
         ActivityScenario.launch(PdfViewTestActivity::class.java).use { scenario ->
             highlightIdlingResource.increment()
             scenario.onActivity {
-                highlightView.pdfDocument = fakePdfDocument
+                highlightView.textBoundsProvider = FakeTextBoundsProvider(fakePdfDocument)
                 val point = PointF(50f, 50f)
                 highlightView.startTextHighlight(
                     id = testId,
                     pageNum = 0,
                     startPdfPoint = point,
-                    startViewPoint = point,
                     pageToViewTransform = Matrix(),
                 )
             }
@@ -210,8 +211,13 @@ class InProgressHighlightViewTest {
             Espresso.onIdle()
             assertThat(testHighlightListener.isStarted).isFalse()
             assertThat(testHighlightListener.isFailed).isFalse()
-            assertThat(testHighlightListener.exceptionThrown).isNotNull()
-            assertThat(testHighlightListener.exceptionThrown?.throwable).isEqualTo(exception)
+            assertThat(testHighlightListener.errorThrown).isNotNull()
+            val error = testHighlightListener.errorThrown
+            if (error is RequestFailedException) {
+                assertThat(error.throwable).isEqualTo(exception)
+            } else {
+                assertThat(error).isEqualTo(exception)
+            }
         }
     }
 
@@ -244,8 +250,8 @@ class InProgressHighlightViewTest {
             Espresso.onIdle()
 
             assertThat(testHighlightListener.isStarted).isTrue()
-            val createdAnnotation =
-                testHighlightListener.finishedAnnotations[testHighlightListener.startedId]
+            assertThat(testHighlightListener.finishedAnnotations).isNotEmpty()
+            val createdAnnotation = testHighlightListener.finishedAnnotations.first()
             assertThat(createdAnnotation).isNotNull()
             assertThat(createdAnnotation).isInstanceOf(StampAnnotation::class.java)
             with(createdAnnotation as StampAnnotation) {
@@ -288,8 +294,13 @@ class InProgressHighlightViewTest {
 
     @Test
     fun touchEvents_upOutsidePage_usesLastValidPdfPointToFinalize() {
-        val pageBounds = RectF(0f, 0f, 150f, 150f)
-        setupActivity(pageInfoProvider = FakePageInfoProvider(pageBounds))
+        val pageRect = RectF(0f, 0f, 150f, 150f)
+        setupActivity(
+            pageInfoProvider =
+                PageInfoProvider().apply {
+                    setPageBounds(SparseArray<RectF>().apply { put(0, pageRect) })
+                }
+        )
 
         ActivityScenario.launch(PdfViewTestActivity::class.java).use { scenario ->
             val startViewPoint = PointF(50f, 50f)
@@ -323,8 +334,8 @@ class InProgressHighlightViewTest {
             Espresso.onIdle()
 
             // Verify the highlight was finished using the last valid point
-            val createdAnnotation =
-                testHighlightListener.finishedAnnotations[testHighlightListener.startedId]
+            assertThat(testHighlightListener.finishedAnnotations).isNotEmpty()
+            val createdAnnotation = testHighlightListener.finishedAnnotations.first()
             assertThat(createdAnnotation).isNotNull()
             assertThat(createdAnnotation).isInstanceOf(StampAnnotation::class.java)
 
@@ -338,7 +349,13 @@ class InProgressHighlightViewTest {
         }
     }
 
-    private fun setupActivity(pageInfoProvider: PageInfoProvider = FakePageInfoProvider()) {
+    @OptIn(ExperimentalPdfApi::class)
+    private fun setupActivity(
+        pageInfoProvider: PageInfoProvider =
+            PageInfoProvider().apply {
+                setPageBounds(SparseArray<RectF>().apply { put(0, RectF(0f, 0f, 500f, 500f)) })
+            }
+    ) {
         val pageText =
             PdfPageTextContent(bounds = listOf(RectF(10f, 10f, 100f, 100f)), text = "Sample Text")
         val fakePdfDocument =
@@ -352,8 +369,9 @@ class InProgressHighlightViewTest {
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT,
                         )
-                    pdfDocument = fakePdfDocument
-                    addInProgressTextHighlightsListener(testHighlightListener)
+                    textBoundsProvider = FakeTextBoundsProvider(fakePdfDocument)
+                    setOnGestureClaimListener(testHighlightListener)
+                    addOnAnnotationEditListener(testHighlightListener)
                     this.pageInfoProvider = pageInfoProvider
                 }
             activity.container.addView(highlightView)
@@ -363,6 +381,25 @@ class InProgressHighlightViewTest {
     private fun obtainMotionEvent(x: Float, y: Float, action: Int): MotionEvent {
         val now = SystemClock.uptimeMillis()
         return MotionEvent.obtain(now, now, action, x, y, 0)
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    internal class FakeTextBoundsProvider(private val pdfDocument: PdfDocument) :
+        TextBoundsProvider {
+        override suspend fun getTextBoundsBetweenPoints(
+            pageNum: Int,
+            start: PointF,
+            end: PointF,
+        ): List<RectF> {
+            // selection boundary api is not available below sdk-ext 13
+            if (!pdfDocument.isFeatureSupported(PdfFeature.TEXT_SELECTION)) return listOf()
+
+            return pdfDocument
+                .getSelectionBounds(pageNum, start, end)
+                ?.selectedContents
+                ?.filterIsInstance<PdfPageTextContent>()
+                ?.flatMap { it.bounds } ?: emptyList()
+        }
     }
 
     companion object {

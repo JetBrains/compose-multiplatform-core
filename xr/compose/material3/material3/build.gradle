@@ -22,7 +22,6 @@
  */
 
 import androidx.build.SoftwareType
-import androidx.build.Publish
 
 plugins {
     id("AndroidXPlugin")
@@ -33,15 +32,28 @@ plugins {
 dependencies {
     // Add dependencies here
     implementation("androidx.compose.ui:ui-unit:1.8.0")
-    implementation("androidx.compose.material3:material3:1.4.0")
-    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.5.0-alpha11")
+    implementation(project(":compose:material3:material3"))
+    implementation(project(":compose:material3:adaptive:adaptive"))
+    implementation(project(":compose:material3:adaptive:adaptive-layout"))
+    implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
     implementation(project(":xr:compose:compose"))
+    implementation("androidx.activity:activity:1.9.3")
+
+    testImplementation(libs.mockitoKotlin)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(libs.kotlinTest)
+    testImplementation(libs.truth)
+    testImplementation("androidx.compose.ui:ui-test:1.11.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.11.0")
+    testImplementation("androidx.compose.ui:ui-test-manifest:1.11.0")
+    testImplementation(project(":xr:compose:compose-testing"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     defaultConfig {
         minSdk { version = release(24) }
     }
@@ -53,4 +65,5 @@ androidx {
     description = "Compose Material3 components for XR"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
+    enableRobolectric()
 }

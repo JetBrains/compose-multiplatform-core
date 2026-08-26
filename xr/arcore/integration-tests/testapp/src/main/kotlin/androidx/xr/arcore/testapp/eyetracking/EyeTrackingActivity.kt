@@ -20,6 +20,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -31,6 +32,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,23 +45,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.xr.arcore.Eye
 import androidx.xr.arcore.perceptionState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
+import androidx.xr.arcore.testapp.common.asString
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.EyeTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.launch
 
 class EyeTrackingActivity : ComponentActivity() {
@@ -66,10 +68,12 @@ class EyeTrackingActivity : ComponentActivity() {
     private var gazeRenderer = GazeRenderer()
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
-    private var config: Config =
-        Config(
-            deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
-            eyeTracking = EyeTrackingMode.COARSE_TRACKING,
+    private var config by
+        mutableStateOf(
+            Config.Builder()
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setEyeTracking(EyeTrackingMode.COARSE_TRACKING)
+                .build()
         )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,8 +95,8 @@ class EyeTrackingActivity : ComponentActivity() {
                                             SubspaceModifier.size(
                                                     DpVolumeSize(640.dp, 480.dp, 0.dp)
                                                 )
-                                                .movable(),
-                                        resizePolicy = ResizePolicy(),
+                                                .movable()
+                                                .resizable()
                                     ) {
                                         Main(session)
                                     }
@@ -119,7 +123,7 @@ class EyeTrackingActivity : ComponentActivity() {
         val currentMode = config.eyeTracking
         val newMode =
             when (currentMode) {
-                // cycle through the 3 different eye tracking config modes
+                // cycle through the 2 different eye tracking config modes
                 EyeTrackingMode.COARSE_TRACKING -> EyeTrackingMode.FINE_TRACKING
                 EyeTrackingMode.FINE_TRACKING -> EyeTrackingMode.COARSE_TRACKING
                 else -> {
@@ -129,7 +133,10 @@ class EyeTrackingActivity : ComponentActivity() {
 
         // reconfigure the session
         config =
-            Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN, eyeTracking = newMode)
+            Config.Builder()
+                .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                .setEyeTracking(newMode)
+                .build()
         sessionHelper.tryUpdateConfig(config)
     }
 
@@ -158,42 +165,82 @@ class EyeTrackingActivity : ComponentActivity() {
                 }
             },
         ) { innerPadding ->
+            @Suppress("DEPRECATION")
             Column(
                 modifier =
                     Modifier.background(color = Color.White)
                         .fillMaxWidth()
                         .fillMaxHeight()
                         .padding(innerPadding)
-                        .padding(horizontal = 20.dp)
+                        .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (perceptionState == null) {
-                    Row { Text("Perception State is null", fontSize = 20.sp) }
+                    Text("Perception State is null", fontSize = 20.sp)
                 } else {
-                    val leftEye = getEyePose(perceptionState.leftEye)
-                    val rightEye = getEyePose(perceptionState.rightEye)
-                    Row {
-                        Button(onClick = { toggleEyeTrackingConfigMode() }) {
-                            // button displays current eyetracking mode. click it to change.
-                            Text(text = config.eyeTracking.asString(), fontSize = 20.sp)
+                    val leftEye = perceptionState.leftEyeState
+                    val rightEye = perceptionState.rightEyeState
+                    Button(onClick = { toggleEyeTrackingConfigMode() }) {
+                        // button displays current eyetracking mode, click it to change
+                        Text(text = "Mode: ${config.eyeTracking.asString()}", fontSize = 20.sp)
+                    }
+                    // Display left eye information.
+                    Column {
+                        if (leftEye != null) {
+                            Text(
+                                text = "Left Eye Found",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text =
+                                    "Left Eye State: ${if (leftEye.isOpen) "Open" else "Closed"}",
+                                fontSize = 18.sp,
+                            )
+                            Text(
+                                text =
+                                    "Left Eye Tracking State: ${leftEye.trackingState.asString()}",
+                                fontSize = 18.sp,
+                            )
+                            Text(text = "Left Eye Pose: ${leftEye.pose}", fontSize = 14.sp)
+                        } else {
+                            Text(
+                                text = "No Left Eye",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
-                    // Display left eye pose, if found.
-                    Row {
-                        var text = "No Left Eye"
-                        leftEye?.let { text = "Left Eye Found" }
-                        Text(text = text, fontSize = 20.sp)
-                        leftEye?.let { Text(text = "$it") }
-                    }
-                    // Display right eye pose, if found.
-                    Row {
-                        var text = "No Right Eye"
-                        rightEye?.let { text = "Right Eye Found" }
-                        Text(text = text, fontSize = 20.sp)
-                        rightEye?.let { Text(text = "$it") }
+                    // Display right eye information.
+                    Column {
+                        if (rightEye != null) {
+                            Text(
+                                text = "Right Eye Found",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text =
+                                    "Right Eye State: ${if (rightEye.isOpen) "Open" else "Closed"}",
+                                fontSize = 18.sp,
+                            )
+                            Text(
+                                text =
+                                    "Right Eye Tracking State: ${rightEye.trackingState.asString()}",
+                                fontSize = 18.sp,
+                            )
+                            Text(text = "Right Eye Pose: ${rightEye.pose}", fontSize = 14.sp)
+                        } else {
+                            Text(
+                                text = "No Right Eye",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                     // Display eye dot color legend.
-                    Row {
-                        Text(text = "Color Legend", fontSize = 15.sp)
+                    Column {
+                        Text(text = "Color Legend", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         Text(text = "\tGreen = Left Eye", fontSize = 12.sp)
                         Text(text = "\tBlue = Right Eye", fontSize = 12.sp)
                         Text(text = "\tBoxes are opaque when eyes are open", fontSize = 12.sp)
@@ -203,8 +250,6 @@ class EyeTrackingActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun getEyePose(eye: Eye?): Pose? = eye?.state?.value?.pose
 
     private fun EyeTrackingMode.asString(): String {
         return when (this) {

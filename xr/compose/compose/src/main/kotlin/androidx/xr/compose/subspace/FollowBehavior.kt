@@ -17,7 +17,12 @@
 package androidx.xr.compose.subspace
 
 import androidx.annotation.IntRange
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.withFrameNanos
 import androidx.xr.arcore.ArDevice
 import androidx.xr.compose.spatial.ExperimentalFollowingSubspaceApi
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
@@ -25,21 +30,20 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import java.lang.Runnable
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.pow
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
@@ -51,8 +55,6 @@ import org.jetbrains.annotations.TestOnly
  */
 @ExperimentalFollowingSubspaceApi
 public sealed class FollowBehavior protected constructor() {
-    protected var targetCurrentPose: Pose = Pose.Identity
-
     internal abstract suspend fun configure(
         session: Session,
         trailingEntity: CoreGroupEntity,
@@ -75,15 +77,19 @@ public sealed class FollowBehavior protected constructor() {
         public val Tight: FollowBehavior = TightFollowBehavior
 
         /**
-         * Creates a behavior where the content smoothly animates to follow the target's movements,
-         * creating a comfortable "soft follow" effect. This is implemented with the Hermite easing
-         * algorithm, which accelerates the content then slows it down towards the end of the
-         * motion, giving it a sense of real world physics. The use of the Hermite algorithm is not
-         * optional but the total duration of the motion can be modified.
+         * Creates a behavior where the content smoothly animates to follow the target's movements.
+         *
+         * This behavior is driven by a critically damped spring physics model, which uses
+         * exponential decay to smoothly decelerate the trailing entity as it approaches the target.
+         * The entity will accelerate to catch up and then decelerate without overshoot, simulating
+         * real-world physical inertia.
+         *
+         * The use of this spring/exponential decay model is not optional, but the total duration of
+         * the motion can be configured via [durationMs].
          *
          * @param durationMs Amount of milliseconds it takes for the content to catch up to the
-         *   user. Default is `DEFAULT_SOFT_DURATION_MS` milliseconds. A value less than
-         *   `MIN_SOFT_DURATION_MS` will be rounded up to `MIN_SOFT_DURATION_MS` to allow enough
+         *   user. Default is [DEFAULT_SOFT_DURATION_MS] milliseconds. A value less than
+         *   [MIN_SOFT_DURATION_MS] will be rounded up to [MIN_SOFT_DURATION_MS] to allow enough
          *   time to complete the content movement.
          * @return A [FollowBehavior] instance configured for soft following.
          */
@@ -91,6 +97,18 @@ public sealed class FollowBehavior protected constructor() {
             @IntRange(from = MIN_SOFT_DURATION_MS.toLong())
             durationMs: Int = DEFAULT_SOFT_DURATION_MS
         ): FollowBehavior = SoftFollowBehavior(durationMs)
+
+        /**
+         * Creates a behavior where the content animates to follow the target's movements using an
+         * exponential decay algorithm.
+         *
+         * This behavior is driven by a first-order exponential decay model, matching the system's
+         * native HeadFollower implementation.
+         *
+         * @return A [FollowBehavior] instance configured for exponential decay.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun ExponentialDecay(): FollowBehavior = ExponentialDecayFollowBehavior()
 
         @TestOnly
         @VisibleForTesting
@@ -101,7 +119,7 @@ public sealed class FollowBehavior protected constructor() {
 /**
  * Creates a behavior where the content smoothly animates to follow the user's movements, creating a
  * comfortable "soft follow" effect. This is the implementation for SoftFollowing which is
- * accessible through the public interface as FollowBehavior.soft()
+ * accessible through the public interface as FollowBehavior.Soft()
  *
  * @param durationMs Amount of milliseconds it takes for the content to catch up to the user.
  *   Default is [FollowBehavior.DEFAULT_SOFT_DURATION_MS] milliseconds. A value less than
@@ -111,15 +129,9 @@ public sealed class FollowBehavior protected constructor() {
 @OptIn(ExperimentalFollowingSubspaceApi::class)
 internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DURATION_MS) :
     FollowBehavior() {
-
-    private var currentAnimationJob: Job? = null
+    private val animationDurationMs: Int = durationMs.coerceAtLeast(MIN_SOFT_DURATION_MS)
     private var trailingEntity: CoreGroupEntity? = null
-    private var startPose: Pose = Pose.Identity
-    private var endPose: Pose = Pose.Identity
-    // Ensure at least one frame of animation
-    private val totalFrames: Int =
-        (durationMs / TIME_BETWEEN_ANIMATION_TICKS).toInt().coerceAtLeast(1)
-    private var currentFrame: Int = 0
+    private val animationProgress = Animatable(initialValue = ANIMATION_START_VALUE)
 
     override suspend fun configure(
         session: Session,
@@ -136,112 +148,63 @@ internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DUR
                 // animation to the trailingEntity, it will instantly appear at the device location.
                 // It will also be made visible, enabled, at this time.
                 val pose = target.poseUpdates.first()
-                targetCurrentPose = applyTrackedDimensions(pose, dimensions, initialPose)
-                trailingEntity.poseInMeters = targetCurrentPose
-                endPose = targetCurrentPose
+                var currentTargetPoseMeter: Pose =
+                    getPoseByTrackedDimensions(
+                        pose = pose,
+                        dimensions = dimensions,
+                        fallbackPose = initialPose,
+                    )
+                trailingEntity.poseInMeters = currentTargetPoseMeter
                 trailingEntity.enabled = true
+                var lastIntendedEndPoseMeter: Pose = currentTargetPoseMeter
 
                 target.poseUpdates.collect { pose ->
                     // Determine the target pose using the source pose but ignoring the
                     // dimensions we are not tracking.
-                    targetCurrentPose = applyTrackedDimensions(pose, dimensions, initialPose)
+                    currentTargetPoseMeter =
+                        getPoseByTrackedDimensions(
+                            pose = pose,
+                            dimensions = dimensions,
+                            fallbackPose = initialPose,
+                        )
 
                     // If the target has moved significantly enough, start the animation over.
-                    if (shouldStartAnimation()) {
-                        currentAnimationJob?.cancel()
-                        startPose = trailingEntity.poseInMeters
-                        endPose = targetCurrentPose
-                        currentFrame = 1
-                        currentAnimationJob = this.launch { animate() }
+                    if (
+                        hasSignificantPoseChange(
+                            pose1 = lastIntendedEndPoseMeter,
+                            pose2 = currentTargetPoseMeter,
+                        )
+                    ) {
+                        lastIntendedEndPoseMeter = currentTargetPoseMeter
+
+                        launch {
+                            animationProgress.snapTo(targetValue = ANIMATION_START_VALUE)
+                            animate(endPoseMeter = lastIntendedEndPoseMeter)
+                        }
                     }
                 }
             }
         }
     }
 
-    private fun applyTrackedDimensions(
-        pose: Pose,
-        dimensions: TrackedDimensions,
-        fallbackPose: Pose,
-    ): Pose {
-        return Pose(
-            translation =
-                Vector3(
-                    x =
-                        getTrackedValue(
-                            dimensions.isTranslationXTracked,
-                            pose.translation.x,
-                            fallbackPose.translation.x,
-                        ),
-                    y =
-                        getTrackedValue(
-                            dimensions.isTranslationYTracked,
-                            pose.translation.y,
-                            fallbackPose.translation.y,
-                        ),
-                    z =
-                        getTrackedValue(
-                            dimensions.isTranslationZTracked,
-                            pose.translation.z,
-                            fallbackPose.translation.z,
-                        ),
-                ),
-            rotation =
-                Quaternion(
-                    x =
-                        getTrackedValue(
-                            dimensions.isRotationXTracked,
-                            pose.rotation.x,
-                            fallbackPose.rotation.x,
-                        ),
-                    y =
-                        getTrackedValue(
-                            dimensions.isRotationYTracked,
-                            pose.rotation.y,
-                            fallbackPose.rotation.y,
-                        ),
-                    z =
-                        getTrackedValue(
-                            dimensions.isRotationZTracked,
-                            pose.rotation.z,
-                            fallbackPose.rotation.z,
-                        ),
-                    w = pose.rotation.w,
-                ),
-        )
-    }
+    private suspend fun animate(endPoseMeter: Pose) {
+        val startPoseMeter = trailingEntity?.poseInMeters ?: return
 
-    /*
-     * Helper to return the tracked value if enabled, otherwise the fallback (initial) value.
-     */
-    private fun getTrackedValue(
-        isTracked: Boolean,
-        currentValue: Float,
-        fallbackValue: Float,
-    ): Float {
-        return if (isTracked) currentValue else fallbackValue
-    }
-
-    // TODO(b/451647909): Investigate if Compose's built in animation APIs could handle the logic.
-    private suspend fun animate() {
-        while (currentFrame <= totalFrames) {
-            // Calculate the raw and linear progress of the animation (a value from 0.0 to 1.0).
-            val linearProgress: Float = currentFrame.toFloat() / totalFrames
-            val easedProgress: Float = smoothstep(linearProgress)
-
-            val nextPose = Pose.lerp(startPose, endPose, easedProgress)
-            trailingEntity?.poseInMeters = nextPose
-            currentFrame++
-
-            delay(TIME_BETWEEN_ANIMATION_TICKS)
+        animationProgress.animateTo(
+            targetValue = ANIMATION_END_VALUE,
+            animationSpec =
+                tween(durationMillis = animationDurationMs, easing = Easing { smoothstep(it) }),
+        ) {
+            val nextPoseMeters =
+                Pose.lerp(start = startPoseMeter, end = endPoseMeter, ratio = this.value)
+            trailingEntity?.poseInMeters = nextPoseMeters
         }
     }
 
-    private fun shouldStartAnimation(): Boolean {
-        // Check the current position of the target entity compared to where the trailingEntity
-        // is planning to be (endPose).
-        val translationDelta = (endPose.translation - targetCurrentPose.translation).length
-        val rotationDelta = Quaternion.angle(endPose.rotation, targetCurrentPose.rotation)
+    private fun hasSignificantPoseChange(pose1: Pose, pose2: Pose): Boolean {
+        // Check the translation and rotation difference between two poses.
+        val translationDelta = (pose1.translation - pose2.translation).length
+        val rotationDelta = Quaternion.angle(pose1.rotation, pose2.rotation)
 
         return translationDelta > TRANSLATION_THRESHOLD || rotationDelta > ROTATION_THRESHOLD
     }
@@ -249,6 +212,7 @@ internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DUR
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is SoftFollowBehavior) return false
+
         return durationMs == other.durationMs
     }
 
@@ -259,9 +223,10 @@ internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DUR
     }
 
     private companion object {
-        private const val TIME_BETWEEN_ANIMATION_TICKS: Long = 10
         private const val TRANSLATION_THRESHOLD: Float = 0.1f
         private const val ROTATION_THRESHOLD: Float = 3f
+        private const val ANIMATION_START_VALUE: Float = 0f
+        private const val ANIMATION_END_VALUE: Float = 1f
 
         /**
          * Applies Smoothstep function (a specific implementation of a Cubic Hermite interpolation
@@ -285,6 +250,231 @@ internal class SoftFollowBehavior(private val durationMs: Int = DEFAULT_SOFT_DUR
     }
 }
 
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+internal class ExponentialDecayFollowBehavior : FollowBehavior() {
+    override suspend fun configure(
+        session: Session,
+        trailingEntity: CoreGroupEntity,
+        target: FollowTarget,
+        dimensions: TrackedDimensions,
+    ) = coroutineScope {
+        val isAnimating = AtomicBoolean(false)
+        val initialPoseMeter: Pose = trailingEntity.poseInMeters
+        val followTargetFlow = target as? FollowTargetFlow ?: return@coroutineScope
+        var currentTargetPoseMeter: Pose
+
+        withContext(dispatcherOverride) {
+            val pose: Pose = target.poseUpdates.first()
+            currentTargetPoseMeter =
+                getPoseByTrackedDimensions(
+                    pose = pose,
+                    dimensions = dimensions,
+                    fallbackPose = initialPoseMeter,
+                )
+            trailingEntity.poseInMeters = currentTargetPoseMeter
+            trailingEntity.enabled = true
+
+            followTargetFlow.poseUpdates.collect { pose ->
+                currentTargetPoseMeter =
+                    getPoseByTrackedDimensions(
+                        pose = pose,
+                        dimensions = dimensions,
+                        fallbackPose = initialPoseMeter,
+                    )
+
+                if (
+                    !hasSignificantPoseChange(
+                        pose1 = trailingEntity.poseInMeters,
+                        pose2 = currentTargetPoseMeter,
+                        translationThreshold = TRANSLATION_THRESHOLD,
+                        rotationThreshold = ROTATION_THRESHOLD,
+                    )
+                ) {
+                    return@collect
+                }
+
+                if (!isAnimating.compareAndSet(false, true)) {
+                    return@collect
+                }
+
+                launch {
+                    try {
+                        animate(trailingEntity, targetPoseProvider = { currentTargetPoseMeter })
+                    } finally {
+                        isAnimating.set(false)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Animates the trailing entity to smoothly follow the target.
+     *
+     * On each frame, this calculates the elapsed time since the last frame and uses an exponential
+     * decay formula to determine the next position. The animation stops when the entity is close
+     * enough to the target.
+     */
+    private suspend fun animate(trailingEntity: CoreGroupEntity, targetPoseProvider: () -> Pose) {
+        // The baseline starts uninitialized.
+        var lastFrameTimeNanos: Long = 0L
+
+        while (true) {
+            // Suspend exactly ONCE per frame
+            val currentFrameTimeNanos: Long = withFrameNanos { it }
+
+            // On the first frame, sync the baseline to the Compose frame clock.
+            if (lastFrameTimeNanos == 0L) {
+                lastFrameTimeNanos = currentFrameTimeNanos
+            }
+
+            val dtSeconds = calculateDtSeconds(lastFrameTimeNanos, currentFrameTimeNanos)
+            lastFrameTimeNanos = currentFrameTimeNanos
+
+            val decayFactor = calculateDecayFactor(dtSeconds)
+
+            // Interpolate between the current pose and the target pose using the decay factor.
+            val currentPose = trailingEntity.poseInMeters
+            val targetPose = targetPoseProvider()
+            val nextPose = Pose.lerp(currentPose, targetPose, decayFactor)
+            trailingEntity.poseInMeters = nextPose
+
+            // If the gap to the target is significant, keep the animation going.
+            if (
+                hasSignificantPoseChange(
+                    pose1 = nextPose,
+                    pose2 = targetPose,
+                    translationThreshold = SETTLE_TRANSLATION_THRESHOLD,
+                    rotationThreshold = SETTLE_ROTATION_THRESHOLD,
+                )
+            ) {
+                continue
+            }
+
+            trailingEntity.poseInMeters = targetPose
+            break
+        }
+    }
+
+    /**
+     * Calculates elapsed time (dt) in seconds, clamped between 1ms and 100ms to prevent large
+     * motion jumps due to frame drops or thread suspension.
+     */
+    private fun calculateDtSeconds(lastFrameTimeNanos: Long, currentFrameTimeNanos: Long): Float {
+        val dtNanos: Long =
+            (currentFrameTimeNanos - lastFrameTimeNanos).coerceIn(1_000_000L, 100_000_000L)
+
+        return dtNanos / 1_000_000_000f
+    }
+
+    /**
+     * Calculates the frame-rate independent interpolation factor using exponential decay.
+     *
+     * The general formula for exponential decay interpolation is: 1 - base^dtSeconds
+     *
+     * where "base" is a constant that corresponds to the level of friction in the system. Here, we
+     * use (1 / LERP_DIVISOR) as our decay base, giving: decayFactor = 1 - (1 /
+     * LERP_DIVISOR)^dtSeconds
+     *
+     * The decay factor will start at zero, quickly approach 1 and level off.
+     */
+    private fun calculateDecayFactor(dtSeconds: Float): Float {
+        return 1.0f - (1.0f / LERP_DIVISOR).pow(dtSeconds)
+    }
+
+    private fun hasSignificantPoseChange(
+        pose1: Pose,
+        pose2: Pose,
+        translationThreshold: Float,
+        rotationThreshold: Float,
+    ): Boolean {
+        val translationDelta: Float = (pose1.translation - pose2.translation).length
+        val rotationDelta: Float = Quaternion.angle(pose1.rotation, pose2.rotation)
+
+        return translationDelta > translationThreshold || rotationDelta > rotationThreshold
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ExponentialDecayFollowBehavior) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+    private companion object {
+        private const val LERP_DIVISOR = 18000f
+        private const val SETTLE_TRANSLATION_THRESHOLD: Float = 0.01f
+        private const val SETTLE_ROTATION_THRESHOLD: Float = 0.01f
+        private const val TRANSLATION_THRESHOLD: Float = 0.1f
+        private const val ROTATION_THRESHOLD: Float = 3f
+    }
+}
+
+/** Helper to return the tracked value if enabled, otherwise the fallback (initial) value. */
+private fun getTrackedValue(isTracked: Boolean, currentValue: Float, fallbackValue: Float): Float {
+    return if (isTracked) currentValue else fallbackValue
+}
+
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+private fun getPoseByTrackedDimensions(
+    pose: Pose,
+    dimensions: TrackedDimensions,
+    fallbackPose: Pose,
+): Pose {
+    // TODO(b/531806536): Check for Gimbal lock issues
+    val currentEuler = pose.rotation.eulerAngles
+    val fallbackEuler = fallbackPose.rotation.eulerAngles
+
+    return Pose(
+        translation =
+            Vector3(
+                x =
+                    getTrackedValue(
+                        isTracked = dimensions.isTranslationXTracked,
+                        currentValue = pose.translation.x,
+                        fallbackValue = fallbackPose.translation.x,
+                    ),
+                y =
+                    getTrackedValue(
+                        isTracked = dimensions.isTranslationYTracked,
+                        currentValue = pose.translation.y,
+                        fallbackValue = fallbackPose.translation.y,
+                    ),
+                z =
+                    getTrackedValue(
+                        isTracked = dimensions.isTranslationZTracked,
+                        currentValue = pose.translation.z,
+                        fallbackValue = fallbackPose.translation.z,
+                    ),
+            ),
+        rotation =
+            Quaternion.fromEulerAngles(
+                pitch =
+                    getTrackedValue(
+                        isTracked = dimensions.isRotationXTracked,
+                        currentValue = currentEuler.x,
+                        fallbackValue = fallbackEuler.x,
+                    ),
+                yaw =
+                    getTrackedValue(
+                        isTracked = dimensions.isRotationYTracked,
+                        currentValue = currentEuler.y,
+                        fallbackValue = fallbackEuler.y,
+                    ),
+                roll =
+                    getTrackedValue(
+                        isTracked = dimensions.isRotationZTracked,
+                        currentValue = currentEuler.z,
+                        fallbackValue = fallbackEuler.z,
+                    ),
+            ),
+    )
+}
+
 /**
  * This is the implementation for StaticFollowBehavior which is accessible through the public
  * interface as FollowBehavior.static()
@@ -300,7 +490,7 @@ internal object StaticFollowBehavior : FollowBehavior() {
         if (target is FollowTargetFlow) {
             withContext(dispatcherOverride) {
                 // Suspends until the first item is emitted, then cancel automatically.
-                val firstPose = target.poseUpdates.first()
+                val firstPose: Pose = target.poseUpdates.first()
 
                 // The pose should be updated first before enabling.
                 trailingEntity.poseInMeters = firstPose
@@ -322,7 +512,7 @@ internal object TightFollowBehavior : FollowBehavior() {
         target: FollowTarget,
         dimensions: TrackedDimensions,
     ) {
-        var isInitialized = false
+        var isInitialized: Boolean = false
 
         if (target is FollowTargetFlow) {
             withContext(dispatcherOverride) {
@@ -438,51 +628,55 @@ public class TrackedDimensions(
  * A FollowTarget can be used with [androidx.xr.compose.spatial.FollowingSubspace] to have a set of
  * content follow a target such as an anchor or AR device.
  */
+@ExperimentalFollowingSubspaceApi
 public sealed interface FollowTarget {
     public companion object {
         /**
          * By designating content to follow the AR device, it will keep that content near the device
          * camera and typically within the field of view, even as the device moves around.
          *
-         * @param session The current [Session] instance.
+         * The [Session] is required to access the device's tracking state and to perform pose
+         * transformations between coordinate spaces.
+         *
+         * @param session The current [Session] instance used to track the device and transform
+         *   poses.
          */
         public fun ArDevice(session: Session): FollowTarget = ArDeviceTarget(session)
 
         /**
          * Targeting an anchor allows content to be positioned relative to that anchor's location.
          *
-         * @param anchorEntity represents the anchor which this
+         * @param anchorSpace represents the anchor which this
          *   [androidx.xr.compose.spatial.FollowingSubspace] will be tethered to. As the anchor
          *   moves, so will the [androidx.xr.compose.spatial.FollowingSubspace]
          */
-        public fun Anchor(anchorEntity: AnchorEntity): FollowTarget = AnchorTarget(anchorEntity)
+        public fun Anchor(anchorSpace: AnchorSpace): FollowTarget = AnchorTarget(anchorSpace)
     }
 }
 
+@OptIn(ExperimentalFollowingSubspaceApi::class)
 internal interface FollowTargetFlow : FollowTarget {
     val poseUpdates: Flow<Pose>
 }
 
 /** A concrete [FollowTarget] that wraps the head pose updates from [ArDevice]. */
+@OptIn(ExperimentalFollowingSubspaceApi::class)
 internal class ArDeviceTarget(private val session: Session) : FollowTargetFlow {
     // Distance to stay away from the target when following it.
     val offset: Pose = DEFAULT_OFFSET
 
     override val poseUpdates: Flow<Pose> =
-        ArDevice.getInstance(session)
-            .state
-            // TODO(b/448689233): Initial head pose data is not reliable.
-            .onStart { delay(INITIAL_POSE_DELAY_MS) }
-            .map { state ->
-                session.scene.perceptionSpace.transformPoseTo(
-                    state.devicePose,
-                    session.scene.activitySpace,
-                )
-            }
+        ArDevice.getInstance(session = session).state.map { state ->
+            session.scene.perceptionSpace.transformPoseTo(
+                pose = state.devicePose,
+                destination = session.scene.activitySpace,
+            )
+        }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ArDeviceTarget) return false
+
         return session == other.session
     }
 
@@ -491,45 +685,54 @@ internal class ArDeviceTarget(private val session: Session) : FollowTargetFlow {
     }
 
     internal companion object {
-        const val INITIAL_POSE_DELAY_MS: Long = 1000
         // Distance to stay away from the target in meters.
-        val DEFAULT_OFFSET: Pose = Pose(translation = Vector3(0f, 0f, -.5f))
+        val DEFAULT_OFFSET: Pose = Pose(translation = Vector3(x = 0f, y = 0f, z = -.5f))
     }
 }
 
 /**
- * A Trackable Anchor entity that wraps an [AnchorEntity] from SceneCore and implements
+ * A Trackable Anchor entity that wraps an [AnchorSpace] from SceneCore and implements
  * [FollowTarget] to provide a stream of pose updates.
  *
- * This implementation is designed to be constructed directly from an existing [AnchorEntity]
+ * This implementation is designed to be constructed directly from an existing [AnchorSpace]
  * instance provided by the developer.
  */
-internal class AnchorTarget(val anchorEntity: AnchorEntity) : FollowTargetFlow {
+@OptIn(ExperimentalFollowingSubspaceApi::class)
+internal class AnchorTarget(val anchorSpace: AnchorSpace) : FollowTargetFlow {
     private val pose: Pose
-        get() = anchorEntity.getPose(Space.ACTIVITY)
+        get() = anchorSpace.getPose(Space.ACTIVITY)
 
     /**
-     * A Flow that emits the latest pose updates whenever the underlying [AnchorEntity] is updated
-     * by the system's perception stack.
+     * A Flow that emits the latest pose updates whenever the underlying [AnchorSpace] is updated by
+     * the system's perception stack.
      */
     override val poseUpdates: Flow<Pose> = callbackFlow {
         // Send the initial pose immediately upon collection.
-        trySend(pose)
+        trySend(element = pose)
 
         val updateListener = Runnable { trySend(pose) }
-        anchorEntity.setOnOriginChangedListener(updateListener)
+        anchorSpace.addOriginChangedListener(updateListener)
 
         // Unregister the listener when the collector cancels or finishes.
-        awaitClose { anchorEntity.setOnOriginChangedListener(null) }
+        awaitClose {
+            try {
+                if (!anchorSpace.isDisposed) {
+                    anchorSpace.removeOriginChangedListener(updateListener)
+                }
+            } catch (_: RuntimeException) {
+                // The anchor was disposed before we could remove the listener.
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is AnchorTarget) return false
-        return anchorEntity == other.anchorEntity
+
+        return anchorSpace == other.anchorSpace
     }
 
     override fun hashCode(): Int {
-        return anchorEntity.hashCode()
+        return anchorSpace.hashCode()
     }
 }

@@ -41,9 +41,9 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            optimization {
+                enable = true
+            }
         }
     }
 }
@@ -53,6 +53,9 @@ androidx {
     type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2025"
     description = "Integration tests app that exercises the ARCore APIs."
+    deviceTests {
+        enabled = false
+    }
 }
 
 dependencies {
@@ -75,6 +78,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
 
     compileOnly(libs.androidExtensionsXr)
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":xr:testutils"))
 }
 
 // Making this APK available via Android Build

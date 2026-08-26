@@ -59,6 +59,7 @@ internal constructor(
 public interface SemanticsPropertyReceiver {
     public operator fun <T> set(key: SemanticsPropertyKey<T>, value: T?)
 
+    @Suppress("HiddenAbstractMethodInInterface")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public operator fun <T> get(key: SemanticsPropertyKey<T>): T?
 }
@@ -116,7 +117,6 @@ internal data class SemanticsModifier(
     val mergeMode: Mode,
     val properties: Map<SemanticsPropertyKey<*>, Any?>,
 ) : RemoteModifier.Element {
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun RemoteStateScope.toRecordingModifierElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.SemanticsModifier(
             CoreSemantics().apply {
@@ -151,7 +151,6 @@ private fun fromRole(role: Role?): AccessibleComponent.Role? {
  * Scope provided by semantics {} blocks, letting you set key/value pairs primarily via extension
  * functions.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class AccessibilitySemantics : SemanticsPropertyReceiver {
     internal val props: MutableMap<SemanticsPropertyKey<*>, Any?> = mutableMapOf()
 

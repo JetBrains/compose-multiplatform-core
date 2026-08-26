@@ -23,8 +23,8 @@ import kotlin.collections.Map
 
 /**
  * Source Files:
- * FakeAllPrimitiveParamsImpl.....kt
- * FakeSchemas.....kt
+ * FakeAllPrimitiveParamsImpl.kt
+ * FakeSchemas.kt
  */
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$FakeAllPrimitiveArrayParamsImpl_AppFunctionInventory` : AppFunctionInventory {
@@ -133,6 +133,8 @@ public class `$FakeAllPrimitiveArrayParamsImpl_AppFunctionInventory` : AppFuncti
             isNullable = false,
             description = "",
             enumValues = null,
+            pattern = null,
+            format = null,
         )
 
     private val PARAMETER_METADATA_ARG5_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
@@ -190,6 +192,8 @@ public class `$FakeAllPrimitiveArrayParamsImpl_AppFunctionInventory` : AppFuncti
             isNullable = true,
             description = "",
             enumValues = null,
+            pattern = null,
+            format = null,
         )
 
     private val PARAMETER_METADATA_ARG8_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =

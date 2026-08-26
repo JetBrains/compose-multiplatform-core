@@ -26,6 +26,7 @@ import android.view.View.AUTOFILL_TYPE_TOGGLE
 import android.view.ViewStructure
 import android.view.autofill.AutofillValue
 import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import androidx.autofill.HintConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -37,6 +38,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,6 +79,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -84,7 +87,6 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -95,7 +97,7 @@ import org.junit.runner.RunWith
 // TODO(MNUZEN): split into filling / saving etc. when more of Autofill goes live and more
 // data types are supported.
 class PerformAndroidAutofillManagerTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     private val height = 200.dp
     private val width = 200.dp
 
@@ -1777,6 +1779,78 @@ class PerformAndroidAutofillManagerTest {
             )
     }
 
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun dispatchProvideAutofillStructure_semanticsAndAndroidViewBothPresent() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Column {
+                Box(
+                    Modifier.size(height, width)
+                        .toggleable(value = true, onValueChange = {})
+                        .testTag(contentTag)
+                )
+                AndroidView(
+                    factory = { context ->
+                        EditText(context).apply {
+                            hint = "Username"
+                            inputType = InputType.TYPE_CLASS_TEXT
+                        }
+                    },
+                    modifier = Modifier.size(height, width),
+                )
+            }
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.dispatchProvideAutofillStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure.virtualId).isEqualTo(AccessibilityNodeProviderCompat.HOST_VIEW_ID)
+        assertThat(viewStructure.packageName).isEqualTo(view.context.applicationInfo.packageName)
+        assertThat(viewStructure.bounds).isEqualTo(Rect(0, 0, width.dpToPx(), 2 * height.dpToPx()))
+        assertThat(viewStructure.autofillId).isEqualTo(view.autofillId)
+        assertThat(viewStructure.isEnabled).isTrue()
+        assertThat(viewStructure.dataIsSensitive).isTrue()
+
+        assertThat(viewStructure.children).hasSize(2)
+
+        val editTextStructure = viewStructure.children[0]
+        assertThat(editTextStructure.bounds)
+            .isEqualTo(Rect(0, height.dpToPx(), width.dpToPx(), 2 * height.dpToPx()))
+        assertThat(editTextStructure.className).isEqualTo(EditText::class.java.name)
+        assertThat(editTextStructure.autofillType).isEqualTo(AUTOFILL_TYPE_TEXT)
+        assertThat(editTextStructure.hint).isEqualTo("Username")
+        assertThat(editTextStructure.inputType).isEqualTo(InputType.TYPE_CLASS_TEXT)
+
+        val toggleStructure = viewStructure.children[1]
+        assertThat(toggleStructure)
+            .isEqualTo(
+                FakeViewStructure().apply {
+                    virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                    packageName = view.context.applicationInfo.packageName
+                    bounds = Rect(0, 0, width.dpToPx(), height.dpToPx())
+                    autofillId = view.autofillId
+                    isCheckable = true
+                    isFocusable = true
+                    autofillType = AUTOFILL_TYPE_TOGGLE
+                    autofillValue = AutofillValue.forToggle(true)
+                    dataIsSensitive = true
+                    isEnabled = true
+                    isChecked = true
+                    isClickable = true
+                    visibility = View.VISIBLE
+                }
+            )
+    }
+
     // ============================================================================================
     // Tests to verify Autofillable components can properly perform autofill.
     // ============================================================================================
@@ -1878,13 +1952,12 @@ class PerformAndroidAutofillManagerTest {
         val toggleTag = "toggle_id"
 
         val newToggleValue = false
-        var checked = true
-        val onCheckedChange: (Boolean) -> Unit = { checked = it }
+        var checked by mutableStateOf(true)
 
         rule.setContent {
             view = LocalView.current
             Box(
-                Modifier.toggleable(value = checked, onValueChange = onCheckedChange)
+                Modifier.toggleable(value = checked, onValueChange = { checked = it })
                     .testTag(toggleTag)
             )
         }

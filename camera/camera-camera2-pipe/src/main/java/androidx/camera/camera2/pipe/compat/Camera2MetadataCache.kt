@@ -28,7 +28,6 @@ import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
 import androidx.camera.camera2.pipe.config.CameraPipeContext
 import androidx.camera.camera2.pipe.core.Debug
@@ -55,14 +54,13 @@ constructor(
     @CameraPipeContext private val cameraPipeContext: Context,
     private val threads: Threads,
     private val permissions: Permissions,
-    private val cameraMetadataConfig: CameraPipe.CameraMetadataConfig,
     private val timeSource: TimeSource,
 ) : Camera2MetadataProvider {
 
     @GuardedBy("cache") private val cache = ArrayMap<String, CameraMetadata>()
 
     @GuardedBy("extensionCache")
-    private val extensionCache = ArrayMap<String, CameraExtensionMetadata>()
+    private val extensionCache = ArrayMap<String, ArrayMap<Int, CameraExtensionMetadata>>()
 
     @GuardedBy("extensionCharacteristicsCache")
     private val extensionCharacteristicsCache = ArrayMap<String, CameraExtensionCharacteristics>()
@@ -84,7 +82,7 @@ constructor(
         extension: Int,
     ): CameraExtensionMetadata {
         synchronized(extensionCache) {
-            val existing = extensionCache[cameraId.value]
+            val existing = extensionCache[cameraId.value]?.get(extension)
             if (existing != null) {
                 return existing
             }
@@ -117,14 +115,19 @@ constructor(
         extension: Int,
     ): CameraExtensionMetadata {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return Debug.trace("$cameraId#awaitExtensionMetadata") {
+            return Debug.trace("$cameraId#awaitExtensionMetadata($extension)") {
                 synchronized(extensionCache) {
-                    val existing = extensionCache[cameraId.value]
+                    val existing = extensionCache[cameraId.value]?.get(extension)
                     if (existing != null) {
                         return@trace existing
                     } else if (!isMetadataRedacted()) {
                         val result = createCameraExtensionMetadata(cameraId, false, extension)
-                        extensionCache[cameraId.value] = result
+                        var extensionMap = extensionCache[cameraId.value]
+                        if (extensionMap == null) {
+                            extensionMap = ArrayMap()
+                            extensionCache[cameraId.value] = extensionMap
+                        }
+                        extensionMap[extension] = result
                         return@trace result
                     }
                 }
@@ -165,18 +168,11 @@ constructor(
 
                 // Merge the camera specific and global cache blocklists together.
                 // this will prevent these values from being cached after first access.
-                val cameraBlocklist =
-                    if (shouldBlockSensorOrientationCache(characteristics)) {
-                        (cameraMetadataConfig.cameraCacheBlocklist[cameraId] ?: emptySet()) +
-                            CameraCharacteristics.SENSOR_ORIENTATION
-                    } else {
-                        cameraMetadataConfig.cameraCacheBlocklist[cameraId]
-                    }
                 val cacheBlocklist =
-                    if (cameraBlocklist == null) {
-                        cameraMetadataConfig.cacheBlocklist
+                    if (shouldBlockSensorOrientationCache(characteristics)) {
+                        setOf(CameraCharacteristics.SENSOR_ORIENTATION)
                     } else {
-                        cameraMetadataConfig.cacheBlocklist + cameraBlocklist
+                        emptySet()
                     }
 
                 val cameraMetadata =
@@ -264,22 +260,23 @@ constructor(
             if (existing != null) {
                 return existing
             }
+            Log.debug { "Retrieving CameraExtensionCharacteristics for $cameraId" }
+            val cameraManager =
+                cameraPipeContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+            val extensionCharacteristics =
+                Api31Compat.getCameraExtensionCharacteristics(cameraManager, cameraId.value)
+
+            // This technically shouldn't be null per documentation, but we suspect it could be
+            // under certain devices in certain situations.
+            @Suppress("RedundantRequireNotNullCall")
+            checkNotNull(extensionCharacteristics) {
+                "Failed to get CameraExtensionCharacteristics for $cameraId!"
+            }
+
+            extensionCharacteristicsCache[cameraId.value] = extensionCharacteristics
+            return extensionCharacteristics
         }
-        Log.debug { "Retrieving CameraExtensionCharacteristics for $cameraId" }
-        val cameraManager =
-            cameraPipeContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-
-        val extensionCharacteristics =
-            Api31Compat.getCameraExtensionCharacteristics(cameraManager, cameraId.value)
-
-        // This technically shouldn't be null per documentation, but we suspect it could be
-        // under certain devices in certain situations.
-        @Suppress("RedundantRequireNotNullCall")
-        checkNotNull(extensionCharacteristics) {
-            "Failed to get CameraExtensionCharacteristics for $cameraId!"
-        }
-
-        return extensionCharacteristics
     }
 
     private fun isMetadataRedacted(): Boolean = !permissions.hasCameraPermission

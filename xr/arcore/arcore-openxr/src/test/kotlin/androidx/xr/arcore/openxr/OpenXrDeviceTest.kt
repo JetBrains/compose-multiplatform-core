@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before

@@ -49,6 +49,7 @@ import androidx.camera.core.concurrent.CameraCoordinator.CameraOperatingMode
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraConfig
 import androidx.camera.core.impl.CameraConfigs
+import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
 import androidx.camera.core.impl.UseCaseConfig
@@ -348,12 +349,8 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
     override fun bindToLifecycle(singleCameraConfigs: List<SingleCameraConfig?>): ConcurrentCamera =
         trace("CX:bindToLifecycle-Concurrent") {
             if (singleCameraConfigs.size < 2) {
-                throw IllegalArgumentException("Concurrent camera needs two camera configs.")
-            }
-
-            if (singleCameraConfigs.size > 2) {
                 throw IllegalArgumentException(
-                    "Concurrent camera is only supporting two cameras at maximum."
+                    "Concurrent camera needs at least two camera configs."
                 )
             }
 
@@ -363,12 +360,17 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             val cameras: MutableList<Camera> = ArrayList()
             if (
                 firstCameraConfig.cameraSelector.lensFacing ==
-                    secondCameraConfig.cameraSelector.lensFacing
-            ) {
+                    secondCameraConfig.cameraSelector.lensFacing &&
+                    firstCameraConfig.cameraSelector.physicalCameraId != null &&
+                    secondCameraConfig.cameraSelector.physicalCameraId != null
+            ) { // Dual Selfie Mode
                 if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
                     throw UnsupportedOperationException(
                         "Camera is already running, call unbindAll() before binding more cameras."
                     )
+                }
+                if (singleCameraConfigs.size > 2) {
+                    throw IllegalArgumentException("Dual selfie is only supporting two cameras.")
                 }
                 if (
                     firstCameraConfig.lifecycleOwner != secondCameraConfig.lifecycleOwner ||
@@ -391,7 +393,9 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                     // Connect physical camera id with use case.
                     for (useCase: UseCase in config!!.useCaseGroup.useCases) {
                         config.cameraSelector.physicalCameraId?.let {
-                            useCase.setPhysicalCameraId(it)
+                            if (useCase.physicalCameraId == null) {
+                                useCase.setPhysicalCameraId(it)
+                            }
                         }
                     }
                     useCases.addAll(config.useCaseGroup.useCases)
@@ -411,6 +415,33 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                     )
                 cameras.add(camera)
             } else {
+                val cameraInfosToBind =
+                    try {
+                        singleCameraConfigs.map { config -> getCameraInfo(config!!.cameraSelector) }
+                    } catch (e: IllegalArgumentException) {
+                        throw IllegalArgumentException(
+                            "Invalid camera selectors in camera configs.",
+                            e,
+                        )
+                    }
+
+                val isCombinationSupported =
+                    availableConcurrentCameraInfos.any { supportedCombination ->
+                        supportedCombination.size == cameraInfosToBind.size &&
+                            supportedCombination
+                                .map { (it as CameraInfoInternal).cameraId }
+                                .toSet() ==
+                                cameraInfosToBind
+                                    .map { (it as CameraInfoInternal).cameraId }
+                                    .toSet()
+                    }
+
+                if (!isCombinationSupported) {
+                    throw IllegalArgumentException(
+                        "The camera configs do not match any supported concurrent camera combination."
+                    )
+                }
+
                 if (!context!!.packageManager.hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
                     throw UnsupportedOperationException(
                         "Concurrent camera is not supported on the device."
@@ -423,17 +454,6 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                     )
                 }
 
-                val cameraInfosToBind: MutableList<CameraInfo> = ArrayList()
-                val firstCameraInfo: CameraInfo
-                val secondCameraInfo: CameraInfo
-                try {
-                    firstCameraInfo = getCameraInfo(firstCameraConfig.cameraSelector)
-                    secondCameraInfo = getCameraInfo(secondCameraConfig.cameraSelector)
-                } catch (_: IllegalArgumentException) {
-                    throw IllegalArgumentException("Invalid camera selectors in camera configs.")
-                }
-                cameraInfosToBind.add(firstCameraInfo)
-                cameraInfosToBind.add(secondCameraInfo)
                 if (
                     activeConcurrentCameraInfos.isNotEmpty() &&
                         cameraInfosToBind != activeConcurrentCameraInfos
@@ -513,7 +533,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                 for (cameraSelectors in concurrentCameraSelectorLists) {
                     val cameraInfos: MutableList<CameraInfo> = ArrayList()
                     for (cameraSelector in cameraSelectors) {
-                        var cameraInfo: CameraInfo
+                        val cameraInfo: CameraInfo
                         try {
                             cameraInfo = getCameraInfo(cameraSelector)
                         } catch (_: IllegalArgumentException) {
@@ -521,7 +541,11 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                         }
                         cameraInfos.add(cameraInfo)
                     }
-                    availableConcurrentCameraInfos.add(cameraInfos)
+
+                    // CameraX currently can only handle 2 cameras
+                    if (cameraInfos.size == 2) {
+                        availableConcurrentCameraInfos.add(cameraInfos)
+                    }
                 }
                 return@trace availableConcurrentCameraInfos
             }
@@ -611,6 +635,15 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                     primaryCameraSelector,
                     secondaryCameraSelector,
                 )
+
+            // Connect physical camera id with use cases if specified and unset for single camera
+            if (finalSecondaryCameraSelector == null) {
+                finalPrimaryCameraSelector.physicalCameraId?.let { physicalCameraId ->
+                    sessionConfig.useCases
+                        .filter { it.physicalCameraId == null }
+                        .forEach { it.setPhysicalCameraId(physicalCameraId) }
+                }
+            }
 
             // TODO(b/153096869): override UseCase's target rotation.
 
@@ -730,18 +763,23 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             val cameraInfoInternal =
                 cameraSelector.select(cameraX!!.cameraRepository.cameras).cameraInfoInternal
             val cameraConfig = getCameraConfig(cameraSelector, cameraInfoInternal)
-
+            val physicalCameraId = cameraSelector.physicalCameraId
             val key =
                 CameraIdentifier.Factory.create(
-                    cameraInfoInternal.cameraId,
-                    null,
+                    listOf(
+                        CameraIdentifier.CompositeCameraId(
+                            cameraInfoInternal.cameraId,
+                            physicalCameraId,
+                        )
+                    ),
                     cameraConfig.compatibilityId,
                 )
             var adapterCameraInfo: AdapterCameraInfo?
             synchronized(lock) {
                 adapterCameraInfo = cameraInfoMap[key]
                 if (adapterCameraInfo == null) {
-                    adapterCameraInfo = AdapterCameraInfo(cameraInfoInternal, cameraConfig)
+                    adapterCameraInfo =
+                        AdapterCameraInfo(cameraInfoInternal, physicalCameraId, cameraConfig)
                     cameraInfoMap[key] = adapterCameraInfo
                 }
             }

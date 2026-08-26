@@ -176,11 +176,13 @@ public class ActivitySpaceImpl(
 
     internal var sceneParentScaleAbs: Vector3 = Vector3.One
 
+    private val lastSceneParentTransform = AtomicReference<Matrix4?>(null)
+
     /**
      * Handles the updates to scene core root transform.
      * <pre>
      * Hierarchy:
-     * OpenXR Unbounded Reference Space Origin
+     * Platform Reference Space Origin (OpenXR Unbounded in XROS)
      * └── Scene Parent Node (Intermediate system-managed node)
      * └── Scene Root Node (ActivitySpace Node)
      *
@@ -191,20 +193,23 @@ public class ActivitySpaceImpl(
      * </pre>
      * <p>By inverting the inherited scale and roll and pitch rotations of the scene parent
      * transform, SceneCore effectively re-orients the ActivitySpace to be unscaled and
-     * gravity-aligned like its grandparent OpenXR unbounded space, while preserving its yaw
-     * rotation (i.e. facing user direction).
+     * gravity-aligned like its grandparent platform unbounded space (OpenXR Unbounded in XROS),
+     * while preserving its yaw rotation (i.e. facing user direction).
      *
      * <p>To maintain continuity when entering FSM, SceneCore provides the original rotation and
      * scale of the scene parent transform via the onSpatialModeChanged callback. This ensures FSM
      * continuity when spatial modes change.
      *
-     * @param newTransform New scene parent transform relative to OpenXR unbounded reference space.
+     * @param newTransform New scene parent transform relative to platform reference space (OpenXR
+     *   Unbounded in XROS).
      */
     public fun handleOriginUpdate(newTransform: Matrix4) {
-        openXrReferenceSpaceTransform.set(newTransform)
+        if (lastSceneParentTransform.getAndSet(newTransform) == newTransform) {
+            return
+        }
         var activitySpaceRotation = Quaternion.Identity
         if (unscaledGravityAlignedActivitySpace) {
-            // Get the absolute scale of the scene parent)
+            // Get the absolute scale of the scene parent
             sceneParentScaleAbs = Vector3.abs(newTransform.scale)
             val sceneParentScaleInv = sceneParentScaleAbs.inverse()
             // Get the unscaled rotation of the activity space.

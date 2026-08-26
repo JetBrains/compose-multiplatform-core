@@ -31,6 +31,7 @@ import androidx.compose.ui.inspection.framework.flatten
 import androidx.compose.ui.inspection.framework.hasSlotTable
 import androidx.compose.ui.inspection.framework.isAndroidComposeView
 import androidx.compose.ui.inspection.framework.signature
+import androidx.compose.ui.inspection.inspector.InlineClassConverter
 import androidx.compose.ui.inspection.inspector.InspectorNode
 import androidx.compose.ui.inspection.inspector.LayoutInspectorTree
 import androidx.compose.ui.inspection.inspector.NodeParameterReference
@@ -128,8 +129,10 @@ class ComposeLayoutInspector(
 
     private val rootsDetector = RootsDetector(environment)
     private val anchorMap = AnchorMap()
-    private val layoutInspectorTree = LayoutInspectorTree(anchorMap)
-    private val recompositionHandler = StateReadHandler(environment.artTooling(), anchorMap)
+    private val inlineClassConverter = InlineClassConverter()
+    private val layoutInspectorTree = LayoutInspectorTree(anchorMap, inlineClassConverter)
+    private val recompositionHandler =
+        StateReadHandler(environment.artTooling(), anchorMap, inlineClassConverter, rootsDetector)
     private var delayParameterExtractions = false
     // Reduce the protobuf nesting of ComposableNode by storing nested nodes with only 1 child each
     // as children under the top node. This limits the stack used when computing the protobuf size.
@@ -158,7 +161,7 @@ class ComposeLayoutInspector(
     override fun onDispose() {
         disposed = true
         recompositionHandler.dispose()
-        cachedNodes.clear()
+        _cachedNodes.clear()
     }
 
     override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
@@ -209,6 +212,16 @@ class ComposeLayoutInspector(
         getComposablesCommand: GetComposablesCommand,
         callback: CommandCallback,
     ) {
+        if (
+            getComposablesCommand.allowEmptyIfUnchanged &&
+                !recompositionHandler.hasNewRecompositions
+        ) {
+            callback.reply {
+                getComposablesResponse =
+                    GetComposablesResponse.newBuilder().apply { unchanged = true }.build()
+            }
+            return
+        }
         val data =
             getComposableNodes(
                 getComposablesCommand.rootViewId,

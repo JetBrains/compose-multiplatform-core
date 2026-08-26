@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
 import android.hardware.display.DisplayManager
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.MoveEventListener
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.ResizeEvent
 import androidx.xr.scenecore.runtime.ResizeEventListener
 import androidx.xr.scenecore.runtime.SurfaceEntity
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import androidx.xr.scenecore.testing.FakeSurfaceFeature
 import com.android.extensions.xr.node.Node
@@ -53,6 +56,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 
@@ -63,7 +67,7 @@ class ResizableComponentImplTest {
         Robolectric.buildActivity(Activity::class.java)
     private val activity: Activity = activityController.create().start().get()
     private val fakeExecutor = FakeScheduledExecutorService()
-    private val xrExtensions = getXrExtensions()!!
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
     private val sceneNodeRegistry = SceneNodeRegistry()
     private val panelShadowRenderer: EntityShadowRenderer = mock<EntityShadowRenderer>()
     private val nodeRepository: NodeRepository = NodeRepository.getInstance()
@@ -804,7 +808,8 @@ class ResizableComponentImplTest {
 
     @Test
     fun addMoveAndResizeComponents_removingMoveKeepsResize() {
-        val entity = createTestEntity() as AndroidXrEntity
+        val panelDimensions = Dimensions(2.0f, 1.0f, 0.0f)
+        val entity = createTestPanelEntity(Pose(), panelDimensions) as PanelEntityImpl
 
         assertThat(entity).isNotNull()
 
@@ -1022,6 +1027,10 @@ class ResizableComponentImplTest {
 
         var resizeEvent = resizeEventCaptor.lastValue
 
+        // Since hideEntityContent/restoreEntityContent now post UI updates to the main thread,
+        // we must idle the looper to ensure those tasks are executed before verifying results.
+        shadowOf(Looper.getMainLooper()).idle()
+
         assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_START)
         assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f)
 
@@ -1035,6 +1044,8 @@ class ResizableComponentImplTest {
 
         sendResizeEvent(entity.getNode(), endReformEvent)
 
+        shadowOf(Looper.getMainLooper()).idle()
+
         assertThat(fakeExecutor.hasNext()).isTrue()
         // Verify that alpha is not restored until the resize event is processed.
         assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f)
@@ -1043,6 +1054,8 @@ class ResizableComponentImplTest {
 
         verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture())
         resizeEvent = resizeEventCaptor.allValues[2]
+
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_END)
         // Verify that alpha is restored after the resize event is processed.
@@ -1450,6 +1463,10 @@ class ResizableComponentImplTest {
             ),
         )
 
+        // Since hideEntityContent/restoreEntityContent now post UI updates to the main thread,
+        // we must idle the looper to ensure those tasks are executed before verifying results.
+        shadowOf(Looper.getMainLooper()).idle()
+
         // Verify content is hidden.
         assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f)
 
@@ -1458,6 +1475,8 @@ class ResizableComponentImplTest {
             entity.getNode(),
             ShadowReformEvent.create(ReformEvent.REFORM_TYPE_MOVE, 0, 0),
         )
+
+        shadowOf(Looper.getMainLooper()).idle()
 
         // Verify alpha is restored because a non-resize event was received.
         assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f)
@@ -1486,6 +1505,10 @@ class ResizableComponentImplTest {
                 0,
             ),
         )
+
+        // Since hideEntityContent/restoreEntityContent now post UI updates to the main thread,
+        // we must idle the looper to ensure those tasks are executed before verifying results.
+        shadowOf(Looper.getMainLooper()).idle()
 
         // Verify content is hidden.
         assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f)
@@ -1524,6 +1547,80 @@ class ResizableComponentImplTest {
 
         // VERIFY: The consumer should NOT be registered again, because there are no listeners.
         assertThat(entity.reformEventConsumerMap).isEmpty()
+    }
+
+    @Test
+    fun resizableComponent_defersAlphaRestore_whenMainPanelEntityIsWaitingForSetSize() {
+
+        val entity = fakeSceneRuntime.mainPanelEntity as MainPanelEntityImpl
+        val resizableComponent =
+            ResizableComponentImpl(
+                MoreExecutors.newDirectExecutorService(),
+                xrExtensions,
+                MIN_DIMENSIONS,
+                MAX_DIMENSIONS,
+            )
+
+        assertThat(entity.addComponent(resizableComponent)).isTrue()
+        entity.setAlpha(0.9f)
+
+        val mockResizeEventListener = mock<ResizeEventListener>()
+        resizableComponent.addResizeEventListener(
+            MoreExecutors.directExecutor(),
+            mockResizeEventListener,
+        )
+
+        // 1. Start a resize event to hide the entity content.
+        sendAndProcessReformEvent(
+            entity.getNode(),
+            ShadowReformEvent.create(
+                ReformEvent.REFORM_TYPE_RESIZE,
+                ReformEvent.REFORM_STATE_START,
+                0,
+            ),
+        )
+
+        // Since hideEntityContent/restoreEntityContent now post UI updates to the main thread,
+        // we must idle the looper to ensure those tasks are executed before verifying results.
+        shadowOf(Looper.getMainLooper()).idle()
+        // Verify the entity content is successfully hidden.
+        assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f)
+
+        // 2. Pause the setMainWindowSize callback to simulate an in-flight IPC call.
+        val shadowExtensions =
+            android.extensions.xr.ShadowXrExtensions.extract(xrExtensions.underlyingObject)
+        shadowExtensions.deferSetMainWindowSizeCallbacks(true)
+
+        // Trigger a size update, which will now be pending due to the paused callback.
+        entity.size = Dimensions(100f, 100f, 100f)
+        assertThat(entity.isWaitingForSetSize()).isTrue()
+
+        // 3. End the resize event
+        // This triggers the localReformEventConsumer which should evaluate the anti-flicker logic.
+        sendAndProcessReformEvent(
+            entity.getNode(),
+            ShadowReformEvent.create(
+                ReformEvent.REFORM_TYPE_RESIZE,
+                ReformEvent.REFORM_STATE_END,
+                0,
+            ),
+        )
+
+        shadowOf(Looper.getMainLooper()).idle()
+
+        // Verify: The entity content must remain hidden because the IPC call is still pending.
+        assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f)
+
+        // 4. Send the pending callback of setMainWindowSize to simulate IPC completion.
+        shadowExtensions.flushSetMainWindowSizeCallbacks(activity)
+
+        shadowOf(Looper.getMainLooper()).idle()
+
+        // Verify: The content is finally restored by the completion listener.
+        assertThat(nodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f)
+
+        // 5. Cleanup
+        shadowExtensions.deferSetMainWindowSizeCallbacks(false)
     }
 
     companion object {

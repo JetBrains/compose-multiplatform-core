@@ -23,6 +23,7 @@ import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.CoreText
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
+import androidx.compose.remote.core.operations.layout.managers.TextStyle
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemoteComposeWriter.hTag
@@ -49,19 +50,23 @@ fun RcTextDemo8(): RemoteComposeContext {
                 vertical = RowLayout.CENTER,
             ) {
                 column(Modifier.horizontalWeight(1f).background(Color.YELLOW)) {
-                    text("New Arsenal Game", maxLines = 1, overflow = CoreText.OVERFLOW_ELLIPSIS)
-                    text(
+                    advancedText(
+                        "New Arsenal Game",
+                        maxLines = 1,
+                        overflow = CoreText.OVERFLOW_ELLIPSIS,
+                    )
+                    advancedText(
                         "Arsenal vs Bayern Munich",
                         fontSize = 64f,
                         maxLines = 3,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
-                    text(
+                    advancedText(
                         "UEFA Champions League Group Stage",
                         maxLines = 2,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
-                    text(
+                    advancedText(
                         "Wednesday 26th November",
                         maxLines = 1,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
@@ -77,7 +82,7 @@ fun RcTextDemo8(): RemoteComposeContext {
                         BoxLayout.CENTER,
                         BoxLayout.CENTER,
                     ) {
-                        text("IMG")
+                        advancedText("IMG")
                     }
                 }
             }
@@ -635,26 +640,329 @@ fun RcTextDemo(): RemoteComposeContext {
     }
 }
 
-@Preview @Composable private fun RcCardAutosizePreview() = RemoteDocPreview(RcTextDemo2b())
+@Suppress("RestrictedApiAndroidX")
+fun RcTextAlignmentDemo(): RemoteComposeContext {
+    return RemoteComposeContextAndroid(
+        AndroidxRcPlatformServices(),
+        7,
+        hTag(Header.DOC_WIDTH, 600),
+        hTag(Header.DOC_HEIGHT, 1150),
+        hTag(Header.FEATURE_PAINT_MEASURE, 0),
+        hTag(Header.DOC_CONTENT_DESCRIPTION, "Text Alignment Demo"),
+        hTag(Header.DOC_PROFILES, RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL),
+    ) {
+        root {
+            column(Modifier.fillMaxSize().background(0xFFF0F2F5.toInt()).padding(16)) {
+                // Section 1: Fixed Size Single-Line Text
+                row(Modifier.fillMaxWidth().background(0xFF1E293B.toInt()).padding(8)) {
+                    text(
+                        "1. Fixed Size Text (Single Line)",
+                        Modifier.fillMaxWidth(),
+                        color = Color.WHITE,
+                        fontWeight = 700f,
+                        fontSize = 16f,
+                    )
+                }
+                box(Modifier.height(6))
+                column(Modifier.fillMaxWidth().background(Color.WHITE).padding(10)) {
+                    text(
+                        "Left Aligned",
+                        Modifier.fillMaxWidth().background(0xFFE2E8F0.toInt()).padding(4),
+                        fontSize = 16f,
+                        textAlign = CoreText.TEXT_ALIGN_LEFT,
+                    )
+                    box(Modifier.height(6))
+                    text(
+                        "Center Aligned",
+                        Modifier.fillMaxWidth().background(0xFFFEF3C7.toInt()).padding(4),
+                        fontSize = 16f,
+                        textAlign = CoreText.TEXT_ALIGN_CENTER,
+                    )
+                    box(Modifier.height(6))
+                    text(
+                        "Right Aligned",
+                        Modifier.fillMaxWidth().background(0xFFD1FAE5.toInt()).padding(4),
+                        fontSize = 16f,
+                        textAlign = CoreText.TEXT_ALIGN_RIGHT,
+                    )
+                }
 
-@Preview @Composable private fun RcTextDemoPreview() = RemoteDocPreview(RcTextDemo())
+                box(Modifier.height(14))
 
-@Preview @Composable private fun RcTextDemo2Preview() = RemoteDocPreview(RcTextDemo2())
+                // Section 2: Autosize Single-Line Text
+                row(Modifier.fillMaxWidth().background(0xFF1E293B.toInt()).padding(8)) {
+                    text(
+                        "2. Autosize Text (Single Line)",
+                        Modifier.fillMaxWidth(),
+                        color = Color.WHITE,
+                        fontWeight = 700f,
+                        fontSize = 16f,
+                    )
+                }
+                box(Modifier.height(6))
+                column(Modifier.fillMaxWidth().background(Color.WHITE).padding(10)) {
+                    box(Modifier.fillMaxWidth().height(64).background(0xFFE2E8F0.toInt())) {
+                        text(
+                            "Autosize Left",
+                            Modifier.fillMaxSize().padding(2),
+                            autosize = true,
+                            minFontSize = 14f,
+                            maxFontSize = 48f,
+                            textAlign = CoreText.TEXT_ALIGN_LEFT,
+                            hyphenationFrequency = CoreText.HYPHENATION_FREQUENCY_NONE,
+                        )
+                    }
+                    box(Modifier.height(6))
+                    box(Modifier.fillMaxWidth().height(64).background(0xFFFEF3C7.toInt())) {
+                        text(
+                            "Autosize Center",
+                            Modifier.fillMaxSize().padding(2),
+                            autosize = true,
+                            minFontSize = 14f,
+                            maxFontSize = 48f,
+                            textAlign = CoreText.TEXT_ALIGN_CENTER,
+                            hyphenationFrequency = CoreText.HYPHENATION_FREQUENCY_NONE,
+                        )
+                    }
+                    box(Modifier.height(6))
+                    box(Modifier.fillMaxWidth().height(64).background(0xFFD1FAE5.toInt())) {
+                        text(
+                            "Autosize Right",
+                            Modifier.fillMaxSize().padding(2),
+                            autosize = true,
+                            minFontSize = 14f,
+                            maxFontSize = 48f,
+                            textAlign = CoreText.TEXT_ALIGN_RIGHT,
+                            hyphenationFrequency = CoreText.HYPHENATION_FREQUENCY_NONE,
+                        )
+                    }
+                }
 
-@Preview @Composable private fun RcTextDemo3Preview() = RemoteDocPreview(RcTextDemo3())
+                box(Modifier.height(14))
+
+                // Section 3: Fixed Size Multi-Line Text
+                row(Modifier.fillMaxWidth().background(0xFF1E293B.toInt()).padding(8)) {
+                    text(
+                        "3. Fixed Size Text (Multi-Line)",
+                        Modifier.fillMaxWidth(),
+                        color = Color.WHITE,
+                        fontWeight = 700f,
+                        fontSize = 16f,
+                    )
+                }
+                box(Modifier.height(6))
+                row(Modifier.fillMaxWidth()) {
+                    column(
+                        Modifier.horizontalWeight(1f)
+                            .height(105)
+                            .background(0xFFE2E8F0.toInt())
+                            .padding(6)
+                    ) {
+                        text(
+                            "Multiline Left",
+                            fontSize = 11f,
+                            color = Color.DKGRAY,
+                            fontWeight = 700f,
+                        )
+                        text(
+                            "The quick brown fox\njumps over\nthe lazy dog.",
+                            Modifier.fillMaxSize().padding(2),
+                            fontSize = 13f,
+                            textAlign = CoreText.TEXT_ALIGN_LEFT,
+                        )
+                    }
+                    box(Modifier.size(6))
+                    column(
+                        Modifier.horizontalWeight(1f)
+                            .height(105)
+                            .background(0xFFFEF3C7.toInt())
+                            .padding(6)
+                    ) {
+                        text(
+                            "Multiline Center",
+                            fontSize = 11f,
+                            color = Color.DKGRAY,
+                            fontWeight = 700f,
+                        )
+                        text(
+                            "The quick brown fox\njumps over\nthe lazy dog.",
+                            Modifier.fillMaxSize().padding(2),
+                            fontSize = 13f,
+                            textAlign = CoreText.TEXT_ALIGN_CENTER,
+                        )
+                    }
+                    box(Modifier.size(6))
+                    column(
+                        Modifier.horizontalWeight(1f)
+                            .height(105)
+                            .background(0xFFD1FAE5.toInt())
+                            .padding(6)
+                    ) {
+                        text(
+                            "Multiline Right",
+                            fontSize = 11f,
+                            color = Color.DKGRAY,
+                            fontWeight = 700f,
+                        )
+                        text(
+                            "The quick brown fox\njumps over\nthe lazy dog.",
+                            Modifier.fillMaxSize().padding(2),
+                            fontSize = 13f,
+                            textAlign = CoreText.TEXT_ALIGN_RIGHT,
+                        )
+                    }
+                }
+
+                box(Modifier.height(14))
+
+                // Section 4: Autosize Multi-Line Text
+                row(Modifier.fillMaxWidth().background(0xFF1E293B.toInt()).padding(8)) {
+                    text(
+                        "4. Autosize Text (Multi-Line)",
+                        Modifier.fillMaxWidth(),
+                        color = Color.WHITE,
+                        fontWeight = 700f,
+                        fontSize = 16f,
+                    )
+                }
+                box(Modifier.height(6))
+                row(Modifier.fillMaxWidth()) {
+                    column(
+                        Modifier.horizontalWeight(1f)
+                            .height(115)
+                            .background(0xFFE2E8F0.toInt())
+                            .padding(6)
+                    ) {
+                        text(
+                            "Autosize Multi Left",
+                            fontSize = 11f,
+                            color = Color.DKGRAY,
+                            fontWeight = 700f,
+                        )
+                        text(
+                            "Autosized Left\nMulti Line\nParagraph",
+                            Modifier.fillMaxSize().padding(2),
+                            autosize = true,
+                            minFontSize = 10f,
+                            maxFontSize = 22f,
+                            maxLines = 3,
+                            textAlign = CoreText.TEXT_ALIGN_LEFT,
+                        )
+                    }
+                    box(Modifier.size(6))
+                    column(
+                        Modifier.horizontalWeight(1f)
+                            .height(115)
+                            .background(0xFFFEF3C7.toInt())
+                            .padding(6)
+                    ) {
+                        text(
+                            "Autosize Multi Center",
+                            fontSize = 11f,
+                            color = Color.DKGRAY,
+                            fontWeight = 700f,
+                        )
+                        text(
+                            "Autosized Center\nMulti Line\nParagraph",
+                            Modifier.fillMaxSize().padding(2),
+                            autosize = true,
+                            minFontSize = 10f,
+                            maxFontSize = 22f,
+                            maxLines = 3,
+                            textAlign = CoreText.TEXT_ALIGN_CENTER,
+                        )
+                    }
+                    box(Modifier.size(6))
+                    column(
+                        Modifier.horizontalWeight(1f)
+                            .height(115)
+                            .background(0xFFD1FAE5.toInt())
+                            .padding(6)
+                    ) {
+                        text(
+                            "Autosize Multi Right",
+                            fontSize = 11f,
+                            color = Color.DKGRAY,
+                            fontWeight = 700f,
+                        )
+                        text(
+                            "Autosized Right\nMulti Line\nParagraph",
+                            Modifier.fillMaxSize().padding(2),
+                            autosize = true,
+                            minFontSize = 10f,
+                            maxFontSize = 22f,
+                            maxLines = 3,
+                            textAlign = CoreText.TEXT_ALIGN_RIGHT,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RcTextAlignmentDemoPreview() = RemoteDocumentPreview(RcTextAlignmentDemo())
+
+@Preview @Composable private fun RcCardAutosizePreview() = RemoteDocumentPreview(RcTextDemo2b())
+
+@Preview @Composable private fun RcTextDemoPreview() = RemoteDocumentPreview(RcTextDemo())
+
+@Preview @Composable private fun RcTextDemo2Preview() = RemoteDocumentPreview(RcTextDemo2())
+
+@Preview @Composable private fun RcTextDemo3Preview() = RemoteDocumentPreview(RcTextDemo3())
 
 @Preview(group = "alignment")
 @Composable
-private fun RcTextDemo3bPreview() = RemoteDocPreview(RcTextDemo3b())
+private fun RcTextDemo3bPreview() = RemoteDocumentPreview(RcTextDemo3b())
 
-@Preview @Composable private fun RcTextDemo4Preview() = RemoteDocPreview(RcTextDemo4())
+@Preview @Composable private fun RcTextDemo4Preview() = RemoteDocumentPreview(RcTextDemo4())
 
-@Preview @Composable private fun RcTextDemo5Preview() = RemoteDocPreview(RcTextDemo5())
+@Preview @Composable private fun RcTextDemo5Preview() = RemoteDocumentPreview(RcTextDemo5())
 
-@Preview @Composable private fun RcTextDemo6Preview() = RemoteDocPreview(RcTextDemo6())
+@Preview @Composable private fun RcTextDemo6Preview() = RemoteDocumentPreview(RcTextDemo6())
 
-@Preview @Composable private fun RcTextDemo7Preview() = RemoteDocPreview(RcTextDemo7())
+@Preview @Composable private fun RcTextDemo7Preview() = RemoteDocumentPreview(RcTextDemo7())
 
-@Preview @Composable private fun RcTextDemo8Preview() = RemoteDocPreview(RcTextDemo8())
+@Preview @Composable private fun RcTextDemo8Preview() = RemoteDocumentPreview(RcTextDemo8())
 
-@Preview @Composable private fun RcTextDemo9Preview() = RemoteDocPreview(RcTextDemo9())
+@Preview @Composable private fun RcTextDemo9Preview() = RemoteDocumentPreview(RcTextDemo9())
+
+@Suppress("RestrictedApiAndroidX")
+private fun RemoteComposeContext.advancedText(
+    text: String,
+    fontSize: Float = TextStyle.DEFAULT_FONT_SIZE,
+    maxLines: Int = Integer.MAX_VALUE,
+    overflow: Int = 1,
+) {
+    mRemoteWriter.startTextComponent(
+        RecordingModifier(),
+        mRemoteWriter.addText(text),
+        -1, // textStyleId
+        0xFF000000.toInt(),
+        -1, // colorId
+        fontSize,
+        -1f,
+        -1f,
+        0,
+        400f,
+        null,
+        5, // textAlign (start)
+        overflow,
+        maxLines,
+        0f,
+        0f,
+        1f,
+        0,
+        0,
+        0,
+        false,
+        false,
+        null,
+        null,
+        false,
+        0,
+    )
+    mRemoteWriter.endTextComponent()
+}

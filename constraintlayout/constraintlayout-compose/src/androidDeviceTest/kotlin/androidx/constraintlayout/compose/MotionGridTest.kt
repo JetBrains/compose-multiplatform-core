@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -50,7 +49,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class MotionGridTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun setup() {
@@ -257,8 +256,8 @@ class MotionGridTest {
         val columns = 2
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)

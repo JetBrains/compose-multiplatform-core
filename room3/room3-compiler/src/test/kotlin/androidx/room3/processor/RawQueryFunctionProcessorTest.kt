@@ -289,8 +289,8 @@ class RawQueryFunctionProcessorTest {
                 public static class MyDataClass {
                     public String foo;
                     @Relation(
-                        parentColumn = "foo",
-                        entityColumn = "name"
+                        parentColumns = {"foo"},
+                        entityColumns = {"name"}
                     )
                     public java.util.List<User> users;
                 }
@@ -424,7 +424,7 @@ class RawQueryFunctionProcessorTest {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @RawQuery
                 ImmutableMap<java.util.Date, Artist> getAlbumDateWithBandActivity(SupportSQLiteQuery query);
             """
@@ -439,7 +439,7 @@ class RawQueryFunctionProcessorTest {
     fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod(
             """
-                @TypeConverters(DateConverter.class)
+                @ColumnTypeConverters(DateConverter.class)
                 @RawQuery
                 ImmutableMap<Artist, java.util.Date> getAlbumDateWithBandActivity(SupportSQLiteQuery query);
             """
@@ -488,7 +488,7 @@ class RawQueryFunctionProcessorTest {
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava3TypeNames.COMPLETABLE.canonicalName}",
+                RxJava3TypeNames.COMPLETABLE.canonicalName,
                 "${LifecyclesTypeNames.LIVE_DATA.canonicalName}<Int>",
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",

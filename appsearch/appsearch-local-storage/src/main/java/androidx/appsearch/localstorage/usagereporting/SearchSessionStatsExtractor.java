@@ -16,7 +16,9 @@
 
 package androidx.appsearch.localstorage.usagereporting;
 
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.localstorage.stats.ClickStats;
 import androidx.appsearch.localstorage.stats.SearchIntentStats;
@@ -34,10 +36,10 @@ import java.util.Objects;
 /**
  * Extractor class for analyzing a list of taken action {@link GenericDocument} and creating a list
  * of {@link SearchSessionStats}.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
 public final class SearchSessionStatsExtractor {
     // TODO(b/319285816): make thresholds configurable.
     /**
@@ -232,7 +234,7 @@ public final class SearchSessionStatsExtractor {
             if (searchSessionStatsBuilder == null) {
                 searchSessionStatsBuilder =
                         new SearchSessionStats.Builder(packageName).setDatabase(database)
-                                .setLaunchVMEnabled(isVMEnabled);
+                                .setLaunchVmEnabled(isVMEnabled);
             }
             searchSessionStatsBuilder.addSearchIntentsStats(
                     createSearchIntentStats(
@@ -267,7 +269,7 @@ public final class SearchSessionStatsExtractor {
                 .setCurrQuery(currSearchAction.getQuery())
                 .setNumResultsFetched(currSearchAction.getFetchedResultCount())
                 .setQueryCorrectionType(getQueryCorrectionType(currSearchAction, prevSearchAction))
-                .setLaunchVMEnabled(isVMEnabled);
+                .setLaunchVmEnabled(isVMEnabled);
         if (prevSearchAction != null) {
             builder.setPrevQuery(prevSearchAction.getQuery());
         }
@@ -295,7 +297,7 @@ public final class SearchSessionStatsExtractor {
                 .setResultRankGlobal(clickAction.getResultRankGlobal())
                 .setTimeStayOnResultMillis(clickAction.getTimeStayOnResultMillis())
                 .setIsGoodClick(isGoodClick)
-                .setLaunchVMEnabled(isVMEnabled)
+                .setLaunchVmEnabled(isVMEnabled)
                 .build();
     }
 

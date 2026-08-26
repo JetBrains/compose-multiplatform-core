@@ -27,7 +27,7 @@ import kotlin.math.atan2
 import kotlin.math.hypot
 
 /** Creates a spinning test */
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to CUBIC_LINEAR, drawCircle, remote-creation
 fun particleDots2(): RemoteComposeContext {
     return RemoteComposeContextAndroid(800, 800, "spinning", 6, 0, AndroidxRcPlatformServices()) {
         val width = rf(Rc.System.WINDOW_WIDTH)
@@ -58,7 +58,7 @@ fun particleDots2(): RemoteComposeContext {
          */
         droppingEngine3(
             writer as RemoteComposeWriterAndroid,
-            ContinuousSec().toFloat(),
+            0f,
             width,
             height,
             centerX,
@@ -86,7 +86,7 @@ fun particleDots2(): RemoteComposeContext {
 }
 
 /** Creates a spinning test */
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to drawCircle, remote-creation
 fun particleDots(): RemoteComposeContext {
     return RemoteComposeContextAndroid(800, 800, "spinning", 6, 0, AndroidxRcPlatformServices()) {
         root {
@@ -128,7 +128,7 @@ fun particleDots(): RemoteComposeContext {
                      */
                     droppingEngine3(
                         writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
+                        0f,
                         width,
                         height,
                         centerX,
@@ -146,7 +146,9 @@ fun particleDots(): RemoteComposeContext {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to CUBIC_LINEAR, drawCircle, drawText, remote-creation
 fun ants(
     rcDoc: RemoteComposeWriterAndroid,
     event: Float,
@@ -219,7 +221,9 @@ fun ants(
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to CUBIC_LINEAR, drawCircle, drawText, remote-creation
 fun droppingEngine3(
     rcDoc: RemoteComposeWriterAndroid,
     event: Float,

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.state
 
@@ -23,6 +22,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.util.fastFold
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import kotlin.enums.EnumEntries
 import kotlin.enums.enumEntries
@@ -32,17 +32,19 @@ import kotlin.enums.enumEntries
  *
  * [RemoteInt] internally stores its state as a [RemoteInt], using the Enum ordinal.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class RemoteEnum<T : Enum<T>>(
     internal val intValue: RemoteInt,
     internal val enumEntries: EnumEntries<T>,
-) : BaseRemoteState<T>() {
+) : BaseRemoteState<T>(RemoteStateInstanceKey()) {
     override val cacheKey: RemoteStateCacheKey
-        get() = intValue.cacheKey
+        get() = constantValueOrNull?.let { RemoteConstantCacheKey(it) } ?: intValue.cacheKey
 
     @get:Suppress("AutoBoxing")
     public override val constantValueOrNull: T?
         get() = intValue.constantValueOrNull?.let { enumEntries[it] }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toDebugString(): String = constantValueOrNull?.name ?: super.toDebugString()
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val asEncoded: RemoteInt
@@ -52,8 +54,30 @@ public open class RemoteEnum<T : Enum<T>>(
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         intValue.writeToDocument(creationState)
 
-    internal enum class OperationKey {
-        ToString
+    internal enum class OperationKey : RemoteOperation {
+        ToString;
+
+        override val precedence: Int
+            get() = 100
+
+        override fun toDebugString(args: List<RemoteStateCacheKey>): String {
+            return "${args[0].toOperandString(precedence)}.toRemoteString()"
+        }
+
+        override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+            return when (this) {
+                ToString -> {
+                    val index =
+                        when (val arg = args[0]) {
+                            is RemoteEnum<*> -> arg.intValue
+                            is RemoteInt -> arg
+                            else -> throw IllegalArgumentException("Unsupported index: $arg")
+                        }
+                    val stringArray = args[1] as RemoteStringArray
+                    stringArray[index]
+                }
+            }
+        }
     }
 
     /**
@@ -70,7 +94,7 @@ public open class RemoteEnum<T : Enum<T>>(
      * Converts this [RemoteEnum] to its underlying [RemoteInt] representation, using the Enum
      * ordinal.
      *
-     * @return The [RemoteInt] that holds the enum\'s value.
+     * @return The [RemoteInt] that holds the enum's value.
      */
     public val ordinal: RemoteInt
         get() = intValue
@@ -91,13 +115,14 @@ public open class RemoteEnum<T : Enum<T>>(
             return mapping(it)
         }
 
-        val strings = enumEntries.fastMap(mapping).toTypedArray()
+        val stringArray = RemoteStringArray(enumEntries.fastMap(mapping))
 
         return MutableRemoteString(
             constantValueOrNull = null,
-            cacheKey = RemoteOperationCacheKey.create(OperationKey.ToString, this),
+            cacheKey = RemoteOperationCacheKey.create(OperationKey.ToString, this, stringArray),
             object : LazyRemoteString {
                 override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
+                    val strings = stringArray.constantValueOrNull!!
                     val stringIds =
                         IntArray(strings.size) { strings[it].getIdForCreationState(creationState) }
                     return creationState.document.textLookup(
@@ -109,7 +134,7 @@ public open class RemoteEnum<T : Enum<T>>(
                 override fun computeRequiredCodePointSet(
                     creationState: RemoteComposeCreationState
                 ) = buildSet {
-                    strings.forEach {
+                    stringArray.constantValueOrNull?.fastForEach {
                         val codePointSet =
                             it.computeRequiredCodePointSet(creationState) ?: return@buildSet
                         addAll(codePointSet)
@@ -136,11 +161,10 @@ public open class RemoteEnum<T : Enum<T>>(
         }
 
         return enumEntries.fastFold((-1).ri) { acc, value ->
-            intValue.eq(value.ordinal.ri).select(mapping(value), acc)
+            intValue.isEqualTo(value.ordinal.ri).select(mapping(value), acc)
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         /**
          * Creates a [RemoteEnum] from a literal constant.
@@ -168,7 +192,6 @@ public open class RemoteEnum<T : Enum<T>>(
          * @param defaultValue The initial [Enum] value for the named remote enum.
          * @return A [RemoteEnum] representing the named enum.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public inline fun <reified T : Enum<T>> createNamedRemoteEnum(
             name: String,
@@ -188,11 +211,10 @@ public open class RemoteEnum<T : Enum<T>>(
 }
 
 /** A mutable implementation of [RemoteEnum]. */
+public class MutableRemoteEnum<T : Enum<T>>
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class MutableRemoteEnum<T : Enum<T>>(
-    public val remoteInt: MutableRemoteInt,
-    enumEntries: EnumEntries<T>,
-) : RemoteEnum<T>(remoteInt, enumEntries), MutableRemoteState<T> {
+public constructor(public val remoteInt: MutableRemoteInt, enumEntries: EnumEntries<T>) :
+    RemoteEnum<T>(remoteInt, enumEntries), MutableRemoteState<T> {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val asEncodedMutable: MutableRemoteInt
@@ -220,10 +242,10 @@ public class MutableRemoteEnum<T : Enum<T>>(
          * @param initialValue The initial value for this mutable enum.
          * @return A [MutableRemoteEnum] instance.
          */
-        public inline fun <reified T : Enum<T>> createMutable(
+        public inline operator fun <reified T : Enum<T>> invoke(
             initialValue: T
         ): MutableRemoteEnum<T> =
-            MutableRemoteEnum(MutableRemoteInt.createMutable(initialValue.ordinal), enumEntries())
+            MutableRemoteEnum(MutableRemoteInt(initialValue.ordinal), enumEntries())
     }
 }
 
@@ -238,9 +260,7 @@ public class MutableRemoteEnum<T : Enum<T>>(
 public inline fun <reified T : Enum<T>> rememberMutableRemoteEnum(
     initialValue: T
 ): MutableRemoteEnum<T> {
-    return remember {
-        MutableRemoteEnum(MutableRemoteInt.createMutable(initialValue.ordinal), enumEntries())
-    }
+    return remember { MutableRemoteEnum(MutableRemoteInt(initialValue.ordinal), enumEntries()) }
 }
 
 /**

@@ -21,41 +21,58 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.annotation.DimenRes
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.pdf.R
+import androidx.pdf.compose.FastScrollConfiguration.Companion.withDrawableAndDimensionIds
+import androidx.pdf.compose.FastScrollConfiguration.Companion.withDrawableIdsAndDp
 import androidx.pdf.content.ExternalLink
 import androidx.pdf.models.FormEditInfo
+import androidx.pdf.ocr.OcrProvider
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.view.PdfView
 import kotlin.random.Random
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * A [Composable] that presents PDF content, provided as [PdfDocument]
  *
- * @param pdfDocument the PDF content to present
+ * @param pdfDocument the PDF content to present, If no document is provided, the viewer will remain
+ *   empty
  * @param state the state object used to observe and control content position
  * @param modifier the [Modifier] to be applied to this PDF viewer
  * @param isFormFillingEnabled boolean flag to enable / disable the form-filling feature surface.
  * @param isImageSelectionEnabled boolean flag to enable / disable the image-selection feature
  *   surface.
+ * @param ocrProvider an [OcrProvider] instance to be used for OCR (Optical Character Recognition)
+ *   in image PDF content. The caller retains ownership of the [OcrProvider] and is responsible for
+ *   calling [OcrProvider.close] when it is no longer needed.
  * @param minZoom the minimum zoom / scaling factor that can be applied to the PDF viewer
  * @param maxZoom the maximum zoom / scaling factor that can be applied to the PDF viewer
  * @param verticalAlignment the alignment of the top page within the view
  * @param pagesPerRow The number of pages to display in a single row.
  * @param horizontalPageSpacing The spacing between horizontally adjacent pages.
  * @param verticalPageSpacing The spacing between vertically adjacent pages.
- * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scoller's
+ * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scroller's
  *   appearance
+ * @param contentPadding a padding around the whole content. This will add padding for the content
+ *   after it has been clipped, which is not possible via [modifier] param. Note: The content bleeds
+ *   into the padded area when the view is scrolled.
  * @param onUrlLinkClicked a callback to be invoked when the user taps a URL link in this PDF viewer
  * @param onFormWidgetInfoUpdated a callback to be invoked when a form widget is updated due to a
  *   user interaction. @see [PdfView.OnFormWidgetInfoUpdatedListener]
@@ -67,12 +84,14 @@ import kotlin.random.Random
  *   completed.
  */
 @Composable
+@ExperimentalPdfApi
 public fun PdfViewer(
     pdfDocument: PdfDocument?,
     state: PdfViewerState,
     modifier: Modifier = Modifier,
     isFormFillingEnabled: Boolean = false,
     isImageSelectionEnabled: Boolean = false,
+    ocrProvider: OcrProvider? = null,
     minZoom: Float = PdfView.MIN_PERMISSIBLE_ZOOM,
     maxZoom: Float = PdfView.MAX_PERMISSIBLE_ZOOM,
     verticalAlignment: Int = PdfView.VERTICAL_ALIGNMENT_CENTER,
@@ -81,6 +100,7 @@ public fun PdfViewer(
     verticalPageSpacing: Dp = 8.dp,
     fastScrollConfig: FastScrollConfiguration =
         FastScrollConfiguration.withDrawableAndDimensionIds(),
+    contentPadding: PaddingValues = NoPadding,
     appendContextMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)? = null,
     filterContextMenuComponents: ((ContextMenuComponent) -> Boolean)? = null,
     onFormWidgetInfoUpdated: ((FormEditInfo) -> Unit)? = null,
@@ -90,6 +110,9 @@ public fun PdfViewer(
     // Create and remember an ID for PdfView so that it retains state across compositions and
     // recreations
     val pdfViewId = rememberSaveable { Random(System.currentTimeMillis()).nextInt() }
+
+    val coroutineScope = rememberCoroutineScope()
+
     // Only reload fast scroll resources when we need to, i.e. when the developer provides new
     // values or when our Context changes.
     val context = LocalContext.current
@@ -109,15 +132,67 @@ public fun PdfViewer(
     }
     // Convert Dp to Px for the underlying PdfView.
     val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
     val horizontalPageSpacingPx = with(density) { horizontalPageSpacing.roundToPx() }
     val verticalPageSpacingPx = with(density) { verticalPageSpacing.roundToPx() }
 
     AndroidView(
         modifier = modifier,
         factory = { context ->
+            var interactionJob: Job? = null
             PdfView(context).apply {
                 this.id = pdfViewId
+                coroutineScope.launch(Dispatchers.Unconfined) { state.cancelOngoingNavigations() }
                 state.pdfView = this
+
+                addOnGestureStateChangedListener(
+                    object : PdfView.OnGestureStateChangedListener {
+                        override fun onGestureStateChanged(newState: Int) {
+                            state.gestureState = newState
+                            when (newState) {
+                                PdfView.GESTURE_STATE_IDLE -> {
+                                    interactionJob?.cancel()
+                                    interactionJob = null
+                                }
+                                PdfView.GESTURE_STATE_INTERACTING -> {
+                                    interactionJob?.cancel()
+                                    // Using Dispatchers.Unconfined guarantees this block runs
+                                    // synchronously up to the first suspend point (mutate),
+                                    // preventing race conditions.
+                                    interactionJob =
+                                        coroutineScope.launch(Dispatchers.Unconfined) {
+                                            // Lock out Default priority mutations while the user is
+                                            // interacting This will cancel any ongoing
+                                            // Default-priority mutations as well as any ongoing
+                                            // UserInput mutations in case a previous
+                                            // UserInteractionSession was not properly closed.
+                                            state.lockZoomScrollOnUserInteraction()
+                                        }
+                                }
+                                PdfView.GESTURE_STATE_SETTLING -> {
+                                    // GESTURE_STATE_SETTLING is an intermediate value and we don't
+                                    // need to take any action other than updating our own state.
+                                    // Other values are unexpected.
+                                }
+                            }
+                        }
+                    }
+                )
+
+                if (contentPadding != NoPadding) {
+                    with(density) {
+                        setPadding(
+                            contentPadding.calculateLeftPadding(layoutDirection).roundToPx(),
+                            contentPadding.calculateTopPadding().roundToPx(),
+                            contentPadding.calculateRightPadding(layoutDirection).roundToPx(),
+                            contentPadding.calculateBottomPadding().roundToPx(),
+                        )
+                    }
+                    // Allow the content to bleed into the padded area.
+                    clipToPadding = false
+                } else {
+                    clipToPadding = true
+                }
                 setLinkClickListener(PdfViewerLinkClickListener(onUrlLinkClicked))
                 addOnFirstContentLoadListener(
                     PdfViewerOnFirstContentLoadListener(onFirstContentLoad)
@@ -151,6 +226,7 @@ public fun PdfViewer(
             view.horizontalPageSpacing = horizontalPageSpacingPx
             view.verticalPageSpacing = verticalPageSpacingPx
             view.isImageSelectionEnabled = isImageSelectionEnabled
+            @OptIn(ExperimentalPdfApi::class) view.setOcrProvider(ocrProvider)
         },
     )
 }
@@ -325,3 +401,5 @@ private class PdfViewerSelectionMenuPreparer(
         }
     }
 }
+
+private val NoPadding = PaddingValues(0.dp)

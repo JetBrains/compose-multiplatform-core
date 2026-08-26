@@ -31,8 +31,8 @@ plugins {
 
 android {
     defaultConfig {
+        minSdk { version = release(24) }
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
-        consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.benchmark.junit4"
 }
@@ -61,6 +61,7 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     deviceTests {
         enableAlsoRunningOnPhysicalDevices = true
+        minSdkForFtlOverride = 25 // b/539512562
     }
     samples(project(":benchmark:benchmark-samples"))
 }

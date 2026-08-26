@@ -23,7 +23,7 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
- * Represents a four-dimensional position in space.
+ * Four-dimensional position in space.
  *
  * @property x the x component of the vector
  * @property y the y component of the vector
@@ -67,10 +67,7 @@ constructor(
      */
     public operator fun times(c: Float): Vector4 = Vector4(x * c, y * c, z * c, w * c)
 
-    /**
-     * Returns a new vector with each component of this vector multiplied by each corresponding
-     * component of the [other] vector.
-     */
+    /** Returns a new vector by component-wise multiplying this vector by [other]. */
     public fun scale(other: Vector4): Vector4 =
         Vector4(x * other.x, y * other.y, z * other.z, w * other.w)
 
@@ -95,16 +92,22 @@ constructor(
         return Vector4(1 / this.x, 1 / this.y, 1 / this.z, 1 / this.w)
     }
 
-    /** Returns the normalized version of this vector. */
+    /**
+     * Returns the normalized version of this vector. A zero-length vector has no direction to
+     * normalize and returns [Zero] rather than a vector of NaN components.
+     */
     public fun toNormalized(): Vector4 {
-        val norm = rsqrt(lengthSquared)
+        val lenSq = lengthSquared
+        if (lenSq < EPSILON) {
+            return Zero
+        }
+        val norm = rsqrt(lenSq)
 
         return Vector4(x * norm, y * norm, z * norm, w * norm)
     }
 
     /**
-     * Returns a new vector with the each component of this vector clamped between corresponding
-     * components of [min] and [max] vectors.
+     * Returns a new vector with components clamped between [min] and [max].
      *
      * @param min the minimum clamp values
      * @param max the maximum clamp values
@@ -153,6 +156,7 @@ constructor(
     override fun toString(): String = "[x=$x, y=$y, z=$z, w=$w]"
 
     public companion object {
+        private const val EPSILON: Float = 1e-15f
         /** Vector with all components set to zero. */
         @JvmField public val Zero: Vector4 = Vector4(x = 0f, y = 0f, z = 0f, w = 0f)
 
@@ -171,18 +175,19 @@ constructor(
          */
         @JvmStatic
         public fun angleBetween(vector1: Vector4, vector2: Vector4): Float {
-            val dot = vector1 dot vector2
-            val magnitude = vector1.length * vector2.length
-
-            if (magnitude < 1e-10f) {
+            val len1 = vector1.length
+            val len2 = vector2.length
+            if (len1 < EPSILON || len2 < EPSILON) {
                 return 0.0f
             }
+            val dot = vector1 dot vector2
+            val magnitude = len1 * len2
 
             // Clamp due to floating point precision errors that could cause dot to be > mag.
             // Would cause acos to return NaN.
             val cos = clamp(dot / magnitude, -1.0f, 1.0f)
 
-            return acos(cos)
+            return toDegrees(acos(cos))
         }
 
         /**
@@ -195,8 +200,7 @@ constructor(
         public fun distance(vector1: Vector4, vector2: Vector4): Float = (vector1 - vector2).length
 
         /**
-         * Returns a new vector that is linearly interpolated between [start] and [end] using the
-         * interpolation amount [ratio].
+         * Returns a new vector linearly interpolated between [start] and [end] by [ratio].
          *
          * If [ratio] is outside of the range `[0, 1]`, the returned vector will be extrapolated.
          *

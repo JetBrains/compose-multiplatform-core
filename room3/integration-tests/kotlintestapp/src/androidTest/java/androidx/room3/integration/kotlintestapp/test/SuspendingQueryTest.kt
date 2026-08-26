@@ -30,6 +30,9 @@ import androidx.room3.integration.kotlintestapp.NewThreadDispatcher
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.vo.Counter
 import androidx.room3.support.getSupportWrapper
+import androidx.room3.useReaderConnection
+import androidx.room3.useWriterConnection
+import androidx.room3.withReadTransaction
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
@@ -638,6 +641,20 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
+    fun suspendTransaction_contextSwitch() = runTest {
+        val bookPublisher = TestUtil.PUBLISHER
+        val addedBook = TestUtil.BOOK_1.copy(bookPublisherId = bookPublisher.publisherId)
+        booksDao.addPublishers(bookPublisher)
+
+        booksDao.suspendFunctionWithSuspendFunctionalParam(addedBook) { book ->
+            withContext(Dispatchers.Default) { booksDao.insertBookSuspend(book) }
+            book
+        }
+
+        assertThat(booksDao.getBooksSuspend()).contains(addedBook)
+    }
+
+    @Test
     fun withTransaction_instantTaskExecutorRule() = runTest {
         // Not the actual InstantTaskExecutorRule since this test class already uses
         // CountingTaskExecutorRule but same behaviour.
@@ -853,6 +870,33 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val count = db.counterDao().getCounter(1)
         assertThat(count.value).isEqualTo(5000)
         db.close()
+    }
+
+    @Test
+    fun queryAfterCloseThrowsProperException() = runTest {
+        booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
+
+        database.close()
+
+        assertThrows<IllegalStateException> { database.booksDao().getPublishersSuspend() }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.useReaderConnection {} }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.useWriterConnection {} }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.withReadTransaction {} }
+            .hasMessageThat()
+            .contains("Database is closed")
+
+        assertThrows<IllegalStateException> { database.withWriteTransaction {} }
+            .hasMessageThat()
+            .contains("Database is closed")
     }
 
     // Utility function to _really_ suspend.

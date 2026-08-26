@@ -18,6 +18,7 @@ package androidx.appsearch.localstorage;
 
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 
@@ -25,8 +26,8 @@ import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link Features} available on the local backend.
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FeaturesImpl implements Features {
 
@@ -59,6 +60,10 @@ public class FeaturesImpl implements Features {
             case Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG:
                 // fall through
             case Features.SCHEMA_EMBEDDING_QUANTIZATION:
+                // fall through
+            case Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR:
+                // fall through
+            case Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA:
                 // fall through
             case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
                 // fall through

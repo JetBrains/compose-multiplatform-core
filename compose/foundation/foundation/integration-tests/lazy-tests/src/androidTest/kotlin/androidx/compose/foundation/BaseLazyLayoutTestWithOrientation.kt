@@ -17,6 +17,8 @@
 package androidx.compose.foundation
 
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,13 +44,11 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 
 open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientation) {
 
-    val testDispatcher = StandardTestDispatcher()
-    @get:Rule val rule = createComposeRule(testDispatcher)
+    @get:Rule val rule = createComposeRule()
 
     val vertical: Boolean
         get() = orientation == Orientation.Vertical
@@ -70,6 +70,14 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
         }
 
     @Stable
+    fun Modifier.fillMaxCrossAxis() =
+        if (vertical) {
+            this.fillMaxWidth()
+        } else {
+            this.fillMaxHeight()
+        }
+
+    @Stable
     fun Modifier.axisSize(crossAxis: Dp, mainAxis: Dp) =
         if (vertical) {
             this.size(crossAxis, mainAxis)
@@ -85,18 +93,24 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
         }
     }
 
-    fun SemanticsNodeInteraction.assertMainAxisSizeIsEqualTo(expectedSize: Dp) =
+    fun SemanticsNodeInteraction.assertMainAxisSizeIsEqualTo(
+        expectedSize: Dp,
+        tolerance: Dp = 0.5.dp,
+    ) =
         if (vertical) {
-            assertHeightIsEqualTo(expectedSize)
+            assertHeightIsEqualTo(expectedSize, tolerance)
         } else {
-            assertWidthIsEqualTo(expectedSize)
+            assertWidthIsEqualTo(expectedSize, tolerance)
         }
 
-    fun SemanticsNodeInteraction.assertCrossAxisSizeIsEqualTo(expectedSize: Dp) =
+    fun SemanticsNodeInteraction.assertCrossAxisSizeIsEqualTo(
+        expectedSize: Dp,
+        tolerance: Dp = 0.5.dp,
+    ) =
         if (vertical) {
-            assertWidthIsEqualTo(expectedSize)
+            assertWidthIsEqualTo(expectedSize, tolerance)
         } else {
-            assertHeightIsEqualTo(expectedSize)
+            assertHeightIsEqualTo(expectedSize, tolerance)
         }
 
     fun SemanticsNodeInteraction.assertStartPositionIsAlmost(expected: Dp) {

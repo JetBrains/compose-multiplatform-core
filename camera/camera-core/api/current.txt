@@ -13,6 +13,7 @@ package androidx.camera.core {
   }
 
   public interface CameraControl {
+    method public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> applyInteropAsync(androidx.camera.core.InteropConfigurator<? super androidx.camera.core.CameraControl!>);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> cancelFocusAndMetering();
     method public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> enableLowLightBoostAsync(boolean);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> enableTorch(boolean);
@@ -56,6 +57,7 @@ package androidx.camera.core {
     method public default int getLensFacing();
     method public default androidx.lifecycle.LiveData<java.lang.Integer!> getLowLightBoostState();
     method @IntRange(from=0) public default int getMaxTorchStrengthLevel();
+    method public default androidx.lifecycle.LiveData<java.lang.Integer!> getNightModeIndicator();
     method public default java.util.Set<androidx.camera.core.CameraInfo!> getPhysicalCameraInfos();
     method public int getSensorRotationDegrees();
     method public int getSensorRotationDegrees(int);
@@ -68,6 +70,7 @@ package androidx.camera.core {
     method public default boolean isFocusMeteringSupported(androidx.camera.core.FocusMeteringAction);
     method public default boolean isLogicalMultiCameraSupported();
     method public default boolean isLowLightBoostSupported();
+    method public default boolean isNightModeIndicatorSupported();
     method public default boolean isSessionConfigSupported(androidx.camera.core.SessionConfig);
     method public default boolean isTorchStrengthSupported();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalZeroShutterLag public default boolean isZslSupported();
@@ -191,10 +194,23 @@ package androidx.camera.core {
     method public androidx.camera.core.CameraXConfig getCameraXConfig();
   }
 
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.DslMarker public @interface CameraXDsl {
+  }
+
+  public final class CameraXDslUtils {
+    method public static androidx.camera.core.ImageAnalysis imageAnalysis(kotlin.jvm.functions.Function1<? super androidx.camera.core.ImageAnalysisScope,kotlin.Unit> block);
+    method public static androidx.camera.core.ImageCapture imageCapture(kotlin.jvm.functions.Function1<? super androidx.camera.core.ImageCaptureScope,kotlin.Unit> block);
+    method public static androidx.camera.core.Preview preview(kotlin.jvm.functions.Function1<? super androidx.camera.core.PreviewScope,kotlin.Unit> block);
+  }
+
   public class CompositionSettings {
     method public float getAlpha();
+    method @ColorInt public int getBorderColor();
+    method @FloatRange(from=0, to=1) public float getBorderWidthRatio();
     method public androidx.core.util.Pair<java.lang.Float!,java.lang.Float!> getOffset();
+    method @FloatRange(from=0, to=1) public float getRoundedCornerRatio();
     method public androidx.core.util.Pair<java.lang.Float!,java.lang.Float!> getScale();
+    method @IntRange(from=0) public int getZOrder();
     field public static final androidx.camera.core.CompositionSettings DEFAULT;
   }
 
@@ -202,13 +218,18 @@ package androidx.camera.core {
     ctor public CompositionSettings.Builder();
     method public androidx.camera.core.CompositionSettings build();
     method public androidx.camera.core.CompositionSettings.Builder setAlpha(@FloatRange(from=0, to=1) float);
+    method public androidx.camera.core.CompositionSettings.Builder setBorderColor(@ColorInt int);
+    method public androidx.camera.core.CompositionSettings.Builder setBorderWidthRatio(@FloatRange(from=0, to=1) float);
     method public androidx.camera.core.CompositionSettings.Builder setOffset(@FloatRange(from=0xffffffff, to=1) float, @FloatRange(from=0xffffffff, to=1) float);
+    method public androidx.camera.core.CompositionSettings.Builder setRoundedCornerRatio(@FloatRange(from=0, to=1) float);
     method public androidx.camera.core.CompositionSettings.Builder setScale(float, float);
+    method public androidx.camera.core.CompositionSettings.Builder setZOrder(@IntRange(from=0) int);
   }
 
   public class ConcurrentCamera {
     ctor public ConcurrentCamera(java.util.List<androidx.camera.core.Camera!>);
     method public java.util.List<androidx.camera.core.Camera!> getCameras();
+    method public void setCompositionSettings(java.util.List<androidx.camera.core.CompositionSettings!>);
   }
 
   public static final class ConcurrentCamera.SingleCameraConfig {
@@ -252,9 +273,6 @@ package androidx.camera.core {
   }
 
   @SuppressCompatibility @RequiresOptIn @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalLensFacing {
-  }
-
-  @SuppressCompatibility @RequiresOptIn @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalMirrorMode {
   }
 
   @SuppressCompatibility @RequiresOptIn @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalRetryPolicy {
@@ -320,6 +338,7 @@ package androidx.camera.core {
     method public void clearAnalyzer();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalUseCaseApi public java.util.concurrent.Executor? getBackgroundExecutor();
     method public int getBackpressureStrategy();
+    method public static androidx.camera.core.ImageAnalysisCapabilities getImageAnalysisCapabilities(androidx.camera.core.CameraInfo);
     method public int getImageQueueDepth();
     method public int getOutputImageFormat();
     method public androidx.camera.core.ResolutionInfo? getResolutionInfo();
@@ -332,6 +351,7 @@ package androidx.camera.core {
     field public static final int COORDINATE_SYSTEM_SENSOR = 2; // 0x2
     field public static final int COORDINATE_SYSTEM_VIEW_REFERENCED = 1; // 0x1
     field public static final int OUTPUT_IMAGE_FORMAT_NV21 = 3; // 0x3
+    field public static final int OUTPUT_IMAGE_FORMAT_PRIVATE = 4; // 0x4
     field public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2; // 0x2
     field public static final int OUTPUT_IMAGE_FORMAT_YUV_420_888 = 1; // 0x1
     field public static final int STRATEGY_BLOCK_PRODUCER = 1; // 0x1
@@ -345,7 +365,7 @@ package androidx.camera.core {
     method public default void updateTransform(android.graphics.Matrix?);
   }
 
-  public static final class ImageAnalysis.Builder implements androidx.camera.core.ExtendableBuilder<androidx.camera.core.ImageAnalysis!> {
+  public static final class ImageAnalysis.Builder implements androidx.camera.core.ExtendableBuilder<androidx.camera.core.ImageAnalysis!> androidx.camera.core.UseCase.InteropConfigurable<androidx.camera.core.ImageAnalysis.Builder!> {
     ctor public ImageAnalysis.Builder();
     method public androidx.camera.core.ImageAnalysis build();
     method public androidx.camera.core.ImageAnalysis.Builder setBackgroundExecutor(java.util.concurrent.Executor);
@@ -358,6 +378,37 @@ package androidx.camera.core {
     method public androidx.camera.core.ImageAnalysis.Builder setTargetName(String);
     method @Deprecated public androidx.camera.core.ImageAnalysis.Builder setTargetResolution(android.util.Size);
     method public androidx.camera.core.ImageAnalysis.Builder setTargetRotation(int);
+  }
+
+  public interface ImageAnalysisCapabilities {
+    method public boolean isOutputFormatSupported(int);
+  }
+
+  @androidx.camera.core.CameraXDsl public final class ImageAnalysisScope implements androidx.camera.core.InteropConfigurableScope<androidx.camera.core.ImageAnalysis.Builder> {
+    method @InaccessibleFromKotlin public java.util.concurrent.Executor getBackgroundExecutor();
+    method @InaccessibleFromKotlin public int getBackpressureStrategy();
+    method @InaccessibleFromKotlin public int getImageQueueDepth();
+    method @InaccessibleFromKotlin public int getOutputImageFormat();
+    method @InaccessibleFromKotlin public androidx.camera.core.resolutionselector.ResolutionSelector getResolutionSelector();
+    method @InaccessibleFromKotlin public String getTargetName();
+    method @InaccessibleFromKotlin public int getTargetRotation();
+    method @InaccessibleFromKotlin public boolean isOutputImageRotationEnabled();
+    method @InaccessibleFromKotlin public void setBackgroundExecutor(java.util.concurrent.Executor);
+    method @InaccessibleFromKotlin public void setBackpressureStrategy(int);
+    method @InaccessibleFromKotlin public void setImageQueueDepth(int);
+    method @InaccessibleFromKotlin public void setOutputImageFormat(int);
+    method @InaccessibleFromKotlin public void setOutputImageRotationEnabled(boolean);
+    method @InaccessibleFromKotlin public void setResolutionSelector(androidx.camera.core.resolutionselector.ResolutionSelector);
+    method @InaccessibleFromKotlin public void setTargetName(String);
+    method @InaccessibleFromKotlin public void setTargetRotation(int);
+    property public java.util.concurrent.Executor backgroundExecutor;
+    property public int backpressureStrategy;
+    property public int imageQueueDepth;
+    property public boolean isOutputImageRotationEnabled;
+    property public int outputImageFormat;
+    property public androidx.camera.core.resolutionselector.ResolutionSelector resolutionSelector;
+    property public String targetName;
+    property public int targetRotation;
   }
 
   public final class ImageCapture extends androidx.camera.core.UseCase {
@@ -403,6 +454,7 @@ package androidx.camera.core {
     method public androidx.camera.core.ImageCapture build();
     method public androidx.camera.core.ImageCapture.Builder setCaptureMode(int);
     method public androidx.camera.core.ImageCapture.Builder setFlashMode(int);
+    method public androidx.camera.core.ImageCapture.Builder setInterop(androidx.camera.core.InteropConfigurator<androidx.camera.core.ImageCapture.Builder!>);
     method public androidx.camera.core.ImageCapture.Builder setIoExecutor(java.util.concurrent.Executor);
     method public androidx.camera.core.ImageCapture.Builder setJpegQuality(@IntRange(from=1, to=100) int);
     method public androidx.camera.core.ImageCapture.Builder setOutputFormat(int);
@@ -496,6 +548,42 @@ package androidx.camera.core {
     field public static final long UNDEFINED_PROCESSING_LATENCY = -1L; // 0xffffffffffffffffL
   }
 
+  @androidx.camera.core.CameraXDsl public final class ImageCaptureScope {
+    method @InaccessibleFromKotlin public int getCaptureMode();
+    method @InaccessibleFromKotlin public int getFlashMode();
+    method @InaccessibleFromKotlin public java.util.concurrent.Executor getIoExecutor();
+    method @InaccessibleFromKotlin @IntRange(from=1L, to=100L) public int getJpegQuality();
+    method @InaccessibleFromKotlin public int getOutputFormat();
+    method @InaccessibleFromKotlin public androidx.camera.core.resolutionselector.ResolutionSelector getPostviewResolutionSelector();
+    method @InaccessibleFromKotlin public androidx.camera.core.resolutionselector.ResolutionSelector getResolutionSelector();
+    method @InaccessibleFromKotlin public androidx.camera.core.ImageCapture.ScreenFlash? getScreenFlash();
+    method @InaccessibleFromKotlin public String getTargetName();
+    method @InaccessibleFromKotlin public int getTargetRotation();
+    method @InaccessibleFromKotlin public boolean isPostviewEnabled();
+    method @InaccessibleFromKotlin public void setCaptureMode(int);
+    method @InaccessibleFromKotlin public void setFlashMode(int);
+    method @InaccessibleFromKotlin public void setIoExecutor(java.util.concurrent.Executor);
+    method @InaccessibleFromKotlin public void setJpegQuality(@IntRange(from=1L, to=100L) int);
+    method @InaccessibleFromKotlin public void setOutputFormat(int);
+    method @InaccessibleFromKotlin public void setPostviewEnabled(boolean);
+    method @InaccessibleFromKotlin public void setPostviewResolutionSelector(androidx.camera.core.resolutionselector.ResolutionSelector);
+    method @InaccessibleFromKotlin public void setResolutionSelector(androidx.camera.core.resolutionselector.ResolutionSelector);
+    method @InaccessibleFromKotlin public void setScreenFlash(androidx.camera.core.ImageCapture.ScreenFlash?);
+    method @InaccessibleFromKotlin public void setTargetName(String);
+    method @InaccessibleFromKotlin public void setTargetRotation(int);
+    property public int captureMode;
+    property public int flashMode;
+    property public java.util.concurrent.Executor ioExecutor;
+    property public boolean isPostviewEnabled;
+    property @IntRange(from=1L, to=100L) public int jpegQuality;
+    property public int outputFormat;
+    property public androidx.camera.core.resolutionselector.ResolutionSelector postviewResolutionSelector;
+    property public androidx.camera.core.resolutionselector.ResolutionSelector resolutionSelector;
+    property public androidx.camera.core.ImageCapture.ScreenFlash? screenFlash;
+    property public String targetName;
+    property public int targetRotation;
+  }
+
   public interface ImageInfo {
     method public default int getFlashState();
     method public int getRotationDegrees();
@@ -516,29 +604,32 @@ package androidx.camera.core {
     method public androidx.camera.core.ImageProxy getOutputImage();
   }
 
-  public interface ImageProxy extends java.lang.AutoCloseable {
-    method public void close();
-    method public android.graphics.Rect getCropRect();
-    method public int getFormat();
-    method public int getHeight();
+  public interface ImageProxy extends androidx.camera.common.ImageWrapper java.lang.AutoCloseable {
     method @SuppressCompatibility @androidx.camera.core.ExperimentalGetImage public android.media.Image? getImage();
     method public androidx.camera.core.ImageInfo getImageInfo();
-    method public androidx.camera.core.ImageProxy.PlaneProxy![] getPlanes();
-    method public int getWidth();
+    method public default java.util.List<androidx.camera.common.ImagePlane> getImagePlanes();
+    method public androidx.camera.core.ImageProxy.PlaneProxy[] getPlanes();
+    method public default long getTimestamp();
     method public void setCropRect(android.graphics.Rect?);
     method public default android.graphics.Bitmap toBitmap();
+    method public default <T> T? unwrapAs(Class<T>);
   }
 
-  public static interface ImageProxy.PlaneProxy {
-    method public java.nio.ByteBuffer getBuffer();
-    method public int getPixelStride();
-    method public int getRowStride();
+  public static interface ImageProxy.PlaneProxy extends androidx.camera.common.ImagePlane {
+    method public default <T> T? unwrapAs(Class<T>);
   }
 
   public class InitializationException extends java.lang.Exception {
     ctor public InitializationException(String?);
     ctor public InitializationException(String?, Throwable?);
     ctor public InitializationException(Throwable?);
+  }
+
+  @androidx.camera.core.CameraXDsl public interface InteropConfigurableScope<B> {
+  }
+
+  public interface InteropConfigurator<T> {
+    method public void configure(T);
   }
 
   public class LowLightBoostState {
@@ -563,24 +654,34 @@ package androidx.camera.core {
     field public static final int MIRROR_MODE_ON_FRONT_ONLY = 2; // 0x2
   }
 
+  public final class NightModeIndicator {
+    field public static final int NOT_RECOMMENDED = 1; // 0x1
+    field public static final int RECOMMENDED = 2; // 0x2
+    field public static final int UNKNOWN = 0; // 0x0
+  }
+
   public final class Preview extends androidx.camera.core.UseCase {
     method public androidx.camera.core.DynamicRange getDynamicRange();
+    method public int getMirrorMode();
     method public static androidx.camera.core.PreviewCapabilities getPreviewCapabilities(androidx.camera.core.CameraInfo);
     method public androidx.camera.core.ResolutionInfo? getResolutionInfo();
     method public androidx.camera.core.resolutionselector.ResolutionSelector? getResolutionSelector();
     method public android.util.Range<java.lang.Integer!> getTargetFrameRate();
     method public int getTargetRotation();
     method public boolean isPreviewStabilizationEnabled();
+    method public void setMirrorMode(int);
     method @UiThread public void setSurfaceProvider(androidx.camera.core.Preview.SurfaceProvider?);
     method @UiThread public void setSurfaceProvider(java.util.concurrent.Executor, androidx.camera.core.Preview.SurfaceProvider?);
     method public void setTargetRotation(int);
+    field public static final int STREAM_STATE_IDLE = 0; // 0x0
+    field public static final int STREAM_STATE_STREAMING = 1; // 0x1
   }
 
-  public static final class Preview.Builder implements androidx.camera.core.ExtendableBuilder<androidx.camera.core.Preview!> {
+  public static final class Preview.Builder implements androidx.camera.core.ExtendableBuilder<androidx.camera.core.Preview!> androidx.camera.core.UseCase.InteropConfigurable<androidx.camera.core.Preview.Builder!> {
     ctor public Preview.Builder();
     method public androidx.camera.core.Preview build();
     method public androidx.camera.core.Preview.Builder setDynamicRange(androidx.camera.core.DynamicRange);
-    method @SuppressCompatibility @androidx.camera.core.ExperimentalMirrorMode public androidx.camera.core.Preview.Builder setMirrorMode(int);
+    method public androidx.camera.core.Preview.Builder setMirrorMode(int);
     method public androidx.camera.core.Preview.Builder setPreviewStabilizationEnabled(boolean);
     method public androidx.camera.core.Preview.Builder setResolutionSelector(androidx.camera.core.resolutionselector.ResolutionSelector);
     method @Deprecated public androidx.camera.core.Preview.Builder setTargetAspectRatio(int);
@@ -596,6 +697,30 @@ package androidx.camera.core {
 
   public interface PreviewCapabilities {
     method public boolean isStabilizationSupported();
+  }
+
+  @androidx.camera.core.CameraXDsl public final class PreviewScope implements androidx.camera.core.InteropConfigurableScope<androidx.camera.core.Preview.Builder> {
+    method @InaccessibleFromKotlin public androidx.camera.core.DynamicRange getDynamicRange();
+    method @InaccessibleFromKotlin public int getMirrorMode();
+    method @InaccessibleFromKotlin public androidx.camera.core.resolutionselector.ResolutionSelector getResolutionSelector();
+    method @InaccessibleFromKotlin public android.util.Range<java.lang.Integer> getTargetFrameRate();
+    method @InaccessibleFromKotlin public String getTargetName();
+    method @InaccessibleFromKotlin public int getTargetRotation();
+    method @InaccessibleFromKotlin public boolean isPreviewStabilizationEnabled();
+    method @InaccessibleFromKotlin public void setDynamicRange(androidx.camera.core.DynamicRange);
+    method @InaccessibleFromKotlin public void setMirrorMode(int);
+    method @InaccessibleFromKotlin public void setPreviewStabilizationEnabled(boolean);
+    method @InaccessibleFromKotlin public void setResolutionSelector(androidx.camera.core.resolutionselector.ResolutionSelector);
+    method @InaccessibleFromKotlin public void setTargetFrameRate(android.util.Range<java.lang.Integer>);
+    method @InaccessibleFromKotlin public void setTargetName(String);
+    method @InaccessibleFromKotlin public void setTargetRotation(int);
+    property public androidx.camera.core.DynamicRange dynamicRange;
+    property public boolean isPreviewStabilizationEnabled;
+    property public int mirrorMode;
+    property public androidx.camera.core.resolutionselector.ResolutionSelector resolutionSelector;
+    property public android.util.Range<java.lang.Integer> targetFrameRate;
+    property public String targetName;
+    property public int targetRotation;
   }
 
   public class ProcessingException extends java.lang.Exception {
@@ -652,14 +777,13 @@ package androidx.camera.core {
 
   public class SessionConfig {
     ctor public SessionConfig(androidx.camera.core.UseCase... useCases);
-    ctor @BytecodeOnly public SessionConfig(java.util.List!, androidx.camera.core.ViewPort!, java.util.List!, android.util.Range!, java.util.Set!, java.util.List!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public SessionConfig(java.util.List!, androidx.camera.core.ViewPort!, java.util.List!, android.util.Range!, java.util.Set!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup, optional java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup);
-    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup, optional java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup, optional boolean isAutoRotationEnabled);
     method @InaccessibleFromKotlin public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
     method @InaccessibleFromKotlin public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> getFeatureSelectionListener();
     method @InaccessibleFromKotlin public final java.util.concurrent.Executor getFeatureSelectionListenerExecutor();
@@ -683,16 +807,42 @@ package androidx.camera.core {
     property public final androidx.camera.core.ViewPort? viewPort;
   }
 
-  public static final class SessionConfig.Builder {
+  @androidx.camera.core.CameraXDsl public static final class SessionConfig.Builder {
     ctor public SessionConfig.Builder(androidx.camera.core.UseCase... useCases);
     ctor public SessionConfig.Builder(java.util.List<? extends androidx.camera.core.UseCase> useCases);
     method public androidx.camera.core.SessionConfig.Builder addEffect(androidx.camera.core.CameraEffect effect);
     method public androidx.camera.core.SessionConfig build();
     method public androidx.camera.core.SessionConfig.Builder setAutoRotationEnabled(boolean autoRotationEnabled);
     method public androidx.camera.core.SessionConfig.Builder setFrameRateRange(android.util.Range<java.lang.Integer> frameRateRange);
+    method public androidx.camera.core.SessionConfig.Builder setInterop(androidx.camera.core.InteropConfigurator<? super androidx.camera.core.SessionConfig.Builder> configurator);
     method public androidx.camera.core.SessionConfig.Builder setPreferredFeatureGroup(androidx.camera.core.featuregroup.GroupableFeature... features);
     method public androidx.camera.core.SessionConfig.Builder setRequiredFeatureGroup(androidx.camera.core.featuregroup.GroupableFeature... features);
     method public androidx.camera.core.SessionConfig.Builder setViewPort(androidx.camera.core.ViewPort viewPort);
+  }
+
+  public final class SessionConfigKt {
+    method public static androidx.camera.core.SessionConfig sessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, kotlin.jvm.functions.Function1<? super androidx.camera.core.SessionConfigScope,kotlin.Unit> block);
+  }
+
+  @androidx.camera.core.CameraXDsl public final class SessionConfigScope {
+    method @InaccessibleFromKotlin public java.util.List<androidx.camera.core.CameraEffect> getEffects();
+    method @InaccessibleFromKotlin public android.util.Range<java.lang.Integer> getFrameRateRange();
+    method @InaccessibleFromKotlin public java.util.List<androidx.camera.core.featuregroup.GroupableFeature> getPreferredFeatureGroup();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> getRequiredFeatureGroup();
+    method @InaccessibleFromKotlin public androidx.camera.core.ViewPort? getViewPort();
+    method @InaccessibleFromKotlin public boolean isAutoRotationEnabled();
+    method @InaccessibleFromKotlin public void setAutoRotationEnabled(boolean);
+    method @InaccessibleFromKotlin public void setEffects(java.util.List<? extends androidx.camera.core.CameraEffect>);
+    method @InaccessibleFromKotlin public void setFrameRateRange(android.util.Range<java.lang.Integer>);
+    method @InaccessibleFromKotlin public void setPreferredFeatureGroup(java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature>);
+    method @InaccessibleFromKotlin public void setRequiredFeatureGroup(java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature>);
+    method @InaccessibleFromKotlin public void setViewPort(androidx.camera.core.ViewPort?);
+    property public java.util.List<androidx.camera.core.CameraEffect> effects;
+    property public android.util.Range<java.lang.Integer> frameRateRange;
+    property public boolean isAutoRotationEnabled;
+    property public java.util.List<androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup;
+    property public java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup;
+    property public androidx.camera.core.ViewPort? viewPort;
   }
 
   public class SurfaceOrientedMeteringPointFactory extends androidx.camera.core.MeteringPointFactory {
@@ -760,6 +910,10 @@ package androidx.camera.core {
 
   public abstract class UseCase {
     method public static int snapToSurfaceRotation(@IntRange(from=0, to=359) int);
+  }
+
+  public static interface UseCase.InteropConfigurable<B extends androidx.camera.core.UseCase.InteropConfigurable<B>> {
+    method public default B setInterop(androidx.camera.core.InteropConfigurator<? super B>);
   }
 
   public final class UseCaseGroup {

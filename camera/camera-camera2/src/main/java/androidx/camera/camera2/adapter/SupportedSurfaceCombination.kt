@@ -36,7 +36,6 @@ import androidx.camera.camera2.adapter.SupportedSurfaceCombination.CheckingMetho
 import androidx.camera.camera2.adapter.SupportedSurfaceCombination.CheckingMethod.WITH_FEATURE_COMBO
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.workaround.ExtraSupportedSurfaceCombinationsContainer
-import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.compat.workaround.ResolutionCorrector
 import androidx.camera.camera2.compat.workaround.TargetAspectRatio
 import androidx.camera.camera2.impl.Camera2Logger
@@ -47,6 +46,7 @@ import androidx.camera.camera2.internal.StreamUseCaseUtil
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPreviewStabilization
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery.Companion.createSessionConfigBuilder
 import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
@@ -54,6 +54,7 @@ import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
+import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
@@ -100,6 +101,9 @@ public class SupportedSurfaceCombination(
     private val cameraMetadata: CameraMetadata,
     private val encoderProfilesProvider: EncoderProfilesProvider,
     private val featureCombinationQuery: FeatureCombinationQuery,
+    private val extraSupportedSurfaceCombinationsContainer:
+        ExtraSupportedSurfaceCombinationsContainer =
+        ExtraSupportedSurfaceCombinationsContainer(),
 ) {
     private val cameraId = cameraMetadata.camera.value
     private val hardwareLevel =
@@ -127,13 +131,14 @@ public class SupportedSurfaceCombination(
     internal lateinit var surfaceSizeDefinition: SurfaceSizeDefinition
     private val surfaceSizeDefinitionFormats = mutableListOf<Int>()
     private val streamConfigurationMapCompat = getStreamConfigurationMapCompat()
-    private val extraSupportedSurfaceCombinationsContainer =
-        ExtraSupportedSurfaceCombinationsContainer()
     private val displayInfoManager = DisplayInfoManager.getInstance(context)
     private val resolutionCorrector = ResolutionCorrector()
     private val targetAspectRatio: TargetAspectRatio = TargetAspectRatio()
     private val dynamicRangeResolver: DynamicRangeResolver = DynamicRangeResolver(cameraMetadata)
     private val highSpeedResolver: HighSpeedResolver = HighSpeedResolver(cameraMetadata)
+
+    private val zslIntersectionSizes: List<Size> =
+        ZslUtil.computeZslIntersectionSizes(cameraMetadata, ImageFormat.PRIVATE)
 
     init {
         checkCapabilities()
@@ -383,6 +388,7 @@ public class SupportedSurfaceCombination(
      * @throws IllegalArgumentException if the suggested solution for newUseCaseConfigs cannot be
      *   found. This may be due to no available output size or no available surface combination.
      */
+    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalZeroShutterLag::class)
     public fun getSuggestedStreamSpecifications(
         cameraMode: Int,
         attachedSurfaces: List<AttachedSurfaceInfo>,
@@ -402,12 +408,37 @@ public class SupportedSurfaceCombination(
             )
         // Filter out unsupported sizes for high-speed at the beginning to ensure correct
         // resolution selection later. High-speed session requires all surface sizes to be the same.
-        val filteredNewUseCaseConfigsSupportedSizeMap =
+        var filteredNewUseCaseConfigsSupportedSizeMap =
             if (isHighSpeedOn) {
                 highSpeedResolver.filterCommonSupportedSizes(newUseCaseConfigsSupportedSizeMap)
             } else {
                 newUseCaseConfigsSupportedSizeMap
             }
+
+        val isZslOn =
+            StreamUseCaseUtil.containsZslUseCase(
+                attachedSurfaces,
+                newUseCaseConfigsSupportedSizeMap.keys.toList(),
+            )
+
+        val zslIntersection = zslIntersectionSizes
+        if (zslIntersection.isNotEmpty() && isZslOn) {
+            filteredNewUseCaseConfigsSupportedSizeMap =
+                filteredNewUseCaseConfigsSupportedSizeMap.mapValues { (useCaseConfig, sizes) ->
+                    val isZsl =
+                        useCaseConfig is ImageCaptureConfig &&
+                            useCaseConfig.hasCaptureMode() &&
+                            useCaseConfig.captureMode ==
+                                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG &&
+                            !useCaseConfig.isZslDisabled(false)
+
+                    if (isZsl) {
+                        sizes.filter { zslIntersection.contains(it) }
+                    } else {
+                        sizes
+                    }
+                }
+        }
 
         val newUseCaseConfigs = filteredNewUseCaseConfigsSupportedSizeMap.keys.toList()
 
@@ -1097,6 +1128,16 @@ public class SupportedSurfaceCombination(
         featureSettings: FeatureSettings,
         forceUniqueMaxFpsFiltering: Boolean = false,
     ): Map<UseCaseConfig<*>, List<Size>> {
+        if (featureSettings.isHighSpeedOn) {
+            // High-speed sessions require all streams to adopt the exact same size. Independent
+            // filtering relies on strict descending area ordering. Differences in sorting order
+            // between use cases in newUseCaseConfigsSupportedSizeMap (e.g., due to aspect-ratio
+            // preferences) can cause a size to be filtered in one use case but kept in another,
+            // resulting in an empty size intersection when resolving common supported sizes later
+            // in getSuggestedStreamSpecifications.
+            return newUseCaseConfigsSupportedSizeMap
+        }
+
         val filteredUseCaseConfigToSupportedSizesMap = mutableMapOf<UseCaseConfig<*>, List<Size>>()
         for (useCaseConfig in newUseCaseConfigsSupportedSizeMap.keys) {
             val reducedSizeList = mutableListOf<Size>()
@@ -1589,7 +1630,7 @@ public class SupportedSurfaceCombination(
                 return FRAME_RATE_UNLIMITED
             }
         }
-        return (1_000_000_000.0 / minFrameDuration).toInt()
+        return (1_000_000_000.0 / minFrameDuration + 0.5).toInt()
     }
 
     /**
@@ -2156,7 +2197,7 @@ public class SupportedSurfaceCombination(
         val map =
             cameraMetadata[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]
                 ?: throw IllegalArgumentException("Cannot retrieve SCALER_STREAM_CONFIGURATION_MAP")
-        return StreamConfigurationMapCompat(map, OutputSizesCorrector(cameraMetadata, map))
+        return StreamConfigurationMapCompat(map, cameraMetadata)
     }
 
     /**

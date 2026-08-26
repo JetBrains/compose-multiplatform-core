@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"メッセージはここに表示されます。\nその他のテキストは 2 行目に表示されます。"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"ショート メッセージ テンプレートのデモ"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"SectionedItemTemplate のデモ"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"コンパクト アイテムのデモ"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"SectionedItem AlphaJump が有効なデモ"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ラジオボタンのセクション"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"切り替えのセクション"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"リスト 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"各リストのサブテキスト"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"終了画像とアクションのデモ"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"チップのデモ"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"進行状況バーのデモ"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"セクション ヘッダーのデモ"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"スポットライト セクションのデモ"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"ペイン テンプレートのデモ"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"場所リスト テンプレートのデモ"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"場所を見る"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"最新機能"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"読み込み有効"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"読み込み無効"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"アプリのテーマを使用"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"アプリのテーマを有効にしました"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"アプリのテーマを無効にしました"</string>
     <string name="loading_screen" msgid="4771507490730308794">"読み込み画面"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"色を追加または削除するための切り替え"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"マップ テンプレート（切り替え付き）"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"地図およびコンテンツのデモ"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"地図およびメッセージ テンプレートのデモ"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"地図およびグリッド テンプレートのデモ"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"セクションに区切られたアイテムリスト付きの地図"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"バナーのデモ"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"拡張ヘッダーのデモ"</string>
 </resources>

@@ -51,7 +51,7 @@ import kotlin.jvm.JvmField
  *      }
  */
 @ExperimentalFoundationApi
-object ComposeFoundationFlags {
+public object ComposeFoundationFlags {
 
     /**
      * Whether to use the new context menu API and default implementations in
@@ -62,7 +62,7 @@ object ComposeFoundationFlags {
     // TODO: b/455589857
     @field:Suppress("MutableBareField")
     @JvmField
-    var isNewContextMenuEnabled: Boolean = isNewContextMenuInitiallyEnabled
+    public var isNewContextMenuEnabled: Boolean = isNewContextMenuInitiallyEnabled
 
     /**
      * Whether to use the new smart selection feature in
@@ -70,51 +70,47 @@ object ComposeFoundationFlags {
      * [androidx.compose.foundation.text.BasicTextField]s.
      */
     // TODO: b/455592302
-    @field:Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
+    @field:Suppress("MutableBareField") @JvmField public var isSmartSelectionEnabled: Boolean = true
 
     /**
      * Whether to support inherited text styles. If enabled, text styles set by the styles API will
      * be inherited by text composables contained in a style box.
      */
     // TODO: b/485968143
-    @field:Suppress("MutableBareField") @JvmField var isInheritedTextStyleEnabled = true
-
-    /**
-     * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
-     * change allows us to distribute work we need to do during the prefetch better, for example we
-     * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
-     * and then continue composing the rest of it in the next frames.
-     */
-    // TODO: b/455589928
-    @field:Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
-
-    /**
-     * With this flag on, Pager will use Cache Window as the default prefetching strategy, instead
-     * of 1 item in the direction of the scroll. The window used will be 1 view port AFTER the
-     * currently composed items, this includes visible and items composed through beyond bounds.
-     */
-    // TODO: b/485967807
-    @field:Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
-
-    /**
-     * When Pager was used with a keyboard in RTL the pages would bounce indefinitely due to the
-     * bring into view animation. If this flag is off the fix for that behavior will be disabled.
-     */
-    // TODO: b/485967682
     @field:Suppress("MutableBareField")
     @JvmField
-    var isBringIntoViewRltBouncyBehaviorInPagerFixEnabled: Boolean = true
+    public var isInheritedTextStyleEnabled: Boolean = false
 
     /**
-     * If this flag is enabled, for lazy layout implementations that use
-     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow], if the dataset changes, the
-     * window mechanism will understand that it needs to re-fill the window from scratch. This is
-     * because there is no good way for the window to know that a possible non-visible item has
-     * changed. For instance, if C and D are 2 items in the cache window and later they're removed
-     * from the dataset, the cache window won't know it until it tries to prefetch them.
+     * With this flag on, Pager will use
+     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] as the default prefetching
+     * strategy, instead of 1 item in the direction of the scroll. The window used will be 1 view
+     * port AFTER the currently composed items, this includes visible and items composed through
+     * beyond bounds.
      */
-    // TODO: b/485967875
-    @field:Suppress("MutableBareField") @JvmField var isCacheWindowRefillFixEnabled = true
+    // TODO: b/485967807
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isCacheWindowForPagerEnabled: Boolean = true
+
+    /**
+     * With this flag on, [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] will
+     * support multi-lane configurations.
+     */
+    // TODO: b/522643119
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMultiLaneCacheWindowEnabled: Boolean = true
+
+    /**
+     * With this flag enabled, [androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGrid]
+     * layouts will make use of a cache window, either a default cache window or the cache window
+     * provided by the user via the composable function arguments.
+     */
+    // TODO: b/530894185
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isUsingCacheWindowInStaggeredGrids: Boolean = true
 
     /**
      * With this flag enabled,
@@ -129,38 +125,7 @@ object ComposeFoundationFlags {
     // TODO: b/485967318
     @field:Suppress("MutableBareField")
     @JvmField
-    var isAnchoredDraggableTargetValueCalculationFixEnabled = true
-
-    /**
-     * If this flag is enabled, Clickable will detect if it should delay press by using the new
-     * GestureNode structure where nodes can indicate if they're interested in a given
-     * PointerInputEvent. Moreover, all containers where a drag gesture happens (e.g. scrollable,
-     * draggable, anchored draggable) will cause the presses to be delayed.
-     */
-    // TODO: b/485966702
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isDelayPressesUsingGestureConsumptionEnabled = true
-
-    /**
-     * Enables support of trackpad gesture events in foundation components.
-     *
-     * This uses the additional trackpad gesture information enabled by
-     * `ComposeUiFlags.isTrackpadGestureHandlingEnabled`
-     */
-    // TODO: b/475634969 remove the temporary flag
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isTrackpadGestureHandlingEnabled: Boolean = true
-
-    /**
-     * With this flag on, nested draggable components (e.g. Lists, Pagers, Grids) will handle
-     * conflicting gestures by deciding which has a higher priority.
-     */
-    // TODO: b/485966180
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isNestedDraggablesTouchConflictFixEnabled = true
+    public var isAnchoredDraggableTargetValueCalculationFixEnabled: Boolean = true
 
     /**
      * This flag controls performance optimizations related to
@@ -169,15 +134,27 @@ object ComposeFoundationFlags {
     // TODO: Remove this flag once it has soaked (b/487251541)
     @field:Suppress("MutableBareField")
     @JvmField
-    var isBasicTextFieldMinSizeOptimizationEnabled = true
+    public var isBasicTextFieldMinSizeOptimizationEnabled: Boolean = true
 
     /**
-     * This flag controls the fix where item placement animation in
-     * [androidx.compose.foundation.lazy.LazyColumn] and [androidx.compose.foundation.lazy.LazyRow]
-     * is disabled when animated scroll happens.
+     * This flag controls performance optimizations related to
+     * [androidx.compose.foundation.text.BasicTextField]'s internal calculations of the minimum and
+     * maximum height.
      */
-    // TODO: Remove this flag once it has soaked (b/493183465)
-    @field:Suppress("MutableBareField") @JvmField var isSkipItemPlacementAnimationFixEnabled = true
+    // TODO: Remove this flag once it has soaked (b/501503945)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldHeightInLinesOptimizationEnabled: Boolean = true
+
+    /**
+     * This flag controls performance optimizations related to squashing multiple modifiers
+     * responsible for providing default measurement of the
+     * [androidx.compose.foundation.text.BasicTextField] into one.
+     */
+    // TODO: Remove this flag after 1.12 (b/507967106)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldSizeOptimizationEnabled: Boolean = true
 
     /**
      * This flag controls the fix where we correctly dispatch deltas in pager's default
@@ -186,7 +163,142 @@ object ComposeFoundationFlags {
     // TODO: Remove this flag once it has soaked (b/493462428)
     @field:Suppress("MutableBareField")
     @JvmField
-    var isReverseLayoutNestedScrollConnectionInPagerFixEnabled = true
+    public var isReverseLayoutNestedScrollConnectionInPagerFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.text.BasicTextField]'s formatted text
+     * features are enabled.
+     */
+    // TODO: Remove this flag once it has soaked (b/494340211)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isBasicTextFieldStyledTextEnabled: Boolean = true
+
+    /**
+     * This flag controls whether the legacy nodeOffset logic in DragGestureNode and
+     * IndirectPointerInputDragCycleDetector is disabled. Previously, VelocityTracker used local
+     * coordinates, necessitating manual point adjustment tracking.
+     */
+    // TODO: Remove this flag once it has soaked (b/457672200)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDragNodeOffsetDoubleCountingFixEnabled: Boolean = true
+
+    /**
+     * This flag controls the fix where we prioritize consumption on initial pass in Draggable. If a
+     * drag gesture started immediately, it should block subsequent nested gestures because the
+     * initial down was consumed.
+     */
+    // TODO: Remove this flag once it has soaked (b/518770709)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableInitialPassConsumptionFixEnabled: Boolean = true
+
+    /**
+     * This flag controls whether selecting text in
+     * [androidx.compose.foundation.text.selection.SelectionContainer] causes scrollable ancestors
+     * of the text to be scrolled when the selecting pointer is dragged outside the scrollable's
+     * viewport.
+     */
+    // TODO: Remove this flag once it has soaked (b/504914051)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isSelectionAutoScrollEnabled: Boolean = true
+
+    /**
+     * This flag controls whether the fix for velocity tracker usage in Draggable and related
+     * classes is enabled to a) properly track velocity per pointer and b) make sure to also take
+     * the pointer events into account that don't move at the beginning of the gesture in order to
+     * increase the stability of the computed velocity.
+     */
+    // TODO: Remove this flag once it has soaked (b/501080937)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableVelocityTrackerFixEnabled: Boolean = false
+
+    /**
+     * This flag controls whether it's possible to start selecting (via the mouse) text in a
+     * [androidx.compose.foundation.text.selection.SelectionContainer] by dragging from the areas
+     * between the text selectables.
+     */
+    // TODO: Remove this flag once it has soaked (b/521973612)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isMouseSelectionBetweenTextEnabled: Boolean = true
+
+    /**
+     * Disable minimum touch target expansion for inline links. Touch target expansion for
+     * multi-line links causes incorrect clicks on plain text on the same lines because it uses
+     * layout bounds (bounding box of multi-line path) instead of clipped shape.
+     */
+    // TODO: b/522377028
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLinkMinimumTouchTargetSizeZeroEnabled: Boolean = false
+
+    /**
+     * This flag controls the fix where draggable was ignoring and not consuming zero delta events.
+     * This caused issues with the gesture pickup feature. When this flag is enabled, zero delta
+     * events will be consumed (after a drag gesture has started).
+     */
+    // TODO: Remove this flag once it has soaked (b/524219039)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDraggableZeroDeltaConsumptionEnabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     * checks if the number of visible items has changed across iterations without scroll deltas
+     * (such as when changing lookahead window sizes) and refills the cache window if needed.
+     */
+    // TODO: b/535884139
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isCacheWindowLookaheadCheckEnabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     * only executes `keepAroundItems` during non-lookahead (approach) measure passes in
+     * [androidx.compose.foundation.lazy.LazyList],
+     * [androidx.compose.foundation.lazy.grid.LazyGrid], and
+     * [androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGrid].
+     */
+    // TODO: b/543772810
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isKeepAroundDuringLookaheadDisabled: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.LazyList] prefers using the
+     * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
+     * [androidx.compose.foundation.lazy.LazyListPrefetchStrategy].
+     */
+    // TODO: b/536884365
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyList: Boolean = true
+
+    /**
+     * This flag controls whether [androidx.compose.foundation.lazy.grid.LazyGrid] prefers using the
+     * default [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow] over
+     * [androidx.compose.foundation.lazy.grid.LazyGridPrefetchStrategy].
+     */
+    // TODO: b/543758449
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPreferDefaultCacheWindowOverPrefetchStrategyLazyGrid: Boolean = true
+
+    /**
+     * This flag controls whether lazy list measure passes calculate `firstVisibleIndex` and
+     * `lastVisibleIndex` from layout visible items before item placement animations run, preventing
+     * moving-away items added by [androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator]
+     * from corrupting visible item bounds and causing unwanted composition in prefetch or cache
+     * window strategies.
+     */
+    // TODO: b/543329409
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isLazyListItemAnimatorVisibleBoundsFixEnabled: Boolean = true
 }
 
 /** The initial value of [ComposeFoundationFlags.isNewContextMenuEnabled] */

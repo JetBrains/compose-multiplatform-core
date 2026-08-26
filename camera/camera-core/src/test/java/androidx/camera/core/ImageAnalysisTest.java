@@ -23,9 +23,12 @@ import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
+import android.graphics.ImageFormat;
+import android.hardware.HardwareBuffer;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -56,6 +59,8 @@ import androidx.camera.testing.fakes.FakeCameraInfoInternal;
 import androidx.camera.testing.impl.CameraUtil;
 import androidx.camera.testing.impl.CameraXUtil;
 import androidx.camera.testing.impl.fakes.FakeCameraFactory;
+import androidx.camera.testing.impl.fakes.FakeImageInfo;
+import androidx.camera.testing.impl.fakes.FakeImageProxy;
 import androidx.camera.testing.impl.fakes.FakeImageReaderProxy;
 import androidx.test.core.app.ApplicationProvider;
 
@@ -80,6 +85,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Unit test for {@link ImageAnalysis}.
@@ -527,6 +534,117 @@ public class ImageAnalysisTest {
                 )).isEqualTo(newImplementationOptionValue);
     }
 
+    @Test
+    @Config(minSdk = 29)
+    public void throwException_whenSetOutputImageFormatToPrivateWithRotationEnabled() {
+        // format then rotation
+        assertThrows(IllegalArgumentException.class,
+                () -> new ImageAnalysis.Builder()
+                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                        .setOutputImageRotationEnabled(true)
+                        .build());
+
+        // rotation then format
+        assertThrows(IllegalArgumentException.class,
+                () -> new ImageAnalysis.Builder()
+                        .setOutputImageRotationEnabled(true)
+                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                        .build());
+    }
+
+    @Test
+    @Config(minSdk = 29)
+    public void toBitmapThrowsException_whenPrivateFormatIsUsed() {
+        FakeImageInfo imageInfo = new FakeImageInfo();
+        FakeImageProxy imageProxy = new FakeImageProxy(imageInfo);
+        imageProxy.setFormat(ImageFormat.PRIVATE);
+
+        assertThrows(IllegalArgumentException.class, imageProxy::toBitmap);
+    }
+
+    @Test
+    @Config(minSdk = 28)
+    public void getHardwareBuffer_returnsCorrectHardwareBuffer() throws InterruptedException {
+        HardwareBuffer hardwareBuffer = mock(HardwareBuffer.class);
+        mImageAnalysis = new ImageAnalysis.Builder()
+                .setSessionOptionUnpacker((resolution, config, builder) -> { })
+                .setImageReaderProxyProvider(
+                        (width, height, format, queueDepth, usage) -> {
+                            mFakeImageReaderProxy = FakeImageReaderProxy.newInstance(width,
+                                    height, format, queueDepth, usage);
+                            mFakeImageReaderProxy.setHardwareBuffer(hardwareBuffer);
+                            return mFakeImageReaderProxy;
+                        })
+                .build();
+
+        CountDownLatch latch = new CountDownLatch(1);
+        final HardwareBuffer[] receivedHardwareBuffer = new HardwareBuffer[1];
+        mImageAnalysis.setAnalyzer(CameraXExecutors.directExecutor(), image -> {
+            receivedHardwareBuffer[0] = image.getHardwareBuffer();
+            image.close();
+            latch.countDown();
+        });
+
+        mImageAnalysis.bindToCamera(new FakeCamera(), null, null, null);
+        mImageAnalysis.updateSuggestedStreamSpec(StreamSpec.builder(new Size(640, 480)).build(),
+                null);
+
+        triggerNextImage();
+
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(receivedHardwareBuffer[0]).isEqualTo(hardwareBuffer);
+    }
+
+    @Test
+    @Config(minSdk = 29)
+    public void createPipelineWithPrivateFormat_fallsBackToZeroUsage_whenSampledUnsupported() {
+        AtomicInteger invocationCount = new AtomicInteger(0);
+        AtomicLong lastUsage = new AtomicLong(-1);
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setSessionOptionUnpacker((resolution, config, builder) -> { })
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .setImageReaderProxyProvider(
+                        (width, height, format, queueDepth, usage) -> {
+                            invocationCount.incrementAndGet();
+                            lastUsage.set(usage);
+                            if (usage == HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE) {
+                                throw new IllegalArgumentException(
+                                        "Simulated unsupported USAGE_GPU_SAMPLED_IMAGE");
+                            }
+                            return FakeImageReaderProxy.newInstance(
+                                    width, height, format, queueDepth, usage);
+                        })
+                .build();
+
+        imageAnalysis.bindToCamera(new FakeCamera(), null, null, null);
+        imageAnalysis.updateSuggestedStreamSpec(StreamSpec.builder(new Size(640, 480)).build(),
+                null);
+
+        // Assert that the provider was called twice:
+        // 1st attempt with USAGE_GPU_SAMPLED_IMAGE (which failed/threw)
+        // 2nd attempt with 0 (which succeeded)
+        assertThat(invocationCount.get()).isEqualTo(2);
+        assertThat(lastUsage.get()).isEqualTo(0);
+    }
+
+    @Test
+    @Config(minSdk = 29)
+    public void createPipelineWithPrivateFormat_throwsException_whenFallbackAlsoThrowsException() {
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setSessionOptionUnpacker((resolution, config, builder) -> { })
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_PRIVATE)
+                .setImageReaderProxyProvider(
+                        (width, height, format, queueDepth, usage) -> {
+                            throw new IllegalArgumentException("Simulated total failure");
+                        })
+                .build();
+
+        imageAnalysis.bindToCamera(new FakeCamera(), null, null, null);
+        assertThrows(IllegalArgumentException.class,
+                () -> imageAnalysis.updateSuggestedStreamSpec(
+                        StreamSpec.builder(new Size(640, 480)).build(), null));
+    }
+
     @SuppressWarnings("deprecation") // test for legacy resolution API
     @Test
     public void throwException_whenSetBothTargetResolutionAndAspectRatio() {
@@ -644,6 +762,40 @@ public class ImageAnalysisTest {
             imagesReceived.add(imageProxy.getImageInfo().getTimestamp());
         }
         return imagesReceived;
+    }
+
+    @Test
+    public void recreatedProcessedImageReaderProxy_isClosed_afterUnbind() {
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setOutputImageRotationEnabled(true)
+                .setSessionOptionUnpacker((resolution, config, builder) -> {
+                })
+                .setCaptureOptionUnpacker((config, builder) -> {
+                })
+                .build();
+
+        imageAnalysis.setTargetRotation(Surface.ROTATION_0);
+        CameraInternal camera = new FakeCamera();
+        imageAnalysis.bindToCamera(camera, null, null, null);
+        imageAnalysis.onSuggestedStreamSpecUpdated(
+                StreamSpec.builder(new Size(800, 600)).build(), null);
+
+        imageAnalysis.setAnalyzer(CameraXExecutors.directExecutor(),
+                mock(ImageAnalysis.Analyzer.class));
+        ImageAnalysisAbstractAnalyzer abstractAnalyzer =
+                imageAnalysis.mImageAnalysisAbstractAnalyzer;
+
+        imageAnalysis.setTargetRotation(Surface.ROTATION_180);
+
+        SafeCloseImageReaderProxy recreatedReader =
+                abstractAnalyzer.getProcessedImageReaderProxy();
+        assertThat(recreatedReader).isNotNull();
+        assertThat(recreatedReader.isClosed()).isFalse();
+
+        imageAnalysis.unbindFromCamera(camera);
+
+        assertThat(recreatedReader.isClosed()).isTrue();
+        assertThat(recreatedReader.getOutstandingImages()).isEqualTo(0);
     }
 
     /**

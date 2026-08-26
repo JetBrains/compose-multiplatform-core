@@ -20,32 +20,39 @@ import androidx.activity.ComponentActivity
 import androidx.kruth.assertThrows
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(UnstableNativeResourceApi::class)
 class NativeDataExtTest {
 
     private lateinit var session: Session
     private val testDispatcher = StandardTestDispatcher()
 
-    // TODO(b/467096822) : Have these tests use the FakePerceptionRuntime once it is implemented.
+    // getNativeSessionData is deprecated, but we still need to test it until 1P support is removed.
+    @Suppress("DEPRECATION")
     @Test
-    fun getNativeData_unsupportedPerceptionRuntime_throwsIllegalStateException() =
+    fun getNativeSessionData_unsupportedPerceptionRuntime_throwsIllegalStateException() =
         createTestSessionAndRunTest {
-            assertThrows<IllegalStateException> { session.getNativeData() }
+            assertThrows<IllegalStateException> { session.getNativeSessionData() }
         }
 
-    private fun createTestSessionAndRunTest(testBody: () -> Unit) {
+    private fun createTestSessionAndRunTest(testBody: (ComponentActivity) -> Unit) {
         ActivityScenario.launch(ComponentActivity::class.java).use {
             it.onActivity { activity ->
                 session =
-                    (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)
+                    (runBlocking {
+                            Session.create(
+                                context = activity,
+                                coroutineContext = StandardTestDispatcher(),
+                            )
+                        }
+                            as SessionCreateSuccess)
                         .session
 
-                testBody()
+                testBody(activity)
             }
         }
     }

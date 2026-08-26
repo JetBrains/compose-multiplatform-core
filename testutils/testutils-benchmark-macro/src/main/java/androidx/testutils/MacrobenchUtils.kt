@@ -17,7 +17,6 @@
 package androidx.testutils
 
 import android.content.Intent
-import android.os.Build
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
 import androidx.benchmark.StartupInsightsConfig
@@ -35,6 +34,8 @@ import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.isSupportedWithVmSettings
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
+import androidx.test.uiautomator.SearchCondition
+import androidx.test.uiautomator.UiDevice
 
 /**
  * Compilation modes to sweep over for jetpack internal macrobenchmarks.
@@ -46,23 +47,18 @@ import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
  * measurements that capture the effectiveness of our baseline profiles, so we run with those too.
  */
 val COMPILATION_MODES =
-    if (Build.VERSION.SDK_INT < 24) {
-        // other modes aren't supported
-        listOf(CompilationMode.Full())
-    } else {
-        listOf(
-            CompilationMode.Partial(
-                baselineProfileMode = BaselineProfileMode.Disable,
-                warmupIterations = 3,
-            ),
-            /* For simplicity we use `Partial()`, which will only install baseline profiles if
-             * available, which would not be useful for macrobenchmarks that don't include baseline
-             * profiles. However baseline profiles are expected to make their way into essentially every
-             * jetpack macrobenchmark over time.
-             */
-            CompilationMode.Partial(),
-        )
-    }
+    listOf(
+        CompilationMode.Partial(
+            baselineProfileMode = BaselineProfileMode.Disable,
+            warmupIterations = 3,
+        ),
+        /* For simplicity we use `Partial()`, which will only install baseline profiles if
+         * available, which would not be useful for macrobenchmarks that don't include baseline
+         * profiles. However baseline profiles are expected to make their way into essentially every
+         * jetpack macrobenchmark over time.
+         */
+        CompilationMode.Partial(),
+    )
 
 /**
  * Default selection of [StartupMode]s for CI.
@@ -70,19 +66,14 @@ val COMPILATION_MODES =
  * By default, we only care about WARM and COLD startup. HOT provides important metrics, but does
  * not provide enough delta to WARM for us to run in CI.
  */
-val STARTUP_MODES =
-    listOf(StartupMode.WARM, StartupMode.COLD).filter {
-        // skip StartupMode.HOT on Angler, API 23 - it works locally with same build on Bullhead,
-        // but not in Jetpack CI (b/204572406)
-        !(Build.VERSION.SDK_INT == 23 && it == StartupMode.HOT && Build.DEVICE == "angler")
-    }
+val STARTUP_MODES = listOf(StartupMode.WARM, StartupMode.COLD)
 
 /** Temporary, while transitioning to new metrics */
 @OptIn(ExperimentalMetricApi::class)
 fun getStartupMetrics() =
     listOfNotNull(
         StartupTimingMetric(),
-        if (Build.VERSION.SDK_INT >= 24) ArtMetric() else null,
+        ArtMetric(),
         TraceSectionMetric("StartupTracingInitializer", TraceSectionMetric.Mode.First),
         MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
     )
@@ -118,14 +109,10 @@ fun MacrobenchmarkRule.measureStartup(
 
 /** Baseline Profile compilation mode is considered primary, and always worth measuring */
 private fun CompilationMode.isPrimary(): Boolean {
-    return if (Build.VERSION.SDK_INT < 24) {
-        true
-    } else {
-        this is CompilationMode.Partial &&
-            this.warmupIterations == 0 &&
-            (this.baselineProfileMode == BaselineProfileMode.UseIfAvailable ||
-                this.baselineProfileMode == BaselineProfileMode.Require)
-    }
+    return this is CompilationMode.Partial &&
+        this.warmupIterations == 0 &&
+        (this.baselineProfileMode == BaselineProfileMode.UseIfAvailable ||
+            this.baselineProfileMode == BaselineProfileMode.Require)
 }
 
 /**
@@ -138,7 +125,7 @@ private fun CompilationMode.isPrimary(): Boolean {
  * measurements that capture the effectiveness of our baseline profiles, , so we run with those too.
  */
 private val STARTUP_COMPILATION_MODES =
-    COMPILATION_MODES.filter { Build.VERSION.SDK_INT < 24 || it is CompilationMode.Partial }
+    COMPILATION_MODES.filterIsInstance<CompilationMode.Partial>()
 
 fun createStartupCompilationParams(
     startupModes: List<StartupMode> = STARTUP_MODES,
@@ -270,4 +257,33 @@ fun defaultComposeScrollingMetrics(): List<Metric> =
             label = "composeDraw",
             mode = TraceSectionMetric.Mode.Sum,
         ),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
+        MemoryUsageMetric(MemoryUsageMetric.Mode.Max),
+        // Measures the time to process accessibility updates. This covers sections in
+        // AndroidComposeViewAccessibilityDelegateCompat that create and update semantic nodes, or
+        // dispatch accessibility events. The relevant slices are prefixed with "Compose:semantics"
+        TraceSectionMetric(
+            sectionName = "Compose:semantics:%",
+            label = "composeSemantics",
+            mode = TraceSectionMetric.Mode.Sum,
+        ),
     )
+
+/**
+ * Wait for the [condition] to become true for [timeoutMillis] ms or throw an exception and dump the
+ * window hierarchy if the condition is not met.
+ */
+fun UiDevice.waitOrThrow(
+    condition: SearchCondition<Boolean>,
+    timeoutMillis: Long,
+    dumpWindowHierarchyOnFailure: Boolean = true,
+    lazyMessage: () -> String = {
+        "Waited for $condition, was not fulfilled after $timeoutMillis ms."
+    },
+) {
+    val waitResult = wait(condition, timeoutMillis)
+    if (waitResult != true && dumpWindowHierarchyOnFailure) {
+        dumpWindowHierarchy(System.out)
+    }
+    require(waitResult == true, lazyMessage)
+}

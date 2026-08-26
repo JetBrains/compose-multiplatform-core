@@ -178,7 +178,7 @@ object ProcessorErrors {
     const val CANNOT_BIND_QUERY_PARAMETER_INTO_STMT =
         "Query function parameters should either be a" +
             " type that can be converted into a database column or a List / Array that contains" +
-            " such type. Consider also adding a @TypeConverter for the parameter type."
+            " such type. Consider also adding a @ColumnTypeConverter for the parameter type."
 
     const val QUERY_PARAMETERS_CANNOT_START_WITH_UNDERSCORE =
         "@Query / @Insert function parameters cannot start with underscore ('_')."
@@ -306,6 +306,10 @@ object ProcessorErrors {
         "@DaoReturnTypeConverter functions without a type parameter should have a suspend lambda " +
             "returning Unit."
 
+    const val DAO_RETURN_TYPE_CONVERTER_LAMBDA_WITH_RAW_QUERY_MISSING_FUNCTION_PARAM =
+        "If the lambda parameter of a @DaoReturnTypeConverter function has a parameter of type " +
+            "RoomRawQuery then so must the @DaoReturnTypeConverter-annotated function."
+
     const val OBSERVABLE_QUERY_NOTHING_TO_OBSERVE =
         "Observable query return type (i.e. Flow) can only be used with SELECT queries that" +
             " directly or indirectly (via @Relation, for example) access at least one table. For" +
@@ -333,7 +337,7 @@ object ProcessorErrors {
 
     const val CANNOT_FIND_COLUMN_TYPE_ADAPTER =
         "Cannot figure out how to save this property into database. " +
-            "Consider also adding a @TypeConverter for the property type."
+            "Consider also adding a @ColumnTypeConverter for the property type."
 
     const val VALUE_CLASS_ONLY_SUPPORTED_IN_KSP =
         "Kotlin value classes are only supported " +
@@ -387,7 +391,7 @@ object ProcessorErrors {
         """
             .trim()
 
-    fun dataClassMissingNonNull(
+    fun dataClassMissingRequiredColumns(
         dataClassTypeName: String,
         missingDataClassProperties: List<String>,
         allQueryColumns: List<String>,
@@ -395,7 +399,7 @@ object ProcessorErrors {
         """
         The columns returned by the query does not have the properties
         [${missingDataClassProperties.joinToString()}] in $dataClassTypeName even
-        though they are annotated as non-null or primitive.
+        though they are non-null, primitive or have no default value.
         Columns returned by the query: [${allQueryColumns.joinToString()}]
         """
             .trim()
@@ -445,14 +449,16 @@ object ProcessorErrors {
             .trim()
     }
 
-    const val TYPE_CONVERTER_UNBOUND_GENERIC = "Cannot use unbound generics in type converters."
+    const val TYPE_CONVERTER_UNBOUND_GENERIC =
+        "Cannot use unbound generics in column type converters."
 
-    const val TYPE_CONVERTER_BAD_RETURN_TYPE = "Invalid return type for a type converter."
+    const val TYPE_CONVERTER_BAD_RETURN_TYPE = "Invalid return type for a column type converter."
 
     const val DAO_RETURN_TYPE_CONVERTER_BAD_RETURN_TYPE =
         "Invalid return type for a DAO return type converter."
 
-    const val TYPE_CONVERTER_MUST_RECEIVE_1_PARAM = "Type converters must receive 1 parameter."
+    const val TYPE_CONVERTER_MUST_RECEIVE_1_PARAM =
+        "Column type converters must receive 1 parameter."
 
     const val TYPE_CONVERTER_EMPTY_CLASS =
         "Class is referenced as a converter but it does not have any converter functions."
@@ -488,23 +494,24 @@ object ProcessorErrors {
             "contain more than one instance of the same generic type argument, e.g. Foo<T,T>."
 
     const val TYPE_CONVERTER_MISSING_NOARG_CONSTRUCTOR =
-        "Classes that are used in @TypeConverters must" +
-            " have no-argument public constructors. Use a @ProvidedTypeConverter annotation if you" +
-            " need to take control over creating an instance of the type converter class"
+        "Classes that are used in @ColumnTypeConverters must" +
+            " have no-argument public constructors. Use a @ProvidedColumnTypeConverter annotation if you" +
+            " need to take control over creating an instance of the column type converter class"
 
-    const val TYPE_CONVERTER_MUST_BE_PUBLIC = "@TypeConverter function must be public or internal"
+    const val TYPE_CONVERTER_MUST_BE_PUBLIC =
+        "@ColumnTypeConverter function must be public or internal"
 
     const val DAO_RETURN_TYPE_CONVERTER_MUST_BE_PUBLIC =
         "@DaoReturnTypeConverter function must be public or internal."
 
     const val INNER_CLASS_TYPE_CONVERTER_MUST_BE_STATIC =
-        "An inner @TypeConverters class must be static."
+        "An inner @ColumnTypeConverters class must be static."
 
     const val INNER_CLASS_DAO_RETURN_TYPE_CONVERTER_MUST_BE_STATIC =
         "An inner @DaoReturnTypeConverters class must be static."
 
     fun duplicateTypeConverters(converters: List<String>) =
-        "Multiple @TypeConverter functions define the same conversion. Conflicts with these:" +
+        "Multiple @ColumnTypeConverter functions define the same conversion. Conflicts with these:" +
             " ${converters.joinToString()}"
 
     fun duplicateDaoReturnTypeConverters(converters: List<String>) =
@@ -512,7 +519,7 @@ object ProcessorErrors {
             " ${converters.joinToString()}"
 
     fun typeConverterMustBeDeclared(typeName: String) =
-        "Invalid type converter type: $typeName. Type converters must be a class."
+        "Invalid column type converter type: $typeName. Column type converters must be a class."
 
     fun dataClassDuplicatePropertyNames(columnName: String, propertyPaths: List<String>) =
         "Multiple properties have the same columnName: $columnName." +
@@ -562,37 +569,37 @@ object ProcessorErrors {
 
     const val NOT_ENTITY_OR_VIEW = "The class must be either @Entity or @DatabaseView."
 
-    fun relationCannotFindEntityProperty(
+    fun relationCannotFindEntityProperties(
         entityName: String,
-        columnName: String,
+        columnNames: List<String>,
         availableColumns: List<String>,
     ) =
-        "Cannot find the child entity column `$columnName` in $entityName." +
+        "Cannot find the child entity columns [${columnNames.joinToString()}] in $entityName." +
             " Available columns are: ${availableColumns.joinToString()}"
 
-    fun relationCannotFindParentEntityProperty(
+    fun relationCannotFindParentEntityProperties(
         entityName: String,
-        columnName: String,
+        columnNames: List<String>,
         availableColumns: List<String>,
     ) =
-        "Cannot find the parent entity column `$columnName` in $entityName." +
+        "Cannot find the parent entity columns [${columnNames.joinToString()}] in $entityName." +
             " Available columns are: ${availableColumns.joinToString()}"
 
-    fun relationCannotFindJunctionEntityProperty(
+    fun relationCannotFindJunctionEntityProperties(
         entityName: String,
-        columnName: String,
+        columnNames: List<String>,
         availableColumns: List<String>,
     ) =
-        "Cannot find the child entity referencing column `$columnName` in the junction " +
+        "Cannot find the child entity referencing columns [${columnNames.joinToString()}] in the junction " +
             "$entityName. Available columns are: ${availableColumns.joinToString()}"
 
-    fun relationCannotFindJunctionParentProperty(
+    fun relationCannotFindJunctionParentProperties(
         entityName: String,
-        columnName: String,
+        columnNames: List<String>,
         availableColumns: List<String>,
     ) =
-        "Cannot find the parent entity referencing column `$columnName` in the junction " +
-            "$entityName. Options: ${availableColumns.joinToString()}"
+        "Cannot find the parent entity referencing columns [${columnNames.joinToString()}] in the junction " +
+            "$entityName. Available columns are: ${availableColumns.joinToString()}"
 
     fun junctionColumnWithoutIndex(entityName: String, columnName: String) =
         "The column $columnName in the junction entity $entityName is being used to resolve " +
@@ -601,6 +608,25 @@ object ProcessorErrors {
             "create an index that covers this column."
 
     const val RELATION_IN_ENTITY = "Entities cannot have relations."
+
+    const val RELATION_PARENT_COLUMNS_CANNOT_BE_EMPTY =
+        "Cannot have empty 'parentColumns' in @Relation."
+
+    const val RELATION_ENTITY_COLUMNS_CANNOT_BE_EMPTY =
+        "Cannot have empty 'entityColumns' in @Relation."
+
+    const val RELATION_COLUMNS_SIZE_MISMATCH =
+        "In @Relation both 'parentColumns' and 'entityColumns' must have the same number of columns."
+
+    const val JUNCTION_PARENT_COLUMNS_SIZE_MISMATCH =
+        "In a @Relation with a junction, 'parentColumns' size must match relation 'parentColumns size"
+
+    const val JUNCTION_ENTITY_COLUMNS_SIZE_MISMATCH =
+        "In a @Relation with a junction, 'entityColumns' size must match relation 'entityColumns' size"
+
+    const val RELATION_CANNOT_INFER_PROJECTION_FOR_COMPOSITE_RELATION =
+        "Cannot infer projection for composite relation when returning a single value. " +
+            "Please specify projection in @Relation."
 
     fun relationAffinityMismatch(
         parentColumn: String,
@@ -1268,4 +1294,12 @@ object ProcessorErrors {
 
     const val INVALID_NULLABLE_DAO_CONSTRUCTOR_PARAM =
         "The database parameter of a DAO constructor must not be nullable."
+
+    fun mismatchPairTripleQueryColumns(required: Int, typeName: String) =
+        "Query returns less than $required columns but $typeName expects at least $required."
+
+    const val WITHOUT_ROWID_CANNOT_USE_AUTOINCREMENT =
+        "An entity with WITHOUT ROWID cannot use AUTOINCREMENT on their primary key."
+
+    const val FTS_ENTITY_CANNOT_USE_WITHOUT_ROWID = "An FTS entity cannot be create WITHOUT ROWID."
 }

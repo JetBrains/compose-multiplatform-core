@@ -22,11 +22,13 @@ import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector3.Companion.abs
+import androidx.xr.scenecore.runtime.CleanupAction
 import androidx.xr.scenecore.runtime.SystemSpaceEntity
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import com.android.extensions.xr.node.NodeTransform
 import java.io.Closeable
+import java.lang.ref.WeakReference
 import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicReference
@@ -47,19 +49,36 @@ internal constructor(
     sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
 ) : AndroidXrEntity(context, node, extensions, sceneNodeRegistry, executor), SystemSpaceEntity {
-    // Transform for this space's origin in OpenXR reference space.
-    internal val openXrReferenceSpaceTransform = AtomicReference<Matrix4?>(null)
+    // Transform for this space's origin in the underlying platform reference space.
+    internal val platformReferenceSpaceTransform = AtomicReference<Matrix4?>(null)
     @VisibleForTesting internal var _worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f)
     // Visible for testing.
     public lateinit var nodeTransformCloseable: Closeable
     private var originChangedListener: Runnable? = null
     private var originChangedExecutor: Executor = scheduledExecutor
 
+    private val systemSpaceCleanupAction = SystemSpaceCleanupAction()
+
     init {
         // The underlying CPM node is always expected to be updated in response to changes to
         // the coordinate space represented by a SystemSpaceEntityImpl so we subscribe at
         // construction.
         subscribeToNodeTransform(node, executor)
+        registerCleanup(executor, systemSpaceCleanupAction)
+    }
+
+    private class SystemSpaceCleanupAction : CleanupAction({}) {
+        @Volatile var nodeTransformCloseable: Closeable? = null
+        private val cleanupAction = CleanupAction {
+            try {
+                nodeTransformCloseable?.close()
+            } catch (_: Exception) {
+                // Don't throw when in dispose.
+            }
+            nodeTransformCloseable = null
+        }
+
+        override fun run() = cleanupAction.run()
     }
 
     /** Called when the underlying space's origin has changed. */
@@ -73,34 +92,34 @@ internal constructor(
         originChangedExecutor = executor ?: scheduledExecutor
     }
 
-    public val poseInOpenXrReferenceSpace: Pose?
+    public override val poseInPlatformReferenceSpace: Pose?
         /**
-         * Returns the pose relative to an OpenXR reference space.
+         * Returns the pose relative to a platform reference space.
          *
-         * The OpenXR reference space is the space returned by
+         * The underlying platform reference space is the space returned by
          * [XrExtensions.getOpenXrWorldReferenceSpaceType]
          */
-        get() = openXrReferenceSpaceTransform.get()?.unscaled()?.toPose()
+        get() = platformReferenceSpaceTransform.get()?.unscaled()?.toPose()
 
     /**
-     * Sets the pose and scale of the entity in an OpenXR reference space and should call the
+     * Sets the pose and scale of the entity in a platform reference space and should call the
      * onOriginChanged() callback to signal a change in the underlying space.
      *
-     * @param openXrReferenceSpaceTransform 4x4 transformation matrix of the entity in an OpenXR
-     *   reference space. The OpenXR reference space is of the type defined by the
+     * @param platformReferenceSpaceTransform 4x4 transformation matrix of the entity in a platform
+     *   reference space. The platform reference space is of the type defined by the
      *   [XrExtensions.getOpenXrWorldReferenceSpaceType] method.
      */
-    public fun setOpenXrReferenceSpaceTransform(openXrReferenceSpaceTransform: Matrix4) {
-        if (openXrReferenceSpaceTransform == Matrix4.Zero) {
+    public fun setPlatformReferenceSpaceTransform(platformReferenceSpaceTransform: Matrix4) {
+        if (platformReferenceSpaceTransform == Matrix4.Zero) {
             return
         }
-        this.openXrReferenceSpaceTransform.set(openXrReferenceSpaceTransform)
+        this.platformReferenceSpaceTransform.set(platformReferenceSpaceTransform)
         // TODO: b/353511649 - Make SystemSpaceEntityImpl thread safe.
         // Matrix4.scale returns either a positive or negative scale based on the rotation
         // matrix determinant, but we keep it positive for now to avoid any unexpected issues.
         // SpaceFlinger might apply a scale to the task node, for example if the user caused the
         // main panel to scale in Homespace mode.
-        val actualScale = openXrReferenceSpaceTransform.scale
+        val actualScale = platformReferenceSpaceTransform.scale
         // TODO: b/367780918 - Use the original scale, when the new matrix decomposition is tested
         // thoroughly.
         _worldSpaceScale = abs(actualScale)
@@ -110,34 +129,24 @@ internal constructor(
 
     /**
      * Subscribes to the node's transform update events and caches the pose by calling
-     * setOpenXrReferenceSpacePose().
+     * setPlatformReferenceSpaceTransform().
      *
      * @param node The node to subscribe to.
      * @param executor The executor to run the callback on.
      */
     private fun subscribeToNodeTransform(node: Node, executor: ScheduledExecutorService) {
+        val weakThis = WeakReference(this)
         nodeTransformCloseable =
             node.subscribeToTransform(executor) { transform: NodeTransform ->
-                setOpenXrReferenceSpaceTransform(RuntimeUtils.getMatrix(transform.transform))
+                weakThis
+                    .get()
+                    ?.setPlatformReferenceSpaceTransform(
+                        RuntimeUtils.getMatrix(transform.transform)
+                    )
             }
+        systemSpaceCleanupAction.nodeTransformCloseable = nodeTransformCloseable
     }
 
     override val worldSpaceScale: Vector3
         get() = _worldSpaceScale
-
-    /** Unsubscribes from the node's transform update events. */
-    private fun unsubscribeFromNodeTransform() {
-        try {
-            nodeTransformCloseable.close()
-        } catch (e: Exception) {
-            throw RuntimeException(
-                "Could not close node transform subscription with error: " + e.message
-            )
-        }
-    }
-
-    override fun dispose() {
-        unsubscribeFromNodeTransform()
-        super.dispose()
-    }
 }

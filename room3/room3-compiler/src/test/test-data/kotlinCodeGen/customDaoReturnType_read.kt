@@ -2,8 +2,6 @@ import androidx.room3.RoomDatabase
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.String
@@ -14,7 +12,7 @@ import kotlin.collections.mutableListOf
 import kotlin.reflect.KClass
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "OPT_IN_USAGE_ERROR", "OPT_IN_USAGE", "MemberExtensionConflict", "CAN_BE_VAL"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
@@ -28,7 +26,7 @@ internal class MyDao_Impl(
   public override suspend fun getFooSingleColumn(): Foo<MyEntity> {
     val _sql: String = "SELECT * FROM MyEntity"
     return __fooReturnTypeConverter.convert() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
@@ -51,7 +49,7 @@ internal class MyDao_Impl(
   public override suspend fun getFooList(): Foo<List<MyEntity>> {
     val _sql: String = "SELECT * FROM MyEntity"
     return __fooReturnTypeConverter.convert() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<List<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
@@ -74,7 +72,7 @@ internal class MyDao_Impl(
   public override fun getBlockingFooList(): Foo<List<MyEntity>> {
     val _sql: String = "SELECT * FROM MyEntity"
     return __fooReturnTypeConverter.convertBlocking() {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<List<MyEntity>>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
@@ -95,6 +93,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

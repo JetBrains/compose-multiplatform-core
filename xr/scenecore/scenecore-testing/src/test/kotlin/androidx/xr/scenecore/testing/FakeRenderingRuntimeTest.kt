@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.app.Activity
@@ -87,21 +89,21 @@ class FakeRenderingRuntimeTest {
     fun setReflectionTexture_checkReturnedValue() {
         check(fakeRenderingRuntime.reflectionTexture == null)
 
-        val resource = FakeResource(0)
-        fakeRenderingRuntime.reflectionTexture = resource
+        val texture = FakeTexture()
+        fakeRenderingRuntime.reflectionTexture = texture
 
-        Truth.assertThat(renderingRuntime.borrowReflectionTexture()).isEqualTo(resource)
+        Truth.assertThat(renderingRuntime.borrowReflectionTexture()).isEqualTo(texture)
     }
 
     @Test
     fun destroyTexture_checkReflectionTexture() {
         check(fakeRenderingRuntime.reflectionTexture == null)
 
-        val resource = FakeResource(0)
-        fakeRenderingRuntime.reflectionTexture = resource
-        renderingRuntime.destroyTexture(resource)
+        val texture = FakeTexture()
+        fakeRenderingRuntime.reflectionTexture = texture
+        renderingRuntime.destroyTexture(texture)
 
-        Truth.assertThat(fakeRenderingRuntime.reflectionTexture).isNull()
+        Truth.assertThat(texture.isDestroyed).isTrue()
     }
 
     @Test
@@ -449,5 +451,45 @@ class FakeRenderingRuntimeTest {
         assertThat(surfaceEntity.parent).isEqualTo(sceneRuntime.activitySpace)
 
         surfaceEntity.dispose()
+    }
+
+    @Test
+    fun loadExrImageByAssetName_returnsExrImage() {
+        val assetName = "testAsset"
+
+        runBlocking {
+            val exrImage = renderingRuntime.loadExrImageByAssetName(assetName)
+
+            assertThat((exrImage as FakeExrImageResource).assetName).isEqualTo(assetName)
+        }
+    }
+
+    @Test
+    fun loadExrImageByByteArray_returnsExrImage() = runBlocking {
+        val assetData: ByteArray = byteArrayOf(100)
+        val assetKey = "testKey"
+
+        val exrImage =
+            renderingRuntime.loadExrImageByByteArray(assetData, assetKey) as FakeExrImageResource
+
+        assertThat(exrImage.assetData).isEqualTo(assetData)
+        assertThat(exrImage.assetKey).isEqualTo(assetKey)
+    }
+
+    @Test
+    fun loadTexture_returnsFakeTextureWithCorrectName() = runBlocking {
+        val textureName = "test_texture.png"
+        val texture = fakeRenderingRuntime.loadTexture(textureName)
+
+        assertThat(texture).isInstanceOf<FakeTexture>()
+        assertThat((texture as FakeTexture).assetName).isEqualTo(textureName)
+    }
+
+    @Test
+    fun destroyTexture_marksTextureAsDestroyed() = runBlocking {
+        val texture = renderingRuntime.loadTexture("test.png") as FakeTexture
+        renderingRuntime.destroyTexture(texture)
+
+        assertThat(texture.isDestroyed).isTrue()
     }
 }

@@ -23,7 +23,7 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
- * Represents a three-dimensional position in space.
+ * Three-dimensional position in space.
  *
  * The coordinate system is right-handed. The [x]-axis points to the right, the [y]-axis up and the
  * [z]-axis back.
@@ -64,10 +64,7 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
      */
     public operator fun times(c: Float): Vector3 = Vector3(x * c, y * c, z * c)
 
-    /**
-     * Returns a new vector with each component of this vector multiplied by each corresponding
-     * component of the [other] vector.
-     */
+    /** Returns a new vector by component-wise multiplying this vector by [other]. */
     public fun scale(other: Vector3): Vector3 = Vector3(x * other.x, y * other.y, z * other.z)
 
     /**
@@ -94,9 +91,16 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
         return Vector3(1 / this.x, 1 / this.y, 1 / this.z)
     }
 
-    /** Returns the normalized version of this vector. */
+    /**
+     * Returns the normalized version of this vector. A zero-length vector has no direction to
+     * normalize and returns [Zero] rather than a vector of NaN components.
+     */
     public fun toNormalized(): Vector3 {
-        val norm = rsqrt(lengthSquared)
+        val lenSq = lengthSquared
+        if (lenSq < EPSILON) {
+            return Zero
+        }
+        val norm = rsqrt(lenSq)
 
         return Vector3(x * norm, y * norm, z * norm)
     }
@@ -144,6 +148,7 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
     override fun toString(): String = "[x=$x, y=$y, z=$z]"
 
     public companion object {
+        private const val EPSILON: Float = 1e-15f
         /** Vector with all components set to zero. */
         @JvmField public val Zero: Vector3 = Vector3(x = 0f, y = 0f, z = 0f)
 
@@ -180,18 +185,19 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
          */
         @JvmStatic
         public fun angleBetween(vector1: Vector3, vector2: Vector3): Float {
-            val dot = vector1 dot vector2
-            val magnitude = vector1.length * vector2.length
-
-            if (magnitude < 1e-10f) {
+            val len1 = vector1.length
+            val len2 = vector2.length
+            if (len1 < EPSILON || len2 < EPSILON) {
                 return 0.0f
             }
+            val dot = vector1 dot vector2
+            val magnitude = len1 * len2
 
             // Clamp due to floating point precision errors that could cause dot to be > mag.
             // Would cause acos to return NaN.
             val cos = clamp(dot / magnitude, -1.0f, 1.0f)
 
-            return acos(cos)
+            return toDegrees(acos(cos))
         }
 
         /**
@@ -204,8 +210,7 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
         public fun distance(vector1: Vector3, vector2: Vector3): Float = (vector1 - vector2).length
 
         /**
-         * Returns a new vector that is linearly interpolated between [start] and [end] using the
-         * interpolated amount [ratio].
+         * Returns a new vector linearly interpolated between [start] and [end] by [ratio].
          *
          * If [ratio] is outside of the range `[0, 1]`, the returned vector will be extrapolated.
          *

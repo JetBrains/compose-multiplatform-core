@@ -21,6 +21,7 @@ import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.SerializableToString;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
 import androidx.compose.remote.core.documentation.DocumentedOperation;
@@ -37,10 +38,11 @@ import java.util.List;
  * compressed and saved in playback the image is decompressed
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class BitmapData extends Operation implements SerializableToString, Serializable {
+public class BitmapData extends Operation
+        implements SerializableToString, Serializable, ComponentData, VariableProvider {
     private static final int OP_CODE = Operations.DATA_BITMAP;
     private static final String CLASS_NAME = "BitmapData";
-    public final int mImageId;
+    public int mImageId;
     int mImageWidth;
     int mImageHeight;
     short mType;
@@ -62,7 +64,9 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     /** The data is encoded as PNG_8888 (default) */
     public static final short TYPE_PNG_8888 = 0;
 
-    /** The data is encoded as PNG */
+    /** The data is encoded as Generic PNG
+     *  Not to be used with ENCODING_INLINE, which requires a specific type
+    */
     public static final short TYPE_PNG = 1;
 
     /** The data is encoded as RAW 8 bit */
@@ -74,13 +78,23 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     /** The data is encoded as PNG_8888 but decoded as ALPHA_8 */
     public static final short TYPE_PNG_ALPHA_8 = 4;
 
+    @Override
+    public int getId() {
+        return mImageId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mImageId = id;
+    }
+
     /**
      * create a bitmap structure
      *
      * @param imageId the id to store the image
-     * @param width   the width of the image
-     * @param height  the height of the image
-     * @param bitmap  the data
+     * @param width the width of the image
+     * @param height the height of the image
+     * @param bitmap the data
      */
     public BitmapData(int imageId, int width, int height, byte @NonNull [] bitmap) {
         this.mImageId = imageId;
@@ -93,9 +107,9 @@ public class BitmapData extends Operation implements SerializableToString, Seria
      * create a bitmap structure
      *
      * @param imageId the id to store the image
-     * @param width   the width of the image
-     * @param height  the height of the image
-     * @param bitmap  the data
+     * @param width the width of the image
+     * @param height the height of the image
+     * @param bitmap the data
      */
     public BitmapData(
             int imageId,
@@ -145,7 +159,13 @@ public class BitmapData extends Operation implements SerializableToString, Seria
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(buffer, mImageId, mType, (short) mImageWidth, mEncoding, (short) mImageHeight,
+        apply(
+                buffer,
+                mImageId,
+                mType,
+                (short) mImageWidth,
+                mEncoding,
+                (short) mImageHeight,
                 mBitmap);
     }
 
@@ -186,11 +206,11 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     /**
      * Add the image to the document
      *
-     * @param buffer  document to write to
+     * @param buffer document to write to
      * @param imageId the id the image will be stored under
-     * @param width   the width of the image
-     * @param height  the height of the image
-     * @param bitmap  the data used to store/encode the image
+     * @param width the width of the image
+     * @param height the height of the image
+     * @param bitmap the data used to store/encode the image
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -208,13 +228,13 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     /**
      * Add the image to the document (using the enhanced encoding)
      *
-     * @param buffer   document to write to
-     * @param imageId  the id the image will be stored under
-     * @param type     the type of image
-     * @param width    the width of the image
+     * @param buffer document to write to
+     * @param imageId the id the image will be stored under
+     * @param type the type of image
+     * @param width the width of the image
      * @param encoding the encoding
-     * @param height   the height of the image
-     * @param bitmap   the data used to store/encode the image
+     * @param height the height of the image
+     * @param bitmap the data used to store/encode the image
      */
     public static void apply(
             @NonNull WireBuffer buffer,
@@ -236,11 +256,11 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int imageId = buffer.readInt();
+        int imageId = buffer.readId();
         int width = buffer.readInt();
         int height = buffer.readInt();
         int type;
@@ -258,13 +278,25 @@ public class BitmapData extends Operation implements SerializableToString, Seria
         } else {
             encoding = ENCODING_INLINE;
         }
+        if (!Limits.ENABLE_IMAGE_URLS) {
+            if (ENCODING_URL == encoding) {
+                throw new RuntimeException("URL image not supported [" + imageId + "]");
+            }
+        }
+        if (!Limits.ENABLE_IMAGE_FILES) {
+            if (ENCODING_FILE == encoding) {
+                throw new RuntimeException("File image not supported [" + imageId + "]");
+            }
+        }
         if (width < 1
                 || height < 1
                 || height > Limits.MAX_IMAGE_DIMENSION
-                || width > Limits.MAX_IMAGE_DIMENSION) {
+                || width > Limits.MAX_IMAGE_DIMENSION
+                || width * height > Limits.MAX_BITMAP_MEMORY) {
             throw new RuntimeException("Dimension of image is invalid " + width + "x" + height);
         }
-        byte[] bitmap = buffer.readBuffer();
+        // This can be reading a JPEG, GIF, PNG or RAW image. Make sure the size is reasonable.
+        byte[] bitmap = buffer.readBuffer(width * height * 4 + Limits.MAX_IMAGE_HEADER_SIZE);
         BitmapData bitmapData = new BitmapData(imageId, width, height, bitmap);
         bitmapData.mType = (short) type;
         bitmapData.mEncoding = (short) encoding;
@@ -281,7 +313,9 @@ public class BitmapData extends Operation implements SerializableToString, Seria
                 .description("Embed or reference bitmap image data")
                 .field(DocumentedOperation.INT, "imageId", "The ID of the bitmap")
                 .field(DocumentedOperation.INT, "widthAndType", "Encoded width and image type")
-                .field(DocumentedOperation.INT, "heightAndEncoding",
+                .field(
+                        DocumentedOperation.INT,
+                        "heightAndEncoding",
                         "Encoded height and data encoding")
                 .field(DocumentedOperation.BYTE_ARRAY, "bitmap", "The raw or encoded bitmap data");
     }

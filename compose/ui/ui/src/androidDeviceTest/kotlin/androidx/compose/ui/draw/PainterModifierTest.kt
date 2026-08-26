@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,7 +47,6 @@ import androidx.compose.ui.FixedSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Padding
 import androidx.compose.ui.assertColorsEqual
-import androidx.compose.ui.background
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Canvas
@@ -97,7 +97,6 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -112,7 +111,7 @@ class PainterModifierTest {
     val containerWidth = 100.0f
     private val containerHeight = 100.0f
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun before() {

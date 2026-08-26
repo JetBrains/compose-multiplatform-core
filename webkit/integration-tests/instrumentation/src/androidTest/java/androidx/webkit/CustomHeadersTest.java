@@ -17,7 +17,6 @@
 package androidx.webkit;
 
 
-import android.os.Build;
 import android.os.CancellationSignal;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -25,7 +24,6 @@ import android.webkit.WebView;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.webkit.test.common.WebViewOnUiThread;
 import androidx.webkit.test.common.WebkitUtils;
 
@@ -53,7 +51,6 @@ import okhttp3.mockwebserver.RecordedRequest;
  */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 public class CustomHeadersTest {
 
     private static final String SERVER_PATH = "/index.html";
@@ -322,6 +319,7 @@ public class CustomHeadersTest {
     @Test
     public void headerPresentOnPrefetchRequests() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.PROFILE_URL_PREFETCH);
+        WebkitUtils.checkFeature(WebViewFeature.PREFETCH_CACHE_V1);
         try (MockWebServer server = new MockWebServer()) {
             MockWebServerHttpsUtil.enableHttps(server);
             server.start();
@@ -331,7 +329,8 @@ public class CustomHeadersTest {
             Set<String> originRules = getOriginRules(url);
             addCustomHeaderOnUiThread(new CustomHeader("X-ExtraHeader", "Value", originRules));
 
-            mDefaultProfile.prefetchUrlAsync(url.toString(), new CancellationSignal(),
+            mDefaultProfile.getPrefetchCache().prefetchUrlAsync(url.toString(),
+                    new CancellationSignal(),
                     Runnable::run, ignored -> {
                     });
 

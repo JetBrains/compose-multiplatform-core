@@ -21,57 +21,101 @@ package androidx.camera.camera2.pipe.testing
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
+import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraExtensionMetadata
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.Metadata
-import kotlin.reflect.KClass
+import androidx.camera.camera2.pipe.Metadata as PipeMetadata
+import androidx.camera.common.Metadata as CommonMetadata
+import java.lang.Class
 
 /** Utility class for interacting with objects that require pre-populated Metadata. */
-public open class FakeMetadata(private val metadata: Map<Metadata.Key<*>, Any?> = emptyMap()) :
-    Metadata {
+public open class FakeMetadata(metadata: Map<*, Any?> = emptyMap<Any, Any?>()) : PipeMetadata {
+    private val commonMetadata: Map<CommonMetadata.Key<*>, Any?> =
+        metadata.entries
+            .mapNotNull { (key, value) ->
+                val commonKey =
+                    when (key) {
+                        is PipeMetadata.Key<*> -> key.commonKey
+                        is CommonMetadata.Key<*> -> key
+                        else -> null
+                    }
+                commonKey?.let { it to value }
+            }
+            .toMap()
+
     public companion object {
-        @JvmField public val TEST_KEY: Metadata.Key<Int> = Metadata.Key.create("test.key")
+        @JvmField public val TEST_KEY: CommonMetadata.Key<Int> = CommonMetadata.Key<Int>("test.key")
 
         @JvmField
-        public val TEST_KEY_ABSENT: Metadata.Key<Int> = Metadata.Key.create("test.key.absent")
+        public val TEST_KEY_ABSENT: CommonMetadata.Key<Int> =
+            CommonMetadata.Key<Int>("test.key.absent")
     }
 
-    override fun <T> get(key: Metadata.Key<T>): T? = metadata[key] as T?
+    override fun <T : Any> get(key: CommonMetadata.Key<T>): T? = commonMetadata[key] as T?
 
-    override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T {
-        val value = metadata[key]
+    override fun <T : Any> getOrDefault(key: CommonMetadata.Key<T>, default: T): T {
+        val value = commonMetadata[key]
         return if (value == null) default else value as T
     }
+
+    override val metadataKeys: Set<CommonMetadata.Key<*>>
+        get() = commonMetadata.keys
+}
+
+public interface DeviceTemplate {
+    public fun createCameraMetadata(
+        cameraId: CameraId = FakeCameraIds.default,
+        lensFacing: Int? = null,
+        characteristicsOverrides: Map<CameraCharacteristics.Key<*>, Any?> = emptyMap(),
+        metadataOverrides: Map<CommonMetadata.Key<*>, Any?> = emptyMap(),
+        requestKeysOverrides: Set<CaptureRequest.Key<*>> = emptySet(),
+        resultKeysOverrides: Set<CaptureResult.Key<*>> = emptySet(),
+        extensionMetadata: Map<Int, FakeCameraExtensionMetadata> = emptyMap(),
+        physicalMetadata: Map<CameraId, FakeCameraMetadata> = emptyMap(),
+    ): FakeCameraMetadata
 }
 
 /** Utility class for interacting with objects require specific [CameraCharacteristics] metadata. */
 public class FakeCameraMetadata(
     private val characteristics: Map<CameraCharacteristics.Key<*>, Any?> = emptyMap(),
-    metadata: Map<Metadata.Key<*>, Any?> = emptyMap(),
+    metadata: Map<*, Any?> = emptyMap<Any, Any?>(),
     cameraId: CameraId = FakeCameraIds.default,
-    override val keys: Set<CameraCharacteristics.Key<*>> = emptySet(),
+    keys: Set<CameraCharacteristics.Key<*>>? = null,
     override val requestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
     override val resultKeys: Set<CaptureResult.Key<*>> = emptySet(),
     override val sessionKeys: Set<CaptureRequest.Key<*>> = emptySet(),
     override val sessionCharacteristicsKeys: Set<CameraCharacteristics.Key<*>> = emptySet(),
     public val physicalMetadata: Map<CameraId, CameraMetadata> = emptyMap(),
     override val physicalRequestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
-    private val extensions: Map<Int, FakeCameraExtensionMetadata> = emptyMap(),
+    private val extensionMetadata: Map<Int, FakeCameraExtensionMetadata> = emptyMap(),
 ) : FakeMetadata(metadata), CameraMetadata {
+
+    override val keys: Set<CameraCharacteristics.Key<*>> = keys ?: characteristics.keys
 
     override fun <T> get(key: CameraCharacteristics.Key<T>): T? = characteristics[key] as T?
 
     override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
         get(key) ?: default
 
+    override fun <T : Any> get(key: CommonMetadata.Key<T>): T? {
+        return super<FakeMetadata>.get(key)
+    }
+
+    override fun <T : Any> getOrDefault(key: CommonMetadata.Key<T>, default: T): T {
+        return super<FakeMetadata>.getOrDefault(key, default)
+    }
+
+    override val metadataKeys: Set<CommonMetadata.Key<*>>
+        get() = super<FakeMetadata>.metadataKeys
+
     override val camera: CameraId = cameraId
     override val isRedacted: Boolean = false
 
     override val physicalCameraIds: Set<CameraId> = physicalMetadata.keys
     override val supportedExtensions: Set<Int>
-        get() = extensions.keys
+        get() = extensionMetadata.keys
 
     override suspend fun getPhysicalMetadata(cameraId: CameraId): CameraMetadata =
         physicalMetadata[cameraId]!!
@@ -80,29 +124,67 @@ public class FakeCameraMetadata(
         physicalMetadata[cameraId]!!
 
     override suspend fun getExtensionMetadata(extension: Int): CameraExtensionMetadata {
-        return extensions[extension]!!
+        return extensionMetadata[extension]!!
     }
 
     override fun awaitExtensionMetadata(extension: Int): CameraExtensionMetadata {
-        return extensions[extension]!!
+        return extensionMetadata[extension]!!
     }
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 
     override fun toString(): String = "FakeCameraMetadata(camera: ${camera.value})"
+
+    public companion object {
+        /**
+         * Creates a [CameraMetadata] instance using a [DeviceTemplate], with optional overrides for
+         * fine-grained testing.
+         */
+        @JvmStatic
+        public fun fromTemplate(
+            template: DeviceTemplate = HighEndDeviceTemplate,
+            cameraId: CameraId = FakeCameraIds.default,
+            lensFacing: Int? = null,
+            characteristicsOverrides: Map<CameraCharacteristics.Key<*>, Any?> = emptyMap(),
+            metadataOverrides: Map<CommonMetadata.Key<*>, Any?> = emptyMap(),
+            requestKeysOverrides: Set<CaptureRequest.Key<*>> = emptySet(),
+            resultKeysOverrides: Set<CaptureResult.Key<*>> = emptySet(),
+            extensionMetadata: Map<Int, FakeCameraExtensionMetadata> = emptyMap(),
+            physicalMetadata: Map<CameraId, FakeCameraMetadata> = emptyMap(),
+        ): FakeCameraMetadata {
+            val overrides =
+                if (lensFacing != null) {
+                    characteristicsOverrides +
+                        mapOf(CameraCharacteristics.LENS_FACING to lensFacing)
+                } else {
+                    characteristicsOverrides
+                }
+            return template.createCameraMetadata(
+                cameraId = cameraId,
+                lensFacing = lensFacing,
+                characteristicsOverrides = overrides,
+                metadataOverrides = metadataOverrides,
+                requestKeysOverrides = requestKeysOverrides,
+                resultKeysOverrides = resultKeysOverrides,
+                extensionMetadata = extensionMetadata,
+                physicalMetadata = physicalMetadata,
+            )
+        }
+    }
 }
 
 /** Utility class for interacting with objects require [CameraExtensionMetadata] */
 public class FakeCameraExtensionMetadata(
     override val camera: CameraId,
     override val cameraExtension: Int,
-    metadata: Map<Metadata.Key<*>, Any?> = emptyMap(),
+    metadata: Map<CommonMetadata.Key<*>, Any?> = emptyMap(),
     private val characteristics: Map<CameraCharacteristics.Key<*>, Any?> = emptyMap(),
     override val requestKeys: Set<CaptureRequest.Key<*>> = emptySet(),
     override val resultKeys: Set<CaptureResult.Key<*>> = emptySet(),
     private val captureOutputSizes: Map<Int, Set<Size>> = emptyMap(),
     private val previewOutputSizes: Map<Class<*>, Set<Size>> = emptyMap(),
     private val postviewSizes: Map<Int, Map<Size, Set<Size>>> = emptyMap(),
+    private val estimatedCaptureLatencyRangeMillis: Map<Int, Map<Size, Range<Long>>> = emptyMap(),
     override val isRedacted: Boolean = false,
     override val isPostviewSupported: Boolean = false,
     override val isCaptureProgressSupported: Boolean = false,
@@ -119,15 +201,22 @@ public class FakeCameraExtensionMetadata(
         return postviewSizes[format]?.get(captureSize) ?: emptySet()
     }
 
-    override fun <T> get(key: CameraCharacteristics.Key<T>): T? = characteristics[key] as T?
+    override fun getEstimatedCaptureLatencyRangeMillis(
+        captureSize: Size,
+        imageFormat: Int,
+    ): Range<Long>? {
+        return estimatedCaptureLatencyRangeMillis[imageFormat]?.get(captureSize)
+    }
 
-    override fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
+    override fun <T : Any> get(key: CameraCharacteristics.Key<T>): T? = characteristics[key] as T?
+
+    override fun <T : Any> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T =
         get(key) ?: default
 
     override val keys: Set<CameraCharacteristics.Key<*>>
         get() = characteristics.keys
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = null
 
     override fun toString(): String =
         "FakeCameraExtensionMetadata(camera: ${camera.value}, extension: $cameraExtension)"

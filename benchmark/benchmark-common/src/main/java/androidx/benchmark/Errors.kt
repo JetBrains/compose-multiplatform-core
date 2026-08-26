@@ -224,8 +224,11 @@ object Errors {
             warningString +=
                 """
                 |WARNING: Benchmark running without full AOT compilation.
-                |    Benchmarks should be speed compiled to reduce noise. This is enabled by default
-                |    in the benchmark plugin. Observed compilation state = $compilationMode.
+                |    Benchmarks should be `speed` compiled to reduce noise. This is enabled by
+                |    default in the benchmark plugin (on AGP 8.4+, where it's supported).
+                |    Observed compilation state = $compilationMode.
+                |    In other contexts, use:
+                |        adb shell cmd package compile -m speed -f ${context.packageName}
             """
                     .trimMarginWrapNewlines()
         }
@@ -248,6 +251,19 @@ object Errors {
             warningPrefix += "${DeviceMirroring.Error.ID}_"
             warningString += "ERROR: " + DeviceMirroring.Error.SUMMARY
             warningString += DeviceMirroring.Error.MESSAGE.trimMarginWrapNewlines()
+        }
+
+        if (!DeviceInfo.canShellAccessAppFiles) {
+            warningPrefix += "SHELL-ACCESS-DENIED_"
+            warningString +=
+                """
+                |ERROR: Shell user cannot access app files
+                |    MediaProvider/FUSE is blocking the ADB shell from accessing app data.
+                |    This is a known issue on some devices and prevents Jetpack Benchmark from
+                |    capturing profiles and traces. The device may simply be incompatible with
+                |    Jetpack Benchmark.
+            """
+                    .trimMarginWrapNewlines()
         }
 
         PREFIX = warningPrefix

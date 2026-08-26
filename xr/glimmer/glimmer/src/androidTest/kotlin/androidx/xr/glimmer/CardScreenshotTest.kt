@@ -21,15 +21,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.xr.glimmer.samples.ActionCardWithTitleSample
 import androidx.xr.glimmer.samples.CardSample
 import androidx.xr.glimmer.samples.CardWithLongText
-import androidx.xr.glimmer.samples.CardWithTitleAndActionSample
 import androidx.xr.glimmer.samples.CardWithTitleAndHeaderSample
 import androidx.xr.glimmer.samples.CardWithTitleAndSubtitleAndLeadingIconAndTrailingIconLongText
 import androidx.xr.glimmer.samples.CardWithTitleAndSubtitleAndLeadingIconLongText
 import androidx.xr.glimmer.samples.CardWithTitleAndSubtitleAndLeadingIconSample
 import androidx.xr.glimmer.samples.CardWithTrailingIconSample
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +38,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CardScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_DIRECTORY)
 
@@ -71,12 +70,6 @@ class CardScreenshotTest {
     fun card_withTitleAndHeader() {
         rule.setGlimmerThemeContent { CardWithTitleAndHeaderSample() }
         rule.assertRootAgainstGolden("card_titleHeader", screenshotRule)
-    }
-
-    @Test
-    fun card_withTitleAndAction() {
-        rule.setGlimmerThemeContent { CardWithTitleAndActionSample() }
-        rule.assertRootAgainstGolden("card_titleAction", screenshotRule)
     }
 
     @Test
@@ -136,5 +129,54 @@ class CardScreenshotTest {
         // Advance past the animation
         rule.mainClock.advanceTimeBy(10000)
         rule.assertRootAgainstGolden("card_focused_and_pressed", screenshotRule)
+    }
+
+    @Test
+    fun actionCard_withTitle() {
+        rule.setGlimmerThemeContent { ActionCardWithTitleSample() }
+        rule.assertRootAgainstGolden("card_titleAction", screenshotRule)
+    }
+
+    @Test
+    fun actionCard_focused() {
+        rule.mainClock.autoAdvance = false
+        rule.setGlimmerThemeContent {
+            ActionCard(
+                action = {
+                    Button(onClick = {}, interactionSource = AlwaysFocusedInteractionSource) {
+                        Text("Send")
+                    }
+                },
+                title = { Text("Title") },
+            ) {
+                Text("This is a card with a title and action")
+            }
+        }
+        // Advance past the animation
+        rule.mainClock.advanceTimeBy(10000)
+        rule.assertRootAgainstGolden("action_card_focused", screenshotRule)
+    }
+
+    @Test
+    fun actionCard_focused_and_pressed() {
+        rule.mainClock.autoAdvance = false
+        rule.setGlimmerThemeContent {
+            ActionCard(
+                action = {
+                    Button(
+                        onClick = {},
+                        interactionSource = AlwaysFocusedAndPressedInteractionSource,
+                    ) {
+                        Text("Send")
+                    }
+                },
+                title = { Text("Title") },
+            ) {
+                Text("This is a card with a title and action")
+            }
+        }
+        // Advance past the animation
+        rule.mainClock.advanceTimeBy(10000)
+        rule.assertRootAgainstGolden("action_card_focused_and_pressed", screenshotRule)
     }
 }

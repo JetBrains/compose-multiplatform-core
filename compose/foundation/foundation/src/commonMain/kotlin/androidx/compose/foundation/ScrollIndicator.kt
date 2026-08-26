@@ -29,18 +29,20 @@ import androidx.compose.runtime.annotation.FrequentlyChangingValue
  * calculating the exact value might be computationally expensive or impossible.
  */
 @Stable
-interface ScrollIndicatorState {
+public interface ScrollIndicatorState {
     /**
-     * The current scroll offset of the content from the start, typically in pixels.
+     * The current scroll offset of the content from the visual start of the container, typically in
+     * pixels.
      *
-     * For a vertical scrollable component, this is the Y offset. For a horizontal scrollable
-     * component, this is the X offset.
+     * For a vertical scrollable component, it's the offset from the top edge. For a horizontal
+     * scrollable component, it's the offset from the left edge in LTR or the right edge in RTL.
+     * This absolute offset is unaffected by reverse layout or reverse scrolling.
      *
      * For lazy layouts, this value may represent an estimated scroll offset.
      *
      * Implementations should return [Int.MAX_VALUE] if this value is not yet known.
      */
-    @get:FrequentlyChangingValue @get:IntRange(from = 0) val scrollOffset: Int
+    @get:FrequentlyChangingValue @get:IntRange(from = 0) public val scrollOffset: Int
 
     /**
      * The total size of the scrollable content, typically in pixels.
@@ -56,7 +58,7 @@ interface ScrollIndicatorState {
      *
      * Implementations should return [Int.MAX_VALUE] if this value is not yet known.
      */
-    @get:IntRange(from = 0) val contentSize: Int
+    @get:IntRange(from = 0) public val contentSize: Int
 
     /**
      * The size of the visible portion of the scrollable content, typically in pixels.
@@ -66,5 +68,5 @@ interface ScrollIndicatorState {
      *
      * Implementations should return [Int.MAX_VALUE] if this value is not yet known.
      */
-    @get:IntRange(from = 0) val viewportSize: Int
+    @get:IntRange(from = 0) public val viewportSize: Int
 }

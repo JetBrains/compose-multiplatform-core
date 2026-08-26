@@ -24,6 +24,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.OutcomeReceiver
+import android.util.Log
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
@@ -32,6 +33,7 @@ import androidx.glance.wear.core.ActiveWearWidgetHandle
 import androidx.glance.wear.core.ContainerInfo
 import androidx.glance.wear.core.WearWidgetProviderInfo
 import androidx.glance.wear.core.WidgetInstanceId
+import androidx.glance.wear.util.isRobolectricBuild
 import androidx.wear.utils.WearApiVersionHelper
 import com.google.wear.Sdk
 import com.google.wear.services.tiles.TileInstance
@@ -140,8 +142,16 @@ public class GlanceWearWidgetManager {
         widget: GlanceWearWidget,
     ) {
         val serviceComponentName = ComponentName(context, service.javaClass)
-        val widgetName = widget.canonicalName()
+        val widgetName = widget.qualifiedName()
         state.updateServiceMapping(serviceComponentName.className, widgetName)
+    }
+
+    internal suspend fun getProviderForWidget(
+        widgetClass: KClass<out GlanceWearWidget>
+    ): ComponentName? {
+        val serviceToWidgetMapping = state.getServiceToWidgetMapping()
+        val targetName = widgetClass.qualifiedName()
+        return serviceToWidgetMapping.entries.firstOrNull { it.value == targetName }?.key
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -206,17 +216,20 @@ public class GlanceWearWidgetManager {
          */
         @SuppressLint("ListIterator")
         private suspend fun recoverServiceToWidgetMapping(): Map<String, String> {
-            val availableWidgetServices =
+            val serviceToWidgetMapping =
                 context.packageManager
                     .queryIntentServices(
                         Intent(WearWidgetProviderInfo.ACTION_BIND_WIDGET_PROVIDER)
                             .setPackage(context.packageName),
                         PackageManager.GET_META_DATA,
                     )
-                    .mapNotNull { it.maybeGlanceWearWidgetService() }
+                    .mapNotNull { resolveInfo ->
+                        resolveInfo.getWidgetClassNameFromService()?.let { widgetName ->
+                            resolveInfo.serviceInfo.name to widgetName
+                        }
+                    }
+                    .toMap()
 
-            val serviceToWidgetMapping =
-                availableWidgetServices.associate { it.serviceName() to it.widget.canonicalName() }
             widgetCache.update {
                 serviceToWidgetMapping.forEach { (serviceName, widgetName) ->
                     putServiceToWidgetMapping(serviceName, widgetName)
@@ -226,14 +239,51 @@ public class GlanceWearWidgetManager {
             return serviceToWidgetMapping
         }
 
+        private fun ResolveInfo.getWidgetClassNameFromService(): String? {
+            val serviceName = serviceInfo.name
+            val serviceClass =
+                runCatching {
+                        Class.forName(
+                            serviceName,
+                            /* initialize = */ false,
+                            // This needs to be our service loader to ensure that we can load
+                            // classes from the calling provider's package and not use Android's
+                            // service ClassLoader.
+                            GlanceWearWidgetService::class.java.classLoader,
+                        )
+                    }
+                    .getOrNull() ?: return null
+            val association = serviceClass.getAnnotation(AssociateWithGlanceWearWidget::class.java)
+            if (association != null) {
+                return association.value.qualifiedName()
+            }
+            return try {
+                maybeGlanceWearWidgetService(serviceClass)?.widget?.qualifiedName()
+            } catch (e: UninitializedPropertyAccessException) {
+                Log.w(TAG, "Widget property not initialized for service $serviceName", e)
+                null
+            } catch (e: Exception) {
+                Log.w(
+                    TAG,
+                    "Failed to find widget class for service $serviceName via fallback reflection",
+                    e,
+                )
+                null
+            }
+        }
+
         companion object {
+            private const val TAG = "GlanceWearWidgetManager"
+
             /**
              * Returns the [GlanceWearWidgetService] instance for this [ResolveInfo], or null if
              * it's not a valid widget service or cannot be instantiated.
              */
-            private fun ResolveInfo.maybeGlanceWearWidgetService(): GlanceWearWidgetService? =
+            private fun ResolveInfo.maybeGlanceWearWidgetService(
+                serviceClass: Class<*>
+            ): GlanceWearWidgetService? =
                 runCatching {
-                        Class.forName(serviceInfo.name).getDeclaredConstructor().newInstance()
+                        serviceClass.getDeclaredConstructor().newInstance()
                             as? GlanceWearWidgetService
                     }
                     .getOrNull()
@@ -243,12 +293,14 @@ public class GlanceWearWidgetManager {
 
 private fun GlanceWearWidgetService.serviceName() = this.javaClass.name
 
-private fun GlanceWearWidget.canonicalName() = this.javaClass.canonicalName ?: this.javaClass.name
+private fun KClass<out GlanceWearWidget>.qualifiedName() = this.qualifiedName ?: this.java.name
+
+private fun GlanceWearWidget.qualifiedName() = this::class.qualifiedName()
 
 @ContainerInfo.ContainerType
 private fun TileProvider.getContainerTypeCompat(): Int {
     if (
-        Build.FINGERPRINT.equals("robolectric", ignoreCase = true) ||
+        isRobolectricBuild() ||
             WearApiVersionHelper.isApiVersionAtLeast(WearApiVersionHelper.WEAR_CINNAMON_BUN_0)
     ) {
         return when (containerType) {

@@ -22,15 +22,16 @@ package androidx.room3.util
 import androidx.annotation.RestrictTo
 import androidx.room3.PooledConnection
 import androidx.room3.RoomDatabase
+import androidx.room3.RoomExternalOperationElement
 import androidx.room3.Transactor
 import androidx.room3.coroutines.RawConnectionAccessor
 import androidx.room3.executeSQL
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.executeSQL
-import androidx.sqlite.prepare
-import androidx.sqlite.step
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
@@ -91,12 +92,14 @@ internal expect suspend fun RoomDatabase.getCoroutineContext(
  * Utility function to wrap a suspend block in Room's transaction coroutine.
  *
  * This function should only be invoked from generated code and is needed to support `@Transaction`
- * delegates in Java and Kotlin. It is preferred to use the other 'perform' functions.
+ * delegate DAO functions.
  */
-// TODO(b/309996304): Replace with proper suspending transaction API for common.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public suspend fun <R> performInTransactionSuspending(db: RoomDatabase, block: suspend () -> R): R =
-    withContext(db.getCoroutineContext(inTransaction = true)) {
+    // The external operation marker is used since this wraps user code that might change
+    // dispatchers and on a passthrough pool with thread local connections (AndroidSQLiteDriver)
+    // the confined transaction thread behavior must be used at the cost of some thread hops.
+    withContext(RoomExternalOperationElement + db.getCoroutineContext(inTransaction = true)) {
         db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
     }
 

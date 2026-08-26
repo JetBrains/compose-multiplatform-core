@@ -79,6 +79,13 @@ public abstract class PaintContext {
         matrixSave();
     }
 
+    /**
+     * Set the custom support
+     * @param customSupport
+     */
+    public void setCustomSupport(@NonNull CustomContext customSupport) {
+    }
+
     public @NonNull RemoteClock getClock() {
         return mContext.getClock();
     }
@@ -562,6 +569,7 @@ public abstract class PaintContext {
 
     /**
      * Set the measure version
+     *
      * @param measureVersion
      */
     public void setMeasureVersion(int measureVersion) {
@@ -570,6 +578,7 @@ public abstract class PaintContext {
 
     /**
      * Get the measure version
+     *
      * @return
      */
     public int getMeasureVersion() {
@@ -578,10 +587,29 @@ public abstract class PaintContext {
 
     /**
      * Return true if the provided feature is enabled in the document
+     *
      * @param feature feature id
      * @return
      */
     public boolean useFeature(short feature) {
         return mContext.useFeature(feature);
+    }
+
+    /**
+     * Return current density
+     *
+     * @return
+     */
+    public float getDensity() {
+        return mContext.getDensity();
+    }
+
+    /**
+     * Return density behavior
+     *
+     * @return
+     */
+    public int getDensityBehavior() {
+        return mContext.mDocument.mDensityBehavior;
     }
 }

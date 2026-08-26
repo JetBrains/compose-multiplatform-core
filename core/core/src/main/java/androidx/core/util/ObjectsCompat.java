@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.core.util;
 
 import org.jspecify.annotations.NonNull;
@@ -107,7 +108,7 @@ public class ObjectsCompat {
      * and constructors, as demonstrated below:
      * <blockquote><pre>
      * public Foo(Bar bar) {
-     *     this.bar = Objects.requireNonNull(bar);
+     *     this.bar = ObjectsCompat.requireNonNull(bar);
      * }
      * </pre></blockquote>
      *
@@ -128,8 +129,8 @@ public class ObjectsCompat {
      * constructors with multiple parameters, as demonstrated below:
      * <blockquote><pre>
      * public Foo(Bar bar, Baz baz) {
-     *     this.bar = Objects.requireNonNull(bar, "bar must not be null");
-     *     this.baz = Objects.requireNonNull(baz, "baz must not be null");
+     *     this.bar = ObjectsCompat.requireNonNull(bar, "bar must not be null");
+     *     this.baz = ObjectsCompat.requireNonNull(baz, "baz must not be null");
      * }
      * </pre></blockquote>
      *
@@ -143,5 +144,41 @@ public class ObjectsCompat {
     public static <T> @NonNull T requireNonNull(@Nullable T obj, @NonNull String message) {
         if (obj == null) throw new NullPointerException(message);
         return obj;
+    }
+
+    /**
+     * Returns the first argument if it's non-{@code null} and
+     * otherwise returns the non-{@code null} second argument.
+     *
+     * @param obj an object
+     * @param defaultObj a non-{@code null} object to return if the first argument is
+     *                    {@code null}
+     * @param <T> the type of the reference
+     * @return the first argument if it's non-{@code null} and otherwise
+     *         the second argument if it's non-{@code null}
+     * @throws NullPointerException if both {@code obj} and {@code defaultObj} are
+     *         {@code null}
+     */
+    public static <T> @NonNull T requireNonNullElse(@Nullable T obj, @NonNull T defaultObj) {
+        return (obj != null) ? obj : requireNonNull(defaultObj, "defaultObj");
+    }
+
+    /**
+     * Returns the first argument if it's non-{@code null} and otherwise
+     * returns the non-{@code null} value of {@code supplier.get()}.
+     *
+     * @param obj an object
+     * @param supplier of a non-{@code null} object to return if the first argument is
+     *                 {@code null}
+     * @param <T> the type of the first argument and return type
+     * @return the first argument if it's non-{@code null} and otherwise
+     *         the value from {@code supplier.get()} if it's non-{@code null}
+     * @throws NullPointerException if {@code obj} is null and
+     *         either {@code supplier} or {@code supplier.get()} is {@code null}
+     */
+    public static <T> @NonNull T requireNonNullElseGet(
+            @Nullable T obj, @NonNull Supplier<? extends T> supplier) {
+        return (obj != null) ? obj
+                : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
     }
 }

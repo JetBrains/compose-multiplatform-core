@@ -18,9 +18,9 @@ package androidx.xr.scenecore
 
 import android.content.Context
 import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope
 import androidx.media3.exoplayer.audio.AudioOutputProvider
 import androidx.xr.runtime.Session
+import androidx.xr.scenecore.runtime.PositionalAudioComponent as RtPositionalAudioComponent
 import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
@@ -32,12 +32,12 @@ import androidx.xr.scenecore.runtime.SceneRuntime
  * This component can only be attached to one [Entity] at a time. If the component is detached from
  * an [Entity], the audio will become head-locked.
  */
-@RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
 public class PositionalAudioComponent
 internal constructor(context: Context, sceneRuntime: SceneRuntime, params: PointSourceParams) :
-    Component {
+    Component() {
 
-    internal val rtComponent =
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtComponent: RtPositionalAudioComponent =
         sceneRuntime.createPositionalAudioComponent(context, params.rtPointSourceParams)
 
     private var attachedEntity: Entity? = null
@@ -46,7 +46,7 @@ internal constructor(context: Context, sceneRuntime: SceneRuntime, params: Point
         if (attachedEntity != null) {
             return false
         }
-        if ((entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)) {
+        if (entity.rtEntity.addComponent(rtComponent)) {
             attachedEntity = entity
             return true
         }
@@ -57,26 +57,29 @@ internal constructor(context: Context, sceneRuntime: SceneRuntime, params: Point
         if (entity != attachedEntity) {
             return
         }
-        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
+        entity.rtEntity.removeComponent(rtComponent)
         attachedEntity = null
     }
 
     /**
      * Updates the [PointSourceParams] used by the spatial audio source.
      *
-     * These params will apply to currently playing audio and future playback requests.
+     * These pointSourceParams will apply to currently playing audio and future playback requests.
      */
-    public fun setPointSourceParams(params: PointSourceParams) {
-        rtComponent.setPointSourceParams(params.rtPointSourceParams)
-    }
+    // TODO: b/514816237 - Do not cache the params in the scenecore layer
+    public var pointSourceParams: PointSourceParams = params
+        get() = field
+        set(value) {
+            field = value
+            rtComponent.setPointSourceParams(value.rtPointSourceParams)
+        }
 
     /**
-     * Returns an [AudioOutputProvider] that can be used to configure an
+     * An [AudioOutputProvider] that can be used to configure an
      * [androidx.media3.exoplayer.ExoPlayer.Builder] for positional audio playback.
      */
-    public fun getAudioOutputProvider(): AudioOutputProvider {
-        return rtComponent.getAudioOutputProvider()
-    }
+    public val audioOutputProvider: AudioOutputProvider
+        get() = rtComponent.getAudioOutputProvider()
 
     public companion object {
         /**

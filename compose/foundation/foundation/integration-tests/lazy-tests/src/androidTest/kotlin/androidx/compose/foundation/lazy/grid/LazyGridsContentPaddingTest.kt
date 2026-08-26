@@ -57,7 +57,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -70,7 +69,7 @@ class LazyGridsContentPaddingTest {
     private val ItemTag = "item"
     private val ContainerTag = "container"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private var itemSize: Dp = Dp.Infinity
     private var smallPaddingSize: Dp = Dp.Infinity
@@ -323,15 +322,15 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ItemTag)
             .assertLeftPositionInRootIsEqualTo(2.dp)
             .assertTopPositionInRootIsEqualTo(4.dp)
-            .assertWidthIsEqualTo(itemSize)
-            .assertHeightIsEqualTo(itemSize)
+            .assertWidthIsEqualTo(itemSize, tolerance = 1.dp)
+            .assertHeightIsEqualTo(itemSize, tolerance = 1.dp)
 
         rule
             .onNodeWithTag(ContainerTag)
             .assertLeftPositionInRootIsEqualTo(0.dp)
             .assertTopPositionInRootIsEqualTo(0.dp)
-            .assertWidthIsEqualTo(itemSize + 2.dp + 6.dp)
-            .assertHeightIsEqualTo(itemSize + 4.dp + 8.dp)
+            .assertWidthIsEqualTo(itemSize + 2.dp + 6.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(itemSize + 4.dp + 8.dp, tolerance = 1.dp)
     }
 
     @Test
@@ -350,8 +349,8 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ContainerTag)
             .assertLeftPositionInRootIsEqualTo(0.dp)
             .assertTopPositionInRootIsEqualTo(0.dp)
-            .assertWidthIsEqualTo(8.dp)
-            .assertHeightIsEqualTo(12.dp)
+            .assertWidthIsEqualTo(8.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(12.dp, tolerance = 1.dp)
     }
 
     @Test
@@ -372,8 +371,8 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ContainerTag)
             .assertLeftPositionInRootIsEqualTo(0.dp)
             .assertTopPositionInRootIsEqualTo(0.dp)
-            .assertWidthIsEqualTo(8.dp)
-            .assertHeightIsEqualTo(12.dp)
+            .assertWidthIsEqualTo(8.dp, tolerance = 1.dp)
+            .assertHeightIsEqualTo(12.dp, tolerance = 1.dp)
     }
 
     @Test

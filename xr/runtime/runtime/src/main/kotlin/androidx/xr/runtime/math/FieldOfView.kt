@@ -17,19 +17,18 @@
 package androidx.xr.runtime.math
 
 /**
- * Represents the field of view of a virtual (or rendering) camera.
+ * Field of view of a virtual or rendering camera.
  *
- * @property angleLeft The angle in radians of the left edge of the field of view.
- * @property angleRight The angle in radians of the right edge of the field of view.
- * @property angleUp The angle in radians of the top edge of the field of view.
- * @property angleDown The angle in radians of the bottom edge of the field of view.
+ * @property angleLeft the angle in radians of the left edge of the field of view
+ * @property angleRight the angle in radians of the right edge of the field of view
+ * @property angleUp the angle in radians of the top edge of the field of view
+ * @property angleDown the angle in radians of the bottom edge of the field of view
  */
-public class FieldOfView
-constructor(
-    public val angleLeft: Float,
-    public val angleRight: Float,
-    public val angleUp: Float,
-    public val angleDown: Float,
+public class FieldOfView(
+    public val angleLeft: Float = Math.PI.toFloat() / 3,
+    public val angleRight: Float = Math.PI.toFloat() / 3,
+    public val angleUp: Float = Math.PI.toFloat() / 3,
+    public val angleDown: Float = Math.PI.toFloat() / 3,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,6 +49,14 @@ constructor(
         result = 31 * result + angleDown.hashCode()
         return result
     }
+
+    /**
+     * Returns a string representation of [FieldOfView] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
+        "FieldOfView(angleLeft=$angleLeft, angleRight=$angleRight, angleUp=$angleUp, angleDown=$angleDown)"
 
     @JvmOverloads
     public fun copy(

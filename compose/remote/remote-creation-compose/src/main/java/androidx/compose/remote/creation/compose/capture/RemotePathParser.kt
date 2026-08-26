@@ -31,6 +31,7 @@ import androidx.compose.remote.creation.compose.state.tan
 import androidx.compose.remote.creation.compose.state.toRad
 import androidx.compose.remote.creation.compose.vector.RemotePathExtensions
 import androidx.compose.remote.creation.compose.vector.RemotePathNode
+import androidx.compose.remote.creation.compose.vector.RemotePathNode.AddArc
 import androidx.compose.remote.creation.compose.vector.RemotePathNode.ArcTo
 import androidx.compose.remote.creation.compose.vector.RemotePathNode.Close
 import androidx.compose.remote.creation.compose.vector.RemotePathNode.CurveTo
@@ -79,6 +80,43 @@ internal fun List<RemotePathNode>.toRemotePath(
                     ctrlX = segmentX
                     ctrlY = segmentY
                     target.close()
+                }
+
+                is AddArc -> {
+                    // We convert the arc to bezier segments because RemotePath does not
+                    // have a direct arc drawing command.
+                    val radiusX = (node.right - node.left) / 2f.rf
+                    val radiusY = (node.bottom - node.top) / 2f.rf
+                    val centerX = node.left + radiusX
+                    val centerY = node.top + radiusY
+                    val start = toRad(node.startAngle)
+                    val sweep = toRad(node.sweepAngle)
+                    val end = start + sweep
+                    val startX = centerX + radiusX * cos(start)
+                    val startY = centerY + radiusY * sin(start)
+                    val endX = centerX + radiusX * cos(end)
+                    val endY = centerY + radiusY * sin(end)
+
+                    target.moveTo(startX, startY)
+                    arcToBezier(
+                        target,
+                        centerX,
+                        centerY,
+                        radiusX,
+                        radiusY,
+                        startX,
+                        startY,
+                        0f.rf,
+                        start,
+                        sweep,
+                        creationState,
+                    )
+                    currentX = endX
+                    currentY = endY
+                    ctrlX = currentX
+                    ctrlY = currentY
+                    segmentX = startX
+                    segmentY = startY
                 }
 
                 is RelativeMoveTo -> {
@@ -324,7 +362,7 @@ private fun drawArc(
     val s = sqrt(disc)
     val sdx = s * dx
     val sdy = s * dy
-    val branch = isMoreThanHalf.eq(isPositiveArc)
+    val branch = isMoreThanHalf.isEqualTo(isPositiveArc)
     var cx: RemoteFloat = branch.select(xm - sdy, xm + sdy)
     var cy: RemoteFloat = branch.select(ym + sdx, ym - sdx)
 
@@ -333,9 +371,10 @@ private fun drawArc(
     val eta1 = atan2(y1p - cy, x1p - cx)
 
     val initialSweep = eta1 - eta0
-    val branch2 = isPositiveArc.ne(initialSweep.ge(0.rf))
+    val branch2 = isPositiveArc.isNotEqualTo(initialSweep.isGreaterThanOrEqualTo(0.rf))
     val pi2 = 2.rf * PI.toFloat().rf
-    val sweep = initialSweep + branch2.select(initialSweep.gt(0.rf).select(-pi2, pi2), 0.rf)
+    val sweep =
+        initialSweep + branch2.select(initialSweep.isGreaterThan(0.rf).select(-pi2, pi2), 0.rf)
 
     cx *= a
     cy *= b

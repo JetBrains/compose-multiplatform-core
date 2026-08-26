@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.core
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.hardware.display.DisplayManager
 import android.net.Uri
@@ -24,7 +26,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
-import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Matrix4.Companion.fromTrs
 import androidx.xr.runtime.math.Pose
@@ -44,6 +45,7 @@ import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.InputEvent
 import androidx.xr.scenecore.runtime.InputEventListener
+import androidx.xr.scenecore.runtime.NodeHolder
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
@@ -51,11 +53,10 @@ import androidx.xr.scenecore.runtime.PlaneType
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialVisibility
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider.getXrExtensions
 import androidx.xr.scenecore.testing.FakeComponent
-import androidx.xr.scenecore.testing.FakeGltfFeature.Companion.createWithMockFeature
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import androidx.xr.scenecore.testing.FakeSurfaceFeature
+import androidx.xr.scenecore.testing.MemoryUtils
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.environment.EnvironmentVisibilityState
 import com.android.extensions.xr.environment.PassthroughVisibilityState
@@ -76,9 +77,9 @@ import com.android.extensions.xr.space.ShadowSpatialState
 import com.android.extensions.xr.space.SpatialCapabilities
 import com.android.extensions.xr.space.VisibilityState
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
+import java.lang.ref.WeakReference
 import java.util.function.Consumer
 import org.junit.After
 import org.junit.Before
@@ -98,14 +99,13 @@ import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 
 /** Tests for [SpatialSceneRuntimeFactory]. */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
 class SpatialSceneRuntimeTest {
     private val sceneNodeRegistry = SceneNodeRegistry()
     private val nodeRepository = NodeRepository.getInstance()
-    private val xrExtensions = requireNotNull(getXrExtensions())
-    private val fakeExecutor = FakeScheduledExecutorService()
+    private val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
+    private var fakeExecutor = FakeScheduledExecutorService()
     private val mockGltfFeature = mock<GltfFeature>()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val contentResolver = activity.contentResolver
@@ -130,10 +130,10 @@ class SpatialSceneRuntimeTest {
     private fun createGltfEntity(): GltfEntityImpl {
         val nodeHolder: NodeHolder<*> =
             NodeHolder<Node>(xrExtensions.createNode(), Node::class.java)
-        val fakeGltfFeature = createWithMockFeature(mockGltfFeature, nodeHolder)
+        whenever(mockGltfFeature.getNodeHolder()).thenReturn(nodeHolder)
         return GltfEntityImpl(
             activity!!,
-            fakeGltfFeature,
+            mockGltfFeature,
             testRuntime.activitySpace,
             xrExtensions,
             sceneNodeRegistry,
@@ -149,6 +149,9 @@ class SpatialSceneRuntimeTest {
     }
 
     private fun createRuntime(): SpatialSceneRuntime {
+        if (fakeExecutor.isShutdown) {
+            fakeExecutor = FakeScheduledExecutorService()
+        }
         return SpatialSceneRuntime.create(activity!!, fakeExecutor, xrExtensions, sceneNodeRegistry)
     }
 
@@ -506,81 +509,6 @@ class SpatialSceneRuntimeTest {
     }
 
     @Test
-    fun createLoggingEntity_returnsEntity() {
-        val pose = Pose()
-        val loggingEntity = testRuntime.createLoggingEntity(pose)
-        val updatedPose = Pose(Vector3(1f, pose.translation.y, pose.translation.z), pose.rotation)
-        loggingEntity.setPose(updatedPose)
-    }
-
-    @Test
-    fun loggingEntitySetParent() {
-        val pose = Pose()
-        val childEntity = testRuntime.createLoggingEntity(pose)
-        val parentEntity = testRuntime.createLoggingEntity(pose)
-
-        childEntity.parent = parentEntity
-        parentEntity.addChild(childEntity)
-
-        assertThat(childEntity.parent).isEqualTo(parentEntity)
-        assertThat(parentEntity.parent).isEqualTo(null)
-        assertThat(childEntity.children).isEmpty()
-        assertThat(parentEntity.children).containsExactly(childEntity)
-    }
-
-    @Test
-    fun loggingEntityUpdateParent() {
-        val pose = Pose()
-        val childEntity = testRuntime.createLoggingEntity(pose)
-        val parentEntity1 = testRuntime.createLoggingEntity(pose)
-        val parentEntity2 = testRuntime.createLoggingEntity(pose)
-
-        childEntity.parent = parentEntity1
-
-        assertThat(childEntity.parent).isEqualTo(parentEntity1)
-        assertThat(parentEntity1.children).containsExactly(childEntity)
-        assertThat(parentEntity2.children).isEmpty()
-
-        childEntity.parent = parentEntity2
-
-        assertThat(childEntity.parent).isEqualTo(parentEntity2)
-        assertThat(parentEntity2.children).containsExactly(childEntity)
-        assertThat(parentEntity1.children).isEmpty()
-    }
-
-    @Test
-    fun loggingEntity_getActivitySpacePose_returnsIdentityPose() {
-        val identityPose = Pose()
-        val loggingEntity = testRuntime.createLoggingEntity(identityPose)
-        assertPose(loggingEntity.activitySpacePose, identityPose)
-    }
-
-    @Test
-    fun loggingEntity_transformPoseTo_returnsIdentityPose() {
-        val identityPose = Pose()
-        val loggingEntity = testRuntime.createLoggingEntity(identityPose)
-        assertPose(loggingEntity.transformPoseTo(identityPose, loggingEntity), identityPose)
-    }
-
-    @Test
-    fun loggingEntityAddChildren() {
-        val pose = Pose()
-        val childEntity1 = testRuntime.createLoggingEntity(pose)
-        val childEntity2 = testRuntime.createLoggingEntity(pose)
-        val parentEntity = testRuntime.createLoggingEntity(pose)
-
-        parentEntity.addChild(childEntity1)
-
-        assertThat(parentEntity.children).containsExactly(childEntity1)
-
-        parentEntity.addChildren(ImmutableList.of(childEntity2))
-
-        assertThat(childEntity1.parent).isEqualTo(parentEntity)
-        assertThat(childEntity2.parent).isEqualTo(parentEntity)
-        assertThat(parentEntity.children).containsExactly(childEntity1, childEntity2)
-    }
-
-    @Test
     fun createAnchorEntity_returnsUnanchoredAnchorEntity() {
         val anchorEntity = testRuntime.createAnchorEntity()
 
@@ -599,17 +527,123 @@ class SpatialSceneRuntimeTest {
     }
 
     @Test
-    fun spatialStateChangeHandler_invokedWhenSpatialStateChangesToFSM() {
-        val spatialState = ShadowSpatialState.create()
+    fun onSpatialStateChanged_HSMToFSM_invokesHandleOriginUpdate() {
+        // Initial state is HSM (no capabilities)
+        val hsmState = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        testRuntime.onSpatialStateChanged(hsmState)
+
+        val fsmState = ShadowSpatialState.create()
         val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
         testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
-        ShadowSpatialState.extract(spatialState)
+        ShadowSpatialState.extract(fsmState)
             .setSpatialCapabilities(ShadowSpatialCapabilities.createAll())
-        ShadowSpatialState.extract(spatialState)
-            .setSceneParentTransform(Mat4f(Matrix4.Identity.data))
-        testRuntime.onSpatialStateChanged(spatialState)
+        // Use a non-identity transform to avoid early return in handleOriginUpdate
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(fsmState)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(fsmState)
 
         verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_FSMToFSM_invokesHandleOriginUpdateIfTransformChanges() {
+        // Initial state is FSM
+        val fsmState1 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(fsmState1)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.createAll())
+        testRuntime.onSpatialStateChanged(fsmState1)
+
+        val fsmState2 = ShadowSpatialState.create()
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+        ShadowSpatialState.extract(fsmState2)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.createAll())
+        // Different transform, same capabilities - should trigger because it's in FSM
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(fsmState2)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(fsmState2)
+
+        verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_HSMToHSM_doesNotInvokeHandleOriginUpdate() {
+        // Initial state is HSM
+        val hsmState1 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState1)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        testRuntime.onSpatialStateChanged(hsmState1)
+
+        val hsmState2 = ShadowSpatialState.create()
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+        ShadowSpatialState.extract(hsmState2)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        // Different transform, but in HSM - should not trigger
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(hsmState2)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(hsmState2)
+
+        verify(mockSpatialModeChangeListener, never()).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_HSMToHSMWithOtherCapChange_doesNotInvokeHandleOriginUpdate() {
+        // Initial state is HSM with no caps
+        val hsmState1 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState1)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        testRuntime.onSpatialStateChanged(hsmState1)
+
+        // New state is HSM with 3D content cap (but still no UI cap)
+        val hsmState2 = ShadowSpatialState.create()
+        ShadowSpatialState.extract(hsmState2)
+            .setSpatialCapabilities(
+                ShadowSpatialCapabilities.create(SpatialCapabilities.SPATIAL_3D_CONTENTS_CAPABLE)
+            )
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(hsmState2)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+
+        testRuntime.onSpatialStateChanged(hsmState2)
+
+        // spatialCapabilitiesChanged is true, but hasCapability(UI) is false.
+        verify(mockSpatialModeChangeListener, never()).onSpatialModeChanged(any(), any())
+    }
+
+    @Test
+    fun onSpatialStateChanged_FSMToHSM_doesNotInvokeHandleOriginUpdate() {
+        // Initial state is FSM
+        val fsmState = ShadowSpatialState.create()
+        ShadowSpatialState.extract(fsmState)
+            .setSpatialCapabilities(
+                ShadowSpatialCapabilities.create(SpatialCapabilities.SPATIAL_UI_CAPABLE)
+            )
+        testRuntime.onSpatialStateChanged(fsmState)
+
+        val hsmState = ShadowSpatialState.create()
+        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
+        testRuntime.spatialModeChangeListener = mockSpatialModeChangeListener
+        ShadowSpatialState.extract(hsmState)
+            .setSpatialCapabilities(ShadowSpatialCapabilities.create(*byteArrayOf()))
+        val nonIdentityTransform = Matrix4.fromTranslation(Vector3(1f, 2f, 3f))
+        ShadowSpatialState.extract(hsmState)
+            .setSceneParentTransform(Mat4f(nonIdentityTransform.data))
+
+        testRuntime.onSpatialStateChanged(hsmState)
+
+        verify(mockSpatialModeChangeListener, never()).onSpatialModeChanged(any(), any())
     }
 
     private fun sendVisibilityState(
@@ -985,8 +1019,8 @@ class SpatialSceneRuntimeTest {
     fun createAnchorPlacement_returnsAnchorPlacement() {
         val anchorPlacement =
             testRuntime.createAnchorPlacementForPlanes(
-                ImmutableSet.of<@JvmSuppressWildcards PlaneType>(PlaneType.ANY),
-                ImmutableSet.of<@JvmSuppressWildcards PlaneSemantic>(PlaneSemantic.ANY),
+                PlaneType.entries.toSet(),
+                PlaneSemantic.entries.toSet(),
             )
 
         assertThat(anchorPlacement).isNotNull()
@@ -1214,22 +1248,18 @@ class SpatialSceneRuntimeTest {
         val identityPose = Pose()
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(identityPose)
         val entity = createEntity()
 
         assertPose(panelEntity.getPose(), identityPose)
         assertPose(gltfEntity.getPose(), identityPose)
-        assertPose(loggingEntity.getPose(), identityPose)
         assertPose(entity.getPose(), identityPose)
 
         panelEntity.setPose(pose)
         gltfEntity.setPose(pose)
-        loggingEntity.setPose(pose)
         entity.setPose(pose)
 
         assertPose(panelEntity.getPose(), pose)
         assertPose(gltfEntity.getPose(), pose)
-        assertPose(loggingEntity.getPose(), pose)
         assertPose(entity.getPose(), pose)
     }
 
@@ -1239,12 +1269,10 @@ class SpatialSceneRuntimeTest {
         val pose = Pose(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f))
         val panelEntity = createPanelEntity(pose)
         val gltfEntity = createGltfEntity(pose)
-        val loggingEntity = testRuntime.createLoggingEntity(pose)
         val entity = createEntity(pose)
 
         assertPose(panelEntity.getPose(), pose)
         assertPose(gltfEntity.getPose(), pose)
-        assertPose(loggingEntity.getPose(), pose)
         assertPose(entity.getPose(), pose)
     }
 
@@ -1260,7 +1288,7 @@ class SpatialSceneRuntimeTest {
         val gltfEntity = createGltfEntity(pose) as GltfEntityImpl
         val entity = createEntity(pose) as AndroidXrEntity
         val activitySpace: ActivitySpace = testRuntime.activitySpace
-        (activitySpace as ActivitySpaceImpl).setOpenXrReferenceSpaceTransform(
+        (activitySpace as ActivitySpaceImpl).setPlatformReferenceSpaceTransform(
             fromTrs(Vector3(5f, 6f, 7f), fromEulerAngles(22f, 33f, 44f), Vector3(2f, 2f, 2f))
         )
         panelEntity.parent = activitySpace
@@ -1622,7 +1650,6 @@ class SpatialSceneRuntimeTest {
     fun addComponent_callsOnAttach() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component = mock<Component>()
         whenever(component.onAttach(any<Entity>())).thenReturn(true)
 
@@ -1631,16 +1658,12 @@ class SpatialSceneRuntimeTest {
 
         assertThat(gltfEntity.addComponent(component)).isTrue()
         verify(component).onAttach(gltfEntity)
-
-        assertThat(loggingEntity.addComponent(component)).isTrue()
-        verify(component).onAttach(loggingEntity)
     }
 
     @Test
     fun addComponent_failsIfOnAttachFails() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component = mock<Component>()
         whenever(component.onAttach(any<Entity>())).thenReturn(false)
 
@@ -1649,16 +1672,12 @@ class SpatialSceneRuntimeTest {
 
         assertThat(gltfEntity.addComponent(component)).isFalse()
         verify(component).onAttach(gltfEntity)
-
-        assertThat(loggingEntity.addComponent(component)).isFalse()
-        verify(component).onAttach(loggingEntity)
     }
 
     @Test
     fun removeComponent_callsOnDetach() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component = mock<Component>()
         whenever(component.onAttach(any<Entity>())).thenReturn(true)
 
@@ -1675,20 +1694,12 @@ class SpatialSceneRuntimeTest {
         gltfEntity.removeComponent(component)
 
         verify(component).onDetach(gltfEntity)
-
-        assertThat(loggingEntity.addComponent(component)).isTrue()
-        verify(component).onAttach(loggingEntity)
-
-        loggingEntity.removeComponent(component)
-
-        verify(component).onDetach(loggingEntity)
     }
 
     @Test
     fun addingSameComponentTypeAgain_addsComponent() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component1 = mock<Component>()
         val component2 = mock<Component>()
         whenever(component1.onAttach(any<Entity>())).thenReturn(true)
@@ -1703,18 +1714,12 @@ class SpatialSceneRuntimeTest {
         assertThat(gltfEntity.addComponent(component2)).isTrue()
         verify(component1).onAttach(gltfEntity)
         verify(component2).onAttach(gltfEntity)
-
-        assertThat(loggingEntity.addComponent(component1)).isTrue()
-        assertThat(loggingEntity.addComponent(component2)).isTrue()
-        verify(component1).onAttach(loggingEntity)
-        verify(component2).onAttach(loggingEntity)
     }
 
     @Test
     fun addingDifferentComponentType_addComponentSucceeds() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component1 = mock<Component>()
         val component2: Component = mock<FakeComponent>()
         whenever(component1.onAttach(any<Entity>())).thenReturn(true)
@@ -1729,18 +1734,12 @@ class SpatialSceneRuntimeTest {
         assertThat(gltfEntity.addComponent(component2)).isTrue()
         verify(component1).onAttach(gltfEntity)
         verify(component2).onAttach(gltfEntity)
-
-        assertThat(loggingEntity.addComponent(component1)).isTrue()
-        assertThat(loggingEntity.addComponent(component2)).isTrue()
-        verify(component1).onAttach(loggingEntity)
-        verify(component2).onAttach(loggingEntity)
     }
 
     @Test
     fun removeAll_callsOnDetachOnAll() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component1 = mock<Component>()
         val component2: Component = mock<FakeComponent>()
         whenever(component1.onAttach(any<Entity>())).thenReturn(true)
@@ -1765,23 +1764,12 @@ class SpatialSceneRuntimeTest {
 
         verify(component1).onDetach(gltfEntity)
         verify(component2).onDetach(gltfEntity)
-
-        assertThat(loggingEntity.addComponent(component1)).isTrue()
-        assertThat(loggingEntity.addComponent(component2)).isTrue()
-        verify(component1).onAttach(loggingEntity)
-        verify(component2).onAttach(loggingEntity)
-
-        loggingEntity.removeAllComponents()
-
-        verify(component1).onDetach(loggingEntity)
-        verify(component2).onDetach(loggingEntity)
     }
 
     @Test
     fun addSameComponentTwice_callsOnAttachTwice() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component = mock<Component>()
         whenever(component.onAttach(any<Entity>())).thenReturn(true)
 
@@ -1792,16 +1780,12 @@ class SpatialSceneRuntimeTest {
         assertThat(gltfEntity.addComponent(component)).isTrue()
         assertThat(gltfEntity.addComponent(component)).isTrue()
         verify(component, times(2)).onAttach(gltfEntity)
-        assertThat(loggingEntity.addComponent(component)).isTrue()
-        assertThat(loggingEntity.addComponent(component)).isTrue()
-        verify(component, times(2)).onAttach(loggingEntity)
     }
 
     @Test
     fun removeSameComponentTwice_callsOnDetachOnce() {
         val panelEntity = createPanelEntity()
         val gltfEntity: GltfEntity = createGltfEntity()
-        val loggingEntity = testRuntime.createLoggingEntity(Pose())
         val component = mock<Component>()
         whenever(component.onAttach(any<Entity>())).thenReturn(true)
 
@@ -1819,13 +1803,6 @@ class SpatialSceneRuntimeTest {
         gltfEntity.removeComponent(component)
 
         verify(component).onDetach(gltfEntity)
-        assertThat(loggingEntity.addComponent(component)).isTrue()
-        verify(component).onAttach(loggingEntity)
-
-        loggingEntity.removeComponent(component)
-        loggingEntity.removeComponent(component)
-
-        verify(component).onDetach(loggingEntity)
     }
 
     @Test
@@ -2476,6 +2453,107 @@ class SpatialSceneRuntimeTest {
 
         assertThat(closeable.isClosed).isTrue()
         assertThat(testRuntime.keyEntityTransformCloseable).isNull()
+    }
+
+    @Test
+    fun genericEntity_garbageCollection_disposesEntity() {
+        fun createEntity(): WeakReference<Entity> {
+            val entity = testRuntime.createEntity(Pose(), "test", null)
+            return WeakReference(entity)
+        }
+
+        val entityRef = createEntity()
+        assertThat(entityRef.get()).isNotNull()
+
+        MemoryUtils.assertGarbageCollected(entityRef)
+    }
+
+    @Test
+    fun defaultPixelsPerMeter_getDefaultValue() {
+        val ppmFromSource = xrExtensions.config.underlyingObject.defaultPixelsPerMeter()
+        val ppm = testRuntime.virtualPixelDensity
+
+        assertThat(ppm).isGreaterThan(0f)
+        assertThat(ppm).isEqualTo(ppmFromSource)
+    }
+
+    @Test
+    fun defaultPixelsPerMeter_getDefaultValueFromLegacy() {
+        val ppmFromLegacySource = xrExtensions.config.defaultPixelsPerMeter(1f)
+        val ppm = testRuntime.virtualPixelDensity
+
+        assertThat(ppm).isGreaterThan(0f)
+        assertThat(ppm).isEqualTo(ppmFromLegacySource)
+    }
+
+    @Test
+    fun destroy_clearsVisibilityCallbacksAndListeners() {
+        testRuntime.destroy()
+
+        // Verify that visibility changes triggered via ShadowXrExtensions are ignored after destroy
+        val shadowXrExtensions = ShadowXrExtensions.extract(xrExtensions)
+        sendVisibilityState(shadowXrExtensions, SpatialVisibility.WITHIN_FOV, 10, 20)
+
+        // Assert spatial state and resources are cleanly unlinked
+        assertThat(shadowXrExtensions.getSpatialStateCallback(activity!!)).isNull()
+    }
+
+    @Test
+    fun spatialCapabilities_afterDestroy_returnsCachedSnapshotWithoutCrashing() {
+        // Populate state before destruction
+        val spatialState = ShadowSpatialState.create()
+        testRuntime.onSpatialStateChanged(spatialState)
+
+        testRuntime.destroy()
+
+        // Accessing spatialCapabilities post-destruction must succeed using the cached snapshot
+        assertThat(testRuntime.spatialCapabilities).isNotNull()
+    }
+
+    @Test
+    fun onSpatialStateChanged_afterDestroy_ignoresLateCallback() {
+        testRuntime.destroy()
+        val lateSpatialState = ShadowSpatialState.create()
+
+        // Delivering a callback after destruction should complete gracefully without throwing
+        testRuntime.onSpatialStateChanged(lateSpatialState)
+    }
+
+    @Test
+    fun modeRequestsAndAspectRatio_afterDestroy_areIgnoredWithoutCrashing() {
+        testRuntime.destroy()
+
+        // Attempting these operations post-destroy must return safely without throwing exceptions
+        testRuntime.requestFullSpaceMode()
+        testRuntime.requestHomeSpaceMode()
+        testRuntime.enablePanelDepthTest(true)
+        testRuntime.setPreferredAspectRatio(activity!!, 1.5f)
+    }
+
+    @Test
+    fun destroy_onUninitializedRuntime_preservesSnapshotForSafePostDestroyAccess() {
+        // Immediately destroy without ever evaluating lazySpatialStateProvider or triggering events
+        testRuntime.destroy()
+
+        // Accessing properties backed by lazySpatialStateProvider post-destruction must return
+        // the preserved snapshot without throwing a NullPointerException
+        assertThat(testRuntime.spatialCapabilities).isNotNull()
+    }
+
+    @Test
+    fun onSpatialStateChanged_afterDestroy_doesNotThrow() {
+        testRuntime.destroy()
+        val lateSpatialState = ShadowSpatialState.create()
+        // Must complete without throwing
+        testRuntime.onSpatialStateChanged(lateSpatialState)
+    }
+
+    @Test
+    fun modeRequests_afterDestroy_doNotThrow() {
+        testRuntime.destroy()
+        // Must complete without throwing
+        testRuntime.requestFullSpaceMode()
+        testRuntime.requestHomeSpaceMode()
     }
 
     companion object {

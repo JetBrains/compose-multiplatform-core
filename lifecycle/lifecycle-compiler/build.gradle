@@ -29,6 +29,7 @@ plugins {
 
 dependencies {
     implementation(project(":lifecycle:lifecycle-common"))
+    implementation(libs.guava)
     implementation(libs.autoCommon)
     implementation(libs.javapoet)
     testImplementation(libs.googleCompileTesting)
@@ -66,5 +67,5 @@ androidx {
     name = "Lifecycles Compiler"
     type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2017"
-    description = "Android Lifecycles annotation processor"
+    description = "Android Lifecycles annotation processor (Deprecated)"
 }

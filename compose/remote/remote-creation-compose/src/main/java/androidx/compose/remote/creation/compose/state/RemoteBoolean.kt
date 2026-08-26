@@ -22,7 +22,6 @@ import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.state.RemoteBoolean.OperationKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
@@ -34,15 +33,49 @@ import androidx.compose.runtime.remember
  * engine.
  */
 public open class RemoteBoolean internal constructor(internal val intValue: RemoteInt) :
-    BaseRemoteState<Boolean>() {
+    BaseRemoteState<Boolean>(RemoteStateInstanceKey()) {
     internal override val cacheKey: RemoteStateCacheKey
         get() = intValue.cacheKey
 
-    internal enum class OperationKey {
+    internal enum class OperationKey : RemoteOperation {
         SelectString,
         SelectFloat,
         SelectInt,
-        SelectBoolean,
+        SelectBoolean;
+
+        override val precedence: Int
+            get() = 0
+
+        override fun toDebugString(args: List<RemoteStateCacheKey>): String {
+            val condStr =
+                when (val cond = args[0].toOperandString(1)) {
+                    "1" -> "true"
+                    "0" -> "false"
+                    else -> cond
+                }
+            return "$condStr ? ${args[1].toOperandString(0)} : ${args[2].toOperandString(0)}"
+        }
+
+        override fun reconstruct(args: List<BaseRemoteState<*>>): BaseRemoteState<*> {
+            return when (this) {
+                SelectString ->
+                    RemoteBoolean(args[0] as RemoteInt)
+                        .select(args[1] as RemoteString, args[2] as RemoteString)
+                SelectFloat ->
+                    RemoteBoolean(args[0] as RemoteInt)
+                        .select(args[1] as RemoteFloat, args[2] as RemoteFloat)
+                SelectInt ->
+                    RemoteBoolean(args[0] as RemoteInt)
+                        .select(args[1] as RemoteInt, args[2] as RemoteInt)
+                SelectBoolean ->
+                    RemoteBoolean(args[0] as RemoteInt)
+                        .select(
+                            RemoteBoolean(args[1] as RemoteInt),
+                            RemoteBoolean(args[2] as RemoteInt),
+                        )
+                        .intValue
+            }
+        }
     }
 
     @get:Suppress("AutoBoxing")
@@ -86,6 +119,16 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
         }
     )
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toDebugString(): String {
+        val str = super.toDebugString()
+        return when (str) {
+            "1" -> "true"
+            "0" -> "false"
+            else -> str
+        }
+    }
+
     /**
      * Converts this [RemoteBoolean] to its underlying [RemoteInt] representation, which evaluates
      * to `1` for `true` and `0` for `false`.
@@ -111,6 +154,10 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
             }
         }
 
+        if (ifTrue.cacheKey == ifFalse.cacheKey) {
+            return ifTrue
+        }
+
         return MutableRemoteString(
             constantValueOrNull = null,
             cacheKey =
@@ -128,11 +175,16 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
 
                 override fun computeRequiredCodePointSet(
                     creationState: RemoteComposeCreationState
-                ) =
-                    mergeSets(
+                ): Set<String>? {
+                    if (hasConstantValue) {
+                        val selected = if (constantValue) ifTrue else ifFalse
+                        return selected.computeRequiredCodePointSet(creationState)
+                    }
+                    return mergeSets(
                         ifTrue.computeRequiredCodePointSet(creationState),
                         ifFalse.computeRequiredCodePointSet(creationState),
                     )
+                }
             },
         )
     }
@@ -153,6 +205,11 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
                 ifFalse
             }
         }
+
+        if (ifTrue.cacheKey == ifFalse.cacheKey) {
+            return ifTrue
+        }
+
         return RemoteFloatExpression(
             constantValueOrNull = null,
             cacheKey =
@@ -183,6 +240,11 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
                 ifFalse
             }
         }
+
+        if (ifTrue.cacheKey == ifFalse.cacheKey) {
+            return ifTrue
+        }
+
         return RemoteIntExpression(
             constantValueOrNull = null,
             cacheKey =
@@ -212,6 +274,10 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
             } else {
                 ifFalse
             }
+        }
+
+        if (ifTrue.cacheKey == ifFalse.cacheKey) {
+            return ifTrue
         }
 
         return RemoteBoolean(
@@ -255,6 +321,10 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
             }
         }
 
+        if (ifTrue == ifFalse) {
+            return RemoteColor(ifTrue)
+        }
+
         return tween(ifFalse, ifTrue, intValue.toRemoteFloat())
     }
 
@@ -275,30 +345,47 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
             }
         }
 
+        if (ifTrue.cacheKey == ifFalse.cacheKey) {
+            return ifTrue
+        }
+
         return tween(ifFalse, ifTrue, intValue.toRemoteFloat())
+    }
+
+    /**
+     * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
+     * otherwise it evaluates to [ifFalse].
+     *
+     * @param ifTrue The [RemoteDp] to be selected if this boolean is `true`.
+     * @param ifFalse The [RemoteDp] to be selected if this boolean is `false`.
+     * @return A new [RemoteDp] representing the conditionally selected Dp value.
+     */
+    public fun select(ifTrue: RemoteDp, ifFalse: RemoteDp): RemoteDp {
+        return select(ifTrue.value, ifFalse.value).asRemoteDp()
     }
 
     /**
      * Equality operator for [RemoteBoolean]s.
      *
-     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean\'s underlying
-     * [RemoteInt] is equal to another [RemoteBoolean]\'s underlying [RemoteInt].
+     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean's underlying
+     * [RemoteInt] is equal to another [RemoteBoolean]'s underlying [RemoteInt].
      *
-     * @param b The other [RemoteBoolean] to compare with.
+     * @param other The other [RemoteBoolean] to compare with.
      * @return A new [RemoteBoolean] representing the result of the equality comparison.
      */
-    public infix fun eq(b: RemoteBoolean): RemoteBoolean = intValue eq b.intValue
+    public fun isEqualTo(other: RemoteBoolean): RemoteBoolean = intValue.isEqualTo(other.intValue)
 
     /**
      * Inequality operator for [RemoteBoolean]s.
      *
-     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean\'s underlying
-     * [RemoteInt] is *not* equal to another [RemoteBoolean]\'s underlying [RemoteInt].
+     * Returns a new [RemoteBoolean] that evaluates to `true` if this boolean's underlying
+     * [RemoteInt] is *not* equal to another [RemoteBoolean]'s underlying [RemoteInt].
      *
-     * @param b The other [RemoteBoolean] to compare with.
+     * @param other The other [RemoteBoolean] to compare with.
      * @return A new [RemoteBoolean] representing the result of the inequality comparison.
      */
-    public infix fun ne(b: RemoteBoolean): RemoteBoolean = intValue ne b.intValue
+    public fun isNotEqualTo(other: RemoteBoolean): RemoteBoolean =
+        intValue.isNotEqualTo(other.intValue)
 
     /**
      * Logical OR operator for [RemoteBoolean]s.
@@ -306,10 +393,13 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * Performs a bitwise OR operation on the underlying [RemoteInt] values of this boolean and the
      * other [RemoteBoolean]. The result is a new [RemoteBoolean].
      *
-     * @param b The other [RemoteBoolean] to perform the OR operation with.
+     * This is designed to align with the standard Kotlin [Boolean.or] infix function.
+     *
+     * @param other The other [RemoteBoolean] to perform the OR operation with.
      * @return A new [RemoteBoolean] representing the result of the logical OR.
      */
-    public infix fun or(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue or b.intValue)
+    public infix fun or(other: RemoteBoolean): RemoteBoolean =
+        RemoteBoolean(intValue or other.intValue)
 
     /**
      * Logical AND operator for [RemoteBoolean]s.
@@ -317,10 +407,13 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * Performs a bitwise AND operation on the underlying [RemoteInt] values of this boolean and the
      * other [RemoteBoolean]. The result is a new [RemoteBoolean].
      *
-     * @param b The other [RemoteBoolean] to perform the AND operation with.
+     * This is designed to align with the standard Kotlin [Boolean.and] infix function.
+     *
+     * @param other The other [RemoteBoolean] to perform the AND operation with.
      * @return A new [RemoteBoolean] representing the result of the logical AND.
      */
-    public infix fun and(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue and b.intValue)
+    public infix fun and(other: RemoteBoolean): RemoteBoolean =
+        RemoteBoolean(intValue and other.intValue)
 
     /**
      * Logical XOR operator for [RemoteBoolean]s.
@@ -328,12 +421,14 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
      * Performs a bitwise XOR operation on the underlying [RemoteInt] values of this boolean and the
      * other [RemoteBoolean]. The result is a new [RemoteBoolean].
      *
-     * @param b The other [RemoteBoolean] to perform the XOR operation with.
+     * This is designed to align with the standard Kotlin [Boolean.xor] infix function.
+     *
+     * @param other The other [RemoteBoolean] to perform the XOR operation with.
      * @return A new [RemoteBoolean] representing the result of the logical XOR.
      */
-    public infix fun xor(b: RemoteBoolean): RemoteBoolean = RemoteBoolean(intValue xor b.intValue)
+    public infix fun xor(other: RemoteBoolean): RemoteBoolean =
+        RemoteBoolean(intValue xor other.intValue)
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         /**
          * Creates a [RemoteBoolean] from a literal constant.
@@ -361,7 +456,6 @@ public open class RemoteBoolean internal constructor(internal val intValue: Remo
          * @param defaultValue The initial [Boolean] value for the named remote boolean.
          * @return A [RemoteBoolean] representing the named boolean.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         public fun createNamedRemoteBoolean(
             name: String,
@@ -416,8 +510,10 @@ public class MutableRemoteBoolean internal constructor(remoteInt: MutableRemoteI
          * @param initialValue The initial value for this mutable boolean.
          * @return A [MutableRemoteBoolean] instance.
          */
-        public fun createMutable(initialValue: Boolean): MutableRemoteBoolean =
-            MutableRemoteBoolean(MutableRemoteInt.createMutable(if (initialValue) 1 else 0))
+        public operator fun invoke(initialValue: Boolean): MutableRemoteBoolean {
+            val initInt: Int = if (initialValue) 1 else 0
+            return MutableRemoteBoolean(MutableRemoteInt(initInt))
+        }
     }
 }
 
@@ -436,17 +532,9 @@ public val Boolean.rb: RemoteBoolean
 @Composable
 @RemoteComposable
 public fun rememberMutableRemoteBoolean(initialValue: Boolean): MutableRemoteBoolean {
-    return remember {
-        MutableRemoteBoolean(MutableRemoteInt.createMutable(if (initialValue) 1 else 0))
-    }
+    val initInt: Int = if (initialValue) 1 else 0
+    return remember { MutableRemoteBoolean(MutableRemoteInt(initInt)) }
 }
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Deprecated("Use rememberMutableRemoteBoolean(value())")
-@Composable
-@RemoteComposable
-public fun rememberRemoteBooleanValue(value: () -> Boolean): RemoteBoolean =
-    rememberMutableRemoteBoolean(value())
 
 /**
  * Remembers a named remote boolean expression.

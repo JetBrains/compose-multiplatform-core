@@ -744,6 +744,12 @@ class ImageCaptureTest {
     }
 
     @Test
+    fun constructor_initializesFlashModeFromConfig() {
+        val imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_AUTO).build()
+        assertThat(imageCapture.flashMode).isEqualTo(ImageCapture.FLASH_MODE_AUTO)
+    }
+
+    @Test
     fun throwException_whenFlashModeScreenSetWithoutScreenFlashInstanceSet() {
         val imageCapture = ImageCapture.Builder().build()
 
@@ -1237,6 +1243,45 @@ class ImageCaptureTest {
         cameraUseCaseAdapter.setViewPort(viewPort)
         cameraUseCaseAdapter.addUseCases(Collections.singleton<UseCase>(imageCapture))
         return imageCapture
+    }
+
+    @Test
+    fun setFlashMode_sameValueDoesNotCallControl() {
+        // Arrange
+        val fakeCameraControl = FakeCameraControl()
+        val fakeCameraInfo = FakeCameraInfoInternal()
+        val fakeManager = FakeCameraDeviceSurfaceManager()
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
+
+        val fakeCamera = FakeCamera(fakeCameraControl, fakeCameraInfo)
+        cameraUseCaseAdapter =
+            CameraUseCaseAdapter(
+                fakeCamera,
+                FakeCameraCoordinator(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
+            )
+
+        // Default flash mode in createImageCapture is ImageCapture.FLASH_MODE_OFF
+        val imageCapture = createImageCapture()
+
+        // Act: bind use case
+        cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
+
+        // Assert: initial set of flash mode (should be called exactly once during bind)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(1)
+
+        // Act: set same flash mode again
+        imageCapture.setFlashMode(ImageCapture.FLASH_MODE_OFF)
+
+        // Assert: should still be called exactly once (no redundant calls)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(1)
+
+        // Act: set a different flash mode
+        imageCapture.setFlashMode(ImageCapture.FLASH_MODE_ON)
+
+        // Assert: should be called again (total count 2)
+        assertThat(fakeCameraControl.setFlashModeCallCount).isEqualTo(2)
     }
 
     private fun createImageCapture(

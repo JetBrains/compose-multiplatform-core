@@ -26,6 +26,7 @@ import androidx.camera.camera2.pipe.CameraPipe.CameraBackendConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.FrameGraph
+import androidx.camera.camera2.pipe.MemoryEstimator
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -46,6 +47,7 @@ private constructor(
     public val fakeSurfaces: FakeSurfaces,
     public val fakeImageReaders: FakeImageReaders,
     public val fakeImageSources: FakeImageSources,
+    private val testThreadScope: TestThreadScope?,
 ) : CameraPipe, AutoCloseable {
     private val closed = atomic(false)
     private val _cameraGraphs = mutableListOf<CameraGraphSimulator>()
@@ -85,7 +87,7 @@ private constructor(
     override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraphSimulator {
         check(!closed.value) { "Cannot interact with CameraPipeSimulator after close!" }
         val frameGraph = cameraPipeInternal.createFrameGraph(frameGraphConfig)
-        val cameraGraph = frameGraph.unwrapAs(CameraGraph::class)
+        val cameraGraph = frameGraph.unwrapAs(CameraGraph::class.java)
         checkNotNull(cameraGraph) { "Failed to unwrap $frameGraph as a CameraGraph!" }
 
         val cameraGraphSimulator =
@@ -94,7 +96,8 @@ private constructor(
                 cameraGraph = cameraGraph,
             )
 
-        val frameGraphSimulator = FrameGraphSimulator(frameGraph, cameraGraphSimulator)
+        val frameGraphSimulator =
+            FrameGraphSimulator(frameGraph, cameraGraphSimulator, testThreadScope)
         _frameGraphs.add(frameGraphSimulator)
         return frameGraphSimulator
     }
@@ -178,6 +181,7 @@ private constructor(
                 fakeImageSources,
                 cameraGraph,
                 cameraGraphConfig,
+                testThreadScope,
             )
         _cameraGraphs.add(cameraGraphSimulator)
         return cameraGraphSimulator
@@ -202,10 +206,12 @@ private constructor(
             testContext: Context,
             testThreads: CameraPipe.ThreadConfig,
             testCameras: List<CameraMetadata>,
+            memoryEstimator: MemoryEstimator = MemoryEstimator.create(),
+            testThreadScope: TestThreadScope? = null,
         ): CameraPipeSimulator {
             val fakeSurfaces = FakeSurfaces()
             val fakeImageReaders = FakeImageReaders(fakeSurfaces)
-            val fakeImageSources = FakeImageSources(fakeImageReaders)
+            val fakeImageSources = FakeImageSources(fakeImageReaders, memoryEstimator)
             val fakeCameraBackend =
                 FakeCameraBackend(fakeCameras = testCameras.associateBy { it.camera })
 
@@ -217,6 +223,7 @@ private constructor(
                             CameraBackendConfig(internalBackend = fakeCameraBackend),
                         threadConfig = testThreads,
                         imageSources = fakeImageSources,
+                        memoryEstimator = memoryEstimator,
                     )
                 )
             return CameraPipeSimulator(
@@ -225,6 +232,7 @@ private constructor(
                 fakeSurfaces,
                 fakeImageReaders,
                 fakeImageSources,
+                testThreadScope,
             )
         }
 
@@ -232,6 +240,7 @@ private constructor(
             testScope: TestScope,
             testContext: Context,
             fakeCameras: List<CameraMetadata> = listOf(FakeCameraMetadata()),
+            memoryEstimator: MemoryEstimator = MemoryEstimator.create(),
         ): CameraPipeSimulator {
             val testScopeDispatcher =
                 StandardTestDispatcher(testScope.testScheduler, "CXCP-TestScope")
@@ -250,10 +259,15 @@ private constructor(
                     },
                     testOnlyScope = testScope,
                 )
+
+            val testThreadScope = TestThreadScope.from(testScope)
+
             return create(
                 testContext = testContext,
                 testThreads = testScopeThreadConfig,
                 testCameras = fakeCameras,
+                memoryEstimator = memoryEstimator,
+                testThreadScope = testThreadScope,
             )
         }
     }

@@ -363,7 +363,7 @@ internal class SlotTableEditor(val table: SlotTable) {
     }
 
     fun seek(handle: GroupHandle) {
-        debugRuntimeCheck(containsHandle(handle)) {
+        debugRuntimeCheck(handle == NULL_GROUP_HANDLE || containsHandle(handle)) {
             "Handle ${handle.group}:${handle.context} is not in the table being read"
         }
         val handleContext = handle.context
@@ -462,7 +462,7 @@ internal class SlotTableEditor(val table: SlotTable) {
         if (slotRange == NULL_ADDRESS) {
             addressSpace.writeSlot(parent, 0, value)
         } else {
-            addressSpace.slotAddressAndSize(slotRange) { address, size ->
+            addressSpace.slotAddressAndSize(slotRange) { _, size ->
                 addressSpace.writeSlot(parent, size, value)
             }
         }

@@ -22,12 +22,15 @@ import static androidx.compose.remote.core.CoreDocument.MINOR_VERSION;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ScrollView;
@@ -37,30 +40,42 @@ import androidx.annotation.VisibleForTesting;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.CoreDocument.ShaderControl;
 import androidx.compose.remote.core.Limits;
+import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.RemoteContextActions;
 import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.layout.Component;
+import androidx.compose.remote.core.operations.loom.PatternCallback;
 import androidx.compose.remote.core.semantics.ScrollableComponent;
 import androidx.compose.remote.player.core.RemoteDocument;
+import androidx.compose.remote.player.core.platform.AndroidCustomContext;
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext;
 import androidx.compose.remote.player.core.platform.BitmapLoader;
 import androidx.compose.remote.player.core.platform.SettingsRetriever;
+import androidx.compose.remote.player.core.platform.TypefaceResolver;
 import androidx.compose.remote.player.core.state.StateUpdater;
 import androidx.compose.remote.player.core.state.StateUpdaterImpl;
 import androidx.compose.remote.player.view.accessibility.platform.RemoteComposeTouchHelper;
+import androidx.compose.remote.player.view.platform.AndroidFloatSystemVariables;
 import androidx.compose.remote.player.view.platform.HapticSupport;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.compose.remote.player.view.platform.RemotePreparedDocument;
 import androidx.compose.remote.player.view.platform.SensorSupport;
+import androidx.compose.remote.player.view.platform.SoundSupport;
 import androidx.compose.remote.player.view.platform.ThemeSupport;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This is a player for a RemoteComposeDocument.
@@ -78,19 +93,111 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     // Theme constants
     @RestrictTo(LIBRARY_GROUP)
     public static final int THEME_UNSPECIFIED = Theme.UNSPECIFIED;
+
     @RestrictTo(LIBRARY_GROUP)
     public static final int THEME_LIGHT = Theme.LIGHT;
+
     @RestrictTo(LIBRARY_GROUP)
     public static final int THEME_DARK = Theme.DARK;
 
-    private RemoteComposeView mInner;
+    // Expose to subclasses to enable player extensibility.
+    @NonNull
+    protected RemoteComposeView mInner;
     private StateUpdater mStateUpdater;
 
     private final @NonNull ThemeSupport mThemeSupport = new ThemeSupport();
     private final @NonNull SensorSupport mSensorsSupport = new SensorSupport();
     private final @NonNull HapticSupport mHapticSupport = new HapticSupport();
+    private final @NonNull SoundSupport mSoundSupport = new SoundSupport();
+    private @Nullable FloatSystemVariables mFloatSystemVariables =
+            new AndroidFloatSystemVariables();
 
     private @NonNull ShaderControl mShaderControl = (shader) -> false;
+
+    private final HashMap<String, RemoteComposeBuffer> mLoadedMacros = new HashMap<>();
+
+    private final PatternCallback mPatternCallbackInternal =
+            new PatternCallback() {
+                @Override
+                public void patternFound(
+                        @NonNull String name, @NonNull RemoteComposeBuffer buffer) {
+                    saveMacro(name, buffer);
+                }
+            };
+
+    private void saveMacro(@NonNull String name, @NonNull RemoteComposeBuffer buffer) {
+        File folder = new File(getContext().getFilesDir(), "macros");
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        File file = new File(folder, name + ".mrc");
+        try {
+            String canonicalFolderPath = folder.getCanonicalPath();
+            String canonicalFilePath = file.getCanonicalPath();
+            if (!canonicalFilePath.startsWith(canonicalFolderPath + File.separator)) {
+                Log.e("RemoteComposePlayer", "Invalid macro name (path traversal detected)");
+                return;
+            }
+        } catch (IOException e) {
+            Log.e("RemoteComposePlayer", "Failed to resolve canonical path for macro", e);
+            return;
+        }
+        mLoadedMacros.put(name, buffer);
+        if (mInner.getDocument() != null) {
+            // mInner.getDocument().getDocument().addMacro(name, buffer);
+            // mInner.getDocument().reinflate();
+        }
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(buffer.getBuffer().cloneBytes());
+        } catch (IOException e) {
+            Log.e("RemoteComposePlayer", "Error saving macro " + name, e);
+        }
+    }
+
+    /** Load macros from the internal storage */
+    public void loadMacros() {
+        if (isInEditMode()) {
+            return;
+        }
+        // Temporarily disabled.
+        if (true) {
+            return;
+        }
+        try {
+            File filesDir = getContext().getFilesDir();
+            if (filesDir == null) {
+                return;
+            }
+            File folder = new File(filesDir, "macros");
+            if (!folder.exists()) {
+                return;
+            }
+            File[] files = folder.listFiles();
+            if (files == null) {
+                return;
+            }
+            for (File file : files) {
+                if (file.getName().endsWith(".mrc")) {
+                    String name = file.getName().substring(0, file.getName().length() - 4);
+                    try (FileInputStream fis = new FileInputStream(file)) {
+                        RemoteComposeBuffer buffer = RemoteComposeBuffer.fromInputStream(fis);
+                        mLoadedMacros.put(name, buffer);
+                        if (mInner.getDocument() != null) {
+                            CoreDocument doc = mInner.getDocument().getDocument();
+                            doc.mLoomManager.addMacroFromBuffer(name, buffer);
+                        }
+                    } catch (IOException e) {
+                        Log.e("RemoteComposePlayer", "Error loading macro " + file.getName(), e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e("RemoteComposePlayer", "Error loading macros", e);
+        }
+        if (mInner.getDocument() != null) {
+            mInner.getDocument().reinflate();
+        }
+    }
 
     public RemoteComposePlayer(@NonNull Context context) {
         super(context);
@@ -102,8 +209,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         init(context, attrs, 0);
     }
 
-    public RemoteComposePlayer(@NonNull Context context, @Nullable AttributeSet attrs,
-            int defStyleAttr) {
+    public RemoteComposePlayer(
+            @NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context, attrs, defStyleAttr);
     }
@@ -142,15 +249,37 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
      */
     public void setDefaultMaxFps(int defaultMaxFps) {
         Limits.DEFAULT_MAX_FPS = defaultMaxFps;
+        mInner.setMaxFps(defaultMaxFps);
     }
 
     /**
-     * Sets the absolute maximum frames per second for the player.
+     * Sets the default sustained average frames per second for the player.
      *
-     * @param maxFps the absolute maximum fps
+     * @param defaultMaxAvgFps the default maximum average fps
+     */
+    public void setDefaultMaxAvgFps(int defaultMaxAvgFps) {
+        Limits.DEFAULT_MAX_AVG_FPS = defaultMaxAvgFps;
+        mInner.setMaxAvgFps(defaultMaxAvgFps);
+    }
+
+    /**
+     * Sets the default duration of the averaging window in seconds.
+     *
+     * @param defaultWindowSec the default window in seconds
+     */
+    public void setDefaultFpsWindow(int defaultWindowSec) {
+        Limits.DEFAULT_WINDOW_SEC = defaultWindowSec;
+        mInner.setFpsWindow(defaultWindowSec);
+    }
+
+    /**
+     * Sets the maximum frames per second for the player.
+     *
+     * @param maxFps the maximum fps
      */
     public void setMaxFps(int maxFps) {
         Limits.MAX_FPS = maxFps;
+        mInner.setMaxFps(maxFps);
     }
 
     private @NonNull RemoteContext getRemoteContext() {
@@ -203,11 +332,10 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         return 0;
     }
 
-
     @RestrictTo(LIBRARY_GROUP)
     @Override
-    public boolean scrollDirection(@NonNull Component component,
-            ScrollableComponent.@NonNull ScrollDirection direction) {
+    public boolean scrollDirection(
+            @NonNull Component component, ScrollableComponent.@NonNull ScrollDirection direction) {
         ScrollableComponent scrollable = component.selfOrModifier(ScrollableComponent.class);
 
         if (scrollable != null) {
@@ -217,10 +345,11 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         return false;
     }
 
-
     @RestrictTo(LIBRARY_GROUP)
     @Override
-    public boolean performClick(@NonNull CoreDocument document, @NonNull Component component,
+    public boolean performClick(
+            @NonNull CoreDocument document,
+            @NonNull Component component,
             @NonNull String metadata) {
         document.performClick(getRemoteContext(), component.getComponentId(), metadata);
         return true;
@@ -270,9 +399,7 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         mInner.setDebug(debugFlags);
     }
 
-    /**
-     * Returns the document
-     */
+    /** Returns the document */
     public @NonNull RemoteDocument getDocument() {
         return mInner.getDocument();
     }
@@ -284,16 +411,20 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
      */
     @RestrictTo(LIBRARY_GROUP)
     public void updateDocument(@NonNull RemoteDocument value) {
-        AndroidRemoteContext tmpContext = new AndroidRemoteContext(value.getClock());
-        tmpContext.setAccessibilityAnimationEnabled(
-                SettingsRetriever.animationsEnabled(getContext()));
-        value.initializeContext(tmpContext);
-        float density = getContext().getResources().getDisplayMetrics().density;
-        tmpContext.setAnimationEnabled(true);
-        tmpContext.setDensity(density);
-        tmpContext.setUseChoreographer(false);
-        mInner.applyUpdate(value);
-        mInner.invalidate();
+        try {
+            AndroidRemoteContext tmpContext = new AndroidRemoteContext(value.getClock());
+            tmpContext.setAccessibilityAnimationEnabled(
+                    SettingsRetriever.animationsEnabled(getContext()));
+            value.initializeContext(tmpContext);
+            float density = getContext().getResources().getDisplayMetrics().density;
+            tmpContext.setAnimationEnabled(true);
+            tmpContext.setDensity(density);
+            tmpContext.setUseChoreographer(false);
+            mInner.applyUpdate(value);
+            mInner.invalidate();
+        } catch (Throwable t) {
+            Log.e("RemoteComposePlayer", "Error updating document", t);
+        }
     }
 
     /**
@@ -303,60 +434,86 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
      */
     @RestrictTo(LIBRARY_GROUP)
     public void updateDocument(byte @NonNull [] buffer) {
-        RemoteDocument document = new RemoteDocument(buffer);
-        updateDocument(document);
+        try {
+            RemoteDocument document = new RemoteDocument(buffer);
+            updateDocument(document);
+        } catch (Throwable t) {
+            Log.e("RemoteComposePlayer", "Error loading update document", t);
+        }
     }
 
-    /**
-     * Set a document on the player
-     */
+    /** Set a document on the player */
     @RestrictTo(LIBRARY_GROUP)
     public void setDocument(byte @NonNull [] buffer) {
-        RemoteDocument document = new RemoteDocument(buffer);
-        setDocument(document);
+        try {
+            RemoteDocument document = new RemoteDocument(buffer);
+            setDocument(document);
+        } catch (Throwable t) {
+            Log.e("RemoteComposePlayer", "Error loading document", t);
+        }
     }
 
-    /**
-     * Set a document on the player
-     */
+    /** Set a document on the player */
     @RestrictTo(LIBRARY_GROUP)
     public void setDocument(@NonNull InputStream inputStream) {
-        RemoteDocument document = new RemoteDocument(inputStream);
-        setDocument(document);
+        try {
+            RemoteDocument document = new RemoteDocument(inputStream);
+            setDocument(document);
+        } catch (Throwable t) {
+            Log.e("RemoteComposePlayer", "Error loading document", t);
+        }
     }
 
-    /**
-     * Set a document on the player
-     */
+    /** Set a document on the player */
     public void setDocument(@Nullable RemoteDocument value) {
-        if (value != null) {
-            if (value.canBeDisplayed(MAX_SUPPORTED_MAJOR_VERSION, MAX_SUPPORTED_MINOR_VERSION,
-                    0L)) {
-                if (value.isUpdateDoc()) {
-                    updateDocument(value);
-                    return;
+        try {
+            if (value != null) {
+                for (Map.Entry<String, RemoteComposeBuffer> entry : mLoadedMacros.entrySet()) {
+                    value.getDocument()
+                            .mLoomManager
+                            .addMacroFromBuffer(entry.getKey(), entry.getValue());
                 }
-                mInner.setDocument(value);
-                int contentBehavior = value.getDocument().getContentScroll();
-                applyContentBehavior(contentBehavior);
+
+                value.reinflate();
+                if (value.canBeDisplayed(
+                        MAX_SUPPORTED_MAJOR_VERSION, MAX_SUPPORTED_MINOR_VERSION, 0L)) {
+                    if (value.isUpdateDoc()) {
+                        updateDocument(value);
+                        return;
+                    }
+                    mInner.setDocument(value);
+                    int contentBehavior = value.getDocument().getContentScroll();
+                    applyContentBehavior(contentBehavior);
+                } else {
+                    Log.e("RemoteComposePlayer", "Unsupported document ");
+                }
+
+                RemoteComposeTouchHelper.REGISTRAR
+                        .setAccessibilityDelegate(this, value.getDocument());
+
             } else {
-                Log.e("RemoteComposePlayer", "Unsupported document ");
+                // TODO discuss with Nico
+                //            mInner.setDocument(null);
+
+                RemoteComposeTouchHelper.REGISTRAR
+                        .clearAccessibilityDelegate(this);
             }
 
-            RemoteComposeTouchHelper.REGISTRAR.setAccessibilityDelegate(this, value.getDocument());
-        } else {
-            // TODO discuss with Nico
-//            mInner.setDocument(null);
+            FloatSystemVariables sysVar = mFloatSystemVariables;
+            if (sysVar != null) {
+                sysVar.loadSystemVariables(mInner,
+                        mInner.getNamedVariables(NamedVariable.FLOAT_TYPE));
+            }
 
-            RemoteComposeTouchHelper.REGISTRAR.clearAccessibilityDelegate(this);
+            mThemeSupport.mapColors(getContext(), mInner);
+            mSensorsSupport.setupSensors(getContext().getApplicationContext(), mInner);
+            mHapticSupport.setupHaptics(mInner);
+            mInner.setSoundEngine(mSoundSupport.buildEngine());
+            mInner.checkShaders(mShaderControl);
+        } catch (Throwable t) {
+            Log.e("RemoteComposePlayer", "Error setting document", t);
         }
-
-        mThemeSupport.mapColors(getContext(), mInner);
-        mSensorsSupport.setupSensors(getContext().getApplicationContext(), mInner);
-        mHapticSupport.setupHaptics(mInner);
-        mInner.checkShaders(mShaderControl);
     }
-
 
     @Override
     public boolean dispatchHoverEvent(MotionEvent event) {
@@ -371,11 +528,11 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     }
 
     @Override
-    public void onFocusChanged(boolean gainFocus, int direction,
-            @Nullable Rect previouslyFocusedRect) {
+    public void onFocusChanged(
+            boolean gainFocus, int direction, @Nullable Rect previouslyFocusedRect) {
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
-        RemoteComposeTouchHelper.REGISTRAR.onFocusChanged(this, gainFocus, direction,
-                previouslyFocusedRect);
+        RemoteComposeTouchHelper.REGISTRAR.onFocusChanged(
+                this, gainFocus, direction, previouslyFocusedRect);
     }
 
     /**
@@ -390,15 +547,15 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
                 if (!(mInner.getParent() instanceof HorizontalScrollView)) {
                     ((ViewGroup) mInner.getParent()).removeView(mInner);
                     removeAllViews();
-                    LayoutParams layoutParamsInner = new LayoutParams(LayoutParams.WRAP_CONTENT,
-                            LayoutParams.MATCH_PARENT);
-                    HorizontalScrollView horizontalScrollView = new HorizontalScrollView(
-                            getContext());
+                    LayoutParams layoutParamsInner =
+                            new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
+                    HorizontalScrollView horizontalScrollView =
+                            new HorizontalScrollView(getContext());
                     horizontalScrollView.setBackgroundColor(Color.TRANSPARENT);
                     horizontalScrollView.setFillViewport(true);
                     horizontalScrollView.addView(mInner, layoutParamsInner);
-                    LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT,
-                            LayoutParams.MATCH_PARENT);
+                    LayoutParams layoutParams =
+                            new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
                     addView(horizontalScrollView, layoutParams);
                 }
                 break;
@@ -406,14 +563,14 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
                 if (!(mInner.getParent() instanceof ScrollView)) {
                     ((ViewGroup) mInner.getParent()).removeView(mInner);
                     removeAllViews();
-                    LayoutParams layoutParamsInner = new LayoutParams(LayoutParams.MATCH_PARENT,
-                            LayoutParams.WRAP_CONTENT);
+                    LayoutParams layoutParamsInner =
+                            new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
                     ScrollView scrollView = new ScrollView(getContext());
                     scrollView.setBackgroundColor(Color.TRANSPARENT);
                     scrollView.setFillViewport(true);
                     scrollView.addView(mInner, layoutParamsInner);
-                    LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT,
-                            LayoutParams.MATCH_PARENT);
+                    LayoutParams layoutParams =
+                            new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
                     addView(scrollView, layoutParams);
                 }
                 break;
@@ -421,24 +578,30 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
                 if (mInner.getParent() != this) {
                     ((ViewGroup) mInner.getParent()).removeView(mInner);
                     removeAllViews();
-                    LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT,
-                            LayoutParams.MATCH_PARENT);
+                    LayoutParams layoutParams =
+                            new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
                     addView(mInner, layoutParams);
                 }
         }
     }
 
     private void init(@NonNull Context context, @NonNull AttributeSet attrs, int defStyleAttr) {
-        LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT);
+        if (!isInEditMode()) {
+            mSoundSupport.init(context);
+        }
+        LayoutParams layoutParams =
+                new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         setBackgroundColor(Color.TRANSPARENT);
         mInner = new RemoteComposeView(context, attrs, defStyleAttr);
+        loadMacros();
         if (mInner.getRemoteContext() instanceof AndroidRemoteContext) {
-            ((AndroidRemoteContext) mInner.getRemoteContext()).setAccessibilityAnimationEnabled(
-                    SettingsRetriever.animationsEnabled(getContext()));
+            ((AndroidRemoteContext) mInner.getRemoteContext())
+                    .setAccessibilityAnimationEnabled(
+                            SettingsRetriever.animationsEnabled(getContext()));
         }
         mInner.setBackgroundColor(Color.TRANSPARENT);
         addView(mInner, layoutParams);
+        mInner.setMacroCallback(mPatternCallbackInternal);
         mStateUpdater = new StateUpdaterImpl(getRemoteContext());
     }
 
@@ -453,6 +616,58 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     }
 
     /**
+     * Sets a custom support on the RemoteContext.
+     *
+     * @param androidCustomSupport new custom support handler
+     */
+    public void setCustomSupport(@Nullable AndroidCustomContext androidCustomSupport) {
+        mInner.setCustomSupport(androidCustomSupport);
+    }
+
+    /**
+     * Sets the TypefaceResolver to be used by the PaintContext.
+     *
+     * @param typefaceResolver The TypefaceResolver to be used.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public void setTypefaceResolver(@NonNull TypefaceResolver typefaceResolver) {
+        ((AndroidRemoteContext) mInner.getRemoteContext()).setTypefaceResolver(typefaceResolver);
+    }
+
+    /**
+     * Gets the current TypefaceResolver used by the PaintContext.
+     *
+     * @return The current TypefaceResolver.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public @NonNull TypefaceResolver getTypefaceResolver() {
+        return ((AndroidRemoteContext) mInner.getRemoteContext()).getTypefaceResolver();
+    }
+
+    /** Sets a FloatSystemVariables on the RemoteContext. */
+    @RestrictTo(LIBRARY_GROUP)
+    public interface FloatSystemVariables {
+        /**
+         * Called to load system variables.
+         *
+         * @param rcView the view to setValues on
+         * @param var    list of strings
+         */
+        @RestrictTo(LIBRARY_GROUP)
+        void loadSystemVariables(@NonNull RemoteComposeView rcView, String @NonNull [] var);
+    }
+
+    /**
+     * Sets the class to override system variables
+     *
+     * @param floatSystemVariables class to set system variables.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public void setFloatSystemVariables(@Nullable FloatSystemVariables floatSystemVariables) {
+        mFloatSystemVariables = floatSystemVariables;
+    }
+
+    /**
      * Set an override for a string resource
      *
      * @param domain  domain (SYSTEM or USER)
@@ -460,8 +675,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
      * @param content content of the string
      */
     @RestrictTo(LIBRARY_GROUP)
-    public void setLocalString(@NonNull String domain, @NonNull String name,
-            @NonNull String content) {
+    public void setLocalString(
+            @NonNull String domain, @NonNull String name, @NonNull String content) {
         mInner.setLocalString(domain + ":" + name, content);
     }
 
@@ -518,6 +733,23 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     @RestrictTo(LIBRARY_GROUP)
     public void setUserLocalFloat(@NonNull String name, float value) {
         mInner.setLocalFloat("USER:" + name, value);
+    }
+
+    /**
+     * Set an override for a user domain float resource
+     *
+     * @param name  name of the float
+     * @param value value of the float
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public void setLocalFloat(@NonNull String name, float value) {
+        mInner.setLocalFloat(name, value);
+    }
+
+    /** Get the animation time. This is used in many */
+    @RestrictTo(LIBRARY_GROUP)
+    public float getAnimationTime() {
+        return mInner.getAnimationTime();
     }
 
     /**
@@ -612,26 +844,50 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         return mInner.getDocument().getDocument().getOpsPerFrame();
     }
 
-    /**
-     * Set to use the choreographer
-     */
+    /** Set to use the choreographer */
     @VisibleForTesting
     @RestrictTo(LIBRARY_GROUP)
     public void setUseChoreographer(boolean value) {
         mInner.setUseChoreographer(value);
     }
 
-    /**
-     * Reload the palette colors
-     */
+    /** Returns the instantaneous maximum frame rate. */
+    public int getMaxFps() {
+        return mInner.getMaxFps();
+    }
+
+    /** Set the sustained average frame rate limit over the sliding window (e.g. 10 fps). */
+    public void setMaxAvgFps(int maxAvgFps) {
+        mInner.setMaxAvgFps(maxAvgFps);
+    }
+
+    /** Returns the sustained average frame rate limit. */
+    public int getMaxAvgFps() {
+        return mInner.getMaxAvgFps();
+    }
+
+    /** Set the duration of the rolling average window in seconds. */
+    public void setFpsWindow(int windowSeconds) {
+        mInner.setFpsWindow(windowSeconds);
+    }
+
+    /** Returns the duration of the rolling average window in seconds. */
+    public int getFpsWindow() {
+        return mInner.getFpsWindow();
+    }
+
+    /** Temporarily boost the frame rate back to maxFps (clears window throttling). */
+    public void touchBoost() {
+        mInner.touchBoost();
+    }
+
+    /** Reload the palette colors */
     public void reloadPalette() {
         mThemeSupport.mapColors(getContext(), mInner);
         invalidate();
     }
 
-    /**
-     * Id action callback interface
-     */
+    /** Id action callback interface */
     @RestrictTo(LIBRARY_GROUP)
     public interface IdActionCallbacks {
         /**
@@ -644,16 +900,15 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     }
 
     /**
-     * Add a callback for handling id actions events on the document.
-     * Can only be added after the
+     * Add a callback for handling id actions events on the document. Can only be added after the
      * document has been loaded.
      *
      * @param callback the callback lambda that will be used when a action is executed
      *                 <p>The parameter of the callback are:
      *                 <ul>
      *                   <li>id : the id of the action
-     *                   <li>metadata: a client provided unstructured string
-     *                   associated with that id action
+     *                   <li>metadata: a client provided unstructured string associated with that
+     *                   id action
      *                 </ul>
      */
     @RestrictTo(LIBRARY_GROUP)
@@ -666,10 +921,12 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
      * the document adapt to the given theme. This method is intended to be used to support
      * night/light themes (system or app level), not custom themes.
      *
-     * @param theme the theme used for playing the document. Possible values for theme are:
-     *              - Theme.UNSPECIFIED -- all instructions in the document will be executed
-     *              - Theme.DARK -- only executed NON Light theme instructions
-     *              - Theme.LIGHT -- only executed NON Dark theme instructions
+     * @param theme the theme used for playing the document. Possible values for theme are: -
+     *              Theme.UNSPECIFIED -- all instructions in the document will be executed -
+     *              Theme.DARK --
+     *              only executed NON Light theme instructions - Theme.LIGHT -- only executed NON
+     *              Dark theme
+     *              instructions
      */
     @RestrictTo(LIBRARY_GROUP)
     public void setTheme(int theme) {
@@ -742,6 +999,24 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     }
 
     @Override
+    public boolean performClick() {
+        ViewParent parent = getParent();
+        if (parent instanceof View) {
+            ((View) parent).performClick();
+        }
+        return super.performClick();
+    }
+
+    @Override
+    public boolean performLongClick() {
+        ViewParent parent = getParent();
+        if (parent instanceof View) {
+            ((View) parent).performLongClick();
+        }
+        return super.performLongClick();
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mSensorsSupport.unregisterListener();
@@ -769,9 +1044,7 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         mShaderControl = ctl;
     }
 
-    /**
-     * This is a prepared document.
-     */
+    /** This is a prepared document. */
     @RestrictTo(LIBRARY_GROUP)
     public interface PreparedDocument {
         /**
@@ -781,7 +1054,6 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
          */
         @NonNull RemoteDocument getOriginalDoc();
     }
-
 
     /**
      * determine whether it is worth it to prepare the document or not.
@@ -795,7 +1067,6 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         return doc.getDocument().getDocInfo().getSizeOfImages() > size_small_enough_to_inline;
     }
 
-    @RestrictTo(LIBRARY_GROUP)
     private boolean isCompatible(@NonNull RemoteDocument doc) {
         if (doc.canBeDisplayed(MAX_SUPPORTED_MAJOR_VERSION, MAX_SUPPORTED_MINOR_VERSION, 0L)) {
             return true;
@@ -814,7 +1085,8 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
     @RestrictTo(LIBRARY_GROUP)
     public @Nullable PreparedDocument prepareDocument(@NonNull RemoteDocument doc) {
         if (isCompatible(doc)) {
-            return new RemotePreparedDocument(doc);
+            AndroidRemoteContext context = (AndroidRemoteContext) mInner.getRemoteContext();
+            return new RemotePreparedDocument(doc, context.getBitmapLoader());
         }
         return null;
     }
@@ -832,4 +1104,39 @@ public class RemoteComposePlayer extends FrameLayout implements RemoteContextAct
         }
         setDocument(doc.getOriginalDoc());
     }
+
+    /**
+     * Get a named float value.
+     *
+     * @param name name of the float
+     * @return the value
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public float getNamedFloat(@NonNull String name) {
+        return mInner.getNamedFloat(name);
+    }
+
+    /**
+     * Get a named string value.
+     *
+     * @param name name of the string
+     * @return the value
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public @Nullable String getNamedString(@NonNull String name) {
+        return mInner.getNamedString(name);
+    }
+
+    /**
+     * Get a named path value.
+     *
+     * @param name name of the path
+     * @param path path to set
+     * @return true if the path was set
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public boolean getNamedPath(@NonNull String name, @NonNull Path path) {
+        return mInner.getNamedPath(name, path);
+    }
+
 }

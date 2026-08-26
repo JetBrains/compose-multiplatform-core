@@ -26,16 +26,18 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.util.propertyName
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -49,12 +51,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RemoteFlowRowTest {
     @get:Rule
-    val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
+    val composeTestRule =
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
             matcher = MSSIMMatcher(threshold = 0.999),
         )
-    }
 
     private val gridScreenshotUI = GridScreenshotUI()
 
@@ -142,17 +144,28 @@ class RemoteFlowRowTest {
     fun outOfBounds() {
         composeTestRule.runScreenshotTest(profile = experimentalProfile) {
             RemoteFlowRow(
-                modifier = RemoteModifier.size(100.rdp).background(Color.LightGray),
+                modifier = RemoteModifier.size(100.rdp).background(Color.LightGray.rc),
                 horizontalArrangement = RemoteArrangement.End,
                 verticalArrangement = RemoteArrangement.Top,
             ) {
                 repeat(5) { index ->
                     val color = if (index % 2 == 0) Color(0xFF6200EE) else Color(0xFF03DAC6)
-                    RemoteBox(modifier = RemoteModifier.size(40.rdp).background(color))
+                    RemoteBox(modifier = RemoteModifier.size(40.rdp).background(color.rc))
                 }
             }
         }
     }
+
+    @Test
+    fun constraints() =
+        composeTestRule.runScreenshotTest(profile = experimentalProfile) {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "maxItemsInEachRow = 3" to { TestMaxItemsInEachRow() },
+                    "maxLines = 2" to { TestMaxLines() },
+                )
+            )
+        }
 
     @Test
     fun spacedBy() =
@@ -233,6 +246,119 @@ class RemoteFlowRowTest {
             )
         }
 
+    @Test
+    fun spacedByAbsolute() =
+        composeTestRule.runScreenshotTest(profile = experimentalProfile) {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "rdp Start" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAlignment.Start)
+                        },
+                    "rdp Center" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(
+                                alignment = RemoteAlignment.CenterHorizontally
+                            )
+                        },
+                    "rdp End" to { TestSpacedByAbsoluteRemoteDp(alignment = RemoteAlignment.End) },
+                    "rdp Left" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAbsoluteAlignment.Left)
+                        },
+                    "Blank" to { Blank() },
+                    "rdp Right" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAbsoluteAlignment.Right)
+                        },
+                    "rf Start" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(alignment = RemoteAlignment.Start)
+                        },
+                    "rf Center" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAlignment.CenterHorizontally
+                            )
+                        },
+                    "rf End" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(alignment = RemoteAlignment.End)
+                        },
+                    "rf Left" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAbsoluteAlignment.Left
+                            )
+                        },
+                    "Blank" to { Blank() },
+                    "rf Right" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAbsoluteAlignment.Right
+                            )
+                        },
+                )
+            )
+        }
+
+    @Test
+    fun spacedByAbsoluteRtl() =
+        composeTestRule.runScreenshotTest(profile = experimentalProfile) {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "rdp Start" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAlignment.Start)
+                        },
+                    "rdp Center" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(
+                                alignment = RemoteAlignment.CenterHorizontally
+                            )
+                        },
+                    "rdp End" to { TestSpacedByAbsoluteRemoteDp(alignment = RemoteAlignment.End) },
+                    "rdp Left" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAbsoluteAlignment.Left)
+                        },
+                    "Blank" to { Blank() },
+                    "rdp Right" to
+                        {
+                            TestSpacedByAbsoluteRemoteDp(alignment = RemoteAbsoluteAlignment.Right)
+                        },
+                    "rf Start" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(alignment = RemoteAlignment.Start)
+                        },
+                    "rf Center" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAlignment.CenterHorizontally
+                            )
+                        },
+                    "rf End" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(alignment = RemoteAlignment.End)
+                        },
+                    "rf Left" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAbsoluteAlignment.Left
+                            )
+                        },
+                    "Blank" to { Blank() },
+                    "rf Right" to
+                        {
+                            TestSpacedByAbsoluteRemoteFloat(
+                                alignment = RemoteAbsoluteAlignment.Right
+                            )
+                        },
+                ),
+                layoutDirection = LayoutDirection.Rtl,
+            )
+        }
+
     private fun getLayoutAlignmentUIs(
         horizontalArrangements: List<RemoteArrangement.Horizontal> = this.horizontalArrangements
     ): List<Pair<String, @RemoteComposable @Composable () -> Unit>> =
@@ -250,12 +376,12 @@ class RemoteFlowRowTest {
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(48.rdp)
-                                                    .background(Color(0xFF6200EE))
+                                                    .background(Color(0xFF6200EE).rc)
                                         )
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(24.rdp)
-                                                    .background(Color(0xFF03DAC6))
+                                                    .background(Color(0xFF03DAC6).rc)
                                         )
                                     }
                                 }
@@ -282,17 +408,17 @@ class RemoteFlowRowTest {
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(40.rdp)
-                                                    .background(Color(0xFF6200EE))
+                                                    .background(Color(0xFF6200EE).rc)
                                         )
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(40.rdp)
-                                                    .background(Color(0xFF03DAC6))
+                                                    .background(Color(0xFF03DAC6).rc)
                                         )
                                         RemoteBox(
                                             modifier =
                                                 RemoteModifier.size(40.rdp)
-                                                    .background(Color(0xFFBB86FC))
+                                                    .background(Color(0xFFBB86FC).rc)
                                         )
                                     }
                                 }
@@ -312,15 +438,15 @@ class RemoteFlowRowTest {
         ) {
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC).rc)
             )
         }
     }
@@ -335,15 +461,15 @@ class RemoteFlowRowTest {
         ) {
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC).rc)
             )
         }
     }
@@ -358,15 +484,15 @@ class RemoteFlowRowTest {
         ) {
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC).rc)
             )
         }
     }
@@ -381,15 +507,15 @@ class RemoteFlowRowTest {
         ) {
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6).rc)
             )
             RemoteBox(
                 modifier =
-                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC))
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC).rc)
             )
         }
     }
@@ -425,7 +551,83 @@ class RemoteFlowRowTest {
         ) {
             repeat(size) { index ->
                 val color = if (index % 2 == 0) Color(0xFF6200EE) else Color(0xFF03DAC6)
-                RemoteBox(modifier = RemoteModifier.size(30.rdp).background(color))
+                RemoteBox(modifier = RemoteModifier.size(30.rdp).background(color.rc))
+            }
+        }
+    }
+
+    @RemoteComposable @Composable private fun Blank() {}
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByAbsoluteRemoteDp(alignment: RemoteAlignment.Horizontal) {
+        RemoteFlowRow(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalArrangement = Absolute.spacedBy(space = 5.rdp, alignment = alignment),
+            verticalArrangement = RemoteArrangement.Top,
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @RemoteComposable
+    @Composable
+    private fun TestSpacedByAbsoluteRemoteFloat(alignment: RemoteAlignment.Horizontal) {
+        RemoteFlowRow(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalArrangement = Absolute.spacedBy(space = 10f.rf, alignment = alignment),
+            verticalArrangement = RemoteArrangement.Top,
+        ) {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF6200EE).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFF03DAC6).rc)
+            )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.width(20.rdp).fillMaxHeight().background(Color(0xFFBB86FC).rc)
+            )
+        }
+    }
+
+    @Composable
+    @RemoteComposable
+    fun TestMaxItemsInEachRow() {
+        RemoteFlowRow(
+            modifier = RemoteModifier.fillMaxSize().background(Color.LightGray.rc),
+            maxItemsInEachRow = 3,
+        ) {
+            repeat(10) { index ->
+                val color = if (index % 2 == 0) Color(0xFF6200EE) else Color(0xFF03DAC6)
+                RemoteBox(modifier = RemoteModifier.size(20.rdp).background(color.rc))
+            }
+        }
+    }
+
+    @Composable
+    @RemoteComposable
+    private fun TestMaxLines() {
+        RemoteFlowRow(
+            modifier = RemoteModifier.fillMaxSize().background(Color.LightGray.rc),
+            maxLines = 2,
+        ) {
+            repeat(15) { index ->
+                val color = if (index % 2 == 0) Color(0xFF6200EE) else Color(0xFF03DAC6)
+                RemoteBox(modifier = RemoteModifier.size(20.rdp).background(color.rc))
             }
         }
     }

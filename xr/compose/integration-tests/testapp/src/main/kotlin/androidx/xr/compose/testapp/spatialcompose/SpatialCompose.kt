@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalSpatialGltfModelApi::class)
+
 package androidx.xr.compose.testapp.spatialcompose
 
 import android.content.Intent
@@ -47,6 +49,7 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -60,19 +63,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.requestFullSpace
 import androidx.xr.compose.platform.requestHomeSpace
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.AnchorPolicy
-import androidx.xr.compose.subspace.ResizePolicy
+import androidx.xr.compose.subspace.ExperimentalSpatialGltfModelApi
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
@@ -82,9 +88,13 @@ import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.draw.alpha
+import androidx.xr.compose.subspace.layout.ExperimentalMoveAnchorPolicy
+import androidx.xr.compose.subspace.layout.MovePolicy
 import androidx.xr.compose.subspace.layout.PlaneOrientation
+import androidx.xr.compose.subspace.layout.ResizePolicy
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialArrangement
+import androidx.xr.compose.subspace.layout.SpatialResizeEventType
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.aspectRatio
@@ -95,23 +105,24 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.padding
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.rememberSpatialActivityPanelController
 import androidx.xr.compose.subspace.semantics.testTag
 import androidx.xr.compose.testapp.common.AnotherActivity
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TestDialog
-import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.GltfAnimation.AnimationState
-import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 import java.time.Clock
 import kotlin.math.cos
@@ -130,12 +141,20 @@ class SpatialCompose : ComponentActivity() {
 
             // 3D Content
             Subspace {
+                val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+                val density = LocalDensity.current
+                val pixelDensity = session.scene.virtualPixelDensity
                 PanelGrid()
                 XyzArrows(
-                    SubspaceModifier.width(.5.meters.toDp())
-                        .height(0.5.meters.toDp())
-                        .depth(0.5.meters.toDp())
-                        .offset(x = 1.meters.toDp(), z = -0.5.meters.toDp())
+                    with(density) {
+                        SubspaceModifier.width(pixelDensity.convertMetersToPixels(0.5f).toDp())
+                            .height(pixelDensity.convertMetersToPixels(0.5f).toDp())
+                            .depth(pixelDensity.convertMetersToPixels(0.5f).toDp())
+                            .offset(
+                                x = pixelDensity.convertMetersToPixels(1f).toDp(),
+                                z = pixelDensity.convertMetersToPixels(-0.5f).toDp(),
+                            )
+                    }
                 )
                 DragonEntity()
             }
@@ -212,7 +231,6 @@ class SpatialCompose : ComponentActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
     @Composable
     @SubspaceComposable
     fun PanelGrid() {
@@ -229,9 +247,11 @@ class SpatialCompose : ComponentActivity() {
                     verticalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
                     Orbiter(
-                        position = ContentEdge.Start,
-                        offset = 8.dp,
-                        offsetType = OrbiterOffsetType.InnerEdge,
+                        position =
+                            OrbiterPosition.CenterStart(
+                                EdgeAlignment.Outside,
+                                offset = DpVolumeOffset((-8).dp),
+                            ),
                         shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
                     ) {
                         Surface {
@@ -261,7 +281,13 @@ class SpatialCompose : ComponentActivity() {
                     horizontalAlignment = SpatialAlignment.CenterHorizontally,
                     verticalArrangement = SpatialArrangement.Center,
                 ) {
-                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxHeight(0.7f).fillMaxWidth())
+                    SpatialMainPanel(
+                        modifier =
+                            SubspaceModifier.fillMaxHeight(0.7f)
+                                .fillMaxWidth()
+                                .movable()
+                                .resizable()
+                    )
                     val intent = remember {
                         Intent(this@SpatialCompose, AnotherActivity::class.java)
                     }
@@ -269,7 +295,7 @@ class SpatialCompose : ComponentActivity() {
                     intent.putExtra("TITLE", "Top Bar")
                     intent.putExtra("BOTTOM_BAR_TEXT", "Bottom Bar")
                     SpatialActivityPanel(
-                        intent = intent,
+                        rememberSpatialActivityPanelController(initialIntent = intent),
                         modifier =
                             SubspaceModifier.fillMaxHeight()
                                 .fillMaxWidth()
@@ -283,8 +309,8 @@ class SpatialCompose : ComponentActivity() {
                     verticalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
-                    AppPanel(modifier = sidePanelModifier, text = "Panel Bottom Right")
                     AspectRatioPanel()
+                    RtlOrbiterPanel()
                 }
             }
         }
@@ -297,21 +323,32 @@ class SpatialCompose : ComponentActivity() {
         var moveResizeLocked by remember { mutableStateOf(true) }
         var alpha by remember { mutableFloatStateOf(1f) }
         SpatialPanel(
-            modifier = modifier.testTag(text).alpha(alpha).movable(enabled = !moveResizeLocked),
-            resizePolicy =
-                ResizePolicy(
-                    isEnabled = !moveResizeLocked,
-                    onResizeStart = { alpha = 0f },
-                    onResizeEnd = { alpha = 1f }, // setting the alpha here.. no pop!
-                ),
+            modifier =
+                modifier
+                    .testTag(text)
+                    .alpha(alpha)
+                    .movable(enabled = !moveResizeLocked)
+                    .resizable(
+                        enabled = !moveResizeLocked,
+                        resizePolicy =
+                            ResizePolicy.system { event ->
+                                when (event.type) {
+                                    SpatialResizeEventType.Start -> alpha = 0f
+                                    SpatialResizeEventType.End -> alpha = 1f
+                                    else -> {}
+                                }
+                            },
+                    )
         ) {
             PanelContent { Text(text) }
 
             Orbiter(
-                position = ContentEdge.Bottom,
-                offset = 24.dp,
+                position =
+                    OrbiterPosition.BottomCenter(
+                        EdgeAlignment.Center,
+                        offset = DpVolumeOffset(y = (-24).dp, z = OrbiterDefaults.Elevation),
+                    ),
                 shape = SpatialRoundedCornerShape(size = CornerSize(50)),
-                shouldRenderInNonSpatial = false,
             ) {
                 IconToggleButton(
                     checked = moveResizeLocked,
@@ -327,18 +364,24 @@ class SpatialCompose : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMoveAnchorPolicy::class)
     @SubspaceComposable
     @Composable
     fun AnchorPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
         val session = LocalSession.current ?: return
         // This is required to use the AnchorPolicy.
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.configure(
+            Config.Builder().setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL).build()
+        )
 
         // TODO(b/424834805): It's possible to have multiple movable overloads in place which are
         // not compatible with each other.
         SpatialPanel(
-            modifier = modifier,
-            dragPolicy = AnchorPolicy(anchorPlaneOrientations = setOf(PlaneOrientation.Any)),
+            modifier =
+                modifier.movable(
+                    movePolicy =
+                        MovePolicy.anchor(anchorPlaneOrientations = setOf(PlaneOrientation.Any))
+                )
         ) {
             Column(
                 modifier = Modifier.background(Color.LightGray).padding(24.dp).fillMaxSize(),
@@ -368,11 +411,11 @@ class SpatialCompose : ComponentActivity() {
                 Subspace { XyzArrows() }
             }
             content()
+
             Orbiter(
-                position = ContentEdge.End,
-                offset = 24.dp,
+                position =
+                    OrbiterPosition.CenterEnd(EdgeAlignment.Center, offset = DpVolumeOffset(24.dp)),
                 shape = SpatialRoundedCornerShape(size = CornerSize(50)),
-                shouldRenderInNonSpatial = false,
             ) {
                 IconButton(
                     onClick = {
@@ -417,61 +460,40 @@ class SpatialCompose : ComponentActivity() {
     @Composable
     fun DragonEntity() {
         val session = LocalSession.current ?: return
-        val dragonModel = remember { mutableStateOf<GltfModel?>(null) }
-        val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
-
-        val dragonAnimationState = remember {
-            androidx.compose.runtime.mutableStateOf(AnimationState.STOPPED)
-        }
+        val dragonModel = remember(session) { mutableStateOf<GltfModel?>(null) }
+        val dragonEntity = remember(session) { mutableStateOf<GltfModelEntity?>(null) }
         var entitySize by remember { mutableStateOf(FloatSize3d(1f, 1f, 1f)) }
 
         // Actions to run once.
-        LaunchedEffect(Unit) {
+        LaunchedEffect(session) {
             dragonModel.value =
                 GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
 
             dragonEntity.value =
                 GltfModelEntity.create(
-                    session,
-                    dragonModel.value!!,
-                    Pose(Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity),
-                )
-
-            dragonEntity.value?.let { entity ->
-                val animation = entity.animations.find { it.name == "Fast_Flying" }
-                animation?.start(GltfAnimationStartOptions(shouldLoop = false))
-                dragonAnimationState.value = animation?.animationState ?: AnimationState.STOPPED
-            }
-        }
-
-        // Actions to run continuously.
-        LaunchedEffect(dragonEntity.value) {
-            val entity = dragonEntity.value
-            if (entity != null) {
-                val animation = entity.animations.find { it.name == "Fast_Flying" }
-                while (true) {
-                    val currentState = animation?.animationState ?: AnimationState.STOPPED
-
-                    // 1. Update the animation state on every frame.
-                    dragonAnimationState.value = currentState
-
-                    // 2. Only calculate the bounding box if the animation is actually playing.
-                    if (currentState == AnimationState.PLAYING) {
-                        entitySize = entity.gltfModelBoundingBox.halfExtents.times(2f)
+                        session,
+                        dragonModel.value!!,
+                        Pose(Vector3(1.0f, 0.0f, 0.0f), Quaternion.Identity),
+                        parent = session.scene.activitySpace,
+                    )
+                    .also { entity ->
+                        entitySize = entity.getGltfModelBoundingBox().halfExtents.times(2f)
                     }
-
-                    delay(16L)
-                }
-            }
         }
 
         if (dragonEntity.value != null) {
+            val density = LocalDensity.current
+            val pixelDensity = session.scene.virtualPixelDensity
             SceneCoreEntity(
                 factory = { dragonEntity.value!! },
                 modifier =
-                    SubspaceModifier.width(entitySize.width.meters.toDp())
-                        .height(entitySize.height.meters.toDp())
-                        .depth(entitySize.depth.meters.toDp()),
+                    with(density) {
+                        SubspaceModifier.width(
+                                pixelDensity.convertMetersToPixels(entitySize.width).toDp()
+                            )
+                            .height(pixelDensity.convertMetersToPixels(entitySize.height).toDp())
+                            .depth(pixelDensity.convertMetersToPixels(entitySize.depth).toDp())
+                    },
             )
         }
     }
@@ -480,9 +502,9 @@ class SpatialCompose : ComponentActivity() {
     fun XyzArrows(modifier: SubspaceModifier = SubspaceModifier) {
         val session = LocalSession.current ?: return
         var rotation by remember { mutableStateOf(Quaternion.Identity) }
-        var gltfModel by remember { mutableStateOf<GltfModel?>(null) }
+        var gltfModel by remember(session) { mutableStateOf<GltfModel?>(null) }
 
-        LaunchedEffect(Unit) {
+        LaunchedEffect(session) {
             gltfModel = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
             val pi = 3.14159F
             val timeSource = Clock.systemUTC()
@@ -507,7 +529,13 @@ class SpatialCompose : ComponentActivity() {
 
         if (gltfModel != null) {
             SceneCoreEntity(
-                factory = { GltfModelEntity.create(session, gltfModel!!) },
+                factory = {
+                    GltfModelEntity.create(
+                        session,
+                        gltfModel!!,
+                        parent = session.scene.activitySpace,
+                    )
+                },
                 modifier = modifier.rotate(rotation),
             )
         }
@@ -519,7 +547,7 @@ class SpatialCompose : ComponentActivity() {
     fun AspectRatioPanel() {
         var aspectRatioValue by remember { mutableFloatStateOf(1f) }
         SpatialPanel(
-            modifier = SubspaceModifier.fillMaxWidth().height(1000.dp).aspectRatio(aspectRatioValue)
+            modifier = SubspaceModifier.fillMaxWidth().height(200.dp).aspectRatio(aspectRatioValue)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().background(Color.LightGray).padding(16.dp),
@@ -531,6 +559,46 @@ class SpatialCompose : ComponentActivity() {
                     Text("16:11", fontSize = 11.sp)
                 }
                 Button(onClick = { aspectRatioValue = 9f / 14f }) { Text("9:14", fontSize = 11.sp) }
+            }
+        }
+    }
+
+    @SubspaceComposable
+    @Composable
+    fun RtlOrbiterPanel() {
+        SpatialPanel(modifier = SubspaceModifier.fillMaxWidth().height(200.dp)) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Orbiter(
+                    position =
+                        OrbiterPosition.TopStart(
+                            horizontalEdgeAlignment = EdgeAlignment.Center,
+                            verticalEdgeAlignment = EdgeAlignment.Center,
+                            offset = DpVolumeOffset((-16).dp, 0.dp, OrbiterDefaults.Elevation),
+                        )
+                ) {
+                    Surface(shape = RoundedCornerShape(CornerSize(16.dp))) {
+                        Text(text = "RTL Orbiter", modifier = Modifier.padding(8.dp))
+                    }
+                }
+            }
+            // Aligns the orbiter to the bottom center of the panel and manually offsets it to the
+            // right and up.
+            Orbiter(
+                position =
+                    OrbiterPosition.BottomCenter(
+                        offset = DpVolumeOffset(120.dp, 120.dp, OrbiterDefaults.Elevation)
+                    )
+            ) {
+                Surface(shape = RoundedCornerShape(CornerSize(16.dp))) {
+                    Text(text = "Center Offset", modifier = Modifier.padding(8.dp))
+                }
+            }
+            Column(
+                modifier = Modifier.fillMaxSize().background(Color.LightGray).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("RTL Layout Orbiter Panel")
             }
         }
     }

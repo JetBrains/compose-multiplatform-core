@@ -13,42 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.HeightModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.compose.v2.RemoteColumnV2
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.platform.LocalLayoutDirection
-
-/** Utility modifier to record the layout information */
-internal class RemoteComposeColumnModifier(
-    public val modifier: RemoteModifier = RemoteModifier,
-    public val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
-    public val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startColumn(
-                canvas.toRecordingModifier(modifier),
-                horizontalAlignment.toRemote(this.layoutDirection),
-                verticalArrangement.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endColumn()
-        }
-    }
-}
+import androidx.compose.ui.unit.LayoutDirection
 
 /** Receiver scope used by [RemoteColumn] for its content. */
 public class RemoteColumnScope {
@@ -65,12 +43,35 @@ public class RemoteColumnScope {
         then(HeightModifier(Type.WEIGHT, RemoteFloat(weight)))
 }
 
+internal class RemoteColumnNode : RemoteComposeNode() {
+    var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top
+    var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start
+    var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val scope = overriddenScope(creationState)
+        val recordingModifier = scope.toRecordingModifier(modifier)
+        (verticalArrangement as? RemoteSpaced)?.let {
+            recordingModifier.spacedBy(it.space.getFloatIdForCreationState(creationState))
+        }
+        creationState.document.startColumn(
+            recordingModifier,
+            horizontalAlignment.toRemote(layoutDirection),
+            verticalArrangement.toRemote(),
+        )
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endColumn()
+    }
+}
+
 /**
  * A layout composable that positions its children in a vertical sequence.
  *
  * `RemoteColumn` allows you to arrange children vertically and control their [verticalArrangement]
  * (spacing) and [horizontalAlignment].
  *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteColumnSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteColumnWeightSample
  * @param modifier The modifier to be applied to this column.
  * @param verticalArrangement The vertical arrangement of the children.
  * @param horizontalAlignment The horizontal alignment of the children.
@@ -84,31 +85,22 @@ public fun RemoteColumn(
     horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
     content: @Composable RemoteColumnScope.() -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteColumnV2(
-            modifier,
-            verticalArrangement,
-            horizontalAlignment,
-            LocalLayoutDirection.current,
-        ) {
-            // Bridge V1 scope to V2 scope
-            val v1Scope = remember { RemoteColumnScope() }
-            v1Scope.content()
-        }
-        return
-    }
-
     val scope = remember { RemoteColumnScope() }
-
-    val composeModifiers =
-        RemoteComposeColumnModifier(modifier, horizontalAlignment, verticalArrangement)
-            .then(modifier.toComposeUiLayout())
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    androidx.compose.foundation.layout.Column(
-        composeModifiers,
-        horizontalAlignment = horizontalAlignment.toComposeUi(),
-        verticalArrangement = verticalArrangement.toComposeUi(),
-    ) {
-        content(scope)
-    }
+    val layoutDirection = LocalLayoutDirection.current
+    RemoteComposeNode(
+        factory = ::RemoteColumnNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(verticalArrangement) { nodeVerticalArrangement ->
+                this.verticalArrangement = nodeVerticalArrangement
+            }
+            set(horizontalAlignment) { nodeHorizontalAlignment ->
+                this.horizontalAlignment = nodeHorizontalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
+        },
+        content = { scope.content() },
+    )
 }

@@ -25,6 +25,7 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.glance.wear.core.WearWidgetProviderInfoXmlParser.parseWearWidgetProviderInfo
+import com.google.wear.services.tiles.TilesManager
 import java.util.Objects
 import org.xmlpull.v1.XmlPullParserException
 
@@ -171,7 +172,14 @@ public constructor(
             providerService: ComponentName,
         ): WearWidgetProviderInfo {
             val pm = context.packageManager
-            val serviceInfo = pm.getServiceInfo(providerService, PackageManager.GET_META_DATA)
+            val serviceInfo =
+                pm.getServiceInfo(
+                    providerService,
+                    PackageManager.GET_META_DATA or
+                        PackageManager.GET_RESOLVED_FILTER or
+                        PackageManager.MATCH_DIRECT_BOOT_AWARE or
+                        PackageManager.MATCH_DIRECT_BOOT_UNAWARE,
+                )
             val providerResources = pm.getResourcesForApplication(serviceInfo.applicationInfo)
             val xmlParser =
                 try {
@@ -255,16 +263,17 @@ public constructor(
          * For this container type, the host shows the widget label above the contents (and may also
          * show icon).
          */
-        public const val CONTAINER_TYPE_TILE_COMPAT: Int = 0
+        public const val CONTAINER_TYPE_TILE_COMPAT: Int =
+            TilesManager.WIDGET_CONTAINER_TYPE_FULLSCREEN
 
         /**
          * Represents a large widget container. Support for this container type is device dependent.
          */
-        public const val CONTAINER_TYPE_LARGE: Int = 1
+        public const val CONTAINER_TYPE_LARGE: Int = TilesManager.WIDGET_CONTAINER_TYPE_LARGE
         /**
          * Represents a small widget container. Support for this container type is device dependent.
          */
-        public const val CONTAINER_TYPE_SMALL: Int = 2
+        public const val CONTAINER_TYPE_SMALL: Int = TilesManager.WIDGET_CONTAINER_TYPE_SMALL
 
         private const val STRING_CONTAINER_TYPE_TILE_COMPAT = "TILE_COMPAT"
         private const val STRING_CONTAINER_TYPE_LARGE = "LARGE"

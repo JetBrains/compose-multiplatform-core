@@ -57,7 +57,6 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ComposeViewContext
-import androidx.compose.ui.platform.ExperimentalComposeViewContextApi
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -92,7 +91,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.test.assertNotEquals
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -104,10 +102,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@OptIn(ExperimentalComposeViewContextApi::class)
 @RunWith(AndroidJUnit4::class)
 class ComposeViewTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @FlakyTest(bugId = 256017578)
     @Test

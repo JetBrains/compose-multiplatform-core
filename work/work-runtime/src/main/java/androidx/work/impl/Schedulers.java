@@ -18,7 +18,7 @@ package androidx.work.impl;
 
 import static androidx.work.impl.Scheduler.MAX_GREEDY_SCHEDULER_LIMIT;
 import static androidx.work.impl.WorkManagerImpl.CONTENT_URI_TRIGGER_API_LEVEL;
-import static androidx.work.impl.utils.PackageManagerHelper.setComponentEnabled;
+import static androidx.work.impl.utils.PackageManagerHelper.setServiceEnabled;
 
 import android.content.Context;
 import android.os.Build;
@@ -32,6 +32,7 @@ import androidx.work.impl.background.systemjob.SystemJobScheduler;
 import androidx.work.impl.background.systemjob.SystemJobService;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
+import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -68,6 +69,11 @@ public class Schedulers {
                 // Try to schedule any newly-unblocked workers, and workers requiring rescheduling
                 // (such as periodic work using AlarmManager). This code runs after runWorker()
                 // because it should happen in its own transaction.
+
+                if (workDatabase.workSpecDao().isWorkSpecScheduled(id.getWorkSpecId())) {
+                    // This work has already been rescheduled, and we don't want to cancel it.
+                    return;
+                }
 
                 // Cancel this work in other schedulers. For example, if this work was
                 // handled by GreedyScheduler, we should make sure JobScheduler is informed
@@ -245,11 +251,15 @@ public class Schedulers {
         return representativeWork;
     }
 
-    static @NonNull Scheduler createBestAvailableBackgroundScheduler(@NonNull Context context,
-            @NonNull WorkDatabase workDatabase, Configuration configuration) {
+    static @NonNull Scheduler createBestAvailableBackgroundScheduler(
+            @NonNull Context context,
+            @NonNull WorkDatabase workDatabase,
+            Configuration configuration,
+            TaskExecutor taskExecutor) {
 
-        Scheduler scheduler = new SystemJobScheduler(context, workDatabase, configuration);
-        setComponentEnabled(context, SystemJobService.class, true);
+        Scheduler scheduler = new SystemJobScheduler(
+                context, workDatabase, configuration, taskExecutor);
+        setServiceEnabled(context, SystemJobService.class, true);
         Logger.get().debug(TAG, "Created SystemJobScheduler and enabled SystemJobService");
         return scheduler;
     }

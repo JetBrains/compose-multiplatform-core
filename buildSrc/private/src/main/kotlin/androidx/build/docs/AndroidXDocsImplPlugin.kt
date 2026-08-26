@@ -17,9 +17,11 @@
 package androidx.build.docs
 
 import androidx.build.KonanPrebuiltsSetup
-import androidx.build.clang.KonanBuildService
+import androidx.build.clang.ClangBuildService
 import androidx.build.configureTaskTimeouts
 import androidx.build.dackka.DackkaTask
+import androidx.build.dackka.DokkaAnalysisPlatform
+import androidx.build.dackka.DokkaUtils
 import androidx.build.dackka.GenerateMetadataTask
 import androidx.build.defaultAndroidConfig
 import androidx.build.getAndroidJar
@@ -30,7 +32,7 @@ import androidx.build.isIsolatedProjectsEnabled
 import androidx.build.metalava.versionMetadataUsage
 import androidx.build.multiplatformExtension
 import androidx.build.sources.PROJECT_STRUCTURE_METADATA_FILENAME
-import androidx.build.sources.multiplatformUsage
+import androidx.build.sources.SourceJarAttributeConfiguration.multiplatformUsage
 import androidx.build.versionCatalog
 import androidx.build.workaroundAndroidXDependencyResolutions
 import com.android.build.api.attributes.BuildTypeAttr
@@ -202,6 +204,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     }
             )
             task.rewriteSamplesTags()
+            task.filterColGroup()
             // Files with the same path in different source jars of the same library will lead to
             // some classes/methods not appearing in the docs.
             task.duplicatesStrategy = DuplicatesStrategy.WARN
@@ -381,6 +384,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         private val kotlinVersionConstraint =
             project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
 
+        private val guavaAndroidVersionConstraint =
+            project.versionCatalog.findLibrary("guavaAndroid").get().map { it.version }
+
         private val kmpExtension = project.extensions.getByType<KotlinMultiplatformExtension>()
 
         // Use the android target to resolve the non-KMP classpath, so that for any KMP dependencies
@@ -400,7 +406,23 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         // Create mapping from target name to classpath for that target.
         val kmpDependencyClasspathMap = createKmpClasspaths()
 
-        private val stdLibKlibDir = KonanBuildService.obtain(project).map { it.stdlibKlibDir() }
+        private val clang = ClangBuildService.obtain(project)
+        private val stdLibKlibDir = clang.map { it.stdlibKlibDir() }
+        private val platformKlibDir = clang.flatMap { it.platformKlibDir() }
+
+        /**
+         * Returns the target-specific klibs required for docs. Currently, this is just posix to
+         * resolve pthread references.
+         */
+        private fun klibsForTarget(target: KotlinNativeTarget): Provider<List<Directory>> {
+            return platformKlibDir.map {
+                val klibDir = it.dir(target.konanTarget.name)
+                listOf(
+                    klibDir.dir("org.jetbrains.kotlin.native.platform.posix"),
+                    klibDir.dir("org.jetbrains.kotlin.native.platform.Metal"),
+                )
+            }
+        }
 
         private fun createKmpClasspaths(): MapProperty<String, FileCollection> {
             val map = project.objects.mapProperty<String, FileCollection>()
@@ -459,7 +481,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             return targetApiClasspath.zip(targetRuntimeClasspath) { api, runtime ->
                 val additionalFiles =
                     if (target is KotlinNativeTarget) {
-                        project.files(stdLibKlibDir)
+                        project.files(stdLibKlibDir) + project.files(klibsForTarget(target))
                     } else {
                         project.files()
                     }
@@ -538,6 +560,17 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                         it.eachDependency { details ->
                             if (details.requested.group == "org.jetbrains.kotlin") {
                                 details.useVersion(kotlinVersionConstraint.requiredVersion)
+                            }
+                        }
+                        // Force a new enough version of android guava in all source sets. The older
+                        // version interferes with resolving new APIs in the non-KMP source set.
+                        it.eachDependency { details ->
+                            if (
+                                details.requested.group == "com.google.guava" &&
+                                    details.requested.name == "guava" &&
+                                    details.requested.version?.endsWith("-android") == true
+                            ) {
+                                details.useVersion(guavaAndroidVersionConstraint.get())
                             }
                         }
                     }
@@ -636,6 +669,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 task.argsJsonFile.set(
                     project.getDistributionDirectory().file("dackkaArgs-${project.name}.json")
                 )
+                task.traceFile.set(
+                    project.getDistributionDirectory().file("dackka-${project.name}.trace")
+                )
                 task.apply {
                     // Remove once there is property version of Copy#destinationDir
                     // Use samplesDir.set(unzipSamplesTask.flatMap { it.destinationDirectory })
@@ -661,8 +697,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     )
                     androidJars.setFrom(
                         project.getAndroidJar(
-                            project.defaultAndroidConfig.latestStableCompileSdk,
-                            project.defaultAndroidConfig.latestCompileSdkExtension,
+                            sdkNum = project.defaultAndroidConfig.latestStableCompileSdk,
+                            extNum = project.defaultAndroidConfig.latestCompileSdkExtension,
+                            minorNum = project.defaultAndroidConfig.latestStableMinorApiLevel,
                         )
                     )
                     nonKmpDependenciesClasspath.from(nonKmpDependencyClasspath)
@@ -871,7 +908,14 @@ private val hiddenPackages =
 
 // Set of packages to exclude from Java refdoc generation
 private val hiddenPackagesJava =
-    setOf("androidx.*compose.*", "androidx.*glance.*", "androidx\\.tv\\..*")
+    setOf(
+        "androidx.*compose.*",
+        "androidx.*glance.*",
+        "androidx\\.tv\\..*",
+        "androidx\\.xr\\.glimmer.*",
+        "androidx\\..*navigation3.*",
+        "androidx\\.appstate\\.transform.*",
+    )
 
 // List of annotations which should not be displayed in the docs
 private val hiddenAnnotations: List<String> =
@@ -927,23 +971,39 @@ private val annotationsToHideApis: List<String> =
         "androidx.annotation.RestrictTo",
         // Appears in androidx.test sources
         "dagger.internal.DaggerGenerated",
+        // Use for Ink internal APIs, which can be exposed via KMP so
+        // RestrictTo is not sufficient. Instead, those use a
+        // RequiresOptIn annotation that itself is restricted via
+        // RestrictTo.
+        "androidx.ink.nativeloader.InkInternalOnlyApi",
     )
 
 /** Data class that matches JSON structure of kotlin source set metadata */
 data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>) {
-    /** Computes the source sets which are dependent on [name] (including [name]. */
-    fun sourceSetsDependentOn(name: String): List<String> {
-        return sourceSets
-            .filter { otherSourceSet ->
-                name == otherSourceSet.name || name in otherSourceSet.dependencies
-            }
-            .map { it.name }
+    /**
+     * Mapping from source set name to transitive dependent source sets computed in
+     * [sourceSetsDependentOn], to avoid having to recompute.
+     */
+    private val cachedTransitiveDependentOn: MutableMap<String, Set<String>> = mutableMapOf()
+
+    /** Computes the source sets which are transitively dependent on [name] (including [name]). */
+    fun sourceSetsDependentOn(name: String): Set<String> {
+        // If the dependent source sets have already been found, return that.
+        return cachedTransitiveDependentOn.getOrPut(name) {
+            // Find all source sets which directly depend on this one.
+            val dependentOn =
+                sourceSets
+                    .filter { otherSourceSet -> name in otherSourceSet.dependencies }
+                    .map { it.name }
+            // Find the transitive dependent source sets, and also include [name] in the set.
+            dependentOn.flatMap { sourceSetsDependentOn(it) }.toSet() + name
+        }
     }
 }
 
 data class SourceSetMetadata(
     val name: String,
-    val analysisPlatform: String,
+    var analysisPlatform: DokkaAnalysisPlatform,
     var dependencies: List<String>,
 )
 
@@ -974,25 +1034,55 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
                 // jars. We want to handle sample jars separately, so filter by the name.
                 .partition { name -> "samples" !in name }
 
-        fileSystemOperations.sync {
+        // Sync all multiplatform metadata files.
+        sources.forEach { (name, fileTree) ->
+            fileSystemOperations.sync {
+                it.from(fileTree)
+                it.into(metadataOutput.file(name))
+                it.include("META-INF/*")
+            }
+        }
+
+        val gson = DokkaUtils.createGson()
+        // For each project, check whether the `commonMain` source set is actually jvm-only.
+        val (sourceWithOnlyJvm, sourcesWithNonJvm) =
+            sources.partition { name ->
+                val metadataFile =
+                    metadataOutput
+                        .file("$name/META-INF/$PROJECT_STRUCTURE_METADATA_FILENAME")
+                        .get()
+                        .asFile
+                val metadata =
+                    gson.fromJson(metadataFile.readText(), ProjectStructureMetadata::class.java)
+                metadata.sourceSets.singleOrNull { it.name == "commonMain" }?.analysisPlatform ==
+                    DokkaAnalysisPlatform.JVM
+            }
+
+        fileSystemOperations.copy {
             it.duplicatesStrategy = DuplicatesStrategy.FAIL
-            it.from(sources.values)
+            it.from(sourcesWithNonJvm.values)
             it.into(sourceOutput)
             it.exclude("META-INF/*")
-            // TODO(b/418945918): Remove when the files below are deduped:
-            // benchmark/benchmark-traceprocessor/src/androidMain/kotlin/perfetto/protos/package-info.java
-            // tracing/tracing-wire/src/androidMain/kotlin/perfetto/protos/package-info.java
-            var seenPath = false
-            it.eachFile { file ->
-                val relPath = file.relativePath.pathString
-                if (relPath == "androidMain/perfetto/protos/package-info.java") {
-                    if (seenPath) {
-                        file.exclude()
-                    }
-                    seenPath = true
+            it.rewriteSamplesTags()
+            it.filterColGroup()
+        }
+
+        // For projects which are jvm-only, move the "commonMain" files to "jvmAndAndroidMain".
+        // This is to enable those files to use jvm dependencies in the merged source sets sent to
+        // dackka. Otherwise, any references to jvm dependencies from these files would be
+        // unresolved because "commonMain" has the common analysis platform.
+        fileSystemOperations.copy {
+            it.duplicatesStrategy = DuplicatesStrategy.FAIL
+            it.from(sourceWithOnlyJvm.values).eachFile { fileCopyDetails ->
+                if (fileCopyDetails.path.startsWith("commonMain/")) {
+                    fileCopyDetails.path =
+                        fileCopyDetails.path.replaceFirst("commonMain/", "jvmAndAndroidMain/")
                 }
             }
+            it.into(sourceOutput)
+            it.exclude("META-INF/*")
             it.rewriteSamplesTags()
+            it.filterColGroup()
         }
 
         fileSystemOperations.sync {
@@ -1003,13 +1093,6 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
             it.from(samples.values)
             it.into(samplesOutput)
             it.exclude("META-INF/*")
-        }
-        sources.forEach { (name, fileTree) ->
-            fileSystemOperations.sync {
-                it.from(fileTree)
-                it.into(metadataOutput.file(name))
-                it.include("META-INF/*")
-            }
         }
     }
 }
@@ -1022,6 +1105,14 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
  */
 internal fun CopySpec.rewriteSamplesTags() {
     filter { line -> line.replace(" * @sample ", " * @author #@sample ") }
+}
+
+/**
+ * The AAPT2-generated R.java file contains colgroup tags, but the dokka parser doesn't handle them
+ * well (b/522904047).
+ */
+internal fun CopySpec.filterColGroup() {
+    filter { line -> line.takeUnless { line.contains("* <colgroup align=\"left\" />") } }
 }
 
 private fun <K, V> Map<K, V>.partition(condition: (K) -> Boolean): Pair<Map<K, V>, Map<K, V>> =
@@ -1045,7 +1136,7 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
             .walkTopDown()
             .filter { file -> file.name == PROJECT_STRUCTURE_METADATA_FILENAME }
             .forEach { metaFile ->
-                val gson = GsonBuilder().create()
+                val gson = DokkaUtils.createGson()
                 val metadata =
                     gson.fromJson(metaFile.readText(), ProjectStructureMetadata::class.java)
                 mergedMetadata.merge(metadata)
@@ -1068,6 +1159,8 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
         metadata.sourceSets.forEach { newSourceSet ->
             val existingSourceSet = originalSourceSets.find { it.name == newSourceSet.name }
             if (existingSourceSet != null) {
+                existingSourceSet.analysisPlatform =
+                    existingSourceSet.analysisPlatform.merge(newSourceSet.analysisPlatform)
                 existingSourceSet.dependencies =
                     (newSourceSet.dependencies + existingSourceSet.dependencies).toSet().toList()
             } else {

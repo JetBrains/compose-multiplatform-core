@@ -39,10 +39,8 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.TextRange
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,7 +49,8 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldUndoTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun canUndo_imeInsert() {
@@ -173,7 +172,6 @@ internal class BasicTextFieldUndoTest {
         state.assertTextAndSelection("Hello", TextRange(0, 5))
     }
 
-    @FlakyTest(bugId = 338623734)
     @Test
     fun redo_revertsSelection() {
         val state = TextFieldState("Hello", TextRange(5))
@@ -181,22 +179,22 @@ internal class BasicTextFieldUndoTest {
         rule.setContent { BasicTextField(state) }
 
         with(rule.onNode(hasSetTextAction())) {
+            requestFocus()
             performTextInputSelection(TextRange(2))
             performTextInput(" abc ")
         }
 
         state.assertTextAndSelection("He abc llo", TextRange(7))
 
-        state.undoState.undo()
+        rule.runOnIdle { state.undoState.undo() }
 
         rule.runOnIdle { assertThat(state.selection).isNotEqualTo(TextRange(7)) }
 
-        state.undoState.redo()
+        rule.runOnIdle { state.undoState.redo() }
 
         state.assertTextAndSelection("He abc llo", TextRange(7))
     }
 
-    @FlakyTest(bugId = 336870687)
     @Test
     fun variousEditOperations() {
         val state = TextFieldState()

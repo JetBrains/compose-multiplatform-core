@@ -24,11 +24,11 @@ import androidx.annotation.RestrictTo
  * A [TextureBitmapStore] that automatically loads texture bitmaps for [StockBrushes].
  *
  * Pass this to your stroke renderer (e.g.
- * [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer] and/or
- * [androidx.ink.authoring.InProgressStrokesView]) to give it access to the textures.
+ * `androidx.ink.rendering.android.canvas.CanvasStrokeRenderer` and/or
+ * `androidx.ink.authoring.InProgressStrokesView`) to give it access to the textures.
  */
-// Not public until we're actually publishing stock brushes with stock textures.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+@ExperimentalInkCustomBrushApi
 public class StockTextureBitmapStore(private val resources: Resources) : TextureBitmapStore {
     private val idToBitmap = mutableMapOf<String, Bitmap>()
 
@@ -51,13 +51,18 @@ public class StockTextureBitmapStore(private val resources: Resources) : Texture
      * This does not modify the store if the [BrushFamily] does not use any [StockBrushes] textures,
      * or if the textures are already loaded.
      */
-    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun preloadStockBrushesTextures(brushFamily: BrushFamily) {
         for (coat in brushFamily.coats) {
             for (paint in coat.paintPreferences) {
                 for (layer in paint.textureLayers) {
-                    if (layer.clientTextureId.isNotEmpty()) {
-                        @Suppress("CheckReturnValue") get(layer.clientTextureId)
+                    val clientTextureId =
+                        when (layer) {
+                            is BrushPaint.StampingTexture -> layer.clientTextureId
+                            is BrushPaint.TilingTexture -> layer.clientTextureId
+                            else -> ""
+                        }
+                    if (clientTextureId.isNotEmpty()) {
+                        @Suppress("CheckReturnValue") get(clientTextureId)
                     }
                 }
             }

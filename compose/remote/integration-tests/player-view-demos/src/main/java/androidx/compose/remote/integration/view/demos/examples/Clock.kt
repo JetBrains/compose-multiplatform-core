@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-@file:Suppress("RestrictedApiAndroidX")
+@file:Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to drawAnchoredText, drawCircle, drawLine, drawPath, drawText, remote-core,
+
+// remote-creation, remotePath
 
 package androidx.compose.remote.integration.view.demos.examples
 
@@ -37,14 +41,16 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.rc
+import androidx.compose.remote.creation.compose.state.remotePath
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemotePreviewWrapper
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewWrapper
 
 const val androidShapeString =
     "M17.6,9.48" +
@@ -71,7 +77,7 @@ const val androidShapeString =
         "S18.25,13.31,18.25,14" +
         "C18.25,14.69,17.69,15.25,17,15.25Z"
 
-@Suppress("RestrictedApiAndroidX") val androidPath = RemotePath(androidShapeString)
+val androidPath = RemotePath(androidShapeString)
 
 fun Color.paint(
     style: PaintingStyle? = null,
@@ -96,7 +102,6 @@ fun Color.paint(
 
 @Composable
 @RemoteComposable
-@Suppress("RestrictedApiAndroidX")
 fun RcSimpleClock1(
     timeHr: RemoteFloat = RemoteFloat(FLOAT_TIME_IN_HR),
     timeMin: RemoteFloat = RemoteFloat(FLOAT_TIME_IN_MIN),
@@ -149,15 +154,15 @@ fun RcSimpleClock1(
             val faceTop = centerY - rad
             val gmtAngle = ((hr - utcOff / 3600f) + ((min % 60f) / 60f)) * 15f
             val handWidth = 20f
-            drawCircle(bezel1.paint(), RemoteOffset(centerX, centerY), rad)
+            drawCircle(bezel1.paint(), rad, RemoteOffset(centerX, centerY))
 
-            drawCircle(bezel1.paint(), RemoteOffset(centerX, centerY), rad)
+            drawCircle(bezel1.paint(), rad, RemoteOffset(centerX, centerY))
 
             clipRect(0f.rf, centerY, w, h) {
-                drawCircle(bezel2.paint(), RemoteOffset(centerX, centerY), rad)
+                drawCircle(bezel2.paint(), rad, RemoteOffset(centerX, centerY))
             }
-            drawCircle(Color.Black.paint(), RemoteOffset(centerX, centerY), rad)
-            drawCircle(Color.DarkGray.paint(), RemoteOffset(centerX, centerY), rad - bezel_thick)
+            drawCircle(Color.Black.paint(), rad, RemoteOffset(centerX, centerY))
+            drawCircle(Color.DarkGray.paint(), rad - bezel_thick, RemoteOffset(centerX, centerY))
 
             for (i in 0 until 60) {
                 rotate((i * 6f).rf, RemoteOffset(centerX, centerY)) {
@@ -183,8 +188,8 @@ fun RcSimpleClock1(
                 rotate(15f.rf + 30f * i, RemoteOffset(centerX, centerY)) {
                     drawCircle(
                         minHandColor.paint(),
-                        RemoteOffset(centerX, top + bezel_thick / 2),
                         8f.rf,
+                        RemoteOffset(centerX, top + bezel_thick / 2),
                     )
                 }
             }
@@ -212,8 +217,8 @@ fun RcSimpleClock1(
                     rotate(30f.rf * i.rf + 30.rf, RemoteOffset(centerX, centerY)) {
                         drawCircle(
                             minHandColor.paint(),
-                            RemoteOffset(centerX, top + (bezel_thick + 20f) + 20f),
                             20f.rf,
+                            RemoteOffset(centerX, top + (bezel_thick + 20f) + 20f),
                         )
                     }
                 } else {
@@ -238,12 +243,12 @@ fun RcSimpleClock1(
                         // drawRect(rect1, 130f, rect2, 180f)
                     } else if (i == 11) {
                         rotate(30f.rf * i.rf + 30.rf, RemoteOffset(centerX, centerY)) {
-                            val path = RemotePath()
-
-                            path.moveTo(40f, 0f)
-                            path.lineTo(-40f, 0f)
-                            path.lineTo(0f, 40f)
-                            path.close()
+                            val path = remotePath {
+                                moveTo(x = 40f.rf, y = 0f.rf)
+                                lineTo(x = -40f.rf, y = 0f.rf)
+                                lineTo(x = 0f.rf, y = 40f.rf)
+                                close()
+                            }
 
                             translate((centerX), (faceTop + bezel_thick / 2f - 20f)) {
                                 drawPath(path = path, minHandColor.paint())
@@ -264,14 +269,7 @@ fun RcSimpleClock1(
                 RemoteOffset(dateLeft, dateTop),
                 RemoteSize(80f.rf, 60f.rf),
             )
-            drawAnchoredText(
-                "32".rs,
-                cx,
-                centerY,
-                0f.rf,
-                0f.rf,
-                paint = Color.Black.paint(textSize = 40f),
-            )
+            drawAnchoredText("32".rs, cx, centerY, paint = Color.Black.paint(textSize = 40f))
             // =============== DAY Complication ===============
             val dayCenterX = centerX + rad - 280f
             val dayLeft = dayCenterX - 46f
@@ -280,8 +278,8 @@ fun RcSimpleClock1(
             clipRect(dayLeft, dateTop, dayRight, dateBottom) {
                 drawCircle(
                     Color.LightGray.paint(),
-                    RemoteOffset(centerX, centerY),
                     dateLeft - centerX,
+                    RemoteOffset(centerX, centerY),
                 )
                 for (i in 0 until 7) {
                     val anim = remote.animateFloat((timeSeconds + i.toFloat()) * 360f / 7f, 0.2f)
@@ -290,8 +288,6 @@ fun RcSimpleClock1(
                             days[6 - i].rs,
                             dayCenterX,
                             centerY,
-                            0f.rf,
-                            0f.rf,
                             paint = Color.Black.paint(textSize = 40f),
                         )
                     }
@@ -317,18 +313,19 @@ fun RcSimpleClock1(
             val edge = 12f
             val gmtColor = Color(0xFFFF0000)
 
-            val gmtPath = RemotePath()
-            gmtPath.moveTo(1f, 1f)
-            gmtPath.moveTo((centerX - 20f).floatId, (top + (bezel_thick + 60f)).floatId)
-            gmtPath.lineTo((centerX + 20f).floatId, (top + (bezel_thick + 60f)).floatId)
-            gmtPath.lineTo(centerX.floatId, (top + (bezel_thick + 30f)).floatId)
-            gmtPath.close()
+            val gmtPath = remotePath {
+                moveTo(x = 1f.rf, y = 1f.rf)
+                moveTo(x = centerX - 20f, y = top + bezel_thick + 60f)
+                lineTo(x = centerX + 20f, y = top + bezel_thick + 60f)
+                lineTo(x = centerX, y = top + bezel_thick + 30f)
+                close()
+            }
 
             rotate(gmtAngle, RemoteOffset(centerX, centerY)) {
                 drawLine(
                     gmtColor.paint(strokeWidth = 3f),
                     RemoteOffset(centerX, centerY),
-                    RemoteOffset(centerX, top + (bezel_thick + 60f)),
+                    RemoteOffset(centerX, top + bezel_thick + 60f),
                 )
                 drawPath(
                     gmtPath,
@@ -347,15 +344,20 @@ fun RcSimpleClock1(
                 )
                 drawCircle(
                     minHandColor.paint(),
-                    RemoteOffset(centerX, centerY - minHandLength * 0.7f),
                     handWidth.rf,
+                    RemoteOffset(centerX, centerY - minHandLength * 0.7f),
                 )
             }
 
-            drawCircle(minHandColor.paint(), RemoteOffset(centerX, centerY), handWidth.rf)
-            drawCircle(Color.Black.paint(), RemoteOffset(centerX, centerY), 10f.rf)
+            drawCircle(minHandColor.paint(), handWidth.rf, RemoteOffset(centerX, centerY))
+            drawCircle(Color.Black.paint(), 10f.rf, RemoteOffset(centerX, centerY))
         }
     }
 }
 
-@Preview @Composable private fun RcSimpleClock1Preview() = RemotePreview { RcSimpleClock1() }
+@Preview
+@PreviewWrapper(wrapper = RemotePreviewWrapper::class)
+@Composable
+private fun RcSimpleClock1Preview() {
+    RcSimpleClock1()
+}

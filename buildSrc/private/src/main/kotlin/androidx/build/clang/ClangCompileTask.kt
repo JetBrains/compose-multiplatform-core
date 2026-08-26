@@ -43,23 +43,23 @@ abstract class ClangCompileTask @Inject constructor(private val workerExecutor: 
         group = "Build"
     }
 
-    @get:ServiceReference(KonanBuildService.KEY)
-    abstract val konanBuildService: Property<KonanBuildService>
+    @get:ServiceReference(ClangBuildService.KEY)
+    abstract val clangBuildService: Property<ClangBuildService>
 
     @get:Nested abstract val clangParameters: ClangCompileParameters
 
     @TaskAction
     fun compile() {
         workerExecutor.noIsolation().submit(ClangCompileWorker::class.java) {
-            it.buildService.set(konanBuildService)
+            it.buildService.set(clangBuildService)
             it.clangParameters.set(clangParameters)
         }
     }
 }
 
 abstract class ClangCompileParameters {
-    /** The compilation target platform for which the given inputs will be compiled. */
-    @get:Input abstract val konanTarget: Property<SerializableKonanTarget>
+    /** The compilation [NativeTarget] platform for which the given inputs will be compiled. */
+    @get:Input abstract val target: Property<String>
 
     /** List of C source files. */
     @get:InputFiles
@@ -81,7 +81,7 @@ abstract class ClangCompileParameters {
 private abstract class ClangCompileWorker : WorkAction<ClangCompileWorker.Params> {
     interface Params : WorkParameters {
         val clangParameters: Property<ClangCompileParameters>
-        val buildService: Property<KonanBuildService>
+        val buildService: Property<ClangBuildService>
     }
 
     override fun execute() {

@@ -15,20 +15,37 @@
  */
 package androidx.compose.remote.creation.compose.state
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import androidx.compose.remote.core.CoreDocument
+import androidx.compose.remote.core.Operation
+import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
+import androidx.compose.remote.core.operations.ColorAttribute
+import androidx.compose.remote.core.operations.NamedVariable
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
+import androidx.compose.remote.creation.compose.layout.RemoteBox
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
+import androidx.compose.remote.player.core.state.RemoteDomains
+import androidx.compose.remote.testing.RemoteCaptureTestRule
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayInputStream
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -44,10 +61,15 @@ private val referenceHsvColor =
 @Config(sdk = [Config.TARGET_SDK])
 @SdkSuppress(minSdkVersion = 29)
 class RemoteColorTest {
+    @get:Rule val remoteCaptureRule = RemoteCaptureTestRule()
+
+    private val androidContext: Context = ApplicationProvider.getApplicationContext()
+
     val context =
         AndroidRemoteContext().apply {
             useCanvas(Canvas(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)))
         }
+    val applicationContext = ApplicationProvider.getApplicationContext<Context>()
 
     val creationState = RemoteComposeCreationState(AndroidxRcPlatformServices(), Size(1f, 1f))
 
@@ -496,6 +518,139 @@ class RemoteColorTest {
     fun cacheKeys() {
         val constant = RemoteColor(Color.Red)
         assertThat(constant.cacheKey).isEqualTo(RemoteConstantCacheKey(Color.Red.toArgb()))
+    }
+
+    @Test
+    fun writesOutColorOnce() = runTest {
+        val displayInfo = RemoteCreationDisplayInfo(500, 500, 1, 1.0f)
+
+        val document =
+            captureSingleRemoteDocument(
+                creationDisplayInfo = displayInfo,
+                context = applicationContext,
+            ) {
+                val color = RemoteColor.createNamedRemoteColor("A", Color.Red).copy(alpha = 0.4f.rf)
+                RemoteBox(modifier = RemoteModifier.background(color))
+            }
+
+        val operations =
+            ArrayList<Operation>().apply {
+                RemoteComposeBuffer.fromInputStream(ByteArrayInputStream(document.bytes))
+                    .inflateFromBuffer(this)
+            }
+
+        assertThat(operations.filterIsInstance<NamedVariable>().size).isEqualTo(1)
+        assertThat(operations.filterIsInstance<ColorAttribute>().size).isEqualTo(3)
+    }
+
+    @Test
+    fun copy_rememberNamedRemoteColor_resultsSingleNamedColor() = runTest {
+        val colorName = "TEST"
+        val coreDoc =
+            remoteCaptureRule.captureDocument(context = androidContext) {
+                val namedColor = rememberNamedRemoteColor(colorName, Color.Red)
+
+                val copy = namedColor.copy(alpha = 0f.rf)
+
+                RemoteCanvas {
+                    drawRect(paint = RemotePaint { color = copy })
+                    drawCircle(
+                        paint = RemotePaint { color = copy },
+                        radius = size.minDimension / 2f,
+                    )
+                }
+            }
+        assertThat(coreDoc.namedColors).hasLength(1)
+        assertThat(coreDoc.namedColors[0]).isEqualTo("${RemoteDomains.USER}:$colorName")
+    }
+
+    @Test
+    fun toDebugString_variable() {
+        val c = RemoteColor.createNamedRemoteColor("col", Color.Red)
+        assertThat(c.toDebugString()).isEqualTo("user:col")
+    }
+
+    @Test
+    fun toDebugString_fromHSV() {
+        val x = RemoteFloat.createNamedRemoteFloat("h", 0.5f)
+        val y = RemoteFloat.createNamedRemoteFloat("s", 0.2f)
+        val z = RemoteFloat.createNamedRemoteFloat("v", 0.1f)
+        val hsv = RemoteColor.hsv(hue = x, saturation = y, value = z)
+        assertThat(hsv.toDebugString()).isEqualTo("fromHSV(user:h, user:s, user:v)")
+    }
+
+    @Test
+    fun toDebugString_contextVariable() {
+        val continuousSecFloat = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+        val colorExpr = RemoteColor.hsv(continuousSecFloat, 1f.rf, 1f.rf)
+        assertThat(colorExpr.toDebugString()).isEqualTo("fromHSV(context:continuous_sec, 1.0, 1.0)")
+    }
+
+    @Test
+    fun toDebugString_constant() {
+        val color = RemoteColor(Color.Red)
+        assertThat(color.toDebugString()).isEqualTo("FFFF0000")
+    }
+
+    @Test
+    fun times_white_elided() {
+        val color = RemoteColor.createNamedRemoteColor("color", Color.Red)
+        val white = RemoteColor(Color.White)
+
+        assertThat(color * white).isSameInstanceAs(color)
+        assertThat(white * color).isSameInstanceAs(color)
+    }
+
+    @Test
+    fun times_transparent_elided() {
+        val color = RemoteColor.createNamedRemoteColor("color", Color.Red)
+        val transparent = RemoteColor(Color.Transparent)
+
+        assertThat(color * transparent).isSameInstanceAs(transparent)
+        assertThat(transparent * color).isSameInstanceAs(transparent)
+    }
+
+    @Test
+    fun times_black_opaque_elided() {
+        val opaqueColor =
+            RemoteColor.rgb(red = 0.5f.rf, green = 0.5f.rf, blue = 0.5f.rf, alpha = 1f.rf)
+        val black = RemoteColor(Color.Black)
+
+        assertThat(opaqueColor * black).isSameInstanceAs(black)
+        assertThat(black * opaqueColor).isSameInstanceAs(black)
+    }
+
+    @Test
+    fun times_black_transparent_not_elided() {
+        val dynamicAlpha = RemoteFloat.createNamedRemoteFloat("alpha", 0.5f)
+        val transparentColor =
+            RemoteColor.rgb(red = 0.5f.rf, green = 0.5f.rf, blue = 0.5f.rf, alpha = dynamicAlpha)
+        val black = RemoteColor(Color.Black)
+
+        val result = transparentColor * black
+        assertThat(result).isNotSameInstanceAs(black)
+        assertThat(result.alpha).isSameInstanceAs(dynamicAlpha)
+        assertThat(result.red.constantValueOrNull).isEqualTo(0f)
+        assertThat(result.green.constantValueOrNull).isEqualTo(0f)
+        assertThat(result.blue.constantValueOrNull).isEqualTo(0f)
+    }
+
+    @Test
+    fun tween_same_from_to_elided() {
+        val color = RemoteColor.createNamedRemoteColor("color", Color.Red)
+        val tweenFactor = 0.5f.rf
+
+        val tweened = tween(color, color, tweenFactor)
+        assertThat(tweened).isSameInstanceAs(color)
+    }
+
+    @Test
+    fun tweenInt_same_from_to_elided() {
+        val colorInt = Color.Red.toArgb()
+        val tweenFactor = 0.5f.rf
+
+        val tweened = tween(colorInt, colorInt, tweenFactor)
+        assertThat(tweened.constantValueOrNull).isEqualTo(Color.Red)
     }
 
     private fun makeAndPaintCoreDocument() =

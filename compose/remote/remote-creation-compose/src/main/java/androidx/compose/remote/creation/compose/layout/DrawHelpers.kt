@@ -27,9 +27,9 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.GenericFontFamily
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
@@ -37,6 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun BlendMode.toAndroidBlendMode(): android.graphics.BlendMode {
     return when (this) {
+        BlendMode.Clear -> AndroidBlendMode.CLEAR
+        BlendMode.Src -> AndroidBlendMode.SRC
+        BlendMode.Dst -> AndroidBlendMode.DST
         BlendMode.SrcOver -> AndroidBlendMode.SRC_OVER
         BlendMode.SrcIn -> AndroidBlendMode.SRC_IN
         BlendMode.SrcOut -> AndroidBlendMode.SRC_OUT
@@ -139,17 +142,6 @@ internal fun FontStyle.encode(): Int =
         else -> -1
     }
 
-internal fun FontFamily?.encode(): String? =
-    when (this) {
-        FontFamily.Default -> "default"
-        FontFamily.SansSerif -> "sans-serif"
-        FontFamily.Serif -> "serif"
-        FontFamily.Monospace -> "monospace"
-        FontFamily.Cursive -> "cursive"
-        is GenericFontFamily -> name
-        else -> null
-    }
-
 internal fun AndroidBlendMode.toComposeBlendMode(): BlendMode {
     return when (this) {
         AndroidBlendMode.CLEAR -> BlendMode.Clear
@@ -247,3 +239,19 @@ internal fun BlendMode.toInt(): Int {
         else -> PaintBundle.BLEND_MODE_SRC_OVER
     }
 }
+
+internal fun LineBreak.encode(): Int =
+    when (this.strategy) {
+        LineBreak.Strategy.Simple -> 0
+        LineBreak.Strategy.HighQuality -> 1
+        LineBreak.Strategy.Balanced -> 2
+        else -> 0
+    }
+
+internal fun Hyphens.encode(): Int =
+    when (this) {
+        Hyphens.Auto -> 2 // Layout.HYPHENATION_FREQUENCY_FULL
+        Hyphens.None,
+        Hyphens.Unspecified -> 0 // Layout.HYPHENATION_FREQUENCY_NONE
+        else -> 0
+    }

@@ -16,7 +16,6 @@
 
 package androidx.xr.glimmer.samples
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,21 +29,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.list.VerticalList
+import androidx.xr.glimmer.list.GlimmerLazyColumn
 import androidx.xr.glimmer.surface
 
 @Composable
 fun ColorsSample() {
     val colors = GlimmerTheme.colors
-    VerticalList {
+    GlimmerLazyColumn {
         item { ColorItem(colors.primary, colorName = "primary") }
         item { ColorItem(colors.secondary, colorName = "secondary") }
         item { ColorItem(colors.negative, colorName = "negative") }
         item { ColorItem(colors.positive, colorName = "positive") }
         item { ColorItem(colors.background, colorName = "background") }
         item { ColorItem(colors.surface, colorName = "surface") }
-        item { ColorItem(colors.outline, colorName = "outline") }
-        item { ColorItem(colors.outlineVariant, colorName = "outlineVariant") }
     }
 }
 
@@ -57,14 +54,7 @@ private fun ColorsPreview() {
 @Composable
 private fun ColorItem(color: Color, colorName: String, modifier: Modifier = Modifier) {
     Row(
-        modifier
-            .surface(
-                shape = RectangleShape,
-                color = color,
-                border = BorderStroke(1.dp, color = Color.White),
-                focusable = false,
-            )
-            .fillMaxWidth(),
+        modifier.surface(shape = RectangleShape, color = color).fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

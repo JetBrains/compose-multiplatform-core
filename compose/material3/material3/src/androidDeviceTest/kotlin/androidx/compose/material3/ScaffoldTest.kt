@@ -76,9 +76,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,7 +85,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ScaffoldTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val scaffoldTag = "Scaffold"
     private val roundingError = 0.5.dp
@@ -636,13 +634,14 @@ class ScaffoldTest {
     }
 
     @Test
-    @Ignore("b/422764314")
     fun scaffold_fabPosition_start() {
         var fabSize: IntSize? = null
         var fabPosition: Offset? = null
         rule.setContent {
             Box(Modifier.requiredSize(200.dp, 200.dp)) {
                 Scaffold(
+                    // Set window insets to zero so we can test without insets applied.
+                    contentWindowInsets = WindowInsets(),
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {},
@@ -674,13 +673,14 @@ class ScaffoldTest {
     }
 
     @Test
-    @Ignore("b/422748931")
     fun scaffold_fabPosition_center() {
         var fabSize: IntSize? = null
         var fabPosition: Offset? = null
         rule.setContent {
             Box(Modifier.requiredSize(200.dp, 200.dp)) {
                 Scaffold(
+                    // Set window insets to zero so we can test without insets applied.
+                    contentWindowInsets = WindowInsets(),
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {},
@@ -712,13 +712,14 @@ class ScaffoldTest {
     }
 
     @Test
-    @Ignore("b/422746150")
     fun scaffold_fabPosition_end() {
         var fabSize: IntSize? = null
         var fabPosition: Offset? = null
         rule.setContent {
             Box(Modifier.requiredSize(200.dp, 200.dp)) {
                 Scaffold(
+                    // Set window insets to zero so we can test without insets applied.
+                    contentWindowInsets = WindowInsets(),
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {},
@@ -818,7 +819,6 @@ private class TopBarHeightChangingScaffoldTestCase : LayeredComposeTestCase(), T
 
     val tracker = CompositionTracker()
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun MeasuredContent() {
         state = remember { mutableStateOf(0.dp) }

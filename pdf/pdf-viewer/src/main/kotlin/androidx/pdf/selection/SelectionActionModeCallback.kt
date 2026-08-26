@@ -20,6 +20,8 @@ import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.core.view.MenuItemCompat
+import androidx.pdf.R
 import androidx.pdf.view.PdfView
 import kotlin.math.roundToInt
 
@@ -60,7 +62,9 @@ internal class SelectionActionModeCallback(
                             /* order = */ Menu.NONE,
                             /* title = */ component.label,
                         )
-                    component.contentDescription?.let { menuItem?.contentDescription = it }
+                    if (component.contentDescription != null && menuItem != null) {
+                        MenuItemCompat.setContentDescription(menuItem, component.contentDescription)
+                    }
                     menuItem?.setOnMenuItemClickListener {
                         component.onClick(this, pdfView)
                         true
@@ -74,7 +78,9 @@ internal class SelectionActionModeCallback(
                             /* order = */ Menu.NONE,
                             /* title = */ component.label,
                         )
-                    component.contentDescription?.let { menuItem?.contentDescription = it }
+                    if (component.contentDescription != null && menuItem != null) {
+                        MenuItemCompat.setContentDescription(menuItem, component.contentDescription)
+                    }
                     menuItem?.setOnMenuItemClickListener {
                         component.onClick(this)
                         true
@@ -91,7 +97,9 @@ internal class SelectionActionModeCallback(
                             /* order = */ Menu.NONE,
                             /* title = */ component.label,
                         )
-                    component.contentDescription?.let { menuItem?.contentDescription = it }
+                    if (component.contentDescription != null && menuItem != null) {
+                        MenuItemCompat.setContentDescription(menuItem, component.contentDescription)
+                    }
                     component.leadingIcon?.let { menuItem?.icon = it }
                     menuItem?.setOnMenuItemClickListener {
                         component.onClick(this, pdfView)
@@ -124,7 +132,12 @@ internal class SelectionActionModeCallback(
                 } == true
             ) {
                 // Found the first visible selection, position the context menu near it.
-                outRect?.set(pdfView.toViewRect(boundsInContentView))
+                val viewRect = pdfView.toViewRect(boundsInContentView)
+                // Increase the bottom of the bounding box by the selection handle touch
+                // size to prevent the context menu from overlapping the selection handle.
+                viewRect.bottom +=
+                    pdfView.resources.getDimensionPixelSize(R.dimen.text_select_handle_touch_size)
+                outRect?.set(viewRect)
                 return
             }
         }

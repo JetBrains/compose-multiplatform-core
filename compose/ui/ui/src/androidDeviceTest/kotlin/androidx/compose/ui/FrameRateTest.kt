@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,7 +66,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -78,7 +78,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalComposeUiApi::class)
 class FrameRateTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Before
     fun before() {

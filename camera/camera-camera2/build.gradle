@@ -94,7 +94,6 @@ dependencies {
 
 android {
     compileSdk { version = release(36) }
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 
     lint {
         enable.add("CameraXQuirksClassDetector")
@@ -114,10 +113,10 @@ ksp {
 androidx {
     name = "Camera2"
     type = SoftwareType.PUBLISHED_LIBRARY
+    samples(project(":camera:camera-camera2:camera-camera2-samples"))
     inceptionYear = "2020"
     description = "A Camera2 Pipe implementation of CameraX, a library providing a consistent " +
             "and reliable camera foundation that enables great camera driven experiences across " +
             "all of Android."
-    doNotDocumentReason = "Not shipped externally"
     enableRobolectric()
 }

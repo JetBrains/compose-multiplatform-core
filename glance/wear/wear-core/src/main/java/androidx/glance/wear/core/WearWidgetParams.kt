@@ -19,6 +19,7 @@ package androidx.glance.wear.core
 import androidx.annotation.Dimension
 import androidx.annotation.RestrictTo
 import androidx.glance.wear.parcel.WearWidgetRequestParcel
+import androidx.glance.wear.proto.PlayerOperation
 import androidx.glance.wear.proto.WearWidgetRequestProto
 import java.util.Objects
 
@@ -56,6 +57,8 @@ public constructor(
     @param:Dimension(unit = Dimension.DP)
     @get:Dimension(unit = Dimension.DP)
     public val cornerRadiusDp: Float,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rendererVersion: RendererVersion = RendererVersion.SAFE_FALLBACK_VERSION,
 ) {
 
     /** Converts this object to [androidx.glance.wear.parcel.WearWidgetRequestParcel]. */
@@ -71,6 +74,11 @@ public constructor(
                 horizontal_padding_dp = horizontalPaddingDp,
                 vertical_padding_dp = verticalPaddingDp,
                 corner_radius_dp = cornerRadiusDp,
+                renderer_version_major = rendererVersion.major,
+                renderer_version_minor = rendererVersion.minor,
+                renderer_version_revision = rendererVersion.revision,
+                renderer_supported_operations =
+                    rendererVersion.supportedOperations.mapToList { PlayerOperation(it) },
             )
         return WearWidgetRequestParcel().apply { payload = requestProto.encode() }
     }
@@ -86,7 +94,8 @@ public constructor(
                     heightDp == other.heightDp &&
                     horizontalPaddingDp == other.horizontalPaddingDp &&
                     verticalPaddingDp == other.verticalPaddingDp &&
-                    cornerRadiusDp == other.cornerRadiusDp
+                    cornerRadiusDp == other.cornerRadiusDp &&
+                    rendererVersion == other.rendererVersion
         }
 
     override fun hashCode(): Int =
@@ -98,11 +107,17 @@ public constructor(
             horizontalPaddingDp,
             verticalPaddingDp,
             cornerRadiusDp,
+            rendererVersion,
         )
 
     public companion object {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun fromParcel(parcel: WearWidgetRequestParcel): WearWidgetParams {
+        public fun fromParcel(
+            parcel: WearWidgetRequestParcel,
+            getDefaultRendererVersion: () -> RendererVersion = {
+                RendererVersion.SAFE_FALLBACK_VERSION
+            },
+        ): WearWidgetParams {
             val requestProto = WearWidgetRequestProto.ADAPTER.decode(parcel.payload)
             return WearWidgetParams(
                 instanceId =
@@ -113,6 +128,24 @@ public constructor(
                 horizontalPaddingDp = requestProto.horizontal_padding_dp,
                 verticalPaddingDp = requestProto.vertical_padding_dp,
                 cornerRadiusDp = requestProto.corner_radius_dp,
+                rendererVersion =
+                    if (requestProto.renderer_version_major == 0) {
+                        getDefaultRendererVersion()
+                    } else {
+                        RendererVersion(
+                            major = requestProto.renderer_version_major,
+                            minor = requestProto.renderer_version_minor,
+                            revision = requestProto.renderer_version_revision,
+                            supportedOperations =
+                                if (requestProto.renderer_supported_operations.isNotEmpty()) {
+                                    requestProto.renderer_supported_operations.toIntSet {
+                                        it.op_code
+                                    }
+                                } else {
+                                    RendererVersion.SAFE_FALLBACK_SUPPORTED_OPERATIONS
+                                },
+                        )
+                    },
             )
         }
     }

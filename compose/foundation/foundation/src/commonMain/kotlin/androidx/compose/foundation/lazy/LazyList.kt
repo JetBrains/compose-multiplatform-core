@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.lazy
 
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.checkScrollableContainerConstraints
@@ -28,11 +29,15 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.lazy.layout.CacheWindowLogic
 import androidx.compose.foundation.lazy.layout.LazyLayout
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.foundation.lazy.layout.lazyLayoutBeyondBoundsModifier
+import androidx.compose.foundation.lazy.layout.lazyLayoutItemAnimator
 import androidx.compose.foundation.lazy.layout.lazyLayoutSemantics
+import androidx.compose.foundation.lazy.layout.rememberLazyLayoutBringIntoViewSpec
 import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -81,6 +86,11 @@ internal fun LazyList(
     verticalAlignment: Alignment.Vertical? = null,
     /** The horizontal arrangement for items. Required when isVertical is false */
     horizontalArrangement: Arrangement.Horizontal? = null,
+    /**
+     * cacheWindow specifies the size of the ahead and behind window to be used as per
+     * [androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow]
+     */
+    cacheWindow: LazyLayoutCacheWindow = DefaultLazyListCacheWindow,
     /** The content of the list */
     content: LazyListScope.() -> Unit,
 ) {
@@ -91,21 +101,59 @@ internal fun LazyList(
     val graphicsContext = LocalGraphicsContext.current
     val stickyHeadersEnabled = !LocalScrollCaptureInProgress.current
 
+    val prefetchStrategy =
+        remember(state, cacheWindow) {
+            state.legacyPrefetchStrategy
+                ?: when (cacheWindow) {
+                    is DefaultLazyListCacheWindow ->
+                        if (
+                            ComposeFoundationFlags
+                                .isPreferDefaultCacheWindowOverPrefetchStrategyLazyList
+                        ) {
+                            LazyListCacheWindowStrategy(cacheWindow)
+                        } else {
+                            LazyListPrefetchStrategy()
+                        }
+                    is LazyLayoutCacheWindow -> LazyListCacheWindowStrategy(cacheWindow)
+                }
+        }
+
+    val prefetchState =
+        remember(state, prefetchStrategy) {
+            // If the user has not constructed state using one of the deprecated constructors that
+            // yield a prefetch state, then, at this point, `state.legacyPrefetchState` will always
+            // be null.
+            state.legacyPrefetchState
+                ?: run {
+                    @Suppress("DEPRECATION") // b/420551535
+                    LazyLayoutPrefetchState(prefetchStrategy.prefetchScheduler) {
+                        with(prefetchStrategy) {
+                            onNestedPrefetch(
+                                Snapshot.withoutReadObservation { state.firstVisibleItemIndex }
+                            )
+                        }
+                    }
+                }
+        }
+
     val measurePolicy =
         rememberLazyListMeasurePolicy(
-            itemProviderLambda,
-            state,
-            contentPadding,
-            reverseLayout,
-            isVertical,
-            beyondBoundsItemCount,
-            horizontalAlignment,
-            verticalAlignment,
-            horizontalArrangement,
-            verticalArrangement,
-            coroutineScope,
-            graphicsContext,
-            if (stickyHeadersEnabled) StickyItemsPlacement.StickToTopPlacement else null,
+            itemProviderLambda = itemProviderLambda,
+            state = state,
+            contentPadding = contentPadding,
+            reverseLayout = reverseLayout,
+            isVertical = isVertical,
+            beyondBoundsItemCount = beyondBoundsItemCount,
+            horizontalAlignment = horizontalAlignment,
+            verticalAlignment = verticalAlignment,
+            horizontalArrangement = horizontalArrangement,
+            verticalArrangement = verticalArrangement,
+            coroutineScope = coroutineScope,
+            graphicsContext = graphicsContext,
+            stickyItemsPlacement =
+                if (stickyHeadersEnabled) StickyItemsPlacement.StickToTopPlacement else null,
+            prefetchState = prefetchState,
+            prefetchStrategy = prefetchStrategy,
         )
 
     val orientation = if (isVertical) Orientation.Vertical else Orientation.Horizontal
@@ -126,6 +174,11 @@ internal fun LazyList(
             Modifier
         }
 
+    val bringIntoViewSpec =
+        rememberLazyLayoutBringIntoViewSpec(reverseLayout, isVertical) {
+            state.layoutInfoState.value.stickingItemsCombinedSize
+        }
+
     LazyLayout(
         modifier =
             modifier
@@ -139,7 +192,7 @@ internal fun LazyList(
                     reverseScrolling = reverseLayout,
                 )
                 .then(beyondBoundsModifier)
-                .then(state.itemAnimator.modifier)
+                .lazyLayoutItemAnimator(state.itemAnimator)
                 .scrollableArea(
                     state = state,
                     orientation = orientation,
@@ -148,8 +201,9 @@ internal fun LazyList(
                     flingBehavior = flingBehavior,
                     interactionSource = state.internalInteractionSource,
                     overscrollEffect = overscrollEffect,
+                    bringIntoViewSpec = bringIntoViewSpec,
                 ),
-        prefetchState = state.prefetchState,
+        prefetchState = prefetchState,
         measurePolicy = measurePolicy,
         itemProvider = itemProviderLambda,
     )
@@ -184,6 +238,10 @@ private fun rememberLazyListMeasurePolicy(
     graphicsContext: GraphicsContext,
     /** Scroll behavior for sticky items */
     stickyItemsPlacement: StickyItemsPlacement?,
+    /** Prefetch state used in our layout */
+    prefetchState: LazyLayoutPrefetchState?,
+    /** Prefetch strategy used in our layout */
+    prefetchStrategy: LazyListPrefetchStrategy?,
 ) =
     remember(
         state,
@@ -197,6 +255,8 @@ private fun rememberLazyListMeasurePolicy(
         verticalArrangement,
         graphicsContext,
         stickyItemsPlacement,
+        prefetchState,
+        prefetchStrategy,
     ) {
         LazyLayoutMeasurePolicy { containerConstraints ->
             state.measurementScopeInvalidator.attachToScope()
@@ -384,14 +444,18 @@ private fun rememberLazyListMeasurePolicy(
                             placement,
                         )
                     },
+                    prefetchState = prefetchState,
+                    prefetchStrategy = prefetchStrategy,
                 )
 
             state.applyMeasureResult(measureResult, isLookingAhead)
             // apply keep around after updating the strategy with measure result.
-            (state.prefetchStrategy as? CacheWindowLogic)?.keepAroundItems(
-                measureResult.visibleItemsInfo,
-                measuredItemProvider,
-            )
+            if (!ComposeFoundationFlags.isKeepAroundDuringLookaheadDisabled || !isLookingAhead) {
+                (prefetchStrategy as? CacheWindowLogic)?.keepAroundItems(
+                    measureResult.visibleItemsInfo,
+                    measuredItemProvider,
+                )
+            }
             measureResult
         }
     }
@@ -408,11 +472,11 @@ private fun CacheWindowLogic.keepAroundItems(
             val lastVisibleItemIndex = visibleItemsList.last().index
             // we must send a message in case of changing directions for items
             // that were keep around and become prefetch forward
-            for (item in prefetchWindowStartLine..<firstVisibleItemIndex) {
+            for (item in perLaneCacheWindowStartIndex[0]..<firstVisibleItemIndex) {
                 measuredItemProvider.keepAround(item)
             }
 
-            for (item in (lastVisibleItemIndex + 1)..prefetchWindowEndLine) {
+            for (item in (lastVisibleItemIndex + 1)..perLaneCacheWindowEndItemIndex[0]) {
                 measuredItemProvider.keepAround(item)
             }
         }

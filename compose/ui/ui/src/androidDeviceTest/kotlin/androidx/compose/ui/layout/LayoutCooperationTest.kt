@@ -18,6 +18,7 @@ package androidx.compose.ui.layout
 
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -26,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +46,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class LayoutCooperationTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)

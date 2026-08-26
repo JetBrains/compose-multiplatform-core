@@ -40,6 +40,7 @@ import android.view.MotionEvent.TOOL_TYPE_MOUSE
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -62,9 +63,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OpenComposeView
-import androidx.compose.ui.background
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
@@ -440,7 +442,11 @@ class AndroidPointerInputTest {
             androidComposeView.dispatchTouchEvent(upBottomBoxEvent)
 
             // Assert
-            assertThat(pointerEventsLog).hasSize(8)
+            // moveBottomBoxEvent (non-moving Move) is processed instead of skipped due to
+            // isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+            @OptIn(ExperimentalComposeUiApi::class)
+            val hasExtraMove = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+            assertThat(pointerEventsLog).hasSize(if (hasExtraMove) 9 else 8)
 
             for (pointerEvent in pointerEventsLog) {
                 assertThat(pointerEvent.internalPointerEvent).isNotNull()
@@ -453,9 +459,16 @@ class AndroidPointerInputTest {
             assertThat(pointerEventsLog[3].type).isEqualTo(PointerEventType.Move)
             assertThat(pointerEventsLog[4].type).isEqualTo(PointerEventType.Move)
 
-            assertThat(pointerEventsLog[5].type).isEqualTo(PointerEventType.Release)
-            assertThat(pointerEventsLog[6].type).isEqualTo(PointerEventType.Release)
-            assertThat(pointerEventsLog[7].type).isEqualTo(PointerEventType.Release)
+            if (hasExtraMove) {
+                assertThat(pointerEventsLog[5].type).isEqualTo(PointerEventType.Move)
+                assertThat(pointerEventsLog[6].type).isEqualTo(PointerEventType.Move)
+                assertThat(pointerEventsLog[7].type).isEqualTo(PointerEventType.Release)
+                assertThat(pointerEventsLog[8].type).isEqualTo(PointerEventType.Release)
+            } else {
+                assertThat(pointerEventsLog[5].type).isEqualTo(PointerEventType.Release)
+                assertThat(pointerEventsLog[6].type).isEqualTo(PointerEventType.Release)
+                assertThat(pointerEventsLog[7].type).isEqualTo(PointerEventType.Release)
+            }
         }
     }
 
@@ -1633,6 +1646,7 @@ class AndroidPointerInputTest {
      * in U. (Thus, why this test request at least that version.)
      */
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun motionEventDispatch_withValidClassification_shouldMatchInPointerEvent() {
         // --> Arrange
@@ -1811,6 +1825,236 @@ class AndroidPointerInputTest {
             assertThat(pointerEvent).isNotNull()
             assertThat(pointerEvent!!.classification).isEqualTo(motionEventClassification)
         }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun trackpadPinch_initialDown_returnsTrue() {
+        // --> Arrange
+        var boxLayoutCoordinates: LayoutCoordinates? = null
+        val setUpFinishedLatch = CountDownLatch(1)
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .onGloballyPositioned {
+                            setUpFinishedLatch.countDown()
+                            boxLayoutCoordinates = it
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent()
+                                }
+                            }
+                        }
+                ) {}
+            }
+        }
+
+        // Ensure Arrange (setup) step is finished
+        assertTrue(setUpFinishedLatch.await(2, TimeUnit.SECONDS))
+
+        var position: Offset?
+        val numPointers = 1
+        val actionIndex = 0
+        val pointerProperties =
+            arrayOf(PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER })
+        var pointerCoords: Array<PointerCoords>?
+
+        // --> Act
+        var dispatchResult = false
+        rule.runOnUiThread {
+            val root = boxLayoutCoordinates!!.findRootCoordinates()
+            position = root.localPositionOf(boxLayoutCoordinates!!, Offset.Zero)
+            pointerCoords =
+                arrayOf(PointerCoords(position!!.x, position!!.y, Offset.Zero.x, Offset.Zero.y))
+
+            val downEvent =
+                MotionEvent(
+                    eventTime = 0,
+                    action = ACTION_DOWN,
+                    numPointers = numPointers,
+                    actionIndex = actionIndex,
+                    pointerProperties = pointerProperties,
+                    pointerCoords = pointerCoords!!,
+                    classification = MotionEvent.CLASSIFICATION_PINCH,
+                )
+
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+            dispatchResult = androidComposeView.dispatchTouchEvent(downEvent)
+        }
+
+        // --> Assert
+        assertThat(dispatchResult).isTrue()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun trackpadPinch_initialDown_usesHoverPosition() {
+        var boxLayoutCoordinates: LayoutCoordinates? = null
+        val setUpFinishedLatch = CountDownLatch(1)
+        var receivedPosition: Offset? = null
+        var receivedType: PointerType? = null
+        var receivedEventType: PointerEventType? = null
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .onGloballyPositioned {
+                            setUpFinishedLatch.countDown()
+                            boxLayoutCoordinates = it
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                var event = awaitPointerEvent()
+                                while (
+                                    event.type == PointerEventType.Enter ||
+                                        event.type == PointerEventType.Move ||
+                                        event.type == PointerEventType.Exit
+                                ) {
+                                    event = awaitPointerEvent()
+                                }
+                                receivedPosition = event.changes[0].position
+                                receivedType = event.changes[0].type
+                                receivedEventType = event.type
+                            }
+                        }
+                ) {}
+            }
+        }
+
+        assertTrue(setUpFinishedLatch.await(2, TimeUnit.SECONDS))
+
+        var position: Offset?
+        val pointerProperties =
+            arrayOf(PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER })
+
+        var dispatchResult = false
+        rule.runOnUiThread {
+            val root = boxLayoutCoordinates!!.findRootCoordinates()
+            position = root.localPositionOf(boxLayoutCoordinates!!, Offset.Zero)
+
+            val hoverPosition = position!!.plus(Offset(15f, 25f))
+            val hoverCoords = arrayOf(PointerCoords(hoverPosition.x, hoverPosition.y))
+            val hoverEvent =
+                MotionEvent(
+                    eventTime = 0,
+                    action = ACTION_HOVER_MOVE,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties =
+                        arrayOf(
+                            PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_MOUSE }
+                        ),
+                    pointerCoords = hoverCoords,
+                )
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+            androidComposeView.dispatchGenericMotionEvent(hoverEvent)
+
+            val pinchPosition = position!!.plus(Offset(100f, 100f))
+            val pinchCoords = arrayOf(PointerCoords(pinchPosition.x, pinchPosition.y))
+            val downEvent =
+                MotionEvent.obtain(
+                    0,
+                    1L,
+                    ACTION_DOWN,
+                    1,
+                    pointerProperties,
+                    pinchCoords,
+                    0,
+                    0,
+                    0f,
+                    0f,
+                    0,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                    0,
+                    0,
+                    MotionEvent.CLASSIFICATION_PINCH,
+                )!!
+
+            dispatchResult = androidComposeView.dispatchTouchEvent(downEvent)
+        }
+
+        assertThat(dispatchResult).isTrue()
+        assertThat(receivedPosition).isEqualTo(Offset(15f, 25f))
+        assertThat(receivedType).isEqualTo(PointerType.Mouse)
+        assertThat(receivedEventType).isEqualTo(PointerEventType.ScaleStart)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun trackpadPinch_noHover_doesNotReinterpret() {
+        var boxLayoutCoordinates: LayoutCoordinates? = null
+        val setUpFinishedLatch = CountDownLatch(1)
+        var receivedPosition: Offset? = null
+        var receivedType: PointerType? = null
+        var receivedEventType: PointerEventType? = null
+
+        rule.runOnUiThread {
+            container.setContent {
+                Box(
+                    Modifier.fillMaxSize()
+                        .onGloballyPositioned {
+                            setUpFinishedLatch.countDown()
+                            boxLayoutCoordinates = it
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                val event = awaitPointerEvent()
+                                receivedPosition = event.changes[0].position
+                                receivedType = event.changes[0].type
+                                receivedEventType = event.type
+                            }
+                        }
+                ) {}
+            }
+        }
+
+        assertTrue(setUpFinishedLatch.await(2, TimeUnit.SECONDS))
+
+        var position: Offset?
+        val pointerProperties =
+            arrayOf(PointerProperties(0).also { it.toolType = MotionEvent.TOOL_TYPE_FINGER })
+
+        var dispatchResult = false
+        rule.runOnUiThread {
+            val root = boxLayoutCoordinates!!.findRootCoordinates()
+            position = root.localPositionOf(boxLayoutCoordinates!!, Offset.Zero)
+
+            val pinchPosition = position!!.plus(Offset(100f, 100f))
+            val pinchCoords = arrayOf(PointerCoords(pinchPosition.x, pinchPosition.y))
+            val downEvent =
+                MotionEvent.obtain(
+                    0,
+                    1L,
+                    ACTION_DOWN,
+                    1,
+                    pointerProperties,
+                    pinchCoords,
+                    0,
+                    0,
+                    0f,
+                    0f,
+                    0,
+                    0,
+                    InputDevice.SOURCE_MOUSE,
+                    0,
+                    0,
+                    MotionEvent.CLASSIFICATION_PINCH,
+                )!!
+
+            val androidComposeView = findAndroidComposeView(container) as AndroidComposeView
+            dispatchResult = androidComposeView.dispatchTouchEvent(downEvent)
+        }
+
+        assertThat(dispatchResult).isTrue()
+        assertThat(receivedPosition).isEqualTo(Offset(100f, 100f))
+        assertThat(receivedType).isEqualTo(PointerType.Touch)
+        assertThat(receivedEventType).isEqualTo(PointerEventType.ScaleStart)
     }
 
     /*
@@ -3770,6 +4014,7 @@ class AndroidPointerInputTest {
      *
      * Should NOT trigger any additional events (like an extra press or exit)!
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun mouseEventsAndPointerIds_completeMouseEventCycle_pointerIdsShouldMatchAcrossAllEvents() {
         // --> Arrange
@@ -3785,6 +4030,7 @@ class AndroidPointerInputTest {
         // mouse. These events happen between the normal press and release events.
         var unknownCount = 0
         var upCount = 0
+        var moveCount = 0
 
         // We want to assert that each updated pointer id matches the original pointer id that
         // starts the sequence of MotionEvents.
@@ -3831,6 +4077,9 @@ class AndroidPointerInputTest {
                                         PointerEventType.Unknown -> {
                                             ++unknownCount
                                         }
+                                        PointerEventType.Move -> {
+                                            ++moveCount
+                                        }
                                         else -> {
                                             eventsThatShouldNotTrigger = true
                                         }
@@ -3854,6 +4103,7 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(0)
             assertThat(unknownCount).isEqualTo(0)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3875,6 +4125,7 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(1)
             assertThat(unknownCount).isEqualTo(0)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3892,6 +4143,7 @@ class AndroidPointerInputTest {
             // mouse. These events happen between the normal press and release events.
             assertThat(unknownCount).isEqualTo(1)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3908,6 +4160,7 @@ class AndroidPointerInputTest {
             // mouse. These events happen between the normal press and release events.
             assertThat(unknownCount).isEqualTo(2)
             assertThat(upCount).isEqualTo(0)
+            assertThat(moveCount).isEqualTo(0)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3926,6 +4179,9 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(1)
             assertThat(unknownCount).isEqualTo(2)
             assertThat(upCount).isEqualTo(1)
+            val expectedMoves =
+                if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) 1 else 0
+            assertThat(moveCount).isEqualTo(expectedMoves)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()
@@ -3944,6 +4200,9 @@ class AndroidPointerInputTest {
             assertThat(downCount).isEqualTo(1)
             assertThat(unknownCount).isEqualTo(2)
             assertThat(upCount).isEqualTo(1)
+            val expectedMoves =
+                if (ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled) 1 else 0
+            assertThat(moveCount).isEqualTo(expectedMoves)
 
             assertThat(pointerEvent).isNotNull()
             assertThat(eventsThatShouldNotTrigger).isFalse()

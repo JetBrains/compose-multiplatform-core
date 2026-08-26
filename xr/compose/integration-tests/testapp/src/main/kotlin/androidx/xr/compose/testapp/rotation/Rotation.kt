@@ -42,6 +42,7 @@ import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SpatialSpacer
+import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
@@ -76,6 +77,7 @@ class Rotation : ComponentActivity() {
     }
 
     @Composable
+    @SubspaceComposable
     private fun SpatialPanelLayout(rotation: Float, axisAngle: Vector3) {
         SpatialColumn {
             SpatialRow {
@@ -118,22 +120,25 @@ class Rotation : ComponentActivity() {
     }
 
     @Composable
+    @SubspaceComposable
     private fun PanelWithClock(label: String) {
-        SpatialPanel(modifier = SubspaceModifier.width(240.dp).height(180.dp)) {
+        SpatialPanel(modifier = SubspaceModifier.width(240.dp).height(170.dp)) {
             ClockColumnWithLabel(label)
         }
     }
 
     @Composable
+    @SubspaceComposable
     private fun RotatingPanelWithClock(axisAngle: Vector3, rotation: Float) {
         SpatialPanel(
-            modifier = SubspaceModifier.width(240.dp).height(180.dp).rotate(axisAngle, rotation)
+            modifier = SubspaceModifier.width(240.dp).height(170.dp).rotate(axisAngle, rotation)
         ) {
             ClockColumnWithLabel("Standalone")
         }
     }
 
     @Composable
+    @SubspaceComposable
     private fun InfoPanel(rotation: Float, axisAngle: Vector3) {
         CommonTestPanel(
             size = DpVolumeSize(640.dp, 480.dp, 0.dp),

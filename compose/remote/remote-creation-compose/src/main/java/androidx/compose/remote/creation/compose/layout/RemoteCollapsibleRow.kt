@@ -13,67 +13,101 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.layout
 
-import androidx.annotation.RestrictTo
+import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.remote.core.operations.layout.managers.CollapsiblePriority
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.CollapsiblePriorityModifier
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.WidthModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.compose.v2.RemoteCollapsibleRowV2
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
-import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
-/** Utility modifier to record the layout information */
-internal class RemoteComposeCollapsibleRowModifier(
-    public val modifier: RecordingModifier,
-    public val horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
-    public val verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startCollapsibleRow(
-                modifier,
-                horizontalArrangement.toRemote(this.layoutDirection),
-                verticalAlignment.toRemote(),
-            )
-            this@draw.drawContent()
-            canvas.document.endCollapsibleRow()
-        }
-    }
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+/** Scope for the children of [RemoteCollapsibleRow]. */
+@LayoutScopeMarker
+@Immutable
 public class RemoteCollapsibleRowScope {
+    /**
+     * Sets the horizontal weight of the child.
+     *
+     * @param weight The weight of the child.
+     */
     public fun RemoteModifier.weight(weight: RemoteFloat): RemoteModifier =
         then(WidthModifier(Type.WEIGHT, weight))
 
+    /**
+     * Sets the horizontal weight of the child.
+     *
+     * @param weight The weight of the child.
+     */
     public fun RemoteModifier.weight(weight: Float): RemoteModifier =
         then(WidthModifier(Type.WEIGHT, RemoteFloat(weight)))
 
-    public fun RemoteModifier.priority(priority: Float): RemoteModifier =
+    /**
+     * Sets the collapsible priority of the child.
+     *
+     * Priority determines the order in which children are hidden when space is limited. Higher
+     * priority items remain visible longer. Items with the same priority are hidden sequentially in
+     * reverse layout order (last child with same priority is hidden first).
+     *
+     * @param priority The priority of the child. Can be any float value; higher values are
+     *   prioritized to remain visible longer.
+     */
+    public fun RemoteModifier.collapsiblePriority(priority: Float): RemoteModifier =
         then(CollapsiblePriorityModifier(CollapsiblePriority.HORIZONTAL, RemoteFloat(priority)))
 }
 
+internal class RemoteCollapsibleRowNode : RemoteComposeNode() {
+    var horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start
+    var verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top
+    var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val scope = overriddenScope(creationState)
+        val recordingModifier = scope.toRecordingModifier(modifier)
+        (horizontalArrangement as? RemoteSpaced)?.let {
+            recordingModifier.spacedBy(it.space.getFloatIdForCreationState(creationState))
+        }
+        creationState.document.startCollapsibleRow(
+            recordingModifier,
+            horizontalArrangement.toRemote(layoutDirection),
+            verticalAlignment.toRemote(),
+        )
+        renderChildren(
+            creationState,
+            remoteCanvas,
+            reversed = shouldReverse(horizontalArrangement, layoutDirection),
+        )
+        creationState.document.endCollapsibleRow()
+    }
+}
+
 /**
- * RemoteRow implements a row layout, delegating to the foundation Row layout as needed. This allows
- * RemoteRow to both work as a normal Row when called within a normal Compose tree, and capture the
- * layout information when called within a capture pass for RemoteCompose.
+ * A collapsible row layout that organizes its children horizontally.
+ *
+ * When available horizontal space is insufficient, children are hidden (collapsed) rather than
+ * shrunk or wrapped. Children are hidden based on their
+ * [RemoteCollapsibleRowScope.collapsiblePriority], with lower priority items being hidden first.
+ * Children without priority set have the highest priority.
+ *
+ * Children can be configured with [RemoteCollapsibleRowScope.weight] and
+ * [RemoteCollapsibleRowScope.collapsiblePriority] to control how they behave when the row is
+ * collapsed.
+ *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteCollapsibleRowSample
+ * @param modifier The modifier to apply to this layout.
+ * @param horizontalArrangement The horizontal arrangement of the children.
+ * @param verticalAlignment The vertical alignment of the children.
+ * @param content The children of the row.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RemoteComposable
 @Composable
 public fun RemoteCollapsibleRow(
@@ -82,34 +116,22 @@ public fun RemoteCollapsibleRow(
     verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top,
     content: @Composable RemoteCollapsibleRowScope.() -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        RemoteCollapsibleRowV2(
-            modifier,
-            horizontalArrangement,
-            verticalAlignment,
-            LocalLayoutDirection.current,
-            content,
-        )
-        return
-    }
-
     val scope = remember { RemoteCollapsibleRowScope() }
-
-    val creationState = LocalRemoteComposeCreationState.current
-    val composeModifiers =
-        RemoteComposeCollapsibleRowModifier(
-                creationState.toRecordingModifier(modifier),
-                horizontalArrangement,
-                verticalAlignment,
-            )
-            .then(modifier.toComposeUiLayout())
-
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    androidx.compose.foundation.layout.Row(
-        composeModifiers,
-        horizontalArrangement = horizontalArrangement.toComposeUi(),
-        verticalAlignment = verticalAlignment.toComposeUi(),
-    ) {
-        content(scope)
-    }
+    val layoutDirection = LocalLayoutDirection.current
+    RemoteComposeNode(
+        factory = ::RemoteCollapsibleRowNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(horizontalArrangement) { nodeHorizontalArrangement ->
+                this.horizontalArrangement = nodeHorizontalArrangement
+            }
+            set(verticalAlignment) { nodeVerticalAlignment ->
+                this.verticalAlignment = nodeVerticalAlignment
+            }
+            set(layoutDirection) { nodeLayoutDirection ->
+                this.layoutDirection = nodeLayoutDirection
+            }
+        },
+        content = { scope.content() },
+    )
 }

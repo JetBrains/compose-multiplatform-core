@@ -65,7 +65,6 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -78,6 +77,7 @@ import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
@@ -98,8 +98,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
             Subspace {
                 SpatialRow {
                     SpatialPanel(
-                        SubspaceModifier.height(400.dp).width(800.dp).movable(),
-                        resizePolicy = ResizePolicy(),
+                        SubspaceModifier.height(400.dp).width(800.dp).movable().resizable()
                     ) {
                         Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                             Box(

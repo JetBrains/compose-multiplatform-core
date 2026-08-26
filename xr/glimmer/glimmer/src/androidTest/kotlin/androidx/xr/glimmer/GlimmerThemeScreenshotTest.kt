@@ -24,8 +24,7 @@ import androidx.xr.glimmer.samples.ColorsSample
 import androidx.xr.glimmer.samples.DepthEffectLevelsSample
 import androidx.xr.glimmer.samples.IconSizesSample
 import androidx.xr.glimmer.samples.ShapesSample
-import androidx.xr.glimmer.samples.TypographySample
-import kotlinx.coroutines.test.StandardTestDispatcher
+import androidx.xr.glimmer.samples.TypographyDefaultUsage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,9 +32,9 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-class GlimmerThemeScreenshotTest() {
+class GlimmerThemeScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_DIRECTORY)
 
@@ -47,8 +46,8 @@ class GlimmerThemeScreenshotTest() {
 
     @Test
     fun typography() {
-        rule.setGlimmerThemeContent { TypographySample() }
-        rule.assertRootAgainstGolden("glimmerTheme_typography", screenshotRule)
+        rule.setGlimmerThemeContent { TypographyDefaultUsage() }
+        rule.assertRootAgainstGolden("glimmerTheme_defaultTypographyRoboto", screenshotRule)
     }
 
     @Test

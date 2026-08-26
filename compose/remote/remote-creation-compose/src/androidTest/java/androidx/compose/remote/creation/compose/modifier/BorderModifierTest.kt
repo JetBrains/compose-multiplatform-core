@@ -19,6 +19,8 @@ package androidx.compose.remote.creation.compose.modifier
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.shaders.RemoteBrush
+import androidx.compose.remote.creation.compose.shaders.verticalGradient
 import androidx.compose.remote.creation.compose.shapes.RemoteCircleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRectangleShape
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
@@ -27,9 +29,11 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI.Companion.DefaultContainerSize
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -42,9 +46,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BorderModifierTest {
     @get:Rule
-    val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-    }
+    val composeTestRule =
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     private val gridScreenshotUI = GridScreenshotUI()
 
@@ -131,6 +137,94 @@ class BorderModifierTest {
                         }
                     }
                     .toList()
+            )
+        }
+
+    @Test
+    fun borderAndBackgroundSolid() {
+        composeTestRule.runScreenshotTest {
+            RemoteBox(
+                modifier =
+                    RemoteModifier.fillMaxWidth()
+                        .fillMaxHeight()
+                        .background(Color.Red.rc)
+                        .border(3.rdp, Color.Cyan.rc)
+            )
+        }
+    }
+
+    // b/519958284: not drawing the border
+    @Test
+    fun borderAndBackgroundBrush() {
+        composeTestRule.runScreenshotTest {
+            val gradient =
+                RemoteBrush.verticalGradient(
+                    colors = listOf(Color.Red.rc, Color.Blue.rc, Color.Green.rc),
+                    startY = 0f.rf,
+                    endY = 10000f.rf,
+                    tileMode = TileMode.Repeated,
+                )
+            RemoteBox(
+                modifier =
+                    RemoteModifier.fillMaxWidth()
+                        .fillMaxHeight()
+                        .background(gradient)
+                        .border(3.rdp, Color.Cyan.rc)
+            )
+        }
+    }
+
+    @Test
+    fun borderAndBackgroundGrid() =
+        composeTestRule.runScreenshotTest {
+            gridScreenshotUI.GridContent(
+                listOf(
+                    "Background (solid) > border" to
+                        @RemoteComposable @Composable {
+                            RemoteBox(
+                                modifier =
+                                    RemoteModifier.size(DefaultContainerSize)
+                                        .background(Color.Blue.rc)
+                                        .border(width = 4.rdp, color = Color.Red.rc)
+                            )
+                        },
+                    "Background (brush) > border" to
+                        @RemoteComposable @Composable {
+                            RemoteBox(
+                                modifier =
+                                    RemoteModifier.size(DefaultContainerSize)
+                                        .background(
+                                            RemoteBrush.verticalGradient(
+                                                listOf(Color.Blue.rc, Color.Cyan.rc)
+                                            )
+                                        )
+                                        .border(width = 4.rdp, color = Color.Red.rc)
+                            )
+                        },
+                    "Empty" to {},
+                    "Border > background (solid)" to
+                        @RemoteComposable @Composable {
+                            RemoteBox(
+                                modifier =
+                                    RemoteModifier.size(DefaultContainerSize)
+                                        .border(width = 4.rdp, color = Color.Red.rc)
+                                        .background(Color.Blue.rc)
+                            )
+                        },
+                    "Border > background (brush)" to
+                        @RemoteComposable @Composable {
+                            RemoteBox(
+                                modifier =
+                                    RemoteModifier.size(DefaultContainerSize)
+                                        .border(width = 4.rdp, color = Color.Red.rc)
+                                        .background(
+                                            RemoteBrush.verticalGradient(
+                                                listOf(Color.Blue.rc, Color.Cyan.rc)
+                                            )
+                                        )
+                            )
+                        },
+                )
             )
         }
 }

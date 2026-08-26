@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"મેસેજ અહીં જાય છે.\nબીજી લાઇન પર વધુ ટેક્સ્ટ."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"ટૂંકા મેસેજના નમૂનાનો ડેમો"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"વિભાગમાં ઉપલબ્ધ આઇટમના નમૂનાનો ડેમો"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"સંકુચિત કરેલી આઇટમનો ડેમો"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"વિભાગમાં ઉપલબ્ધ આઇટમ AlphaJumpનો ડેમો ચાલુ કર્યો"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"રેડિયો બટનનો વિભાગ"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"વિભાગ ટૉગલ કરો"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"સૂચિ 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"દરેક સૂચિ હેઠળની પેટાટેક્સ્ટ"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"છબી અને ઍક્શનનો ડેમો સમાપ્ત કરો"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"ચિપનો ડેમો"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"પ્રોગ્રેસ બારનો ડેમો"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"વિભાગના હેડરનો ડેમો"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"સ્પૉટલાઇટ વિભાગનો ડેમો"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"વિભાગના નમૂનાનો ડેમો"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"જગ્યાની સૂચિના નમૂનાનો ડેમો"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"સ્થાનો બ્રાઉઝ કરો"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"નવીનતમ સુવિધાઓ"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"લોડ કરવાની સુવિધા ચાલુ કરવામાં આવી છે"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"લોડ કરવાની સુવિધા બંધ કરવામાં આવી છે"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"ઍપની થીમનો ઉપયોગ કરો"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"ઍપની થીમ ચાલુ કરી"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"ઍપની થીમ બંધ કરી"</string>
     <string name="loading_screen" msgid="4771507490730308794">"સ્ક્રીન લોડ કરી રહ્યાં છીએ"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"રંગ ઉમેરવા/કાઢી નાખવા માટે ટૉગલ કરો"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"ટૉગલ સાથેનો નકશાનો નમૂનો"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"કન્ટેન્ટ સાથેના નક્શાના ડેમો"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"મેસેજ નમૂના સાથેના નક્શાનો ડેમો"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"ગ્રિડ નમૂના સાથેના નક્શાનો ડેમો"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"વિભાગમાં ઉપલબ્ધ આઇટમની સૂચિ સાથેનો નકશો"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"બૅનરનો ડેમો"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"બહેતર બનાવેલા હેડરનો ડેમો"</string>
 </resources>

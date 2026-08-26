@@ -33,6 +33,7 @@ import static org.junit.Assume.assumeTrue;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.appsearch.app.AppSearchAccount;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
@@ -67,6 +68,7 @@ import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.flags.Flags;
 import androidx.appsearch.testutil.AppSearchEmail;
 import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsDisabled;
 import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 import androidx.appsearch.usagereporting.ClickAction;
 import androidx.appsearch.usagereporting.DismissAction;
@@ -730,8 +732,7 @@ public abstract class AppSearchSessionCtsTestBase {
                         .addSchemas(schemaBuilder.build()).setForceOverride(true).build()).get());
         Throwable cause = exception.getCause();
         assertThat(cause).isInstanceOf(AppSearchException.class);
-        assertThat(cause).hasMessageThat().isEqualTo("Too many properties to be indexed, max "
-                + "number of properties allowed: " + maxProperties);
+        assertThat(cause).hasMessageThat().contains("Too many properties to be indexed");
     }
 
     @Test
@@ -1406,7 +1407,6 @@ public abstract class AppSearchSessionCtsTestBase {
                                 + "not supported on this AppSearch implementation.");
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_REPEATED_FIELD_JOINS)
     @Test
     public void testGetSchema_joinableValueTypeQualifiedIdRepeatedProperty() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
@@ -1465,7 +1465,7 @@ public abstract class AppSearchSessionCtsTestBase {
             //   platform schema, platform SDK AppSearchSchema.StringPropertyConfig.Builder#build
             //   will throw this exception.
             // - New behavior in platform SDK does not throw IllegalStateException. If this test
-            //   runs against newer builds on Android C+ devices (with enableRepeatedFieldJoins()
+            //   runs against newer builds on Android C+ devices (with getAllowRepeatedFieldJoins()
             //   ON), then:
             //   - AppSearch and Icing WON't throw exception or return an error anymore.
             //   - Normally, this test should've been skipped since the feature is enabled, but
@@ -1868,7 +1868,7 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 // @exportToFramework:endStrip()
 
-    @SdkSuppress(minSdkVersion = 24) // b/441557822
+    @SdkSuppress(minSdkVersion = 25) // b/441557822
     @Test
     public void testPutHugeDocumentInBatch() throws Exception {
         // Schema registration
@@ -1918,7 +1918,7 @@ public abstract class AppSearchSessionCtsTestBase {
         inDocuments.add(inDocument);
         getByDocumentIdRequestBuilder.addIds(id);
 
-        for (int i = 101; i < 200; ++i) {
+        for (int i = 101; i < 400; ++i) {
             chars = new char[1024];
             Arrays.fill(chars, ' ');
             body = String.valueOf(chars) + "the end.";
@@ -5951,7 +5951,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
     public void testSnippet_usingTextMatchInfo() throws Exception {
         // Schema registration
         AppSearchSchema genericSchema = new AppSearchSchema.Builder("Generic")
@@ -6084,8 +6083,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
     public void testEmbeddingSnippet() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.SEARCH_EMBEDDING_MATCH_INFO));
         assumeTrue(
@@ -6211,8 +6208,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
     public void testHybridSnippet() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.SEARCH_EMBEDDING_MATCH_INFO));
         assumeTrue(
@@ -6357,8 +6352,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
     public void testEmbeddingSnippet_withSnippetCountPerPropertyLimit() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.SEARCH_EMBEDDING_MATCH_INFO));
         assumeTrue(
@@ -8932,7 +8925,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testQuery_matchScoreExpression() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
         assumeTrue(
@@ -8991,7 +8983,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testQuery_listFilterQueryMatchScoreExpressionFunction_notSupported()
             throws Exception {
         assumeFalse(
@@ -9014,7 +9005,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testQuery_matchScoreExpressionFunctionWithoutEnablingFeatureFails()
             throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
@@ -11792,7 +11782,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingSearch_simple() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -11876,7 +11865,90 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+    public void testEmbeddingSearch_ann() throws Exception {
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(
+                        Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR));
+
+        // Schema registration
+        AppSearchSchema schema = new AppSearchSchema.Builder("Email")
+                .addProperty(new StringPropertyConfig.Builder("body")
+                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .build())
+                .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("embedding1")
+                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                        .setIndexingType(
+                                AppSearchSchema.EmbeddingPropertyConfig
+                                        .INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR)
+                        .build())
+                .build();
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder().addSchemas(schema).build()).get();
+
+        // Index documents
+        GenericDocument doc0 =
+                new GenericDocument.Builder<>("namespace", "id0", "Email")
+                        .setPropertyString("body", "foo")
+                        .setCreationTimestampMillis(1000)
+                        .setPropertyEmbedding("embedding1", new EmbeddingVector(
+                                        new float[]{0.1f, 0.2f, 0.3f, 0.4f, 0.5f}, "my_model_v1"),
+                                new EmbeddingVector(
+                                        new float[]{-0.1f, -0.2f, -0.3f, 0.4f, 0.5f},
+                                        "my_model_v1"))
+                        .build();
+        GenericDocument doc1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Email")
+                        .setPropertyString("body", "bar")
+                        .setCreationTimestampMillis(1000)
+                        .setPropertyEmbedding("embedding1", new EmbeddingVector(
+                                new float[]{-0.1f, 0.2f, -0.3f, -0.4f, 0.5f}, "my_model_v1"))
+                        .build();
+        checkIsBatchResultSuccess(mDb1.putAsync(
+                new PutDocumentsRequest.Builder().addGenericDocuments(doc0, doc1).build()));
+
+        EmbeddingVector searchEmbedding = new EmbeddingVector(
+                new float[]{1, -1, -1, 1, -1}, "my_model_v1");
+
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setDefaultEmbeddingSearchMetricType(
+                        SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT)
+                .addEmbeddingParameters(searchEmbedding)
+                .setRankingStrategy(
+                        "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                .setListFilterQueryLanguageEnabled(true)
+                .setEmbeddingQueryProbeCount(10)
+                .build();
+        SearchResults searchResults = mDb1.search(
+                "semanticSearch(getEmbeddingParameter(0), -1, 1)", searchSpec);
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).getGenericDocument()).isEqualTo(doc0);
+        assertThat(results.get(0).getRankingSignal()).isWithin(0.00001).of(-0.2);
+        assertThat(results.get(1).getGenericDocument()).isEqualTo(doc1);
+        assertThat(results.get(1).getRankingSignal()).isWithin(0.00001).of(-0.9);
+
+        // Test with probe count 0. If probe count is <= 0, embeddings in properties marked with
+        // INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR will be skipped.
+        SearchSpec searchSpecProbeCountZero = new SearchSpec.Builder()
+                .setDefaultEmbeddingSearchMetricType(
+                        SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT)
+                .addEmbeddingParameters(searchEmbedding)
+                .setRankingStrategy(
+                        "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                .setListFilterQueryLanguageEnabled(true)
+                .setEmbeddingQueryProbeCount(0)
+                .build();
+        searchResults = mDb1.search(
+                "semanticSearch(getEmbeddingParameter(0), -1, 1)", searchSpecProbeCountZero);
+        results = retrieveAllSearchResults(searchResults);
+        assertThat(results).isEmpty();
+    }
+
+    @Test
     public void testEmbeddingSearch_propertyRestriction() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -11959,7 +12031,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingSearch_multipleSearchEmbeddings() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -12048,7 +12119,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingSearch_hybrid() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -12130,7 +12200,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingSearch_notSupported() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
@@ -12149,6 +12218,36 @@ public abstract class AppSearchSessionCtsTestBase {
                         searchSpec).getNextPageAsync().get());
         assertThat(exception).hasMessageThat().contains(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                 + " is not available on this AppSearch implementation.");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+    public void testEmbeddingSearch_ann_notSupported() throws Exception {
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
+        assumeFalse(
+                mDb1.getFeatures().isFeatureSupported(
+                        Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR));
+
+        // Test that setSchema throws UnsupportedOperationException when using
+        // INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR
+        AppSearchSchema schema = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("embedding1")
+                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                        .setIndexingType(
+                                AppSearchSchema.EmbeddingPropertyConfig
+                                        .INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR)
+                        .build())
+                .build();
+        UnsupportedOperationException schemaException = assertThrows(
+                UnsupportedOperationException.class,
+                () -> mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder().addSchemas(schema).build()).get());
+        assertThat(schemaException).hasMessageThat().contains(
+                Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR
+                        + " is not available on this AppSearch implementation.");
     }
 
     @Test
@@ -12373,9 +12472,7 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled({
-            Flags.FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS)
     public void testInformationalRankingExpressions_embeddingExpression() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -12509,8 +12606,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingQuantization() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -12560,9 +12655,117 @@ public abstract class AppSearchSessionCtsTestBase {
                 .isWithin(0.0001)
                 .of(256);
     }
+
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA)
+    public void testEmbeddingPreQuantized() throws Exception {
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(
+                        Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA));
+
+        // Schema registration
+        AppSearchSchema schema = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.EmbeddingPropertyConfig.Builder("embedding")
+                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                        .setIndexingType(
+                                AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+                        .setQuantizationType(
+                                AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_8_BIT)
+                        .build())
+                .build();
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder().addSchemas(schema).build()).get();
+
+        // 1. Construct a pre-quantized embedding vector using the direct constructor.
+        // Supposing minValue = 0, scale = 1.0f, quantized byte = 10, it represents float value
+        // 10.0f.
+        byte[] quantizedValues = new byte[]{10, 20, 30};
+        EmbeddingVector preQuantizedVector1 =
+                new EmbeddingVector(
+                        new EmbeddingVector.QuantizedData(0.0f, 1.0f, quantizedValues),
+                        "my_model");
+
+        // 2. Construct a pre-quantized embedding vector using the static factory method.
+        // Passing {0.0f, 127.5f, 255.0f} calculates min = 0, max = 255, scale = 1.0f,
+        // quantizing to bytes {0, (byte) 128, (byte) 255}.
+        EmbeddingVector preQuantizedVector2 =
+                new EmbeddingVector(
+                        EmbeddingVector.QuantizedData.fromUnquantizedValues(
+                                new float[]{0.0f, 127.5f, 255.0f}),
+                        "my_model");
+
+        // Index documents
+        GenericDocument doc1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Email")
+                        .setCreationTimestampMillis(1000)
+                        .setPropertyEmbedding("embedding", preQuantizedVector1)
+                        .build();
+        GenericDocument doc2 =
+                new GenericDocument.Builder<>("namespace", "id2", "Email")
+                        .setCreationTimestampMillis(1001)
+                        .setPropertyEmbedding("embedding", preQuantizedVector2)
+                        .build();
+        checkIsBatchResultSuccess(mDb1.putAsync(
+                new PutDocumentsRequest.Builder().addGenericDocuments(doc1, doc2).build()));
+
+        // Search using a query vector {1, 1, 1}.
+        // - doc1 dot product with {10, 20, 30} is 10 + 20 + 30 = 60.
+        // - doc2 dot product with {0, 128, 255} is 0 + 128 + 255 = 383.
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setDefaultEmbeddingSearchMetricType(
+                        SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT)
+                .addEmbeddingParameters(new EmbeddingVector(new float[]{1, 1, 1}, "my_model"))
+                .setRankingStrategy(
+                        "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                .setListFilterQueryLanguageEnabled(true)
+                .build();
+        SearchResults searchResults = mDb1.search(
+                "semanticSearch(getEmbeddingParameter(0), -1000, 1000)", searchSpec);
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(2);
+
+        // Results are sorted by ranking signal descending, so doc2 (383) comes before doc1 (60).
+        assertThat(results.get(0).getGenericDocument()).isEqualTo(doc2);
+        assertThat(results.get(0).getRankingSignal())
+                .isWithin(0.0001)
+                .of(383);
+
+        assertThat(results.get(1).getGenericDocument()).isEqualTo(doc1);
+        assertThat(results.get(1).getRankingSignal())
+                .isWithin(0.0001)
+                .of(60);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA)
+    public void testEmbeddingPreQuantized_notSupported() throws Exception {
+        assumeTrue(
+                mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
+        assumeFalse(
+                mDb1.getFeatures().isFeatureSupported(
+                        Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA));
+
+        byte[] quantizedValues = new byte[]{10, 20, 30};
+        EmbeddingVector preQuantizedVector =
+                new EmbeddingVector(
+                        new EmbeddingVector.QuantizedData(0.0f, 1.0f, quantizedValues),
+                        "my_model");
+
+        GenericDocument doc = new GenericDocument.Builder<>("namespace", "id1", "Email")
+                .setPropertyEmbedding("embedding", preQuantizedVector)
+                .build();
+
+        UnsupportedOperationException exception = assertThrows(
+                UnsupportedOperationException.class,
+                () -> mDb1.putAsync(
+                        new PutDocumentsRequest.Builder().addGenericDocuments(doc).build()).get());
+
+        assertThat(exception).hasMessageThat().contains(Features.SCHEMA_EMBEDDING_PRE_QUANTIZED_DATA
+                + " is not available on this AppSearch implementation.");
+    }
+
+    @Test
     public void testEmbeddingQuantization_changeSchema() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -12649,8 +12852,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingQuantization_notSupported() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
@@ -12684,7 +12885,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testRankingFunction_maxMinOrDefault() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -12830,7 +13030,6 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testRankingFunction_filterByRange() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
@@ -14307,5 +14506,138 @@ public abstract class AppSearchSessionCtsTestBase {
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
     public void testRankWithInvalidPropertyName() throws Exception {
         // TODO(b/379923400): Implement this test.
+    }
+
+    @Test
+    @RequiresFlagsDisabled(Flags.FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testSetSchema_promoteToAccountProperty_compatible() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT));
+
+        List<AppSearchSchema> schemas = ImmutableList.of(
+                new AppSearchSchema.Builder("Type")
+                        .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                                AppSearchAccount.SCHEMA_TYPE)
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .setShouldIndexNestedProperties(true)
+                                .build())
+                        .build(),
+                AppSearchAccount.SCHEMA);
+
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .build()).get();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .setSchemaTypeWipeoutAccountPropertyPaths(
+                        "Type", ImmutableSet.of(new PropertyPath("account")), true)
+                .build();
+
+        mDb1.setSchemaAsync(request).get();
+    }
+
+    @Test
+    @RequiresFlagsEnabled({
+            Flags.FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK,
+            Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS
+    })
+    public void testSetSchema_promoteToAccountProperty_incompatible() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SET_SCHEMA_REQUEST_SET_WIPEOUT_ACCOUNT));
+
+        List<AppSearchSchema> schemas = ImmutableList.of(
+                new AppSearchSchema.Builder("Type")
+                        .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                                AppSearchAccount.SCHEMA_TYPE)
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .setShouldIndexNestedProperties(true)
+                                .build())
+                        .build(),
+                AppSearchAccount.SCHEMA);
+
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .build()).get();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(schemas)
+                .setSchemaTypeWipeoutAccountPropertyPaths(
+                        "Type", ImmutableSet.of(new PropertyPath("account")), true)
+                .build();
+
+        ExecutionException executionException = assertThrows(ExecutionException.class,
+                () -> mDb1.setSchemaAsync(request).get());
+        assertThat(executionException).hasCauseThat().isInstanceOf(AppSearchException.class);
+        AppSearchException exception = (AppSearchException) executionException.getCause();
+        assertThat(exception.getResultCode()).isEqualTo(RESULT_INVALID_SCHEMA);
+        assertThat(exception).hasMessageThat().contains("Schema is incompatible.");
+    }
+
+    @Test
+    public void testQuery_resultCountPerPageZero() throws Exception {
+        // Schema registration
+        mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder().addSchemas(AppSearchEmail.SCHEMA).build())
+                .get();
+
+        // Index a document
+        AppSearchEmail inEmail =
+                new AppSearchEmail.Builder("namespace", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("This is the body of the testPut email")
+                        .build();
+        checkIsBatchResultSuccess(
+                mDb1.putAsync(
+                        new PutDocumentsRequest.Builder().addGenericDocuments(inEmail).build()));
+
+        // Query with resultCountPerPage = 0.
+        SearchResults searchResults =
+                mDb1.search(
+                        "body",
+                        new SearchSpec.Builder()
+                                .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                                .setResultCountPerPage(0)
+                                .build());
+
+        // Get the first page. It should return 0 results.
+        List<SearchResult> results = searchResults.getNextPageAsync().get();
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    public void testQuery_resultCountPerPageGreaterThanZero_noMatch() throws Exception {
+        // Schema registration
+        mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder().addSchemas(AppSearchEmail.SCHEMA).build())
+                .get();
+
+        // Index a document
+        AppSearchEmail inEmail =
+                new AppSearchEmail.Builder("namespace", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("This is the body of the testPut email")
+                        .build();
+        checkIsBatchResultSuccess(
+                mDb1.putAsync(
+                        new PutDocumentsRequest.Builder().addGenericDocuments(inEmail).build()));
+
+        // Query with resultCountPerPage = 5, but searching for a query that has no matches.
+        SearchResults searchResults =
+                mDb1.search(
+                        "nonMatchingQueryString",
+                        new SearchSpec.Builder()
+                                .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                                .setResultCountPerPage(5)
+                                .build());
+
+        // Get the first page. It should return 0 results.
+        List<SearchResult> results = searchResults.getNextPageAsync().get();
+        assertThat(results).isEmpty();
     }
 }

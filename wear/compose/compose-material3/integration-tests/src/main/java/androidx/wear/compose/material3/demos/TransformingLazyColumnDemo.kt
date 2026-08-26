@@ -32,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LocalPinnableContainer
+import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -364,6 +366,20 @@ fun TransformingLazyColumnAnimationSample() {
         elements = elements.subList(0, index) + elements.subList(index + 1, elements.count())
     }
 
+    fun moveCardToStart(index: Int) {
+        elements =
+            elements.subList(index, index + 1) +
+                elements.subList(0, index) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun moveCardToEnd(index: Int) {
+        elements =
+            elements.subList(0, index) +
+                elements.subList(index + 1, elements.count()) +
+                elements.subList(index, index + 1)
+    }
+
     AppScaffold {
         ScreenScaffold(
             state,
@@ -373,8 +389,22 @@ fun TransformingLazyColumnAnimationSample() {
         ) { contentPadding ->
             TransformingLazyColumn(state = state, contentPadding = contentPadding) {
                 itemsIndexed(elements, key = { _, key -> key }) { index, cardKey ->
+                    var isPinned by remember { mutableStateOf(false) }
+                    var pinHandle by remember {
+                        mutableStateOf<PinnableContainer.PinnedHandle?>(null)
+                    }
+                    val pinnableContainer = LocalPinnableContainer.current
                     Card(
-                        onClick = {},
+                        onClick = {
+                            if (isPinned) {
+                                pinHandle?.release()
+                                pinHandle = null
+                                isPinned = false
+                            } else {
+                                pinHandle = pinnableContainer?.pin()
+                                isPinned = true
+                            }
+                        },
                         modifier =
                             Modifier.minimumVerticalContentPadding(
                                     CardDefaults.minimumVerticalListContentPadding
@@ -383,8 +413,10 @@ fun TransformingLazyColumnAnimationSample() {
                                 .animateItem(),
                         transformation = SurfaceTransformation(transformationSpec),
                     ) {
-                        Text("Card $cardKey")
+                        Text("Card $cardKey" + if (isPinned) " - Pinned" else "")
                         Row {
+                            CompactButton(onClick = { moveCardToEnd(index) }) { Text(ArrowDown) }
+                            CompactButton(onClick = { moveCardToStart(index) }) { Text(ArrowUp) }
                             Spacer(modifier = Modifier.weight(1f))
                             CompactButton(
                                 onClick = { removeCardAt(index) },
@@ -421,6 +453,20 @@ fun TransformingLazyColumnReverseLayoutSample() {
         elements = elements.subList(0, index) + elements.subList(index + 1, elements.count())
     }
 
+    fun moveCardToStart(index: Int) {
+        elements =
+            elements.subList(index, index + 1) +
+                elements.subList(0, index) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun moveCardToEnd(index: Int) {
+        elements =
+            elements.subList(0, index) +
+                elements.subList(index + 1, elements.count()) +
+                elements.subList(index, index + 1)
+    }
+
     AppScaffold {
         ScreenScaffold(
             state,
@@ -446,6 +492,12 @@ fun TransformingLazyColumnReverseLayoutSample() {
                     ) {
                         Text("Card $cardKey")
                         Row {
+                            CompactButton(onClick = { moveCardToEnd(index) }) {
+                                Text(if (reverseLayout) ArrowUp else ArrowDown)
+                            }
+                            CompactButton(onClick = { moveCardToStart(index) }) {
+                                Text(if (reverseLayout) ArrowDown else ArrowUp)
+                            }
                             Spacer(modifier = Modifier.weight(1f))
                             CompactButton(
                                 onClick = { removeCardAt(index) },
@@ -495,3 +547,6 @@ fun TransformingLazyColumnExpandableCardSample() {
         }
     }
 }
+
+private const val ArrowUp = "\u2191"
+private const val ArrowDown = "\u2193"

@@ -25,9 +25,9 @@ import androidx.sqlite.SQLiteDriver
 import kotlin.coroutines.CoroutineContext
 
 /** Configuration class for a [RoomDatabase]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public actual class DatabaseConfiguration
 @Suppress("ExecutorRegistration") // not a registration method
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 constructor(
     /* The context to use while connecting to the database. */
     public val context: Context?,
@@ -68,8 +68,11 @@ constructor(
     /* Callback when Room uses a pre-packaged database. */
     public val prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?,
 
-    /* List of provided type converters. */
-    @param:Suppress("ListenerLast") public actual val typeConverters: List<Any>,
+    /* List of provided column type converters. */
+    @param:Suppress("ListenerLast") public actual val columnTypeConverters: List<Any>,
+
+    /* List of provided DAO return type converters. */
+    @param:Suppress("ListenerLast") public actual val daoReturnTypeConverters: List<Any>,
 
     /* List of provided auto migration specs. */
     @param:Suppress("ListenerLast") public actual val autoMigrationSpecs: List<AutoMigrationSpec>,
@@ -83,6 +86,9 @@ constructor(
 
     /* The Coroutine context for the database. */
     public actual val queryCoroutineContext: CoroutineContext,
+
+    /* The connection pool configuration. */
+    public actual val connectionPoolConfiguration: ConnectionPoolConfiguration,
 ) {
     /* Whether the invalidation tracker will use temp or real tables for invalidation tracking. */
     internal var useTempTrackingTable = true
@@ -114,11 +120,13 @@ constructor(
         migrationNotRequiredFrom: Set<Int>? = this.migrationNotRequiredFrom,
         prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback? =
             this.prepackagedDatabaseCallback,
-        typeConverters: List<Any> = this.typeConverters,
+        columnTypeConverters: List<Any> = this.columnTypeConverters,
+        daoReturnTypeConverters: List<Any> = this.daoReturnTypeConverters,
         autoMigrationSpecs: List<AutoMigrationSpec> = this.autoMigrationSpecs,
         allowDestructiveMigrationForAllTables: Boolean = this.allowDestructiveMigrationForAllTables,
         sqliteDriver: SQLiteDriver = this.sqliteDriver,
         queryCoroutineContext: CoroutineContext = this.queryCoroutineContext,
+        connectionPoolConfiguration: ConnectionPoolConfiguration = this.connectionPoolConfiguration,
     ): DatabaseConfiguration =
         DatabaseConfiguration(
                 context,
@@ -132,11 +140,13 @@ constructor(
                 allowDestructiveMigrationOnDowngrade,
                 migrationNotRequiredFrom,
                 prepackagedDatabaseCallback,
-                typeConverters,
+                columnTypeConverters,
+                daoReturnTypeConverters,
                 autoMigrationSpecs,
                 allowDestructiveMigrationForAllTables,
                 sqliteDriver,
                 queryCoroutineContext,
+                connectionPoolConfiguration,
             )
             .also {
                 it.useTempTrackingTable = this.useTempTrackingTable

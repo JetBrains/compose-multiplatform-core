@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import android.app.Activity
@@ -57,7 +59,7 @@ class FakePanelEntityTest {
 
     @Test
     fun getSizeInPixels_returnsDefaultValue() {
-        assertThat(underTest.sizeInPixels).isEqualTo(PixelDimensions(1152, 1152))
+        assertThat(underTest.sizeInPixels).isEqualTo(PixelDimensions(2000, 2000))
     }
 
     @Test

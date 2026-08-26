@@ -134,7 +134,6 @@ public class WebViewFeature {
             PRECONNECT,
             PROVIDER_WEAKLY_REF_WEBVIEW,
             HYPERLINK_CONTEXT_MENU_ITEMS,
-            ORIGIN_MATCHED_HEADERS,
             CUSTOM_REQUEST_HEADERS,
             ADD_QUIC_HINTS_V1,
             PAGE_GET_URL,
@@ -142,6 +141,10 @@ public class WebViewFeature {
             SET_MAX_PRERENDERS_V1,
             JS_INJECTION_IN_FRAME_AND_WORLD,
             NAVIGATION_LISTENER,
+            WEBVIEW_NAVIGATE_EXPERIMENTAL_V1,
+            DOWNLOAD_FAVICONS_ENABLED,
+            HTTP_CACHE_MANAGER,
+            CROSS_ORIGIN_ISOLATED_ALLOWLIST,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -559,7 +562,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isStartupFeatureSupported(Context, String)}.
      * This feature covers
-     * {@link ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, Boolean)}
+     * {@link ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, boolean)}
      */
     public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
             "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
@@ -667,7 +670,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     * {@link WebSettingsCompat#setBackForwardCacheEnabled(WebSettings, boolean)}
      * {@link WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
      */
     public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
@@ -681,12 +684,22 @@ public class WebViewFeature {
     public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3 =
             "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3";
 
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link BackForwardCacheSettings#setKeepForwardEntriesEnabled(boolean)}
+     * {@link BackForwardCacheSettings#isKeepForwardEntriesEnabled()}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4 =
+            "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4";
+
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, WebViewOutcomeReceiver)}
-     * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)}
+     * {@link PrefetchCache#prefetchUrlAsync(String, CancellationSignal, Executor, PrefetchParameters, WebViewOutcomeReceiver)}
+     * {@link PrefetchCache#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)}
      */
     @Profile.ExperimentalUrlPrefetch
     public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V5";
@@ -710,7 +723,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)}}
+     * {@link androidx.webkit.WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)}
      */
     public static final String PRERENDER_WITH_URL = "PRERENDER_URL_V2";
 
@@ -725,7 +738,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link PrefetchCache#setMaxPrefetches(Integer)},{@link PrefetchCache#setPrefetchTtlSeconds(Integer)}
+     * {@link PrefetchCache#setMaxPrefetches(int)}, {@link PrefetchCache#setPrefetchTtlSeconds(int)}
      */
     @Profile.ExperimentalUrlPrefetch
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -734,7 +747,7 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link Profile#setMaxPrerenders(Integer)}
+     * {@link Profile#setMaxPrerenders(int)}
      */
     @Profile.ExperimentalUrlPrefetch
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -867,17 +880,6 @@ public class WebViewFeature {
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
-     * {@link Profile#hasOriginMatchedHeader(String)},
-     * {@link Profile#clearOriginMatchedHeader(String)}, and
-     * {@link Profile#clearAllOriginMatchedHeaders()}.
-     *
-     */
-    @Profile.ExperimentalOriginMatchedHeader
-    public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
-
-    /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      *
      * <p>This feature covers
      * {@link Profile#addCustomHeader(androidx.webkit.CustomHeader)},
@@ -927,6 +929,13 @@ public class WebViewFeature {
     public static final String PRECONNECT = "PRECONNECT";
 
     /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers {@link Profile#enqueuePreconnect(String)}
+     */
+    @Profile.ExperimentalPreconnect
+    public static final String ENQUEUE_PRECONNECT = "ENQUEUE_PRECONNECT";
+
+    /**
      * Feature for {@link Profile#addQuicHints(Set)}.
      */
     @Profile.ExperimentalAddQuicHints
@@ -955,6 +964,54 @@ public class WebViewFeature {
      * {@link JavaScriptReplyProxy#executeJavaScript(String, WebViewOutcomeReceiver)}.
      */
     public static final String JS_INJECTION_IN_FRAME_AND_WORLD = "JS_INJECTION_IN_FRAME_AND_WORLD";
+
+    /**
+     * This feature covers
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}.
+     */
+    @WebViewCompat.ExperimentalNavigate
+    public static final String WEBVIEW_NAVIGATE_EXPERIMENTAL_V1 =
+            "WEBVIEW_NAVIGATE_EXPERIMENTAL_V1";
+
+    /**
+     * When this feature is enabled,
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}
+     * will drain the prefetch queue before navigating.
+     * <p>
+     * This will become the default behavior of
+     * {@link WebViewCompat#navigate(WebView, String, NavigationParameters)}.
+     */
+    @WebViewCompat.ExperimentalNavigate
+    public static final String WEBVIEW_NAVIGATE_DRAIN_PREFETCH =
+            "WEBVIEW_NAVIGATE_DRAIN_PREFETCH";
+
+    /**
+     * Feature for
+     * {@link WebSettingsCompat#setDownloadFaviconsEnabled(WebSettings, boolean)},
+     * {@link WebSettingsCompat#getDownloadFaviconsEnabled(WebSettings)}
+     */
+    public static final String DOWNLOAD_FAVICONS_ENABLED = "DOWNLOAD_FAVICONS_ENABLED";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#getHttpCache()}
+     * {@link HttpCache#getDefaultQuotaBytes()}
+     * {@link HttpCache#isUsingDefaultQuota()}
+     * {@link HttpCache#useDefaultQuota()}
+     * {@link HttpCache#getQuotaBytes()}
+     * {@link HttpCache#setQuotaBytes(long)}
+     */
+    public static final String HTTP_CACHE_MANAGER = "HTTP_CACHE_MANAGER";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#setCrossOriginIsolatedAllowlist(Set)}
+     * {@link Profile#getCrossOriginIsolatedAllowlist()}
+     */
+    public static final String CROSS_ORIGIN_ISOLATED_ALLOWLIST =
+            "CROSS_ORIGIN_ISOLATED_ALLOWLIST";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

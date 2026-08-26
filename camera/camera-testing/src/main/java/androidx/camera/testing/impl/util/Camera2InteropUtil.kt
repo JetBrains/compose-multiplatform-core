@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.testing.impl.util
 
 import android.hardware.camera2.CameraCaptureSession
@@ -336,7 +338,7 @@ public object Camera2InteropUtil {
                         } else {
                             signal.completeExceptionally(
                                 TimeoutException(
-                                    "Test doesn't complete after waiting for $_numOfCaptures frames."
+                                    "Test doesn't complete after waiting for $initialCount frames."
                                 )
                             )
                         }
@@ -359,5 +361,7 @@ public object Camera2InteropUtil {
             { _, _ ->
                 true
             },
-    )
+    ) {
+        internal val initialCount = count
+    }
 }

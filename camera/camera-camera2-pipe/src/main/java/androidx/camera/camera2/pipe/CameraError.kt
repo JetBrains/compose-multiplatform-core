@@ -90,7 +90,7 @@ public value class CameraError private constructor(public val value: Int) {
          * The camera has been disconnected for one of the following potential causes:
          * - The camera has been disconnected from the Android device.
          * - The camera ID is no longer valid.
-         * - The camera has been taken for a higher-priority process.
+         * - The camera has been taken by a higher-priority process.
          */
         public val ERROR_CAMERA_DISCONNECTED: CameraError = CameraError(6)
 
@@ -126,6 +126,10 @@ public value class CameraError private constructor(public val value: Int) {
          */
         public val ERROR_CAMERA_OPENER: CameraError = CameraError(12)
 
+        /**
+         * Camera open timed out, which happens when the camera open request is aborted by a latter
+         * request, canceled by shutdown, or the CameraManager.openCamera() call timed out.
+         */
         public val ERROR_CAMERA_OPEN_TIMEOUT: CameraError = CameraError(13)
 
         internal fun from(throwable: Throwable) =

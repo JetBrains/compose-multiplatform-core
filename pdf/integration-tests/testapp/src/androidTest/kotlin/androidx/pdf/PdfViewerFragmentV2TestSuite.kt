@@ -40,6 +40,7 @@ import androidx.pdf.util.Preconditions
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScroller
+import androidx.pdf.viewer.fragment.PdfDocumentViewModel
 import androidx.pdf.viewer.fragment.R as PdfR
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
@@ -70,6 +71,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import kotlin.time.Duration
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -91,6 +93,7 @@ class PdfViewerFragmentV2TestSuite {
 
     @Before
     fun setup() {
+        PdfDocumentViewModel.searchDebounceDuration = Duration.ZERO
         Intents.init()
         scenario =
             launchFragmentInContainer<TestPdfViewerFragment>(
@@ -126,6 +129,8 @@ class PdfViewerFragmentV2TestSuite {
         }
         scenario.close()
         Intents.release()
+        PdfDocumentViewModel.searchDebounceDuration =
+            PdfDocumentViewModel.DEFAULT_SEARCH_DEBOUNCE_DURATION
     }
 
     @Test
@@ -151,7 +156,10 @@ class PdfViewerFragmentV2TestSuite {
 
         // Swipe actions
         onView(withId(PdfR.id.pdfContentLayout)).perform(swipeUp())
-        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
+        scenario.onFragment {
+            it.pdfScrollIdlingResource.increment()
+            it.getPdfViewInstance().fastScrollVisibility = PdfView.FastScrollVisibility.AUTO_HIDE
+        }
 
         // Cause Espresso to wait for IdlingResources before performing the assertion below
         // which doesn't use Espresso APIs.

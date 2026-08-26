@@ -388,7 +388,6 @@ private fun configOf(dataSources: List<TraceConfig.DataSource>) =
  *
  * Eventually, this should be more configurable.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal fun perfettoConfig(
     atraceApps: List<String>,
     stackSamplingConfig: StackSamplingConfig?,
@@ -444,12 +443,5 @@ internal fun TraceConfig.validateAndEncode(): ByteArray {
         }
     }
 
-    if (Build.VERSION.SDK_INT < 24) {
-        val packageList = ftraceConfig.atrace_apps.joinToString(",")
-        check(packageList.length <= 91) {
-            "Unable to trace package list (\"$packageList\").length = " +
-                "${packageList.length} > 91 chars, which is the limit before API 24"
-        }
-    }
     return encode()
 }

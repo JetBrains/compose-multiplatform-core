@@ -134,10 +134,10 @@ public fun <T : Any> rememberSceneState(
 
         // Find all the overlay scenes
         val overlayScenes = allScenes.dropLast(1).fastMap { it as OverlayScene<T> }
-        // The currentScene is just just whatever is last on the list.
+        // The currentScene is just whatever is last on the list.
         val currentScene = allScenes.last()
         // Get the previous scenes, starting from the current scene.
-        val previousScenes = mutableListOf(allScenes.first())
+        val previousScenes = mutableListOf(currentScene)
 
         do {
             // get the first scene off the list
@@ -168,7 +168,8 @@ public fun <T : Any> rememberSceneState(
  *
  * @param entries all of the entries that are associated with this state
  * @param overlayScenes any overlay scenes available to the state
- * @param currentScene the current scene that could be displayed
+ * @param currentScene the current scene that could be displayed, and also the scene that is
+ *   displayed underneath any overlay scenes.
  * @param previousScenes the list of all of the previous scenes before the currentScene
  */
 @Immutable
@@ -203,6 +204,13 @@ internal constructor(
     }
 }
 
+/**
+ * Calculates a scene by iterating through the [sceneStrategies] in order.
+ *
+ * If the calculated scene is not an [OverlayScene], it further decorates the scene with
+ * [SceneDecoratorStrategy.decorateScene]. Overlay scenes are animated separately from non-overlays
+ * and therefore don't get decorated along with non-overlays.
+ */
 private fun <T : Any> provideScene(
     scope: SceneDecoratorStrategyScope<T>,
     decoratedEntries: List<NavEntry<T>>,

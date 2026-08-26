@@ -26,6 +26,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.integration.view.TestUtil.assertPreviewStreamingState
 import androidx.camera.integration.view.TestUtil.getFragment
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.view.PreviewView
@@ -38,7 +39,6 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Rule
@@ -55,6 +55,7 @@ class EffectsFragmentDeviceTest(
 ) {
     @get:Rule
     val requireForegroundRule = RequireForegroundRule {
+        assumeFalse("Test fails on API 24 emulator (b/539514196)", AndroidUtil.isEmulator(24))
         assumeFalse(
             "Test fails on cuttlefish (b/465855844)",
             MODEL.contains("Cuttlefish", ignoreCase = true),
@@ -95,16 +96,15 @@ class EffectsFragmentDeviceTest(
         fragment = fragmentScenario.getFragment()
 
         requireForegroundRule.deferCleanup {
-            if (::cameraProvider.isInitialized) {
-                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+            try {
+                if (::fragmentScenario.isInitialized) {
+                    fragmentScenario.moveToState(Lifecycle.State.DESTROYED)
+                }
+            } finally {
+                if (::cameraProvider.isInitialized) {
+                    cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+                }
             }
-        }
-    }
-
-    @After
-    fun tearDown() {
-        if (::fragmentScenario.isInitialized) {
-            fragmentScenario.moveToState(Lifecycle.State.DESTROYED)
         }
     }
 

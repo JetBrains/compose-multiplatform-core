@@ -58,8 +58,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * It currently supports three input modes: {@link #INPUT_MODE_BUFFER},
  * {@link #INPUT_MODE_SURFACE}, or {@link #INPUT_MODE_BITMAP}.
  *
- * Callback#onOutputFormatChanged(MediaCodec, MediaFormat)} and {@link
- * Callback#onDrainOutputBuffer(MediaCodec, ByteBuffer)}. If the client
+ * Callback#onOutputFormatChanged(EncoderBase, MediaFormat)} and {@link
+ * Callback#onDrainOutputBuffer(EncoderBase, ByteBuffer)}. If the client
  * requests to use grid, each tile will be sent back individually.
  *
  *
@@ -398,12 +398,15 @@ public class EncoderBase implements AutoCloseable,
         }
 
         MediaFormat codecFormat;
+        // Choose image encoder if useHeicEncoder is true, otherwise fall back to
+        // video encoder (HEVC or AV1)
         if (useHeicEncoder) {
             codecFormat = MediaFormat.createVideoFormat(
                 MediaFormat.MIMETYPE_IMAGE_ANDROID_HEIC, mWidth, mHeight);
         } else {
-            codecFormat = MediaFormat.createVideoFormat(
-                MediaFormat.MIMETYPE_VIDEO_HEVC, gridWidth, gridHeight);
+            String mime = MIME.equals("AVIF") ?
+                MediaFormat.MIMETYPE_VIDEO_AV1 : MediaFormat.MIMETYPE_VIDEO_HEVC;
+            codecFormat = MediaFormat.createVideoFormat(mime, gridWidth, gridHeight);
         }
 
         if (useGrid) {
@@ -428,6 +431,21 @@ public class EncoderBase implements AutoCloseable,
 
         codecFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 0);
         codecFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
+        if (useBitDepth10) {
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_STANDARD, MediaFormat.COLOR_STANDARD_BT2020);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_FULL);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_TRANSFER, MediaFormat.COLOR_TRANSFER_ST2084);
+        } else {
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_STANDARD, MediaFormat.COLOR_STANDARD_BT601_NTSC);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_FULL);
+            codecFormat.setInteger(
+                    MediaFormat.KEY_COLOR_TRANSFER, MediaFormat.COLOR_TRANSFER_SDR_VIDEO);
+        }
         codecFormat.setInteger(MediaFormat.KEY_FRAME_RATE, mNumTiles);
 
         // When we're doing tiles, set the operating rate higher as the size
@@ -525,8 +543,15 @@ public class EncoderBase implements AutoCloseable,
                 mInputSurface = mEncoderSurface;
             }
         } else {
+            // Use long to prevent integer overflow for large dimensions
+            long size = mUseBitDepth10 ? (long) mWidth * mHeight * 3 :
+                    (long) mWidth * mHeight * 3 / 2;
+            if (size > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "Image dimensions too large for buffer allocation");
+            }
+            int bufferSize = (int) size;
             for (int i = 0; i < INPUT_BUFFER_POOL_SIZE; i++) {
-                int bufferSize = mUseBitDepth10 ? mWidth * mHeight * 3 : mWidth * mHeight * 3 / 2;
                 mEmptyBuffers.add(ByteBuffer.allocateDirect(bufferSize));
             }
         }
@@ -631,9 +656,10 @@ public class EncoderBase implements AutoCloseable,
                 || (!mUseBitDepth10 && format != ImageFormat.YUV_420_888)) {
             throw new IllegalStateException("Wrong color format.");
         }
-        if (data == null
-                || (mUseBitDepth10 && data.length != mWidth * mHeight * 3)
-                || (!mUseBitDepth10 && data.length != mWidth * mHeight * 3 / 2)) {
+        // Use long to prevent integer overflow during validation
+        long expectedSize = mUseBitDepth10 ? (long) mWidth * mHeight * 3 :
+                (long) mWidth * mHeight * 3 / 2;
+        if (data == null || data.length != expectedSize) {
             throw new IllegalArgumentException("invalid data");
         }
         addYuvBufferInternal(data);
@@ -811,24 +837,36 @@ public class EncoderBase implements AutoCloseable,
                 int copyWidth = Math.min(srcRect.width(), srcWidth - srcRect.left);
                 int copyHeight = Math.min(srcRect.height(), srcHeight - srcRect.top);
                 int srcPlanePos = 0, div = 1;
+                int srcPixelStride = 2; // Y is 2 bytes per pixel
                 if (n > 0) {
                     div = 2;
-                    srcPlanePos = srcWidth * srcHeight;
+                    // P010 uses 2 bytes per pixel, adjust offset for Y plane size
+                    srcPlanePos = srcWidth * srcHeight * 2;
+                    srcPixelStride = 4; // UV is interleaved, 4 bytes per pair
                     if (n == 2) {
-                        srcPlanePos += colStride / 2;
+                        srcPlanePos += 2; // V channel offset
                     }
                 }
                 for (int i = 0; i < copyHeight / div; i++) {
-                    srcBuffer.position(srcPlanePos +
-                        (i + srcRect.top / div) * srcWidth + srcRect.left / div);
+                    // Multiply row index by bytes per row, and column index by bytes per pixel
+                    srcBuffer.position(srcPlanePos
+                            + (i + srcRect.top / div) * (srcWidth * 2)
+                            + (srcRect.left / div) * srcPixelStride);
                     dstBuffer.position((i + dstRect.top / div) * planes[n].getRowStride()
                         + dstRect.left * colStride / div);
 
                     for (int j = 0; j < copyWidth / div; j++) {
                         dstBuffer.put(srcBuffer.get());
                         dstBuffer.put(srcBuffer.get());
-                        if (colStride > 2 /*pixel step*/ && j != copyWidth / div - 1) {
-                            dstBuffer.position(dstBuffer.position() + colStride / 2);
+                        if (j != copyWidth / div - 1) {
+                            if (colStride > 2 /*pixel step*/) {
+                                // Advance destination buffer correctly based on stride
+                                dstBuffer.position(dstBuffer.position() + colStride - 2);
+                            }
+                            if (srcPixelStride > 2) {
+                                // Advance source buffer to skip interleaved channels
+                                srcBuffer.position(srcBuffer.position() + srcPixelStride - 2);
+                            }
                         }
                     }
                 }

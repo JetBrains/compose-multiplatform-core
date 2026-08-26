@@ -19,33 +19,30 @@ package androidx.ink.authoring
 import android.graphics.Canvas
 import android.graphics.Matrix
 import androidx.annotation.OpenForTesting
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
-import androidx.ink.brush.TextureAnimationProgressHelper
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.rendering.android.canvas.StrokePaintAnimationClock
 
 /**
  * An implementation of [InProgressShapeRenderer] that just wraps
  * [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer].
  */
 @OpenForTesting
-@ExperimentalCustomShapeWorkflowApi
+@ExperimentalInkCustomShapeWorkflowApi
+@OptIn(ExperimentalInkAnimationApi::class)
 internal open class InkInProgressShapeRenderer(
-    private val canvasStrokeRenderer: CanvasStrokeRenderer
+    private val animationClock: StrokePaintAnimationClock,
+    private val canvasStrokeRenderer: CanvasStrokeRenderer,
 ) : InProgressShapeRenderer<InkInProgressShape> {
 
     override fun draw(canvas: Canvas, shape: InkInProgressShape, strokeToScreenTransform: Matrix) {
         check(!shape.isCanceled()) { "Internal error: Tried to draw canceled stroke shape" }
         val textureAnimationDurationMillis = shape.textureAnimationDurationMillis
-        @OptIn(ExperimentalInkCustomBrushApi::class)
         canvasStrokeRenderer.draw(
             canvas = canvas,
             inProgressStroke = shape.inProgressStroke,
             strokeToScreenTransform = strokeToScreenTransform,
-            textureAnimationProgress =
-                TextureAnimationProgressHelper.calculateAnimationProgress(
-                    shape.lastUpdateSystemElapsedTimeMillis,
-                    textureAnimationDurationMillis,
-                ),
+            animatorClockStateMillis = animationClock.getClockStateMillis(),
         )
     }
 }

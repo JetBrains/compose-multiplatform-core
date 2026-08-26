@@ -33,7 +33,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.AnyThread
 import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.annotation.UiThread
@@ -43,15 +42,14 @@ import androidx.core.graphics.withMatrix
 import androidx.graphics.CanvasBufferedRenderer
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.hardware.SyncFenceCompat
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.InProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.geometry.MutableBox
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -74,7 +72,7 @@ import kotlin.math.floor
  */
 @Suppress("ObsoleteSdkInt") // TODO(b/262911421): Should not need to suppress.
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 internal class CanvasInProgressStrokesRenderHelperV33<
     ShapeSpecT : Any,
     InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
@@ -86,12 +84,12 @@ internal class CanvasInProgressStrokesRenderHelperV33<
         Looper.getMainLooper().let { looper ->
             ScheduledExecutorImpl(looper.thread, Handler(looper))
         },
-    private val renderThreadExecutor: ScheduledExecutor =
-        HandlerThread(CanvasInProgressStrokesRenderHelperV33::class.java.simpleName + "_Render")
-            .let {
-                it.start()
-                ScheduledExecutorImpl(it, Handler(it.looper))
-            },
+    private val renderThreadExecutorFactory: () -> ScheduledExecutor = {
+        HandlerThread("CanvasInProgressStrokesRenderHelperV33_Render").let {
+            it.start()
+            ScheduledExecutorImpl(it, Handler(it.looper))
+        }
+    },
 ) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT>() {
 
     override val contentsPreservedBetweenDraws = true
@@ -188,15 +186,17 @@ internal class CanvasInProgressStrokesRenderHelperV33<
 
     @WorkerThread
     override fun assertOnRenderThread() {
-        check(renderThreadExecutor.onThread()) {
-            "Should be running on render thread, but actually running on ${Thread.currentThread()}."
-        }
+        currentViewport?.assertOnRenderThread()
     }
 
+    @VisibleForTesting
     @UiThread
     override fun executeOnRenderThread(runnable: Runnable) {
         assertOnUiThread()
-        renderThreadExecutor.execute(runnable)
+        // Since this function is test-only, hard crash when there's not a currentViewport rather
+        // than
+        // implement some sort of queueing mechanism.
+        checkNotNull(currentViewport).executeOnRenderThread(runnable)
     }
 
     @UiThread
@@ -282,31 +282,15 @@ internal class CanvasInProgressStrokesRenderHelperV33<
 
     private inner class Viewport(val bounds: Bounds) {
 
+        private val renderThreadExecutor: ScheduledExecutor = renderThreadExecutorFactory()
+
         /**
          * When a [Viewport] is no longer valid (e.g. when the [Bounds] change), this will be set to
          * `true`, so that any in-flight callbacks don't execute on this now-invalid object.
          */
         private val discarded = AtomicBoolean(false)
 
-        private val buffersState =
-            object {
-                private val stateInternal = AtomicReference<BuffersState?>()
-
-                @AnyThread
-                fun checkAndSet(expectedValue: BuffersState?, newValue: BuffersState?) {
-                    check(stateInternal.compareAndSet(expectedValue, newValue)) {
-                        "buffersState: expected $expectedValue, but current value is ${stateInternal.get()}"
-                    }
-                }
-
-                @UiThread
-                fun getAndSet(newValue: BuffersState?): BuffersState? {
-                    assertOnUiThread()
-                    return stateInternal.getAndSet(newValue)
-                }
-
-                @AnyThread fun get(): BuffersState? = stateInternal.get()
-            }
+        private val buffersState = AtomicReference<BuffersState?>()
 
         /**
          * The next value to pass to [SurfaceControlCompat.Transaction.setLayer]. This increases
@@ -360,8 +344,29 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                 .preserveContents(true)
                 .setTransformFromBounds(bounds)
                 .drawAsync(renderThreadExecutor) { renderResult ->
-                    if (discarded.get()) return@drawAsync
-                    buffersState.checkAndSet(expectedValue = null, initialState)
+                    // This must be done before the check for discarded. That ensures that if the
+                    // check below
+                    // returns false, a subequent call to discard() will be able to clean up the
+                    // state. (If
+                    // the check below returns true, we ensure it's cleaned up here.)
+                    check(buffersState.getAndSet(initialState) == null) {
+                        "BuffersState was not null when initializing the first viewport."
+                    }
+                    if (discarded.get()) {
+                        // If we're in this block, discard() has definitely started and maybe
+                        // (probably)
+                        // finished. But we still have to consider the interleaving where discard()
+                        // is just
+                        // beyond setting discarded to true but has not yet kicked off the cleanup
+                        // by setting
+                        // buffersState to null. So whichever place gets to that first does the
+                        // cleanup.
+                        buffersState.getAndSet(null)?.let {
+                            it.cleanup()
+                            renderThreadExecutor.shutdown()
+                        }
+                        return@drawAsync
+                    }
                     SurfaceControlCompat.Transaction()
                         .setAndShow(active, renderResult.hardwareBuffer, renderResult.fence)
                         .addTransactionCommittedListener(
@@ -437,7 +442,7 @@ internal class CanvasInProgressStrokesRenderHelperV33<
         }
 
         private fun createDebugName(bufferNumber: Int) =
-            "$bufferNumber-${CanvasInProgressStrokesRenderHelperV33::class.java.simpleName}"
+            "$bufferNumber-CanvasInProgressStrokesRenderHelperV33"
 
         private fun createRenderNode(name: String): RenderNode =
             RenderNode(name).apply {
@@ -506,6 +511,18 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                 bounds.rendererTransform?.let { setBufferTransform(it) }
             }
 
+        fun assertOnRenderThread() {
+            check(renderThreadExecutor.onThread()) {
+                "Should be running on render thread, but actually running on ${Thread.currentThread()}."
+            }
+        }
+
+        @UiThread
+        fun executeOnRenderThread(runnable: Runnable) {
+            assertOnUiThread()
+            renderThreadExecutor.execute(runnable)
+        }
+
         /* Dispatches a draw request to the render thread. */
         @UiThread
         fun requestDraw() {
@@ -535,9 +552,6 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             renderThreadState.frontBufferCanvas = frontBufferCanvas
             callback.onDraw()
             renderThreadState.frontBufferCanvas = null
-
-            // Clear the client-defined masked area.
-            maskPath?.let { frontBufferCanvas.drawPath(it, maskPaint) }
 
             callback.onDrawComplete()
             // Check that the save/restore count is balanced, if we haven't bailed out of the draw
@@ -672,9 +686,21 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                 checkNotNull(renderThreadState.drawingTo).frontBufferRenderNode
             val frontBufferCanvas = checkNotNull(renderThreadState.frontBufferCanvas)
             val offScreenRenderNode = checkNotNull(renderThreadState.drawingTo).offScreenRenderNode
+            val offScreenCanvas = checkNotNull(renderThreadState.offScreenCanvas)
+
+            // Clear the masked area in the offscreen frame buffer rather than the front buffer to
+            // avoid
+            // scanline racing artifacts where content "behind" the mask is temporarily visible. If
+            // the
+            // masked area was cleared in the front buffer, then these artifacts can happen if the
+            // front
+            // buffer was read out to the display after the stroke content was drawn but before the
+            // masked
+            // area was cleared.
+            maskPath?.let { offScreenCanvas.drawPath(it, maskPaint) }
 
             // Previously saved in `prepareToDrawInModifiedRegion`.
-            checkNotNull(renderThreadState.offScreenCanvas).restore()
+            offScreenCanvas.restore()
 
             offScreenRenderNode.endRecording()
             check(offScreenRenderNode.hasDisplayList())
@@ -759,7 +785,17 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                     inactive = state.active,
                     inactiveIsReady = false,
                 )
-            buffersState.checkAndSet(state, newState)
+            // The buffers state should not change between where it is retrieved above and here.
+            // Exactly
+            // one handoff gets triggered here and further handoffs are blocked until the inactive
+            // buffer
+            // is ready again, so this can't be interrupted by the callback posted by
+            // onInactiveBufferHidden. And it can't be interrupted by a discard() call, as that's
+            // also on
+            // the UI thread.
+            check(buffersState.getAndSet(newState) == state) {
+                "Buffers state should not change during a handoff on the UI thread."
+            }
             mainView.invalidate()
             callback.onStrokeCohortHandoffToHwui(cohort)
             callback.onStrokeCohortHandoffToHwuiComplete()
@@ -809,7 +845,22 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                                             inactive = state.inactive,
                                             inactiveIsReady = true,
                                         )
-                                    buffersState.checkAndSet(state, newState)
+                                    // Theres a very narrow window where there could be an
+                                    // interleaving of:
+                                    // * discarded.get() above
+                                    // * discarded.getAndSet(true) in discard()
+                                    // * buffersState.getAndSet(null) in discard()
+                                    // * buffersState.compareAndSet below
+                                    // So if the state is not as expected, double-check
+                                    // discarded.get() and
+                                    // only throw if that's not the case.
+                                    check(
+                                        buffersState.compareAndSet(state, newState) ||
+                                            discarded.get()
+                                    ) {
+                                        "Buffers state should not change during a handoff on the render thread " +
+                                            "unless the view is discarded."
+                                    }
                                     callback.resumeStrokeCohortHandoffs()
                                     countDownAfterHandoffsResumedTestLatch?.countDown()
                                 }
@@ -824,6 +875,11 @@ internal class CanvasInProgressStrokesRenderHelperV33<
             assertOnUiThread()
             if (discarded.getAndSet(true)) return
             val state = buffersState.getAndSet(null) ?: return
+            // Don't call state.cleanup() right away, as its layers should be hidden first. And
+            // don't shut
+            // down renderThreadExecutor until the state is cleaned up, otherwise the callback that
+            // cleans
+            // up the state won't be able to run.
             SurfaceControlCompat.Transaction()
                 .unsetAndHide(state.active)
                 .unsetAndHide(state.inactive)
@@ -831,9 +887,9 @@ internal class CanvasInProgressStrokesRenderHelperV33<
                     renderThreadExecutor,
                     object : SurfaceControlCompat.TransactionCommittedListener {
                         override fun onTransactionCommitted() {
-                            state.active.cleanup()
-                            state.inactive.cleanup()
+                            state.cleanup()
                             mainView.postInvalidate()
+                            renderThreadExecutor.shutdown()
                         }
                     },
                 )
@@ -863,7 +919,7 @@ internal class CanvasInProgressStrokesRenderHelperV33<
      * [Bounds] continue to be the same, and discarded when the [Bounds] change.
      */
     @VisibleForTesting
-    internal data class Bounds(
+    internal class Bounds(
         /** The width of [mainView]. */
         val mainViewWidth: Int,
         /** The height of [mainView]. */
@@ -975,6 +1031,11 @@ internal class CanvasInProgressStrokesRenderHelperV33<
         init {
             check(active != inactive)
         }
+
+        fun cleanup() {
+            active.cleanup()
+            inactive.cleanup()
+        }
     }
 
     /**
@@ -982,6 +1043,10 @@ internal class CanvasInProgressStrokesRenderHelperV33<
      * to implement and fake.
      */
     interface ScheduledExecutor : Executor {
+        val isShutdown: Boolean
+
+        fun shutdown()
+
         fun onThread(): Boolean
 
         fun executeDelayed(command: Runnable, delayTime: Long, delayTimeUnit: TimeUnit)
@@ -990,20 +1055,31 @@ internal class CanvasInProgressStrokesRenderHelperV33<
     private class ScheduledExecutorImpl(private val thread: Thread, private val handler: Handler) :
         ScheduledExecutor {
 
+        private var stopped = AtomicBoolean(false)
+
+        override val isShutdown
+            get() = stopped.get()
+
+        override fun shutdown() {
+            // This should only be called for the render thread executor, which needs to be cleaned
+            // up
+            // with the view.
+            check(thread != Looper.getMainLooper().thread)
+            stopped.getAndSet(true)
+            // Quitting the looper will also cause the thread to exit.
+            handler.looper.quitSafely()
+        }
+
         override fun onThread() = Thread.currentThread() == thread
 
         override fun execute(command: Runnable) {
-            check(thread.isAlive)
-            if (!handler.post(command)) {
-                throw RejectedExecutionException("$handler is shutting down")
-            }
+            // If the thread is already shut down, we drop the command.
+            handler.post(command)
         }
 
         override fun executeDelayed(command: Runnable, delayTime: Long, delayTimeUnit: TimeUnit) {
-            check(thread.isAlive)
-            if (!handler.postDelayed(command, delayTimeUnit.toMillis(delayTime))) {
-                throw RejectedExecutionException("$handler is shutting down")
-            }
+            // If the thread is already shut down, we drop the command.
+            handler.postDelayed(command, delayTimeUnit.toMillis(delayTime))
         }
     }
 

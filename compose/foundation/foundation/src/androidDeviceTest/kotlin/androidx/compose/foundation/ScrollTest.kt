@@ -113,7 +113,6 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -142,7 +141,7 @@ class ScrollTest(private val config: Config) {
             )
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val scrollerTag = "ScrollerTest"
 
@@ -1329,6 +1328,23 @@ class ScrollTest(private val config: Config) {
             assertNotNull(state.scrollIndicatorState)
             assertThat(state.scrollIndicatorState?.scrollOffset)
                 .isEqualTo(initialScroll + scrollAmount)
+            assertThat(state.scrollIndicatorState?.contentSize).isEqualTo(contentSize)
+            assertThat(state.scrollIndicatorState?.viewportSize).isEqualTo(scrollerSize)
+        }
+    }
+
+    @Test
+    fun scrollIndicatorState_reverseLayout() {
+        val initialScroll = 0
+        val state = ScrollState(initialScroll)
+        val contentSize = defaultCellSize * colors.size
+        val scrollerSize = contentSize - 10
+
+        composeScroller(scrollState = state, mainAxisSize = scrollerSize, isReversed = true)
+
+        rule.runOnIdle {
+            assertNotNull(state.scrollIndicatorState)
+            assertThat(state.scrollIndicatorState?.scrollOffset).isEqualTo(10)
             assertThat(state.scrollIndicatorState?.contentSize).isEqualTo(contentSize)
             assertThat(state.scrollIndicatorState?.viewportSize).isEqualTo(scrollerSize)
         }

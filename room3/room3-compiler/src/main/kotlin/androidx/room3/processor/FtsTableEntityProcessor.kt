@@ -27,6 +27,7 @@ import androidx.room3.FtsOptions.TOKENIZER_UNICODE61
 import androidx.room3.compiler.processing.XAnnotation
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
+import androidx.room3.ext.hasAnnotationOnPropertyOrField
 import androidx.room3.parser.FtsVersion
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.processor.EntityProcessor.Companion.extractForeignKeys
@@ -93,6 +94,12 @@ internal constructor(
         val tableName: String
         if (entityAnnotation != null) {
             tableName = extractTableName(element, entityAnnotation)
+            val withoutRowId = entityAnnotation["withoutRowId"]?.asBoolean() ?: false
+            context.checker.check(
+                !withoutRowId,
+                element,
+                ProcessorErrors.FTS_ENTITY_CANNOT_USE_WITHOUT_ROWID,
+            )
             context.checker.check(
                 extractIndices(entityAnnotation, tableName).isEmpty(),
                 element,
@@ -279,17 +286,23 @@ internal constructor(
                         declaredIn = pkProperty.element.enclosingElement,
                         properties = Properties(pkProperty),
                         autoGenerateId = true,
+                        algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT,
                     )
                 }
             } ?: emptyList()
 
         val keysFromPrimaryKeyAnnotations =
             properties.mapNotNull { property ->
-                if (property.element.hasAnnotation(androidx.room3.PrimaryKey::class)) {
+                if (
+                    property.element.hasAnnotationOnPropertyOrField(
+                        androidx.room3.PrimaryKey::class
+                    )
+                ) {
                     PrimaryKey(
                         declaredIn = property.element.enclosingElement,
                         properties = Properties(property),
                         autoGenerateId = true,
+                        algorithm = androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT,
                     )
                 } else {
                     null
@@ -301,7 +314,7 @@ internal constructor(
                 .firstOrNull { it.columnName == "rowid" }
                 ?.let {
                     context.checker.check(
-                        it.element.hasAnnotation(androidx.room3.PrimaryKey::class),
+                        it.element.hasAnnotationOnPropertyOrField(androidx.room3.PrimaryKey::class),
                         it.element,
                         ProcessorErrors.MISSING_PRIMARY_KEYS_ANNOTATION_IN_ROW_ID,
                     )

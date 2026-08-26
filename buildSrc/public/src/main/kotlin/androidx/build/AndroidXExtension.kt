@@ -319,11 +319,8 @@ abstract class AndroidXExtension(
     }
 
     fun shouldPublishSbom(): Provider<Boolean> {
-        return type.zip(project.provider { isIsolatedProjectsEnabled() }) { type, isolated ->
-            if (isolated) return@zip false
-            // IDE plugins are used by and ship inside Studio
-            type.publish.shouldPublish() || type == SoftwareType.IDE_PLUGIN
-        }
+        // IDE plugins are used by and ship inside Studio
+        return type.map { type -> type.publish.shouldPublish() || type == SoftwareType.IDE_PLUGIN }
     }
 
     var doNotDocumentReason: String? = null
@@ -346,9 +343,6 @@ abstract class AndroidXExtension(
 
     var bypassCoordinateValidation = false
 
-    /** Whether the project has not yet been migrated to use JSpecify annotations. */
-    var optOutJSpecify = false
-
     val additionalDeviceTestApkKeys = mutableListOf<String>()
 
     val additionalDeviceTestTags: MutableList<String> by lazy {
@@ -358,6 +352,7 @@ abstract class AndroidXExtension(
                 project.path.startsWith(":privacysandbox:ads:") ->
                     mutableListOf("privacysandbox", "privacysandbox_ads")
                 project.path.startsWith(":wear:watchface") -> mutableListOf("wear_optin")
+                project.path.startsWith(":xr:") -> mutableListOf("xr_optin")
                 else -> mutableListOf()
             }
         if (deviceTests.enableAlsoRunningOnPhysicalDevices) {
@@ -447,6 +442,9 @@ abstract class AndroidXExtension(
     fun enableRobolectric() {
         configureRobolectric(project)
     }
+
+    val usePlatformSpecificCacheForJvmTests: Property<Boolean> =
+        project.objects.property<Boolean>().convention(false)
 
     /** Sets the minimum supported version of Gradle for this Gradle plugin */
     fun setMinimumGradleVersion(version: String) {

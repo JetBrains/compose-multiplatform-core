@@ -19,7 +19,6 @@ package androidx.pdf.testapp
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.os.ext.SdkExtensions
 import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
@@ -34,17 +33,14 @@ import androidx.pdf.testapp.databinding.MainActivityBinding
 import androidx.pdf.testapp.databinding.ScenarioButtonsBinding
 import androidx.pdf.testapp.ui.XmlStyledPdfFragment
 import androidx.pdf.testapp.ui.scenarios.PageObjectPdfFragment
-import androidx.pdf.testapp.ui.scenarios.SinglePdfFragment
-import androidx.pdf.testapp.ui.scenarios.TabsViewPdfFragment
 import androidx.pdf.testapp.ui.v2.TabbedPdfViewerFragment
 import androidx.pdf.testapp.ui.v2.compose.PdfComposeFragment
+import androidx.pdf.testapp.util.isAnnotationsFeatureAvailable
 import com.google.android.material.button.MaterialButton
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var singlePdfButton: MaterialButton
-    private lateinit var tabsViewButton: MaterialButton
     private lateinit var pdfFragmentV2Button: MaterialButton
     private lateinit var tabsViewV2Button: MaterialButton
     private lateinit var editableFragmentButton: MaterialButton
@@ -54,9 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var composePdfButton: MaterialButton
     private lateinit var fragmentContainer: FrameLayout
 
-    private val isAnnotationsSupported: Boolean by lazy {
-        SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 18
-    }
+    private val isAnnotationsSupported: Boolean by lazy { isAnnotationsFeatureAvailable() }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,8 +61,6 @@ class MainActivity : AppCompatActivity() {
 
         val scenarioButtons = ScenarioButtonsBinding.bind(mainActivity.root)
 
-        singlePdfButton = scenarioButtons.singlePdf
-        tabsViewButton = scenarioButtons.tabView
         pdfFragmentV2Button = scenarioButtons.pdfFragmentV2
         tabsViewV2Button = scenarioButtons.tabViewV2
         editableFragmentButton = scenarioButtons.editablePdfFragment
@@ -87,8 +79,6 @@ class MainActivity : AppCompatActivity() {
             editableFragmentButton.visibility = View.GONE
         }
 
-        singlePdfButton.setOnClickListener { loadFragment(SinglePdfFragment()) }
-        tabsViewButton.setOnClickListener { loadFragment(TabsViewPdfFragment()) }
         pageObjectPdfButton.setOnClickListener { loadFragment(PageObjectPdfFragment()) }
         pdfFragmentV2Button.setOnClickListener {
             launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.BASIC_FRAGMENT)
@@ -171,8 +161,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showButtons() {
-        singlePdfButton.visibility = View.VISIBLE
-        tabsViewButton.visibility = View.VISIBLE
         tabsViewV2Button.visibility = View.VISIBLE
         pdfFragmentV2Button.visibility = View.VISIBLE
         styledPdfFragmentButton.visibility = View.VISIBLE
@@ -182,8 +170,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideButtons() {
-        singlePdfButton.visibility = View.GONE
-        tabsViewButton.visibility = View.GONE
         tabsViewV2Button.visibility = View.GONE
         pdfFragmentV2Button.visibility = View.GONE
         editableFragmentButton.visibility = View.GONE

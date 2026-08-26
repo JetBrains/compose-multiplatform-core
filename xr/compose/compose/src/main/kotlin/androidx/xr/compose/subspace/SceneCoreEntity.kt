@@ -22,6 +22,7 @@ import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.remember
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.layout.AdaptableCoreEntity
 import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
@@ -35,10 +36,10 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEn
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.scene
 import kotlin.math.max
 
 /**
@@ -56,6 +57,7 @@ import kotlin.math.max
  *   rendered entity size. This adapter implementation will likely be different for every entity and
  *   some SceneCore entities may not require sizing at all (this may be null).
  * @param content the children of this [Entity].
+ * @sample androidx.xr.compose.samples.SceneCoreEntitySample
  * @see SceneCoreEntitySizeAdapter for more information on how compose sizes SceneCore entities.
  */
 @Composable
@@ -68,12 +70,15 @@ public fun <T : Entity> SceneCoreEntity(
     content: @Composable @SubspaceComposable () -> Unit = {},
 ) {
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
+    val session = checkNotNull(LocalSession.current) { "Session must be initialized" }
     val entity = remember(factory)
 
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = {
             ComposeSubspaceNode.Constructor().apply {
-                SetCoreEntity(AdaptableCoreEntity(entity, sizeAdapter))
+                SetCoreEntity(
+                    AdaptableCoreEntity(session.scene.virtualPixelDensity, entity, sizeAdapter)
+                )
             }
         },
         update = {
@@ -104,8 +109,9 @@ public fun <T : Entity> SceneCoreEntity(
  * the size of the entity, or (3) remove the adapter from the [SceneCoreEntity] as without an
  * adapter compose will not try to control the size of this entity.
  *
- * Note that many SceneCore entities accept sizes in meter units instead of pixels. The [Meter] type
- * may be used to convert from pixels to meters.
+ * Note that many SceneCore entities accept sizes in meter units instead of pixels.
+ * [androidx.xr.scenecore.Scene.virtualPixelDensity] can be used to convert between pixels and
+ * meters.
  *
  * @sample androidx.xr.compose.samples.SceneCoreEntitySizeAdapterSample
  */
@@ -120,56 +126,6 @@ public interface SceneCoreEntitySizeAdapter<T : Entity> {
      */
     public fun currentSize(entity: T): IntVolumeSize? = null
 }
-
-/**
- * The sizing strategy used by [SceneCoreEntity] to control and read the size of an entity.
- *
- * The developer should use [onLayoutSizeChanged] to apply compose layout size changes to the
- * entity. Compose will not inherently affect the size of the [Entity].
- *
- * If the developer uses [onLayoutSizeChanged] to change the size of the entity, but [intrinsicSize]
- * is not provided, then the intrinsic size of the entity will be ignored and the layout size as
- * determined solely by compose will be used to size the entity. If the [SceneCoreEntity] has no
- * children or size modifiers then compose doesn't know how to size this node and it will be size 0,
- * causing it not to render at all. In such a case, please do one of the following: (1) provide
- * [intrinsicSize] so compose can infer the size from the entity, (2) add a sizing modifier to
- * control the size of the entity, or (3) remove the adapter from the [SceneCoreEntity] as without
- * an adapter compose will not try to control the size of this entity.
- *
- * Note that many SceneCore entities accept sizes in meter units instead of pixels. The [Meter] type
- * may be used to convert from pixels to meters.
- *
- * ```kotlin
- * Meter.fromPixel(px, density).toM()
- * ```
- *
- * Deprecated constructor function to maintain backwards compatibility after changing
- * SceneCoreEntitySizeAdapter from a class to an interface.
- *
- * @param onLayoutSizeChanged a callback that is invoked with the final layout size of the
- *   composable in pixels.
- * @param intrinsicSize a getter method that returns the current [IntVolumeSize] in pixels of the
- *   entity. This isn't as critical for compose as [onLayoutSizeChanged]; however, this can help to
- *   inform compose of the intrinsic size of the entity.
- */
-@Deprecated(
-    message =
-        "SceneCoreEntitySizeAdapter is now an interface and intrinsicSize has been renamed to currentSize.",
-    level = DeprecationLevel.WARNING,
-)
-public fun <T : Entity> SceneCoreEntitySizeAdapter(
-    onLayoutSizeChanged: T.(IntVolumeSize) -> Unit,
-    intrinsicSize: (T.() -> IntVolumeSize)? = null,
-): SceneCoreEntitySizeAdapter<T> =
-    object : SceneCoreEntitySizeAdapter<T> {
-        override fun onLayoutSizeChanged(entity: T, size: IntVolumeSize) {
-            entity.onLayoutSizeChanged(size)
-        }
-
-        override fun currentSize(entity: T): IntVolumeSize? {
-            return intrinsicSize?.invoke(entity)
-        }
-    }
 
 private class SceneCoreEntityMeasurePolicy(private val originalSize: IntVolumeSize?) :
     SubspaceMeasurePolicy {
@@ -195,9 +151,9 @@ private class SceneCoreEntityMeasurePolicy(private val originalSize: IntVolumeSi
             placeables[index] = placeable
             size =
                 IntVolumeSize(
-                    width = max(size.width, placeable.measuredWidth),
-                    height = max(size.height, placeable.measuredHeight),
-                    depth = max(size.depth, placeable.measuredDepth),
+                    width = max(size.width, placeable.width),
+                    height = max(size.height, placeable.height),
+                    depth = max(size.depth, placeable.depth),
                 )
         }
         val finalSize = size.coerceIn(constraints)

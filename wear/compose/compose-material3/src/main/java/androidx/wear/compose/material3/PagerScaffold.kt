@@ -61,6 +61,11 @@ import kotlin.math.absoluteValue
  * Example of using [AppScaffold] and [HorizontalPagerScaffold]:
  *
  * @sample androidx.wear.compose.material3.samples.HorizontalPagerScaffoldSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_HorizontalPagerScaffoldSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param pagerState The state of the pager controlling the page content.
  * @param modifier The modifier to be applied to the scaffold.
  * @param pageIndicator A composable function that defines the page indicator to be displayed. By
@@ -107,10 +112,19 @@ public fun HorizontalPagerScaffold(
  *
  * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_VerticalPagerScaffoldSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of using [AppScaffold] and [VerticalPagerScaffold] with low snap sensitivity, for screens
  * where gross motor control is limited:
  *
  * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldWithLowSensitivitySample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_VerticalPagerScaffoldWithLowSensitivitySample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param pagerState The state of the pager controlling the page content.
  * @param modifier The modifier to be applied to the scaffold.
  * @param pageIndicator A composable function that defines the page indicator to be displayed. By
@@ -238,6 +252,10 @@ public object PagerScaffoldDefaults {
      * where quick scrolling is desired.
      *
      * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_VerticalPagerScaffoldSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
      */
     public val HighSnapPositionalThreshold: Float = 0.35f
 
@@ -250,10 +268,18 @@ public object PagerScaffoldDefaults {
      *
      * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldWithLowSensitivitySample
      *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_VerticalPagerScaffoldWithLowSensitivitySample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * Example of a [androidx.compose.foundation.pager.HorizontalPager] with a small number of pages
      * and low sensitivity:
      *
      * @sample androidx.wear.compose.material3.samples.HorizontalPagerScaffoldWithLowSensitivitySample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_HorizontalPagerScaffoldWithLowSensitivitySample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
      */
     public val LowSnapPositionalThreshold: Float = 0.1f
 
@@ -267,10 +293,19 @@ public object PagerScaffoldDefaults {
      *
      * @sample androidx.wear.compose.material3.samples.HorizontalPagerScaffoldSample
      *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_HorizontalPagerScaffoldSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * Example of using [androidx.compose.foundation.pager.VerticalPager] and
      * [snapWithSpringFlingBehavior]:
      *
      * @sample androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
+     *
+     * <video
+     * src=https://developer.android.com/wear/images/design/WearComposeM3_VerticalPagerScaffoldSample_CompositeImage.mp4
+     * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+     *
      * @param state The [PagerState] that controls the [androidx.compose.foundation.pager.Pager] to
      *   which this FlingBehavior will be applied to.
      */
@@ -307,16 +342,26 @@ private fun PagerScaffoldImpl(
 
     // Update the timeText & scrollInfoProvider if there is a change and the screen is already
     // present
-    scaffoldState.screenContent.updateIfNeeded(key, timeText = null, scrollInfoProvider)
+    scaffoldState.screenContent.updateIfNeeded(
+        key,
+        timeText = null,
+        scrollInfoProvider,
+        statusBarMode = StatusBarMode.Inherit,
+    )
 
     DisposableEffect(key) { onDispose { scaffoldState.screenContent.removeScreen(key) } }
 
     scaffoldState.screenContent.UpdateIdlingDetectorIfNeeded()
 
     val screenIsActive = LocalScreenIsActive.current
-    LaunchedEffect(screenIsActive) {
+    LaunchedEffect(screenIsActive, scaffoldState) {
         if (screenIsActive) {
-            scaffoldState.screenContent.addScreen(key, timeText = null, scrollInfoProvider)
+            scaffoldState.screenContent.addScreen(
+                key,
+                timeText = null,
+                scrollInfoProvider,
+                statusBarMode = StatusBarMode.Inherit,
+            )
         } else {
             scaffoldState.screenContent.removeScreen(key)
         }

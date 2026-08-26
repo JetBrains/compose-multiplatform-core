@@ -34,12 +34,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -83,6 +84,16 @@ fun LazyRowSample() {
         item { Text("Single item") }
 
         itemsIndexed(itemsIndexedList) { index, item -> Text("Item at index $index is $item") }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyListCacheWindowSample() {
+    val itemsList = (0..100).toList()
+
+    LazyColumn(cacheWindow = LazyLayoutCacheWindow(aheadFraction = 0.5f, behindFraction = 0.2f)) {
+        items(itemsList) { item -> Text("Item $item") }
     }
 }
 
@@ -245,6 +256,22 @@ fun LazyListCustomScrollUsingLazyLayoutScrollScopeSample() {
             items(itemsList) {
                 Box(Modifier.padding(2.dp).background(Color.Red).size(45.dp)) {
                     Text(it.toString())
+                }
+            }
+        }
+    }
+}
+
+@Sampled
+@Preview
+@Composable
+fun LazyColumnWithLazyRowsSample() {
+    LazyColumn {
+        items(100) { row ->
+            val color = if (row % 2 == 0) Color.Red else Color.Blue
+            LazyRow(modifier = Modifier.background(color).padding(2.dp)) {
+                items(20) { column ->
+                    Box(Modifier.size(64.dp).padding(2.dp)) { Text("row=$row column=$column") }
                 }
             }
         }

@@ -22,7 +22,8 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
-import androidx.pdf.annotation.models.HighlightAnnotation
+import android.os.Build
+import androidx.pdf.annotation.content.HighlightAnnotation
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -68,7 +69,9 @@ class HighlightAnnotationDrawerTest {
 
             val paint = shadowCanvas.getDrawnRect(i).paint
             assertThat(paint.color).isEqualTo(color)
-            assertThat(paint.blendMode).isEqualTo(BlendMode.MULTIPLY)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                assertThat(paint.blendMode).isEqualTo(BlendMode.MULTIPLY)
+            }
             assertThat(paint.style).isEqualTo(Paint.Style.FILL)
         }
     }

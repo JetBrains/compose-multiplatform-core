@@ -26,11 +26,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,6 +39,7 @@ import androidx.core.view.ViewCompat;
 import androidx.recyclerview.test.R;
 import androidx.recyclerview.test.RecyclerViewTestActivity;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 
@@ -124,9 +123,9 @@ public class FocusSearchNavigationTest {
                 is(mLayoutDir));
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // maxSdkVersion = 36 -> b/537525864
     @Test
     public void focusSearchForward() throws Throwable {
-        assumeFalse("Test fails on cuttlefish b/460512080", Build.MODEL.contains("Cuttlefish"));
         setup(20);
         requestFocus(mBefore);
         assertThat(mBefore, hasFocus());
@@ -147,8 +146,9 @@ public class FocusSearchNavigationTest {
         assertThat(focused.getParent(), CoreMatchers.<ViewParent>sameInstance(mRecyclerView));
     }
 
+    @SdkSuppress(maxSdkVersion = 25)
     @Test
-    public void focusSearchBackwards() throws Throwable {
+    public void focusSearchBackwards_oldBehavior() throws Throwable {
         setup(20);
         requestFocus(mAfter);
         assertThat(mAfter, hasFocus());
@@ -161,6 +161,29 @@ public class FocusSearchNavigationTest {
         assertThat(lastViewHolder, notNullValue());
 
         while(i >= 0) {
+            focusSearchAndGive(focused, View.FOCUS_BACKWARD);
+            RecyclerView.ViewHolder viewHolder = mRecyclerView.findViewHolderForAdapterPosition(i);
+            assertThat("vh at " + i, viewHolder, hasFocus());
+            focused = viewHolder.itemView;
+            i--;
+        }
+        focusSearchAndGive(focused, View.FOCUS_BACKWARD);
+        assertThat(mBefore, hasFocus());
+        focusSearchAndGive(mBefore, View.FOCUS_BACKWARD);
+        assertThat(mAfter, hasFocus());
+    }
+
+    // Fix for b/406190006 only works for API 26 and above
+    @SdkSuppress(minSdkVersion = 26, maxSdkVersion = 36) // maxSdkVersion = 36 -> b/537525864
+    @Test
+    public void focusSearchBackwards_fixedBehavior() throws Throwable {
+        setup(20);
+        requestFocus(mAfter);
+        assertThat(mAfter, hasFocus());
+        View focused = mAfter;
+        RecyclerView.ViewHolder lastViewHolder = null;
+        int i = 19;
+        while (i >= 0) {
             focusSearchAndGive(focused, View.FOCUS_BACKWARD);
             RecyclerView.ViewHolder viewHolder = mRecyclerView.findViewHolderForAdapterPosition(i);
             assertThat("vh at " + i, viewHolder, hasFocus());
@@ -190,20 +213,11 @@ public class FocusSearchNavigationTest {
     }
 
     private View focusSearchAndGive(final View view, final int focusDir) throws Throwable {
-        View next = focusSearch(view, focusDir);
-        if (next != null && next != view) {
-            requestFocus(next);
-            return next;
-        }
-        return null;
-    }
-
-    private View focusSearch(final View view, final int focusDir) throws Throwable {
         final View[] result = new View[1];
-        mActivityRule.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                result[0] = view.focusSearch(focusDir);
+        mActivityRule.runOnUiThread(() -> {
+            result[0] = view.focusSearch(focusDir);
+            if (result[0] != null && result[0] != view) {
+                result[0].requestFocus(focusDir);
             }
         });
         waitForIdleSync();
@@ -216,12 +230,7 @@ public class FocusSearchNavigationTest {
     }
 
     private void requestFocus(final View view) throws Throwable {
-        mActivityRule.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                view.requestFocus();
-            }
-        });
+        mActivityRule.runOnUiThread(view::requestFocus);
         waitForIdleSync();
     }
 

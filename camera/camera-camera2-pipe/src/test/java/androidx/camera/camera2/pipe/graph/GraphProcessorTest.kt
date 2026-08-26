@@ -43,9 +43,11 @@ import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Compani
 import androidx.camera.camera2.pipe.testing.FakeGraphConfigs
 import androidx.camera.camera2.pipe.testing.FakeRequestListener
 import androidx.camera.camera2.pipe.testing.FakeThreads
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -83,6 +85,9 @@ internal class GraphProcessorTest {
     private val requestListener2 = FakeRequestListener()
     private val request2 = Request(listOf(StreamId(0)), listeners = listOf(requestListener2))
 
+    private val cameraMetadata =
+        FakeCameraMetadata.fromTemplate(template = HighEndDeviceTemplate, cameraId = CameraId("0"))
+
     private val graphProcessor =
         GraphProcessorImpl(
             fakeThreads,
@@ -92,9 +97,7 @@ internal class GraphProcessorTest {
             arrayListOf(globalListener),
             Camera2Quirks(
                 metadataProvider =
-                    FakeCamera2MetadataProvider(
-                        mapOf(CameraId("0") to FakeCameraMetadata(cameraId = CameraId("0")))
-                    ),
+                    FakeCamera2MetadataProvider(mapOf(cameraMetadata.camera to cameraMetadata)),
                 strictMode = StrictMode(false),
             ),
         )
@@ -357,7 +360,7 @@ internal class GraphProcessorTest {
             graphProcessor.submit(request2)
 
             val abortEvent1 =
-                withTimeoutOrNull(timeMillis = 50L) { requestListener1.onAbortedFlow.firstOrNull() }
+                withTimeoutOrNull(50.milliseconds) { requestListener1.onAbortedFlow.firstOrNull() }
             val abortEvent2 = requestListener2.onAbortedFlow.first()
             assertThat(abortEvent1).isNull()
             assertThat(abortEvent2.request).isSameInstanceAs(request2)

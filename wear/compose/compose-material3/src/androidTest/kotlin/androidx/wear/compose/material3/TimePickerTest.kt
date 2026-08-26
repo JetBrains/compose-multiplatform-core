@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsDisplayed
@@ -55,7 +57,6 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoField
 import java.util.Locale
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +65,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(TestParameterInjector::class)
 class TimePickerTest {
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun timePicker_supports_testtag() {
@@ -623,8 +624,8 @@ class TimePickerTest {
     ) {
         val initialTime = LocalTime.of(10, 20, 30)
         val newLocale =
-            if (isAmPmFirst) Locale("ko", "Kr") // "a h:mm"
-            else Locale("us", "US")
+            if (isAmPmFirst) Locale.forLanguageTag("ko-Kr") // "a h:mm"
+            else Locale.forLanguageTag("us-US")
         val timePickerType = TimePickerType.HoursMinutesAmPm12H
 
         rule.setContentWithTheme {
@@ -674,8 +675,8 @@ class TimePickerTest {
     ) {
         val initialTime = LocalTime.of(10, 20, 30)
         val newLocale =
-            if (isAmPmFirst) Locale("ko", "Kr") // "a h:mm"
-            else Locale("us", "US")
+            if (isAmPmFirst) Locale.forLanguageTag("ko-Kr") // "a h:mm"
+            else Locale.forLanguageTag("us-US")
         val timePickerType = TimePickerType.HoursMinutesAmPm12H
 
         rule.setContentWithTheme {
@@ -783,6 +784,37 @@ class TimePickerTest {
         }
 
         rule.confirmButton().assertIsFocused()
+    }
+
+    @Test
+    fun timePicker_period_selected_clears_semantics() {
+        val initialTime = LocalTime.of(10, 23) // AM
+        val locale = Locale.getDefault()
+        val amString = DateTimeFormatter.ofPattern("a", locale).format(LocalTime.of(0, 0))
+
+        rule.setContentWithTheme {
+            TimePicker(
+                onTimePicked = {},
+                initialTime = initialTime,
+                timePickerType = TimePickerType.HoursMinutesAmPm12H,
+            )
+        }
+
+        // Verify hour heading exists initially
+        val resources = InstrumentationRegistry.getInstrumentation().context.resources
+        val hourHeadingString = resources.getString(Strings.TimePickerHour.value)
+        rule.onNodeWithText(hourHeadingString).assertExists()
+        rule.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertExists()
+
+        // Click on AM/PM picker (which is AM) to select it
+        rule.onNodeWithContentDescription(amString).performClick()
+        rule.waitForIdle()
+
+        // Verify hour heading no longer exists
+        rule.onNodeWithText(hourHeadingString).assertDoesNotExist()
+
+        // Verify no heading exists
+        rule.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertDoesNotExist()
     }
 
     private fun SemanticsNodeInteractionsProvider.onNodeWithContentDescription(

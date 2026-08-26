@@ -65,14 +65,24 @@
         android:label="Hello AR Plane"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
     <activity
+        android:name=".helloar.HelloArAugmentedImageActivity"
+        android:exported="true"
+        android:label="Hello AR Augmented Image"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <activity
+        android:name=".helloar.HelloArQrCodeActivity"
+        android:exported="true"
+        android:label="Hello AR Qr Code"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <activity
         android:name=".persistentanchors.PersistentAnchorsActivity"
         android:exported="true"
         android:label="Persistent Anchors"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
     <activity
-        android:name=".depthmaps.DepthMapActivity"
+        android:name=".depth.DepthActivity"
         android:exported="true"
-        android:label="Depth Maps"
+        android:label="Depth"
         android:theme="@style/Theme.AppCompat.NoActionBar" />
     <activity
         android:name=".eyetracking.EyeTrackingActivity"
@@ -85,5 +95,18 @@
         android:label="Geospatial"
         android:theme="@style/Theme.AppCompat.NoActionBar" >
     </activity>
+    <activity
+        android:name=".capabilities.CapabilitiesActivity"
+        android:exported="true"
+        android:label="Capabilities"
+        android:theme="@style/Theme.AppCompat.NoActionBar" >
+    </activity>
+    <activity
+        android:name=".nativedata.NativeDataActivity"
+        android:exported="true"
+        android:label="Native Data"
+        android:process=":nativeTest"
+        android:theme="@style/Theme.AppCompat.NoActionBar" />
+    <meta-data android:name="com.google.android.ar.API_KEY" android:value="AIzaSyAHi4Mj26DDlgztTGPe_3hiSiXBxkgM4ww"/>
   </application>
 </manifest>

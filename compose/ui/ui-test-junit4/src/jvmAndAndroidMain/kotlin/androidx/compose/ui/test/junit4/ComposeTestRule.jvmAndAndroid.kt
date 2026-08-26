@@ -55,22 +55,22 @@ import org.junit.rules.TestRule
  * UI's setters (like [ComponentActivity.setContent][androidx.compose.ui.platform .setContent]).
  */
 @JvmDefaultWithCompatibility
-interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
+public interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     /**
      * Current device screen's density. Note that it is technically possible for a Compose hierarchy
      * to define a different density for a certain subtree.
      */
-    val density: Density
+    public val density: Density
 
     /** Clock that drives frames and recompositions in compose tests. */
-    val mainClock: MainTestClock
+    public val mainClock: MainTestClock
 
     /**
      * Runs the given [action] on the UI thread.
      *
      * This method is blocking until the action is complete.
      */
-    fun <T> runOnUiThread(action: () -> T): T
+    public fun <T> runOnUiThread(action: () -> T): T
 
     /**
      * Executes the given [action] in the same way as [runOnUiThread] but [waits][waitForIdle] until
@@ -79,7 +79,35 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      *
      * This method blocks until the action is complete.
      */
-    fun <T> runOnIdle(action: () -> T): T
+    public fun <T> runOnIdle(action: () -> T): T
+
+    /**
+     * Executes the given [block] with implicit synchronization suppressed. [block] should contain
+     * read-only assertions, and any actions that mutate state should be performed outside of this
+     * block.
+     *
+     * To ensure stability of the UI tree while running assertions in this block, make sure to call
+     * this on the UI thread, such as with [runOnUiThread]. If you run this block off the UI thread,
+     * state might change in the background and be reflected in the UI while the block is executing.
+     * This exposes your test to race conditions, flakiness, and may cause you to read stale or
+     * inconsistent state.
+     *
+     * Standard node queries (like `onNodeWithTag` or `fetchSemanticsNode`) normally trigger a
+     * `waitForIdle()` under the hood. In animation tests that manually step through frames in a
+     * loop, these implicit waits impose a severe performance penalty.
+     *
+     * This API acts as a performance optimization for motion tests that assert UI state across
+     * multiple frames. It is primarily designed for use when mainClock.autoAdvance is set to false
+     * and the UI is known to be in a stable state at the specific frame being tested (for example,
+     * by calling waitForIdle() before this block).
+     *
+     * @sample androidx.compose.ui.test.junit4.samples.runWithoutImplicitWaitSample
+     * @see runOnUiThread
+     * @see hasPendingWork
+     */
+    public fun <T> runWithoutImplicitWait(block: () -> T): T {
+        throw NotImplementedError("runWithoutImplicitWait is not implemented.")
+    }
 
     /**
      * Waits for the UI to become idle. Quiescence is reached when there are no more pending changes
@@ -95,7 +123,7 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      * execute when auto advancement is disabled. For example, Android's measure, layout and draw
      * passes can still happen if required by the View system.
      */
-    fun waitForIdle()
+    public fun waitForIdle()
 
     /**
      * Suspends until the UI is idle. Quiescence is reached when there are no more pending changes
@@ -111,7 +139,7 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      * execute when auto advancement is disabled. For example, Android's measure, layout and draw
      * passes can still happen if required by the View system.
      */
-    suspend fun awaitIdle()
+    public suspend fun awaitIdle()
 
     /**
      * Blocks until the given [condition] is satisfied.
@@ -135,7 +163,7 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      * @throws androidx.compose.ui.test.ComposeTimeoutException If the condition is not satisfied
      *   after [timeoutMillis] (in wall clock time).
      */
-    fun waitUntil(timeoutMillis: Long = 1_000, condition: () -> Boolean)
+    public fun waitUntil(timeoutMillis: Long = 1_000, condition: () -> Boolean)
 
     /**
      * Blocks until the given [condition] is satisfied.
@@ -161,7 +189,7 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      * @throws androidx.compose.ui.test.ComposeTimeoutException If the condition is not satisfied
      *   after [timeoutMillis] (in wall clock time).
      */
-    fun waitUntil(
+    public fun waitUntil(
         conditionDescription: String,
         timeoutMillis: Long = 1_000,
         condition: () -> Boolean,
@@ -181,8 +209,16 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      *   the [matcher] is not [count] after [timeoutMillis] (in wall clock time).
      * @see ComposeTestRule.waitUntil
      */
+    @Deprecated(
+        message = "Replaced with same function, but with useUnmergedTree",
+        level = DeprecationLevel.HIDDEN,
+    )
     @ExperimentalTestApi
-    fun waitUntilNodeCount(matcher: SemanticsMatcher, count: Int, timeoutMillis: Long = 1_000L)
+    public fun waitUntilNodeCount(
+        matcher: SemanticsMatcher,
+        count: Int,
+        timeoutMillis: Long = 1_000L,
+    )
 
     /**
      * Blocks until at least one node matches the given [matcher].
@@ -194,8 +230,12 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      *   [matcher] after [timeoutMillis] (in wall clock time).
      * @see ComposeTestRule.waitUntil
      */
+    @Deprecated(
+        message = "Replaced with same function, but with useUnmergedTree",
+        level = DeprecationLevel.HIDDEN,
+    )
     @ExperimentalTestApi
-    fun waitUntilAtLeastOneExists(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
+    public fun waitUntilAtLeastOneExists(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
 
     /**
      * Blocks until exactly one node matches the given [matcher].
@@ -207,8 +247,12 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      *   the given [matcher] after [timeoutMillis] (in wall clock time).
      * @see ComposeTestRule.waitUntil
      */
+    @Deprecated(
+        message = "Replaced with same function, but with useUnmergedTree",
+        level = DeprecationLevel.HIDDEN,
+    )
     @ExperimentalTestApi
-    fun waitUntilExactlyOneExists(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
+    public fun waitUntilExactlyOneExists(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
 
     /**
      * Blocks until no nodes match the given [matcher].
@@ -220,14 +264,129 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
      *   [matcher] after [timeoutMillis] (in wall clock time).
      * @see ComposeTestRule.waitUntil
      */
+    @Deprecated(
+        message = "Replaced with same function, but with useUnmergedTree",
+        level = DeprecationLevel.HIDDEN,
+    )
     @ExperimentalTestApi
-    fun waitUntilDoesNotExist(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
+    public fun waitUntilDoesNotExist(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
+
+    /**
+     * Blocks until the number of nodes matching the given [matcher] is equal to the given [count].
+     *
+     * @param matcher The matcher that will be used to filter nodes.
+     * @param count The number of nodes that are expected to be matched.
+     * @param timeoutMillis The time after which this method throws an exception if the number of
+     *   nodes that match the [matcher] is not [count]. This observes wall clock time, not frame
+     *   time.
+     * @param useUnmergedTree If true, searches the unmerged semantics tree instead of the merged
+     *   semantics tree.
+     * @throws androidx.compose.ui.test.ComposeTimeoutException If the number of nodes that match
+     *   the [matcher] is not [count] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
+     */
+    public fun waitUntilNodeCount(
+        matcher: SemanticsMatcher,
+        count: Int,
+        timeoutMillis: Long = 1_000L,
+        useUnmergedTree: Boolean = false,
+    ) {
+        waitUntil(timeoutMillis) {
+            onAllNodes(matcher, useUnmergedTree)
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .size == count
+        }
+    }
+
+    /**
+     * Blocks until at least one node matches the given [matcher].
+     *
+     * @param matcher The matcher that will be used to filter nodes.
+     * @param timeoutMillis The time after which this method throws an exception if no nodes match
+     *   the given [matcher]. This observes wall clock time, not frame time.
+     * @param useUnmergedTree If true, searches the unmerged semantics tree instead of the merged
+     *   semantics tree.
+     * @throws androidx.compose.ui.test.ComposeTimeoutException If no nodes match the given
+     *   [matcher] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
+     */
+    public fun waitUntilAtLeastOneExists(
+        matcher: SemanticsMatcher,
+        timeoutMillis: Long = 1_000L,
+        useUnmergedTree: Boolean = false,
+    ) {
+        waitUntil(timeoutMillis) {
+            onAllNodes(matcher, useUnmergedTree)
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
+        }
+    }
+
+    /**
+     * Blocks until exactly one node matches the given [matcher].
+     *
+     * @param matcher The matcher that will be used to filter nodes.
+     * @param timeoutMillis The time after which this method throws an exception if exactly one node
+     *   does not match the given [matcher]. This observes wall clock time, not frame time.
+     * @param useUnmergedTree If true, searches the unmerged semantics tree instead of the merged
+     *   semantics tree.
+     * @throws androidx.compose.ui.test.ComposeTimeoutException If exactly one node does not match
+     *   the given [matcher] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
+     */
+    public fun waitUntilExactlyOneExists(
+        matcher: SemanticsMatcher,
+        timeoutMillis: Long = 1_000L,
+        useUnmergedTree: Boolean = false,
+    ) {
+        waitUntilNodeCount(matcher, 1, timeoutMillis, useUnmergedTree)
+    }
+
+    /**
+     * Blocks until no nodes match the given [matcher].
+     *
+     * @param matcher The matcher that will be used to filter nodes.
+     * @param timeoutMillis The time after which this method throws an exception if any nodes match
+     *   the given [matcher]. This observes wall clock time, not frame time.
+     * @param useUnmergedTree If true, searches the unmerged semantics tree instead of the merged
+     *   semantics tree.
+     * @throws androidx.compose.ui.test.ComposeTimeoutException If any nodes match the given
+     *   [matcher] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
+     */
+    public fun waitUntilDoesNotExist(
+        matcher: SemanticsMatcher,
+        timeoutMillis: Long = 1_000L,
+        useUnmergedTree: Boolean = false,
+    ) {
+        waitUntilNodeCount(matcher, 0, timeoutMillis, useUnmergedTree)
+    }
 
     /** Registers an [IdlingResource] in this test. */
-    fun registerIdlingResource(idlingResource: IdlingResource)
+    public fun registerIdlingResource(idlingResource: IdlingResource)
 
     /** Unregisters an [IdlingResource] from this test. */
-    fun unregisterIdlingResource(idlingResource: IdlingResource)
+    public fun unregisterIdlingResource(idlingResource: IdlingResource)
+
+    /**
+     * Returns whether the Compose UI has any pending work.
+     *
+     * This performs a passive check of the [mainClock], snapshot state, and recomposer to determine
+     * if there is any pending work. Unlike [waitForIdle], calling this method does not advance the
+     * clock or drain the main message queue.
+     *
+     * This is particularly useful when `autoAdvance` is disabled, allowing you to inspect the state
+     * of the UI while an animation or other work is still active. If `autoAdvance` is `true`, the
+     * testing framework continuously processes pending work. In that scenario, calling this method
+     * acts as a momentary snapshot and will generally return `false`. It may briefly return `true`
+     * if work is queued but the framework hasn't auto-advanced yet, making the result fleeting and
+     * unreliable for driving test logic.
+     *
+     * @sample androidx.compose.ui.test.junit4.samples.hasPendingWorkSample
+     */
+    public fun hasPendingWork(): Boolean {
+        throw NotImplementedError("hasPendingWork() is not implemented.")
+    }
 }
 
 /**
@@ -243,7 +402,7 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
  * [ComponentActivity .setContent][androidx.activity.compose.setContent]).
  */
 @JvmDefaultWithCompatibility
-interface ComposeContentTestRule : ComposeTestRule {
+public interface ComposeContentTestRule : ComposeTestRule {
     /**
      * Sets the given composable as a content of the current screen.
      *
@@ -252,7 +411,7 @@ interface ComposeContentTestRule : ComposeTestRule {
      *
      * @throws IllegalStateException if called more than once per test.
      */
-    fun setContent(composable: @Composable @UiComposable () -> Unit)
+    public fun setContent(composable: @Composable @UiComposable () -> Unit)
 }
 
 /**
@@ -272,7 +431,7 @@ interface ComposeContentTestRule : ComposeTestRule {
     level = DeprecationLevel.HIDDEN,
     message = "Replaced with same function, but with effectContext",
 )
-expect fun createComposeRule(): ComposeContentTestRule
+public expect fun createComposeRule(): ComposeContentTestRule
 
 /**
  * Factory method to provide an implementation of [ComposeContentTestRule].
@@ -302,6 +461,6 @@ expect fun createComposeRule(): ComposeContentTestRule
     level = DeprecationLevel.WARNING,
 )
 @Suppress("KmpExperimentalMismatch") // only experimental in jvmStubs
-expect fun createComposeRule(
+public expect fun createComposeRule(
     effectContext: CoroutineContext = EmptyCoroutineContext
 ): ComposeContentTestRule

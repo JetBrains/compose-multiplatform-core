@@ -334,4 +334,32 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     public int getBackForwardCacheMaxPagesInCache() {
         return 0;
     }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public void setBackForwardCacheKeepForwardEntries(boolean keepForwardEntries) {
+    }
+
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public boolean getBackForwardCacheKeepForwardEntries() {
+        return true;
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setDownloadFaviconsEnabled(WebSettings, boolean)}
+     */
+    @Override
+    public void setDownloadFaviconsEnabled(boolean shouldDownload) {
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getDownloadFaviconsEnabled(WebSettings)}
+     */
+    @Override
+    public boolean getDownloadFaviconsEnabled() {
+        return true;
+    }
 }

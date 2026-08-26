@@ -30,9 +30,13 @@ import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfAnnotation
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.annotation.content.InsertDraftEditOperation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PdfAnnotation
+import androidx.pdf.annotation.content.PdfObject
+import androidx.pdf.annotation.content.RemoveDraftEditOperation
+import androidx.pdf.annotation.content.UpdateDraftEditOperation
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -53,13 +57,8 @@ import kotlinx.coroutines.withTimeout
 
 @OpenForTesting
 internal open class FakeEditablePdfDocument(
-    internal val pages: List<Point?> = listOf(),
+    internal val pages: List<Point?> = listOf(Point(600, 800)),
     override val formType: Int = PDF_FORM_TYPE_NONE,
-    @Deprecated(
-        "Deprecated, Use linearizationStatus instead",
-        replaceWith = ReplaceWith("linearizationStatus"),
-    )
-    override val isLinearized: Boolean = false,
     override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
@@ -68,6 +67,7 @@ internal open class FakeEditablePdfDocument(
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
     initialEdits: List<PdfAnnotation> = emptyList(),
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
+    private val unsupportedFeatures: Set<PdfFeature> = emptySet(),
 ) : EditablePdfDocument {
     override val pageCount: Int = pages.size
 
@@ -83,6 +83,12 @@ internal open class FakeEditablePdfDocument(
         get() = _formWidgetRequests.toSet()
 
     internal var editHistory: MutableList<FormEditInfo> = mutableListOf()
+
+    /**
+     * If set, [applyEdits] will throw a [PdfEditApplyException] when it reaches this operation
+     * index.
+     */
+    internal var failAtIndex: Int? = null
 
     // Store annotations keyed by Page Number
     private val edits = mutableMapOf<Int, MutableList<KeyedPdfAnnotation>>()
@@ -113,6 +119,7 @@ internal open class FakeEditablePdfDocument(
         } ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         return null
     }
@@ -131,10 +138,18 @@ internal open class FakeEditablePdfDocument(
         return edits[pageNum] ?: emptyList()
     }
 
+    override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
+        return emptyList()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
         val results = mutableListOf<String>()
 
-        for (operation in editsDraft.operations) {
+        editsDraft.operations.forEachIndexed { index, operation ->
+            if (index == failAtIndex) {
+                throw PdfEditApplyException(index, results, Exception("Simulated failure"))
+            }
             when (operation) {
                 is InsertDraftEditOperation -> {
                     val id = UUID.randomUUID().toString()
@@ -145,18 +160,16 @@ internal open class FakeEditablePdfDocument(
                 is UpdateDraftEditOperation -> {
                     val pageNum = operation.annotation.pageNum
                     val pageEdits = edits[pageNum]
-                    val index = pageEdits?.indexOfFirst { it.key == operation.id } ?: -1
-                    if (index != -1) {
-                        pageEdits!![index] = KeyedPdfAnnotation(operation.id, operation.annotation)
+                    val indexInPage = pageEdits?.indexOfFirst { it.key == operation.id } ?: -1
+                    if (indexInPage != -1) {
+                        pageEdits!![indexInPage] =
+                            KeyedPdfAnnotation(operation.id, operation.annotation)
                         results.add(operation.id)
-                    } else {
-                        // Simulate failure or ignore if not found in fake
-                        // Real service might throw, but fake can be lenient or throw
                     }
                 }
                 is RemoveDraftEditOperation -> {
                     val pageEdits = edits[operation.pageNum]
-                    val removed = pageEdits?.removeIf { it.key == operation.id } ?: false
+                    val removed = pageEdits?.removeAll { it.key == operation.id } ?: false
                     if (removed) {
                         results.add(operation.id)
                     }
@@ -182,19 +195,28 @@ internal open class FakeEditablePdfDocument(
         pageNumber: Int,
         start: PointF,
         stop: PointF,
-    ): PageSelection {
-        val selectedTextContents =
-            if (textContents.isEmpty()) {
-                listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test"))
-            } else {
-                listOf(textContents[pageNumber])
-            }
+    ): PageSelection? {
+        if (textContents.isEmpty() || pageNumber >= textContents.size) {
+            return null
+        }
         return PageSelection(
             pageNumber,
             SelectionBoundary(0),
             SelectionBoundary(0),
-            selectedTextContents,
+            listOf(textContents[pageNumber]),
         )
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection? {
+        if (textContents.isEmpty() || pageNumber >= textContents.size) {
+            return null
+        }
+        return PageSelection(pageNumber, start, stop, listOf(textContents[pageNumber]))
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
@@ -286,17 +308,22 @@ internal open class FakeEditablePdfDocument(
         override fun close() {}
     }
 
-    override fun addOnEditsAppliedListener(
+    @OptIn(ExperimentalPdfApi::class)
+    override fun addOnEditAppliedListener(
         executor: Executor,
-        listener: EditablePdfDocument.OnEditsAppliedListener,
+        listener: PdfDocument.OnEditAppliedListener,
     ) {
         TODO("Not yet implemented")
     }
 
-    override fun removeOnEditsAppliedListener(
-        listener: EditablePdfDocument.OnEditsAppliedListener
-    ) {
+    @OptIn(ExperimentalPdfApi::class)
+    override fun removeOnEditAppliedListener(listener: PdfDocument.OnEditAppliedListener) {
         TODO("Not yet implemented")
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override suspend fun addPageObject(pageNum: Int, newObject: PdfObject): String {
+        return "fake_embedded_object_${System.currentTimeMillis()}"
     }
 
     override fun addOnPdfContentInvalidatedListener(
@@ -307,6 +334,10 @@ internal open class FakeEditablePdfDocument(
     override fun removeOnPdfContentInvalidatedListener(
         listener: PdfDocument.OnPdfContentInvalidatedListener
     ) {}
+
+    override fun isFeatureSupported(feature: PdfFeature): Boolean {
+        return !unsupportedFeatures.contains(feature)
+    }
 
     override fun createWriteHandle(): PdfWriteHandle {
         return object : PdfWriteHandle {

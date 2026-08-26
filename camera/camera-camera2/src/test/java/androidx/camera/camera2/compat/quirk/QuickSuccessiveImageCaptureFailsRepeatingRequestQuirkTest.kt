@@ -23,8 +23,8 @@ import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_3
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
-import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.core.impl.Quirks
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -62,28 +62,27 @@ class QuickSuccessiveImageCaptureFailsRepeatingRequestQuirkTest(
     }
 
     private fun getCameraQuirks(cameraHwLevel: Int): Quirks {
-        val characteristicsMap =
-            mutableMapOf<CameraCharacteristics.Key<*>, Any?>()
-                .apply { this[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL] = cameraHwLevel }
-                .toMap()
-
         val cameraCharacteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         val shadowCharacteristics =
             Shadow.extract<ShadowCameraCharacteristics>(cameraCharacteristics)
-        characteristicsMap.forEach { entry -> shadowCharacteristics.set(entry.key, entry.value) }
 
-        val cameraMetadata = FakeCameraMetadata(characteristicsMap)
-
-        return CameraQuirks(
-                cameraMetadata,
-                StreamConfigurationMapCompat(
-                    StreamConfigurationMapBuilder.newBuilder().build(),
-                    OutputSizesCorrector(
-                        cameraMetadata,
-                        StreamConfigurationMapBuilder.newBuilder().build(),
-                    ),
-                ),
+        val characteristicsMap =
+            mutableMapOf<CameraCharacteristics.Key<*>, Any?>(
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL to cameraHwLevel
             )
+        shadowCharacteristics.set(
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL,
+            cameraHwLevel,
+        )
+
+        val cameraMetadata =
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                characteristicsOverrides = characteristicsMap,
+            )
+
+        val map = StreamConfigurationMapBuilder.newBuilder().build()
+        return CameraQuirks(cameraMetadata, StreamConfigurationMapCompat(map, cameraMetadata))
             .quirks
     }
 

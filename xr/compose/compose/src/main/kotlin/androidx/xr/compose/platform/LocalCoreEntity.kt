@@ -43,7 +43,7 @@ internal val LocalOpaqueEntity: ProvidableCompositionLocal<OpaqueEntity?> = comp
 
 internal val LocalCoreMainPanelEntity: CompositionLocal<CoreMainPanelEntity?> =
     compositionLocalWithComputedDefaultOf {
-        LocalComposeXrOwners.currentValue?.coreMainPanelEntity
+        LocalComposeXrOwners.currentValue.coreMainPanelEntity
             ?: LocalSession.currentValue?.let { CoreMainPanelEntity(it) }
     }
 
@@ -51,9 +51,8 @@ internal val LocalCoreMainPanelEntity: CompositionLocal<CoreMainPanelEntity?> =
  * Finds the nearest [CoreEntity] in the view hierarchy.
  *
  * This function traverses up the view hierarchy starting from the receiver [View], checking each
- * ancestor for a [CoreEntity] stored in its tag with the ID [R.id.compose_xr_local_view_entity].
- * The traversal uses [getParentOrViewTreeDisjointParent] to correctly navigate across different
- * view trees.
+ * ancestor for a [CoreEntity] stored in its tag. The traversal uses
+ * [getParentOrViewTreeDisjointParent] to correctly navigate across different view trees.
  *
  * @return The first [CoreEntity] found in an ancestor's tag, or `null` if the root of the view
  *   hierarchy is reached without finding one.
@@ -74,9 +73,9 @@ internal fun View.findViewEntity(): CoreEntity? {
 /**
  * Determines the parent [CoreEntity] for spatial composable positioning.
  * 1. When the element is placed inside a Subspace composition the parent is pulled from
- *    [LocalOpaqueEntity].
+ *    [LocalOpaqueEntity]
  * 2. If the element is part of a standard 2D Compose composition that has a registered view-backed
- *    entity in [LocalViewEntity]
+ *    entity in [LocalView]
  * 3. If the element is not inside an active Subspace or a 2D view with a backing entity, it
  *    defaults to the application's root entity, typically the [LocalCoreMainPanelEntity]. This
  *    occurs when the element is the root spatial content, ex: `setContent { Orbiter(...) }`.

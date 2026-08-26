@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.internal
 
 import android.hardware.HardwareBuffer
 import android.os.Build
+import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame
@@ -232,19 +233,29 @@ internal class FrameDistributor(
 
         // Create a Frame, and offer it
         val frame = FrameImpl(frameState)
-        frameStartedListener.onFrameStarted(frame)
 
         // If there is an explicit capture request associated with this request, pass it to the
         // FrameCapture.
         if (!requestMetadata.repeating) {
             val frameCapture = frameCaptureQueue.remove(requestMetadata.request)
+            // Acquire a Frame for this capture with usage type as external. Pass on the same frame
+            // to the frameStartedListener.
+            // FrameBuffers(s) are one of the consumer of this listener, but sending an external use
+            // Frame to them is ok since FrameBuffer(s) will get this Frame as a FrameReference.
+            // If they want to use this Frame, they will need to fork a new Frame out. The forked
+            // Frame can be marked for internal use.
             if (frameCapture != null) {
+                frame.isExternal = true
+                frameStartedListener.onFrameStarted(frame)
                 frameCapture.completeWith(frame)
                 return
             }
         }
+        frameStartedListener.onFrameStarted(frame)
 
-        // Close the frame. This releases the reference we are holding.
+        // Close the frame. This releases the reference we are holding. This is ok since the
+        // FrameBuffer(s) are supposed to acquire a Frame from the reference and for explicit
+        // captures we use a forked reference.
         frame.close()
     }
 
@@ -341,7 +352,8 @@ internal class FrameDistributor(
     @Suppress("NOTHING_TO_INLINE")
     companion object {
         @JvmStatic
-        private fun selectTimestampMatcher(
+        @VisibleForTesting
+        internal fun selectTimestampMatcher(
             cameraStreamId: StreamId,
             cameraStreamConfig: CameraStream.Config,
             imageSourceConfig: ImageSourceConfig,

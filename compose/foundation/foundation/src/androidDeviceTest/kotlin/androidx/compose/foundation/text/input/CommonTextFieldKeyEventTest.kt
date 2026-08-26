@@ -27,7 +27,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.NativeClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -42,7 +41,6 @@ import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 
 // This file should be moved to commonTest once the infrastructure for running common tests on
 // device is set up. Currently, it fails presubmit when placed in commonTest because that attempts
@@ -423,7 +421,7 @@ class CommonTextFieldKeyEventTest {
         initClipboardText: String? = null,
         sequence: suspend SequenceScope.() -> Unit,
     ) {
-        runComposeUiTest(StandardTestDispatcher()) {
+        runComposeUiTest {
             val tag = "TextFieldTestTag"
             val state = TextFieldState(initText, initSelection)
             val clipboard = FakeClipboard(initClipboardText)
@@ -531,9 +529,4 @@ internal class FakeClipboard(private var clipEntry: ClipEntry?) : Clipboard {
         setClipEntryCalled++
         this@FakeClipboard.clipEntry = clipEntry
     }
-
-    override val nativeClipboard: NativeClipboard
-        get() {
-            throw UnsupportedOperationException("Native Clipboard isn't needed in tests")
-        }
 }

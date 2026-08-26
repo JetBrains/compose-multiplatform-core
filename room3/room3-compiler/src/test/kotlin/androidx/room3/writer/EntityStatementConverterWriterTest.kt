@@ -41,7 +41,7 @@ class EntityStatementConverterWriterTest : BaseEntityParserTest() {
             import kotlin.Suppress
 
             @Generated(value = ["androidx.room3.RoomProcessor"])
-            @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
+            @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "OPT_IN_USAGE_ERROR", "OPT_IN_USAGE", "MemberExtensionConflict", "CAN_BE_VAL"])
             public class MyContainerClass {
             """
                 .trimIndent()
@@ -118,7 +118,8 @@ class EntityStatementConverterWriterTest : BaseEntityParserTest() {
         singleEntity(input) { entity, invocation ->
             val className = XClassName.get("foo.bar", "MyContainerClass")
             val writer =
-                object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true)) {
+                object :
+                    TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true, 500)) {
                     override val packageName = className.packageName
 
                     override fun createTypeSpecBuilder(): XTypeSpec.Builder {

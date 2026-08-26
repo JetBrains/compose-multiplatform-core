@@ -17,17 +17,19 @@
 package androidx.pdf.ink.fragment
 
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.RectF
 import android.net.Uri
+import android.util.SparseArray
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.SavedStateHandle
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.FakeEditablePdfDocument
 import androidx.pdf.SandboxedPdfLoader
+import androidx.pdf.annotation.PdfViewportState
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.PdfAnnotation
+import androidx.pdf.annotation.content.StampAnnotation
 import androidx.pdf.annotation.models.AnnotationsDisplayState
-import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.PdfAnnotation
-import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.coroutines.collectTill
 import androidx.pdf.ink.EditableDocumentViewModel
 import androidx.pdf.ink.model.ApplyEditsState
@@ -36,9 +38,9 @@ import androidx.pdf.ink.state.PdfEditMode
 import androidx.pdf.ink.state.PdfEditMode.Companion.EDITING_JOURNEY_ANNOTATIONS
 import androidx.pdf.ink.state.PdfEditMode.Companion.EDITING_JOURNEY_FORM_FILLING
 import androidx.pdf.ink.util.InkDefaults
-import androidx.pdf.ink.view.tool.Eraser
-import androidx.pdf.ink.view.tool.Highlighter
-import androidx.pdf.ink.view.tool.Pen
+import androidx.pdf.view.annotation.tool.Eraser
+import androidx.pdf.view.annotation.tool.Highlighter
+import androidx.pdf.view.annotation.tool.Pen
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -97,6 +99,11 @@ class EditableDocumentViewModelTest {
     fun statePersistence_restoresEditMode_afterRecreation() = runTest {
         annotationsViewModel.pdfEditMode = PdfEditMode.Enabled()
 
+        // Assert that state persistence only stores primitives to avoid ClassLoader issues
+        assertThat(savedStateHandle.get<Boolean>("isEditModeEnabled")).isTrue()
+        assertThat(savedStateHandle.get<Int>("editModeJourney"))
+            .isEqualTo(EDITING_JOURNEY_ANNOTATIONS)
+
         val newViewModel =
             EditableDocumentViewModel(savedStateHandle, SandboxedPdfLoader(appContext, dispatcher))
 
@@ -107,15 +114,23 @@ class EditableDocumentViewModelTest {
     }
 
     @Test
-    fun editMode_setJourneyFormFilling() = runTest {
-        assertThat(annotationsViewModel.pdfEditMode is PdfEditMode.Disabled).isTrue()
-        annotationsViewModel.pdfEditMode =
-            PdfEditMode.Enabled(journey = EDITING_JOURNEY_ANNOTATIONS)
+    fun statePersistence_restoresEditModeDisabled_afterRecreation() = runTest {
+        // Transition from Enabled to Disabled to trigger the state setter
+        annotationsViewModel.pdfEditMode = PdfEditMode.Enabled()
+        assertThat(savedStateHandle.get<Boolean>("isEditModeEnabled")).isTrue()
 
-        assertThat(annotationsViewModel.pdfEditMode is PdfEditMode.Enabled).isTrue()
-        assertThat(annotationsViewModel.pdfEditModeFlow.first() is PdfEditMode.Enabled).isTrue()
-        assertThat((annotationsViewModel.pdfEditModeFlow.first() as PdfEditMode.Enabled).journey)
-            .isEqualTo(EDITING_JOURNEY_ANNOTATIONS)
+        annotationsViewModel.pdfEditMode = PdfEditMode.Disabled
+
+        // Assert that state persistence only stores primitives to avoid ClassLoader issues
+        assertThat(savedStateHandle.get<Boolean>("isEditModeEnabled")).isFalse()
+        // Journey key should be removed/null when disabled
+        assertThat(savedStateHandle.get<Int>("editModeJourney")).isNull()
+
+        val newViewModel =
+            EditableDocumentViewModel(savedStateHandle, SandboxedPdfLoader(appContext, dispatcher))
+
+        assertThat(newViewModel.pdfEditMode is PdfEditMode.Disabled).isTrue()
+        assertThat(newViewModel.pdfEditModeFlow.first() is PdfEditMode.Disabled).isTrue()
     }
 
     @Test
@@ -373,17 +388,67 @@ class EditableDocumentViewModelTest {
     // --- Display State Tests ---
 
     @Test
-    fun updateTransformationMatrices_updatesFlow() = runTest {
-        val matrixPage0 = Matrix().apply { setScale(1f, 1f) }
-        val matrixPage1 = Matrix().apply { setTranslate(10f, 10f) }
-        val newMatrices = mapOf(0 to matrixPage0, 1 to matrixPage1)
+    fun updateViewportState_updatesFlow() = runTest {
+        val pageBounds =
+            SparseArray<RectF>().apply {
+                put(0, RectF(0f, 0f, 100f, 100f))
+                put(1, RectF(100f, 100f, 200f, 200f))
+            }
+        val viewportState =
+            PdfViewportState(
+                firstVisiblePage = 0,
+                visiblePagesCount = 2,
+                pageBounds = pageBounds,
+                zoom = 1.5f,
+            )
 
-        annotationsViewModel.updateTransformationMatrices(newMatrices)
+        annotationsViewModel.updateViewportState(viewportState)
         val emittedState = annotationsViewModel.annotationsDisplayStateFlow.first()
 
-        assertThat(emittedState.transformationMatrices.size).isEqualTo(2)
-        assertThat(emittedState.transformationMatrices[0]).isEqualTo(matrixPage0)
-        assertThat(emittedState.transformationMatrices[1]).isEqualTo(matrixPage1)
+        assertThat(emittedState.viewportState).isEqualTo(viewportState)
+    }
+
+    @Test
+    fun updateViewportState_updatesFlow_evenWhenDocumentIsNull() = runTest {
+        annotationsViewModel.resetState()
+        assertThat(annotationsViewModel.editablePdfDocument).isNull()
+
+        val viewportState =
+            PdfViewportState(
+                firstVisiblePage = 1,
+                visiblePagesCount = 1,
+                pageBounds = SparseArray<RectF>().apply { put(1, RectF(0f, 0f, 100f, 100f)) },
+                zoom = 2.0f,
+            )
+
+        annotationsViewModel.updateViewportState(viewportState)
+        val emittedState = annotationsViewModel.annotationsDisplayStateFlow.first()
+
+        assertThat(emittedState.viewportState).isEqualTo(viewportState)
+        assertThat(annotationsViewModel.visiblePageRange).isEqualTo(1..1)
+        // Also check if pageInfoProvider is updated
+        assertThat(annotationsViewModel.pageInfoProvider.getPageInfo(1)).isNotNull()
+    }
+
+    @Test
+    fun maybeInitialiseForDocument_preservesViewportState() = runTest {
+        val viewportState =
+            PdfViewportState(
+                firstVisiblePage = 5,
+                visiblePagesCount = 1,
+                pageBounds = SparseArray<RectF>().apply { put(5, RectF(0f, 0f, 100f, 100f)) },
+                zoom = 3.0f,
+            )
+        annotationsViewModel.updateViewportState(viewportState)
+
+        val newDoc = FakeEditablePdfDocument(uri = Uri.parse("content://test/new.pdf"))
+        annotationsViewModel.maybeInitialiseForDocument(newDoc)
+
+        // Wait for the async initialization in setupManagersAndHandlers
+        testScheduler.advanceUntilIdle()
+
+        val finalState = annotationsViewModel.annotationsDisplayStateFlow.value
+        assertThat(finalState.viewportState).isEqualTo(viewportState)
     }
 
     // --- Interaction State Tests ---
@@ -520,11 +585,47 @@ class EditableDocumentViewModelTest {
             .contains("Document not available")
     }
 
+    @Test
+    fun applyDraftEdits_partialFailure_retriesSuccessfully() = runTest {
+        val a1 = createAnnotation(pageNum = 0, bounds = RectF(0f, 0f, 10f, 10f))
+        val a2 = createAnnotation(pageNum = 0, bounds = RectF(10f, 10f, 20f, 20f))
+        val a3 = createAnnotation(pageNum = 0, bounds = RectF(20f, 20f, 30f, 30f))
+
+        annotationsViewModel.addDraftAnnotation(a1)
+        annotationsViewModel.addDraftAnnotation(a2)
+        annotationsViewModel.addDraftAnnotation(a3)
+
+        // 1. First attempt: Fail at second edit (index 1)
+        fakeDocument.failAtIndex = 1
+        annotationsViewModel.applyDraftEdits()
+        testScheduler.advanceUntilIdle()
+
+        assertThat(annotationsViewModel.applyEditsStatus.value)
+            .isInstanceOf(ApplyEditsState.Failure::class.java)
+        // Verify only first edit was applied to document
+        assertThat(fakeDocument.getAnnotationsForPage(0)).hasSize(1)
+        assertThat(fakeDocument.getAnnotationsForPage(0).first().annotation).isEqualTo(a1)
+
+        // 2. Second attempt: Succeed
+        fakeDocument.failAtIndex = null
+        annotationsViewModel.applyDraftEdits()
+        testScheduler.advanceUntilIdle()
+
+        assertThat(annotationsViewModel.applyEditsStatus.value)
+            .isInstanceOf(ApplyEditsState.Success::class.java)
+        // Verify all 3 edits are now in document, but a1 is not duplicated
+        val finalAnnotations = fakeDocument.getAnnotationsForPage(0)
+        assertThat(finalAnnotations).hasSize(3)
+        val finalAnnos = finalAnnotations.map { it.annotation }
+        assertThat(finalAnnos).containsExactly(a1, a2, a3).inOrder()
+    }
+
     // --- Tool Selection Tests ---
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun setCurrentToolInfo_updatesDrawingMode_whenPenSelected() = runTest {
-        val penTool = Pen(brushSize = 2.0f, color = Color.RED)
+        val penTool = Pen.createForTest(brushSize = 2.0f, color = Color.RED)
         annotationsViewModel.setCurrentToolInfo(penTool)
 
         val drawingMode = annotationsViewModel.drawingMode.first()
@@ -533,9 +634,10 @@ class EditableDocumentViewModelTest {
         assertThat(drawingMode.color).isEqualTo(Color.RED)
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun setCurrentToolInfo_updatesDrawingMode_whenHighlighterSelected() = runTest {
-        val highlighterTool = Highlighter(brushSize = 10.0f, color = Color.YELLOW, emoji = null)
+        val highlighterTool = Highlighter.createForTest(brushSize = 10.0f, color = Color.YELLOW)
         annotationsViewModel.setCurrentToolInfo(highlighterTool)
 
         val drawingMode = annotationsViewModel.drawingMode.first()
@@ -546,6 +648,7 @@ class EditableDocumentViewModelTest {
         assertThat(drawingMode.color).isEqualTo(colorWithHighlighterAlpha)
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun setCurrentToolInfo_updatesDrawingMode_whenEraserSelected() = runTest {
         annotationsViewModel.setCurrentToolInfo(Eraser)
@@ -555,6 +658,7 @@ class EditableDocumentViewModelTest {
 
     // --- Helpers ---
 
+    @OptIn(ExperimentalPdfApi::class)
     fun createAnnotation(
         pageNum: Int = 0,
         bounds: RectF = RectF(0f, 0f, 100f, 100f),

@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.1.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (9.1.0-alpha02)" variant="all" version="9.1.0-alpha02">
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Constructor for class `null` is a flagged API and must be inside a flag check for &quot;com.android.media.flags.enable_suggested_device_api&quot;"
-        errorLine1="                    new MediaRouter2.DeviceSuggestionsUpdatesCallback() {"
-        errorLine2="                    ^">
-        <location
-            file="src/main/java/androidx/mediarouter/media/MediaRoute2Provider.java"/>
-    </issue>
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
 
     <issue
         id="BanThreadSleep"
@@ -47,21 +38,39 @@
     </issue>
 
     <issue
-        id="ImplicitCastClassVerificationFailure"
-        message="This expression has type android.media.MediaRouter2.DeviceSuggestionsUpdatesCallback (guarded by Trunk Stable flag &quot;com.android.media.flags.enable_suggested_device_api&quot;) but it used as type V (added in API level -1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels."
-        errorLine1="            mDeviceSuggestionsUpdatesCallbackMap.put(deviceSuggestionsUpdatesCallback, adapter);"
-        errorLine2="                                                                                       ~~~~~~~">
-        <location
-            file="src/main/java/androidx/mediarouter/media/MediaRoute2Provider.java"/>
-    </issue>
-
-    <issue
         id="UnspecifiedRegisterReceiverFlag"
         message="`mActionReceiver` is missing `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag for unprotected broadcasts registered for androidx.mediarouter.media.actions.ACTION_ITEM_STATUS_CHANGED, androidx.mediarouter.media.actions.ACTION_SESSION_STATUS_CHANGED, androidx.mediarouter.media.actions.ACTION_MESSAGE_RECEIVED"
         errorLine1="            context.registerReceiver(mActionReceiver, actionFilter);"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/mediarouter/media/RemotePlaybackClient.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/mediarouter/media/PlatformMediaRouter1RouteProvider.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                                Build.VERSION.SDK_INT >= 24"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/mediarouter/media/PlatformMediaRouter1RouteProvider.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/mediarouter/media/PlatformMediaRouter1RouteProvider.java"/>
     </issue>
 
 </issues>

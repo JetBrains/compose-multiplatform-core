@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.NodeHolder
+import androidx.xr.scenecore.runtime.NodeHolder
 
 /** Test-only interface for XrExtensions Node. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface FakeNode
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface FakeNode
 
 /** Test-only interface for Impress SubspaceNode. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface FakeSubspaceNode {
     public val nodeHolder: NodeHolder<*>
 }

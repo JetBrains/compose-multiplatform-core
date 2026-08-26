@@ -20,9 +20,7 @@ import android.os.CancellationSignal;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
-import android.webkit.WebView;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntRange;
@@ -56,10 +54,13 @@ public interface Profile {
     String DEFAULT_PROFILE_NAME = "Default";
 
     /**
+     * Returns the name of this Profile.
+     *
      * @return the name of this Profile which was used to create the Profile from
      * ProfileStore create methods.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
@@ -72,10 +73,11 @@ public interface Profile {
      * <p>
      * Can be called from any thread.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
@@ -88,10 +90,11 @@ public interface Profile {
      * <p>
      * Can be called from any thread.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
@@ -104,10 +107,11 @@ public interface Profile {
      * Returns the {@link PrefetchCache} associated with this {@link Profile}.
      * Can be called from any thread.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#PREFETCH_CACHE_V1}
-     *                                       feature is not supported.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#PREFETCH_CACHE_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.PREFETCH_CACHE_V1,
@@ -120,7 +124,7 @@ public interface Profile {
         // Profile (eg, for testing) don't have their build broken by the addition of this
         // method. However, throw a runtime exception if this method is actually called, as
         // that's better than silently no-oping.
-        throw new UnsupportedOperationException("Profile#preconnect is not implemented.");
+        throw new UnsupportedOperationException("Profile#getPrefetchCache is not implemented.");
     }
 
     /**
@@ -128,10 +132,11 @@ public interface Profile {
      * <p>
      * Can be called from any thread.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
@@ -144,10 +149,11 @@ public interface Profile {
      * <p>
      * Can be called from any thread.
      *
-     * @throws IllegalStateException if the profile has been deleted by
-     *                               {@link ProfileStore#deleteProfile(String)}}.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     * @throws IllegalStateException         if the profile has been deleted by
+     *                                       {@link ProfileStore#deleteProfile(String)}}.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
@@ -195,20 +201,26 @@ public interface Profile {
      * @param cancellationSignal will make the best effort to cancel an
      *                           in-flight prefetch request, However cancellation is not
      *                           guaranteed.
-     * @param callbackExecutor   the executor to resolve the callback with.
-     * @param operationCallback  callbacks for reporting result back to application.
-     * @throws IllegalArgumentException if the url or callback is null.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#PROFILE_URL_PREFETCH}
-     *                                       feature is not supported.
+     * @param callbackExecutor   the executor to resolve the callback with. If {@code null},
+     *                           the callback will be executed on the main thread.
+     * @param outcomeReceiver    callbacks for reporting result back to application.
+     * @throws IllegalArgumentException      if the url or callback is null.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#PROFILE_URL_PREFETCH} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     * @deprecated Use
+     * {@link PrefetchCache#prefetchUrlAsync(String, CancellationSignal, Executor, WebViewOutcomeReceiver)} instead.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @AnyThread
     @ExperimentalUrlPrefetch
-    void prefetchUrlAsync(@NonNull String url,
+    @Deprecated
+    void prefetchUrlAsync(
+            @NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull Executor callbackExecutor,
-            @NonNull WebViewOutcomeReceiver<Void, PrefetchException> operationCallback);
+            @Nullable Executor callbackExecutor,
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, PrefetchException> outcomeReceiver);
 
     /**
      * Starts a URL prefetch request.
@@ -240,22 +252,29 @@ public interface Profile {
      * @param cancellationSignal           will make the best effort to cancel an
      *                                     in-flight prefetch request, However cancellation is not
      *                                     guaranteed.
-     * @param callbackExecutor             the executor to resolve the callback with.
+     * @param callbackExecutor             the executor to resolve the callback with. If
+     *                                     {@code null}, the callback will be executed on the
+     *                                     main thread.
      * @param speculativeLoadingParameters parameters to customize the prefetch request.
-     * @param operationCallback            callbacks for reporting result back to application.
-     * @throws IllegalArgumentException if the url or callback is null.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#PROFILE_URL_PREFETCH}
-     *                                       feature is not supported.
+     * @param outcomeReceiver              callbacks for reporting result back to application.
+     * @throws IllegalArgumentException      if the url or callback is null.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#PROFILE_URL_PREFETCH} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     * @deprecated Use
+     * {@link PrefetchCache#prefetchUrlAsync(String, CancellationSignal, Executor, PrefetchParameters, WebViewOutcomeReceiver)} instead.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @AnyThread
     @ExperimentalUrlPrefetch
-    void prefetchUrlAsync(@NonNull String url,
+    @Deprecated
+    void prefetchUrlAsync(
+            @NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull Executor callbackExecutor,
+            @Nullable Executor callbackExecutor,
             @NonNull SpeculativeLoadingParameters speculativeLoadingParameters,
-            @NonNull WebViewOutcomeReceiver<Void, PrefetchException> operationCallback);
+            @NonNull WebViewOutcomeReceiver<@Nullable Void, PrefetchException> outcomeReceiver);
 
 
     /**
@@ -266,15 +285,14 @@ public interface Profile {
      * These configurations will be applied to any prefetch requests initiated by
      * a prerender request. This applies specifically to WebViews that are
      * associated with this Profile.
-     * <p>
      *
      * @param speculativeLoadingConfig the config to set for this profile session.
-     * @deprecated use {@link Profile#setMaxPrerenders(Integer)},
-     * {@link PrefetchCache#setMaxPrefetches(Integer)} and
-     * {@link PrefetchCache#setPrefetchTtlSeconds(Integer)} instead.
+     * @deprecated use {@link Profile#setMaxPrerenders(int)},
+     * {@link PrefetchCache#setMaxPrefetches(int)} and
+     * {@link PrefetchCache#setPrefetchTtlSeconds(int)} instead.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#SPECULATIVE_LOADING_CONFIG}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#SPECULATIVE_LOADING_CONFIG} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING_CONFIG,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -285,29 +303,69 @@ public interface Profile {
             speculativeLoadingConfig);
 
     /**
-     * Sets the max pererenders for the current profile session.
+     * Sets the max prerenders for the current profile session.
      * These configurations will be applied to any prerender requests made after they are set;
      * they will not be applied to in-flight requests.
      * <p>
      * These configurations will be applied to WebViews that are associated with this Profile.
-     * <p>
      *
-     * @param maxPrerenders the prerender value to update. Setting this value {@code null} will
-     *                      use the default value of maximum prerenders.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#SET_MAX_PRERENDERS_V1}
-     *                                       feature is not supported.
+     * @param maxPrerenders the prerender value to update.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#SET_MAX_PRERENDERS_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.SET_MAX_PRERENDERS_V1,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalUrlPrefetch
-    default void setMaxPrerenders(
-            @SuppressWarnings("AutoBoxing") @Nullable @IntRange(from = 1) Integer maxPrerenders) {
+    default void setMaxPrerenders(@IntRange(from = 1) int maxPrerenders) {
         // We provide a default implementation of this method so that embedders extending the
         // Profile (eg, for testing) don't have their build broken by the addition of this
         // method. However, throw a runtime exception if this method is actually called, as
         // that's better than silently no-oping.
         throw new UnsupportedOperationException("Profile#setMaxPrerenders is not implemented.");
+    }
+
+    /**
+     * Returns maximum prerenders for the current profile session.
+     *
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#SET_MAX_PRERENDERS_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     */
+    @RequiresFeature(name = WebViewFeature.SET_MAX_PRERENDERS_V1,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalUrlPrefetch
+    default int getMaxPrerenders() {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#getMaxPrerenders is not implemented.");
+    }
+
+    /**
+     * Resets the max prerenders for the current profile session to system default.
+     * This configuration will be applied to any prerender requests made after they are set;
+     * they will not be applied to in-flight requests.
+     * <p>
+     * This configuration will be applied to WebViews that are associated with this Profile.
+     *
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#SET_MAX_PRERENDERS_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     */
+    @RequiresFeature(name = WebViewFeature.SET_MAX_PRERENDERS_V1,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalUrlPrefetch
+    default void clearMaxPrerenders() {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#clearMaxPrerenders is not implemented.");
     }
 
     /**
@@ -328,106 +386,16 @@ public interface Profile {
      * renderer will be fully started by the time it returns.
      * <p>
      * This can be used to reduce perceived latency when a renderer is needed shortly after.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#WARM_UP_RENDERER_PROCESS}
-     *                                       feature is not supported.
+     *
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#WARM_UP_RENDERER_PROCESS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.WARM_UP_RENDERER_PROCESS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalWarmUpRendererProcess
     void warmUpRendererProcess();
-
-    /**
-     * Denotes that the OriginMatchedHeader API surface is experimental.
-     * It may change without warning.
-     */
-    @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
-    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
-    @interface ExperimentalOriginMatchedHeader {
-    }
-
-    /**
-     * Set a custom header to be applied to HTTP requests to the specified origins.
-     * <p>
-     * It applies to all requests that are initiated after this method is called, including
-     * prefetch requests and requests sent from service workers.
-     * It does <em>not</em> apply the header to WebSocket requests.
-     *
-     * <p>Headers added through this API will be present in the set returned by
-     * {@link WebResourceRequest#getRequestHeaders()} provided in
-     * {@link android.webkit.WebViewClient#shouldInterceptRequest(WebView, WebResourceRequest)}
-     * and {@link android.webkit.ServiceWorkerClient#shouldInterceptRequest(WebResourceRequest)}.
-     * <p>
-     * Calling this method again with the same {@code headerName} parameter will overwrite any
-     * previously set mapping.
-     *
-     * @param headerName  A
-     *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
-     * @param headerValue A
-     *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP value name string</a>
-     * @param originRules a set of origin rules following the same format as
-     *                    {@link WebViewCompat#addWebMessageListener}
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#ORIGIN_MATCHED_HEADERS}
-     *                                       feature is not supported.
-     */
-    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
-    @ExperimentalOriginMatchedHeader
-    void setOriginMatchedHeader(@NonNull String headerName,
-            @NonNull String headerValue, @NonNull Set<String> originRules);
-
-    /**
-     * Returns true if the profile has a value set for the given header name.
-     *
-     * <p>This method is case sensitive.
-     *
-     * @param headerName A
-     *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
-     * @return {@code true} if there is a value mapped for the provided {@code
-     * headerName}, {code false} otherwise.
-     * @see #setOriginMatchedHeader(String, String, Set)
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#ORIGIN_MATCHED_HEADERS}
-     *                                       feature is not supported.
-     */
-    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
-    @ExperimentalOriginMatchedHeader
-    boolean hasOriginMatchedHeader(@NonNull String headerName);
-
-    /**
-     * Removes the specified header from the set of headers attached to requests.
-     * <p>
-     * It is safe to call this method even if {@code headerName} has not previously been set via
-     * {@link #setOriginMatchedHeader(String, String, Set)}
-     *
-     * <p>This method is case sensitive.
-     *
-     * @param headerName Header to remove.
-     * @see #setOriginMatchedHeader(String, String, Set)
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#ORIGIN_MATCHED_HEADERS}
-     *                                       feature is not supported.
-     */
-    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
-    @ExperimentalOriginMatchedHeader
-    void clearOriginMatchedHeader(@NonNull String headerName);
-
-    /**
-     * Remove any currently set headers from being applied to network requests.
-     *
-     * @see #setOriginMatchedHeader(String, String, Set)
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#ORIGIN_MATCHED_HEADERS}
-     *                                       feature is not supported.
-     */
-    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @UiThread
-    @ExperimentalOriginMatchedHeader
-    void clearAllOriginMatchedHeaders();
 
     /**
      * Add a header for outgoing requests that match the given origin rules.
@@ -456,8 +424,9 @@ public interface Profile {
      * This API will use the casing of the first custom header encountered.
      *
      * @param header The header to add.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -475,9 +444,10 @@ public interface Profile {
      *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
      * @return {@code true} if there is a value mapped for the provided {@code
      * headerName}, {code false} otherwise.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      * @see #addCustomHeader(CustomHeader)
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -488,11 +458,11 @@ public interface Profile {
     }
 
     /**
-     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
-     * {@link #setOriginMatchedHeader(String, String, Set)}.
+     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)}.
      *
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -504,14 +474,15 @@ public interface Profile {
     }
 
     /**
-     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
-     * {@link #setOriginMatchedHeader(String, String, Set)} which have the specified {@code name}.
+     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} which have the
+     * specified {@code name}.
      *
      * <p>This method is case insensitive.
      *
      * @param name Name of headers to get. Case sensitive.
-     * @throws UnsupportedOperationException if the {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -523,17 +494,16 @@ public interface Profile {
     }
 
     /**
-     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
-     * {@link #setOriginMatchedHeader(String, String, Set)} which have the specified {@code name}
-     * and {@code value}.
+     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} which have the
+     * specified {@code name} and {@code value}.
      *
      * <p>This method is case insensitive for {@code name} but case-sensitive for {@code value}.
      *
      * @param name  Name of headers to get. Case sensitive.
      * @param value Value of headers to get. Case sensitive.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -549,16 +519,15 @@ public interface Profile {
      * remove all configured headers that match {@code headerName}.
      * <p>
      * It is safe to call this method even if {@code headerName} has not previously been set via
-     * {@link #addCustomHeader(CustomHeader)} or
-     * {@link #setOriginMatchedHeader(String, String, Set)}.
+     * {@link #addCustomHeader(CustomHeader)}.
      *
      * <p>This method is case insensitive.
      *
      * @param headerName Header to remove.
-     * @see #addCustomHeader(CustomHeader)
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -571,18 +540,16 @@ public interface Profile {
      * Removes the specified header from the set of headers attached to requests.
      * <p>
      * It is safe to call this method even if {@code (headerName, headerValue)} has not
-     * previously been set via
-     * {@link #addCustomHeader(CustomHeader)} or
-     * {@link #setOriginMatchedHeader(String, String, Set)}.
+     * previously been set via {@link #addCustomHeader(CustomHeader)}.
      *
      * <p>This method is case insensitive for {@code name} but case-sensitive for {@code value}.
      *
      * @param headerName  Header name to remove.
      * @param headerValue Header value to remove.
-     * @see #addCustomHeader(CustomHeader)
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -594,11 +561,10 @@ public interface Profile {
     /**
      * Remove any currently set headers from being applied to network requests.
      *
-     * @see #addCustomHeader(CustomHeader)
-     * @see #setOriginMatchedHeader(String, String, Set)
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#CUSTOM_REQUEST_HEADERS}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#CUSTOM_REQUEST_HEADERS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     * @see #addCustomHeader(CustomHeader)
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -618,7 +584,7 @@ public interface Profile {
     }
 
     /**
-     * Preconnects to the given origin, this can speed up future loads.
+     * Preconnect to the given origin to speed up future network requests.
      * <p>
      * Opens a connection to the provided origin, performing DNS lookup and TCP/TLS handshakes. This
      * can speed up future loads to the origin which could use the open connection. The connection
@@ -640,8 +606,8 @@ public interface Profile {
      *
      * @param url A url containing the origin to open a connection to.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#PRECONNECT}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#PRECONNECT} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.PRECONNECT,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -653,6 +619,30 @@ public interface Profile {
         // method. However, throw a runtime exception if this method is actually called, as
         // that's better than silently no-oping.
         throw new UnsupportedOperationException("Profile#preconnect is not implemented.");
+    }
+
+    /**
+     * Enqueue a network preconnect to occur once WebView has started up.
+     * <p>
+     * This method acts like {@link #preconnect(String)} but doesn't trigger WebView start up.
+     * Instead, it enqueues that action for when WebView start up occurs.
+     * If the WebView has already started, this method acts exactly like {@link #preconnect(String)}
+     * <p>
+     * @param url A url containing the origin to open a connection to.
+     * @throws UnsupportedOperationException if the
+     * {@link WebViewFeature#ENQUEUE_PRECONNECT} feature is not supported.
+     * @see Profile#preconnect(String)
+     */
+    @RequiresFeature(name = WebViewFeature.ENQUEUE_PRECONNECT,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalPreconnect
+    default void enqueuePreconnect(@NonNull String url) {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#enqueuePreconnect is not implemented.");
     }
 
     /**
@@ -670,7 +660,7 @@ public interface Profile {
      * connect to them.
      * <p>
      * By default, when connecting to a new server, WebView attempts both a HTTP3 (QUIC) and HTTP2
-     * connection, choosing the one that responds faster. This can leads to cases where HTTP2
+     * connection, choosing the one that responds faster. This can lead to cases where HTTP2
      * responds faster, even though HTTP3 is supported and would result in a faster overall load.
      * Calling this API tells WebView to prefer HTTP3 connections for these origins.
      * <p>
@@ -684,13 +674,16 @@ public interface Profile {
      *
      * @param urls A set of urls representing origins that support the QUIC protocol.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#ADD_QUIC_HINTS_V1}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#ADD_QUIC_HINTS_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     * @deprecated This method is being renamed to {@link #preferQuicFor(Set)}, use that instead.
+     *     There is no difference in functionality.
      */
     @RequiresFeature(name = WebViewFeature.ADD_QUIC_HINTS_V1,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalAddQuicHints
+    @Deprecated(forRemoval = true)
     default void addQuicHints(@NonNull Set<@NonNull String> urls) {
         // We provide a default implementation of this method so that embedders extending the
         // Profile (eg, for testing) don't have their build broken by the addition of this
@@ -698,4 +691,108 @@ public interface Profile {
         // that's better than silently no-oping.
         throw new UnsupportedOperationException("Profile#addQuicHints is not implemented.");
     }
+
+    /**
+     * Advises that the given origins support the QUIC protocol and that WebView should use that to
+     * connect to them.
+     * <p>
+     * By default, when connecting to a new server, WebView attempts both a HTTP3 (QUIC) and HTTP2
+     * connection, choosing the one that responds faster. This can lead to cases where HTTP2
+     * responds faster, even though HTTP3 is supported and would result in a faster overall load.
+     * Calling this API tells WebView to prefer HTTP3 connections for these origins.
+     * <p>
+     * Note: preferQuicFor operates on origins, but for convenience full URLs can be provided. A
+     * full URL (such as {@code https://www.example.com/index.html}) will be treated as its origin
+     * ({@code https://www.example.com}).
+     * <p>
+     * This method can be called multiple times and the result is additive - QUIC hints are applied
+     * to all of the origins provided to all calls. Providing the same origin multiple times has no
+     * further effect.
+     *
+     * @param urls A set of urls representing origins that support the QUIC protocol.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#ADD_QUIC_HINTS_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     */
+    @RequiresFeature(name = WebViewFeature.ADD_QUIC_HINTS_V1,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalAddQuicHints
+    default void preferQuicFor(@NonNull Set<@NonNull String> urls) {
+        // We provide a default implementation of this method so that embedders extending the
+        // Profile (eg, for testing) don't have their build broken by the addition of this
+        // method. However, throw a runtime exception if this method is actually called, as
+        // that's better than silently no-oping.
+        throw new UnsupportedOperationException("Profile#preferQuicFor is not implemented.");
+    }
+
+    /**
+     * Returns the {@link HttpCache} associated with this {@link Profile}.
+     *
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#HTTP_CACHE_MANAGER} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     */
+    @RequiresFeature(name = WebViewFeature.HTTP_CACHE_MANAGER,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    default @NonNull HttpCache getHttpCache() {
+        throw new UnsupportedOperationException("Profile#getHttpCache is not implemented.");
+    }
+
+    /**
+     * Get the current allowlist of origins, with explicitly written ports, for cross-origin
+     * isolated APIs.
+     * <p>
+     * If setting the origin rule {@code https://example.com}, this method will return the same
+     * origin rule as {@code https://example.com:443}).
+     *
+     * @return An empty set if no allowlist has been set.
+     *
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#CROSS_ORIGIN_ISOLATED_ALLOWLIST} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     */
+    @RequiresFeature(name = WebViewFeature.CROSS_ORIGIN_ISOLATED_ALLOWLIST,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    default @NonNull Set<String> getCrossOriginIsolatedAllowlist() {
+        throw new UnsupportedOperationException("Profile#getCrossOriginIsolatedAllowlist is "
+                + "not implemented.");
+    }
+
+    /**
+     * Set the list of origin patterns where <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/cross-origin-isolated">Cross Origin Isolated APIs</a> should be accessible.
+     * <p>
+     * This API allows you to set an allowlist of origins where potentially risky APIs will be
+     * enabled, provided the loaded page has the correct <a href="https://developer.chrome.com/blog/document-isolation-policy">{@code Document-Isolation-Policy}</a>
+     * response header.
+     * <p>
+     * WebView does not enable this feature by default because WebView does not support renderer
+     * process isolation. By calling this API, you acknowledge that it is OK to relax this security
+     * guarantee and allow pages to use cross-origin-isolated APIs, for example <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer">SharedArrayBuffer</a>
+     * even if they are running in a shared renderer process. For this reason, you should only use
+     * this API with origins you trust.
+     * <p>
+     * You should also avoid using the wildcard matcher ({@code "*"}) in the {@code originPatterns}
+     * for the same reason.
+     * <p>
+     * This method will affect pages that are already loaded.
+     *
+     * @param allowedOriginRules A set of origin patterns where cross-origin-isolated APIs should be
+     *                       available. Avoid using the wildcard matcher. See the documentation for
+     *                       {@link WebViewCompat#addWebMessageListener} for syntax.
+     * @throws IllegalArgumentException if one or more of the patterns cannot be parsed.
+     * @throws UnsupportedOperationException if the
+     *     {@link WebViewFeature#CROSS_ORIGIN_ISOLATED_ALLOWLIST} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
+     */
+    @RequiresFeature(name = WebViewFeature.CROSS_ORIGIN_ISOLATED_ALLOWLIST,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    default void setCrossOriginIsolatedAllowlist(@NonNull Set<String> allowedOriginRules) {
+        throw new UnsupportedOperationException("Profile#setCrossOriginIsolatedAllowlist is "
+                + "not implemented.");
+    }
+
 }

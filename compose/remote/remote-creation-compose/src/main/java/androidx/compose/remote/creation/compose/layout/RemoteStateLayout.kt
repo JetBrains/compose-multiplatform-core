@@ -2,7 +2,7 @@
  * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not uses this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -13,115 +13,138 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.creation.compose.layout
 
-import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.Box
+import android.annotation.SuppressLint
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.modifier.toRecordingModifier
+import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteEnum
 import androidx.compose.remote.creation.compose.state.RemoteInt
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteEnum
-import androidx.compose.remote.creation.compose.state.rememberMutableRemoteInt
-import androidx.compose.remote.creation.compose.v2.RemoteComposeApplierV2
-import androidx.compose.remote.creation.compose.v2.StateLayoutV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.util.fastForEach
-import kotlin.enums.EnumEntries
-import kotlin.enums.enumEntries
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteStateMachine<T>
-internal constructor(public val currentState: RemoteInt, public val states: List<T>) {
+internal class RemoteStateMachine<T>
+internal constructor(val currentState: RemoteInt, val states: List<T>) {
 
-    public fun size(): Int {
+    fun size(): Int {
         return states.size
     }
 }
 
-@RemoteComposable
-@Composable
-public fun rememberStateMachine(
-    currentState: RemoteInt = rememberMutableRemoteInt(0),
-    vararg states: Int,
-): RemoteStateMachine<Int> {
-    val currentState = rememberMutableRemoteInt(0)
-    return remember { RemoteStateMachine(currentState, states.sorted()) }
-}
+internal class RemoteStateLayoutNode : RemoteComposeNode() {
+    lateinit var currentState: RemoteInt
 
-@RemoteComposable
-@Composable
-public inline fun <reified T : Enum<T>> rememberStateMachine(
-    currentState: RemoteEnum<T> = rememberMutableRemoteEnum(enumEntries<T>().first())
-): RemoteStateMachine<T> {
-    return rememberStateMachine(currentState, enumEntries())
-}
+    override fun render(creationState: RemoteComposeCreationState, remoteCanvas: RemoteCanvas) {
+        val scope = overriddenScope(creationState)
+        val recordingModifier = scope.toRecordingModifier(modifier)
 
-@RemoteComposable
-@Composable
-public fun <T : Enum<T>> rememberStateMachine(
-    currentState: RemoteEnum<T>,
-    enumEntries: EnumEntries<T>,
-): RemoteStateMachine<T> {
-    return remember<RemoteStateMachine<T>> {
-        RemoteStateMachine(currentState.intValue, enumEntries)
+        creationState.document.startStateLayout(
+            recordingModifier,
+            currentState.getIdForCreationState(creationState),
+        )
+
+        renderChildren(creationState, remoteCanvas)
+        creationState.document.endStateLayout()
     }
 }
 
-/** Utility modifier to record the layout information */
-internal class RemoteComposeStateLayoutModifier(
-    public var modifier: RemoteModifier,
-    public var currentState: RemoteInt,
-) : DrawModifier {
-    override fun ContentDrawScope.draw() {
-        drawIntoRemoteCanvas { canvas ->
-            canvas.document.startStateLayout(
-                canvas.toRecordingModifier(modifier),
-                with(canvas) { currentState.id },
-            )
-            this@draw.drawContent()
-            canvas.document.endStateLayout()
-        }
-    }
-}
-
-@RemoteComposable
+@SuppressLint("PrimitiveInCollection")
 @Composable
-public inline fun <reified T : Enum<T>> RemoteStateLayout(
-    state: RemoteEnum<T>,
+@RemoteComposable
+internal fun <T> StateLayout(
+    stateMachine: RemoteStateMachine<T>,
     modifier: RemoteModifier = RemoteModifier,
-    noinline content: @Composable (T) -> Unit,
+    content: @Composable @RemoteComposable (T) -> Unit,
 ) {
-    RemoteStateLayout(
-        stateMachine = rememberStateMachine(state),
-        modifier = modifier,
-        content = content,
+    RemoteComposeNode(
+        factory = ::RemoteStateLayoutNode,
+        update = {
+            set(modifier) { nodeModifier -> this.modifier = nodeModifier }
+            set(stateMachine.currentState) { state -> this.currentState = state }
+        },
+        content = {
+            val states = stateMachine.states
+            states.fastForEach { state -> key(state) { content(state) } }
+        },
     )
 }
 
+/**
+ * A layout that manages and displays multiple states defined by a [RemoteEnum].
+ *
+ * This component ensures that all possible states defined in the [RemoteEnum] are composed, while
+ * the underlying remote rendering system handles the visibility and transitions between them based
+ * on the [currentState].
+ *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteStateLayoutEnumSample
+ * @param currentState The state machine governing the available states and the current active
+ *   state.
+ * @param modifier The [RemoteModifier] to be applied to this layout.
+ * @param content A composable lambda that defines the UI for each state [T].
+ */
 @RemoteComposable
 @Composable
-public fun <T> RemoteStateLayout(
-    stateMachine: RemoteStateMachine<T>,
+public fun <T : Enum<T>> RemoteStateLayout(
+    currentState: RemoteEnum<T>,
     modifier: RemoteModifier = RemoteModifier,
     content: @Composable (T) -> Unit,
 ) {
-    if (currentComposer.applier is RemoteComposeApplierV2) {
-        StateLayoutV2(stateMachine, modifier, content)
-        return
+    val stateMachine = remember {
+        RemoteStateMachine(currentState.intValue, currentState.enumEntries)
     }
-    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/481422057
-    Box(
-        RemoteComposeStateLayoutModifier(modifier, stateMachine.currentState)
-            .then(modifier.toComposeUiLayout())
-    ) {
-        stateMachine.states.fastForEach { state -> content(state) }
-    }
+    StateLayout(stateMachine, modifier, content)
+}
+
+/**
+ * A layout that manages and displays two states defined by a [RemoteBoolean].
+ *
+ * This component ensures that both possible states are composed, while the underlying remote
+ * rendering system handles the visibility and transitions between them based on the [currentState].
+ *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteStateLayoutBooleanSample
+ * @param currentState The state machine governing the available states and the current active
+ *   state.
+ * @param modifier The [RemoteModifier] to be applied to this layout.
+ * @param content A composable lambda that defines the UI for each state [Boolean].
+ */
+@RemoteComposable
+@Composable
+public fun RemoteStateLayout(
+    currentState: RemoteBoolean,
+    modifier: RemoteModifier = RemoteModifier,
+    content: @Composable (Boolean) -> Unit,
+) {
+    val stateMachine = remember { RemoteStateMachine(currentState.intValue, listOf(false, true)) }
+    StateLayout(stateMachine, modifier, content)
+}
+
+/**
+ * A layout that manages and displays multiple states defined by a [RemoteInt].
+ *
+ * This component ensures that all possible states defined in [states] are composed, while the
+ * underlying remote rendering system handles the visibility and transitions between them based on
+ * the [RemoteStateMachine.currentState].
+ *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteStateLayoutIntSample
+ * @param currentState The state machine governing the available states and the current active
+ *   state.
+ * @param states The list of integer states that this layout can display.
+ * @param modifier The [RemoteModifier] to be applied to this layout.
+ * @param content A composable lambda that defines the UI for each state [Int].
+ */
+@RemoteComposable
+@Composable
+public fun RemoteStateLayout(
+    currentState: RemoteInt,
+    vararg states: Int,
+    modifier: RemoteModifier = RemoteModifier,
+    content: @Composable (Int) -> Unit,
+) {
+    val stateMachine = remember { RemoteStateMachine(currentState, states.sorted()) }
+    StateLayout(stateMachine, modifier, content)
 }

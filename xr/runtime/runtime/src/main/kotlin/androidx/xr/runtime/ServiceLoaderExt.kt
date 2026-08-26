@@ -23,7 +23,6 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.interfaces.Feature
 import androidx.xr.runtime.interfaces.Service
@@ -31,7 +30,6 @@ import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
 import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
 import java.util.ServiceLoader
 
-// TODO(b/440615454): Reduce visibility to internal once stub providers are added for testing.
 /**
  * Loads all well-known service providers directly. Combines the results with any additional
  * providers discovered via the default service loader implementation.
@@ -39,12 +37,14 @@ import java.util.ServiceLoader
  * This is useful in some app configurations where the APK is too big and the default service loader
  * implementation is not able to automatically find all the available service providers.
  *
- * @param service the service to load.
- * @param providersClassNames the list of known service providers to load.
- * @return the list of loaded service providers.
+ * @param service the service to load
+ * @param providersClassNames the list of known service providers to load
+ * @return the list of loaded service providers
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun <S : Any> loadProviders(service: Class<S>, providersClassNames: List<String>): List<S> {
+internal fun <S : Any> loadProviders(
+    service: Class<S>,
+    providersClassNames: List<String>,
+): List<S> {
     val providers = mutableListOf<S>()
 
     val filteredProviderClassNames =
@@ -78,6 +78,7 @@ private const val PROJECTED_DEVICE_NAME = "ProjectionDevice"
 internal const val REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED =
     "android.hardware.display.category.XR_PROJECTED"
 @VisibleForTesting internal const val REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED_LEGACY = "xr_projected"
+@VisibleForTesting internal const val FORCE_OPENXR_PROPERTY = "androidx.xr.force_openxr"
 
 private fun hasXrProjectedDisplayCategory(activityInfo: ActivityInfo): Boolean {
     // TODO b/460536048 - Remove reflection once requiredDisplayCategory is public in SDK 36
@@ -88,7 +89,9 @@ private fun hasXrProjectedDisplayCategory(activityInfo: ActivityInfo): Boolean {
         val category = field.get(activityInfo) as? String
         category == REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED ||
             category == REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED_LEGACY
-    } catch (e: Exception) {
+    } catch (e: ReflectiveOperationException) {
+        false
+    } catch (e: SecurityException) {
         false
     }
 }
@@ -131,12 +134,40 @@ private fun getVirtualDevice(context: Context) =
         it.deviceId == context.deviceId
     }
 
-/**
- * Returns the first service provider from [providers] that has its requirements satisfied by the
- * [features] supported by the current device.
- */
+/** Selects the first provider in [providers] satisfying the device's [features] requirements. */
 internal fun <S : Service> selectProvider(providers: List<S>, features: Set<Feature>): S? =
     providers.firstOrNull { features.containsAll(it.requirements) }
+
+private external fun nativeIsStub(): Boolean
+
+/**
+ * This method returns true only if the OpenXR stub library was loaded explicitly before calling
+ * into JXR (i.e. in internal testing environments). In all other cases, it throws
+ * [UnsatisfiedLinkError], which is caught and returns false.
+ */
+private fun isOpenXrStubLoaded(): Boolean {
+    return try {
+        nativeIsStub()
+    } catch (_: UnsatisfiedLinkError) {
+        false
+    }
+}
+
+@Suppress("BanUncheckedReflection")
+private fun forceOpenXrFeature(): Boolean =
+    try {
+        val systemPropertiesClass = Class.forName("android.os.SystemProperties")
+        val getBooleanMethod =
+            systemPropertiesClass.getMethod(
+                "getBoolean",
+                String::class.java,
+                java.lang.Boolean.TYPE,
+            )
+        getBooleanMethod.invoke(/* obj= */ null, FORCE_OPENXR_PROPERTY, /* def= */ false)
+            as? Boolean == true
+    } catch (_: Exception) {
+        false
+    }
 
 /** Returns the set of features available for the current context associated with the device. */
 internal fun getDeviceContextFeatures(context: Context): Set<Feature> {
@@ -156,19 +187,17 @@ internal fun getDeviceContextFeatures(context: Context): Set<Feature> {
         features.add(Feature.PROJECTED)
     }
 
-    // TODO(b/398957058): Remove emulator check once the emulator has the system feature.
     if (
         packageManager.hasSystemFeature(FEATURE_XR_API_OPENXR) ||
-            Build.FINGERPRINT.contains("emulator")
+            isOpenXrStubLoaded() ||
+            // TODO: b/548083314: Replace this with a version check for OpenXR once
+            // supported.
+            forceOpenXrFeature()
     ) {
         features.add(Feature.OPEN_XR)
     }
 
-    // TODO(b/398957058): Remove emulator check once the emulator has the system feature.
-    if (
-        packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL) ||
-            Build.FINGERPRINT.contains("emulator")
-    ) {
+    if (packageManager.hasSystemFeature(FEATURE_XR_API_SPATIAL)) {
         features.add(Feature.SPATIAL)
     }
 

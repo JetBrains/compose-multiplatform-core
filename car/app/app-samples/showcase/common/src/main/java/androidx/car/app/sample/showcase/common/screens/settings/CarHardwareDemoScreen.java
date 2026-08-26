@@ -20,7 +20,9 @@ import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
+import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.NavigationTemplate;
 import androidx.car.app.sample.showcase.common.R;
@@ -66,6 +68,9 @@ public final class CarHardwareDemoScreen extends Screen {
 
     @Override
     public @NonNull Template onGetTemplate() {
+        CarIconStyle carIconStyle = new CarIconStyle.Builder(CarIconStyle.TINTED)
+                .setTint(CarColor.DEFAULT)
+                .build();
         ActionStrip actionStrip =
                 new ActionStrip.Builder()
                         // Add a Button to show the CarHardware info screen
@@ -75,6 +80,7 @@ public final class CarHardwareDemoScreen extends Screen {
                                                 IconCompat.createWithResource(
                                                         getCarContext(),
                                                         R.drawable.info_gm_grey_24dp))
+                                                .setStyle(carIconStyle)
                                                 .build())
                                 .setOnClickListener(() -> getScreenManager().push(
                                         new CarHardwareInfoScreen(getCarContext())))

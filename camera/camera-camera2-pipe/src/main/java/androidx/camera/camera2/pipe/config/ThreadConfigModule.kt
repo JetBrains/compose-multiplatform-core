@@ -32,13 +32,12 @@ import dagger.Provides
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
 
 /** Configure and provide a single [Threads] object to other parts of the library. */
@@ -118,7 +117,15 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
                 ?: {
                     if (threadConfig.defaultCameraHandler == null) {
                         val handlerThread =
-                            HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
+                            HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { thread ->
+                                thread.uncaughtExceptionHandler =
+                                    Thread.UncaughtExceptionHandler { _, throwable ->
+                                        if (throwable is CancellationException) {
+                                            return@UncaughtExceptionHandler
+                                        }
+                                    }
+                                thread.start()
+                            }
                         cameraPipeLifetime.addShutdownAction(
                             CameraPipeLifetime.ShutdownType.THREAD
                         ) {
@@ -150,8 +157,8 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             }
         }
 
-        var cameraPipeScope: CoroutineScope
-        var cameraPipeDispatchScope: CoroutineScope
+        val cameraPipeScope: CoroutineScope
+        val cameraPipeDispatchScope: CoroutineScope
         if (threadConfig.testOnlyScope != null) {
             cameraPipeScope = threadConfig.testOnlyScope
             cameraPipeDispatchScope = threadConfig.testOnlyScope
@@ -180,33 +187,6 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             lightweightDispatcher = lightweightDispatcher,
             camera2Handler = cameraHandlerFn,
             camera2Executor = cameraExecutorFn,
-        )
-    }
-
-    private fun provideTestOnlyThreads(
-        testDispatcher: CoroutineDispatcher,
-        testScope: CoroutineScope,
-    ): Threads {
-        val testExecutor = testDispatcher.asExecutor()
-
-        // TODO: This should delegate to the testDispatcher instead of using a HandlerThread.
-        val cameraHandlerFn = {
-            val handlerThread =
-                HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
-            Handler(handlerThread.looper)
-        }
-
-        return Threads(
-            cameraPipeScope = testScope,
-            cameraPipeDispatchScope = testScope,
-            blockingExecutor = testExecutor,
-            blockingDispatcher = testDispatcher,
-            backgroundExecutor = testExecutor,
-            backgroundDispatcher = testDispatcher,
-            lightweightExecutor = testExecutor,
-            lightweightDispatcher = testDispatcher,
-            camera2Handler = cameraHandlerFn,
-            camera2Executor = { testExecutor },
         )
     }
 }

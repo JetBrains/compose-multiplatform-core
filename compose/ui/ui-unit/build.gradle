@@ -32,10 +32,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.unit"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -82,6 +78,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose classes for simple units"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-unit:ui-unit-samples"))
 }

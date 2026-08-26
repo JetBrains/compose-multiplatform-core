@@ -22,14 +22,54 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionCompon
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableProxyAnnotation
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionServiceEntryPointAnnotation
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSignatureAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.SERIALIZABLE_PROXY_PACKAGE_NAME
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 /** The helper class to resolve AppFunction related symbols. */
 class AppFunctionSymbolResolver(private val resolver: Resolver) {
+    /** Resolves symbols annotated with @AppFunctionServiceEntryPoint without validation. */
+    fun resolveUnvalidatedAnnotatedAppFunctionServiceEntryPoints():
+        List<AnnotatedAppFunctionServiceEntryPoint> {
+        return resolver
+            .getSymbolsWithAnnotation(
+                AppFunctionServiceEntryPointAnnotation.CLASS_NAME.canonicalName
+            )
+            .map { declaration ->
+                if (declaration !is KSClassDeclaration) {
+                    throw ProcessingException(
+                        "Only classes can be annotated with @AppFunctionServiceEntryPoint",
+                        declaration,
+                    )
+                }
+                declaration
+            }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration ->
+                val appFunctionDeclarations =
+                    declaration
+                        .getDeclaredFunctions()
+                        .filter {
+                            it.annotations.findAnnotation(AppFunctionAnnotation.CLASS_NAME) != null
+                        }
+                        .toList()
+                val appFunctions =
+                    appFunctionDeclarations.map { AnnotatedAppFunction(it, it.docString) }
+                AnnotatedAppFunctionServiceEntryPoint(declaration, appFunctions)
+            }
+            .toList()
+    }
+
+    /** Resolves symbols annotated with @AppFunctionServiceEntryPoint. */
+    fun resolveAnnotatedAppFunctionServiceEntryPoints():
+        List<AnnotatedAppFunctionServiceEntryPoint> {
+        return resolveUnvalidatedAnnotatedAppFunctionServiceEntryPoints().map { it.validate() }
+    }
 
     /** Resolves symbols annotated with @AppFunctionSchemaDefinition. */
     fun resolveAnnotatedAppFunctionSchemaDefinitions(): List<AnnotatedAppFunctionSchemaDefinition> {
@@ -61,8 +101,11 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
      * processing.
      */
     fun resolveUnvalidatedAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
-        return resolver
-            .getSymbolsWithAnnotation(AppFunctionAnnotation.CLASS_NAME.canonicalName)
+        val serviceSymbols =
+            resolver.getSymbolsWithAnnotation(AppFunctionAnnotation.CLASS_NAME.canonicalName)
+
+        return serviceSymbols
+            .distinct()
             .map { declaration ->
                 if (declaration !is KSFunctionDeclaration) {
                     throw ProcessingException(
@@ -71,6 +114,12 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                     )
                 }
                 declaration
+            }
+            .filter { declaration ->
+                val parentClass = declaration.parentDeclaration as? KSClassDeclaration
+                parentClass
+                    ?.annotations
+                    ?.findAnnotation(AppFunctionServiceEntryPointAnnotation.CLASS_NAME) == null
             }
             .sortedBy { checkNotNull(it.qualifiedName).asString() }
             .groupBy { declaration ->
@@ -83,7 +132,10 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .entries
             .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
-                AnnotatedAppFunctions(classDeclaration, appFunctionsDeclarations)
+                AnnotatedAppFunctions(
+                    classDeclaration,
+                    appFunctionsDeclarations.map { AnnotatedAppFunction(it) },
+                )
             }
     }
 
@@ -91,6 +143,31 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
     fun resolveAnnotatedAppFunctions(): List<AnnotatedAppFunctions> {
         return resolveUnvalidatedAnnotatedAppFunctions().map { annotatedAppFunction ->
             annotatedAppFunction.validate()
+        }
+    }
+
+    /** Resolves unvalidated classes annotated with @AppFunctionSignature annotation. */
+    fun resolveUnvalidatedAnnotatedAppFunctionSignatures(): List<AnnotatedAppFunctionSignature> {
+        return resolver
+            .getSymbolsWithAnnotation(AppFunctionSignatureAnnotation.CLASS_NAME.canonicalName)
+            .map { declaration ->
+                if (declaration !is KSClassDeclaration) {
+                    throw ProcessingException(
+                        "Only fun interfaces can be annotated with @AppFunctionSignature",
+                        declaration,
+                    )
+                }
+                declaration
+            }
+            .sortedBy { checkNotNull(it.qualifiedName).asString() }
+            .map { declaration -> AnnotatedAppFunctionSignature(declaration) }
+            .toList()
+    }
+
+    /** Resolves valid classes annotated with @AppFunctionSignature annotation. */
+    fun resolveAnnotatedAppFunctionSignatures(): List<AnnotatedAppFunctionSignature> {
+        return resolveUnvalidatedAnnotatedAppFunctionSignatures().map { signature ->
+            signature.validate()
         }
     }
 
@@ -210,10 +287,13 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
             .entries
             .sortedBy { it.key.qualifiedName?.asString() }
             .map { (classDeclaration, appFunctionsDeclarations) ->
+                val docstringMap =
+                    filteredAppFunctionComponents.associate { it.qualifiedName to it.docString }
                 AnnotatedAppFunctions(
                         classDeclaration,
-                        appFunctionsDeclarations,
-                        filteredAppFunctionComponents.associate { it.qualifiedName to it.docString },
+                        appFunctionsDeclarations.map {
+                            AnnotatedAppFunction(it, docstringMap[it.ensureQualifiedName()])
+                        },
                     )
                     .validate()
             }

@@ -41,11 +41,13 @@ internal fun FocusTargetNode.saveFocusedChild(): Boolean {
             val previouslyFocusedChildHash = child.requireLayoutNode().compositeKeyHash
             this.previouslyFocusedChildHash = previouslyFocusedChildHash
             val saveableStateRegistry = currentValueOf(LocalSaveableStateRegistry)
-            saveableStateRegistry?.registerProvider(
-                PrevFocusedChild + requireLayoutNode().compositeKeyHash
-            ) {
-                previouslyFocusedChildHash
-            }
+            this.focusRestorationEntry?.unregister()
+            this.focusRestorationEntry =
+                saveableStateRegistry?.registerProvider(
+                    PrevFocusedChild + requireLayoutNode().compositeKeyHash
+                ) {
+                    previouslyFocusedChildHash
+                }
             return true
         }
     }
@@ -104,7 +106,7 @@ internal fun FocusTargetNode.pinFocusedChild(): PinnedHandle? {
  * @sample androidx.compose.ui.samples.FocusRestorerSample
  * @sample androidx.compose.ui.samples.FocusRestorerCustomFallbackSample
  */
-fun Modifier.focusRestorer(fallback: FocusRequester = Default): Modifier =
+public fun Modifier.focusRestorer(fallback: FocusRequester = Default): Modifier =
     this then FocusRestorerElement(fallback)
 
 /**
@@ -117,7 +119,7 @@ fun Modifier.focusRestorer(fallback: FocusRequester = Default): Modifier =
     ReplaceWith("this.focusRestorer(onRestoreFailed())"),
     DeprecationLevel.WARNING,
 )
-fun Modifier.focusRestorer(onRestoreFailed: (() -> FocusRequester)?): Modifier =
+public fun Modifier.focusRestorer(onRestoreFailed: (() -> FocusRequester)?): Modifier =
     focusRestorer(fallback = onRestoreFailed?.invoke() ?: Default)
 
 internal class FocusRestorerNode(var fallback: FocusRequester) :

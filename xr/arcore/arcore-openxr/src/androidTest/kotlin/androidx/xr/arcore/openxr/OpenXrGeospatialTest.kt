@@ -55,7 +55,7 @@ class OpenXrGeospatialTest {
 
     @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    private lateinit var openXrManager: OpenXrManager
+    private lateinit var openXrRuntime: OpenXrRuntime
     private lateinit var perceptionManager: OpenXrPerceptionManager
     private lateinit var underTest: OpenXrGeospatial
     private lateinit var timeSource: OpenXrTimeSource
@@ -68,7 +68,30 @@ class OpenXrGeospatialTest {
     }
 
     @Test
-    fun createGeospatialPoseFromPose_returnsGeospatialPose() = initOpenXrManagerAndRunTest {
+    fun update_whenRunning_updatesGeospatialProperties() = initOpenXrRuntimeAndRunTest {
+        runTest {
+            ensureGeospatialRunning()
+
+            // The values below come from `xrLocateGeospatialPoseFromPoseANDROIDX2` in
+            // //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
+            assertThat(underTest.state).isEqualTo(Geospatial.State.RUNNING)
+            assertThat(underTest.geospatialPose)
+                .isEqualTo(
+                    GeospatialPose(
+                        latitude = 37.422,
+                        longitude = -122.084,
+                        altitude = 10.0,
+                        eastUpSouthQuaternion = Quaternion(0f, 0f, 0f, 1f),
+                    )
+                )
+            assertThat(underTest.horizontalAccuracy).isEqualTo(1.0)
+            assertThat(underTest.verticalAccuracy).isEqualTo(2.0)
+            assertThat(underTest.orientationYawAccuracy).isEqualTo(3.0)
+        }
+    }
+
+    @Test
+    fun createGeospatialPoseFromPose_returnsGeospatialPose() = initOpenXrRuntimeAndRunTest {
         runTest {
             ensureGeospatialRunning()
 
@@ -92,7 +115,7 @@ class OpenXrGeospatialTest {
     }
 
     @Test
-    fun createPoseFromGeospatialPose_returnsPose() = initOpenXrManagerAndRunTest {
+    fun createPoseFromGeospatialPose_returnsPose() = initOpenXrRuntimeAndRunTest {
         runTest {
             ensureGeospatialRunning()
 
@@ -111,7 +134,7 @@ class OpenXrGeospatialTest {
     }
 
     @Test
-    fun createGeospatialAnchor_returnsAnchor() = initOpenXrManagerAndRunTest {
+    fun createGeospatialAnchor_returnsAnchor() = initOpenXrRuntimeAndRunTest {
         runTest {
             ensureGeospatialRunning()
 
@@ -121,7 +144,7 @@ class OpenXrGeospatialTest {
     }
 
     @Test
-    fun createSurfaceAnchor_returnsAnchor() = initOpenXrManagerAndRunTest {
+    fun createSurfaceAnchor_returnsAnchor() = initOpenXrRuntimeAndRunTest {
         runTest {
             ensureGeospatialRunning()
 
@@ -138,7 +161,7 @@ class OpenXrGeospatialTest {
     }
 
     @Test
-    fun createGeospatialAnchor_anchorLimitReached_throwsException() = initOpenXrManagerAndRunTest {
+    fun createGeospatialAnchor_anchorLimitReached_throwsException() = initOpenXrRuntimeAndRunTest {
         runTest {
             ensureGeospatialRunning()
 
@@ -153,7 +176,7 @@ class OpenXrGeospatialTest {
     }
 
     @Test
-    fun createAnchors_sharedAnchorLimitReached_throwsException() = initOpenXrManagerAndRunTest {
+    fun createAnchors_sharedAnchorLimitReached_throwsException() = initOpenXrRuntimeAndRunTest {
         runTest {
             ensureGeospatialRunning()
 
@@ -191,22 +214,22 @@ class OpenXrGeospatialTest {
     private suspend fun ensureGeospatialRunning() {
         // Ensure the runtime handles async events and futures so that Geospatial is in the
         // running state.
-        openXrManager.update()
+        openXrRuntime.update()
         Thread.sleep(XR_POLL_TIME_MS)
-        openXrManager.update()
+        openXrRuntime.update()
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            openXrManager = OpenXrManager(it, perceptionManager, timeSource)
-            openXrManager.create()
-            openXrManager.resume()
-            openXrManager.configure(Config(geospatial = GeospatialMode.VPS_AND_GPS))
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
+            openXrRuntime.configure(Config(geospatial = GeospatialMode.SPATIAL))
 
             testBody()
 
-            openXrManager.pause()
-            openXrManager.stop()
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

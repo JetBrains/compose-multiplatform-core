@@ -22,6 +22,7 @@ import static androidx.appsearch.localstorage.visibilitystore.VisibilityToDocume
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
@@ -70,9 +71,8 @@ import java.util.Set;
  *
  * <p>These visibility settings won't be used in AppSearch Jetpack, we only store them for clients
  * to look up.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class VisibilityStore {
     private static final String TAG = "AppSearchVisibilityStor";
@@ -400,6 +400,7 @@ public class VisibilityStore {
             searchResultPage = mAppSearchImpl.getNextPage(
                     VISIBILITY_PACKAGE_NAME,
                     searchResultPage.getNextPageToken(),
+                    /*maxResults=*/Integer.MAX_VALUE,
                     /*queryStatsBuilder=*/null,
                     callStatsBuilder);
             searchResults = searchResultPage.getResults();

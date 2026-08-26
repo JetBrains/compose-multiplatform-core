@@ -20,7 +20,6 @@ package androidx.appsearch.flags;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
-import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 
 import java.util.Collection;
 
@@ -53,10 +52,6 @@ public final class Flags {
     /** Enable the "hasProperty" function in list filter query expressions. */
     public static final String FLAG_ENABLE_LIST_FILTER_HAS_PROPERTY_FUNCTION =
             FLAG_PREFIX + "enable_list_filter_has_property_function";
-
-    /** Enable the "matchScoreExpression" function in list filter query expressions. */
-    public static final String FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION =
-            FLAG_PREFIX + "enable_list_filter_match_score_expression_function";
 
     /** Enable Schema Type Grouping related features. */
     public static final String FLAG_ENABLE_GROUPING_TYPE_PER_SCHEMA =
@@ -132,29 +127,9 @@ public final class Flags {
     public static final String FLAG_ENABLE_GET_PARENT_TYPES_AND_INDEXABLE_NESTED_PROPERTIES =
             FLAG_PREFIX + "enable_get_parent_types_and_indexable_nested_properties";
 
-    /** Enables embedding search related APIs. */
-    public static final String FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG =
-            FLAG_PREFIX + "enable_schema_embedding_property_config";
-
-    /** Enables embedding quantization. */
-    public static final String FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION =
-            FLAG_PREFIX + "enable_schema_embedding_quantization";
-
     /** Enables informational ranking expressions. */
     public static final String FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS =
             FLAG_PREFIX + "enable_informational_ranking_expressions";
-
-    /** Enable {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS}. */
-    public static final String FLAG_ENABLE_RESULT_ALREADY_EXISTS =
-            FLAG_PREFIX + "enable_result_already_exists";
-
-    /** Enable {@link androidx.appsearch.app.AppSearchBlobHandle}. */
-    public static final String FLAG_ENABLE_BLOB_STORE =
-            FLAG_PREFIX + "enable_blob_store";
-
-    /** Enable {@link androidx.appsearch.app.GenericDocument#writeToParcel}. */
-    public static final String FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC =
-            FLAG_PREFIX + "enable_generic_document_over_ipc";
 
     /** Enable empty batch result fix for enterprise GetDocuments. */
     public static final String FLAG_ENABLE_ENTERPRISE_EMPTY_BATCH_RESULT_FIX =
@@ -196,48 +171,9 @@ public final class Flags {
     public static final String FLAG_ENABLE_APP_SEARCH_MANAGE_BLOB_FILES =
             FLAG_PREFIX + "enable_app_search_manage_blob_files";
 
-    /**
-     * Enables time since last optimize to be calculated by last attempted optimize run time instead
-     * of last successful optimize run time.
-     */
-    public static final String FLAG_ENABLE_CALCULATE_TIME_SINCE_LAST_ATTEMPTED_OPTIMIZE =
-            FLAG_PREFIX + "enable_calculate_time_since_last_attempted_optimize";
-
-    /** Enables qualified id join index v3. */
-    public static final String FLAG_ENABLE_QUALIFIED_ID_JOIN_INDEX_V3 =
-            FLAG_PREFIX + "enable_qualified_id_join_index_v3";
-
-    /** Enables soft index restoration. */
-    public static final String FLAG_ENABLE_SOFT_INDEX_RESTORATION =
-            FLAG_PREFIX + "enable_soft_index_restoration";
-
-    /** Enables marker file creation for Optimize API. */
-    public static final String FLAG_ENABLE_MARKER_FILE_FOR_OPTIMIZE =
-            FLAG_PREFIX + "enable_marker_file_for_optimize";
-
-    /**
-     * Enables releasing the backup schema file instance in the schema store if the overlay schema
-     * instance exists.
-     */
-    public static final String FLAG_ENABLE_RELEASE_BACKUP_SCHEMA_FILE_IF_OVERLAY_PRESENT =
-            FLAG_PREFIX + "enable_release_backup_schema_file_if_overlay_present";
-
-    /** Enables retrieving embedding match snippet information. This affects */
-    public static final String FLAG_ENABLE_EMBEDDING_MATCH_INFO =
-            FLAG_PREFIX + "enable_embedding_match_info";
-
-    /** Enables strict byte size enforcement on a result page. */
-    public static final String FLAG_ENABLE_STRICT_PAGE_BYTE_SIZE_LIMIT =
-            FLAG_PREFIX + "enable_strict_page_byte_size_limit";
-
     /** Enables compression threshold. */
     public static final String FLAG_ENABLE_COMPRESSION_THRESHOLD =
             FLAG_PREFIX + "enable_compression_threshold";
-
-    /** Enables setting the gzip compression memlevel to 1. */
-    public static final String FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE =
-            FLAG_PREFIX + "enable_compression_mem_level_one";
-
 
     /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED}. */
     public static final String FLAG_ENABLE_RESULT_ABORTED =
@@ -256,29 +192,10 @@ public final class Flags {
             FLAG_PREFIX + "enable_throw_exception_for_native_not_found_page_token";
 
     /**
-     * Enable database-scoped set and get schema operations for AppSearch internal impl. This
-     * allows AppSearchImpl to set and get the schema for a single package-database combo at a time.
-     */
-    public static final String FLAG_ENABLE_DATABASE_SCOPED_SCHEMA_OPERATIONS =
-            FLAG_PREFIX + "enable_database_scoped_schema_operations";
-
-    /** Enables the Eigen library for embedding scoring, if Eigen is compiled in. */
-    public static final String FLAG_ENABLE_EIGEN_EMBEDDING_SCORING =
-            FLAG_PREFIX + "enable_eigen_embedding_scoring";
-
-    /**
      * Enable retrying the critical section of initialization before resetting as a last resort.
      */
     public static final String FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET =
             FLAG_PREFIX + "enable_initialization_retries_before_reset";
-
-    /** Enable reset visibility store during initialization. */
-    public static final String FLAG_ENABLE_RESET_VISIBILITY_STORE =
-            FLAG_PREFIX + "enable_reset_visibility_store";
-
-    /** Enables passing down filters to child iterators for optimized DocHitInfo retrieval. */
-    public static final String FLAG_ENABLE_PASSING_FILTER_TO_CHILDREN =
-            FLAG_PREFIX + "enable_passing_filter_to_children";
 
     /**
      * Whether to skip interacting with icing if the set schema call is a noop.
@@ -287,23 +204,17 @@ public final class Flags {
             FLAG_PREFIX + "enable_early_set_schema_exit";
 
     /**
-     * Whether to enable sharded storage for embedding index.
-     */
-    public static final String FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE =
-            FLAG_PREFIX + "enable_sharded_embedding_storage";
-
-    /**
      * Whether to directly write data to parcel data for remove and commit blob.
      */
     public static final String FLAG_ENABLE_DIRECTLY_WRITE_COMMIT_REMOVE_BLOB_RESPONSE =
             FLAG_PREFIX + "directly_write_commit_remove_blob_response";
 
     /**
-     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
-     * existing types will be preserved when possible.
+     * Whether to enable deduping schema types' property definitions when storing
+     * SchemaTypeConfigs in the schema store.
      */
-    public static final String FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION =
-            FLAG_PREFIX + "enable_schema_type_id_optimization";
+    public static final String FLAG_ENABLE_SCHEMA_DEFINITION_DEDUPING =
+            FLAG_PREFIX + "enable_schema_definition_deduping";
 
     /**
      * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
@@ -313,13 +224,6 @@ public final class Flags {
      */
     public static final String FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS =
             FLAG_PREFIX + "enable_optimize_improvements";
-
-    /**
-     * Controls whether repeated fields may set joinable value type to
-     * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
-     */
-    public static final String FLAG_ENABLE_REPEATED_FIELD_JOINS =
-            FLAG_PREFIX + "enable_repeated_field_joins";
 
     /** Enables delete propagation API. */
     public static final String FLAG_ENABLE_DELETE_PROPAGATION_RW =
@@ -338,25 +242,53 @@ public final class Flags {
     public static final String FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN =
             FLAG_PREFIX + "enable_non_existent_qualified_id_join";
 
-    /** Enables visibility access for Private Compute Core UIDs. */
-    public static final String FLAG_ENABLE_PRIVATE_COMPUTE_CORE_UID_ACCESS =
-            FLAG_PREFIX + "enable_private_compute_core_uid_access";
-
-    /**
-     * Whether to enable skipping the unnecessary schema type equality check.
-     */
-    public static final String FLAG_ENABLE_SKIP_SET_SCHEMA_TYPE_EQUALITY_CHECK =
-            FLAG_PREFIX + "enable_skip_set_schema_type_equality_check";
-
-    /**
-     * Whether to enable the query optimization to rewrite AND'd embedding queries.
-     */
-    public static final String FLAG_ENABLE_EMBED_QUERY_OPTIMIZATION =
-            FLAG_PREFIX + "enable_embed_query_optimization";
-
     /** Enables set SearchFeatures and RankingFeatures APIs. */
     public static final String FLAG_ENABLE_SET_SEARCH_AND_RANKING_FEATURE =
             FLAG_PREFIX + "enable_set_search_and_ranking_feature";
+
+    /**
+     * Whether to enable client-side pagination.
+     */
+    public static final String FLAG_ENABLE_CLIENT_SIDE_PAGINATION =
+            FLAG_PREFIX + "enable_client_side_pagination";
+
+    /** Enables embedding approximate nearest neighbor. */
+    public static final String FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR =
+            FLAG_PREFIX + "enable_embedding_approximate_nearest_neighbor";
+
+    /** Enables embedding pre-quantized data. */
+    public static final String FLAG_ENABLE_EMBEDDING_PRE_QUANTIZED_DATA =
+            FLAG_PREFIX + "enable_embedding_pre_quantized_data";
+
+    /** Enables database stableness log in Icing. */
+    public static final String FLAG_ENABLE_DATABASE_STABLENESS_LOG =
+            FLAG_PREFIX + "enable_database_stableness_log";
+
+    /** Enables incompatibility check when promoting a regular property to an account property. */
+    public static final String FLAG_ENABLE_ACCOUNT_PROPERTY_INCOMPATIBILITY_CHECK =
+            FLAG_PREFIX + "enable_account_property_incompatibility_check";
+
+    /** Controls whether to release schema store cached proto after initialization. */
+    public static final String FLAG_RELEASE_SCHEMA_CACHE_AFTER_INITIALIZATION =
+            FLAG_PREFIX + "release_schema_cache_after_initialization";
+
+    /**
+     * Controls whether to remove schema store move assignment during schema store set schema.
+     */
+    public static final String FLAG_REMOVE_SCHEMA_STORE_MOVE_ASSIGNMENT =
+            FLAG_PREFIX + "remove_schema_store_move_assignment";
+
+    /**
+     * Whether to enable fine-grained index rebuilding when schema changes occur.
+     */
+    public static final String FLAG_ENABLE_FINE_GRAINED_INDEX_REBUILD =
+            FLAG_PREFIX + "enable_fine_grained_index_rebuild";
+
+    /**
+     * Whether to unblock read requests during ANN index maintenance.
+     */
+    public static final String FLAG_ENABLE_READ_DURING_ANN_MAINTENANCE =
+            FLAG_PREFIX + "enable_read_during_ann_maintenance";
 
     // Whether the features should be enabled.
     //
@@ -369,14 +301,6 @@ public final class Flags {
 
     /** Whether the "hasProperty" function in list filter query expressions should be enabled. */
     public static boolean enableListFilterHasPropertyFunction() {
-        return true;
-    }
-
-    /**
-     * Whether the "matchScoreExpression" function in list filter query expressions should be
-     * enabled.
-     */
-    public static boolean enableListFilterMatchScoreExpressionFunction() {
         return true;
     }
 
@@ -460,16 +384,6 @@ public final class Flags {
         return true;
     }
 
-    /** Whether embedding search related APIs should be enabled. */
-    public static boolean enableSchemaEmbeddingPropertyConfig() {
-        return true;
-    }
-
-    /** Whether embedding quantization is enabled. */
-    public static boolean enableSchemaEmbeddingQuantization() {
-        return true;
-    }
-
     /** Whether the search parameter APIs should be enabled. */
     public static boolean enableSearchSpecSearchStringParameters() {
         return true;
@@ -477,19 +391,6 @@ public final class Flags {
 
     /** Whether informational ranking expressions should be enabled. */
     public static boolean enableInformationalRankingExpressions() {
-        return true;
-    }
-
-    /**
-     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS} should be
-     * enabled.
-     */
-    public static boolean enableResultAlreadyExists() {
-        return true;
-    }
-
-    /** Whether {@link androidx.appsearch.app.AppSearchBlobHandle} should be enabled. */
-    public static boolean enableBlobStore() {
         return true;
     }
 
@@ -551,49 +452,6 @@ public final class Flags {
     }
 
     /**
-     * Whether to calculate time since last optimize using last attempted optimize run time instead
-     * of last successful optimize run time.
-     */
-    public static boolean enableCalculateTimeSinceLastAttemptedOptimize() {
-        return true;
-    }
-
-    /** Whether qualified id join index v3 should be enabled. */
-    public static boolean enableQualifiedIdJoinIndexV3() {
-        return true;
-    }
-
-    /** Whether soft index restoration should be enabled. */
-    public static boolean enableSoftIndexRestoration() {
-        return true;
-    }
-
-    /** Whether marker file creation for Optimize API should be enabled. */
-    public static boolean enableMarkerFileForOptimize() {
-        return true;
-    }
-
-    /**
-     * Whether to release the backup schema file instance in the schema store if the overlay schema
-     * instance exists.
-     */
-    public static boolean enableReleaseBackupSchemaFileIfOverlayPresent() {
-        return true;
-    }
-
-    /**
-     * Whether to enable retrieving embedding match info during snippetting.
-     */
-    public static boolean enableEmbeddingMatchInfo() {
-        return true;
-    }
-
-    /** Whether to enforce page byte size limit in a stricter way. */
-    public static boolean enableStrictPageByteSizeLimit() {
-        return true;
-    }
-
-    /**
      * Whether to enable compression threshold.
      */
     public static boolean enableCompressionThreshold() {
@@ -640,21 +498,6 @@ public final class Flags {
     }
 
     /**
-     * Whether to enable database-scoped set and get schema operations for AppSearch internal impl.
-     */
-    public static boolean enableDatabaseScopedSchemaOperations() {
-        return true;
-    }
-
-
-    /** Whether to enable the Eigen library for embedding scoring */
-    public static boolean enableEigenEmbeddingScoring() {
-        // The return value does not matter, since Jetpack does not have Eigen compiled in.
-        // Set it to false for clarity.
-        return false;
-    }
-
-    /**
      * Whether to enable retrying the critical section of initialization before resetting as a
      * last resort.
      */
@@ -662,34 +505,12 @@ public final class Flags {
         return true;
     }
 
-    /**
-     * Whether to enable reset visibility store during initialization.
-     */
-    public static boolean enableResetVisibilityStore() {
-        return true;
-    }
-
-    /**
-     * Whether to enable passing down filters to child iterators for optimized DocHitInfo
-     * retrieval.
-     */
-    public static boolean enablePassingFilterToChildren() {
-        return true;
-    }
 
     /**
      * Whether to skip interacting with icing if the set schema call is a noop.
      */
     public static boolean enableEarlySetSchemaExit() {
         // TODO(b/436813583): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
-     * Whether to enable sharded storage for embedding index.
-     */
-    public static boolean enableShardedEmbeddingStorage() {
-        // TODO(b/436237337): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 
@@ -701,20 +522,19 @@ public final class Flags {
     }
 
     /**
-     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
-     * existing types will be preserved when possible, and there will be no schema-type id
-     * reassignment for adding new types.
+     * Whether to enable deduping schema types' property definitions when storing
+     * SchemaTypeConfigs in the schema store.
      */
-    public static boolean enableSchemaTypeIdOptimization() {
-        // TODO(b/434218554): Enable this once the feature is rolled out to Nextfood in platform.
+    public static boolean enableSchemaDefinitionDeduping() {
+        // TODO(b/448166747): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 
     /**
      * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
-     *   * Whether there is an unnecessary PersistToDisk call in Optimize
-     *   * Whether there is an unnecessary PersistToDisk call in Index Merge
-     *   * Whether DocumentStore Optimize will create unnecessary status messages.
+     * * Whether there is an unnecessary PersistToDisk call in Optimize
+     * * Whether there is an unnecessary PersistToDisk call in Index Merge
+     * * Whether DocumentStore Optimize will create unnecessary status messages.
      */
     public static boolean enableOptimizeImprovements() {
         // TODO(b/455903084): Enable this once the feature is rolled out to Nextfood in platform.
@@ -722,19 +542,9 @@ public final class Flags {
     }
 
     /**
-     * Controls whether repeated fields may set joinable value type to
-     * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
-     */
-    public static boolean enableRepeatedFieldJoins() {
-        return true;
-    }
-
-    /**
      * Whether delete propagation API should be enabled.
      *
-     * <p>Note: delete propagation depends on qualified id join index v3 and soft index restoration,
-     * so {@link #enableQualifiedIdJoinIndexV3()} and {@link #enableSoftIndexRestoration()} should
-     * also be true.
+     * <p>Note: delete propagation depends on qualified id join index v3 and soft index restoration.
      */
     public static boolean enableDeletePropagationRw() {
         // TODO(b/384947619): Enable this once the feature is rolled out to Nextfood in platform.
@@ -756,31 +566,73 @@ public final class Flags {
     }
 
     /**
-     * Whether visibility access for Private Compute Core UIDs should be enabled.
-     */
-    public static boolean enablePrivateComputeCoreUidAccess() {
-        return true;
-    }
-
-    /*
-     * Whether to enable skipping the unnecessary schema type equality check.
-     */
-    public static boolean enableSkipSetSchemaTypeEqualityCheck() {
-        return true;
-    }
-
-    /**
-     * Whether to enable the query optimization to rewrite AND'd embedding queries.
-     */
-    public static boolean enableEmbedQueryOptimization() {
-        return true;
-    }
-
-    /**
      * Whether {@link androidx.appsearch.app.SearchFeatures} and
      * {@link androidx.appsearch.app.RankingFeatures} related APIs should be enabled.
      */
     public static boolean enableSetSearchAndRankingFeature() {
+        return true;
+    }
+
+    /**
+     * Whether to enable client-side pagination.
+     */
+    public static boolean enableClientSidePagination() {
+        // TODO(b/492234192): Enable this feature only after it rolls out to Nextfood in
+        // platform and localstorage/SearchResultsImpl.java has been updated.
+        return false;
+    }
+
+    /** Whether embedding approximate nearest neighbor should be enabled. */
+    public static boolean enableEmbeddingApproximateNearestNeighbor() {
+        return true;
+    }
+
+    /** Whether embedding pre-quantized data should be enabled. */
+    public static boolean enableEmbeddingPreQuantizedData() {
+        return true;
+    }
+
+    /** Whether to enable database stableness log in Icing. */
+    public static boolean enableDatabaseStablenessLog() {
+        return false;
+    }
+
+    /**
+     * Whether incompatibility check when promoting a regular property to an account property
+     * should be enabled.
+     */
+    public static boolean enableAccountPropertyIncompatibilityCheck() {
+        // TODO(b/506060010): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether to release schema store cached proto after initialization.
+     */
+    public static boolean releaseSchemaCacheAfterInitialization() {
+        // TODO(b/490448633): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether to remove schema store move assignment during schema store set schema.
+     */
+    public static boolean removeSchemaStoreMoveAssignment() {
+        // TODO(b/521549968): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable fine-grained index rebuilding when schema changes occur.
+     */
+    public static boolean enableFineGrainedIndexRebuild() {
+        return true;
+    }
+
+    /**
+     * Whether to unblock read requests during ANN index maintenance.
+     */
+    public static boolean enableReadDuringAnnMaintenance() {
         return true;
     }
 }

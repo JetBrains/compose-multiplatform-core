@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.semantics
 
-import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.SubspaceSemanticsModifierNode
@@ -24,14 +23,28 @@ import androidx.xr.compose.subspace.node.SubspaceSemanticsModifierNode
 /**
  * Add semantics key/value pairs to the layout node, for use in testing, accessibility, etc.
  *
+ * **Mental Model (Picture Frame vs. Canvas):** When building a combined UI in Compose for XR, think
+ * of a Subspace node (such as `SpatialPanel`) as a "Picture Frame" existing in 3D space, and the
+ * standard 2D Compose UI elements inside it as the "Canvas".
+ * - Use [SubspaceModifier.semantics] on the 3D container (the frame) to provide spatial properties
+ *   (such as [testTag] and [contentDescription]) for 3D placement, anchoring, or testing.
+ * - Use standard [androidx.compose.ui.semantics.semantics] modifiers on the 2D Compose composables
+ *   (the canvas) for fine-grained user interactions and TalkBack accessibility.
+ *
+ * **Interop & Merging Guidance:** The 3D Subspace semantics tree and the 2D foundational semantics
+ * tree operate as distinct hierarchies. Spatial containers do not support merging descendant
+ * semantics (`mergeDescendants = true`).
+ *
+ * @sample androidx.xr.compose.samples.SubspaceSemanticsModifierSample
  * @param properties Builder block where the semantics properties are defined.
  */
+@JvmName("semanticsSubspace")
 public fun SubspaceModifier.semantics(
-    properties: (SemanticsPropertyReceiver.() -> Unit)
+    properties: (SubspaceSemanticsPropertyReceiver.() -> Unit)
 ): SubspaceModifier = this then AppendedSemanticsElement(properties = properties)
 
 private class AppendedSemanticsElement(
-    private val properties: (SemanticsPropertyReceiver.() -> Unit)
+    private val properties: (SubspaceSemanticsPropertyReceiver.() -> Unit)
 ) : SubspaceModifierNodeElement<SemanticsModifierNode>() {
 
     override fun create(): SemanticsModifierNode {
@@ -53,9 +66,10 @@ private class AppendedSemanticsElement(
     }
 }
 
-private class SemanticsModifierNode(public var properties: SemanticsPropertyReceiver.() -> Unit) :
-    SubspaceModifier.Node(), SubspaceSemanticsModifierNode {
-    override fun SemanticsPropertyReceiver.applySemantics() {
+private class SemanticsModifierNode(
+    public var properties: SubspaceSemanticsPropertyReceiver.() -> Unit
+) : SubspaceModifier.Node(), SubspaceSemanticsModifierNode {
+    override fun SubspaceSemanticsPropertyReceiver.applySemantics() {
         properties()
     }
 }

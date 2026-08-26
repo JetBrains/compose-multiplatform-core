@@ -19,6 +19,7 @@ package androidx.glance.wear.parcel
 import android.content.ComponentName
 import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.glance.wear.GlanceWearWidget
@@ -107,7 +108,7 @@ class WearWidgetProviderImplTest {
                 verticalPaddingDp = 0f,
                 cornerRadiusDp = 0f,
             )
-        testWidget.content = { RemoteText("Testing ...") }
+        testWidget.content = { RemoteText("Testing ...".rs) }
         val expectedRcDocumentHierarchy =
             """
             ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
@@ -115,10 +116,10 @@ class WearWidgetProviderImplTest {
                 MODIFIERS
                   DRAW_CONTENT
                 BOX [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-                  DATA_TEXT<42> = "Testing ..."
+                  DATA_TEXT<46> = "Testing ..."
                   MODIFIERS
                     PADDING = [0.0, 0.0, 0.0, 0.0]
-                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (46:"null")
                     MODIFIERS
             """
                 .trimIndent()
@@ -275,7 +276,7 @@ class WearWidgetProviderImplTest {
         var addedHandle: ActiveWearWidgetHandle? = null
         var removedHandle: ActiveWearWidgetHandle? = null
         var enableFailureMode = false
-        var content = @Composable { RemoteText("WearWidgetProviderImplTest") }
+        var content = @Composable { RemoteText("WearWidgetProviderImplTest".rs) }
         var events: List<WearWidgetEvent>? = null
 
         override suspend fun provideWidgetData(

@@ -2116,7 +2116,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkMindfulnessSession =
+        val sdkMindfulnessSession =
             platformMindfulnessSessionBuilder.build().toSdkRecord() as MindfulnessSessionRecord
 
         assertSdkRecord(sdkMindfulnessSession) {
@@ -2143,7 +2143,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkMindfulnessSession =
+        val sdkMindfulnessSession =
             platformMindfulnessSessionBuilder.build().toSdkRecord() as MindfulnessSessionRecord
 
         assertSdkRecord(sdkMindfulnessSession) {
@@ -2168,7 +2168,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkActivityIntensityRecord =
+        val sdkActivityIntensityRecord =
             platformActivityIntensityRecordBuilder.build().toSdkRecord() as ActivityIntensityRecord
 
         assertSdkRecord(sdkActivityIntensityRecord) {
@@ -2191,7 +2191,7 @@ class RecordConvertersTest {
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
 
-        var sdkActivityIntensityRecord =
+        val sdkActivityIntensityRecord =
             platformActivityIntensityRecordBuilder.build().toSdkRecord() as ActivityIntensityRecord
 
         assertSdkRecord(sdkActivityIntensityRecord) {
@@ -2508,7 +2508,7 @@ class RecordConvertersTest {
         assertPlatformRecord(platformRecord) {}
     }
 
-    private fun <T : PlatformIntervalRecord> assertPlatformRecord(
+    private inline fun <T : PlatformIntervalRecord> assertPlatformRecord(
         platformRecord: T,
         typeSpecificAssertions: T.() -> Unit,
     ) {
@@ -2523,7 +2523,7 @@ class RecordConvertersTest {
     private fun <T : PlatformInstantRecord> assertPlatformRecord(platformRecord: T) =
         assertPlatformRecord(platformRecord) {}
 
-    private fun <T : PlatformInstantRecord> assertPlatformRecord(
+    private inline fun <T : PlatformInstantRecord> assertPlatformRecord(
         platformRecord: T,
         typeSpecificAssertions: T.() -> Unit,
     ) {
@@ -2535,7 +2535,7 @@ class RecordConvertersTest {
 
     private fun <T : IntervalRecord> assertSdkRecord(sdkRecord: T) = assertSdkRecord(sdkRecord) {}
 
-    private fun <T : IntervalRecord> assertSdkRecord(
+    private inline fun <T : IntervalRecord> assertSdkRecord(
         sdkRecord: T,
         typeSpecificAssertions: T.() -> Unit,
     ) {
@@ -2552,7 +2552,7 @@ class RecordConvertersTest {
     private fun <T : InstantaneousRecord> assertSdkRecord(sdkRecord: T) =
         assertSdkRecord(sdkRecord) {}
 
-    private fun <T : InstantaneousRecord> assertSdkRecord(
+    private inline fun <T : InstantaneousRecord> assertSdkRecord(
         sdkRecord: T,
         typeSpecificAssertions: T.() -> Unit,
     ) {

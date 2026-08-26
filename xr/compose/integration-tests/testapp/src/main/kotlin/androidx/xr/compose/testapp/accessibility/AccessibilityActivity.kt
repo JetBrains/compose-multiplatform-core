@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
+@file:kotlin.OptIn(androidx.xr.compose.subspace.ExperimentalSpatialGltfModelApi::class)
+
 package androidx.xr.compose.testapp.accessibility
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.collection.floatListOf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -34,6 +38,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,14 +53,25 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.arcore.ArDevice
+import androidx.xr.arcore.TrackingState
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
+import androidx.xr.compose.subspace.SpatialGltfModel
+import androidx.xr.compose.subspace.SpatialGltfModelSource
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
+import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.draw.scale
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.subspace.rememberSpatialActivityPanelController
+import androidx.xr.compose.subspace.rememberSpatialGltfModelState
+import androidx.xr.compose.subspace.semantics.contentDescription
+import androidx.xr.compose.subspace.semantics.semantics
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.common.AnotherActivity
 import androidx.xr.compose.testapp.ui.components.ColumnWithCenterText
@@ -62,15 +79,17 @@ import androidx.xr.compose.testapp.ui.components.CommonTestPanel
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.unit.DpVolumeSize
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
-import androidx.xr.scenecore.ExrImage
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
+import androidx.xr.scenecore.ImageBasedLightingAsset
 import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
@@ -80,7 +99,7 @@ import kotlinx.coroutines.launch
 class AccessibilityActivity : ComponentActivity() {
     private val activity = this
     private val TAG = "AccessibilityTest"
-    private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
+    private lateinit var session: Session
     private var spatialEnvironmentPreference: SpatialEnvironmentPreference? = null
 
     enum class PanelType {
@@ -92,18 +111,34 @@ class AccessibilityActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
-
         setContent {
-            var title = intent.getStringExtra("TITLE")
-            if (title == null) title = "Accessibility Test"
-            MainContent()
+            var sessionCreated by remember { mutableStateOf(false) }
+
+            if (sessionCreated) {
+                MainContent()
+            }
+
+            LaunchedEffect(Unit) {
+                val sessionResult = Session.create(context = this@AccessibilityActivity)
+                if (sessionResult is SessionCreateSuccess) {
+                    session = sessionResult.session
+                    session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+                    val config =
+                        Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                    session.configure(config)
+                    sessionCreated = true
+                } else {
+                    finish()
+                }
+            }
         }
     }
 
     @Composable
     private fun MainContent() {
         var panelType by remember { mutableStateOf(PanelType.None) }
+        var showGltfEntities by remember { mutableStateOf(false) }
+
         Subspace {
             SpatialRow {
                 CommonTestPanel(
@@ -119,8 +154,10 @@ class AccessibilityActivity : ComponentActivity() {
                             modifier = Modifier.weight(1f).padding(6.dp),
                         ) {
                             Card("Virtual Environment") { GeometryUI() }
-                            Card("GLTF Entities") { GltfEntityUI() }
-                            Card("Anchor Entity") { AnchorEntityUI() }
+                            Card("GLTF Entities") {
+                                GltfEntityUI(onToggle = { showGltfEntities = it })
+                            }
+                            Card("Anchor Space") { AnchorSpaceUI() }
                         }
                         Column(
                             verticalArrangement = Arrangement.Center,
@@ -143,25 +180,43 @@ class AccessibilityActivity : ComponentActivity() {
                     PanelType.ActivityPanel -> {
                         SpatialColumn {
                             SpatialActivityPanel(
-                                intent =
-                                    Intent(activity, AnotherActivity::class.java)
-                                        .putExtra("INSIDE_TEXT", "Spatial Activity Panel 1")
-                                        .putExtra("TITLE", "Activity Panel 1"),
-                                modifier = SubspaceModifier.width(300.dp).height(150.dp),
+                                controller =
+                                    rememberSpatialActivityPanelController(
+                                        Intent(activity, AnotherActivity::class.java)
+                                            .putExtra("INSIDE_TEXT", "Spatial Activity Panel 1")
+                                            .putExtra("TITLE", "Activity Panel 1")
+                                    ),
+                                modifier =
+                                    SubspaceModifier.width(300.dp).height(150.dp).semantics {
+                                        contentDescription =
+                                            "Semantics modifier override Activity Panel 1"
+                                    },
                             )
                             SpatialActivityPanel(
-                                intent =
-                                    Intent(activity, AnotherActivity::class.java)
-                                        .putExtra("INSIDE_TEXT", "Spatial Activity Panel 2")
-                                        .putExtra("TITLE", "Activity Panel 2"),
-                                modifier = SubspaceModifier.width(300.dp).height(150.dp),
+                                controller =
+                                    rememberSpatialActivityPanelController(
+                                        Intent(activity, AnotherActivity::class.java)
+                                            .putExtra("INSIDE_TEXT", "Spatial Activity Panel 2")
+                                            .putExtra("TITLE", "Activity Panel 2")
+                                    ),
+                                modifier =
+                                    SubspaceModifier.width(300.dp).height(150.dp).semantics {
+                                        contentDescription =
+                                            "Semantics modifier override Activity Panel 2"
+                                    },
                             )
                             SpatialActivityPanel(
-                                intent =
-                                    Intent(activity, AnotherActivity::class.java)
-                                        .putExtra("INSIDE_TEXT", "Spatial Activity Panel 3")
-                                        .putExtra("TITLE", "Activity Panel 3"),
-                                modifier = SubspaceModifier.width(300.dp).height(150.dp),
+                                controller =
+                                    rememberSpatialActivityPanelController(
+                                        Intent(activity, AnotherActivity::class.java)
+                                            .putExtra("INSIDE_TEXT", "Spatial Activity Panel 3")
+                                            .putExtra("TITLE", "Activity Panel 3")
+                                    ),
+                                modifier =
+                                    SubspaceModifier.width(300.dp).height(150.dp).semantics {
+                                        contentDescription =
+                                            "Semantics modifier override Activity Panel 3"
+                                    },
                             )
                         }
                     }
@@ -171,13 +226,33 @@ class AccessibilityActivity : ComponentActivity() {
                     }
                 }
             }
+
+            if (showGltfEntities) {
+                val offsets = floatListOf((-1.5f), 0f, 1.5f)
+                offsets.forEachIndexed { index, xOffset ->
+                    DragonModel(
+                        contentDescription = "Dragon Entity ${index + 1} at $xOffset",
+                        modifier =
+                            SubspaceModifier.offset(
+                                    x = (xOffset * 500).dp,
+                                    y = 500.dp,
+                                    z = (-1000).dp,
+                                )
+                                .scale(0.5f),
+                    )
+                }
+            }
         }
     }
 
     @Composable
     fun SimpleSpatialPanel(title: String = "Spatial Panel", insideText: String = "Spatial Panel") {
         IntegrationTestsAppTheme {
-            SpatialPanel(SubspaceModifier.width(300.dp).height(150.dp)) {
+            SpatialPanel(
+                SubspaceModifier.width(300.dp).height(150.dp).semantics {
+                    contentDescription = "Semantics modifier override $title"
+                }
+            ) {
                 CommonTestScaffold(title = title, showBottomBar = false, onClickBackArrow = null) {
                     padding ->
                     ColumnWithCenterText(padding = padding, text = insideText)
@@ -186,7 +261,7 @@ class AccessibilityActivity : ComponentActivity() {
         }
     }
 
-    private fun setSkyboxAndGeometry(skybox: ExrImage?, geometry: GltfModel?) {
+    private fun setSkyboxAndGeometry(skybox: ImageBasedLightingAsset?, geometry: GltfModel?) {
         spatialEnvironmentPreference =
             if (skybox == null && geometry == null) {
                 null
@@ -209,7 +284,7 @@ class AccessibilityActivity : ComponentActivity() {
     @Composable
     fun GeometryUI() {
         var envGeometry by remember { mutableStateOf<GltfModel?>(null) }
-        var blueSkybox by remember { mutableStateOf<ExrImage?>(null) }
+        var blueSkybox by remember { mutableStateOf<ImageBasedLightingAsset?>(null) }
         val scope = rememberCoroutineScope()
 
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -219,7 +294,10 @@ class AccessibilityActivity : ComponentActivity() {
                         envGeometry =
                             GltfModel.create(session, Paths.get("models", "GroundGeometry.glb"))
                         blueSkybox =
-                            ExrImage.createFromZip(session, Paths.get("skyboxes", "BlueSkybox.zip"))
+                            ImageBasedLightingAsset.createFromZip(
+                                session,
+                                Paths.get("skyboxes", "BlueSkybox.zip"),
+                            )
                     }
                     setSkyboxAndGeometry(blueSkybox, envGeometry)
                 }
@@ -271,19 +349,27 @@ class AccessibilityActivity : ComponentActivity() {
             }
             Button({
                 if (surfaceEntity == null) {
-                    surfaceEntity =
+                    val newSurfaceEntity =
                         SurfaceEntity.create(
                             session,
                             pose = Pose(Vector3(-1f, 0f, -0.5f)),
                             shape = shape,
+                            parent = session.scene.activitySpace,
                         )
-                    surfaceEntity?.contentDescription = "${shape.javaClass.simpleName} Surface"
+                    newSurfaceEntity.contentDescription = "${shape.javaClass.simpleName} Surface"
+
+                    // Surface will be transparent if we don't add a solid color.
+                    val canvas = newSurfaceEntity.getSurface().lockHardwareCanvas()
+                    canvas.drawColor(Color.BLACK)
+                    newSurfaceEntity.getSurface().unlockCanvasAndPost(canvas)
+
+                    surfaceEntity = newSurfaceEntity
                 }
             }) {
                 Text("Create Surface", fontSize = 20.sp)
             }
             Button({
-                surfaceEntity?.dispose()
+                surfaceEntity?.parent = null
                 surfaceEntity = null
             }) {
                 Text("Remove Surface", fontSize = 20.sp)
@@ -292,61 +378,32 @@ class AccessibilityActivity : ComponentActivity() {
     }
 
     fun createModelEntity(model: GltfModel, desc: String, translation: Vector3): GltfModelEntity {
-        val entity: GltfModelEntity
-        entity = GltfModelEntity.create(session, model, Pose(translation))
-
+        val entity: GltfModelEntity = GltfModelEntity.create(session, model, Pose(translation))
         entity.setScale(0.5f)
         entity.contentDescription = desc
         return entity
     }
 
     @Composable
-    fun GltfEntityUI() {
-        val dragonEntities = remember { List(3) { mutableStateOf<GltfModelEntity?>(null) } }
-        var entitiesCreated by remember { mutableStateOf(false) }
-        var dragonModel by remember { mutableStateOf<GltfModel?>(null) }
-        val scope = rememberCoroutineScope()
-
+    fun GltfEntityUI(onToggle: (Boolean) -> Unit) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Button({
-                scope.launch {
-                    if (!entitiesCreated) {
-                        if (dragonModel == null) {
-                            dragonModel =
-                                GltfModel.create(
-                                    session,
-                                    Paths.get("models", "Dragon_Evolved.gltf"),
-                                )
-                        }
-                        var offset = -1.5f
-                        entitiesCreated = true
-                        dragonEntities.forEachIndexed { index, entity ->
-                            val translation = Vector3(offset, 0f, -1f)
-                            entity.value =
-                                createModelEntity(
-                                    dragonModel!!,
-                                    "Dragon Entity ${index+1} at $translation",
-                                    translation,
-                                )
-                            offset += 1.5f
-                        }
-                    }
-                }
-            }) {
-                Text("Create Models", fontSize = 20.sp)
-            }
-            Button({
-                if (entitiesCreated) {
-                    entitiesCreated = false
-                    dragonEntities.forEach {
-                        it.value?.dispose()
-                        it.value = null
-                    }
-                }
-            }) {
-                Text("Remove Models", fontSize = 20.sp)
-            }
+            Button(onClick = { onToggle(true) }) { Text("Create Models", fontSize = 20.sp) }
+            Button(onClick = { onToggle(false) }) { Text("Remove Models", fontSize = 20.sp) }
         }
+    }
+
+    @Composable
+    @SubspaceComposable
+    fun DragonModel(contentDescription: String, modifier: SubspaceModifier = SubspaceModifier) {
+        val dragonModelState =
+            rememberSpatialGltfModelState(
+                source = SpatialGltfModelSource.fromPath(Paths.get("models", "Dragon_Evolved.gltf"))
+            )
+
+        SpatialGltfModel(
+            state = dragonModelState,
+            modifier = modifier.semantics { this.contentDescription = contentDescription },
+        )
     }
 
     @Composable
@@ -371,45 +428,55 @@ class AccessibilityActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AnchorEntityUI() {
+    fun AnchorSpaceUI() {
         val gltfEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
-        val anchorEntity = remember { mutableStateOf<AnchorEntity?>(null) }
+        val anchorSpace = remember { mutableStateOf<AnchorSpace?>(null) }
         val scope = rememberCoroutineScope()
 
+        val arDevice = remember(session) { ArDevice.getInstance(session) }
+        val arDeviceState by arDevice.state.collectAsState()
+        val isTracking = arDeviceState.trackingState == TrackingState.TRACKING
+
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Button({
-                scope.launch {
-                    val anchorPose = Pose(Vector3(0f, -0.5f, -0.5f))
-                    val anchorResult = Anchor.create(session, anchorPose)
-                    when (anchorResult) {
-                        is AnchorCreateSuccess -> {
-                            val model =
-                                GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
-                            gltfEntity.value = createModelEntity(model, "", anchorPose.translation)
-                            anchorEntity.value =
-                                AnchorEntity.create(session, anchor = anchorResult.anchor)
-                            gltfEntity.value?.parent = anchorEntity?.value
-                            anchorEntity.value?.contentDescription =
-                                "Anchor Entity at ${anchorPose.translation}"
-                        }
+            Button(
+                enabled = isTracking,
+                onClick = {
+                    scope.launch {
+                        val anchorPose = Pose(Vector3(0f, -0.5f, -0.5f))
+                        val anchorResult = Anchor.create(session, anchorPose)
+                        when (anchorResult) {
+                            is AnchorCreateSuccess -> {
+                                val model =
+                                    GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
+                                gltfEntity.value =
+                                    createModelEntity(model, "", anchorPose.translation)
+                                anchorSpace.value =
+                                    AnchorSpace.create(session, anchor = anchorResult.anchor)
+                                gltfEntity.value?.parent = anchorSpace.value
+                                anchorSpace.value?.contentDescription =
+                                    "Anchor Space at ${anchorPose.translation}"
+                            }
 
-                        is AnchorCreateResourcesExhausted -> {
-                            Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
-                        }
+                            is AnchorCreateResourcesExhausted -> {
+                                Log.e(TAG, "Failed to create anchor: anchor resources exhausted.")
+                            }
 
-                        else -> {
-                            Log.e(TAG, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                            else -> {
+                                Log.e(
+                                    TAG,
+                                    "Failed to create anchor: ${anchorResult::class.simpleName}",
+                                )
+                            }
                         }
                     }
-                }
-            }) {
+                },
+            ) {
                 Text("Create Anchor", fontSize = 20.sp)
             }
             Button({
-                anchorEntity.value?.dispose()
-                anchorEntity.value = null
-                gltfEntity.value?.dispose()
+                gltfEntity.value?.parent = null
                 gltfEntity.value = null
+                anchorSpace.value = null
             }) {
                 Text("Remove Anchor", fontSize = 20.sp)
             }

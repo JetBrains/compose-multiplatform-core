@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Message ici.\nTexte supplémentaire à la deuxième ligne."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Démo du modèle de message court"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Démo d\'un modèle d\'élément segmenté"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Démo d\'éléments condensés"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Démo d\'éléments à sections AlphaJump activée"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Section à boutons radio"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Activer/Désactiver la section"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Liste 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Sous-titre de chaque liste"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Image de fin et actions de la démo"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Démo des jetons"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Démo de la barre de progression"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Démo de l\'en-tête de section"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Démo de la section Vedettes"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Démo du modèle de volet"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Démo du modèle de la liste des lieux"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Parcourir les lieux"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Dernières fonctionnalités"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Chargement activé"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Chargement désactivé"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Utiliser le thème de l\'appli"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Thème de l\'appli activé"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Thème de l\'appli désactivé"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Écran de chargement"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Basculer pour ajouter ou retirer une couleur"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Modèle de carte avec commutateurs"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Démos de cartes avec du contenu"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Démo d\'une carte avec message"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Démo du modèle de carte avec grille"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Carte avec liste d\'éléments à sections"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Démo de bannière"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Démo d\'en-tête améliorée"</string>
 </resources>

@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,9 +45,8 @@ import org.junit.runner.RunWith
 class HorizontalCenterOpticallyTest {
     private val TextTag = "text"
     private val ContainerTag = "container"
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun horizontalCenterOptically_contentPadding_asymmetricShape() {
         val shape =
@@ -87,7 +85,6 @@ class HorizontalCenterOpticallyTest {
         (containerBounds.right - textBounds.right).assertIsEqualTo(expectedEndPadding)
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun horizontalCenterOptically_contentPadding_symmetricShape() {
         val shape = RoundedCornerShape(0.dp)
@@ -119,7 +116,6 @@ class HorizontalCenterOpticallyTest {
         (containerBounds.right - textBounds.right).assertIsEqualTo(expectedPadding)
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun horizontalCenterOptically_contentPadding_asymmetricShape_rtl() {
         val shape =

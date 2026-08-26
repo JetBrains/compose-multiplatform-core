@@ -171,9 +171,14 @@ fun PasswordTextField() {
     SecureTextField(
         state = rememberTextFieldState(),
         label = { Text("Enter password") },
+        keyboardOptions =
+            KeyboardOptions(
+                autoCorrectEnabled = false,
+                keyboardType =
+                    if (passwordHidden) KeyboardType.Password else KeyboardType.PasswordVisible,
+            ),
         textObfuscationMode =
-            if (passwordHidden) TextObfuscationMode.RevealLastTyped
-            else TextObfuscationMode.Visible,
+            if (passwordHidden) TextObfuscationMode.System else TextObfuscationMode.Visible,
         trailingIcon = {
             IconButton(onClick = { passwordHidden = !passwordHidden }) {
                 val visibilityIcon =

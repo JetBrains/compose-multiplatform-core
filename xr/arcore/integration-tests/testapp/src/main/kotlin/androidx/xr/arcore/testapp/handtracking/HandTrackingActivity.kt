@@ -44,13 +44,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Hand
 import androidx.xr.arcore.HandJointType
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
+import androidx.xr.arcore.testapp.common.asString
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
@@ -151,7 +152,7 @@ class HandTrackingActivity : ComponentActivity() {
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(handTracking = HandTrackingMode.BOTH),
+                Config.Builder().setHandTracking(HandTrackingMode.BOTH).build(),
                 onSessionAvailable = { session ->
                     this.session = session
 
@@ -163,18 +164,28 @@ class HandTrackingActivity : ComponentActivity() {
 
                             val leftHandJointEntityMap =
                                 HandJointType.entries.associateWith {
-                                    GltfModelEntity.create(session, xyzModel).also {
-                                        it.setScale(0.015f)
-                                        it.setEnabled(false)
-                                    }
+                                    GltfModelEntity.create(
+                                            session,
+                                            xyzModel,
+                                            parent = session.scene.activitySpace,
+                                        )
+                                        .also {
+                                            it.setScale(0.015f)
+                                            it.setEnabled(false)
+                                        }
                                 }
 
                             val rightHandJointEntityMap =
                                 HandJointType.entries.associateWith {
-                                    GltfModelEntity.create(session, xyzModel).also {
-                                        it.setScale(0.015f)
-                                        it.setEnabled(false)
-                                    }
+                                    GltfModelEntity.create(
+                                            session,
+                                            xyzModel,
+                                            parent = session.scene.activitySpace,
+                                        )
+                                        .also {
+                                            it.setScale(0.015f)
+                                            it.setEnabled(false)
+                                        }
                                 }
 
                             launch {
@@ -184,7 +195,7 @@ class HandTrackingActivity : ComponentActivity() {
                                     }
                                 } finally {
                                     for (entity in leftHandJointEntityMap.values) {
-                                        entity.dispose()
+                                        entity.parent = null
                                     }
                                 }
                             }
@@ -196,7 +207,7 @@ class HandTrackingActivity : ComponentActivity() {
                                     }
                                 } finally {
                                     for (entity in rightHandJointEntityMap.values) {
-                                        entity.dispose()
+                                        entity.parent = null
                                     }
                                 }
                             }
@@ -346,7 +357,7 @@ class HandTrackingActivity : ComponentActivity() {
                         .padding(5.dp)
             ) {
                 Text(text = "CoreState: ${state.timeMark.toString()}", fontSize = 22.sp)
-                if (leftHand == null || rightHand == null) {
+                if (session.config.handTracking == HandTrackingMode.DISABLED) {
                     Text(text = "Hand module is not supported.", fontSize = 22.sp)
                 } else {
                     val handedness = Hand.getPrimaryHandSide(contentResolver)
@@ -354,7 +365,8 @@ class HandTrackingActivity : ComponentActivity() {
 
                     val leftHandState = leftHand.state.collectAsState().value
                     Text(
-                        text = "Left hand tracking is active: ${leftHandState.trackingState}",
+                        text =
+                            "Left hand tracking is active: ${leftHandState.trackingState.asString()}",
                         fontSize = 22.sp,
                     )
                     if (leftHandState.trackingState == TrackingState.TRACKING) {
@@ -367,7 +379,8 @@ class HandTrackingActivity : ComponentActivity() {
 
                     val rightHandState = rightHand.state.collectAsState().value
                     Text(
-                        text = "Right hand tracking is active: ${rightHandState.trackingState}",
+                        text =
+                            "Right hand tracking is active: ${rightHandState.trackingState.asString()}",
                         fontSize = 22.sp,
                     )
                     if (rightHandState.trackingState == TrackingState.TRACKING) {

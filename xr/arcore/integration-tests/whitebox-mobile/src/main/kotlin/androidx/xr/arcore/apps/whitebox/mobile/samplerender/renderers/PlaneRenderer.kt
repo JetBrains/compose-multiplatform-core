@@ -19,6 +19,7 @@ package androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers
 import android.opengl.Matrix
 import androidx.collection.MutableObjectIntMap
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.IndexBuffer
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Mesh
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.SampleRender
@@ -26,7 +27,6 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Shader
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Shader.BlendFactor
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Texture
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.VertexBuffer
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -186,9 +186,9 @@ class PlaneRenderer(render: SampleRender) {
     /**
      * Draws the collection of tracked planes, with closer planes hiding more distant ones.
      *
-     * @param allPlanes The collection of planes to draw.
-     * @param cameraPose The pose of the camera.
-     * @param cameraProjection The projection matrix.
+     * @param allPlanes the collection of planes to draw
+     * @param cameraPose the pose of the camera
+     * @param cameraProjection the projection matrix
      */
     fun drawPlanes(
         render: SampleRender,

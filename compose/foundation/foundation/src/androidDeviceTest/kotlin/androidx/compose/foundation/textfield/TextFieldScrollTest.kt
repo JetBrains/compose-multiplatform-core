@@ -46,6 +46,7 @@ import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -54,6 +55,7 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
@@ -90,7 +92,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -121,7 +122,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu " +
             "fugiat nulla pariatur."
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun before() {
@@ -436,6 +437,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                         remember { scrollerPosition },
                         TextFieldValue(text),
                         VisualTransformation.None,
+                        null,
                     ) {
                         textLayoutResultRef.value
                     },
@@ -486,6 +488,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                         remember { scrollerPosition },
                         TextFieldValue(text),
                         VisualTransformation.None,
+                        null,
                     ) {
                         textLayoutResultRef.value
                     },
@@ -622,6 +625,7 @@ class TextFieldScrollTest : FocusedWindowTest {
 
         rule.onNodeWithTag(TextfieldTag).performTouchInput { swipeRight() }
         rule.runOnIdle {
+            assertThat(overscrollEffect.drawCallsCount).isGreaterThan(0)
             assertThat(overscrollEffect.applyToScrollCallCount).isGreaterThan(0)
             assertThat(overscrollEffect.applyToFlingCallCount).isGreaterThan(0)
         }
@@ -641,6 +645,7 @@ class TextFieldScrollTest : FocusedWindowTest {
 
         rule.onNodeWithTag(TextfieldTag).performTouchInput { swipeDown() }
         rule.runOnIdle {
+            assertThat(overscrollEffect.drawCallsCount).isGreaterThan(0)
             assertThat(overscrollEffect.applyToScrollCallCount).isGreaterThan(0)
             assertThat(overscrollEffect.applyToFlingCallCount).isGreaterThan(0)
         }
@@ -702,7 +707,11 @@ class TextFieldScrollTest : FocusedWindowTest {
             modifier =
                 modifier
                     .testTag(TextfieldTag)
-                    .heightInLines(textStyle = TextStyle.Default, maxLines = resolvedMaxLines)
+                    .heightInLines(
+                        textStyle = TextStyle.Default,
+                        maxLines = resolvedMaxLines,
+                        softWrap = isVertical,
+                    )
                     .textFieldScrollable(
                         scrollerPosition = scrollerPosition,
                         overscrollEffect = overscrollEffect,
@@ -711,6 +720,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                         remember { scrollerPosition },
                         TextFieldValue(text),
                         VisualTransformation.None,
+                        overscrollEffect,
                         { textLayoutResultRef.value },
                     ),
         )
@@ -718,8 +728,16 @@ class TextFieldScrollTest : FocusedWindowTest {
 }
 
 private class CustomEffect : OverscrollEffect {
+    inner class OverscrollNode : Modifier.Node(), DrawModifierNode {
+        override fun ContentDrawScope.draw() {
+            drawCallsCount++
+            drawContent()
+        }
+    }
+
     override val isInProgress = false
-    override val node = object : Modifier.Node() {}
+    override val node = OverscrollNode()
+    var drawCallsCount = 0
     var applyToScrollCallCount = 0
     var applyToFlingCallCount = 0
 

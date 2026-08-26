@@ -7,9 +7,12 @@ module:kotlinx-coroutines-core
 kotlinx.coroutines
 kotlinx.coroutines.channels
 kotlinx.coroutines.flow
-kotlinx.coroutines.intrinsics
+kotlinx.coroutines.future
+kotlinx.coroutines.internal
 kotlinx.coroutines.selects
+kotlinx.coroutines.stream
 kotlinx.coroutines.sync
+kotlinx.coroutines.time
 module:kotlinx-coroutines-debug
 kotlinx.coroutines.debug
 kotlinx.coroutines.debug.junit4
@@ -18,10 +21,6 @@ module:kotlinx-coroutines-guava
 kotlinx.coroutines.guava
 module:kotlinx-coroutines-javafx
 kotlinx.coroutines.javafx
-module:kotlinx-coroutines-jdk8
-kotlinx.coroutines.future
-kotlinx.coroutines.stream
-kotlinx.coroutines.time
 module:kotlinx-coroutines-jdk9
 kotlinx.coroutines.jdk9
 module:kotlinx-coroutines-play-services

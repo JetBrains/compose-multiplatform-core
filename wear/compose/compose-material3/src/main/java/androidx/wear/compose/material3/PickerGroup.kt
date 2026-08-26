@@ -17,10 +17,8 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -64,9 +62,16 @@ import kotlinx.coroutines.coroutineScope
  *
  * @sample androidx.wear.compose.material3.samples.PickerGroupSample
  *
+ * ![PickerGroupSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_PickerGroupSample_CompositeImage.png)
+ *
  * Example of an auto centering picker group where the total width exceeds screen's width:
  *
  * @sample androidx.wear.compose.material3.samples.AutoCenteringPickerGroup
+ *
+ * ![AutoCenteringPickerGroup Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_AutoCenteringPickerGroup_CompositeImage.png)
+ *
  * @param selectedPickerState The [PickerState] of the [Picker] that is selected. Null value means
  *   that no [Picker] is selected.
  * @param modifier [Modifier] to be applied to the [PickerGroup].
@@ -95,13 +100,9 @@ public fun PickerGroup(
         modifier =
             modifier.then(
                 if (touchExplorationServicesEnabled && selectedPickerState != null) {
-                    // When touch exploration services are enabled, send the scroll events on the
-                    // parent composable to selected picker
-                    Modifier.scrollable(
-                        state = selectedPickerState,
-                        orientation = Orientation.Vertical,
-                        reverseDirection = true,
-                    )
+                    // When touch exploration services are enabled,
+                    // Apply scrollable modifier for the selected picker
+                    Modifier.scrollableForTouchExploration(selectedPickerState)
                 } else if (!touchExplorationServicesEnabled && autoCenter) {
                     // Apply the single-pointer input filter only when touch exploration is OFF
                     // and autoCenter is TRUE.

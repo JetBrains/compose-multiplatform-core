@@ -16,37 +16,50 @@
 
 package androidx.compose.foundation.lazy.list
 
-import androidx.compose.foundation.ComposeFoundationFlags.isCacheWindowRefillFixEnabled
+import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.printToLog
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Assume
+import org.junit.Assert.assertEquals
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -188,12 +201,10 @@ class LazyListCacheWindowTest(orientation: Orientation) :
 
     @Test
     fun datasetChanged_shouldMakeSureNestedItemsChanged_afterScroll() {
-        Assume.assumeTrue(isCacheWindowRefillFixEnabled)
         val items = mutableStateOf(listOf("a", "b", "c", "d", "e"))
 
         rule.setContent {
-            @OptIn(ExperimentalFoundationApi::class)
-            state = rememberLazyListState(cacheWindow = viewportWindow)
+            state = rememberLazyListState()
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f)
                     .then(
@@ -204,13 +215,15 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                         }
                     ),
                 state,
+                cacheWindow = viewportWindow,
             ) {
                 items(items.value, key = { it }) {
                     if (it == "e") {
-                        val state = rememberLazyListState(cacheWindow = viewportWindow)
+                        val state = rememberLazyListState()
                         LazyRow(
                             Modifier.mainAxisSize(itemsSizeDp).fillMaxCrossAxis().testTag(it),
                             state = state,
+                            cacheWindow = viewportWindow,
                         ) {
                             item {
                                 Spacer(
@@ -269,12 +282,10 @@ class LazyListCacheWindowTest(orientation: Orientation) :
 
     @Test
     fun datasetChanged_shouldMakeSureNestedItemsChanged_noScroll() {
-        Assume.assumeTrue(isCacheWindowRefillFixEnabled)
         val items = mutableStateOf(listOf("a", "b", "c", "d"))
 
         rule.setContent {
-            @OptIn(ExperimentalFoundationApi::class)
-            state = rememberLazyListState(cacheWindow = viewportWindow)
+            state = rememberLazyListState()
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 2f)
                     .then(
@@ -285,13 +296,15 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                         }
                     ),
                 state,
+                cacheWindow = viewportWindow,
             ) {
                 items(items.value, key = { it }) {
                     if (it == "e" || it == "f") {
-                        val state = rememberLazyListState(cacheWindow = viewportWindow)
+                        val state = rememberLazyListState()
                         LazyRow(
                             Modifier.mainAxisSize(itemsSizeDp).fillMaxCrossAxis().testTag(it),
                             state = state,
+                            cacheWindow = viewportWindow,
                         ) {
                             item {
                                 Spacer(
@@ -422,6 +435,53 @@ class LazyListCacheWindowTest(orientation: Orientation) :
         rule.onNodeWithTag("23").assertDoesNotExist()
     }
 
+    @Test
+    fun lookahead_sizeChange_cacheClearedCorrectly() {
+        assumeTrue(ComposeFoundationFlags.isCacheWindowLookaheadCheckEnabled)
+        assumeTrue(ComposeFoundationFlags.isMultiLaneCacheWindowEnabled)
+        val disposed = mutableListOf<Boolean>().apply { repeat(10) { this.add(false) } }
+        var lookaheadHeight by mutableIntStateOf(1000)
+        var approachHeight by mutableIntStateOf(1000)
+        rule.setContent {
+            LookaheadScope {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyColumn(
+                        Modifier.layout { m, _ ->
+                            val c =
+                                if (isLookingAhead) Constraints.fixed(400, lookaheadHeight)
+                                else Constraints.fixed(400, approachHeight)
+                            m.measure(c).run { layout(width, lookaheadHeight) { place(0, 0) } }
+                        },
+                        state = LazyListState(),
+                        cacheWindow = LazyLayoutCacheWindow(0f),
+                    ) {
+                        items(10) {
+                            Box(Modifier.height(100.dp).fillMaxWidth())
+                            DisposableEffect(Unit) { onDispose { disposed[it] = true } }
+                        }
+                    }
+                }
+            }
+        }
+        rule.runOnIdle { repeat(10) { assertEquals(false, disposed[it]) } }
+        approachHeight = 400
+        rule.waitForIdle()
+        lookaheadHeight = 400
+
+        rule.runOnIdle {
+            repeat(10) {
+                if (it < 4) {
+                    assertEquals(false, disposed[it])
+                } else {
+                    assertEquals(true, disposed[it])
+                }
+            }
+        }
+        lookaheadHeight = 300
+
+        rule.runOnIdle { repeat(4) { assertEquals(false, disposed[it]) } }
+    }
+
     private val activeNodes = mutableSetOf<Int>()
 
     private fun composeList(
@@ -435,12 +495,10 @@ class LazyListCacheWindowTest(orientation: Orientation) :
     ) {
         rule.setContent {
             scope = rememberCoroutineScope()
-            @OptIn(ExperimentalFoundationApi::class)
             state =
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = firstItem,
                     initialFirstVisibleItemScrollOffset = itemOffset,
-                    cacheWindow = cacheWindow,
                 )
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * numberOfItemsInTheList)
@@ -454,6 +512,7 @@ class LazyListCacheWindowTest(orientation: Orientation) :
                 state,
                 reverseLayout = reverseLayout,
                 contentPadding = contentPadding,
+                cacheWindow = cacheWindow,
             ) {
                 items(numItems.value) {
                     DisposableEffect(it) {

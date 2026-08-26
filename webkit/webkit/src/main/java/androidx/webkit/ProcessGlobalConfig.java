@@ -21,6 +21,7 @@ import android.content.Context;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.OptIn;
+import androidx.annotation.ReplaceWith;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp;
@@ -115,13 +116,14 @@ public class ProcessGlobalConfig {
      *               process. Must not contain a path separator and should not be empty.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
      * @throws UnsupportedOperationException if the
-     *                              {@link WebViewFeature#STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX} feature is not
+     *     supported. This should be checked before use with
+     *     {@link WebViewFeature#isStartupFeatureSupported}.
      * @throws IllegalArgumentException if the suffix contains a path separator or is empty.
      */
     @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             enforcement =
-                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+                    "androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)")
     public @NonNull ProcessGlobalConfig setDataDirectorySuffix(@NonNull Context context,
             @NonNull String suffix) {
         final StartupApiFeature.P feature =
@@ -171,18 +173,21 @@ public class ProcessGlobalConfig {
      * @param cacheDirectoryBasePath the absolute base path for the WebView cache directory.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
      * @throws UnsupportedOperationException if the
-     *                               {@link WebViewFeature#STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isStartupFeatureSupported}.
      * @throws IllegalArgumentException if the paths supplied do not have the right permissions
-     * @deprecated Please use {@link #setDataDirectorySuffix(Context, String)}
-     *              to set the suffix instead.
+     * @deprecated Deprecated due to the lack of usage and the added maintenance complexity. In
+     *     order to support more than one process running WebView,
+     *     {@link #setDataDirectorySuffix(Context, String)} can be used instead to set the
+     *     data directory suffix. There is no utility expected in setting the base
+     *     directory base paths.
      */
     @Deprecated
     @SuppressWarnings("StreamFiles")
     @RequiresFeature(name =
             WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             enforcement =
-                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+                    "androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)")
     public @NonNull ProcessGlobalConfig setDirectoryBasePaths(@NonNull Context context,
             @NonNull File dataDirectoryBasePath, @NonNull File cacheDirectoryBasePath) {
         final StartupApiFeature.NoFramework feature =
@@ -215,12 +220,13 @@ public class ProcessGlobalConfig {
      * @param isEnabled whether partitioned cookies should be enabled.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
      * @throws UnsupportedOperationException if the
-     *                          {@link WebViewFeature#STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES} feature is not
+     *     supported. This should be checked before use with
+     *     {@link WebViewFeature#isStartupFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
             enforcement =
-                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+                    "androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)")
     public @NonNull ProcessGlobalConfig setPartitionedCookiesEnabled(
             @NonNull Context context, boolean isEnabled) {
         final StartupApiFeature.NoFramework feature =
@@ -280,6 +286,7 @@ public class ProcessGlobalConfig {
      */
     @ExperimentalAsyncStartUp
     @Deprecated
+    @ReplaceWith(expression = "ProcessGlobalConfig.UI_THREAD_STARTUP_MODE_ASYNC")
     public static final int UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS =
             UI_THREAD_STARTUP_MODE_ASYNC;
 
@@ -292,6 +299,7 @@ public class ProcessGlobalConfig {
      */
     @ExperimentalAsyncStartUp
     @Deprecated
+    @ReplaceWith(expression = "ProcessGlobalConfig.UI_THREAD_STARTUP_MODE_ASYNC")
     public static final int UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS =
             UI_THREAD_STARTUP_MODE_ASYNC;
 
@@ -305,6 +313,7 @@ public class ProcessGlobalConfig {
      */
     @ExperimentalAsyncStartUp
     @Deprecated
+    @ReplaceWith(expression = "ProcessGlobalConfig.UI_THREAD_STARTUP_MODE_ASYNC")
     public static final int UI_THREAD_STARTUP_MODE_ASYNC_VERY_SHORT_TASKS =
             ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE_ASYNC_VERY_SHORT_TASKS;
 
@@ -329,17 +338,18 @@ public class ProcessGlobalConfig {
      * @param startupMode the mode to run WebView's UI thread initialization in.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
      * @throws UnsupportedOperationException if the
-     *                             {@link WebViewFeature#STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE}
-     *                                       feature is not supported.
-     *
+     *     {@link WebViewFeature#STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE} feature is not
+     *     supported. This should be checked before use with
+     *     {@link WebViewFeature#isStartupFeatureSupported}.
      * @deprecated Use {@link #setUiThreadStartupModeV2(Context, int)} instead.
      */
     @ExperimentalAsyncStartUp
     @RequiresFeature(
             name = WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
             enforcement =
-                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+                    "androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)")
     @Deprecated
+    @ReplaceWith(expression = "setUiThreadStartupModeV2(context, startupMode)")
     public @NonNull ProcessGlobalConfig setUiThreadStartupMode(
             @NonNull Context context, @UiThreadStartupMode int startupMode) {
         final StartupApiFeature.NoFramework feature =
@@ -361,14 +371,15 @@ public class ProcessGlobalConfig {
      * @param startupMode the mode to run WebView's UI thread initialization in.
      * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
      * @throws UnsupportedOperationException if the
-     *                          {@link WebViewFeature#STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2} feature is not
+     *     supported. This should be checked before use with
+     *     {@link WebViewFeature#isStartupFeatureSupported}.
      */
     @ExperimentalAsyncStartUp
     @RequiresFeature(
             name = WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2,
             enforcement =
-                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+                    "androidx.webkit.WebViewFeature#isStartupFeatureSupported(String, Context)")
     public @NonNull ProcessGlobalConfig setUiThreadStartupModeV2(
             @NonNull Context context, @UiThreadStartupMode int startupMode) {
         final StartupApiFeature.NoFramework feature =

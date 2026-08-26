@@ -16,10 +16,12 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.hasTestTag
@@ -33,11 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.matchers.BitmapMatcher
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope
+import androidx.wear.compose.material3.AlertDialogDefaults.ConfirmIcon
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -47,7 +51,7 @@ import org.junit.runner.RunWith
 @RunWith(TestParameterInjector::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AlertDialogScreenshotTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -263,6 +267,27 @@ class AlertDialogScreenshotTest {
         )
     }
 
+    @Test
+    fun alertContent_icon_title_longMessageText_reducedBottomButton(
+        @TestParameter edgeButtonContent: EdgeButtonContent
+    ) {
+        rule.verifyAlertDialogContentScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            showIcon = true,
+            showContent = false,
+            showTwoButtons = false,
+            scrollToBottom = false,
+            screenSize = ScreenSize.LARGE,
+            contentContainer = ContentContainer.TLC,
+            edgeButtonContent = edgeButtonContent,
+            titleText = "Test EdgeButton",
+            messageText =
+                "This long text forces the AlertDialog's EdgeButton to shrink in size, allowing us to verify that the UI renders and scales correctly even when constrained by content length.",
+            matcher = MSSIMMatcher(0.99), // Check for the near-perfect match
+        )
+    }
+
     private fun ComposeContentTestRule.verifyAlertDialogContentScreenshot(
         testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,
@@ -274,6 +299,8 @@ class AlertDialogScreenshotTest {
         contentContainer: ContentContainer,
         messageText: String? = MessageText,
         titleText: String = TitleText,
+        edgeButtonContent: EdgeButtonContent = EdgeButtonContent.Icon,
+        matcher: BitmapMatcher = MSSIMMatcher(),
     ) {
         setContentWithTheme {
             ScreenConfiguration(screenSize.size, isRound = true) {
@@ -295,7 +322,12 @@ class AlertDialogScreenshotTest {
                         } else null,
                     edgeButton =
                         if (!showTwoButtons) {
-                            { AlertDialogDefaults.EdgeButton({}) }
+                            {
+                                AlertDialogDefaults.EdgeButton(
+                                    onClick = {},
+                                    content = edgeButtonContent.content,
+                                )
+                            }
                         } else null,
                     text =
                         if (messageText != null) {
@@ -320,6 +352,7 @@ class AlertDialogScreenshotTest {
             testName,
             screenshotRule,
             testTagNode = onAllNodes(hasTestTag(TEST_TAG), true).onFirst(),
+            matcher = matcher,
         )
     }
 
@@ -358,6 +391,11 @@ class AlertDialogScreenshotTest {
             )
         }
     }
+}
+
+enum class EdgeButtonContent(val content: @Composable RowScope.() -> Unit) {
+    Icon(ConfirmIcon),
+    Text({ Text("Button") }),
 }
 
 internal const val longMessageText =

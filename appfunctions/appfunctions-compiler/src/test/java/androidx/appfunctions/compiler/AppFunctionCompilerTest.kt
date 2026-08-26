@@ -18,7 +18,9 @@ package androidx.appfunctions.compiler
 
 import androidx.appfunctions.compiler.testings.CompilationTestHelper
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import java.io.File
+import kotlin.io.path.Path
 import org.junit.Before
 import org.junit.Test
 
@@ -31,7 +33,7 @@ class AppFunctionCompilerTest {
             CompilationTestHelper(
                 testFileSrcDir = File("src/test/test-data/input"),
                 goldenFileSrcDir = File("src/test/test-data/output"),
-                proxySourceFileNames =
+                stubSourceFileNames =
                     listOf(
                         "androidx/appfunctions/internal/serializableproxies/AppFunctionLocalDateTime.KT",
                         "androidx/appfunctions/internal/serializableproxies/AppFunctionUri.KT",
@@ -41,6 +43,199 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testAppFunctionSignature_globalScope_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/GlobalSignature.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/globalSignature_app_level_app_functions.xml",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName =
+                "${'$'}GlobalSignature_HandleAppFunctionRequestAdapter.kt",
+            goldenFileName = "adapter/${'$'}GlobalSignature_HandleAppFunctionRequestAdapter.KT",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_withSerializable_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/SerializableSignature.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/serializableSignature_app_level_app_functions.xml",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName =
+                "${'$'}SerializableSignature_HandleAppFunctionRequestAdapter.kt",
+            goldenFileName =
+                "adapter/${'$'}SerializableSignature_HandleAppFunctionRequestAdapter.KT",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_withDescription_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/SignatureWithDescription.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/signatureWithDescription_app_level_app_functions.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_withInstruction_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/SignatureWithInstruction.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/signatureWithInstruction_app_level_app_functions.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_withKDocAndInstruction_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/SignatureWithKDocAndInstruction.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/signatureWithKDocAndInstruction_app_level_app_functions.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_withMixOfKDocAndInstruction_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/SignatureWithMixOfKDocAndInstruction.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/signatureWithMixOfKDocAndInstruction_app_level_app_functions.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_activityScope_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/valid/ActivitySignature.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_level_app_functions.xml",
+            goldenFileName = "xml/activitySignature_app_level_app_functions.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_noMethods_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/invalid/NoMethodsInterface.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            expectedErrorMessage =
+                "Only functional interfaces (fun interface) can be annotated with @AppFunctionSignature",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_multiMethods_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/invalid/MultiMethodsInterface.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            expectedErrorMessage =
+                "Only functional interfaces (fun interface) can be annotated with @AppFunctionSignature",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_invalidClassKind_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/invalid/InvalidClassSignature.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            expectedErrorMessage =
+                "Only functional interfaces (fun interface) can be annotated with @AppFunctionSignature",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_notFunctionalInterface_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/invalid/NotFunctionalInterface.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            expectedErrorMessage =
+                "Only functional interfaces (fun interface) can be annotated with @AppFunctionSignature",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_invalidScope_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("signatures/invalid/InvalidScopeSignature.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            expectedErrorMessage = "Invalid scope: \"100\". Supported scopes are \"0\" and \"1\".",
+        )
+    }
+
+    @Test
+    fun testAppFunctionSignature_emptyAppFunctionXmlFileName_hasCompileError() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf("signatures/invalid/EmptyAppFunctionXmlFileNameSignature.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report = report,
+            expectedErrorMessage = "appFunctionXmlFileName cannot be empty",
+        )
+    }
+
     fun testEmpty() {
         val report = compilationTestHelper.compileAll(sourceFileNames = emptyList())
 
@@ -758,6 +953,21 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testFakeFreeFormFunctionWithInstruction_genXml_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("functions/valid/FakeFreeFormFunctionsWithInstruction.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "xml/fake_freeForm_with_instruction_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
     fun testFakeFunction_freeForm_detailedKdocAsDescription_success() {
         val report =
             compilationTestHelper.compileAll(
@@ -1148,6 +1358,96 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedResourceFileName = "app_functions_v2.xml",
             goldenFileName = "xml/deprecated_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionsXmlLocation_generatesFileAtSpecifiedLocation() {
+        // Create a unique temporary directory for this test's output
+        val testOutputLocation =
+            Path(
+                    compilationTestHelper.outputDir.toString(),
+                    "build/test-generated-xml/${java.util.UUID.randomUUID()}",
+                )
+                .toString()
+        val dynamicSchemaXmlFile = File(testOutputLocation, "app_functions_v2.xml")
+        val legacySchemaXmlFile = File(testOutputLocation, "app_functions.xml")
+
+        try {
+            val report =
+                compilationTestHelper.compileAll(
+                    sourceFileNames = listOf("functions/valid/FunctionWithGenericSerializable.KT"),
+                    processorOptions =
+                        mapOf(
+                            "appfunctions:aggregateAppFunctions" to "true",
+                            "appfunctions:appFunctionsXmlLocation" to testOutputLocation,
+                        ),
+                )
+
+            assertThat(dynamicSchemaXmlFile.exists()).isTrue()
+            compilationTestHelper.assertSuccessWithGeneratedContent(
+                report,
+                expectGeneratedFileName = dynamicSchemaXmlFile.name,
+                goldenFileName =
+                    "xml/functionWithGenericSerializable_app_function_dynamic_schema.xml",
+                generatedFileContent = dynamicSchemaXmlFile.readText(),
+            )
+            assertThat(legacySchemaXmlFile.exists()).isTrue()
+            compilationTestHelper.assertSuccessWithGeneratedContent(
+                report,
+                expectGeneratedFileName = legacySchemaXmlFile.name,
+                goldenFileName = "xml/functionWithGenericSerializable_app_function_legacy.xml",
+                generatedFileContent = legacySchemaXmlFile.readText(),
+            )
+            // Also verify original XML under assets is still generated.
+            compilationTestHelper.assertSuccessWithResourceContent(
+                report = report,
+                expectGeneratedResourceFileName = "app_functions_v2.xml",
+                goldenFileName =
+                    "xml/functionWithGenericSerializable_app_function_dynamic_schema.xml",
+            )
+            compilationTestHelper.assertSuccessWithResourceContent(
+                report = report,
+                expectGeneratedResourceFileName = "app_functions.xml",
+                goldenFileName = "xml/functionWithGenericSerializable_app_function_legacy.xml",
+            )
+        } finally {
+            File(testOutputLocation).deleteRecursively()
+        }
+    }
+
+    @Test
+    fun testKDocPropertyIndex_generateXml() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("entrypoints/valid/PropertyDocPriorityService.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "property_doc_priority.xml",
+            goldenFileName = "xml/property_doc_priority.xml",
+        )
+    }
+
+    @Test
+    fun testKDocPropertyIndex_multiModule_generateXml() {
+        val libraryReport =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("serializable/valid/MultiModuleLibrarySerializable.KT")
+            )
+        assertThat(libraryReport.isSuccess).isTrue()
+
+        val appReport =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("entrypoints/valid/MultiModuleAppService.KT"),
+                additionalClasspath = libraryReport.outputClasspath,
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = appReport,
+            expectGeneratedResourceFileName = "multi_module_app.xml",
+            goldenFileName = "xml/multi_module_app.xml",
         )
     }
 }

@@ -40,8 +40,8 @@ android {
 
 dependencies {
     implementation(libs.kotlinCoroutinesCore)
-    implementation(project(":activity:activity"))
-    implementation(project(":lifecycle:lifecycle-runtime"))
+    implementation("androidx.activity:activity:1.12.1")
+    implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
     implementation(project(":xr:arcore:arcore"))
     implementation(project(":xr:arcore:arcore-play-services"))
     implementation(project(":xr:scenecore:scenecore"))

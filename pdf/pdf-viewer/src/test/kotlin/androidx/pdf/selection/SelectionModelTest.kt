@@ -16,13 +16,18 @@
 
 package androidx.pdf.selection
 
+import android.graphics.Bitmap
 import android.graphics.Point
+import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Parcel
 import android.util.SparseArray
+import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
+import androidx.pdf.selection.model.ImageSelection
 import androidx.pdf.selection.model.TextSelection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -38,14 +43,61 @@ class SelectionModelTest {
     val selectionBoundary = SelectionBoundary(0, Point(100, 100), false)
 
     @Test
-    fun testCombineSelections_returnsNullOnNoSelections() {
-        val result =
-            SelectionModel.getCombinedSelectionModel(DocumentSelection(SparseArray()), emptyList())
+    fun testCreate_returnsNullOnNoSelections() {
+        val result = SelectionModel.create(emptyList())
         assertNull(result)
     }
 
     @Test
-    fun testCombineSelections_combineSingleSelection() {
+    fun testCreate_isOcrFlag() {
+        val newBounds: List<RectF> = listOf(RectF(100f, 100f, 200f, 200f))
+        val newPageSelections: List<PageSelection?> =
+            listOf(
+                PageSelection(
+                    1,
+                    selectionBoundary,
+                    selectionBoundary,
+                    listOf(PdfPageTextContent(newBounds, "Hello")),
+                )
+            )
+
+        val ocrSelection = SelectionModel.create(newPageSelections, isOcr = true)
+        assertNotNull(ocrSelection)
+        assertEquals(true, ocrSelection?.isOcr)
+
+        val nonOcrSelection = SelectionModel.create(newPageSelections, isOcr = false)
+        assertNotNull(nonOcrSelection)
+        assertEquals(false, nonOcrSelection?.isOcr)
+    }
+
+    @Test
+    fun testParcelable_isOcrPreserved() {
+        val newBounds: List<RectF> = listOf(RectF(100f, 100f, 200f, 200f))
+        val newPageSelections: List<PageSelection?> =
+            listOf(
+                PageSelection(
+                    1,
+                    selectionBoundary,
+                    selectionBoundary,
+                    listOf(PdfPageTextContent(newBounds, "Hello")),
+                )
+            )
+
+        val original = SelectionModel.create(newPageSelections, isOcr = true)
+        val parcel = Parcel.obtain()
+        original?.writeToParcel(parcel, 0)
+        parcel.setDataPosition(0)
+
+        val restored = SelectionModel.CREATOR.createFromParcel(parcel)
+        assertNotNull(restored)
+        assertEquals(true, restored.isOcr)
+        assertEquals(original?.startBoundary, restored.startBoundary)
+        assertEquals(original?.endBoundary, restored.endBoundary)
+        parcel.recycle()
+    }
+
+    @Test
+    fun testCreate_singleSelection() {
 
         val newBounds: List<RectF> = listOf(RectF(100f, 100f, 200f, 200f))
         val newPageSelections: List<PageSelection?> =
@@ -58,11 +110,7 @@ class SelectionModelTest {
                 )
             )
 
-        val combinedSelection: SelectionModel? =
-            SelectionModel.getCombinedSelectionModel(
-                DocumentSelection(SparseArray()),
-                newPageSelections,
-            )
+        val combinedSelection: SelectionModel? = SelectionModel.create(newPageSelections)
         assertNotNull(combinedSelection?.documentSelection?.selection?.bounds)
         assertEquals(
             combinedSelection?.documentSelection?.selection?.bounds?.map {
@@ -77,7 +125,7 @@ class SelectionModelTest {
     }
 
     @Test
-    fun testCombineSelections_multipleNewSelectionsOnMultiplePages() {
+    fun testCreate_multipleNewSelectionsOnMultiplePages() {
         val newBoundsPage1: List<RectF> =
             listOf(RectF(100f, 100f, 200f, 200f), RectF(200f, 200f, 300f, 300f))
         val newBoundsPage2: List<RectF> =
@@ -98,11 +146,7 @@ class SelectionModelTest {
                 ),
             )
 
-        val combinedSelection: SelectionModel? =
-            SelectionModel.getCombinedSelectionModel(
-                DocumentSelection(SparseArray()),
-                newPageSelections,
-            )
+        val combinedSelection: SelectionModel? = SelectionModel.create(newPageSelections)
 
         assertNotNull(combinedSelection?.documentSelection?.selection?.bounds)
 
@@ -121,78 +165,89 @@ class SelectionModelTest {
     }
 
     @Test
-    fun testCombineSelections_combineWithCurrentAndNewSelections() {
-        val currentBounds =
-            listOf(
-                PdfRect(1, RectF(100f, 100f, 200f, 200f)),
-                PdfRect(2, RectF(300f, 300f, 400f, 400f)),
-                PdfRect(2, RectF(400f, 400f, 500f, 500f)),
-                PdfRect(3, RectF(500f, 500f, 600f, 600f)),
-                PdfRect(3, RectF(600f, 600f, 700f, 700f)),
-            )
-
-        val newBounds = listOf(RectF(150f, 150f, 200f, 200f), RectF(200f, 200f, 250f, 250f))
-        val expectedBounds =
-            listOf(
-                currentBounds[0],
-                PdfRect(2, newBounds[0]),
-                PdfRect(2, newBounds[1]),
-                currentBounds[3],
-                currentBounds[4],
-            )
-
-        val currentSelection =
-            DocumentSelection(
-                SparseArray<List<Selection>>().apply {
-                    set(1, listOf(TextSelection("this is page 1", listOf(currentBounds[0]))))
-                    set(
-                        2,
-                        listOf(
-                            TextSelection(
-                                "this is page 2",
-                                listOf(currentBounds[1], currentBounds[2]),
-                            )
-                        ),
-                    )
-                    set(
-                        3,
-                        listOf(
-                            TextSelection(
-                                "this is page 3",
-                                listOf(currentBounds[3], currentBounds[4]),
-                            )
-                        ),
-                    )
-                }
-            )
-
+    fun testToPlaceholder_createsLightweightPointsOnlySelection() {
+        val newBounds: List<RectF> = listOf(RectF(100f, 100f, 200f, 200f))
         val newPageSelections: List<PageSelection?> =
             listOf(
                 PageSelection(
-                    2,
+                    1,
                     selectionBoundary,
                     selectionBoundary,
-                    listOf(
-                        PdfPageTextContent(listOf(newBounds[0]), "New content"),
-                        PdfPageTextContent(listOf(newBounds[1]), "for page 2"),
-                    ),
+                    listOf(PdfPageTextContent(newBounds, "Large Text Sample")),
                 )
             )
 
-        val combinedSelection =
-            SelectionModel.getCombinedSelectionModel(currentSelection, newPageSelections)
+        val original = SelectionModel.create(newPageSelections)
+        assertNotNull(original)
+        assertEquals(false, original?.isPlaceholder)
 
-        assertNotNull(combinedSelection)
-        assert(combinedSelection?.documentSelection?.selection is TextSelection)
-        val textSelection = combinedSelection?.documentSelection?.selection as TextSelection
+        val placeholder = original?.toPlaceholder()
+        assertNotNull(placeholder)
+        assertEquals(true, placeholder?.isPlaceholder)
+        assertEquals(original?.startBoundary, placeholder?.startBoundary)
+        assertEquals(original?.endBoundary, placeholder?.endBoundary)
+        assertEquals(0, placeholder?.documentSelection?.selectedContents?.size())
+    }
 
-        assertNotNull(textSelection.bounds)
-        var resultBounds: List<PdfRect> = textSelection.bounds
-        resultBounds = resultBounds.sortedWith(compareBy({ it.pageNum }, { it.left }, { it.top }))
+    @Test
+    fun testParcelable_isPlaceholderPreserved() {
+        val newBounds: List<RectF> = listOf(RectF(100f, 100f, 200f, 200f))
+        val newPageSelections: List<PageSelection?> =
+            listOf(
+                PageSelection(
+                    1,
+                    selectionBoundary,
+                    selectionBoundary,
+                    listOf(PdfPageTextContent(newBounds, "Hello")),
+                )
+            )
 
-        assertNotNull(resultBounds)
-        assertEquals(expectedBounds.size, resultBounds.size)
-        assertEquals(expectedBounds, resultBounds)
-        assertEquals("this is page 1 New content for page 2 this is page 3", textSelection.text)
+        val original = SelectionModel.create(newPageSelections)?.toPlaceholder()
+        val parcel = Parcel.obtain()
+        original?.writeToParcel(parcel, 0)
+        parcel.setDataPosition(0)
+
+        val restored = SelectionModel.CREATOR.createFromParcel(parcel)
+        assertNotNull(restored)
+        assertEquals(true, restored.isPlaceholder)
+        assertEquals(original?.startBoundary, restored.startBoundary)
+        assertEquals(original?.endBoundary, restored.endBoundary)
+        parcel.recycle()
+    }
+
+    @Test
+    fun testToPlaceholder_withImageSelection_createsPlaceholderImageSelection() {
+        val pdfRect = PdfRect(1, 10f, 10f, 100f, 100f)
+        val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ALPHA_8)
+        val imageSelection = ImageSelection(bitmap, pdfRect)
+        val boundary = UiSelectionBoundary(PdfPoint(1, PointF(10f, 10f)), isRtl = false)
+        val selectedContents =
+            SparseArray<List<Selection>>().apply { put(1, listOf(imageSelection)) }
+        val original =
+            SelectionModel(
+                documentSelection = DocumentSelection(selectedContents = selectedContents),
+                startBoundary = boundary,
+                endBoundary = boundary,
+                isPlaceholder = false,
+            )
+
+        // Since ImageSelection natively strips the bitmap in
+        // writeToParcel/imageSelectionFromParcel,
+        // toPlaceholder() returns the model as-is without redundant object allocation.
+        val placeholder = original.toPlaceholder()
+        assertEquals(original, placeholder)
+
+        // Verify that when unparceled across IPC, ImageSelection converts to a lightweight
+        // placeholder.
+        val parcel = Parcel.obtain()
+        original.writeToParcel(parcel, 0)
+        parcel.setDataPosition(0)
+
+        val unparceled = SelectionModel.CREATOR.createFromParcel(parcel)
+        assertNotNull(unparceled)
+        val resultSelection = unparceled.documentSelection.selection as ImageSelection
+        assertEquals(true, resultSelection.isPlaceholder)
+        assertEquals(pdfRect, resultSelection.bounds.first())
+        parcel.recycle()
     }
 }

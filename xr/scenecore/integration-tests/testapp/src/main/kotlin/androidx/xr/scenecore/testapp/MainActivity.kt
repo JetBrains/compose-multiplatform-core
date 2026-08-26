@@ -73,11 +73,12 @@ import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.accessibilitytest.AccessibilityTestActivity
 import androidx.xr.scenecore.testapp.activitypanel.ActivityPanelActivity
-import androidx.xr.scenecore.testapp.anchorentity.AnchorEntityActivity
+import androidx.xr.scenecore.testapp.anchorspace.AnchorSpaceActivity
 import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import androidx.xr.scenecore.testapp.environment.EnvironmentActivity
 import androidx.xr.scenecore.testapp.fieldofviewvisibility.FieldOfViewVisibilityActivity
 import androidx.xr.scenecore.testapp.fsmhsmtransition.FsmHsmTransitionActivity
+import androidx.xr.scenecore.testapp.handtracking.HandTrackingTest
 import androidx.xr.scenecore.testapp.headlockedui.HeadLockedUiActivity
 import androidx.xr.scenecore.testapp.hittest.HitTestActivity
 import androidx.xr.scenecore.testapp.inputmoveresize.InputMoveResizeTestActivity
@@ -90,6 +91,7 @@ import androidx.xr.scenecore.testapp.panelcoordinate.PanelCoordinateActivity
 import androidx.xr.scenecore.testapp.panelroundedcorner.PanelRoundedCornerActivity
 import androidx.xr.scenecore.testapp.sceneviewer.SceneViewerActivity
 import androidx.xr.scenecore.testapp.spatialaudio.SpatialAudioActivity
+import androidx.xr.scenecore.testapp.spatialaudio.SpatialAudioComponentsActivity
 import androidx.xr.scenecore.testapp.spatialcapabilities.SpatialCapabilitiesActivity
 import androidx.xr.scenecore.testapp.spatialuser.SpatialUserActivity
 import androidx.xr.scenecore.testapp.standalone.StandaloneActivity
@@ -102,9 +104,7 @@ import androidx.xr.scenecore.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.scenecore.testapp.visibility.VisibilityActivity
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private var session: Session? = null
@@ -114,8 +114,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        createSessionAndSetupUi()
-
         setContent {
             IntegrationTestsAppTheme {
                 Scaffold(
@@ -132,6 +130,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        createSessionAndSetupUi()
     }
 
     @Composable
@@ -309,7 +309,7 @@ class MainActivity : AppCompatActivity() {
     private fun createSessionAndSetupUi() {
         // Create the session in a separate thread to avoid StrictMode DiskRead Violations
         lifecycleScope.launch {
-            val createdSession = withContext(Dispatchers.IO) { sessionManager.createSession() }
+            val createdSession = sessionManager.createSession()
             if (createdSession == null) {
                 finish()
             } else {
@@ -339,7 +339,7 @@ class MainActivity : AppCompatActivity() {
         when (index) {
             Tests.ACTIVITY_PANEL_TEST.test -> startActivity(createIntent<ActivityPanelActivity>())
 
-            Tests.ANCHOR_TEST.test -> startActivity(createIntent<AnchorEntityActivity>())
+            Tests.ANCHOR_TEST.test -> startActivity(createIntent<AnchorSpaceActivity>())
 
             Tests.FIELD_OF_VIEW_VISIBILITY_TEST.test ->
                 startActivity(createIntent<FieldOfViewVisibilityActivity>())
@@ -353,6 +353,8 @@ class MainActivity : AppCompatActivity() {
                 val intent = Intent(this@MainActivity, FsmHsmTransitionActivity::class.java)
                 activityLauncher.launch(intent)
             }
+
+            Tests.HAND_TRACKING_TEST.test -> startActivity(createIntent<HandTrackingTest>())
 
             Tests.SPATIAL_USER_TEST.test -> startActivity(createIntent<SpatialUserActivity>())
 
@@ -415,6 +417,15 @@ class MainActivity : AppCompatActivity() {
                 intent.putExtra(
                     "MAIN_PANEL_TITLE",
                     getString(R.string.cuj_spatial_audio_setting_pointsourceparams_test),
+                )
+                startActivity(intent)
+            }
+
+            Tests.SPATIAL_AUDIO_COMPONENTS_TEST.test -> {
+                val intent = createIntent<SpatialAudioComponentsActivity>()
+                intent.putExtra(
+                    "MAIN_PANEL_TITLE",
+                    getString(R.string.cuj_spatial_audio_components_test),
                 )
                 startActivity(intent)
             }
@@ -539,6 +550,7 @@ class MainActivity : AppCompatActivity() {
                         ),
                         TestCase(R.string.cuj_movable_test, Tests.MOVABLE_PANEL_TEST.test),
                         TestCase(R.string.cuj_hit_test, Tests.DIGITAL_HIT_TEST.test),
+                        TestCase(R.string.cuj_hand_tracking_test, Tests.HAND_TRACKING_TEST.test),
                     ),
                 "SURFACES & MEDIA" to
                     listOf(
@@ -577,6 +589,10 @@ class MainActivity : AppCompatActivity() {
                         TestCase(
                             R.string.cuj_spatial_audio_setting_pointsourceparams_test,
                             Tests.SPATIAL_AUDIO_3_TEST.test,
+                        ),
+                        TestCase(
+                            R.string.cuj_spatial_audio_components_test,
+                            Tests.SPATIAL_AUDIO_COMPONENTS_TEST.test,
                         ),
                         TestCase(R.string.cuj_mesh_entity_test, Tests.MESH_ENTITY_TEST.test),
                     ),
@@ -628,5 +644,7 @@ class MainActivity : AppCompatActivity() {
         GLTF_MODEL_ANIMATION_TEST(28),
         SURFACE_CUSTOM_MESH_TEST(29),
         MESH_ENTITY_TEST(30),
+        SPATIAL_AUDIO_COMPONENTS_TEST(31),
+        HAND_TRACKING_TEST(32),
     }
 }

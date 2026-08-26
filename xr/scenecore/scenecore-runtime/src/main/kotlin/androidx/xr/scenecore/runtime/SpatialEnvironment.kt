@@ -28,7 +28,7 @@ import java.util.function.Consumer
  * visibility by enabling or disabling passthrough. The skybox and geometry will be remembered
  * across passthrough mode changes.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SpatialEnvironment {
     /**
      * Gets the current passthrough opacity value between 0 and 1 where 0.0f means no passthrough,
@@ -130,14 +130,14 @@ public interface SpatialEnvironment {
     /**
      * A class that represents the user's preferred spatial environment.
      *
-     * @param geometry the preferred geometry for the environment based on a pre-loaded glTF model.
-     *   If null, there will be no geometry if no other geometry entity is passed.
      * @param skybox the preferred skybox for the environment based on a pre-loaded EXR Image. If
      *   null, it will be all black.
+     * @param geometry the preferred geometry for the environment based on a pre-loaded glTF model.
+     *   If null, there will be no geometry if no other geometry entity is passed.
      * @param geometryEntity the preferred geometry Entity for the environment. If null, there will
      *   be no geometry if no other geometry resource is passed.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public class SpatialEnvironmentPreference
     @JvmOverloads
     constructor(
@@ -159,7 +159,7 @@ public interface SpatialEnvironment {
         }
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
         /**
          * Passed into [preferredPassthroughOpacity] to clear the application's passthrough opacity

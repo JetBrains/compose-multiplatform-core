@@ -41,7 +41,6 @@ import androidx.wear.compose.material3.samples.DatePickerYearMonthDaySample
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +50,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DatePickerTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {
@@ -851,7 +850,13 @@ class DatePickerTest {
         resources: Resources,
         selectedValue: Int,
         contentDescriptionResource: Strings,
-    ): String = "${resources.getString(contentDescriptionResource.value)}, $selectedValue"
+    ): String =
+        String.format(
+            resources.configuration.locales[0],
+            resources.getString(Strings.DatePickerContentDescription.value),
+            resources.getString(contentDescriptionResource.value),
+            selectedValue,
+        )
 
     private enum class SelectionMode(val contentDescriptionResource: Strings) {
         Day(Strings.DatePickerDay),

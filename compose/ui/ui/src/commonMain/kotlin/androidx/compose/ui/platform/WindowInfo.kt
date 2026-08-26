@@ -20,14 +20,13 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 
 /** Provides information about the Window that is hosting this compose hierarchy. */
 @Stable
-interface WindowInfo {
+public interface WindowInfo {
     /**
      * Indicates whether the window hosting this compose hierarchy is in focus.
      *
@@ -35,10 +34,10 @@ interface WindowInfo {
      * or dialog is visible, this property can be used to determine if the current window is in
      * focus.
      */
-    val isWindowFocused: Boolean
+    public val isWindowFocused: Boolean
 
     /** Indicates the state of keyboard modifiers (pressed or not). */
-    val keyboardModifiers: PointerKeyboardModifiers
+    public val keyboardModifiers: PointerKeyboardModifiers
         get() = WindowInfoImpl.GlobalKeyboardModifiers.value
 
     /**
@@ -47,7 +46,7 @@ interface WindowInfo {
      * window. Instead this size should be used as a breakpoint when changing between UI
      * configurations, or similar window-dependent configuration.
      */
-    val containerSize: IntSize
+    public val containerSize: IntSize
         get() = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
 
     /**
@@ -56,7 +55,7 @@ interface WindowInfo {
      * hierarchy hosted inside this window. Instead this size should be used as a breakpoint when
      * changing between UI configurations, or similar window-dependent configuration.
      */
-    val containerDpSize: DpSize
+    public val containerDpSize: DpSize
         get() = DpSize.Unspecified
 }
 
@@ -88,6 +87,6 @@ internal class WindowInfoImpl : WindowInfo {
     companion object {
         // One instance across all windows makes sense, since the state of KeyboardModifiers is
         // common for all windows.
-        internal val GlobalKeyboardModifiers = mutableStateOf(EmptyPointerKeyboardModifiers())
+        internal val GlobalKeyboardModifiers = mutableStateOf(PointerKeyboardModifiers())
     }
 }

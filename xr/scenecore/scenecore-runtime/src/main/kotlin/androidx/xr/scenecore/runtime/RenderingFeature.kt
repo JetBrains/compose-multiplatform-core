@@ -17,7 +17,6 @@
 package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.NodeHolder
 
 /**
  * Defines the internal rendering implementation for an entity.
@@ -26,7 +25,7 @@ import androidx.xr.runtime.NodeHolder
  * associated resources. An instance of a `RenderingFeature` is injected into an entity that
  * requires rendering API support.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RenderingFeature {
     /** Return the holder of underlying extension Node for the corresponding entity's creation. */
     public fun getNodeHolder(): NodeHolder<*>
@@ -34,8 +33,10 @@ public interface RenderingFeature {
     public fun getSubspaceNodeHolder(): NodeHolder<*>?
 
     /**
-     * Disposes the resources used by the feature. This is called by the corresponding entity's
-     * dispose method.
+     * Disposes system resources held by this feature.
+     *
+     * Once disposed, this [RenderingFeature] must not be used. This is called by the corresponding
+     * [Entity.dispose] method.
      */
     public fun dispose()
 }

@@ -25,6 +25,7 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
+import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.GoalProgressComplicationData
@@ -40,6 +41,7 @@ import androidx.wear.watchface.complications.data.test.R
 import com.google.common.truth.Expect
 import java.time.Instant
 import java.util.Locale
+import java.util.TimeZone
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -54,10 +56,11 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(SharedRobolectricTestRunner::class)
-@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
+@Config(sdk = [Config.TARGET_SDK])
 @SuppressLint("NewApi")
 class StaticPreviewDataParserTest {
     @Rule @JvmField val expect = Expect.create()
@@ -746,15 +749,98 @@ class StaticPreviewDataParserTest {
         }
     }
 
-    private fun runTestForLocale(locale: Locale, testLogic: (Context) -> Unit) {
-        Locale.setDefault(locale)
-        val baseContext = ApplicationProvider.getApplicationContext<Context>()
-        val config = Configuration(baseContext.resources.configuration)
-        config.setLocale(locale)
-        val localeContext = baseContext.createConfigurationContext(config)
-        val finalContext = spy(localeContext)
-        whenever(finalContext.packageManager).thenReturn(packageManager)
-        testLogic(finalContext)
+    @Test
+    @Throws(Exception::class)
+    fun integerInstantComplication() {
+        runTestForLocale(Locale.US) { context ->
+            context.resources.getXml(R.xml.static_preview_data_integer_instants).use { parser ->
+                val previewData = PreviewData.inflate(TEST_PROVIDER, context, context, parser)
+                val complicationData =
+                    previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
+
+                val timeText =
+                    complicationData.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
+                val dateText =
+                    complicationData.title!!.getTextAt(context.resources, Instant.ofEpochMilli(0))
+
+                expect.that(timeText).isEqualTo("10:09AM")
+                expect.that(dateText).isEqualTo("May 24")
+                expect.that(complicationData.dataSource).isEqualTo(TEST_PROVIDER)
+            }
+        }
+    }
+
+    private fun runTestForLocale(
+        locale: Locale,
+        timeZone: TimeZone = TimeZone.getTimeZone("GMT"),
+        testLogic: (Context) -> Unit,
+    ) {
+        val originalLocale = Locale.getDefault()
+        val originalTimeZone = TimeZone.getDefault()
+        try {
+            Locale.setDefault(locale)
+            TimeZone.setDefault(timeZone)
+            val baseContext = ApplicationProvider.getApplicationContext<Context>()
+            val config = Configuration(baseContext.resources.configuration)
+            config.setLocale(locale)
+            val localeContext = baseContext.createConfigurationContext(config)
+            val finalContext = spy(localeContext)
+            whenever(finalContext.packageManager).thenReturn(packageManager)
+            testLogic(finalContext)
+        } finally {
+            Locale.setDefault(originalLocale)
+            TimeZone.setDefault(originalTimeZone)
+        }
+    }
+
+    @Test
+    fun parseFormattedText_invalidOomeFormatString_isRejectedSafely() {
+        runTestForLocale(Locale.US) { context ->
+            context.resources.getXml(R.xml.static_preview_data_invalid_oome).use { parser ->
+                // After fix: invalid format width specifiers (>5 digits) are explicitly rejected.
+                assertThrows(org.xmlpull.v1.XmlPullParserException::class.java) {
+                    PreviewData.inflate(TEST_PROVIDER, context, context, parser)
+                }
+            }
+        }
+    }
+
+    @Test(timeout = 2000)
+    fun parseFormattedText_invalidEmptyParamLoop_completesInstantlyAfterFix() {
+        runTestForLocale(Locale.US) { context ->
+            context.resources.getXml(R.xml.static_preview_data_invalid_loop).use { parser ->
+                // After fix: empty <param/> bails out cleanly without overshooting into an infinite
+                // spin.
+                assertThrows(Exception::class.java) {
+                    PreviewData.inflate(TEST_PROVIDER, context, context, parser)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun timeComponentComplication_24HourFormat_omitsAmPm() {
+        runTestForLocale(Locale.UK) { context ->
+            // Enable 24-hour format
+            Settings.System.putString(context.contentResolver, Settings.System.TIME_12_24, "24")
+            context.resources.getXml(R.xml.static_preview_data_time_component).use { parser ->
+                val previewData = PreviewData.inflate(TEST_PROVIDER, context, context, parser)
+                val shortTextComplication =
+                    previewData[ComplicationType.SHORT_TEXT] as ShortTextComplicationData
+                val longTextComplication =
+                    previewData[ComplicationType.LONG_TEXT] as LongTextComplicationData
+                val timeOnlyText =
+                    shortTextComplication.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
+                val amPmOnlyText =
+                    longTextComplication.text.getTextAt(context.resources, Instant.ofEpochMilli(0))
+                // 1. timeOnly produces 24h formatted time
+                expect.that(timeOnlyText).isEqualTo("01:01")
+                // 2. amPmOnly is empty string in 24h format
+                expect.that(amPmOnlyText).isEqualTo("")
+                expect.that(shortTextComplication.dataSource).isEqualTo(TEST_PROVIDER)
+                expect.that(longTextComplication.dataSource).isEqualTo(TEST_PROVIDER)
+            }
+        }
     }
 
     private companion object {

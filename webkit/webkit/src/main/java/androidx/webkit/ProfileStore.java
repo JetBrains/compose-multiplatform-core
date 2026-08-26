@@ -50,8 +50,8 @@ public interface ProfileStore {
      *
      * @return ProfileStore instance to use for managing profiles.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -73,8 +73,8 @@ public interface ProfileStore {
      * @param name name of the profile to retrieve.
      * @return instance of {@link Profile} matching this name.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -89,8 +89,8 @@ public interface ProfileStore {
      * @param name the name of the profile to retrieve.
      * @return instance of {@link Profile} matching this name, null otherwise if there's no match.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -103,8 +103,8 @@ public interface ProfileStore {
      *
      * @return profile names as a list.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -128,8 +128,8 @@ public interface ProfileStore {
      * {@link ProfileStore#getProfile(String)}.
      * @throws IllegalArgumentException if you are trying to delete the default Profile.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

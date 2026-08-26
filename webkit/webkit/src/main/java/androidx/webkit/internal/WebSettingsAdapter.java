@@ -161,6 +161,7 @@ public class WebSettingsAdapter {
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#getAttributionRegistrationBehavior(WebSettings)}
      */
+    @SuppressWarnings("deprecation")
     public int getAttributionRegistrationBehavior() {
         return mBoundaryInterface.getAttributionBehavior();
     }
@@ -169,6 +170,7 @@ public class WebSettingsAdapter {
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#setAttributionRegistrationBehavior(WebSettings, int)}
      */
+    @SuppressWarnings("deprecation")
     public void setAttributionRegistrationBehavior(int behavior) {
         mBoundaryInterface.setAttributionBehavior(behavior);
     }
@@ -328,5 +330,37 @@ public class WebSettingsAdapter {
     @WebSettingsCompat.ExperimentalBackForwardCacheSettings
     public void setBackForwardCacheMaxPagesInCache(int maxPages) {
         mBoundaryInterface.setBackForwardCacheSettingsMaxPagesInCache(maxPages);
+    }
+
+    /**
+     * Adapter method for {@link BackForwardCacheSettings#isKeepForwardEntriesEnabled()}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public boolean getBackForwardCacheKeepForwardEntries() {
+        return mBoundaryInterface.getBackForwardCacheSettingsKeepForwardEntries();
+    }
+
+    /**
+     * Adapter method for {@link BackForwardCacheSettings#setKeepForwardEntriesEnabled(boolean)}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public void setBackForwardCacheKeepForwardEntries(boolean keepForwardEntries) {
+        mBoundaryInterface.setBackForwardCacheSettingsKeepForwardEntries(keepForwardEntries);
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setDownloadFaviconsEnabled(WebSettings, boolean)}
+     */
+    public void setDownloadFaviconsEnabled(boolean enabled) {
+        mBoundaryInterface.setDownloadFaviconsEnabled(enabled);
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getDownloadFaviconsEnabled(WebSettings)}
+     */
+    public boolean getDownloadFaviconsEnabled() {
+        return mBoundaryInterface.getDownloadFaviconsEnabled();
     }
 }

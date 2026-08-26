@@ -2,10 +2,12 @@
 package androidx.webkit {
 
   @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public class BackForwardCacheSettings {
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public int getMaxPagesInCache();
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public long getTimeoutSeconds();
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public void setMaxPagesInCache(int);
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public void setTimeoutSeconds(long);
+    method @IntRange(from=0) @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public int getMaxPagesInCache();
+    method @IntRange(from=0) @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public long getTimeoutSeconds();
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public boolean isKeepForwardEntriesEnabled();
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public void setKeepForwardEntriesEnabled(boolean);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public void setMaxPagesInCache(@IntRange(from=0) int);
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public void setTimeoutSeconds(@IntRange(from=0) long);
   }
 
   @AnyThread public class CookieManagerCompat {
@@ -155,8 +157,8 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.CUSTOM_REQUEST_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public default boolean hasCustomHeader(String);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.ORIGIN_MATCHED_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalOriginMatchedHeader public boolean hasOriginMatchedHeader(String);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.PRECONNECT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalPreconnect public default void preconnect(String);
-    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor, androidx.webkit.SpeculativeLoadingParameters, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void!,androidx.webkit.PrefetchException!>);
-    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void!,androidx.webkit.PrefetchException!>);
+    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.SpeculativeLoadingParameters, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void?,androidx.webkit.PrefetchException!>);
+    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.PROFILE_URL_PREFETCH, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.Profile.ExperimentalUrlPrefetch public void prefetchUrlAsync(String, android.os.CancellationSignal?, java.util.concurrent.Executor?, androidx.webkit.WebViewOutcomeReceiver<java.lang.Void?,androidx.webkit.PrefetchException!>);
     method @SuppressCompatibility @RequiresFeature(name="SET_MAX_PRERENDERS_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public default void setMaxPrerenders(@IntRange(from=1) Integer?);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.ORIGIN_MATCHED_HEADERS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalOriginMatchedHeader public void setOriginMatchedHeader(String, String, java.util.Set<java.lang.String!>);
     method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.SPECULATIVE_LOADING_CONFIG, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.Profile.ExperimentalUrlPrefetch public void setSpeculativeLoadingConfig(androidx.webkit.SpeculativeLoadingConfig);
@@ -633,6 +635,7 @@ package androidx.webkit {
     field public static final String BACK_FORWARD_CACHE = "BACK_FORWARD_CACHE";
     field public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
     field public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3 = "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V3";
+    field @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public static final String BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4 = "BACK_FORWARD_CACHE_SETTINGS_EXPERIMENTAL_V4";
     field public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
     field public static final String CREATE_WEB_MESSAGE_CHANNEL = "CREATE_WEB_MESSAGE_CHANNEL";
     field public static final String CUSTOM_REQUEST_HEADERS = "CUSTOM_REQUEST_HEADERS";

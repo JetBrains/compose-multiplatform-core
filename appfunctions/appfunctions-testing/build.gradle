@@ -33,12 +33,15 @@ plugins {
 dependencies {
 
     implementation(project(":appfunctions:appfunctions"))
-    implementation(project(":appfunctions:appfunctions-service"))
+    implementation(libs.kotlinCoroutinesAndroid)
     implementation("junit:junit:4.13.2")
     implementation(libs.robolectric)
 
     // Internal dependencies
     implementation("androidx.annotation:annotation:1.9.0")
+
+    // Forcing this upgrade due to CVE-2026-0636. For more information, see b/505222436
+    implementation("org.bouncycastle:bcprov-jdk18on:1.84")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation(libs.truth)
@@ -55,7 +58,7 @@ ksp {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     namespace = "androidx.appfunctions.testing"
 }
 

@@ -17,8 +17,10 @@
 package androidx.pdf.annotation.operations
 
 import androidx.pdf.EditsDraft
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.MutableEditsDraft
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.PdfAnnotation
 
 class FakeAnnotationOperationsTracker : AnnotationOperationsTracker {
     private val operations = mutableMapOf<String, KeyedAnnotationOperation>()
@@ -42,8 +44,13 @@ class FakeAnnotationOperationsTracker : AnnotationOperationsTracker {
 
     override fun getSnapshot(): List<KeyedAnnotationOperation> = operations.values.toList()
 
+    override fun removeEntry(key: String) {
+        operations.remove(key)
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
     override fun getModificationsSnapshot(): EditsDraft {
-        TODO("Not yet implemented")
+        return MutableEditsDraft().toEditsDraft()
     }
 
     override fun clear() = operations.clear()

@@ -29,7 +29,6 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.media.ImageWriter;
-import android.os.Build;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
@@ -47,6 +46,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Abstract Analyzer that wraps around {@link ImageAnalysis.Analyzer} and implements
@@ -276,7 +276,13 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
             Rect cropRect = new Rect();
             Matrix transformMatrix = new Matrix();
             synchronized (mAnalyzerLock) {
-                if (outputImageDirty && !outputProcessedImageFailed) {
+                // Recalculate transform matrix and update crop rect only if rotation succeeded or
+                // relative rotation degree is 0. For 0-degree rotation,
+                // outputProcessedImageFailed is expected to be true (since rotateYUV returns null
+                // as a no-op), but we still need to recalculate the matrix to ensure it is reset
+                // to identity.
+                if (outputImageDirty && (!outputProcessedImageFailed
+                        || currentBufferRotationDegrees == 0)) {
                     recalculateTransformMatrixAndCropRect(
                             imageProxy.getWidth(),
                             imageProxy.getHeight(),
@@ -292,28 +298,39 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
             // When the analyzer exists and ImageAnalysis is active.
             future = CallbackToFutureAdapter.getFuture(
                     completer -> {
-                        executor.execute(() -> {
-                            if (mIsAttached) {
-                                ImageInfo imageInfo = ImmutableImageInfo.create(
-                                        imageProxy.getImageInfo().getTagBundle(),
-                                        imageProxy.getImageInfo().getTimestamp(),
-                                        mOutputImageRotationEnabled ? 0
-                                                : mRelativeRotation,
-                                        transformMatrix,
-                                        imageProxy.getImageInfo().getFlashState());
+                        try {
+                            executor.execute(() -> {
+                                if (mIsAttached) {
+                                    ImageInfo imageInfo = ImmutableImageInfo.create(
+                                            imageProxy.getImageInfo().getTagBundle(),
+                                            imageProxy.getImageInfo().getTimestamp(),
+                                            mOutputImageRotationEnabled ? 0
+                                                    : mRelativeRotation,
+                                            transformMatrix,
+                                            imageProxy.getImageInfo().getFlashState());
 
-                                ImageProxy outputSettableImageProxy = new SettableImageProxy(
-                                        outputImageProxy, imageInfo);
-                                if (!cropRect.isEmpty()) {
-                                    outputSettableImageProxy.setCropRect(cropRect);
+                                    ImageProxy outputSettableImageProxy = new SettableImageProxy(
+                                            outputImageProxy, imageInfo);
+                                    if (!cropRect.isEmpty()) {
+                                        outputSettableImageProxy.setCropRect(cropRect);
+                                    }
+                                    try {
+                                        analyzer.analyze(outputSettableImageProxy);
+                                        completer.set(null);
+                                    } catch (Exception e) {
+                                        closeProcessedImageIfNeeded(outputImageProxy, imageProxy);
+                                        completer.setException(e);
+                                    }
+                                } else {
+                                    closeProcessedImageIfNeeded(outputImageProxy, imageProxy);
+                                    completer.setException(new OperationCanceledException(
+                                            "ImageAnalysis is detached"));
                                 }
-                                analyzer.analyze(outputSettableImageProxy);
-                                completer.set(null);
-                            } else {
-                                completer.setException(new OperationCanceledException(
-                                        "ImageAnalysis is detached"));
-                            }
-                        });
+                            });
+                        } catch (RejectedExecutionException e) {
+                            closeProcessedImageIfNeeded(outputImageProxy, imageProxy);
+                            completer.setException(e);
+                        }
                         return "analyzeImage";
                     });
         } else {
@@ -322,6 +339,21 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
         }
 
         return future;
+    }
+
+    /**
+     * Closes the processed image proxy if it is different from the original image proxy.
+     *
+     * <p>When image processing (such as rotation or YUV-to-RGB conversion) occurs, a new
+     * intermediate {@link ImageProxy} is created. If the analysis task fails or is cancelled,
+     * this intermediate image must be closed to avoid resource leaks in the processing
+     * pipeline. The original image's lifecycle is managed separately by the caller via the future.
+     */
+    private static void closeProcessedImageIfNeeded(
+            @NonNull ImageProxy outputImage, @NonNull ImageProxy originalImage) {
+        if (outputImage != originalImage) {
+            outputImage.close();
+        }
     }
 
     private static @NonNull SafeCloseImageReaderProxy createImageReaderProxy(
@@ -373,10 +405,30 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
         }
     }
 
+    @GuardedBy("mAnalyzerLock")
+    private void closeProcessedFormatProperties() {
+        if (mProcessedImageReaderProxy != null) {
+            mProcessedImageReaderProxy.safeClose();
+            mProcessedImageReaderProxy = null;
+        }
+        if (mProcessedImageWriter != null) {
+            ImageWriterCompat.close(mProcessedImageWriter);
+            mProcessedImageWriter = null;
+        }
+    }
+
     void setProcessedImageReaderProxy(
             @NonNull SafeCloseImageReaderProxy processedImageReaderProxy) {
         synchronized (mAnalyzerLock) {
+            closeProcessedFormatProperties();
             mProcessedImageReaderProxy = processedImageReaderProxy;
+        }
+    }
+
+    @VisibleForTesting
+    @Nullable SafeCloseImageReaderProxy getProcessedImageReaderProxy() {
+        synchronized (mAnalyzerLock) {
+            return mProcessedImageReaderProxy;
         }
     }
 
@@ -405,6 +457,9 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
     void detach() {
         mIsAttached = false;
         clearCache();
+        synchronized (mAnalyzerLock) {
+            closeProcessedFormatProperties();
+        }
     }
 
     @GuardedBy("mAnalyzerLock")
@@ -466,8 +521,7 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
                 mProcessedImageReaderProxy.getImageFormat(),
                 mProcessedImageReaderProxy.getMaxImages());
 
-        if (Build.VERSION.SDK_INT >= 23
-                && mOutputImageFormat == ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888) {
+        if (mOutputImageFormat == ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888) {
 
             if (mProcessedImageWriter != null) {
                 ImageWriterCompat.close(mProcessedImageWriter);

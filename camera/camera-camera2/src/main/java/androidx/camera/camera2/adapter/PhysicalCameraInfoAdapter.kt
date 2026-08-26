@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.adapter
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraMetadata
 import android.util.Range
 import android.view.Surface
 import androidx.annotation.OptIn
+import androidx.camera.camera2.impl.Camera2Logger.warn
 import androidx.camera.camera2.impl.CameraProperties
+import androidx.camera.camera2.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.camera2.pipe.UnsafeWrapper
+import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.common.UnsafeWrapper
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -37,7 +41,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ZoomState
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.lifecycle.LiveData
-import kotlin.reflect.KClass
+import java.lang.Class
 
 /**
  * Implementation of [CameraInfo] for physical camera. In comparison, [CameraInfoAdapter] is the
@@ -46,8 +50,11 @@ import kotlin.reflect.KClass
 @SuppressLint(
     "UnsafeOptInUsageError" // Suppressed due to experimental API
 )
-public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraProperties) :
-    CameraInfo, UnsafeWrapper {
+public class PhysicalCameraInfoAdapter(
+    private val cameraProperties: CameraProperties,
+    private val intrinsicZoomCalculator: IntrinsicZoomCalculator,
+    private val parentCameraInfo: CameraInfo,
+) : CameraInfo, UnsafeWrapper {
 
     @OptIn(ExperimentalCamera2Interop::class)
     internal val camera2CameraInfo: Camera2CameraInfo by lazy {
@@ -73,40 +80,34 @@ public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraPrope
         )
     }
 
-    override fun hasFlashUnit(): Boolean {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun hasFlashUnit(): Boolean = parentCameraInfo.hasFlashUnit()
 
-    override fun getTorchState(): LiveData<Int> {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getTorchState(): LiveData<Int> = parentCameraInfo.torchState
 
-    override fun getZoomState(): LiveData<ZoomState> {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getZoomState(): LiveData<ZoomState> = parentCameraInfo.zoomState
 
-    override fun getExposureState(): ExposureState {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getExposureState(): ExposureState = parentCameraInfo.exposureState
 
-    override fun getCameraState(): LiveData<CameraState> {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getCameraState(): LiveData<CameraState> = parentCameraInfo.cameraState
 
-    override fun getImplementationType(): String {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getImplementationType(): String = parentCameraInfo.implementationType
 
-    override fun getCameraSelector(): CameraSelector {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getCameraSelector(): CameraSelector =
+        CameraSelector.Builder.fromSelector(parentCameraInfo.cameraSelector)
+            .setPhysicalCameraId(cameraProperties.cameraId.value)
+            .build()
 
     override fun getLensFacing(): Int =
         getCameraSelectorLensFacing(cameraProperties.metadata[CameraCharacteristics.LENS_FACING]!!)
 
-    override fun getIntrinsicZoomRatio(): Float {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getIntrinsicZoomRatio(): Float =
+        intrinsicZoomCalculator.calculateIntrinsicZoomRatio(cameraProperties.metadata)
+            ?: run {
+                warn {
+                    "Failed to calculate intrinsic zoom ratio for physical camera: ${cameraProperties.cameraId}"
+                }
+                CameraInfo.INTRINSIC_ZOOM_RATIO_UNKNOWN
+            }
 
     override fun isFocusMeteringSupported(action: FocusMeteringAction): Boolean {
         throw UnsupportedOperationException("Physical camera doesn't support this function")
@@ -121,9 +122,7 @@ public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraPrope
         throw UnsupportedOperationException("Physical camera doesn't support this function")
     }
 
-    override fun isLogicalMultiCameraSupported(): Boolean {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun isLogicalMultiCameraSupported(): Boolean = false
 
     override fun isPrivateReprocessingSupported(): Boolean {
         throw UnsupportedOperationException("Physical camera doesn't support this function")
@@ -135,21 +134,28 @@ public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraPrope
         throw UnsupportedOperationException("Physical camera doesn't support this function")
     }
 
-    override fun getPhysicalCameraInfos(): Set<CameraInfo> {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
-    }
+    override fun getPhysicalCameraInfos(): Set<CameraInfo> = emptySet()
 
-    override fun getCameraIdentifier(): CameraIdentifier {
-        throw UnsupportedOperationException("Physical camera doesn't support this function")
+    override fun getCameraIdentifier(): CameraIdentifier? {
+        val parentIdentifier = parentCameraInfo.cameraIdentifier ?: return null
+        return CameraIdentifier.Factory.create(
+            listOf(
+                CameraIdentifier.CompositeCameraId(
+                    parentIdentifier.internalId,
+                    cameraProperties.cameraId.value,
+                )
+            ),
+            parentIdentifier.compatibilityId,
+        )
     }
 
     @OptIn(ExperimentalCamera2Interop::class)
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            Camera2CameraInfo::class -> camera2CameraInfo as T
-            CameraProperties::class -> cameraProperties as T
-            CameraMetadata::class -> cameraProperties.metadata as T
+            Camera2CameraInfo::class.java -> camera2CameraInfo as T
+            CameraProperties::class.java -> cameraProperties as T
+            CameraMetadata::class.java -> cameraProperties.metadata as T
             else -> cameraProperties.metadata.unwrapAs(type)
         }
 

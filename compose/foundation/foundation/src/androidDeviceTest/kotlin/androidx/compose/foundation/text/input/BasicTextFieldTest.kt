@@ -127,7 +127,6 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -140,7 +139,7 @@ import org.mockito.kotlin.verify
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val immRule = ComposeInputMethodManagerTestRule()
 
@@ -1220,7 +1219,6 @@ internal class BasicTextFieldTest {
                         style = textStyle,
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
-                        maxLines = 1,
                     )
                     .width
 
@@ -1257,7 +1255,6 @@ internal class BasicTextFieldTest {
                         style = textStyle,
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
-                        maxLines = 1,
                     )
                     .width
 
@@ -1294,7 +1291,6 @@ internal class BasicTextFieldTest {
                     density = density,
                     enabled = true,
                     readOnly = false,
-                    isFocused = false,
                     isPassword = false,
                     toolbarRequester = FakeToolbarRequester(),
                     coroutineScope = CoroutineScope(EmptyCoroutineContext),
@@ -1309,7 +1305,7 @@ internal class BasicTextFieldTest {
 
     @Test
     fun changingInputTransformation_doesNotRestartInput() {
-        var inputTransformation by mutableStateOf(InputTransformation.maxLength(10))
+        var inputTransformation by mutableStateOf(InputTransformation.maxLengthTrim(10))
         inputMethodInterceptor.setTextFieldTestContent {
             val state = remember { TextFieldState() }
             BasicTextField(
@@ -1323,7 +1319,7 @@ internal class BasicTextFieldTest {
         inputMethodInterceptor.assertSessionActive()
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(1)
 
-        inputTransformation = InputTransformation.maxLength(15)
+        inputTransformation = InputTransformation.maxLengthTrim(15)
 
         inputMethodInterceptor.assertSessionActive()
         inputMethodInterceptor.assertThatSessionCount().isEqualTo(1)
@@ -1582,7 +1578,7 @@ internal class BasicTextFieldTest {
     fun whenWindowFocusGained_unfocusedTextFieldStateIsNotRecomposed() {
         val state = TextFieldState("Hello")
         var isWindowFocused by mutableStateOf(false)
-        var windowInfo =
+        val windowInfo =
             object : WindowInfo {
                 override val isWindowFocused: Boolean
                     get() = isWindowFocused

@@ -19,7 +19,6 @@ package androidx.camera.camera2.testing
 import android.hardware.camera2.CameraCharacteristics
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
-import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlashImpl
 import androidx.camera.camera2.internal.IntrinsicZoomCalculator
@@ -28,6 +27,7 @@ import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 object FakeUseTorchAsFlash {
@@ -37,11 +37,12 @@ object FakeUseTorchAsFlash {
         intrinsicZoomCalculator: IntrinsicZoomCalculator = NO_OP_INTRINSIC_ZOOM_CALCULATOR,
     ): UseTorchAsFlash {
         val metadata =
-            FakeCameraMetadata(
-                characteristics = mapOf(CameraCharacteristics.LENS_FACING to lensFacing),
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
                 cameraId =
                     if (lensFacing == CameraCharacteristics.LENS_FACING_BACK) CameraId("0")
                     else CameraId("1"),
+                lensFacing = lensFacing,
             )
 
         val cameraDevices =
@@ -56,17 +57,8 @@ object FakeUseTorchAsFlash {
                     mapOf(CameraBackendId(metadata.camera.value) to listOf(metadata)),
             )
 
-        val cameraQuirks =
-            CameraQuirks(
-                metadata,
-                StreamConfigurationMapCompat(
-                    StreamConfigurationMapBuilder.newBuilder().build(),
-                    OutputSizesCorrector(
-                        FakeCameraMetadata(),
-                        StreamConfigurationMapBuilder.newBuilder().build(),
-                    ),
-                ),
-            )
+        val map = StreamConfigurationMapBuilder.newBuilder().build()
+        val cameraQuirks = CameraQuirks(metadata, StreamConfigurationMapCompat(map, metadata))
 
         return if (forceEnable) {
             UseTorchAsFlashImpl(cameraQuirks, cameraDevices, intrinsicZoomCalculator)

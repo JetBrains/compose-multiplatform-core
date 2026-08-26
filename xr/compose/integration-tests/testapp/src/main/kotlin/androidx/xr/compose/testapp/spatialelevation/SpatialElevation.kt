@@ -79,9 +79,10 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.OrbiterDefaults
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
@@ -93,6 +94,7 @@ import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.Purple80
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.launch
 
@@ -103,7 +105,6 @@ class SpatialElevation : ComponentActivity() {
         setContent { IntegrationTestsAppTheme { SpatialElevationApp() } }
     }
 
-    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun SpatialElevationApp() {
@@ -115,9 +116,11 @@ class SpatialElevation : ComponentActivity() {
         var showPopup by remember { mutableStateOf(false) }
 
         Orbiter(
-            position = ContentEdge.Start,
-            offset = 8.dp,
-            offsetType = OrbiterOffsetType.Overlap,
+            position =
+                OrbiterPosition.CenterStart(
+                    EdgeAlignment.Outside,
+                    offset = DpVolumeOffset(x = (0).dp, y = 0.dp, z = OrbiterDefaults.Elevation),
+                )
         ) {
             NavigationRail(
                 modifier =
@@ -159,9 +162,11 @@ class SpatialElevation : ComponentActivity() {
             }
         }
         Orbiter(
-            position = ContentEdge.End,
-            offset = 80.dp,
-            offsetType = OrbiterOffsetType.OuterEdge,
+            position =
+                OrbiterPosition.CenterEnd(
+                    EdgeAlignment.Inside,
+                    offset = DpVolumeOffset(x = 90.dp, y = 0.dp, z = OrbiterDefaults.Elevation),
+                )
         ) {
             Row(
                 modifier = Modifier.animateContentSize(),
@@ -209,29 +214,22 @@ class SpatialElevation : ComponentActivity() {
                 }
             },
             bottomBar = {
-                if (LocalSpatialConfiguration.current.hasXrSpatialFeature) {
-                    val session =
-                        checkNotNull(LocalSession.current) {
-                            "LocalSession.current was null. Session must be available."
+                if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return@Scaffold
+                val session = LocalSession.current ?: return@Scaffold
+
+                Box(
+                    modifier = Modifier.fillMaxWidth().background(Purple40),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(modifier = Modifier.align(Alignment.Center)) {
+                        if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+                            CUJButton("Enter Home Space") { session.scene.requestHomeSpace() }
+                        } else {
+                            CUJButton("Enter Full Space") { session.scene.requestFullSpace() }
                         }
-                    Box(
-                        modifier = Modifier.fillMaxWidth().background(Purple40),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Box(modifier = Modifier.align(Alignment.Center)) {
-                            if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                                CUJButton("Enter Home Space Mode") {
-                                    session.scene.requestHomeSpaceMode()
-                                }
-                            } else {
-                                CUJButton("Enter Full Space Mode") {
-                                    session.scene.requestFullSpaceMode()
-                                }
-                            }
-                        }
-                        Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 20.dp)) {
-                            RecreateButton { this@SpatialElevation.recreate() }
-                        }
+                    }
+                    Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 20.dp)) {
+                        RecreateButton { this@SpatialElevation.recreate() }
                     }
                 }
             },

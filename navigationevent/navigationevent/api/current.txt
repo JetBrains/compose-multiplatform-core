@@ -13,6 +13,9 @@ package androidx.navigationevent {
     method @MainThread public void forwardStarted(androidx.navigationevent.NavigationEvent event);
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.LOCAL_VARIABLE, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.TYPEALIAS}) public @interface ExperimentalNavigationEventApi {
+  }
+
   @androidx.compose.runtime.Immutable public final class NavigationEvent {
     ctor public NavigationEvent();
     ctor public NavigationEvent(optional int swipeEdge);
@@ -77,6 +80,11 @@ package androidx.navigationevent {
     property public abstract androidx.navigationevent.NavigationEventDispatcher navigationEventDispatcher;
   }
 
+  public final class NavigationEventDispatcherOwnerFactory {
+    method @KotlinOnly public static androidx.navigationevent.NavigationEventDispatcherOwner NavigationEventDispatcherOwner(androidx.navigationevent.NavigationEventDispatcher navigationEventDispatcher);
+    method @InaccessibleFromKotlin public static androidx.navigationevent.NavigationEventDispatcherOwner create(androidx.navigationevent.NavigationEventDispatcher navigationEventDispatcher);
+  }
+
   public abstract class NavigationEventHandler<T extends androidx.navigationevent.NavigationEventInfo> {
     ctor public NavigationEventHandler(T initialInfo, boolean isBackEnabled);
     ctor public NavigationEventHandler(T initialInfo, boolean isBackEnabled, boolean isForwardEnabled);
@@ -118,6 +126,10 @@ package androidx.navigationevent {
 
   @androidx.compose.runtime.Immutable public abstract class NavigationEventInfo {
     ctor public NavigationEventInfo();
+    method @InaccessibleFromKotlin @SuppressCompatibility @androidx.navigationevent.ExperimentalNavigationEventApi public String? getTitle();
+    method @InaccessibleFromKotlin @SuppressCompatibility @androidx.navigationevent.ExperimentalNavigationEventApi public String? getUrl();
+    property @SuppressCompatibility @androidx.navigationevent.ExperimentalNavigationEventApi public String? title;
+    property @SuppressCompatibility @androidx.navigationevent.ExperimentalNavigationEventApi public String? url;
   }
 
   public static final class NavigationEventInfo.None extends androidx.navigationevent.NavigationEventInfo {
@@ -134,10 +146,18 @@ package androidx.navigationevent {
     method @MainThread protected final void dispatchOnForwardCompleted();
     method @MainThread protected final void dispatchOnForwardProgressed(androidx.navigationevent.NavigationEvent event);
     method @MainThread protected final void dispatchOnForwardStarted(androidx.navigationevent.NavigationEvent event);
+    method @InaccessibleFromKotlin public final boolean hasEnabledBackHandlers();
+    method @InaccessibleFromKotlin public final boolean hasEnabledForwardHandlers();
+    method @InaccessibleFromKotlin public final boolean hasEnabledHandlers();
     method @EmptySuper @MainThread protected void onAdded(androidx.navigationevent.NavigationEventDispatcher dispatcher);
+    method @EmptySuper @MainThread protected void onHasEnabledBackHandlersChanged(boolean hasEnabledBackHandlers);
+    method @EmptySuper @MainThread protected void onHasEnabledForwardHandlersChanged(boolean hasEnabledForwardHandlers);
     method @EmptySuper @MainThread protected void onHasEnabledHandlersChanged(boolean hasEnabledHandlers);
     method @EmptySuper @MainThread protected void onHistoryChanged(androidx.navigationevent.NavigationEventHistory history);
     method @EmptySuper @MainThread protected void onRemoved();
+    property public final boolean hasEnabledBackHandlers;
+    property public final boolean hasEnabledForwardHandlers;
+    property public final boolean hasEnabledHandlers;
   }
 
   public final class NavigationEventKt {

@@ -16,14 +16,8 @@
 
 package androidx.compose.remote.integration.view.demos
 
-import android.view.View
-import androidx.compose.foundation.layout.size
-import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
-import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
-import androidx.compose.remote.creation.compose.capture.rememberVirtualDisplay
-import androidx.compose.remote.creation.profile.RcPlatformProfiles
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,18 +44,18 @@ private class ReusableByteArrayStream(initialSize: Int) : ByteArrayOutputStream(
     }
 }
 
-@OptIn(ExperimentalRemoteCreationComposeApi::class)
 @Suppress("RestrictedApiAndroidX")
 @Composable
 fun RemoteComposeDumper(
     sample: DumperSample,
     width: Int,
     height: Int,
+    densityDpi: Int = LocalConfiguration.current.densityDpi,
+    fontScale: Float = LocalConfiguration.current.fontScale,
     onFinished: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val config = LocalConfiguration.current
 
     val stream = remember { ReusableByteArrayStream(1024 * 1024) }
     var isCaptureFinished by remember { mutableStateOf(false) }
@@ -69,37 +63,32 @@ fun RemoteComposeDumper(
     var currentDataLength by remember { mutableIntStateOf(0) }
 
     val creationDisplayInfo =
-        remember(sample, width, height) { CreationDisplayInfo(width, height, config.densityDpi) }
+        remember(sample, width, height, densityDpi, fontScale) {
+            RemoteCreationDisplayInfo(width, height, densityDpi, fontScale)
+        }
     val virtualDisplay = rememberVirtualDisplay(creationDisplayInfo)
 
     when (sample) {
         is DumperSample.ComposableSample -> {
             if (!isCaptureFinished) {
-                RemoteComposeCapture(
-                    context = context,
-                    virtualDisplay = virtualDisplay,
-                    creationDisplayInfo = creationDisplayInfo,
-                    onPaint = { view: View, writer: RemoteComposeWriter ->
-                        val bufferSize = writer.bufferSize()
-
-                        stream.ensureCapacity(bufferSize)
-                        writer.buffer().copyInto(stream.getInternalBuffer(), 0, 0, bufferSize)
-
-                        val file = File(context.cacheDir, "${sample.name}_${width}x${height}.rc")
-                        file.writeBytes(stream.getInternalBuffer().copyOf(bufferSize))
-
-                        view.post {
-                            currentDataLength = bufferSize
-                            isCaptureFinished = true // Triggers Composable removal
-                            onFinished(file.absolutePath)
+                LaunchedEffect(sample) {
+                    val doc =
+                        captureSingleRemoteDocument(
+                            creationDisplayInfo = creationDisplayInfo,
+                            context = context,
+                        ) {
+                            sample.content()
                         }
-                        false
-                    },
-                    onCaptureReady = {},
-                    profile = RcPlatformProfiles.ANDROIDX,
-                    writerEvents = null,
-                    content = { sample.content() },
-                )
+                    stream.ensureCapacity(doc.bytes.size)
+                    doc.bytes.copyInto(stream.getInternalBuffer(), 0, 0, doc.bytes.size)
+
+                    val file = File(context.cacheDir, "${sample.name}_${width}x${height}.rc")
+                    file.writeBytes(stream.getInternalBuffer().copyOf(doc.bytes.size))
+
+                    currentDataLength = doc.bytes.size
+                    isCaptureFinished = true // Triggers Composable removal
+                    onFinished(file.absolutePath)
+                }
             }
         }
         is DumperSample.Context -> {
@@ -118,6 +107,9 @@ fun RemoteComposeDumper(
                 isCaptureFinished = true
                 onFinished(file.absolutePath)
             }
+        }
+        is DumperSample.FileSample -> {
+            LaunchedEffect(sample) { onFinished(sample.file.absolutePath) }
         }
     }
 }

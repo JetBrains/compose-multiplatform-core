@@ -16,26 +16,35 @@
 
 package androidx.pdf.viewer.fragment
 
+import android.graphics.Bitmap
 import android.graphics.Rect
 import android.net.Uri
+import android.os.Parcelable
 import androidx.core.os.OperationCanceledException
 import androidx.lifecycle.SavedStateHandle
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfLoader
 import androidx.pdf.PdfPoint
 import androidx.pdf.SandboxedPdfLoader
 import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.ocr.OcrProvider
+import androidx.pdf.ocr.OcrResult
 import androidx.pdf.viewer.coroutines.collectTill
 import androidx.pdf.viewer.coroutines.toListDuring
+import androidx.pdf.viewer.document.FakePdfDocument
 import androidx.pdf.viewer.fragment.TestUtils.openFileAsUri
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.collections.toTypedArray
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
@@ -343,7 +352,7 @@ class PdfDocumentViewModelTest {
         val localSavedStateHandle =
             SavedStateHandle().also {
                 it["documentUri"] = documentUri
-                it["formEditInfos"] = formEditInfos
+                it["formEditInfos"] = formEditInfos.toTypedArray<Parcelable>()
             }
 
         val pdfDocumentViewModel =
@@ -431,17 +440,100 @@ class PdfDocumentViewModelTest {
         assertFalse(savedState.contains("formEditInfos"))
     }
 
+    @Test
+    fun test_pdfDocumentViewModel_loadDocumentFailure_zeroPageCount() = runTest {
+        val documentUri = Uri.parse("content://test.app/zero_page.pdf")
+        val fakePdfLoader = FakePdfLoader()
+        fakePdfLoader.documentToReturn = FakePdfDocument(pages = emptyList())
+
+        val pdfViewModel = PdfDocumentViewModel(SavedStateHandle(), fakePdfLoader)
+
+        val uiStates = mutableListOf<PdfFragmentUiState>()
+        val collectJob = launch {
+            pdfViewModel.fragmentUiScreenState.collectTill(uiStates) { state ->
+                state is PdfFragmentUiState.DocumentError
+            }
+        }
+
+        pdfViewModel.loadDocument(documentUri, null)
+        collectJob.join()
+
+        assertTrue(uiStates.last() is PdfFragmentUiState.DocumentError)
+        val errorState = uiStates.last() as PdfFragmentUiState.DocumentError
+        assertTrue(errorState.exception is IllegalStateException)
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @Test
+    fun test_ocrProvider_closedOnCleared() = runTest {
+        val ocrProvider = FakeOcrProvider()
+        val testViewModel =
+            TestPdfDocumentViewModel(SavedStateHandle(), SandboxedPdfLoader(appContext, dispatcher))
+        testViewModel.ocrProvider = ocrProvider
+
+        testViewModel.onCleared()
+
+        assertTrue(ocrProvider.isClosed)
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @Test
+    fun test_ocrProvider_closedOnReplace() = runTest {
+        val oldProvider = FakeOcrProvider()
+        val newProvider = FakeOcrProvider()
+        val testViewModel =
+            TestPdfDocumentViewModel(SavedStateHandle(), SandboxedPdfLoader(appContext, dispatcher))
+
+        testViewModel.ocrProvider = oldProvider
+        testViewModel.ocrProvider = newProvider
+
+        assertTrue(oldProvider.isClosed)
+        assertFalse(newProvider.isClosed)
+    }
+
     private fun fullyContains(innerRects: List<Rect>, outerRects: List<Rect>): Boolean {
         return innerRects.all { inner -> outerRects.any { outer -> outer.contains(inner) } }
     }
 
     /** A test-only subclass to expose protected methods for verification. */
+    private class FakePdfLoader : PdfLoader {
+        var documentToReturn: PdfDocument? = null
+
+        override suspend fun openDocument(uri: Uri, password: String?): PdfDocument {
+            return documentToReturn ?: throw IOException("Document not set in FakePdfLoader")
+        }
+
+        override suspend fun openDocument(
+            uri: Uri,
+            fileDescriptor: android.os.ParcelFileDescriptor,
+            password: String?,
+            renderParams: androidx.pdf.RenderParams,
+        ): PdfDocument {
+            return documentToReturn ?: throw IOException("Document not set in FakePdfLoader")
+        }
+    }
+
     private class TestPdfDocumentViewModel(
         savedStateHandle: SavedStateHandle,
         pdfLoader: SandboxedPdfLoader,
     ) : PdfDocumentViewModel(savedStateHandle, pdfLoader) {
         public override fun forceLoadDocument() {
             super.forceLoadDocument()
+        }
+
+        public override fun onCleared() {
+            super.onCleared()
+        }
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    private class FakeOcrProvider : OcrProvider {
+        var isClosed = false
+
+        override suspend fun recognizeText(image: Bitmap): OcrResult? = null
+
+        override fun close() {
+            isClosed = true
         }
     }
 

@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
 
     defaultConfig {
         applicationId = "androidx.camera.integration.uiwidgets"
@@ -134,5 +134,3 @@ dependencies {
     debugImplementation(project(":compose:ui:ui-test-manifest"))
     androidTestImplementation(project(":window:window"))
 }
-
-androidx.deviceTests.minSdkForFtlOverride = 24 // b/437944630

@@ -31,16 +31,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.Subspace
@@ -51,10 +52,12 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.PurpleGrey80
+import androidx.xr.compose.unit.DpVolumeOffset
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.scene
+import kotlinx.coroutines.launch
 
 class ModeChange : ComponentActivity() {
 
@@ -63,16 +66,21 @@ class ModeChange : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        setContent {
-            val renderingSession = remember {
-                (Session.create(activity = this@ModeChange) as SessionCreateSuccess).session
-            }
-            IntegrationTestsAppTheme {
-                if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                    FullSpaceMainPanel(renderingSession)
-                } else {
-                    HomeSpaceMainPanel(renderingSession)
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@ModeChange)
+            if (sessionResult is SessionCreateSuccess) {
+                val renderingSession = sessionResult.session
+                setContent {
+                    IntegrationTestsAppTheme {
+                        if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
+                            FullSpaceMainPanel(renderingSession)
+                        } else {
+                            HomeSpaceMainPanel(renderingSession)
+                        }
+                    }
                 }
+            } else {
+                finish()
             }
         }
     }
@@ -97,7 +105,7 @@ class ModeChange : ComponentActivity() {
                     onClickRecreate = { this@ModeChange.recreate() },
                 ) { padding ->
                     PanelContent(padding, "FullSpace Mode", "Transition to HomeSpace Mode") {
-                        renderingSession.scene.requestHomeSpaceMode()
+                        renderingSession.scene.requestHomeSpace()
                     }
                 }
 
@@ -122,7 +130,7 @@ class ModeChange : ComponentActivity() {
             onClickRecreate = { this@ModeChange.recreate() },
         ) { padding ->
             PanelContent(padding, "HomeSpace Mode", "Transition to FullSpace Mode") {
-                renderingSession!!.scene.requestFullSpaceMode()
+                renderingSession!!.scene.requestFullSpace()
             }
         }
     }
@@ -139,8 +147,13 @@ class ModeChange : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
-                @Suppress("DEPRECATION")
-                Orbiter(position = ContentEdge.Top, offset = 5.dp) {
+                Orbiter(
+                    position =
+                        OrbiterPosition.TopCenter(
+                            EdgeAlignment.Outside,
+                            offset = DpVolumeOffset(y = 5.dp),
+                        )
+                ) {
                     Text(
                         text = orbiterText,
                         fontSize = 20.sp,

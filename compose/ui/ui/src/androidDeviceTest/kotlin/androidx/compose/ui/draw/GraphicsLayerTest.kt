@@ -23,6 +23,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -37,7 +38,9 @@ import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertPixelColor
 import androidx.compose.testutils.assertPixels
@@ -45,7 +48,7 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.FixedSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Padding
-import androidx.compose.ui.background
+import androidx.compose.ui.SubcompositionReusableContentHost
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -56,6 +59,7 @@ import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.LayerOutsets
 import androidx.compose.ui.graphics.LightingColorFilter
 import androidx.compose.ui.graphics.OffsetEffect
 import androidx.compose.ui.graphics.Outline
@@ -86,7 +90,6 @@ import androidx.compose.ui.padding
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.scale
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
@@ -107,7 +110,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.ceil
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -121,7 +123,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class GraphicsLayerTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @After
     fun teardown() {
@@ -180,6 +182,338 @@ class GraphicsLayerTest {
             val bounds = layoutCoordinates.boundsInRoot()
             assertEquals(Rect(5f, 0f, 25f, 30f), bounds)
             assertEquals(Offset(5f, 0f), layoutCoordinates.positionInRoot())
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testLayerOutsetsWithImplicitClipToBounds() {
+        val outerBoxSizePx = 100
+        val innerBoxSizePx = 50
+        val outsetsPx = 20
+        rule.setContent {
+            val outerBoxSizeDp = with(rule.density) { outerBoxSizePx.toDp() }
+            val outsetsDp = with(rule.density) { outsetsPx.toDp() }
+            Box(Modifier.size(outerBoxSizeDp).background(Color.White)) {
+                Box(
+                    Modifier.graphicsLayer {
+                        alpha = 0.5f // Adding alpha enforces clip to bounds behavior.
+                        outsets =
+                            LayerOutsets(
+                                outsetsDp
+                            ) // Adding outsets to increase the bounds of the layer by 20px.
+                    }
+                ) {
+                    val innerBoxSizeDp = with(rule.density) { innerBoxSizePx.toDp() }
+                    Box(
+                        Modifier.size(innerBoxSizeDp).drawBehind {
+                            drawRect(
+                                Color.Red,
+                                size = Size(outerBoxSizePx.toFloat(), outerBoxSizePx.toFloat()),
+                            ) // Draw beyond the inner box to cover the entire outer box.
+                        }
+                    )
+                }
+            }
+        }
+        val pixelMap = rule.onRoot().captureToImage().toPixelMap()
+
+        val compositedColor = Color.Red.copy(alpha = 0.5f).compositeOver(Color.White)
+        assertEqualsWithTolerance(compositedColor, pixelMap[0, 0], 0.03f)
+        assertEqualsWithTolerance(
+            compositedColor,
+            pixelMap[innerBoxSizePx + outsetsPx - 3, innerBoxSizePx + outsetsPx - 3],
+            0.03f,
+        )
+        assertEqualsWithTolerance(
+            compositedColor,
+            pixelMap[0, innerBoxSizePx + outsetsPx - 3],
+            0.03f,
+        )
+        assertEqualsWithTolerance(
+            compositedColor,
+            pixelMap[innerBoxSizePx + outsetsPx - 3, 0],
+            0.03f,
+        )
+        assertEqualsWithTolerance(
+            Color.White,
+            pixelMap[outerBoxSizePx - 5, outerBoxSizePx - 5],
+            0.03f,
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testLayerOutsetsUpdatesCorrectly() {
+        val outerBoxSizePx = 100
+        val innerBoxSizePx = 50
+        var outsetsPx by mutableIntStateOf(20)
+        rule.setContent {
+            val outerBoxSizeDp = with(rule.density) { outerBoxSizePx.toDp() }
+            val outsetsDp = with(rule.density) { outsetsPx.toDp() }
+            Box(Modifier.size(outerBoxSizeDp).background(Color.White)) {
+                Box(
+                    Modifier.graphicsLayer {
+                        alpha = 0.5f // Adding alpha enforces clip to bounds behavior.
+                        outsets =
+                            LayerOutsets(
+                                outsetsDp
+                            ) // Adding outsets to increase the bounds of the layer by 20px.
+                    }
+                ) {
+                    val innerBoxSizeDp = with(rule.density) { innerBoxSizePx.toDp() }
+                    Box(
+                        Modifier.size(innerBoxSizeDp).drawBehind {
+                            drawRect(
+                                Color.Red,
+                                size = Size(outerBoxSizePx.toFloat(), outerBoxSizePx.toFloat()),
+                            ) // Draw beyond the inner box to cover the entire outer box.
+                        }
+                    )
+                }
+            }
+        }
+
+        val compositedColor = Color.Red.copy(alpha = 0.5f).compositeOver(Color.White)
+        rule.onRoot().captureToImage().apply {
+            with(toPixelMap()) {
+                assertEqualsWithTolerance(compositedColor, this[0, 0], 0.03f)
+                assertEqualsWithTolerance(
+                    compositedColor,
+                    this[innerBoxSizePx + outsetsPx - 3, innerBoxSizePx + outsetsPx - 3],
+                    0.03f,
+                )
+                assertEqualsWithTolerance(
+                    compositedColor,
+                    this[0, innerBoxSizePx + outsetsPx - 3],
+                    0.03f,
+                )
+                assertEqualsWithTolerance(
+                    compositedColor,
+                    this[innerBoxSizePx + outsetsPx - 3, 0],
+                    0.03f,
+                )
+                assertEqualsWithTolerance(
+                    Color.White,
+                    this[outerBoxSizePx - 5, outerBoxSizePx - 5],
+                    0.03f,
+                )
+            }
+        }
+
+        // Updating the outsets to 0px. The layer size must be updated to reflect the new outsets
+        // i.e.
+        // the inner box must get clipped.
+        outsetsPx = 0
+        rule.onRoot().captureToImage().apply {
+            with(toPixelMap()) {
+                assertEqualsWithTolerance(compositedColor, this[0, 0], 0.03f)
+                assertEqualsWithTolerance(Color.White, this[innerBoxSizePx, innerBoxSizePx], 0.03f)
+                assertEqualsWithTolerance(compositedColor, this[0, innerBoxSizePx - 3], 0.03f)
+                assertEqualsWithTolerance(Color.White, this[innerBoxSizePx, 0], 0.03f)
+                assertEqualsWithTolerance(
+                    Color.White,
+                    this[outerBoxSizePx - 5, outerBoxSizePx - 5],
+                    0.03f,
+                )
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testLayerOutsetsWithPivot() {
+        val outerBoxSizePx = 100
+        val innerBoxSizePx = 50
+        rule.setContent {
+            val outerBoxSizeDp = with(rule.density) { outerBoxSizePx.toDp() }
+            Box(Modifier.size(outerBoxSizeDp).background(Color.White)) {
+                Box(
+                    Modifier.graphicsLayer {
+                        // Rotating around the bottom corner of the box thus effectively moving the
+                        // red box forward by 1 step (by innerBoxSizePx).
+                        rotationZ = 90f
+
+                        outsets =
+                            LayerOutsets(
+                                10.dp,
+                                100.dp,
+                                5.dp,
+                                50.dp,
+                            ) // irregular outsets should not affect pivot
+                        // Transform origin is set to bottom corner. This must be calculated based
+                        // on the original layer size (without outsets)
+                        // and thus the pivot be place at (innerBoxSizePx, innerBoxSizePx).
+                        transformOrigin = TransformOrigin(1.0f, 1.0f)
+                    }
+                ) {
+                    val innerBoxSizeDp = with(rule.density) { innerBoxSizePx.toDp() }
+                    Box(Modifier.size(innerBoxSizeDp).background(Color.Red))
+                }
+            }
+        }
+        val pixelMap = rule.onRoot().captureToImage().toPixelMap()
+
+        for (i in 0..<outerBoxSizePx) {
+            for (j in 0..<outerBoxSizePx) {
+                if (innerBoxSizePx in (j + 1)..i) {
+                    // Should be Red
+                    assertEquals(Color.Red, pixelMap[i, j])
+                } else {
+                    assertEquals(Color.White, pixelMap[i, j])
+                }
+            }
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun testLayerClipWithLayerOutsets() {
+        val testTag = "box"
+        var offset = 0
+        val scale = 0.5f
+        val sizePx = 100
+        val squarePx = sizePx / 2
+        val outsetsPx = 30
+        rule.setContent {
+            val density = LocalDensity.current.density
+            val size = (sizePx / density)
+            val squareSize = (squarePx / density)
+            val outsetsDp = (outsetsPx / density)
+            offset = (20f / density).roundToInt()
+            Box(Modifier.size(size.dp).background(Color.LightGray).testTag(testTag)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeWithLayer(offset, offset) {
+                                    scaleX = scale
+                                    scaleY = scale
+                                    clip = true
+                                    transformOrigin = TransformOrigin(0f, 0f)
+                                    outsets =
+                                        LayerOutsets(outsetsDp.dp) // Should have no effect on clip
+                                }
+                            }
+                        }
+                        .size(squareSize.dp)
+                        .drawBehind {
+                            // Draw a rectangle twice the size of the original bounds
+                            // to verify rectangular clipping is applied properly and ignores
+                            // the pixels outside of the original size
+                            val width = this.size.width
+                            val height = this.size.height
+                            drawRect(
+                                color = Color.Red,
+                                topLeft = Offset(-width, -height),
+                                size = Size(width * 2, height * 2),
+                            )
+                        }
+                )
+            }
+        }
+
+        rule.onNodeWithTag(testTag).captureToImage().apply {
+            with(toPixelMap()) {
+                assertEquals(Color.LightGray, this[0, 0])
+                assertEquals(Color.LightGray, this[width - 1, 0])
+                assertEquals(Color.LightGray, this[0, height - 1])
+                assertEquals(Color.LightGray, this[width - 1, height - 1])
+
+                val scaledSquare = squarePx * scale
+                val scaledLeft = offset
+                val scaledTop = offset
+                val scaledRight = (offset + scaledSquare).toInt()
+                val scaledBottom = (offset + scaledSquare).toInt()
+
+                assertPixelColor(Color.LightGray, scaledLeft - 3, scaledTop - 3)
+                assertPixelColor(Color.LightGray, scaledRight + 3, scaledTop - 3)
+                assertPixelColor(Color.LightGray, scaledLeft - 3, scaledBottom + 3)
+                assertPixelColor(Color.LightGray, scaledRight + 3, scaledBottom + 3)
+
+                assertPixelColor(Color.Red, scaledLeft + 3, scaledTop + 3)
+                assertPixelColor(Color.Red, scaledRight - 3, scaledTop + 3)
+                assertPixelColor(Color.Red, scaledLeft + 3, scaledBottom - 3)
+                assertPixelColor(Color.Red, scaledRight - 3, scaledBottom - 3)
+            }
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun testLayerClipGenericPathWithLayerOutsets() {
+        val testTag = "box"
+        var offset = 0
+        val scale = 0.5f
+        val sizePx = 100
+        val squarePx = sizePx / 2
+        val outsetsPx = 30
+        rule.setContent {
+            val density = LocalDensity.current.density
+            val size = (sizePx / density)
+            val squareSize = (squarePx / density)
+            val outsetsDp = (outsetsPx / density)
+            offset = (20f / density).roundToInt()
+            Box(Modifier.size(size.dp).background(Color.LightGray).testTag(testTag)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeWithLayer(offset, offset) {
+                                    scaleX = scale
+                                    scaleY = scale
+                                    clip = true
+                                    transformOrigin = TransformOrigin(0f, 0f)
+                                    shape = GenericShape { size, _ ->
+                                        addOval(Rect(Offset.Zero, size))
+                                    }
+                                    outsets =
+                                        LayerOutsets(outsetsDp.dp) // Should have no effect on clip
+                                }
+                            }
+                        }
+                        .size(squareSize.dp)
+                        .drawBehind {
+                            // Draw a rectangle twice the size of the original bounds
+                            // to verify rectangular clipping is applied properly and ignores
+                            // the pixels outside of the original size
+                            val width = this.size.width
+                            val height = this.size.height
+                            drawRect(
+                                color = Color.Red,
+                                topLeft = Offset(-width, -height),
+                                size = Size(width * 2, height * 2),
+                            )
+                        }
+                )
+            }
+        }
+
+        rule.onNodeWithTag(testTag).captureToImage().apply {
+            with(toPixelMap()) {
+                assertEquals(Color.LightGray, this[0, 0])
+                assertEquals(Color.LightGray, this[width - 1, 0])
+                assertEquals(Color.LightGray, this[0, height - 1])
+                assertEquals(Color.LightGray, this[width - 1, height - 1])
+
+                val scaledSquare = squarePx * scale
+                val scaledLeft = offset
+                val scaledTop = offset
+                val scaledRight = (offset + scaledSquare).toInt()
+                val scaledBottom = (offset + scaledSquare).toInt()
+
+                assertPixelColor(Color.LightGray, scaledLeft + 1, scaledTop + 1)
+                assertPixelColor(Color.LightGray, scaledRight - 1, scaledTop + 1)
+                assertPixelColor(Color.LightGray, scaledLeft + 1, scaledBottom - 1)
+                assertPixelColor(Color.LightGray, scaledRight - 1, scaledBottom - 1)
+
+                val scaledMidHorizontal = (scaledLeft + scaledRight) / 2
+                val scaledMidVertical = (scaledTop + scaledBottom) / 2
+                assertPixelColor(Color.Red, scaledMidHorizontal, scaledTop + 3)
+                assertPixelColor(Color.Red, scaledRight - 3, scaledMidVertical)
+                assertPixelColor(Color.Red, scaledMidHorizontal, scaledBottom - 3)
+                assertPixelColor(Color.Red, scaledLeft + 3, scaledMidVertical)
+            }
         }
     }
 
@@ -498,7 +832,7 @@ class GraphicsLayerTest {
         rule.onNodeWithTag(testTag).captureToImage().asAndroidBitmap().apply {
             assertColor(Color.Red, 0, 0)
             assertColor(Color.Red, 0, height - 1)
-            assertColor(Color.Red, width / 2 - 10, height / 2)
+            assertColor(Color.Red, width / 2, height / 2)
         }
     }
 
@@ -523,7 +857,7 @@ class GraphicsLayerTest {
         rule.onNodeWithTag(testTag).captureToImage().asAndroidBitmap().apply {
             assertColor(Color.Red, 0, 0)
             assertColor(Color.Red, 0, height - 1)
-            assertColor(Color.Red, width / 2 - 10, height / 2)
+            assertColor(Color.Red, width / 2, height / 2)
         }
     }
 
@@ -546,7 +880,7 @@ class GraphicsLayerTest {
         rule.onNodeWithTag(testTag).captureToImage().asAndroidBitmap().apply {
             assertColor(Color.Yellow, 0, 0)
             assertColor(Color.Yellow, 0, height - 1)
-            assertColor(Color.Yellow, width / 2 - 10, height / 2)
+            assertColor(Color.Yellow, width / 2, height / 2)
         }
     }
 
@@ -569,7 +903,7 @@ class GraphicsLayerTest {
         rule.onNodeWithTag(testTag).captureToImage().asAndroidBitmap().apply {
             assertColor(Color.Yellow, 0, 0)
             assertColor(Color.Yellow, 0, height - 1)
-            assertColor(Color.Yellow, width / 2 - 10, height / 2)
+            assertColor(Color.Yellow, width / 2, height / 2)
         }
     }
 
@@ -747,6 +1081,64 @@ class GraphicsLayerTest {
 
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun testSoftwareLayerOffsetWithLayerOutsets() {
+        val testTag = "box"
+        var offset = 0
+        val scale = 0.5f
+        val boxAlpha = 0.5f
+        val sizePx = 100
+        val squarePx = sizePx / 2
+        rule.setContent {
+            LocalView.current.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            val density = LocalDensity.current.density
+            val size = (sizePx / density)
+            val squareSize = (squarePx / density)
+            offset = (20f / density).roundToInt()
+            Box(Modifier.size(size.dp).background(Color.LightGray).testTag(testTag)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeWithLayer(offset, offset) {
+                                    alpha = boxAlpha
+                                    scaleX = scale
+                                    scaleY = scale
+                                    transformOrigin = TransformOrigin(0f, 0f)
+                                    outsets = LayerOutsets(10.dp, 100.dp, 20.dp, 15.dp)
+                                }
+                            }
+                        }
+                        .size(squareSize.dp)
+                        .background(Color.Red)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(testTag).captureToImage().apply {
+            with(toPixelMap()) {
+                assertEquals(Color.LightGray, this[0, 0])
+                assertEquals(Color.LightGray, this[width - 1, 0])
+                assertEquals(Color.LightGray, this[0, height - 1])
+                assertEquals(Color.LightGray, this[width - 1, height - 1])
+
+                val blended = Color.Red.copy(alpha = boxAlpha).compositeOver(Color.LightGray)
+
+                val scaledSquare = squarePx * scale
+                val scaledLeft = offset
+                val scaledTop = offset
+                val scaledRight = (offset + scaledSquare).toInt()
+                val scaledBottom = (offset + scaledSquare).toInt()
+
+                assertPixelColor(blended, scaledLeft + 3, scaledTop + 3)
+                assertPixelColor(blended, scaledRight - 3, scaledTop + 3)
+                assertPixelColor(blended, scaledLeft + 3, scaledBottom - 3)
+                assertPixelColor(blended, scaledRight - 3, scaledBottom - 3)
+            }
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun testSoftwareLayerRectangularClip() {
         val testTag = "box"
         var offset = 0
@@ -771,6 +1163,84 @@ class GraphicsLayerTest {
                                     scaleY = scale
                                     clip = true
                                     transformOrigin = TransformOrigin(0f, 0f)
+                                }
+                            }
+                        }
+                        .size(squareSize.dp)
+                        .drawBehind {
+                            // Draw a rectangle twice the size of the original bounds
+                            // to verify rectangular clipping is applied properly and ignores
+                            // the pixels outside of the original size
+                            val width = this.size.width
+                            val height = this.size.height
+                            drawRect(
+                                color = Color.Red,
+                                topLeft = Offset(-width, -height),
+                                size = Size(width * 2, height * 2),
+                            )
+                        }
+                )
+            }
+        }
+
+        rule.onNodeWithTag(testTag).captureToImage().apply {
+            with(toPixelMap()) {
+                assertEquals(Color.LightGray, this[0, 0])
+                assertEquals(Color.LightGray, this[width - 1, 0])
+                assertEquals(Color.LightGray, this[0, height - 1])
+                assertEquals(Color.LightGray, this[width - 1, height - 1])
+
+                val blended = Color.Red.copy(alpha = boxAlpha).compositeOver(Color.LightGray)
+
+                val scaledSquare = squarePx * scale
+                val scaledLeft = offset
+                val scaledTop = offset
+                val scaledRight = (offset + scaledSquare).toInt()
+                val scaledBottom = (offset + scaledSquare).toInt()
+
+                assertPixelColor(Color.LightGray, scaledLeft - 3, scaledTop - 3)
+                assertPixelColor(Color.LightGray, scaledRight + 3, scaledTop - 3)
+                assertPixelColor(Color.LightGray, scaledLeft - 3, scaledBottom + 3)
+                assertPixelColor(Color.LightGray, scaledRight + 3, scaledBottom + 3)
+
+                assertPixelColor(blended, scaledLeft + 3, scaledTop + 3)
+                assertPixelColor(blended, scaledRight - 3, scaledTop + 3)
+                assertPixelColor(blended, scaledLeft + 3, scaledBottom - 3)
+                assertPixelColor(blended, scaledRight - 3, scaledBottom - 3)
+            }
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun testSoftwareLayerRectangularClipWithLayerOutsets() {
+        val testTag = "box"
+        var offset = 0
+        val scale = 0.5f
+        val boxAlpha = 0.5f
+        val sizePx = 100
+        val squarePx = sizePx / 2
+        val outsetsPx = 30
+        rule.setContent {
+            LocalView.current.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            val density = LocalDensity.current.density
+            val size = (sizePx / density)
+            val squareSize = (squarePx / density)
+            val outsetsDp = (outsetsPx / density)
+            offset = (20f / density).roundToInt()
+            Box(Modifier.size(size.dp).background(Color.LightGray).testTag(testTag)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeWithLayer(offset, offset) {
+                                    alpha = boxAlpha
+                                    scaleX = scale
+                                    scaleY = scale
+                                    clip = true
+                                    transformOrigin = TransformOrigin(0f, 0f)
+                                    outsets =
+                                        LayerOutsets(outsetsDp.dp) // Should have no effect on clip
                                 }
                             }
                         }
@@ -2000,5 +2470,115 @@ class GraphicsLayerTest {
         rule.runOnIdle { switch = !switch }
 
         assertPixels()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun layerUpdatesCorrectlyWhenMovedBetweenLayouts() {
+        var moveContent by mutableStateOf(false)
+        var lastPositionInRoot = Offset.Unspecified
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                val movableContent = remember {
+                    movableContentOf {
+                        Box(
+                            Modifier.size(40.dp)
+                                .graphicsLayer {
+                                    alpha = 0.5f
+                                    translationX = 10f
+                                }
+                                .onGloballyPositioned { coordinates ->
+                                    lastPositionInRoot = coordinates.positionInRoot()
+                                }
+                                .background(Color.Red)
+                        )
+                    }
+                }
+
+                Box(modifier = Modifier.size(100.dp).testTag("container").background(Color.Blue)) {
+                    if (moveContent) {
+                        Box(Modifier.offset(60.dp, 60.dp)) { movableContent() }
+                    } else {
+                        Box(Modifier.offset(0.dp, 0.dp)) { movableContent() }
+                    }
+                }
+            }
+        }
+
+        val expectedAlphaColor = Color.Red.copy(alpha = 0.5f).compositeOver(Color.Blue)
+
+        rule.runOnIdle { assertThat(lastPositionInRoot).isEqualTo(Offset(10f, 0f)) }
+
+        // (10, 0) - (50, 40) has alpha applied. Elsewhere is Blue.
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(100, 100)) { pos ->
+            if (pos.x in 10 until 50 && pos.y in 0 until 40) {
+                expectedAlphaColor
+            } else {
+                Color.Blue
+            }
+        }
+
+        rule.runOnIdle { moveContent = true }
+
+        rule.runOnIdle { assertThat(lastPositionInRoot).isEqualTo(Offset(70f, 60f)) }
+
+        // (70, 60) - (100, 100) has alpha applied.
+        // (10, 0) - (50, 40) does not have alpha applied and is Blue.
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(100, 100)) { pos ->
+            if (pos.x in 70 until 100 && pos.y in 60 until 100) {
+                expectedAlphaColor
+            } else {
+                Color.Blue
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun layerUpdatesCorrectlyWhenDeactivatedAndReused() {
+        var active by mutableStateOf(true)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box(Modifier.size(50.dp).testTag("container").background(Color.Blue)) {
+                    SubcompositionReusableContentHost(active) {
+                        ReusableContent(0) {
+                            Box(
+                                Modifier.size(50.dp)
+                                    .graphicsLayer { alpha = 0.5f }
+                                    .background(Color.Red)
+                                    .testTag("graphics_box")
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val expectedAlphaColor = Color.Red.copy(alpha = 0.5f).compositeOver(Color.Blue)
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) {
+            expectedAlphaColor
+        }
+
+        rule.runOnIdle { active = false }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) {
+            Color.Blue
+        }
+
+        rule.runOnIdle { active = true }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) {
+            expectedAlphaColor
+        }
+    }
+
+    fun assertEqualsWithTolerance(expected: Color, actual: Color, tolerance: Float) {
+        assertEquals(expected.red, actual.red, tolerance)
+        assertEquals(expected.green, actual.green, tolerance)
+        assertEquals(expected.blue, actual.blue, tolerance)
+        assertEquals(expected.alpha, actual.alpha, tolerance)
     }
 }

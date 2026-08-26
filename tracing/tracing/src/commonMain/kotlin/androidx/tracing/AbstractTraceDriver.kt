@@ -24,19 +24,9 @@ public abstract class AbstractTraceDriver : AutoCloseable {
      */
     public val sink: AbstractTraceSink
 
-    /**
-     * When [isEnabled] is `true`, then the [Tracer] obtained from the [AbstractTraceDriver] emits
-     * trace events. Otherwise, no events are emitted.
-     */
-    public val isEnabled: Boolean
-
-    /**
-     * Builds an instance of [AbstractTraceDriver] using the provided [AbstractTraceSink] if
-     * `isEnabled` is `true`. Otherwise, you get an instance of a no-op [AbstractTraceDriver].
-     */
-    protected constructor(sink: AbstractTraceSink, isEnabled: Boolean) {
+    /** Builds an instance of [AbstractTraceDriver] using the provided [AbstractTraceSink]. */
+    protected constructor(sink: AbstractTraceSink) {
         this.sink = sink
-        this.isEnabled = isEnabled
     }
 
     /** Return an instance of a [Tracer] that can be used to emit trace events. */
@@ -50,4 +40,23 @@ public abstract class AbstractTraceDriver : AutoCloseable {
      * [AbstractTraceSink].
      */
     public abstract override fun close()
+
+    /**
+     * Provides the instance of [AbstractTraceDriver] that can be used for in-process-tracing.
+     *
+     * On Android, The `android.app.Application` subtype should implement this, to provide a
+     * canonical process wide [AbstractTraceDriver].
+     *
+     * When using `androidx.tracing:tracing-wire`,
+     * `androidx.tracing.profiler.ConnectedProfilerTracingInitializer` discovers the
+     * [AbstractTraceDriver.Factory], and constructs the instance. It then registers a global
+     * [Tracer] by calling [Tracer.setGlobalTracer].
+     *
+     * Otherwise, construct [AbstractTraceDriver] during startup and register it via
+     * [Tracer.setGlobalTracer] so other components can discover and use it.
+     */
+    public interface Factory {
+        /** @return The [AbstractTraceDriver] instance that can be used for in-process tracing. */
+        public fun create(): AbstractTraceDriver
+    }
 }

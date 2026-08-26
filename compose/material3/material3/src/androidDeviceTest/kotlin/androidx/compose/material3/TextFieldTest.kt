@@ -64,7 +64,6 @@ import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.testutils.assertPixels
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -125,8 +124,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -138,10 +135,11 @@ class TextFieldTest {
     private val ExpectedDefaultTextFieldWidth = TextFieldDefaults.MinWidth
     private val ExpectedPadding = TextFieldPadding
     private val IconPadding = 12.dp
+    private val ExtraTopPaddingForCutoutLabelPosition = 8.dp
     private val TextFieldWidth = 300.dp
     private val TextFieldTag = "textField"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testTextField_setSmallHeight() {
@@ -400,7 +398,6 @@ class TextFieldTest {
         rule.runOnIdle { assertThat(hostView.isSoftwareKeyboardShown).isFalse() }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     fun testTextField_clickingOnTextAfterDismissingKeyboard_showsKeyboard() {
         val (focusRequester, parentFocusRequester) = FocusRequester.createRefs()
@@ -461,6 +458,38 @@ class TextFieldTest {
     }
 
     @Test
+    fun testTextField_labelPosition_initial_singleLine_cutout() {
+        val labelPosition = Ref<Offset>()
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState(),
+                lineLimits = TextFieldLineLimits.SingleLine,
+                label = {
+                    Box(
+                        Modifier.size(MinTextLineHeight).onGloballyPositioned {
+                            labelPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition = TextFieldLabelPosition.Cutout(),
+            )
+        }
+
+        rule.runOnIdleWithDensity {
+            // x position is start + padding
+            assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            // y position is centered, plus additional padding allowance on top
+            assertThat(labelPosition.value?.y)
+                .isWithin(1f)
+                .of(
+                    ((ExpectedDefaultTextFieldHeight - MinTextLineHeight) / 2 +
+                            ExtraTopPaddingForCutoutLabelPosition)
+                        .toPx()
+                )
+        }
+    }
+
+    @Test
     fun testTextField_labelPosition_initial_withDefaultHeight() {
         val labelPosition = Ref<Offset>()
         rule.setMaterialContent(lightColorScheme()) {
@@ -481,6 +510,33 @@ class TextFieldTest {
             assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
             // y position is top + padding
             assertThat(labelPosition.value?.y).isWithin(1f).of(ExpectedPadding.toPx())
+        }
+    }
+
+    @Test
+    fun testTextField_labelPosition_initial_withDefaultHeight_cutout() {
+        val labelPosition = Ref<Offset>()
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState(),
+                label = {
+                    Box(
+                        Modifier.size(MinTextLineHeight).onGloballyPositioned {
+                            labelPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition = TextFieldLabelPosition.Cutout(),
+            )
+        }
+
+        rule.runOnIdleWithDensity {
+            // x position is start + padding
+            assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            // y position is top + default padding + label padding allowance
+            assertThat(labelPosition.value?.y)
+                .isWithin(1f)
+                .of((ExpectedPadding + ExtraTopPaddingForCutoutLabelPosition).toPx())
         }
     }
 
@@ -507,6 +563,35 @@ class TextFieldTest {
             assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
             // y position is top + padding
             assertThat(labelPosition.value?.y).isWithin(1f).of(ExpectedPadding.toPx())
+        }
+    }
+
+    @Test
+    fun testTextField_labelPosition_initial_withCustomHeight_cutout() {
+        val height = 80.dp
+        val labelPosition = Ref<Offset>()
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState(),
+                modifier = Modifier.height(height),
+                label = {
+                    Box(
+                        Modifier.size(MinTextLineHeight).onGloballyPositioned {
+                            labelPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition = TextFieldLabelPosition.Cutout(),
+            )
+        }
+
+        rule.runOnIdleWithDensity {
+            // x position is start + padding
+            assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            // y position is top + default padding + label padding allowance
+            assertThat(labelPosition.value?.y)
+                .isWithin(1f)
+                .of((ExpectedPadding + ExtraTopPaddingForCutoutLabelPosition).toPx())
         }
     }
 
@@ -541,6 +626,35 @@ class TextFieldTest {
     }
 
     @Test
+    fun testTextField_labelPosition_whenFocused_cutout() {
+        val labelPosition = Ref<Offset>()
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                modifier = Modifier.testTag(TextFieldTag),
+                state = rememberTextFieldState(),
+                label = {
+                    Box(
+                        Modifier.size(MinFocusedLabelLineHeight).onGloballyPositioned {
+                            labelPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition = TextFieldLabelPosition.Cutout(),
+            )
+        }
+
+        // click to focus
+        rule.onNodeWithTag(TextFieldTag).performClick()
+
+        rule.runOnIdleWithDensity {
+            // x position is start + padding
+            assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            // y position should be smaller than default focused position (higher up)
+            assertThat(labelPosition.value?.y).isLessThan(TextFieldWithLabelVerticalPadding.toPx())
+        }
+    }
+
+    @Test
     fun testTextField_labelPosition_whenInput() {
         val labelPosition = Ref<Offset>()
         rule.setMaterialContent(lightColorScheme()) {
@@ -563,6 +677,31 @@ class TextFieldTest {
             assertThat(labelPosition.value?.y)
                 .isWithin(1f)
                 .of(TextFieldWithLabelVerticalPadding.toPx())
+        }
+    }
+
+    @Test
+    fun testTextField_labelPosition_whenInput_cutout() {
+        val labelPosition = Ref<Offset>()
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState("input"),
+                label = {
+                    Box(
+                        Modifier.size(MinFocusedLabelLineHeight).onGloballyPositioned {
+                            labelPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition = TextFieldLabelPosition.Cutout(),
+            )
+        }
+
+        rule.runOnIdleWithDensity {
+            // x position is start + padding
+            assertThat(labelPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            // y position should be smaller than default focused position (higher up)
+            assertThat(labelPosition.value?.y).isLessThan(TextFieldWithLabelVerticalPadding.toPx())
         }
     }
 
@@ -611,7 +750,47 @@ class TextFieldTest {
                     )
                 },
                 labelPosition =
-                    TextFieldLabelPosition.Attached(
+                    TextFieldLabelPosition.Inside(
+                        minimizedAlignment = Alignment.End,
+                        expandedAlignment = Alignment.CenterHorizontally,
+                    ),
+            )
+        }
+
+        rule.runOnIdleWithDensity {
+            // centered horizontally
+            assertThat(labelPosition.value?.x)
+                .isWithin(1f)
+                .of(((ExpectedDefaultTextFieldWidth - labelSize) / 2).toPx())
+        }
+
+        rule.onNodeWithTag(TextFieldTag).performClick()
+
+        rule.runOnIdleWithDensity {
+            // end
+            assertThat(labelPosition.value?.x)
+                .isWithin(1f)
+                .of((ExpectedDefaultTextFieldWidth - TextFieldPadding - labelSize).toPx())
+        }
+    }
+
+    @Test
+    fun testTextField_labelPosition_customAlignment_cutout() {
+        val labelPosition = Ref<Offset>()
+        val labelSize = MinFocusedLabelLineHeight
+        rule.setMaterialContentForSizeAssertions {
+            TextField(
+                state = rememberTextFieldState(),
+                modifier = Modifier.testTag(TextFieldTag),
+                label = {
+                    Box(
+                        Modifier.size(labelSize).onGloballyPositioned {
+                            labelPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition =
+                    TextFieldLabelPosition.Cutout(
                         minimizedAlignment = Alignment.End,
                         expandedAlignment = Alignment.CenterHorizontally,
                     ),
@@ -691,6 +870,39 @@ class TextFieldTest {
             assertThat(placeholderPosition.value?.y)
                 .isWithin(1f)
                 .of((TextFieldWithLabelVerticalPadding + MinFocusedLabelLineHeight).toPx())
+        }
+    }
+
+    @Test
+    fun testTextField_placeholderPosition_withLabel_cutout() {
+        val placeholderPosition = Ref<Offset>()
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                modifier = Modifier.testTag(TextFieldTag),
+                state = rememberTextFieldState(),
+                label = { Box(Modifier.size(MinFocusedLabelLineHeight)) },
+                placeholder = {
+                    Box(
+                        Modifier.size(MinTextLineHeight).onGloballyPositioned {
+                            placeholderPosition.value = it.positionInRoot()
+                        }
+                    )
+                },
+                labelPosition = TextFieldLabelPosition.Cutout(),
+            )
+        }
+
+        // click to focus
+        rule.onNodeWithTag(TextFieldTag).performClick()
+
+        rule.runOnIdleWithDensity {
+            // x position is start + padding
+            assertThat(placeholderPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            // y position should be at top + padding + label padding allowance (since label is in
+            // cutout)
+            assertThat(placeholderPosition.value?.y)
+                .isWithin(1f)
+                .of((ExpectedPadding + ExtraTopPaddingForCutoutLabelPosition).toPx())
         }
     }
 
@@ -1077,7 +1289,7 @@ class TextFieldTest {
                 prefix = { Text(prefixText) },
                 suffix = { Text(suffixText) },
                 placeholder = { Text(placeholderText) },
-                labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = false),
+                labelPosition = TextFieldLabelPosition.Inside(isAlwaysMinimized = false),
             )
         }
 
@@ -1101,7 +1313,7 @@ class TextFieldTest {
                 prefix = { Text(prefixText) },
                 suffix = { Text(suffixText) },
                 placeholder = { Text(placeholderText) },
-                labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true),
+                labelPosition = TextFieldLabelPosition.Inside(isAlwaysMinimized = true),
             )
         }
 
@@ -1497,7 +1709,6 @@ class TextFieldTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun testTextField_imeActionAndKeyboardTypePropagatedDownstream() {
@@ -1626,7 +1837,6 @@ class TextFieldTest {
     @Test
     @LargeTest
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Ignore("Enabled after b/484131458")
     fun testTextField_transformedTextIsUsed_toDefineLabelPosition() {
         rule.setMaterialContent(lightColorScheme()) {
             TextField(
@@ -2145,6 +2355,22 @@ class TextFieldTest {
                 outputTransformation = { addStyle(SpanStyle(), 0, length) },
             )
         }
+    }
+
+    @Test
+    fun testTextField_prefixAndSuffix_semantics() {
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                state = rememberTextFieldState("google"),
+                prefix = { Text("www.") },
+                suffix = { Text(".com") },
+                modifier = Modifier.testTag("TextField"),
+            )
+        }
+
+        val rootNode = rule.onNodeWithTag("TextField", useUnmergedTree = false).fetchSemanticsNode()
+        val textList = rootNode.config.getOrNull(SemanticsProperties.Text)?.map { it.text }
+        assertThat(textList).containsExactly("www.", "google", ".com").inOrder()
     }
 }
 

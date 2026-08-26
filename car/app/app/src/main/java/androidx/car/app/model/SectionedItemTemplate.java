@@ -16,6 +16,8 @@
 
 package androidx.car.app.model;
 
+import android.util.Log;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
@@ -24,6 +26,7 @@ import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.constraints.ActionsConstraints;
+import androidx.car.app.utils.LogTags;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
@@ -119,6 +122,10 @@ public final class SectionedItemTemplate implements Template {
 
     private final @Nullable Header mHeader;
 
+    @RequiresCarApi(9)
+    @OptIn(markerClass = ExperimentalCarApi.class)
+    private final @Nullable SearchHeader mSearchHeader;
+
     private final boolean mIsLoading;
 
     @Deprecated
@@ -133,6 +140,7 @@ public final class SectionedItemTemplate implements Template {
         mSections = Collections.emptyList();
         mActions = Collections.emptyList();
         mHeader = null;
+        mSearchHeader = null;
         mIsLoading = false;
         mIsAlphabeticalIndexingAllowed = false;
         mAlphabeticalIndexingStrategy = ALPHABETICAL_INDEXING_DISABLED;
@@ -144,6 +152,7 @@ public final class SectionedItemTemplate implements Template {
         mSections = Collections.unmodifiableList(builder.mSections);
         mActions = Collections.unmodifiableList(builder.mActions);
         mHeader = builder.mHeader;
+        mSearchHeader = builder.mSearchHeader;
         mIsLoading = builder.mIsLoading;
         mIsAlphabeticalIndexingAllowed = builder.mIsAlphabeticalIndexingAllowed;
         mAlphabeticalIndexingStrategy = builder.mAlphabeticalIndexingStrategy;
@@ -163,6 +172,17 @@ public final class SectionedItemTemplate implements Template {
     /** Returns the optional header for this template. */
     public @Nullable Header getHeader() {
         return mHeader;
+    }
+
+    /**
+     * Returns the {@link SearchHeader} for this template or {@code null} if not set.
+     *
+     * @see Builder#setSearchHeader(SearchHeader)
+     */
+    @ExperimentalCarApi
+    @RequiresCarApi(9)
+    public @Nullable SearchHeader getSearchHeader() {
+        return mSearchHeader;
     }
 
     /** Returns whether or not this template is in a loading state. */
@@ -226,6 +246,7 @@ public final class SectionedItemTemplate implements Template {
         return Objects.hash(mSections,
                 mActions,
                 mHeader,
+                mSearchHeader,
                 mIsLoading,
                 mIsAlphabeticalIndexingAllowed,
                 mScrollStatePersistenceStrategy
@@ -247,6 +268,7 @@ public final class SectionedItemTemplate implements Template {
         return Objects.equals(mSections, template.mSections)
                 && Objects.equals(mActions, template.mActions)
                 && Objects.equals(mHeader, template.mHeader)
+                && Objects.equals(mSearchHeader, template.mSearchHeader)
                 && mIsLoading == template.mIsLoading
                 && mIsAlphabeticalIndexingAllowed == template.mIsAlphabeticalIndexingAllowed
                 && mScrollStatePersistenceStrategy == template.mScrollStatePersistenceStrategy;
@@ -264,8 +286,8 @@ public final class SectionedItemTemplate implements Template {
      *
      * <ul>
      *     <li>The template is not both loading and populated with sections
-     *     <li>Only {@link ChipSection}, {@link RowSection} and/or {@link GridSection} are
-     *     added as sections
+     *     <li>Only {@link ChipSection}, {@link RowSection}, {@link GridSection},
+     *     {@link CondensedSection}, or {@link BannerSection} are added as sections
      *     <li>If a {@link ChipSection} is added, it must be the first section and only one
      *     is allowed
      * </ul>
@@ -276,6 +298,10 @@ public final class SectionedItemTemplate implements Template {
         private @NonNull List<Action> mActions = new ArrayList<>();
 
         private @Nullable Header mHeader = null;
+
+        @RequiresCarApi(9)
+        @OptIn(markerClass = ExperimentalCarApi.class)
+        private @Nullable SearchHeader mSearchHeader = null;
 
         private boolean mIsLoading = false;
 
@@ -297,6 +323,7 @@ public final class SectionedItemTemplate implements Template {
             mSections = template.mSections;
             mActions = template.mActions;
             mHeader = template.mHeader;
+            mSearchHeader = template.mSearchHeader;
             mIsLoading = template.mIsLoading;
             mIsAlphabeticalIndexingAllowed = template.mIsAlphabeticalIndexingAllowed;
             mAlphabeticalIndexingStrategy = template.mAlphabeticalIndexingStrategy;
@@ -339,10 +366,23 @@ public final class SectionedItemTemplate implements Template {
          * actions in the header), overwriting any other previously set actions from {@link
          * #addAction(Action)} or {@link #setActions(List)}. All actions must conform to the
          * {@link ActionsConstraints#ACTIONS_CONSTRAINTS_FAB} constraints.
+         *
+         * <p>Note: Starting in Car API 9, for media apps (apps with
+         * {@link androidx.car.app.CarAppPermission#MEDIA_TEMPLATES}), a maximum of 1 action can be
+         * set, as the host reserves space to render a persistent media entry point or miniplayer.
+         * If extra actions are sent by a media app, the host will drop the extra action.
          */
         @CanIgnoreReturnValue
         public @NonNull Builder setActions(@NonNull List<Action> actions) {
             ActionsConstraints.ACTIONS_CONSTRAINTS_FAB.validateOrThrow(actions);
+            for (Action action : actions) {
+                if (action.getType() == Action.TYPE_MEDIA_PLAYBACK) {
+                    Log.w(LogTags.TAG,
+                            "Action.TYPE_MEDIA_PLAYBACK is ignored as a floating action button on"
+                                    + " Car API 9+ hosts.");
+                    break;
+                }
+            }
             mActions = actions;
             return this;
         }
@@ -351,12 +391,22 @@ public final class SectionedItemTemplate implements Template {
          * Adds a single {@link Action} to this template, appending to the existing list of
          * actions. All actions must conform to the
          * {@link ActionsConstraints#ACTIONS_CONSTRAINTS_FAB} constraints.
+         *
+         * <p>Note: Starting in Car API 9, for media apps (apps with
+         * {@link androidx.car.app.CarAppPermission#MEDIA_TEMPLATES}), a maximum of 1 action can be
+         * set, as the host reserves space to render a persistent media entry point or miniplayer.
+         * If extra actions are sent by a media app, the host will drop the extra action.
          */
         @CanIgnoreReturnValue
         public @NonNull Builder addAction(@NonNull Action action) {
             List<Action> actionsCopy = new ArrayList<>(mActions);
             actionsCopy.add(action);
             ActionsConstraints.ACTIONS_CONSTRAINTS_FAB.validateOrThrow(actionsCopy);
+            if (action.getType() == Action.TYPE_MEDIA_PLAYBACK) {
+                Log.w(LogTags.TAG,
+                        "Action.TYPE_MEDIA_PLAYBACK is ignored as a floating action button on"
+                                + " Car API 9+ hosts.");
+            }
 
             mActions.add(action);
             return this;
@@ -369,10 +419,31 @@ public final class SectionedItemTemplate implements Template {
             return this;
         }
 
-        /** Sets or clears the optional header for this template. */
+        /**
+         * Sets or clears the optional header for this template.
+         *
+         * <p> Note that only one of {@link Header} or {@link SearchHeader} can be set
+         * on this template at the same time.
+         * Otherwise, an exception will be thrown on {@link #build()} invocation.
+         */
         @CanIgnoreReturnValue
         public @NonNull Builder setHeader(@Nullable Header header) {
             mHeader = header;
+            return this;
+        }
+
+        /**
+         * Sets or clears a search header on this template, enabling search input mode.
+         *
+         * <p> Note that only one of {@link Header} or {@link SearchHeader} can be set
+         * on this template at the same time.
+         * Otherwise, an exception will be thrown on {@link #build()} invocation.
+         */
+        @ExperimentalCarApi
+        @RequiresCarApi(9)
+        @CanIgnoreReturnValue
+        public @NonNull Builder setSearchHeader(@Nullable SearchHeader searchHeader) {
+            mSearchHeader = searchHeader;
             return this;
         }
 
@@ -472,6 +543,10 @@ public final class SectionedItemTemplate implements Template {
          */
         @OptIn(markerClass = ExperimentalCarApi.class)
         public @NonNull SectionedItemTemplate build() {
+            if (mHeader != null && mSearchHeader != null) {
+                throw new IllegalArgumentException(
+                        "Both Header and SearchHeader cannot be set on SectionedItemTemplate");
+            }
             if (mIsLoading) {
                 if (!mSections.isEmpty()) {
                     throw new IllegalArgumentException(
@@ -493,10 +568,14 @@ public final class SectionedItemTemplate implements Template {
                                         + "SectionedItemTemplate.");
                     }
                     hasChipSection = true;
-                } else if (!(section instanceof RowSection) && !(section instanceof GridSection)) {
+                } else if (!(section instanceof RowSection) && !(section instanceof GridSection)
+                        && !(section instanceof CondensedSection)
+                        && !(section instanceof SpotlightSection)
+                        && !(section instanceof BannerSection)) {
                     throw new IllegalArgumentException(
-                            "Only ChipSections, RowSections and GridSections are allowed in "
-                                    + "SectionedItemTemplate.");
+                            "Only ChipSections, RowSections, GridSections, "
+                                    + "CondensedSections, SpotlightSections, and BannerSections "
+                                    + "are allowed in SectionedItemTemplate.");
                 }
             }
 

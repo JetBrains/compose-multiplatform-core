@@ -55,8 +55,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialColumn
@@ -78,6 +79,7 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.Purple80
+import androidx.xr.compose.unit.DpVolumeOffset
 
 class CurvedLayout : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,6 +98,7 @@ class CurvedLayout : ComponentActivity() {
         Subspace { PanelGrid() }
     }
 
+    @Suppress("DEPRECATION")
     @Composable
     private fun PanelGrid() {
         var curvePercent by remember { mutableFloatStateOf(0.625f) }
@@ -188,7 +191,13 @@ class CurvedLayout : ComponentActivity() {
                         Text(text = item, fontSize = 20.sp, color = Color.Black)
                     }
                 }
-                Orbiter(position = ContentEdge.End, offset = 30.dp) {
+                Orbiter(
+                    position =
+                        OrbiterPosition.CenterEnd(
+                            EdgeAlignment.Outside,
+                            offset = DpVolumeOffset(x = 30.dp),
+                        )
+                ) {
                     IconButton(
                         onClick = { addHighlight = !addHighlight },
                         modifier = Modifier.background(Purple40),

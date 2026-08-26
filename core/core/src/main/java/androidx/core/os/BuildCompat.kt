@@ -22,6 +22,7 @@ import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import java.util.Locale
 
 /**
  * This class contains additional platform version checking methods for targeting pre-release
@@ -40,28 +41,31 @@ public object BuildCompat {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @VisibleForTesting
     public fun isAtLeastPreReleaseCodename(codename: String, buildCodename: String): Boolean {
-        fun codenameToInt(codename: String): Int? =
-            when (codename.uppercase()) {
-                "BAKLAVA" -> 0
-                else -> null
-            }
-
         // Special case "REL", which means the build is not a pre-release build.
         if ("REL" == buildCodename) {
             return false
         }
 
+        val buildUpper = buildCodename.uppercase(Locale.US)
+        val codeUpper = codename.uppercase(Locale.US)
+
+        fun codenameToInt(upperCodename: String): Int? =
+            when (upperCodename) {
+                "BAKLAVA" -> 0
+                else -> null
+            }
+
         // Starting with Baklava, the Android dessert names wrapped around to the start of the
         // alphabet; handle these "new" codenames explicitly; lexically compare "old" codenames.
         // Return true if the build codename is equal to or greater than the requested codename.
-        val buildCodenameInt = codenameToInt(buildCodename)
-        val codenameInt = codenameToInt(codename)
+        val buildCodenameInt = codenameToInt(buildUpper)
+        val codenameInt = codenameToInt(codeUpper)
         if (buildCodenameInt != null && codenameInt != null) {
             // both codenames are "new" -> use hard-coded int values
             return buildCodenameInt >= codenameInt
         } else if (buildCodenameInt == null && codenameInt == null) {
             // both codenames are "old" -> use lexical comparison
-            return buildCodename.uppercase() >= codename.uppercase()
+            return buildUpper >= codeUpper
         } else {
             // one codename is "new", one is "old"
             return buildCodenameInt != null
@@ -300,6 +304,13 @@ public object BuildCompat {
      */
     @JvmStatic
     @ChecksSdkIntAtLeast(api = 36, codename = "Baklava")
+    @Deprecated(
+        message =
+            "Android Baklava is a finalized release and this method is no longer " +
+                "necessary. It will be removed in a future release of this library. Instead, use " +
+                "`Build.VERSION.SDK_INT >= 36`.",
+        ReplaceWith("android.os.Build.VERSION.SDK_INT >= 36"),
+    )
     public fun isAtLeastB(): Boolean =
         Build.VERSION.SDK_INT >= 36 ||
             (Build.VERSION.SDK_INT >= 35 &&
@@ -312,6 +323,16 @@ public object BuildCompat {
      * @return `true` if Baklava minor release 1 APIs are available for use, `false` otherwise
      */
     @JvmStatic
+    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    @Deprecated(
+        message =
+            "Android Baklava minor release 1 is a finalized release and this method is no longer " +
+                "necessary. It will be removed in a future release of this library. Instead, use " +
+                "`Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1`.",
+        ReplaceWith(
+            "android.os.Build.VERSION.SDK_INT_FULL >= android.os.Build.VERSION_CODES_FULL.BAKLAVA_1"
+        ),
+    )
     public fun isAtLeastB_1(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
             Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1

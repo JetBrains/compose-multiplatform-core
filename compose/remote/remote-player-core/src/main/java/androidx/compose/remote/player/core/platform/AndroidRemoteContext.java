@@ -17,10 +17,9 @@ package androidx.compose.remote.player.core.platform;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.widget.EdgeEffect;
 
 import androidx.annotation.RestrictTo;
@@ -30,7 +29,6 @@ import androidx.compose.remote.core.ScrollingEdgeEffect;
 import androidx.compose.remote.core.SystemClock;
 import androidx.compose.remote.core.TouchListener;
 import androidx.compose.remote.core.VariableSupport;
-import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.FloatExpression;
 import androidx.compose.remote.core.operations.ShaderData;
 import androidx.compose.remote.core.operations.utilities.ArrayAccess;
@@ -40,7 +38,6 @@ import androidx.compose.remote.core.types.LongConstant;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +49,16 @@ import java.util.HashMap;
  */
 @RestrictTo(LIBRARY_GROUP)
 public class AndroidRemoteContext extends RemoteContext {
-    private static final boolean CHECK_DATA_SIZE = true;
+
+    private Context mAndroidContext;
+
+    public void setAndroidContext(@Nullable Context context) {
+        mAndroidContext = context;
+    }
+
+    public @Nullable Context getAndroidContext() {
+        return mAndroidContext;
+    }
 
     public @Nullable EdgeEffectBuilder mEdgeEffectBuilder;
 
@@ -60,6 +66,32 @@ public class AndroidRemoteContext extends RemoteContext {
 
     @NonNull
     private BitmapLoader mBitmapLoader = BitmapLoader.UNSUPPORTED;
+
+    private TypefaceResolver mTypefaceResolver;
+
+    /**
+     * Sets the TypefaceResolver to be used by the PaintContext.
+     *
+     * @param typefaceResolver The TypefaceResolver to be used.
+     */
+    public void setTypefaceResolver(@NonNull TypefaceResolver typefaceResolver) {
+        mTypefaceResolver = typefaceResolver;
+        if (mPaintContext != null) {
+            ((AndroidPaintContext) mPaintContext).setTypefaceResolver(typefaceResolver);
+        }
+    }
+
+    /**
+     * Gets the current TypefaceResolver.
+     *
+     * @return The current TypefaceResolver.
+     */
+    public @NonNull TypefaceResolver getTypefaceResolver() {
+        if (mTypefaceResolver == null) {
+            mTypefaceResolver = new DefaultTypefaceResolver(this);
+        }
+        return mTypefaceResolver;
+    }
 
     /** Default constructor, uses a {@link RemoteClock#SYSTEM} as the clock. */
     public AndroidRemoteContext() {
@@ -88,6 +120,15 @@ public class AndroidRemoteContext extends RemoteContext {
     }
 
     /**
+     * Returns the BitmapLoader used by the RemoteContext.
+     *
+     * @return The BitmapLoader being used.
+     */
+    public @NonNull BitmapLoader getBitmapLoader() {
+        return mBitmapLoader;
+    }
+
+    /**
      * Sets the Canvas to be used by the RemoteContext for drawing operations. Typically received in
      * onDraw. If a PaintContext already exists, it will be reset and updated with the new Canvas.
      * Otherwise, a new AndroidPaintContext will be created. The width and height of the context are
@@ -98,6 +139,9 @@ public class AndroidRemoteContext extends RemoteContext {
     public void useCanvas(@NonNull Canvas canvas) {
         if (mPaintContext == null) {
             mPaintContext = new AndroidPaintContext(this, canvas);
+            if (mTypefaceResolver != null) {
+                ((AndroidPaintContext) mPaintContext).setTypefaceResolver(mTypefaceResolver);
+            }
         } else {
             // need to make sure to update the canvas for the current one
             mPaintContext.reset();
@@ -111,12 +155,11 @@ public class AndroidRemoteContext extends RemoteContext {
     // Edge effect handling
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /**
-     * EdgeEffectBuilder interface
-     */
+    /** EdgeEffectBuilder interface */
     public interface EdgeEffectBuilder {
         /**
          * Create a new EdgeEffect
+         *
          * @return EdgeEffect
          */
         @NonNull EdgeEffect create();
@@ -124,6 +167,7 @@ public class AndroidRemoteContext extends RemoteContext {
 
     /**
      * Set a builder for EdgeEffects
+     *
      * @param builder EdgeEffectBuilder
      */
     public void setEdgeEffectBuilder(@NonNull EdgeEffectBuilder builder) {
@@ -140,7 +184,8 @@ public class AndroidRemoteContext extends RemoteContext {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Data handling
-    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// ////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public void loadPathData(int instanceId, int winding, float @NonNull [] floatPath) {
@@ -167,8 +212,14 @@ public class AndroidRemoteContext extends RemoteContext {
 
     HashMap<String, ArrayList<VarName>> mVarNameHashMap = new HashMap<>();
 
+    @Override
+    public void clearVariables() {
+        mVarNameHashMap.clear();
+    }
+
     /**
      * Returns the id of a variable
+     *
      * @param name name of variable
      * @return id of variable
      */
@@ -182,6 +233,7 @@ public class AndroidRemoteContext extends RemoteContext {
 
     /**
      * Returns the content of a name variable
+     *
      * @param name name of variable
      * @return content of variable
      */
@@ -365,96 +417,13 @@ public class AndroidRemoteContext extends RemoteContext {
     public void loadBitmap(
             int imageId, short encoding, short type, int width, int height, byte @NonNull [] data) {
         if (!mRemoteComposeState.containsId(imageId)) {
-            Bitmap image = null;
-            switch (encoding) {
-                case BitmapData.ENCODING_INLINE:
-                    switch (type) {
-                        case BitmapData.TYPE_PNG_8888:
-                            if (CHECK_DATA_SIZE) {
-                                BitmapFactory.Options opts = new BitmapFactory.Options();
-                                opts.inJustDecodeBounds = true; // <-- do a bounds-only pass
-                                BitmapFactory.decodeByteArray(data, 0, data.length, opts);
-                                if (opts.outWidth > width || opts.outHeight > height) {
-                                    throw new RuntimeException(
-                                            "dimension don't match "
-                                                    + opts.outWidth
-                                                    + "x"
-                                                    + opts.outHeight
-                                                    + " vs "
-                                                    + width
-                                                    + "x"
-                                                    + height);
-                                }
-                            }
-                            image = BitmapFactory.decodeByteArray(data, 0, data.length);
-                            break;
-                        case BitmapData.TYPE_PNG_ALPHA_8:
-                            image = decodePreferringAlpha8(data);
-
-                            // If needed convert to ALPHA_8.
-                            if (!image.getConfig().equals(Bitmap.Config.ALPHA_8)) {
-                                Bitmap alpha8Bitmap =
-                                        Bitmap.createBitmap(
-                                                image.getWidth(),
-                                                image.getHeight(),
-                                                Bitmap.Config.ALPHA_8);
-                                Canvas canvas = new Canvas(alpha8Bitmap);
-                                Paint paint = new Paint();
-                                paint.setXfermode(
-                                        new android.graphics.PorterDuffXfermode(
-                                                android.graphics.PorterDuff.Mode.SRC));
-                                canvas.drawBitmap(image, 0, 0, paint);
-                                image.recycle(); // Release resources
-
-                                image = alpha8Bitmap;
-                            }
-                            break;
-                        case BitmapData.TYPE_RAW8888:
-                            image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                            int[] idata = new int[data.length / 4];
-                            for (int i = 0; i < idata.length; i++) {
-                                int p = i * 4;
-                                idata[i] =
-                                        (data[p] << 24)
-                                                | (data[p + 1] << 16)
-                                                | (data[p + 2] << 8)
-                                                | data[p + 3];
-                            }
-                            image.setPixels(idata, 0, width, 0, 0, width, height);
-                            break;
-                        case BitmapData.TYPE_RAW8:
-                            image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                            int[] bdata = new int[data.length / 4];
-                            for (int i = 0; i < bdata.length; i++) {
-
-                                bdata[i] = 0x1010101 * data[i];
-                            }
-                            image.setPixels(bdata, 0, width, 0, 0, width, height);
-                            break;
-                    }
-                    break;
-                case BitmapData.ENCODING_FILE:
-                    image = BitmapFactory.decodeFile(new String(data));
-                    break;
-                case BitmapData.ENCODING_URL:
-                    try {
-                        image = BitmapFactory.decodeStream(
-                                mBitmapLoader.loadBitmap(new String(data)));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    break;
-                case BitmapData.ENCODING_EMPTY:
-                    image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Bitmap image =
+                    RemoteBitmapDecoder.decodeBitmap(
+                            imageId, encoding, type, width, height, data, mBitmapLoader);
+            if (image != null) {
+                mRemoteComposeState.cacheData(imageId, image);
             }
-            mRemoteComposeState.cacheData(imageId, image);
         }
-    }
-
-    private Bitmap decodePreferringAlpha8(byte @NonNull [] data) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ALPHA_8;
-        return BitmapFactory.decodeByteArray(data, 0, data.length, options);
     }
 
     @Override
@@ -671,6 +640,16 @@ public class AndroidRemoteContext extends RemoteContext {
     @Override
     public void hapticEffect(int type) {
         mDocument.haptic(type);
+    }
+
+    @Override
+    public void loadSound(int soundId, byte @NonNull [] data) {
+        mDocument.loadSound(soundId, data);
+    }
+
+    @Override
+    public void playSound(int soundId) {
+        mDocument.playSound(soundId);
     }
 
     /**

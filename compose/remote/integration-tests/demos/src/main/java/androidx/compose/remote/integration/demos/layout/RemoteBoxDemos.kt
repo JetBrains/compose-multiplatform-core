@@ -31,8 +31,8 @@ import androidx.compose.material3.Text
 import androidx.compose.remote.creation.compose.layout.RemoteAbsoluteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteBox
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteStateLayout
-import androidx.compose.remote.creation.compose.layout.rememberStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
@@ -43,6 +43,7 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.rememberNamedRemoteInt
 import androidx.compose.remote.integration.demos.common.RemoteDemo
 import androidx.compose.remote.integration.demos.common.propertyName
+import androidx.compose.remote.tooling.preview.RemoteComponentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -55,10 +56,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-@Suppress("RestrictedApiAndroidX")
+private const val ALIGNMENT_ID = "ALIGNMENT_ID"
+
+@Suppress("RestrictedApiAndroidX") // Referring to setUserLocalInt
 @Composable
 fun RemoteBoxAlignmentsDemo() {
-    val alignmentId = "alignmentId"
     val alignments =
         listOf(
             0 to RemoteAlignment.TopStart,
@@ -110,23 +112,32 @@ fun RemoteBoxAlignmentsDemo() {
             }
         }
 
-        RemoteDemo(update = { player -> player.setUserLocalInt(alignmentId, selectedAlignment) }) {
-            val alignmentId = rememberNamedRemoteInt(alignmentId, alignments[0].first)
-            val fsm = rememberStateMachine(alignmentId, *alignments.map { it.first }.toIntArray())
+        RemoteDemo(update = { player -> player.setUserLocalInt(ALIGNMENT_ID, selectedAlignment) }) {
+            RemoteBoxAlignmentsDemoContent(alignments)
+        }
+    }
+}
 
-            RemoteStateLayout(modifier = RemoteModifier.wrapContentSize(), stateMachine = fsm) {
-                state ->
-                RemoteBox(
-                    modifier =
-                        RemoteModifier.fillMaxSize().background(RemoteColor(Color.LightGray)),
-                    contentAlignment = alignments[state].second,
-                ) {
-                    RemoteBox(
-                        modifier =
-                            RemoteModifier.size(RemoteDp(50.dp)).background(RemoteColor(Color.Red))
-                    )
-                }
-            }
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteComponentPreview, background, setUserLocalInt
+@Composable
+@RemoteComposable
+private fun RemoteBoxAlignmentsDemoContent(alignments: List<Pair<Int, RemoteAlignment>>) {
+    val currentState = rememberNamedRemoteInt(ALIGNMENT_ID, alignments[0].first)
+
+    RemoteStateLayout(
+        modifier = RemoteModifier.wrapContentSize(),
+        currentState = currentState,
+        states = alignments.map { it.first }.toIntArray(),
+    ) { state ->
+        RemoteBox(
+            modifier = RemoteModifier.fillMaxSize().background(RemoteColor(Color.LightGray)),
+            contentAlignment = alignments[state].second,
+        ) {
+            RemoteBox(
+                modifier = RemoteModifier.size(RemoteDp(50.dp)).background(RemoteColor(Color.Red))
+            )
         }
     }
 }
@@ -135,4 +146,14 @@ fun RemoteBoxAlignmentsDemo() {
 @Composable
 private fun RemoteBoxAlignmentsDemoPreview() {
     RemoteBoxAlignmentsDemo()
+}
+
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteComponentPreview, background, setUserLocalInt
+@RemoteComponentPreview
+@Composable
+@RemoteComposable
+fun RemoteBoxAlignmentsDemoContentPreview() {
+    RemoteBoxAlignmentsDemoContent(alignments = listOf(0 to RemoteAlignment.Center))
 }

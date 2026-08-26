@@ -17,13 +17,20 @@
 package androidx.appfunction.integration.test.sharedschema
 
 import android.app.PendingIntent
+import android.net.Uri
 import androidx.appfunctions.AppFunctionIntValueConstraint
 import androidx.appfunctions.AppFunctionResourceContainer
 import androidx.appfunctions.AppFunctionSchemaCapability
 import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.AppFunctionStringValueConstraint
 import androidx.appfunctions.AppFunctionTextResource
 import androidx.appfunctions.AppFunctionUriGrant
+import androidx.appfunctions.AppFunctionUriValueConstraint
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 // TODO: b/463375632 - We should write tests in Agent app to not use these since they're not part of
 // schema.
@@ -89,6 +96,16 @@ interface AppFunctionOpenable {
 }
 
 @AppFunctionSerializable data class DateTime(val localDateTime: LocalDateTime)
+
+@AppFunctionSerializable
+data class ProxyTypesWrapper(
+    val localDateTime: LocalDateTime,
+    val localDate: LocalDate,
+    val localTime: LocalTime,
+    val uri: Uri,
+    val instant: Instant,
+    val zoneId: ZoneId,
+)
 
 @AppFunctionSerializable
 data class ClassWithOptionalValues(
@@ -274,7 +291,50 @@ data class IntEnumSerializable(
 )
 
 @AppFunctionSerializable
+data class UriConstraintSerializable(
+    @property:AppFunctionUriValueConstraint(allowedSchemes = ["content", "file"]) val uri: Uri,
+    @property:AppFunctionStringValueConstraint(pattern = "^[0-9]+$", format = "numeric")
+    val numericString: String,
+)
+
+@AppFunctionSerializable
 data class ResourceFunctionResponse(
     val stringValue: String,
     override val resources: List<AppFunctionTextResource>,
 ) : AppFunctionResourceContainer
+
+/** The MultiServiceNote. */
+@AppFunctionSerializable(isDescribedByKDoc = true)
+data class MultiServiceNote(
+    /** The multiservice note title. */
+    val title: String,
+    /** The multiservice note content. */
+    val content: List<String>,
+)
+
+/** The MultiServiceCreateNoteParams. */
+@AppFunctionSerializable(isDescribedByKDoc = true)
+data class MultiServiceCreateNoteParams(
+    /** The multiservice note title. */
+    val title: String,
+    /** The multiservice note content. */
+    val content: List<String>,
+)
+
+@AppFunctionSerializable
+data class MultiServiceProxyTypesWrapper(
+    val localDateTime: LocalDateTime,
+    val localDate: LocalDate,
+    val localTime: LocalTime,
+    val uri: Uri,
+    val instant: Instant,
+    val zoneId: ZoneId,
+)
+
+@AppFunctionSerializable
+data class MultiServiceFilesData(
+    val readOnlyUri: AppFunctionUriGrant,
+    val writeOnlyUri: AppFunctionUriGrant,
+    val readWriteUri: AppFunctionUriGrant,
+    val persistReadWriteUri: AppFunctionUriGrant,
+)

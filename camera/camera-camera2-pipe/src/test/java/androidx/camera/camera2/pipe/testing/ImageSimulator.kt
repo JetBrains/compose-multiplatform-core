@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.testing
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.MemoryEstimator
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
@@ -32,10 +33,18 @@ internal class ImageSimulator(
     private val fakeImageReaders = FakeImageReaders(fakeSurfaces)
     private val fakeImageSources = FakeImageSources(fakeImageReaders)
 
-    val cameraMetadata = defaultCameraMetadata ?: FakeCameraMetadata()
+    val cameraMetadata =
+        defaultCameraMetadata ?: FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
     val graphConfig = CameraGraph.Config(camera = cameraMetadata.camera, streams = streamConfigs)
 
-    val streamGraph = StreamGraphImpl(cameraMetadata, graphConfig, fakeImageSources, mock())
+    val streamGraph =
+        StreamGraphImpl(
+            cameraMetadata,
+            graphConfig,
+            fakeImageSources,
+            mock(),
+            MemoryEstimator.create(),
+        )
 
     val streamToSurfaceMap = buildMap {
         for (config in graphConfig.streams) {

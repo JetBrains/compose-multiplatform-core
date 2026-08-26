@@ -33,6 +33,7 @@ import androidx.car.app.constraints.ConstraintManager;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.CarIconSpan;
+import androidx.car.app.model.CarIconStyle;
 import androidx.car.app.model.CarLocation;
 import androidx.car.app.model.Distance;
 import androidx.car.app.model.DistanceSpan;
@@ -98,6 +99,8 @@ public class SamplePlaces {
         Location location1 = new Location(SamplePlaces.class.getSimpleName());
         location1.setLatitude(47.6696482);
         location1.setLongitude(-122.19950278);
+        CarIconStyle carIconStyle =
+                new CarIconStyle.Builder(CarIconStyle.TINTED).setTint(iconTintColor).build();
         places.add(
                 new PlaceInfo(
                         carContext.getString(R.string.location_1_title),
@@ -111,7 +114,7 @@ public class SamplePlaces {
                                                 IconCompat.createWithResource(
                                                         carContext,
                                                         R.drawable.ic_commute_24px))
-                                                .setTint(iconTintColor)
+                                                .setStyle(carIconStyle)
                                                 .build(),
                                         PlaceMarker.TYPE_ICON)
                                 .build()));

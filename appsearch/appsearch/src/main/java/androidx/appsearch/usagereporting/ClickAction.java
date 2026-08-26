@@ -69,7 +69,13 @@ public class ClickAction extends TakenAction {
     @Document.LongProperty
     private final long mTimeStayOnResultMillis;
 
-    ClickAction(@NonNull BuilderImpl<? extends BuilderImpl<?>> builder) {
+    /**
+     * Constructs a {@link ClickAction} from a {@link BuilderBase}.
+     *
+     * @param builder The builder to construct the {@link ClickAction} from.
+     */
+    @ExperimentalAppSearchApi
+    public ClickAction(@NonNull BuilderBase<?> builder) {
         super(builder);
         mQuery = builder.mQuery;
         mReferencedQualifiedId = builder.mReferencedQualifiedId;
@@ -145,7 +151,7 @@ public class ClickAction extends TakenAction {
 
     /** Builder for {@link ClickAction}. */
     @Document.BuilderProducer
-    public static final class Builder extends BuilderImpl<Builder> {
+    public static final class Builder extends BuilderBase<Builder> {
         /**
          * Constructor for {@link ClickAction.Builder}.
          *
@@ -155,7 +161,7 @@ public class ClickAction extends TakenAction {
          *                              since Unix epoch.
          */
         public Builder(@NonNull String namespace, @NonNull String id, long actionTimestampMillis) {
-            super(namespace, id, actionTimestampMillis, ActionConstants.ACTION_TYPE_CLICK);
+            super(namespace, id, actionTimestampMillis);
         }
 
         /**
@@ -186,8 +192,11 @@ public class ClickAction extends TakenAction {
         }
     }
 
+    /** Builder for {@link ClickAction}. */
     @SuppressWarnings("unchecked")
-    static class BuilderImpl<T extends BuilderImpl<T>> extends TakenAction.BuilderImpl<T> {
+    @ExperimentalAppSearchApi
+    public static class BuilderBase<T extends BuilderBase<T>> extends
+            TakenAction.BuilderBase<T> {
         private String mQuery;
         private String mReferencedQualifiedId;
         private int mResultRankInBlock;
@@ -195,7 +204,7 @@ public class ClickAction extends TakenAction {
         private long mTimeStayOnResultMillis;
 
         /**
-         * Constructs {@link BuilderImpl} with given {@code namespace}, {@code id},
+         * Constructs {@link ClickAction.BuilderBase} with given {@code namespace}, {@code id},
          * {@code actionTimestampMillis} and {@code actionType}.
          *
          * @param namespace             Namespace for the Document. See {@link Document.Namespace}.
@@ -205,7 +214,7 @@ public class ClickAction extends TakenAction {
          * @param actionType            Action type enum for the Document. See
          *                              {@link TakenAction.ActionType}.
          */
-        BuilderImpl(@NonNull String namespace, @NonNull String id,
+        public BuilderBase(@NonNull String namespace, @NonNull String id,
                 long actionTimestampMillis, @TakenAction.ActionType int actionType) {
             super(namespace, id, actionTimestampMillis, actionType);
 
@@ -220,12 +229,29 @@ public class ClickAction extends TakenAction {
         }
 
         /**
-         * Constructs {@link BuilderImpl} by copying existing values from the given
+         * Constructs {@link ClickAction.BuilderBase} with given {@code namespace}, {@code id}, and
+         * {@code actionTimestampMillis}.
+         *
+         * <p>The {@link TakenAction.ActionType} for the Document returned from
+         * {@link TakenAction#getActionType()} will be {@link ActionConstants#ACTION_TYPE_CLICK}.
+         *
+         * @param namespace             Namespace for the Document. See {@link Document.Namespace}.
+         * @param id                    Unique identifier for the Document. See {@link Document.Id}.
+         * @param actionTimestampMillis The timestamp when the user took the action, in milliseconds
+         *                              since Unix epoch.
+         */
+        public BuilderBase(@NonNull String namespace, @NonNull String id,
+                long actionTimestampMillis) {
+            this(namespace, id, actionTimestampMillis, ActionConstants.ACTION_TYPE_CLICK);
+        }
+
+        /**
+         * Constructs {@link ClickAction.BuilderBase} by copying existing values from the given
          * {@link ClickAction}.
          *
          * @param clickAction an existing {@link ClickAction} object.
          */
-        BuilderImpl(@NonNull ClickAction clickAction) {
+        public BuilderBase(@NonNull ClickAction clickAction) {
             super(Preconditions.checkNotNull(clickAction));
 
             mQuery = clickAction.getQuery();

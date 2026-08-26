@@ -1,22 +1,47 @@
 // Signature format: 4.0
 package androidx.xr.runtime.testing {
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialApiVersionProvider implements androidx.xr.runtime.SpatialApiVersionProvider {
-    ctor public FakeSpatialApiVersionProvider();
-    method @InaccessibleFromKotlin public int getPreviewSpatialApiVersion();
-    method @InaccessibleFromKotlin public int getSpatialApiVersion();
-    property public int previewSpatialApiVersion;
-    property public int spatialApiVersion;
-    field public static final androidx.xr.runtime.testing.FakeSpatialApiVersionProvider.Companion Companion;
+  public final class SessionTestRule extends org.junit.rules.ExternalResource {
+    ctor public SessionTestRule();
+    method protected void before();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.SessionConfigureResult? getConfigureResult();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.SessionCreateResult? getCreateResult();
+    method @InaccessibleFromKotlin public void setConfigureResult(androidx.xr.runtime.SessionConfigureResult?);
+    method @InaccessibleFromKotlin public void setCreateResult(androidx.xr.runtime.SessionCreateResult?);
+    property public androidx.xr.runtime.SessionConfigureResult? configureResult;
+    property public androidx.xr.runtime.SessionCreateResult? createResult;
   }
 
-  public static final class FakeSpatialApiVersionProvider.Companion {
-    method @InaccessibleFromKotlin public Integer? getTestPreviewSpatialApiVersion();
-    method @InaccessibleFromKotlin public Integer? getTestSpatialApiVersion();
-    method @InaccessibleFromKotlin public void setTestPreviewSpatialApiVersion(Integer?);
-    method @InaccessibleFromKotlin public void setTestSpatialApiVersion(Integer?);
-    property public Integer? testPreviewSpatialApiVersion;
-    property public Integer? testSpatialApiVersion;
+  public final class XrDeviceTestRule extends org.junit.rules.ExternalResource {
+    ctor public XrDeviceTestRule();
+    method protected void before();
+    method @InaccessibleFromKotlin public androidx.lifecycle.Lifecycle.State getLifecycleState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.DisplayBlendMode getPreferredDisplayBlendMode();
+    method @InaccessibleFromKotlin public int getSpatialApiVersion();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.DepthEstimationMode> getSupportedDepthEstimationModes();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.EyeTrackingMode> getSupportedEyeTrackingModes();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.GeospatialMode> getSupportedGeospatialModes();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.HandTrackingMode> getSupportedHandTrackingModes();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.RenderingMode> getSupportedRenderingModes();
+    method @InaccessibleFromKotlin public boolean isProjectedServiceAvailable();
+    method @InaccessibleFromKotlin public void setLifecycleState(androidx.lifecycle.Lifecycle.State);
+    method @InaccessibleFromKotlin public void setPreferredDisplayBlendMode(androidx.xr.runtime.DisplayBlendMode);
+    method @InaccessibleFromKotlin public void setProjectedServiceAvailable(boolean);
+    method @InaccessibleFromKotlin public void setSpatialApiVersion(int);
+    method @InaccessibleFromKotlin public void setSupportedDepthEstimationModes(java.util.Set<androidx.xr.runtime.DepthEstimationMode>);
+    method @InaccessibleFromKotlin public void setSupportedEyeTrackingModes(java.util.Set<androidx.xr.runtime.EyeTrackingMode>);
+    method @InaccessibleFromKotlin public void setSupportedGeospatialModes(java.util.Set<androidx.xr.runtime.GeospatialMode>);
+    method @InaccessibleFromKotlin public void setSupportedHandTrackingModes(java.util.Set<androidx.xr.runtime.HandTrackingMode>);
+    method @InaccessibleFromKotlin public void setSupportedRenderingModes(java.util.Set<androidx.xr.runtime.RenderingMode>);
+    property public boolean isProjectedServiceAvailable;
+    property public androidx.lifecycle.Lifecycle.State lifecycleState;
+    property public androidx.xr.runtime.DisplayBlendMode preferredDisplayBlendMode;
+    property public int spatialApiVersion;
+    property public java.util.Set<androidx.xr.runtime.DepthEstimationMode> supportedDepthEstimationModes;
+    property public java.util.Set<androidx.xr.runtime.EyeTrackingMode> supportedEyeTrackingModes;
+    property public java.util.Set<androidx.xr.runtime.GeospatialMode> supportedGeospatialModes;
+    property public java.util.Set<androidx.xr.runtime.HandTrackingMode> supportedHandTrackingModes;
+    property public java.util.Set<androidx.xr.runtime.RenderingMode> supportedRenderingModes;
   }
 
 }

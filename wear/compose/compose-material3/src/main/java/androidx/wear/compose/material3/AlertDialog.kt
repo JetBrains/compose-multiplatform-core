@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -90,6 +92,11 @@ import androidx.wear.compose.material3.lazy.transformedHeight
  * Example of an [AlertDialog] with an icon, title and two buttons to confirm and dismiss:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithConfirmAndDismissSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithConfirmAndDismissSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping
  *   right (typically also called by the [dismissButton]). Implementation of this lambda must remove
@@ -174,6 +181,11 @@ public fun AlertDialog(
  * Example of an [AlertDialog] with an icon, title and two buttons to confirm and dismiss:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithConfirmAndDismissTransformingContentSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithConfirmAndDismissTransformingContentSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping
  *   right (typically also called by the [dismissButton]). Implementation of this lambda must remove
@@ -421,9 +433,18 @@ public fun AlertDialog(
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithEdgeButtonSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithEdgeButtonSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of an [AlertDialog] with content groups and a bottom [EdgeButton]:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithContentGroupsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithContentGroupsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping to
  *   the right or by other dismiss action. Implementation of this lambda must remove the dialog from
@@ -505,9 +526,18 @@ public fun AlertDialog(
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithEdgeButtonTransformingContentSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithEdgeButtonTransformingContentSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of an [AlertDialog] with content groups and a bottom [EdgeButton]:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithContentGroupsTransformingContentSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithContentGroupsTransformingContentSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping to
  *   the right or by other dismiss action. Implementation of this lambda must remove the dialog from
@@ -635,6 +665,7 @@ public fun AlertDialogContent(
 ) {
     val scrollableLayout: @Composable () -> Unit = {
         val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+
         ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
             contentPadding ->
             ScalingLazyColumn(
@@ -738,6 +769,7 @@ public fun AlertDialogContent(
 ) {
     val scrollableLayout: @Composable () -> Unit = {
         val state = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+
         ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
             contentPadding ->
             TransformingLazyColumn(
@@ -745,6 +777,7 @@ public fun AlertDialogContent(
                 contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = verticalArrangement,
+                modifier = Modifier.fillMaxSize(),
             ) {
                 alertDialogCommonContent(
                     icon = icon,
@@ -830,6 +863,7 @@ public fun AlertDialogContent(
 ) {
     val scrollableLayout: @Composable () -> Unit = {
         val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+
         ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
             contentPadding ->
             ScalingLazyColumn(
@@ -917,6 +951,7 @@ public fun AlertDialogContent(
 ) {
     val scrollableLayout: @Composable () -> Unit = {
         val state = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+
         ScreenScaffold(
             scrollState = state,
             modifier = modifier,
@@ -1010,6 +1045,7 @@ public fun AlertDialogContent(
     // is not needed.
     val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
     val noTextAndContent = text == null && content == null
+
     ScreenScaffold(
         scrollState = state,
         edgeButton = edgeButton,
@@ -1099,6 +1135,7 @@ public fun AlertDialogContent(
     */
     val state = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
     val noTextAndContent = text == null && content == null
+
     ScreenScaffold(
         scrollState = state,
         modifier = modifier,
@@ -1174,6 +1211,7 @@ public object AlertDialogDefaults {
         val confirmWidth = 63.dp
         val confirmHeight = 54.dp
         val confirmShape = CircleShape
+
         FilledIconButton(
             onClick = onClick,
             modifier = modifier.rotate(-45f).size(confirmWidth, confirmHeight),

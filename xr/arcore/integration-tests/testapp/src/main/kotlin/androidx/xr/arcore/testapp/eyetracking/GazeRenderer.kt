@@ -19,8 +19,8 @@ package androidx.xr.arcore.testapp.eyetracking
 import android.util.Log
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Eye
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -46,11 +46,21 @@ class GazeRenderer {
 
         companion object {
             suspend fun create(session: Session, name: String, isLeft: Boolean): EyeWidget {
-                val rootEntity = Entity.create(session, "$name Root")
+                val rootEntity =
+                    Entity.create(
+                        session,
+                        name = "$name Root",
+                        parent = session.scene.activitySpace,
+                    )
 
                 val offsetPose = Pose(Vector3(0f, 0f, -0.2f), Quaternion.Identity)
-                val offsetEntity = Entity.create(session, "$name Offset", offsetPose)
-                rootEntity.addChild(offsetEntity)
+                val offsetEntity =
+                    Entity.create(
+                        session,
+                        name = "$name Offset",
+                        pose = offsetPose,
+                        parent = rootEntity,
+                    )
 
                 val assetName =
                     when (isLeft) {
@@ -58,9 +68,8 @@ class GazeRenderer {
                         false -> "BoundingBoxBlue.glb"
                     }
                 val model = GltfModel.create(session, Paths.get("models", assetName))
-                val modelEntity = GltfModelEntity.create(session, model)
+                val modelEntity = GltfModelEntity.create(session, model, parent = offsetEntity)
                 modelEntity.setScale(PANEL_SIZE)
-                offsetEntity.addChild(modelEntity)
                 return EyeWidget(session, rootEntity, modelEntity, isLeft)
             }
 
@@ -71,7 +80,7 @@ class GazeRenderer {
         }
 
         fun dispose() {
-            entity.dispose()
+            entity.parent = null
         }
 
         fun update(eyeState: Eye.State) {
