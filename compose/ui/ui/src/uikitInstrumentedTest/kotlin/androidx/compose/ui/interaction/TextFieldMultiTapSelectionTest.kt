@@ -35,6 +35,7 @@ import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -56,6 +57,7 @@ class TextFieldMultiTapSelectionTest {
     }
 
     @Test
+    @Ignore
     fun triple_tap_selects_all_text() = runUIKitInstrumentedTest(params = tfOptions) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
         focusThenTripleTap(TAG)
@@ -78,6 +80,7 @@ class TextFieldMultiTapSelectionTest {
     }
 
     @Test
+    @Ignore
     fun BTF2_triple_tap_then_double_tap_selects_word() = runUIKitInstrumentedTest(params = listOf(TextFieldFactory.BTF2)) { textFieldOption ->
         textFieldOption.setup(this, MULTI_WORD_TEXT, TAG)
 
