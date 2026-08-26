@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.DpInsets
+import androidx.compose.ui.platform.EmptyTextEditingDelegate
 import androidx.compose.ui.platform.NativeTextEditingDelegate
 import androidx.compose.ui.platform.TextLayoutDirection
 import androidx.compose.ui.platform.TextInputSelectionRect
@@ -63,7 +64,9 @@ internal class NativeTextInputConnection(
 ), NativeTextEditingDelegate {
     private val scrollView by lazy { NativeTextInputScrollView() }
 
-    override val textInputView = NativeTextInputView()
+    override val isInteractive: Boolean = true
+
+    override val textInputView = NativeTextInputView(input = EmptyTextEditingDelegate)
 
     override fun attachInputToView() {
         view.addSubview(scrollView)
@@ -81,7 +84,7 @@ internal class NativeTextInputConnection(
         // Out-of-bounds non-empty frame is required to hide text keyboard focus frame
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
-        textInputView.input = null
+        textInputView.input = EmptyTextEditingDelegate
 
         textInputView.let { textView ->
             textView.setFrame(outOfBoundsFrame)
