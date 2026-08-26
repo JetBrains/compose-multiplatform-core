@@ -81,6 +81,21 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
     }
 
     @Test
+    fun determineCursorDesiredOffset_tap_on_cjk_punctuation() {
+        val text = "tap\u3001" + "\u540E".repeat(120) + " html"
+        val punctuationOffset = text.indexOf('\u3001')
+
+        val actual =
+            determineCursorDesiredOffset(
+                offset = punctuationOffset,
+                textLayoutResult = createSimpleTextLayoutResult(text),
+                currentText = text,
+            )
+
+        assertEquals(punctuationOffset, actual)
+    }
+
+    @Test
     fun determineCursorDesiredOffset_tap_in_the_first_half_of_word() {
         val givenOffset = 23
         val desiredOffset = 19
