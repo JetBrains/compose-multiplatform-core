@@ -24,6 +24,7 @@ import android.hardware.SyncFence
 import android.os.Build
 import androidx.camera.common.ImageDataSpace
 import androidx.camera.common.ImageFormat
+import androidx.camera.common.ImageFormats
 import androidx.camera.common.ImagePlane
 import androidx.camera.common.MutableImageWrapper
 import androidx.camera.common.testing.FakeByteBuffers.sliceNative
@@ -44,16 +45,17 @@ import kotlinx.atomicfu.atomic
  *
  * If provided, the `HardwareBuffer` will be closed when this [FakeImage] is closed.
  */
-public class FakeImage
+public open class FakeImage
 @JvmOverloads
 constructor(
-    override val width: Int,
-    override val height: Int,
-    @ImageFormat override val format: Int,
+    override var width: Int,
+    override var height: Int,
+    @ImageFormat override var format: Int,
     override var timestamp: Long,
     byteBuffer: ByteBuffer? = null,
     hardwareBuffer: HardwareBuffer? = null,
     override var cropRect: Rect = Rect(0, 0, width, height),
+    imagePlanes: List<ImagePlane> = emptyList(),
 ) : MutableImageWrapper {
     private val _providedByteBuffer = byteBuffer
     private val _providedHardwareBuffer = hardwareBuffer
@@ -71,8 +73,7 @@ constructor(
 
     private val debugId = debugIds.incrementAndGet()
     private val _closeCount = atomic(0)
-
-    public val isClosed: Boolean
+    public open val isClosed: Boolean
         get() = _closeCount.value > 0
 
     public val closeCount: Int
@@ -114,8 +115,21 @@ constructor(
     override val hardwareBuffer: HardwareBuffer?
         get() = lazyHardwareBuffer.value
 
-    override val imagePlanes: List<ImagePlane> by lazy {
-        check(!isClosed)
+    private var _imagePlanes = imagePlanes
+
+    override var imagePlanes: List<ImagePlane>
+        get() {
+            check(!isClosed)
+            if (_imagePlanes.isEmpty()) {
+                _imagePlanes = generatePlanes()
+            }
+            return _imagePlanes
+        }
+        set(value) {
+            _imagePlanes = value
+        }
+
+    private fun generatePlanes(): List<ImagePlane> {
         val buf =
             lazyByteBuffer
                 ?: throw UnsupportedOperationException(
@@ -129,7 +143,7 @@ constructor(
         check(buf.capacity() >= minSize) {
             "Provided ByteBuffer capacity (${buf.capacity()}) is smaller than estimated minimum capacity ($minSize) for format $format"
         }
-        when (format) {
+        return when (format) {
             GraphicsImageFormat.YUV_420_888 -> createYuvPlanes(buf, isNv21 = false)
             GraphicsImageFormat.NV21 -> createYuvPlanes(buf, isNv21 = true)
             GraphicsImageFormat.JPEG,
@@ -168,7 +182,8 @@ constructor(
         }
     }
 
-    override fun toString(): String = "FakeImage-$debugId-$format-w${width}h$height-t$timestamp"
+    override fun toString(): String =
+        "FakeImage-$debugId-${ImageFormats.name(format)}-w${width}h$height-t$timestamp"
 
     private companion object {
         private val debugIds = atomic(0)
@@ -178,13 +193,13 @@ constructor(
 private fun FakeImage.estimateMinimumByteBufferSize(): Int? =
     when (format) {
         GraphicsImageFormat.YUV_420_888,
-        GraphicsImageFormat.NV21 -> (width * height * 3) / 2
+        GraphicsImageFormat.NV21,
         GraphicsImageFormat.JPEG,
         GraphicsImageFormat.HEIC,
         GraphicsImageFormat.DEPTH_JPEG,
         GraphicsImageFormat.JPEG_R,
         GraphicsImageFormat.DEPTH_POINT_CLOUD ->
-            FakeHardwareBuffers.estimateBlobBufferSize(width, height)
+            ImageFormats.bytesPerImage(format, width, height).toInt()
         GraphicsImageFormat.PRIVATE,
         GraphicsImageFormat.UNKNOWN -> 0
         else -> null

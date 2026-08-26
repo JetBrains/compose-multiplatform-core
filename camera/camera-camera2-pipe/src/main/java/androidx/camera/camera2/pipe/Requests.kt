@@ -27,6 +27,7 @@ import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageWrapper
+import androidx.camera.common.UnsafeWrapper
 
 /**
  * A [RequestNumber] is an artificial identifier that is created for each request that is submitted
@@ -201,7 +202,7 @@ public class Request(
          * @param stream the internal stream that will not receive a buffer for this frame.
          * @see android.hardware.camera2.CameraCaptureSession.CaptureCallback.onCaptureBufferLost
          *
-         * TODO: b/474658963 - Remove this method once deprecated usages are removed.
+         * TODO(b/474658963): Remove this method once deprecated usages are removed.
          */
         @Deprecated("Use the onBufferLost with OutputId.")
         public fun onBufferLost(

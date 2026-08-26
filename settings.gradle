@@ -164,14 +164,9 @@ def pushSetting = providers.environmentVariable("IS_POSTSUBMIT")
 switch (cacheSetting) {
     case ["true", "gcp"]:
         settings.buildCache {
-            def europe = System.getenv("USE_ANDROIDX_REMOTE_BUILD_CACHE_EUROPE")
             remote(androidx.build.gradle.gcpbuildcache.GcpBuildCache) {
                 projectId = "androidx-ge"
-                if (europe == "true") {
-                    bucketName = "androidx-gradle-remote-cache-europe"
-                } else {
-                    bucketName = "androidx-gradle-remote-cache"
-                }
+                bucketName = "androidx-gradle-remote-cache"
                 messageOnAuthenticationFailure = "Your GCP Credentials have expired.\n" +
                         "Please regenerate credentials following the steps below and try again:\n" +
                         "gcloud auth application-default login --project androidx-ge"
@@ -726,6 +721,7 @@ includeProject(":compose:ui:ui-test-junit4-accessibility", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-junit4-accessibility:ui-test-junit4-accessibility-samples", "compose/ui/ui-test-junit4-accessibility/samples", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test:ui-test-samples", "compose/ui/ui-test/samples", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-junit4", [BuildType.COMPOSE])
+includeProject(":compose:ui:ui-test-junit4:ui-test-junit4-samples", "compose/ui/ui-test-junit4/samples", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-manifest", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-manifest-lint", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", [BuildType.COMPOSE])
@@ -976,7 +972,6 @@ includeProject(":lint:lint-gradle", [BuildType.MAIN])
 includeProject(":lint-checks")
 includeProject(":lint-checks:integration-tests")
 includeProject(":loader:loader", [BuildType.MAIN])
-includeProject(":loader:loader-ktx", [BuildType.MAIN])
 includeProject(":mediarouter:mediarouter", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":mediarouter:mediarouter-testing", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":metrics:metrics-performance", [BuildType.MAIN])

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,34 @@
  * Please use the task when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
-    api(project(":loader:loader"))
+    compileOnly(project(":annotation:annotation-sampled"))
+
+    implementation(project(":compose:ui:ui-test"))
+    implementation(project(":compose:ui:ui-test-junit4"))
+
+    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.activity:activity:1.13.0")
+    implementation(libs.espressoAccessibility)
 }
 
 androidx {
-    name = "Loader Kotlin Extensions"
-    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
-    inceptionYear = "2019"
-    description = "Kotlin extensions for 'loader' artifact"
-    doNotDocumentReason = "empty artifact maintained for compatibility"
+    name = "Compose Testing for JUnit4 Samples"
+    type = SoftwareType.SAMPLES
+    inceptionYear = "2026"
+    description = "Contains samples for AndroidX Compose Testing for JUnit4."
 }
 
 android {
-    compileSdk { version = release(35) }
-    namespace = "androidx.loader.ktx"
+    compileSdk { version = release(37) }
+    namespace = "androidx.compose.ui.test.junit4.samples"
 }
