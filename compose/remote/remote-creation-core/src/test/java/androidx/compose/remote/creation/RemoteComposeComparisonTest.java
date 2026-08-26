@@ -28,11 +28,16 @@ import androidx.compose.remote.core.operations.layout.managers.BoxLayout;
 import androidx.compose.remote.core.operations.layout.managers.Custom;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.core.operations.utilities.MatrixOperations;
+import androidx.compose.remote.core.semantics.CoreSemantics;
 import androidx.compose.remote.creation.actions.ValueFloatChange;
 import androidx.compose.remote.creation.dsl.RcFloat;
 import androidx.compose.remote.creation.dsl.VerticalScrollRcFloatModifier;
 import androidx.compose.remote.creation.json.RemoteComposeJsonParser;
+import androidx.compose.remote.creation.modifiers.GraphicsLayerModifier;
+import androidx.compose.remote.creation.modifiers.MarqueeModifier;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
+import androidx.compose.remote.creation.modifiers.RippleModifier;
+import androidx.compose.remote.creation.modifiers.SemanticsModifier;
 
 import org.json.JSONException;
 import org.jspecify.annotations.NonNull;
@@ -526,6 +531,161 @@ public class RemoteComposeComparisonTest {
         assertArrayEquals(expected, actual);
     }
 
+    @Test
+    public void testStage4Comparison() throws JSONException {
+        MockPlatform platform = new MockPlatform();
+        RemoteComposeWriter.HTag[] tags = new RemoteComposeWriter.HTag[] {
+            RemoteComposeWriter.hTag(Header.DOC_WIDTH, 400),
+            RemoteComposeWriter.hTag(Header.DOC_HEIGHT, 800),
+            RemoteComposeWriter.hTag(Header.DOC_CONTENT_DESCRIPTION, "Stage4"),
+            RemoteComposeWriter.hTag(Header.DOC_PROFILES, 513)
+        };
+        java.util.Arrays.sort(tags, (a, b) -> Short.compare(a.mTag, b.mTag));
+        RemoteComposeWriter expectedWriter = new RemoteComposeWriter(platform, 7, tags);
+
+        expectedWriter.root(() -> {
+            RecordingModifier mod = new RecordingModifier();
+            mod.spacedBy(8.0f);
+            mod.animationSpec(1);
+            mod.alignByBaseline();
+            mod.fillParentMaxWidth(1.0f);
+            mod.fillParentMaxHeight(1.0f);
+            mod.fillParentMaxSize(1.0f);
+            expectedWriter.startStateLayout(mod, 0);
+
+            expectedWriter.startCanvas(new RecordingModifier());
+            expectedWriter.addPolarPathExpression(new float[] { 10f }, 0.0f, 6.28f, 100.0f,
+                    0.0f, 0.0f, 0);
+            expectedWriter.setArrayValue(1, 0.0f, 5.0f);
+            expectedWriter.callFloatFunction(2, 1.0f, 2.0f);
+
+            expectedWriter.endCanvas();
+            expectedWriter.endStateLayout();
+        });
+        byte[] expected = expectedWriter.encodeToByteArray();
+
+        String json = "{"
+                + "  \"header\": { \"apiLevel\": 7, \"profiles\": 513, \"width\": 400,"
+                + " \"height\": 800, \"contentDescription\": \"Stage4\" },"
+                + "  \"root\": {"
+                + "    \"type\": \"stateLayout\","
+                + "    \"indexId\": 0,"
+                + "    \"modifiers\": ["
+                + "      { \"spacedBy\": 8.0 },"
+                + "      { \"animationSpec\": 1 },"
+                + "      { \"alignByBaseline\": {} },"
+                + "      { \"fillParentMaxWidth\": 1.0 },"
+                + "      { \"fillParentMaxHeight\": 1.0 },"
+                + "      { \"fillParentMaxSize\": 1.0 }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"polarPathExpression\", \"id\": \"polar1\","
+                + " \"expressionR\": \"10\", \"start\": 0.0, \"end\": 6.28, \"count\": 100.0 },"
+                + "          { \"type\": \"setArrayValue\", \"id\": 1, \"index\": 0.0,"
+                + " \"value\": 5.0 },"
+                + "          { \"type\": \"callFloatFunction\", \"id\": 2, \"args\": [1.0, 2.0] }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+
+        RemoteComposeWriter.HTag[] actualTags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        int actualApiLevel = RemoteComposeJsonParser.parseApiLevel(json);
+        RemoteComposeWriter actualWriter =
+                new RemoteComposeWriter(platform, actualApiLevel, actualTags);
+        RemoteComposeJsonParser parser = new RemoteComposeJsonParser(actualWriter);
+        parser.parse(json);
+        byte[] actual = actualWriter.encodeToByteArray();
+
+        if (!java.util.Arrays.equals(expected, actual)) {
+            printMismatch("Stage4", expected, actual);
+        }
+        assertArrayEquals(expected, actual);
+    }
+
+    @Test
+    public void testStage5Comparison() throws JSONException {
+        MockPlatform platform = new MockPlatform();
+        RemoteComposeWriter.HTag[] tags = new RemoteComposeWriter.HTag[] {
+            RemoteComposeWriter.hTag(Header.DOC_WIDTH, 400),
+            RemoteComposeWriter.hTag(Header.DOC_HEIGHT, 800),
+            RemoteComposeWriter.hTag(Header.DOC_CONTENT_DESCRIPTION, "Stage5"),
+            RemoteComposeWriter.hTag(Header.DOC_PROFILES, 513)
+        };
+        java.util.Arrays.sort(tags, (a, b) -> Short.compare(a.mTag, b.mTag));
+        RemoteComposeWriter expectedWriter = new RemoteComposeWriter(platform, 7, tags);
+
+        expectedWriter.root(() -> {
+            RecordingModifier mod = new RecordingModifier();
+            GraphicsLayerModifier gMod = new GraphicsLayerModifier();
+            gMod.setFloatAttribute(0, 1.2f);
+            gMod.setFloatAttribute(11, 0.8f);
+            mod.then(gMod);
+            mod.then(new MarqueeModifier(5, 0, 1200f, 1200f, 0f, 10f));
+            mod.then(new RippleModifier());
+
+            int descId = expectedWriter.addText("desc");
+            CoreSemantics semantics = new CoreSemantics();
+            semantics.mContentDescriptionId = descId;
+            semantics.mClickable = true;
+            mod.then(new SemanticsModifier(semantics));
+
+            expectedWriter.startBox(mod);
+            expectedWriter.startCanvas(new RecordingModifier());
+            expectedWriter.addClickArea(1, "click", 0f, 0f, 100f, 100f, null);
+            expectedWriter.endCanvas();
+            expectedWriter.endBox();
+        });
+        byte[] expected = expectedWriter.encodeToByteArray();
+
+        String json = "{"
+                + "  \"header\": { \"apiLevel\": 7, \"profiles\": 513, \"width\": 400,"
+                + " \"height\": 800, \"contentDescription\": \"Stage5\" },"
+                + "  \"root\": {"
+                + "    \"type\": \"box\","
+                + "    \"modifiers\": ["
+                + "      { \"graphicsLayer\": { \"scaleX\": 1.2, \"alpha\": 0.8 } },"
+                + "      { \"marquee\": { \"iterations\": 5, \"velocity\": 10.0 } },"
+                + "      { \"ripple\": {} },"
+                + "      { \"semantics\": { \"contentDescription\": \"desc\","
+                + " \"clickable\": true } }"
+                + "    ],"
+                + "    \"children\": ["
+                + "      {"
+                + "        \"type\": \"canvas\","
+                + "        \"commands\": ["
+                + "          { \"type\": \"clickArea\", \"id\": 1,"
+                + " \"contentDescription\": \"click\","
+                + " \"left\": 0.0, \"top\": 0.0, \"right\": 100.0, \"bottom\": 100.0 }"
+                + "        ]"
+                + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+
+        RemoteComposeWriter.HTag[] actualTags = RemoteComposeJsonParser.parseHeaderOnly(json);
+        int actualApiLevel = RemoteComposeJsonParser.parseApiLevel(json);
+        RemoteComposeWriter actualWriter =
+                new RemoteComposeWriter(platform, actualApiLevel, actualTags);
+        RemoteComposeJsonParser parser = new RemoteComposeJsonParser(actualWriter);
+        parser.parse(json);
+        byte[] actual = actualWriter.encodeToByteArray();
+
+        if (!java.util.Arrays.equals(expected, actual)) {
+            printMismatch("Stage5", expected, actual);
+            for (int i = 0; i < expected.length; i++) {
+                if (expected[i] != actual[i]) {
+                    System.out.format("DIFF [%d] exp=%02X act=%02X\n", i, expected[i], actual[i]);
+                }
+            }
+        }
+        assertArrayEquals(expected, actual);
+    }
+
     private void generateTickerKotlin(RemoteComposeWriter writer) {
         writer.beginGlobal();
         int bgId = writer.addThemedColor(null, 0xFFEEEEEE, null, 0xFF111111);
@@ -769,6 +929,82 @@ public class RemoteComposeComparisonTest {
                 + "          }"
                 + "        ]"
                 + "      }"
+                + "    ]"
+                + "  }"
+                + "}";
+    }
+
+    @Test
+    public void testCanvasDrawingOperationsComparison() throws JSONException {
+        MockPlatform platform = new MockPlatform();
+        RemoteComposeWriter.HTag[] tags = new RemoteComposeWriter.HTag[] {
+            RemoteComposeWriter.hTag(Header.DOC_WIDTH, 400),
+            RemoteComposeWriter.hTag(Header.DOC_HEIGHT, 400),
+            RemoteComposeWriter.hTag(Header.DOC_CONTENT_DESCRIPTION, "CanvasOps")
+        };
+        java.util.Arrays.sort(tags, (a, b) -> Short.compare(a.mTag, b.mTag));
+        RemoteComposeWriter expectedWriter = new RemoteComposeWriter(platform, 7, tags);
+        generateCanvasOpsKotlin(expectedWriter);
+        byte[] expected = expectedWriter.encodeToByteArray();
+
+        RemoteComposeWriter.HTag[] actualTags =
+                RemoteComposeJsonParser.parseHeaderOnly(getCanvasOpsJson());
+        int actualApiLevel = RemoteComposeJsonParser.parseApiLevel(getCanvasOpsJson());
+        RemoteComposeWriter actualWriter =
+                new RemoteComposeWriter(platform, actualApiLevel, actualTags);
+        RemoteComposeJsonParser parser = new RemoteComposeJsonParser(actualWriter);
+        parser.parse(getCanvasOpsJson());
+        byte[] actual = actualWriter.encodeToByteArray();
+
+        if (!Arrays.equals(expected, actual)) {
+            printMismatch("CanvasOps", expected, actual);
+        }
+        assertArrayEquals(expected, actual);
+    }
+
+    private void generateCanvasOpsKotlin(RemoteComposeWriter writer) {
+        writer.root(() -> {
+            RecordingModifier mod = new RecordingModifier();
+            mod.fillMaxSize(1.0f);
+            writer.startCanvas(mod);
+            writer.drawSector(10f, 10f, 100f, 100f, 0f, 90f);
+            writer.skew(0.1f, 0.2f);
+            int p1 = writer.pathCreate(0f, 0f);
+            writer.pathAppendLineTo(p1, 100f, 100f);
+            writer.pathAppendClose(p1);
+            int textId1 = writer.addText("Hello Path");
+            writer.drawTextOnPath(textId1, p1, 5f, 10f);
+//            int textId = writer.addText("Circle Text");
+//            writer.drawTextOnCircle(
+//                    textId, 200f, 200f, 50f, 0f, 0f,
+//                    DrawTextOnCircle.Alignment.CENTER,
+//                    DrawTextOnCircle.Placement.OUTSIDE);
+            writer.endCanvas();
+        });
+    }
+
+    private String getCanvasOpsJson() {
+        return "{"
+                + "  \"header\": { \"apiLevel\": 7, \"width\": 400, \"height\": 400,"
+                + " \"contentDescription\": \"CanvasOps\" },"
+                + "  \"root\": {"
+                + "    \"type\": \"canvas\","
+                + "    \"modifiers\": [ { \"fillMaxSize\": 1.0 } ],"
+                + "    \"commands\": ["
+                + "      { \"type\": \"drawSector\", \"left\": 10.0, \"top\": 10.0,"
+                + " \"right\": 100.0, \"bottom\": 100.0, \"startAngle\": 0.0,"
+                + " \"sweepAngle\": 90.0 },"
+                + "      { \"type\": \"skew\", \"skewX\": 0.1, \"skewY\": 0.2 },"
+                + "      { \"type\": \"pathCreate\", \"id\": \"p1\", \"x\": 0.0, \"y\": 0.0 },"
+                + "      { \"type\": \"pathAppendLineTo\", \"path\": \"p1\","
+                + " \"x\": 100.0, \"y\": 100.0 },"
+                + "      { \"type\": \"pathAppendClose\", \"path\": \"p1\" },"
+                + "      { \"type\": \"drawTextOnPath\", \"text\": \"Hello Path\","
+                + " \"path\": \"p1\", \"hOffset\": 5.0, \"vOffset\": 10.0 }"
+//                + "      { \"type\": \"drawTextOnCircle\", \"text\": \"Circle Text\","
+//                + " \"cx\": 200.0, \"cy\": 200.0, \"radius\": 50.0, \"startAngle\": 0.0,"
+//                + " \"warpRadiusOffset\": 0.0, \"alignment\": \"center\","
+//                + " \"placement\": \"outside\" }"
                 + "    ]"
                 + "  }"
                 + "}";

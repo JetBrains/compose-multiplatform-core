@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.test.partialgesturescope
 
-import android.os.SystemClock.sleep
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Press
@@ -75,12 +74,17 @@ class SendDownTest {
     fun twoPointers() {
         // When we put two pointers down
         rule.partialGesture { down(1, position1) }
-        sleep(20) // (with some time in between)
+        // Since this gesture is split across separate input blocks, we must manually advance
+        // the clock between them. By default, advanceTimeBy rounds up durations to the nearest
+        // multiple of the frame duration (16ms), which would cause the 20ms delay to become a
+        // 32ms delay. Adding ignoreFrameDuration = true ensures that the clock advances by exactly
+        // 20ms.
+        rule.mainClock.advanceTimeBy(20, ignoreFrameDuration = true)
         rule.partialGesture { down(2, position2) }
 
         rule.runOnIdle {
             recorder.run {
-                // Then we have recorded 2 down events with the same timestamp
+                // Then we have recorded 2 down events
                 assertTimestampsAreIncreasing()
                 assertThat(events).hasSize(2)
 
@@ -91,8 +95,8 @@ class SendDownTest {
                 val pointerId1 = events[0].getPointer(0).id
 
                 assertThat(events[1].pointerCount).isEqualTo(2)
-                events[1].getPointer(0).verify(t, pointerId1, true, position1, Touch, Press)
-                events[1].getPointer(1).verify(t, null, true, position2, Touch, Press)
+                events[1].getPointer(0).verify(t + 20, pointerId1, true, position1, Touch, Press)
+                events[1].getPointer(1).verify(t + 20, null, true, position2, Touch, Press)
 
                 val pointerId2 = events[1].getPointer(1).id
                 assertThat(pointerId2).isNotEqualTo(pointerId1)
