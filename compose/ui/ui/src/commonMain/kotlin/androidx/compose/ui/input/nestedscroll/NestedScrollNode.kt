@@ -24,7 +24,9 @@ import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.unit.Velocity
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 
 /**
@@ -32,7 +34,7 @@ import kotlinx.coroutines.isActive
  * [Modifier.nestedScroll] since that implementation also uses this. Use this factory to create
  * nodes that can be delegated to.
  */
-fun nestedScrollModifierNode(
+public fun nestedScrollModifierNode(
     connection: NestedScrollConnection,
     dispatcher: NestedScrollDispatcher?,
 ): DelegatableNode {
@@ -62,8 +64,7 @@ internal class NestedScrollNode(
 
     override val traverseKey: Any = "androidx.compose.ui.input.nestedscroll.NestedScrollNode"
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private val nestedCoroutineScope: CoroutineScope
+    private val nestedCoroutineScope: CoroutineScope?
         get() {
             val parentCoroutineScope = parentNestedScrollNode?.nestedCoroutineScope
             return if (
@@ -74,10 +75,6 @@ internal class NestedScrollNode(
                 parentCoroutineScope
             } else {
                 resolvedDispatcher.scope
-                    ?: throw IllegalStateException(
-                        "in order to access nested coroutine scope you need to attach dispatcher to the " +
-                            "`Modifier.nestedScroll` first."
-                    )
             }
         }
 
@@ -116,7 +113,7 @@ internal class NestedScrollNode(
         val parent = if (isAttached) parentConnection else lastKnownParentNode
         val parentConsumed =
             parent?.onPostFling(consumed + selfConsumed, available - selfConsumed) ?: Velocity.Zero
-        return selfConsumed + parentConsumed
+        return (selfConsumed + parentConsumed)
     }
 
     // On receiving a new dispatcher, re-setting fields
@@ -144,7 +141,6 @@ internal class NestedScrollNode(
         updateDispatcherFields()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun onDetach() {
         // cache parent for detached clean up access in the dispatcher and in this node.
         lastKnownParentNode = findNearestAttachedAncestor()
@@ -166,10 +162,15 @@ internal class NestedScrollNode(
         resolvedDispatcher.scope = coroutineScope
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun resetDispatcherFields() {
         // only null this out if the modifier local node is what we set it to, since it is possible
         // it has already been reused in a different node
-        if (resolvedDispatcher.nestedScrollNode === this) resolvedDispatcher.nestedScrollNode = null
+        if (resolvedDispatcher.nestedScrollNode === this) {
+            resolvedDispatcher.nestedScrollNode = null
+            resolvedDispatcher.scope = null
+            resolvedDispatcher.calculateNestedScrollScope = CancelledNestedScope
+        }
     }
 
     internal fun updateNode(
@@ -193,3 +194,8 @@ private fun <T : TraversableNode> T.findNearestAttachedAncestor(): T? {
     }
     return node
 }
+
+internal val CancelledNestedScope: () -> CoroutineScope = { CancelledScope }
+
+internal val CancelledScope: CoroutineScope =
+    CoroutineScope(EmptyCoroutineContext).also { it.cancel() }

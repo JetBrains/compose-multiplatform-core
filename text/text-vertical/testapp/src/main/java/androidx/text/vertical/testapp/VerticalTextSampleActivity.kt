@@ -17,6 +17,7 @@
 package androidx.text.vertical.testapp
 
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.text.Layout
 import android.text.Spanned
@@ -48,16 +49,28 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
-import androidx.text.vertical.EmphasisSpan
-import androidx.text.vertical.VerticalTextLayout
-import java.util.Locale
-import kotlin.math.max
+import androidx.text.vertical.EmphasisStyle
+import androidx.text.vertical.FontShearSpan
+import androidx.text.vertical.compose.VerticalText
+import androidx.text.vertical.compose.VerticalTextStyle
+import androidx.text.vertical.compose.buildVerticalText
 
 class VerticalTextSampleActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +92,10 @@ class VerticalTextSampleActivity : ComponentActivity() {
             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                 Column(modifier = Modifier.padding(innerPadding)) {
                     var selectedTabIndex by remember { mutableIntStateOf(0) }
-                    PrimaryTabRow(selectedTabIndex = 0, modifier = Modifier.fillMaxWidth()) {
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         demos.forEachIndexed { index, (title, _) ->
                             Tab(
                                 selected = selectedTabIndex == index,
@@ -96,21 +112,25 @@ class VerticalTextSampleActivity : ComponentActivity() {
 }
 
 @Composable
-fun ZoomableVerticalText(content: @Composable (TextPaint) -> Unit) {
-    val fontSize = with(LocalDensity.current) { 32.sp.toPx() }
+fun ZoomableVerticalText(content: @Composable (VerticalTextStyle) -> Unit) {
+    val fontSize = 32f
     var zoom by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
-    val paint =
+    val style =
         remember(zoom) {
-            TextPaint().apply {
-                textSize = fontSize * zoom
-                typeface = Typeface.SERIF
-                textLocale =
-                    Locale.Builder()
-                        .setLocale(Locale.JAPANESE)
-                        .setUnicodeLocaleKeyword("lb", "strict")
-                        .build()
-            }
+            VerticalTextStyle(
+                fontSize = (fontSize * zoom).sp,
+                fontFamily = FontFamily.Serif,
+                localeList =
+                    LocaleList(
+                        Locale(
+                            java.util.Locale.Builder()
+                                .setLocale(java.util.Locale.JAPANESE)
+                                .setUnicodeLocaleKeyword("lb", "strict")
+                                .build()
+                        )
+                    ),
+            )
         }
 
     Box(
@@ -125,43 +145,38 @@ fun ZoomableVerticalText(content: @Composable (TextPaint) -> Unit) {
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, offsetChange, gestureZoom, _ ->
-                        zoom = zoom * gestureZoom
-                        offsetX = max(0f, offsetX + offsetChange.x)
+                        zoom = (zoom * gestureZoom).coerceIn(0.25f, 10f)
+                        offsetX += offsetChange.x
                     }
                 }
                 .graphicsLayer(translationX = offsetX)
     ) {
-        content(paint)
+        content(style)
     }
 }
 
 @Composable
-fun VerticalText(text: Spanned, paint: TextPaint, modifier: Modifier = Modifier) {
-    var vTextLayout by remember { mutableStateOf<VerticalTextLayout?>(null) }
-    Layout(
-        modifier =
-            modifier.fillMaxSize().drawWithContent {
-                drawIntoCanvas { c ->
-                    vTextLayout?.draw(c.nativeCanvas, c.nativeCanvas.width.toFloat(), 0f)
-                }
-            },
-        content = {},
-    ) { _, constraints ->
-        vTextLayout =
-            VerticalTextLayout(
-                text = text,
-                start = 0,
-                end = text.length,
-                paint = paint,
-                height = constraints.maxHeight.toFloat(),
-            )
-        layout(constraints.maxWidth, constraints.maxHeight) {}
-    }
-}
-
-@Composable
-fun LegacyHorizontalText(text: Spanned, paint: TextPaint, modifier: Modifier = Modifier) {
+fun LegacyHorizontalText(text: Spanned, style: VerticalTextStyle, modifier: Modifier = Modifier) {
     var hTextLayout by remember { mutableStateOf<Layout?>(null) }
+    val density = LocalDensity.current
+    val resolver = LocalFontFamilyResolver.current
+    val paint = remember(density, resolver) { TextPaint() }
+    val typeface =
+        remember(resolver, style) {
+            resolver
+                .resolve(
+                    fontFamily = style.fontFamily,
+                    fontWeight = style.fontWeight ?: FontWeight.Normal,
+                    fontStyle = style.fontStyle ?: FontStyle.Normal,
+                    fontSynthesis = style.fontSynthesis ?: FontSynthesis.All,
+                )
+                .value as Typeface
+        }
+    remember(paint, style, typeface, density) {
+        paint.reset()
+        setStyleToPaint(style, typeface, density, paint)
+        paint
+    }
     Layout(
         modifier =
             modifier.fillMaxSize().drawWithContent {
@@ -176,106 +191,142 @@ fun LegacyHorizontalText(text: Spanned, paint: TextPaint, modifier: Modifier = M
 }
 
 @Composable
-fun LongText(paint: TextPaint, modifier: Modifier = Modifier) {
-    VerticalText(makeSampleText(), paint, modifier)
+fun LongText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text = remember(density) { makeSampleText(density) }
+    VerticalText(text, modifier, style)
 }
 
 @Composable
-fun LongHorizontalText(paint: TextPaint, modifier: Modifier = Modifier) {
-    LegacyHorizontalText(makeSampleText(), paint, modifier)
+fun LongHorizontalText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text = remember(density) { makeSampleText(density) }
+    LegacyHorizontalText(text, style, modifier)
 }
 
 @Composable
-fun ComplexHorizontalText(paint: TextPaint, modifier: Modifier = Modifier) {
-    LegacyHorizontalText(
-        buildVerticalText {
-            withEmphasis { text("傍点も") }
-            text("Support")
-            withEmphasis(EmphasisSpan.STYLE_SESAME) { text("されてます。") }
-        },
-        paint,
-        modifier,
-    )
-}
-
-@Composable
-fun makeSampleText() = buildVerticalText {
-    text("吾輩は猫である。", mapOf("吾輩" to "わがはい", "猫" to "ねこ"))
-    text("名前はまだ無い。", mapOf("名前" to "なまえ", "無" to "な"))
-    text("\n")
-    text("どこで生まれたかとんと見当がつかぬ。", mapOf("見当" to "けんとう"))
-    text("何でも薄暗いじめじめしたところでニャーニャー泣いていた事だけは記憶している。")
-    text("吾輩はここで始めて人間というものを見た。")
-    text("しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。", mapOf("獰悪" to "どうあく"))
-    text("この書生というのは時々我々を捕えて煮て食うという話である。", mapOf("捕" to "つかま", "煮" to "に"))
-    text("しかしその当時は何という考もなかったから別段恐しいとも思わなかった。")
-    text("ただ彼の掌に載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。", mapOf("掌" to "てのひら"))
-    text("掌の上で少し落ちついて書生の顔を見たのがいわゆる人間というものの見始であろう。", mapOf("見始" to "みはじめ"))
-    text("この時妙なものだと思った感じが今でも残っている。")
-    text("第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶だ。", mapOf("薬缶" to "やかん"))
-    text("その後猫にもだいぶ逢ったがこんな片輪には一度も出会わした事がない。", mapOf("片端" to "かたわ", "出会" to "でく"))
-    text("のみならず顔の真中があまりに突起している。")
-    text("そうしてその穴の中から時々ぷうぷうと煙を吹く。", mapOf("煙" to "けむり"))
-    text("どうも咽せぽくて実に弱った。", mapOf("咽" to "む"))
-    text("これが人間の飲む煙草というものである事はようやくこの頃知った。", mapOf("煙草" to "たばこ"))
-    text("\n")
-}
-
-@Composable
-fun ComplexText(paint: TextPaint, modifier: Modifier = Modifier) {
-    VerticalText(
-        buildVerticalText {
-            Upright("2024")
-            text("年の")
-            ruby("クリスマス") {
-                TateChuYoko("12")
-                text("月")
-                TateChuYoko("25")
-                text("日")
+fun ComplexHorizontalText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text =
+        remember(density) {
+            buildVerticalText(density) {
+                withEmphasis { text("傍点も") }
+                text("Support")
+                withEmphasis(EmphasisStyle.Sesame) { text("されてます。") }
             }
-            text("に")
-            Sideways("Google Pixel")
-            text("を買う。\n")
-
-            Upright("2024")
-            text("年は")
-            TateChuYoko("2024")
-            text("年ともかけるし")
-            Sideways("2024年")
-            text("ともかけるよ。\n")
-
-            text("もちろん")
-            withStyle(textColor = Color.Red) {
-                ruby(
-                    buildVerticalText {
-                        text("インライン")
-                        withStyle(fontSize = 1.5.em) { text("スタイリング") }
-                    }
-                ) {
-                    withStyle(fontSize = 0.8.em) { Sideways("inline ") }
-                    withStyle(backgroundColor = Color.Green) { Sideways("styling") }
-                }
-                withStyle(backgroundColor = Color.LightGray) {
-                    text("も")
-                    withStyle(fontSize = 2.em) { text("可能") }
-                    text("です。\n")
-                }
-            }
-
-            TateChuYoko(
-                buildVerticalText { // Tate Chu Yoko only respect styling.
-                    text("2")
-                    withStyle(backgroundColor = Color.Red) { text("0") }
-                    withStyle(backgroundColor = Color.Green) { text("2") }
-                    text("5")
-                }
-            )
-            text("年もよろしくお願いいたします。")
-
-            withFontShear { text("日本語の斜体はEnglishのItalicとは少し違います。") }
-            withEmphasis { text("傍点もSupportされてます。") }
-        },
-        paint,
-        modifier,
-    )
+        }
+    LegacyHorizontalText(text, style, modifier)
 }
+
+fun makeSampleText(density: Density) =
+    buildVerticalText(density) {
+        text("吾輩は猫である。", mapOf("吾輩" to "わがはい", "猫" to "ねこ"))
+        text("名前はまだ無い。", mapOf("名前" to "なまえ", "無" to "な"))
+        text("\n")
+        text("どこで生まれたかとんと見当がつかぬ。", mapOf("見当" to "けんとう"))
+        text("何でも薄暗いじめじめしたところでニャーニャー泣いていた事だけは記憶している。")
+        text("吾輩はここで始めて人間というものを見た。")
+        text("しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。", mapOf("獰悪" to "どうあく"))
+        text("この書生というのは時々我々を捕えて煮て食うという話である。", mapOf("捕" to "つかま", "煮" to "に"))
+        text("しかしその当時は何という考もなかったから別段恐しいとも思わなかった。")
+        text("ただ彼の掌に載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。", mapOf("掌" to "てのひら"))
+        text("掌の上で少し落ちついて書生の顔を見たのがいわゆる人間というものの見始であろう。", mapOf("見始" to "みはじめ"))
+        text("この時妙なものだと思った感じが今でも残っている。")
+        text("第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶だ。", mapOf("薬缶" to "やかん"))
+        text("その後猫にもだいぶ逢ったがこんな片輪には一度も出会わした事がない。", mapOf("片輪" to "かたわ", "出会" to "であ"))
+        text("のみならず顔の真中があまりに突起している。")
+        text("そうしてその穴の中から時々ぷうぷうと煙を吹く。", mapOf("煙" to "けむり"))
+        text("どうも咽せぽくて実に弱った。", mapOf("咽" to "む"))
+        text("これが人間の飲む煙草というものである事はようやくこの頃知った。", mapOf("煙草" to "たばこ"))
+        text("\n")
+    }
+
+@Composable
+fun ComplexText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val text = remember(density) { buildComplexText(density) }
+    VerticalText(text, modifier, style)
+}
+
+private fun buildComplexText(density: Density) =
+    buildVerticalText(density) {
+        upright("2024")
+        text("年の")
+        withRuby("クリスマス") {
+            combineUpright("12")
+            text("月")
+            combineUpright("25")
+            text("日")
+        }
+        text("に")
+        sideways("Google Pixel")
+        text("を買う。\n")
+
+        upright("2024")
+        text("年は")
+        combineUpright("2024")
+        text("年ともかけるし")
+        sideways("2024年")
+        text("ともかけるよ。\n")
+
+        text("もちろん")
+        withStyle(textColor = Color.Red) {
+            withRuby(
+                buildVerticalText(density) {
+                    text("インライン")
+                    withStyle(fontSize = 1.5.em) { text("スタイリング") }
+                }
+            ) {
+                withStyle(fontSize = 0.8.em) { sideways("inline ") }
+                withStyle(backgroundColor = Color.Green) { sideways("styling") }
+            }
+            withStyle(backgroundColor = Color.LightGray) {
+                text("も")
+                withStyle(fontSize = 2.em) { text("可能") }
+                text("です。\n")
+            }
+        }
+
+        combineUpright(
+            buildVerticalText(density) { // Tate Chu Yoko only respect styling.
+                text("2")
+                withStyle(backgroundColor = Color.Red) { text("0") }
+                withStyle(backgroundColor = Color.Green) { text("2") }
+                text("5")
+            }
+        )
+        text("年もよろしくお願いいたします。")
+
+        withStyle(fontShear = FontShearSpan.DEFAULT_FONT_SHEAR) {
+            text("日本語の斜体はEnglishのItalicとは少し違います。")
+        }
+        withEmphasis { text("傍点もSupportされてます。") }
+    }
+
+private fun setStyleToPaint(
+    style: VerticalTextStyle,
+    typeface: Typeface,
+    density: Density,
+    out: TextPaint,
+) {
+    with(density) {
+        out.textSize =
+            if (style.fontSize.isSpecified) style.fontSize.toPx() else DefaultFontSize.toPx()
+        out.typeface = typeface
+        out.fontFeatureSettings = style.fontFeatureSettings
+        if (style.color.isSpecified) {
+            out.color = style.color.toArgb()
+        }
+        if (style.background.isSpecified) {
+            out.bgColor = style.background.toArgb()
+        }
+        if (Build.VERSION.SDK_INT >= 25) {
+            style.localeList
+                ?.map { it.platformLocale }
+                ?.toTypedArray()
+                ?.let { out.textLocales = android.os.LocaleList(*it) }
+        }
+    }
+}
+
+private val DefaultFontSize = 16.sp

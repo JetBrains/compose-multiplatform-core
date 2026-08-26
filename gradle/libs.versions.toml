@@ -2,14 +2,16 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "9.2.0-alpha03"
+androidGradlePlugin = "9.5.0-alpha01"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "32.2.0-alpha03"
+androidLint = "32.5.0-alpha01"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudioIj = "2025.3.3.3"
-androidStudioName = "panda3-canary3"
+androidStudioIj = "2026.2.1.1"
+androidStudioName = "rabbit1-canary1"
+# For IntelliJ download via intellij gradle task
+intelliJVersion = "2026.1"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -62,28 +64,28 @@ kotlinCoroutines = "1.9.0"
 kotlinNativeUtils = "1.9.24"
 kotlinSerialization = "1.7.3"
 kotlinToolingCore = "1.9.24"
-ksp = "2.3.4"
+ksp = "2.3.11"
 ktfmt = "0.61"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
 ktfmtIdeaPlugin = "1.3.0.61"
 leakcanary = "2.13"
 media3 = "1.4.1"
-metalava = "1.0.0-alpha14"
+metalava = "1.0.0-alpha15"
 mockito = "2.25.0"
 moshi = "1.13.0"
 node = "22.0.0"
 protobuf = "4.33.5"
 skiko = "0.7.7"
-spdxGradlePlugin = "0.6.0"
+spdxGradlePlugin = "0.12.0"
 sqldelight = "1.3.0"
 tink = "1.20.0"
 retrofit = "2.12.0"
-wire = "6.0.0"
+wire = "6.4.0"
 core = "1.12.0"
 xmlApis = "1.4.01"
 yarn = "1.22.17"
-extensionsXr = "1.3.0"
+extensionsXr = "1.4.0"
 xrProjectedMinApiVersion = "260316000"
 
 [libraries]
@@ -134,7 +136,7 @@ byteBuddyAgent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byt
 checkerframework = { module = "org.checkerframework:checker-qual", version = "2.5.3" }
 checkmark = { module = "net.saff.checkmark:checkmark", version = "0.1.6" }
 constraintLayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.0.1"}
-dackka = { module = "com.google.devsite:dackka", version = "1.8.1" }
+dackka = { module = "com.google.devsite:dackka", version = "1.10.4" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 daggerCompiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dependency-analysis-gradle-plugin = { module = "com.autonomousapps:dependency-analysis-gradle-plugin", version.ref = "dependencyAnalysisGradlePlugin" }
@@ -171,13 +173,14 @@ javapoet = { module = "com.squareup:javapoet", version = "1.13.0" }
 javaxInject = { module = "javax.inject:javax.inject", version.ref = "javaxInject" }
 jcodec = { module = "org.jcodec:jcodec", version.ref = "jcodec" }
 jcodecJavaSe = { module = "org.jcodec:jcodec-javase", version.ref = "jcodec" }
-jsoup = { module = "org.jsoup:jsoup", version = "1.16.2" }
+jsoup = { module = "org.jsoup:jsoup", version = "1.23.1" }
 jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
 jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version = "3.1" }
 jsr250 = { module = "javax.annotation:javax.annotation-api", version = "1.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
 gcmNetworkManager = { module = "com.google.android.gms:play-services-gcm", version = "17.0.0" }
 googleCompileTesting = { module = "com.google.testing.compile:compile-testing", version = "0.22.0" }
+gradlePluginCompatibility = { module = "org.gradle.plugin:compatibility-plugin", version = "1.0.0" }
 grpcAndroid = { module = "io.grpc:grpc-android", version.ref = "grpc" }
 grpcBinder = { module = "io.grpc:grpc-binder", version.ref = "grpc" }
 grpcProtobufCompiler = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
@@ -193,6 +196,7 @@ gradleIncapHelper = { module = "net.ltgt.gradle.incap:incap", version.ref = "inc
 gradleIncapHelperProcessor = { module = "net.ltgt.gradle.incap:incap-processor", version.ref = "incap" }
 intellijKotlinCompiler = { module = "com.android.tools.external.com-intellij:kotlin-compiler", version.ref = "androidLint" }
 kotlinAbiTools = { module = "org.jetbrains.kotlin:abi-tools", version.ref = "kotlin" }
+kotlinAbiToolsApi = { module = "org.jetbrains.kotlin:abi-tools-api", version.ref = "kotlin" }
 kotlinNativeUtils = { module = "org.jetbrains.kotlin:kotlin-native-utils", version.ref = "kotlinNativeUtils" }
 kotlinGradlePluginApi = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlinGradlePluginApi" }
 kotlinToolingCore = { module = "org.jetbrains.kotlin:kotlin-tooling-core", version.ref = "kotlinToolingCore" }
@@ -224,7 +228,7 @@ kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "2.1.0" }
-kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3" }
+kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.5.0" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing", version.ref = "ksp" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.0.10-1.0.24" }
 kspCommon = { module = "com.google.devtools.ksp:symbol-processing-common-deps", version.ref = "ksp" }
@@ -269,17 +273,18 @@ playServicesBasement = { module = "com.google.android.gms:play-services-basement
 playServicesBlockstore = {module = "com.google.android.gms:play-services-auth-blockstore", version = "16.4.0"}
 playServicesDevicePerformance = { module = "com.google.android.gms:play-services-deviceperformance", version = "16.0.0" }
 playServicesFido = {module = "com.google.android.gms:play-services-fido", version = "21.0.0"}
-playServicesIdentityCredentials = {module = "com.google.android.gms:play-services-identity-credentials", version = "16.0.0-alpha11"}
-playServicesWearable = { module = "com.google.android.gms:play-services-wearable", version = "17.1.0" }
+playServicesIdentityCredentials = {module = "com.google.android.gms:play-services-identity-credentials", version = "16.0.0-alpha12"}
+playServicesMlkitTextRecognition = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version = "19.0.1" }
+playServicesWearable = { module = "com.google.android.gms:play-services-wearable", version = "20.0.1" }
 protobuf = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobufCompiler = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
-protobufGradlePlugin = { module = "com.google.protobuf:protobuf-gradle-plugin", version = "0.9.4" }
+protobufGradlePlugin = { module = "com.google.protobuf:protobuf-gradle-plugin", version = "0.10.0" }
 protobufLite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
 protobufKotlinLite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 reactiveStreams = { module = "org.reactivestreams:reactive-streams", version = "1.0.0" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofitConverterWire = { module = "com.squareup.retrofit2:converter-wire", version.ref = "retrofit" }
-robolectric = { module = "org.robolectric:robolectric", version = "4.16.1" }
+robolectric = { module = "org.robolectric:robolectric", version = "4.17-beta-3" }
 rxjava2 = { module = "io.reactivex.rxjava2:rxjava", version = "2.2.9" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.0" }
 sdklib = { module = "com.android.tools:sdklib", version.ref = "androidLint" }
@@ -301,10 +306,11 @@ testExtJunit = { module = "androidx.test.ext:junit", version.ref = "androidxTest
 testExtJunitKtx = { module = "androidx.test.ext:junit-ktx", version.ref = "androidxTestExtJunit" }
 testExtTruth = { module = "androidx.test.ext:truth", version.ref = "androidxTestExtTruth" }
 testMonitor = { module = "androidx.test:monitor", version.ref = "androidxTestMonitor" }
-testParameterInjector = { module = "com.google.testparameterinjector:test-parameter-injector", version = "1.9" }
+testParameterInjector = { module = "com.google.testparameterinjector:test-parameter-injector", version = "1.22" }
 testRules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
 testRunner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
-testUiautomator = { module = "androidx.test.uiautomator:uiautomator", version = "2.2.0" }
+testOrchestrator = { module = "androidx.test:orchestrator", version = "1.6.1" }
+testUiautomator = { module = "androidx.test.uiautomator:uiautomator", version = "2.4.0" }
 tink = { module = "com.google.crypto.tink:tink", version.ref = "tink" }
 tinkAndroid = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
 truth = { module = "com.google.truth:truth", version = "1.0.1" }

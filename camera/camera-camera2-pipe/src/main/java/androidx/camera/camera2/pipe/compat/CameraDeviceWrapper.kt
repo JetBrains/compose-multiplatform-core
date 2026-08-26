@@ -30,13 +30,14 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
 import androidx.camera.camera2.pipe.writeParameter
-import kotlin.reflect.KClass
+import androidx.camera.common.UnsafeWrapper
+import androidx.camera.common.unwrapAs
+import java.lang.Class
 import kotlinx.atomicfu.atomic
 
 /**
@@ -75,14 +76,12 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     ): Boolean
 
     /** @see CameraDevice.createCaptureSessionByOutputConfigurations */
-    @RequiresApi(24)
     fun createCaptureSessionByOutputConfigurations(
         outputConfigurations: List<OutputConfigurationWrapper>,
         stateCallback: CameraCaptureSessionWrapper.StateCallback,
     ): Boolean
 
     /** @see CameraDevice.createReprocessableCaptureSessionByConfigurations */
-    @RequiresApi(24)
     fun createReprocessableCaptureSessionByConfigurations(
         inputConfig: InputConfigData,
         outputs: List<OutputConfigurationWrapper>,
@@ -185,7 +184,7 @@ internal class AndroidCameraDevice(
                 val sessionConfig =
                     Api31Compat.newExtensionSessionConfiguration(
                         config.extensionMode,
-                        config.outputConfigurations.map { it.unwrapAs(OutputConfiguration::class) },
+                        config.outputConfigurations.map { it.unwrapAs<OutputConfiguration>() },
                         config.executor,
                         AndroidExtensionSessionStateCallback(
                             this,
@@ -202,7 +201,7 @@ internal class AndroidCameraDevice(
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
                 ) {
                     val postviewOutput =
-                        config.postviewOutputConfiguration.unwrapAs(OutputConfiguration::class)
+                        config.postviewOutputConfiguration.unwrapAs<OutputConfiguration>()
                     checkNotNull(postviewOutput) { "Failed to unwrap Postview OutputConfiguration" }
                     Api34Compat.setPostviewOutputConfiguration(sessionConfig, postviewOutput)
                 }
@@ -298,7 +297,7 @@ internal class AndroidCameraDevice(
         return result != null
     }
 
-    @RequiresApi(24)
+    @Suppress("deprecation")
     override fun createCaptureSessionByOutputConfigurations(
         outputConfigurations: List<OutputConfigurationWrapper>,
         stateCallback: CameraCaptureSessionWrapper.StateCallback,
@@ -311,9 +310,8 @@ internal class AndroidCameraDevice(
                 // This function was deprecated in Android Q, but is required for some
                 // configurations
                 // when running on older versions of the OS.
-                Api24Compat.createCaptureSessionByOutputConfigurations(
-                    cameraDevice,
-                    outputConfigurations.map { it.unwrapAs(OutputConfiguration::class) },
+                cameraDevice.createCaptureSessionByOutputConfigurations(
+                    outputConfigurations.map { it.unwrapAs<OutputConfiguration>() },
                     AndroidCaptureSessionStateCallback(
                         this,
                         stateCallback,
@@ -337,7 +335,7 @@ internal class AndroidCameraDevice(
         return result != null
     }
 
-    @RequiresApi(24)
+    @Suppress("deprecation")
     override fun createReprocessableCaptureSessionByConfigurations(
         inputConfig: InputConfigData,
         outputs: List<OutputConfigurationWrapper>,
@@ -350,10 +348,9 @@ internal class AndroidCameraDevice(
             instrumentAndCatch("createReprocessableCaptureSessionByConfigurations") {
                 // This function was deprecated in Android Q, but is required for some
                 // configurations when running on older versions of the OS.
-                Api24Compat.createReprocessableCaptureSessionByConfigurations(
-                    cameraDevice,
+                cameraDevice.createReprocessableCaptureSessionByConfigurations(
                     InputConfiguration(inputConfig.width, inputConfig.height, inputConfig.format),
-                    outputs.map { it.unwrapAs(OutputConfiguration::class) },
+                    outputs.map { it.unwrapAs<OutputConfiguration>() },
                     AndroidCaptureSessionStateCallback(
                         this,
                         stateCallback,
@@ -387,7 +384,7 @@ internal class AndroidCameraDevice(
                 val sessionConfig =
                     Api28Compat.newSessionConfiguration(
                         config.sessionType,
-                        config.outputConfigurations.map { it.unwrapAs(OutputConfiguration::class) },
+                        config.outputConfigurations.map { it.unwrapAs<OutputConfiguration>() },
                         config.executor,
                         AndroidCaptureSessionStateCallback(
                             this,
@@ -514,9 +511,9 @@ internal class AndroidCameraDevice(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            CameraDevice::class -> cameraDevice as T
+            CameraDevice::class.java -> cameraDevice as T
             else -> null
         }
 
@@ -606,7 +603,6 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
             }
         }
 
-    @RequiresApi(24)
     override fun createCaptureSessionByOutputConfigurations(
         outputConfigurations: List<OutputConfigurationWrapper>,
         stateCallback: CameraCaptureSessionWrapper.StateCallback,
@@ -626,7 +622,6 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
             }
         }
 
-    @RequiresApi(24)
     override fun createReprocessableCaptureSessionByConfigurations(
         inputConfig: InputConfigData,
         outputs: List<OutputConfigurationWrapper>,
@@ -697,7 +692,7 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
 
     override fun onDeviceClosed() = androidCameraDevice.onDeviceClosed()
 
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = androidCameraDevice.unwrapAs(type)
+    override fun <T : Any> unwrapAs(type: Class<T>): T? = androidCameraDevice.unwrapAs(type)
 
     internal fun disconnect() = synchronized(lock) { disconnected = true }
 

@@ -16,7 +16,7 @@
 
 package androidx.ink.authoring.latency.aggregators
 
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -33,7 +33,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 26) // Required for `kotlin.time.Duration`
 class PercentileLatencyAggregatorTest {
@@ -576,75 +576,65 @@ class PercentileLatencyAggregatorTest {
     @Test
     fun percentileLatencyAggregator_factoryThrowsOnNonPositiveWindowDuration() {
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                PercentileLatencyAggregator.create(
-                    window = 0.seconds,
-                    percentiles = listOf(50f),
-                    expectedSamplesPerSecond = 30,
-                    testScope.backgroundScope,
-                ) { _: List<Long>, _: Int ->
-                    Unit
-                }
+            PercentileLatencyAggregator.create(
+                window = 0.seconds,
+                percentiles = listOf(50f),
+                expectedSamplesPerSecond = 30,
+                testScope.backgroundScope,
+            ) { _: List<Long>, _: Int ->
+            }
         }
     }
 
     @Test
     fun percentileLatencyAggregator_factoryThrowsOnEmptyPercentileList() {
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                PercentileLatencyAggregator.create(
-                    window = 1.seconds,
-                    percentiles = listOf<Float>(),
-                    expectedSamplesPerSecond = 30,
-                    testScope.backgroundScope,
-                ) { _: List<Long>, _: Int ->
-                    Unit
-                }
+            PercentileLatencyAggregator.create(
+                window = 1.seconds,
+                percentiles = listOf<Float>(),
+                expectedSamplesPerSecond = 30,
+                testScope.backgroundScope,
+            ) { _: List<Long>, _: Int ->
+            }
         }
     }
 
     @Test
     fun percentileLatencyAggregator_factoryThrowsOnNegativePercentileList() {
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                PercentileLatencyAggregator.create(
-                    window = 1.seconds,
-                    percentiles = listOf<Float>(-5f),
-                    expectedSamplesPerSecond = 30,
-                    testScope.backgroundScope,
-                ) { _: List<Long>, _: Int ->
-                    Unit
-                }
+            PercentileLatencyAggregator.create(
+                window = 1.seconds,
+                percentiles = listOf<Float>(-5f),
+                expectedSamplesPerSecond = 30,
+                testScope.backgroundScope,
+            ) { _: List<Long>, _: Int ->
+            }
         }
     }
 
     @Test
     fun percentileLatencyAggregator_factoryThrowsOnPercentileListAbove100() {
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                PercentileLatencyAggregator.create(
-                    window = 1.seconds,
-                    percentiles = listOf<Float>(105f),
-                    expectedSamplesPerSecond = 30,
-                    testScope.backgroundScope,
-                ) { _: List<Long>, _: Int ->
-                    Unit
-                }
+            PercentileLatencyAggregator.create(
+                window = 1.seconds,
+                percentiles = listOf<Float>(105f),
+                expectedSamplesPerSecond = 30,
+                testScope.backgroundScope,
+            ) { _: List<Long>, _: Int ->
+            }
         }
     }
 
     @Test
     fun percentileLatencyAggregator_factoryThrowsOnNonPositiveSamplesPerSecond() {
         assertFailsWith(IllegalStateException::class) {
-            val unused =
-                PercentileLatencyAggregator.create(
-                    window = 1.seconds,
-                    percentiles = listOf(50f),
-                    expectedSamplesPerSecond = 0,
-                    testScope.backgroundScope,
-                ) { _: List<Long>, _: Int ->
-                    Unit
-                }
+            PercentileLatencyAggregator.create(
+                window = 1.seconds,
+                percentiles = listOf(50f),
+                expectedSamplesPerSecond = 0,
+                testScope.backgroundScope,
+            ) { _: List<Long>, _: Int ->
+            }
         }
     }
 

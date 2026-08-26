@@ -22,6 +22,7 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.role
 import androidx.compose.remote.creation.compose.modifier.semantics
@@ -57,10 +58,11 @@ internal fun RemoteRoundButton(
                         containerPainter = null,
                         disabledContainerPainter = null,
                         borderColor = borderColor,
-                        borderStrokeWidth = border?.value,
+                        borderStrokeWidth = border,
                     )
                     drawContent()
                 }
+                .clip(shape = shape)
                 .clickable(onClick, enabled = enabled.constantValueOrNull ?: false)
                 .semantics(mergeDescendants = true) { role = Role.Button },
         content = content,

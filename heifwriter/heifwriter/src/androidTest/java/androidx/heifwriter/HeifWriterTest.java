@@ -32,7 +32,6 @@ import android.util.Log;
 
 import androidx.heifwriter.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.GrantPermissionRule;
@@ -54,7 +53,6 @@ import java.io.InputStream;
  * Test {@link HeifWriter}.
  */
 @RunWith(AndroidJUnit4.class)
-@FlakyTest
 public class HeifWriterTest extends TestBase {
     private static final String TAG = HeifWriterTest.class.getSimpleName();
 
@@ -272,6 +270,58 @@ public class HeifWriterTest extends TestBase {
             .build();
 
         heifWriter.close();
+    }
+
+    @Test
+    @SmallTest
+    public void testAddExifData_InvalidIndex() throws Throwable {
+        if (shouldSkip()) return;
+
+        final String outputPath = new File(getApplicationContext().getExternalFilesDir(null),
+                OUTPUT_FILENAME).getAbsolutePath();
+        HeifWriter heifWriter = new HeifWriter.Builder(
+                outputPath, 1920, 1080, INPUT_MODE_SURFACE)
+                .setMaxImages(1)
+                .build();
+        heifWriter.start();
+
+        try {
+            byte[] exifData = new byte[100];
+            // index 1 is invalid for maxImages = 1
+            heifWriter.addExifData(1, exifData, 0, exifData.length);
+            throw new RuntimeException("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        } finally {
+            heifWriter.close();
+        }
+    }
+
+    @Test
+    @SmallTest
+    public void testAddExifData_TooManyBlocks() throws Throwable {
+        if (shouldSkip()) return;
+
+        final String outputPath = new File(getApplicationContext().getExternalFilesDir(null),
+                OUTPUT_FILENAME).getAbsolutePath();
+        HeifWriter heifWriter = new HeifWriter.Builder(
+                outputPath, 1920, 1080, INPUT_MODE_SURFACE)
+                .setMaxImages(1)
+                .build();
+        heifWriter.start();
+
+        try {
+            byte[] exifData = new byte[100];
+            // Add first block
+            heifWriter.addExifData(0, exifData, 0, exifData.length);
+            // Add second block, should fail as maxImages is 1
+            heifWriter.addExifData(0, exifData, 0, exifData.length);
+            throw new RuntimeException("Should have thrown IllegalStateException");
+        } catch (IllegalStateException e) {
+            // expected
+        } finally {
+            heifWriter.close();
+        }
     }
 
     private void doTestForVariousNumberImages(TestConfig.Builder builder) throws Exception {

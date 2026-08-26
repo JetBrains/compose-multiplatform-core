@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.integration.featurecombo.ui
 
 import android.content.ContentValues
@@ -706,6 +708,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         if (featureTypes.contains(GroupableFeature.FEATURE_TYPE_RECORDING_QUALITY)) {
             when (recordingQuality) {
                 RecordingQuality.UHD -> features.add(GroupableFeatures.UHD_RECORDING)
+                RecordingQuality.QHD -> features.add(GroupableFeatures.QHD_RECORDING)
                 RecordingQuality.FHD -> features.add(GroupableFeatures.FHD_RECORDING)
                 RecordingQuality.HD -> features.add(GroupableFeatures.HD_RECORDING)
                 RecordingQuality.SD -> features.add(GroupableFeatures.SD_RECORDING)
@@ -762,6 +765,9 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             when (feature) {
                 GroupableFeatures.UHD_RECORDING -> {
                     newAppFeatures = newAppFeatures.copy(recordingQuality = RecordingQuality.UHD)
+                }
+                GroupableFeatures.QHD_RECORDING -> {
+                    newAppFeatures = newAppFeatures.copy(recordingQuality = RecordingQuality.QHD)
                 }
                 GroupableFeatures.FHD_RECORDING -> {
                     newAppFeatures = newAppFeatures.copy(recordingQuality = RecordingQuality.FHD)

@@ -23,15 +23,25 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.glance.wear.WearWidgetBrush
+import androidx.glance.wear.color
+import androidx.glance.wear.isEmpty
+
+// Forked from androidx.wear.compose.material3.ColorScheme.surfaceContainerLow
+private val surfaceContainerLowColor: RemoteColor = Color(red = 39, green = 36, blue = 48).rc
 
 /**
  * A container for a remote compose widget, applying standard styling.
  *
- * This container applies horizontal and vertical padding, as well as corners, to its content.
+ * This container applies horizontal and vertical padding, as well as corners, to its content. It is
+ * strongly recommended to explicitly define a non-transparent background. If the given [background]
+ * is empty, a default surface color will be applied.
  */
 @RemoteComposable
 @Composable
@@ -42,12 +52,18 @@ internal fun WearWidgetContainer(
     background: WearWidgetBrush,
     content: @RemoteComposable @Composable () -> Unit,
 ) {
+    val backgroundWithDefault =
+        if (background.isEmpty()) {
+            WearWidgetBrush.color(surfaceContainerLowColor)
+        } else {
+            background
+        }
     RemoteBox(
         modifier =
             RemoteModifier.fillMaxSize().drawWithContent {
                 val cornerRadiusOffset = RemoteOffset(cornerRadius.toPx(), cornerRadius.toPx())
                 val paint = RemotePaint()
-                background.foldIn(Unit) { _, element ->
+                backgroundWithDefault.foldIn(Unit) { _, element ->
                     with(element.brush) { applyTo(paint, size) }
                     drawRoundRect(paint = paint, cornerRadius = cornerRadiusOffset)
                 }

@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.internal
 
+import android.app.appfunctions.AppFunctionRegistration
 import android.content.Context
 import android.os.Build
 import android.os.CancellationSignal
@@ -30,10 +31,14 @@ import androidx.appfunctions.AppFunctionManager.Companion.APP_FUNCTION_STATE_ENA
 import androidx.appfunctions.AppFunctionSystemUnknownException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.RegisterAppFunctionRequest
+import androidx.appfunctions.internal.AppFunctionManagerApi.Companion.applyMissingRuntimeMetadataExceptionFix
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import com.android.extensions.appfunctions.AppFunctionManager as ExtensionAppFunctionManager
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -52,7 +57,16 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
     ): ExecuteAppFunctionResponse {
         return suspendCancellableCoroutine { cont ->
             val cancellationSignal = CancellationSignal()
-            cont.invokeOnCancellation { cancellationSignal.cancel() }
+            // Wrapped in an AtomicReference so we can explicitly null it out. This protects the
+            // client from leaky binder proxies on platform versions where the system_server holds a
+            // strong reference to the CancellationSignal's OnCancelListener and its associated
+            // Binder proxies.
+            val activeCont =
+                AtomicReference<CancellableContinuation<ExecuteAppFunctionResponse>?>(cont)
+            cont.invokeOnCancellation {
+                cancellationSignal.cancel()
+                activeCont.set(null)
+            }
             appFunctionManager.executeAppFunction(
                 request.toPlatformExtensionClass(),
                 Runnable::run,
@@ -66,12 +80,14 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     override fun onResult(
                         result: com.android.extensions.appfunctions.ExecuteAppFunctionResponse
                     ) {
-                        cont.resume(
-                            ExecuteAppFunctionResponse.Success.fromPlatformExtensionClass(
-                                result,
-                                functionMetadata,
+                        activeCont
+                            .getAndSet(null)
+                            ?.resume(
+                                ExecuteAppFunctionResponse.Success.fromPlatformExtensionClass(
+                                    result,
+                                    functionMetadata,
+                                )
                             )
-                        )
                     }
 
                     override fun onError(
@@ -81,7 +97,9 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                             fixAppFunctionExceptionErrorType(
                                 AppFunctionException.fromPlatformExtensionsClass(error)
                             )
-                        cont.resume(ExecuteAppFunctionResponse.Error(exception))
+                        activeCont
+                            .getAndSet(null)
+                            ?.resume(ExecuteAppFunctionResponse.Error(exception))
                     }
                 },
             )
@@ -104,7 +122,9 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     }
 
                     override fun onError(error: Exception) {
-                        cont.resumeWithException(error)
+                        cont.resumeWithException(
+                            applyMissingRuntimeMetadataExceptionFix(functionId, error)
+                        )
                     }
                 },
             )
@@ -127,7 +147,9 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
                     }
 
                     override fun onError(error: Exception) {
-                        cont.resumeWithException(error)
+                        cont.resumeWithException(
+                            applyMissingRuntimeMetadataExceptionFix(functionId, error)
+                        )
                     }
                 },
             )
@@ -148,6 +170,24 @@ internal class ExtensionAppFunctionManagerApi(private val context: Context) :
             return AppFunctionFunctionNotFoundException("App function not found.")
         }
         return exception
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    override fun registerAppFunctions(
+        requests: List<RegisterAppFunctionRequest>
+    ): AppFunctionRegistration {
+        throw UnsupportedOperationException(
+            "Only supported on SDK 37+ which does not have extensions lib"
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    override suspend fun getAppFunctionActivityStates(
+        activityIds: Set<android.app.appfunctions.AppFunctionActivityId>
+    ): List<androidx.appfunctions.AppFunctionActivityState> {
+        throw UnsupportedOperationException(
+            "Only supported on SDK 37+ which does not have extensions lib"
+        )
     }
 
     @ExtensionAppFunctionManager.EnabledState

@@ -16,7 +16,10 @@
 
 package androidx.xr.arcore.runtime
 
-/** Represents the type of hand joint. */
+import androidx.annotation.RestrictTo
+
+/** Type of hand joint. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public enum class HandJointType {
     /** The center of the palm. Often used as a reference point for hand tracking. */
     HAND_JOINT_TYPE_PALM,

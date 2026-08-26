@@ -17,12 +17,12 @@ package androidx.pdf.compose {
     method public void item(Object key, String label, String? contentDescription, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick);
   }
 
-  public final class PdfViewerKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static void PdfViewer(androidx.pdf.PdfDocument? pdfDocument, androidx.pdf.compose.PdfViewerState state, optional androidx.compose.ui.Modifier modifier, optional boolean isFormFillingEnabled, optional boolean isImageSelectionEnabled, optional float minZoom, optional float maxZoom, optional int verticalAlignment, optional int pagesPerRow, optional androidx.compose.ui.unit.Dp horizontalPageSpacing, optional androidx.compose.ui.unit.Dp verticalPageSpacing, optional androidx.pdf.compose.FastScrollConfiguration fastScrollConfig, optional kotlin.jvm.functions.Function1<androidx.pdf.compose.PdfSelectionMenuBuilderScope,kotlin.Unit>? appendContextMenuComponents, optional kotlin.jvm.functions.Function1<androidx.pdf.selection.ContextMenuComponent,java.lang.Boolean>? filterContextMenuComponents, optional kotlin.jvm.functions.Function1<androidx.pdf.models.FormEditInfo,kotlin.Unit>? onFormWidgetInfoUpdated, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onFirstContentLoad, optional kotlin.jvm.functions.Function1<android.net.Uri,java.lang.Boolean>? onUrlLinkClicked);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static void PdfViewer-zXhUaTo(androidx.pdf.PdfDocument?, androidx.pdf.compose.PdfViewerState, androidx.compose.ui.Modifier?, boolean, boolean, float, float, int, int, float, float, androidx.pdf.compose.FastScrollConfiguration?, kotlin.jvm.functions.Function1<? super androidx.pdf.compose.PdfSelectionMenuBuilderScope!,kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.ContextMenuComponent!,java.lang.Boolean!>?, kotlin.jvm.functions.Function1<? super androidx.pdf.models.FormEditInfo!,kotlin.Unit!>?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super android.net.Uri!,java.lang.Boolean!>?, androidx.compose.runtime.Composer?, int, int, int);
+  @SuppressCompatibility public final class PdfViewerKt {
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.pdf.ExperimentalPdfApi public static void PdfViewer(androidx.pdf.PdfDocument? pdfDocument, androidx.pdf.compose.PdfViewerState state, optional androidx.compose.ui.Modifier modifier, optional boolean isFormFillingEnabled, optional boolean isImageSelectionEnabled, optional androidx.pdf.ocr.OcrProvider? ocrProvider, optional float minZoom, optional float maxZoom, optional int verticalAlignment, optional int pagesPerRow, optional androidx.compose.ui.unit.Dp horizontalPageSpacing, optional androidx.compose.ui.unit.Dp verticalPageSpacing, optional androidx.pdf.compose.FastScrollConfiguration fastScrollConfig, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional kotlin.jvm.functions.Function1<androidx.pdf.compose.PdfSelectionMenuBuilderScope,kotlin.Unit>? appendContextMenuComponents, optional kotlin.jvm.functions.Function1<androidx.pdf.selection.ContextMenuComponent,java.lang.Boolean>? filterContextMenuComponents, optional kotlin.jvm.functions.Function1<androidx.pdf.models.FormEditInfo,kotlin.Unit>? onFormWidgetInfoUpdated, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onFirstContentLoad, optional kotlin.jvm.functions.Function1<android.net.Uri,java.lang.Boolean>? onUrlLinkClicked);
+    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.pdf.ExperimentalPdfApi public static void PdfViewer-XiQjojk(androidx.pdf.PdfDocument?, androidx.pdf.compose.PdfViewerState, androidx.compose.ui.Modifier?, boolean, boolean, androidx.pdf.ocr.OcrProvider?, float, float, int, int, float, float, androidx.pdf.compose.FastScrollConfiguration?, androidx.compose.foundation.layout.PaddingValues?, kotlin.jvm.functions.Function1<? super androidx.pdf.compose.PdfSelectionMenuBuilderScope!,kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.ContextMenuComponent!,java.lang.Boolean!>?, kotlin.jvm.functions.Function1<? super androidx.pdf.models.FormEditInfo!,kotlin.Unit!>?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function1<? super android.net.Uri!,java.lang.Boolean!>?, androidx.compose.runtime.Composer?, int, int, int);
   }
 
-  public final class PdfViewerState {
+  @SuppressCompatibility @androidx.pdf.ExperimentalPdfApi public final class PdfViewerState {
     ctor public PdfViewerState();
     method public void clearCurrentSelection();
     method @InaccessibleFromKotlin public androidx.pdf.selection.Selection? getCurrentSelection();
@@ -33,17 +33,17 @@ package androidx.pdf.compose {
     method @BytecodeOnly public androidx.compose.ui.geometry.Offset? getVisiblePageOffset-x-9fifI(@IntRange(from=0L) int);
     method @InaccessibleFromKotlin public int getVisiblePagesCount();
     method @InaccessibleFromKotlin @androidx.compose.runtime.annotation.FrequentlyChangingValue public float getZoom();
-    method @KotlinOnly public androidx.compose.ui.geometry.Offset? pdfPointToVisibleOffset(androidx.pdf.PdfPoint pdfPoint);
-    method @BytecodeOnly public androidx.compose.ui.geometry.Offset? pdfPointToVisibleOffset-x-9fifI(androidx.pdf.PdfPoint);
+    method @KotlinOnly public androidx.compose.ui.geometry.Offset pdfPointToVisibleOffset(androidx.pdf.PdfPoint pdfPoint);
+    method @BytecodeOnly public long pdfPointToVisibleOffset-tuRUvjQ(androidx.pdf.PdfPoint);
     method public suspend Object? scrollToPage(@IntRange(from=0L) int pageNum, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? scrollToPosition(androidx.pdf.PdfPoint position, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public void setHighlights(java.util.List<androidx.pdf.view.Highlight> highlights);
+    method public void setHighlights(java.util.List<androidx.pdf.Highlight> highlights);
     method @KotlinOnly public androidx.pdf.PdfPoint? visibleOffsetToPdfPoint(androidx.compose.ui.geometry.Offset offset);
     method @BytecodeOnly public androidx.pdf.PdfPoint? visibleOffsetToPdfPoint-k-4lQ0M(long);
     method public suspend Object? zoomScroll(kotlin.jvm.functions.Function1<? super androidx.pdf.compose.PdfZoomScrollScope,kotlin.Unit> block, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public androidx.pdf.selection.Selection? currentSelection;
     property public int firstVisiblePage;
-    property public androidx.compose.ui.geometry.Offset firstVisiblePageOffset;
+    property @androidx.compose.runtime.annotation.FrequentlyChangingValue public androidx.compose.ui.geometry.Offset firstVisiblePageOffset;
     property public int gestureState;
     property public int visiblePagesCount;
     property @androidx.compose.runtime.annotation.FrequentlyChangingValue public float zoom;
@@ -53,10 +53,15 @@ package androidx.pdf.compose {
     field public static final int GESTURE_STATE_SETTLING = 2; // 0x2
   }
 
-  public static final class PdfViewerState.Companion {
+  @SuppressCompatibility @androidx.pdf.ExperimentalPdfApi public static final class PdfViewerState.Companion {
     property public static int GESTURE_STATE_IDLE;
     property public static int GESTURE_STATE_INTERACTING;
     property public static int GESTURE_STATE_SETTLING;
+  }
+
+  @SuppressCompatibility public final class PdfViewerStateKt {
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.pdf.ExperimentalPdfApi public static androidx.pdf.compose.PdfViewerState rememberPdfViewerState();
+    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.pdf.ExperimentalPdfApi public static androidx.pdf.compose.PdfViewerState rememberPdfViewerState(androidx.compose.runtime.Composer?, int);
   }
 
   public interface PdfZoomScrollScope {

@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-// TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
-// removed.
-@file:Suppress("DEPRECATION")
-
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -30,9 +26,8 @@ import androidx.xr.runtime.math.Pose
  * @property pose the [Pose] of the view camera
  * @property fieldOfView the [FieldOfView] of the view camera
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RenderViewpoint {
     public val pose: Pose
-    @Deprecated(message = "Convert to androidx.xr.runtime.math.FieldOfView")
     public val fieldOfView: FieldOfView
 }

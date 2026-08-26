@@ -16,8 +16,10 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.collection.IntList
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMinByOrNull
 import androidx.compose.ui.util.fastRoundToInt
@@ -47,6 +50,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     private val itemAnimator: LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>,
     private val isScrollInProgress: () -> Boolean,
     private val reverseLayout: Boolean,
+    private val firstLayoutItemProvider: () -> TransformingLazyColumnFirstLayoutItemProvider?,
 ) : TransformingLazyColumnMeasurementStrategy {
     override val rightContentPadding: Int =
         with(density) { contentPadding.calculateRightPadding(layoutDirection).roundToPx() }
@@ -78,19 +82,20 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 val minOffset = 0
                 val minIndex = 0
                 val item = first()
-                var topOffset = item.offset - itemSpacing
-                var topPassIndex = item.index - 1
+                var nextBottomOffset = item.offset - itemSpacing
+                var nextIndex = item.index - 1
 
-                while (topOffset >= minOffset && topPassIndex >= minIndex) {
+                while (nextBottomOffset >= minOffset && nextIndex >= minIndex) {
                     val additionalItem =
-                        measuredItemProvider.upwardMeasuredItem(
-                            topPassIndex,
-                            topOffset,
+                        resolveMeasuredItemForFixedBottomOffset(
+                            index = nextIndex,
+                            targetBottomOffset = nextBottomOffset,
                             maxHeight = maxHeight,
+                            measuredItemProvider = measuredItemProvider,
                         )
                     addFirst(additionalItem)
-                    topOffset -= additionalItem.transformedHeight + itemSpacing
-                    topPassIndex -= 1 // Indexes must be incremental.
+                    nextBottomOffset -= additionalItem.transformedHeight + itemSpacing
+                    nextIndex -= 1 // Indexes must be incremental.
                 }
                 recalculateBeforePaddings()
             }
@@ -100,19 +105,20 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 val maxOffset: Int = maxHeight
                 val maxIndex: Int = itemsCount - 1
                 val item = last()
-                var bottomOffset = item.offset + item.transformedHeight + itemSpacing
-                var bottomPassIndex = item.index + 1
+                var nextTopOffset = item.offset + item.transformedHeight + itemSpacing
+                var nextIndex = item.index + 1
 
-                while (bottomOffset < maxOffset && bottomPassIndex <= maxIndex) {
+                while (nextTopOffset < maxOffset && nextIndex <= maxIndex) {
                     val additionalItem =
-                        measuredItemProvider.downwardMeasuredItem(
-                            bottomPassIndex,
-                            bottomOffset,
+                        resolveMeasuredItemForFixedTopOffset(
+                            index = nextIndex,
+                            targetTopOffset = nextTopOffset,
                             maxHeight = maxHeight,
+                            measuredItemProvider = measuredItemProvider,
                         )
-                    bottomOffset += additionalItem.transformedHeight + itemSpacing
+                    nextTopOffset += additionalItem.transformedHeight + itemSpacing
                     add(additionalItem)
-                    bottomPassIndex += 1 // Indexes must be incremental.
+                    nextIndex += 1 // Indexes must be incremental.
                 }
                 recalculateAfterPaddings()
             }
@@ -282,8 +288,18 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         coroutineScope: CoroutineScope,
         density: Density,
         scrollToBeConsumed: Float,
+        pinnedItems: IntList,
         layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
     ): TransformingLazyColumnMeasureResult {
+        if (itemsCount == 0) {
+            return emptyMeasureResult(
+                containerConstraints = containerConstraints,
+                beforeContentPadding = initialBeforeContentPadding,
+                afterContentPadding = initialAfterContentPadding,
+                layout = layout,
+            )
+        }
+
         val itemSpacingPx = with(density) { verticalArrangement.spacing.roundToPx() }
         measurementScope.itemSpacing = itemSpacingPx
 
@@ -294,18 +310,8 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 // this key, it is not present and was probably deleted or was not yet initialised.
                 if (it == -1) anchorItemIndex to false else it to true
             }
-
-        if (itemsCount == 0) {
-            return emptyMeasureResult(
-                containerConstraints = containerConstraints,
-                beforeContentPadding = initialBeforeContentPadding,
-                afterContentPadding = initialAfterContentPadding,
-                layout = layout,
-            )
-        }
-
         // Restore the position of anchor item from the previous measurement.
-        val previousAnchorItem =
+        val defaultPreviousAnchorItem =
             if (lastMeasuredAnchorItemHeight > 0) {
                 val offset =
                     containerConstraints.maxHeight / 2 -
@@ -333,6 +339,52 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                     .also { it.offset += it.transformedHeight / 2 }
             }
 
+        val activeFirstLayoutItemProvider: TransformingLazyColumnFirstLayoutItemProvider? =
+            firstLayoutItemProvider()
+
+        val firstLayoutItem =
+            activeFirstLayoutItemProvider?.let { provider ->
+                val defaultCenterItemInfo =
+                    TransformingLazyColumnFirstLayoutItemProvider.ItemInfo(
+                        index = defaultPreviousAnchorItem.index,
+                        itemEdge = TransformingLazyColumnFirstLayoutItemProvider.ItemEdge.Start,
+                        offset = defaultPreviousAnchorItem.offset,
+                        key = defaultPreviousAnchorItem.key,
+                    )
+                val info =
+                    Snapshot.withoutReadObservation {
+                        provider.getFirstLayoutItem(defaultCenterItemInfo)
+                    }
+                if (info == defaultCenterItemInfo) {
+                    defaultPreviousAnchorItem
+                } else {
+                    val firstLayoutItemIndex =
+                        info.key?.let { key ->
+                            keyIndexMap.getIndex(key).takeIf { index -> index != -1 }
+                        } ?: info.index
+
+                    val resolvedIndex = firstLayoutItemIndex.coerceIn(0 until itemsCount)
+
+                    if (
+                        info.itemEdge == TransformingLazyColumnFirstLayoutItemProvider.ItemEdge.End
+                    ) {
+                        resolveMeasuredItemForFixedBottomOffset(
+                            index = resolvedIndex,
+                            targetBottomOffset = info.offset,
+                            maxHeight = containerConstraints.maxHeight,
+                            measuredItemProvider = measuredItemProvider,
+                        )
+                    } else {
+                        resolveMeasuredItemForFixedTopOffset(
+                            index = resolvedIndex,
+                            targetTopOffset = info.offset,
+                            maxHeight = containerConstraints.maxHeight,
+                            measuredItemProvider = measuredItemProvider,
+                        )
+                    }
+                }
+            } ?: defaultPreviousAnchorItem
+
         var canScrollForward = true
         var canScrollBackward = true
         var anchorItem: TransformingLazyColumnMeasuredItem
@@ -347,7 +399,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
 
         with(measurementScope) {
             this.itemsCount = itemsCount
-            this.itemSpacing = itemSpacing
+            this.itemSpacing = itemSpacingPx
             this.maxHeight = containerConstraints.maxHeight
             this.beforeContentPadding = initialBeforeContentPadding
             this.afterContentPadding = initialAfterContentPadding
@@ -356,17 +408,38 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             fun TransformingLazyColumnMeasuredItem.isVisible(): Boolean =
                 offset + transformedHeight > 0 && offset < containerConstraints.maxHeight
 
-            visibleItems.add(previousAnchorItem)
+            visibleItems.add(firstLayoutItem)
 
-            // Move previous anchor item to the new position.
-            // This is done to make sure we only apply scroll to the items that are not scaled and
-            // therefore it visually looks like content is following user's finger as it gets
-            // scrolled.
-            previousAnchorItem.offset += scrollDelta
-
-            // Add the rest of the items.
-            addVisibleItemsAfter(measuredItemProvider)
-            addVisibleItemsBefore(measuredItemProvider)
+            val isDefaultAnchor = firstLayoutItem === defaultPreviousAnchorItem
+            // Move first layout item to the new position.
+            // If it's the default anchor, or if the custom anchor is unscaled,
+            // we apply the linear scroll delta directly to it (legacy behavior).
+            if (
+                isDefaultAnchor ||
+                    firstLayoutItem.measuredHeight == firstLayoutItem.transformedHeight
+            ) {
+                firstLayoutItem.offset += scrollDelta
+                // Add the rest of the items.
+                addVisibleItemsAfter(measuredItemProvider)
+                addVisibleItemsBefore(measuredItemProvider)
+            } else {
+                // For scaled edge items.
+                // Reconstruct the pre-scroll layout exactly as it was.
+                addVisibleItemsAfter(measuredItemProvider)
+                addVisibleItemsBefore(measuredItemProvider)
+                if (scrollDelta != 0) {
+                    // Find the most stable unscaled item in the center.
+                    val anchorItem = anchorItem() ?: firstLayoutItem
+                    // Apply linear scroll delta to the stable center item.
+                    anchorItem.offset += scrollDelta
+                    //  Propagate the layout changes relative to the center.
+                    correctLayout(anchorItem)
+                    // The scroll might have revealed new gaps at the top or bottom.
+                    // Fill them. (These will only execute if there is actual empty space).
+                    addVisibleItemsAfter(measuredItemProvider)
+                    addVisibleItemsBefore(measuredItemProvider)
+                }
+            }
 
             fun restoreLayoutIfNeeded() {
                 if (fitsScreen()) {
@@ -453,12 +526,82 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 visibleItems.fastFilter { it.isVisible() || (shouldAnimate && it.hasAnimations()) }
         }
 
+        // Determine index range of visible items to find items pinned outside visible bounds.
+        // If actuallyVisibleItems is non-empty, firstIndex and lastIndex are the indices of the
+        // first and last visible items. Otherwise (e.g. overscroll or large content padding),
+        // fall back to the index of the first item at/after offset 0, the item after the last
+        // measured item, or the anchor item index.
+        val firstIndex =
+            if (actuallyVisibleItems.isNotEmpty()) {
+                actuallyVisibleItems.first().index
+            } else {
+                measurementScope.visibleItems.fastFirstOrNull { it.offset >= 0 }?.index
+                    ?: if (measurementScope.visibleItems.isNotEmpty())
+                        measurementScope.visibleItems.last().index + 1
+                    else anchorItem.index
+            }
+        val lastIndex =
+            if (actuallyVisibleItems.isNotEmpty()) {
+                actuallyVisibleItems.last().index
+            } else {
+                firstIndex - 1
+            }
+
+        val extraBeforeBottomOffset =
+            if (actuallyVisibleItems.isNotEmpty()) {
+                actuallyVisibleItems.first().offset - itemSpacingPx
+            } else {
+                0
+            }
+        val extraItemsBefore =
+            measurePinnedItemsBefore(
+                pinnedItems = pinnedItems,
+                firstIndex = firstIndex,
+                measuredItemProvider = measuredItemProvider,
+                bottomOffset = extraBeforeBottomOffset,
+                maxHeight = containerConstraints.maxHeight,
+                itemSpacingPx = itemSpacingPx,
+            )
+
+        val extraAfterTopOffset =
+            if (actuallyVisibleItems.isNotEmpty()) {
+                actuallyVisibleItems.last().offset +
+                    actuallyVisibleItems.last().transformedHeight +
+                    itemSpacingPx
+            } else {
+                containerConstraints.maxHeight
+            }
+        val extraItemsAfter =
+            measurePinnedItemsAfter(
+                pinnedItems = pinnedItems,
+                lastIndex = lastIndex,
+                measuredItemProvider = measuredItemProvider,
+                topOffset = extraAfterTopOffset,
+                maxHeight = containerConstraints.maxHeight,
+                itemSpacingPx = itemSpacingPx,
+            )
+
+        val positionedItems =
+            if (extraItemsBefore.isEmpty() && extraItemsAfter.isEmpty()) {
+                actuallyVisibleItems
+            } else {
+                ArrayList<TransformingLazyColumnMeasuredItem>(
+                        extraItemsBefore.size + actuallyVisibleItems.size + extraItemsAfter.size
+                    )
+                    .apply {
+                        addAll(extraItemsBefore)
+                        addAll(actuallyVisibleItems)
+                        addAll(extraItemsAfter)
+                    }
+            }
+
         itemAnimator.onMeasured(
             shouldAnimate = shouldAnimate,
-            positionedItems = actuallyVisibleItems,
+            positionedItems = positionedItems,
             keyIndexMap = keyIndexMap,
             layoutMinOffset = 0,
             layoutMaxOffset = containerConstraints.maxHeight,
+            itemSpacing = itemSpacingPx,
             coroutineScope = coroutineScope,
             graphicsContext = graphicsContext,
         )
@@ -466,10 +609,12 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         val childConstraints =
             Constraints(
                 maxHeight = Constraints.Infinity,
-                maxWidth = containerConstraints.maxWidth - leftContentPadding - rightContentPadding,
+                maxWidth =
+                    (containerConstraints.maxWidth - leftContentPadding - rightContentPadding)
+                        .coerceAtLeast(0),
             )
 
-        actuallyVisibleItems.fastForEach { it.markMeasured() }
+        positionedItems.fastForEach { it.markMeasured() }
 
         val appliedScroll = scrollDelta + scrollAdjustment
         val consumedScroll =
@@ -487,6 +632,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                         containerConstraints.maxHeight / 2 - it.transformedHeight / 2 - it.offset
                     },
                 visibleItems = actuallyVisibleItems,
+                positionedItems = positionedItems,
                 totalItemsCount = itemsCount,
                 lastMeasuredItemHeight = anchorItem.transformedHeight,
                 canScrollForward = canScrollForward,
@@ -501,7 +647,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 consumedScroll = consumedScroll,
                 measureResult =
                     layout(containerConstraints.maxWidth, containerConstraints.maxHeight) {
-                        actuallyVisibleItems.fastForEach { it.place(this) }
+                        positionedItems.fastForEach { it.place(this) }
                     },
             )
             .also {
@@ -529,7 +675,166 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             }
         }
 
+    private fun resolveMeasuredItemForFixedTopOffset(
+        index: Int,
+        targetTopOffset: Int,
+        maxHeight: Int,
+        measuredItemProvider: MeasuredItemProvider,
+    ): TransformingLazyColumnMeasuredItem {
+        val item =
+            measuredItemProvider.downwardMeasuredItem(
+                index = index,
+                offset = targetTopOffset,
+                maxHeight = maxHeight,
+            )
+        if (
+            targetTopOffset + item.measuredHeight / 2 >= maxHeight / 2 ||
+                item.measuredHeight == item.transformedHeight
+        ) {
+            return item
+        }
+
+        var lowBottom = targetTopOffset
+        var highBottom = targetTopOffset + item.transformedHeight
+        var bestBottom = highBottom
+        var minDiff = Int.MAX_VALUE
+        var repetitions = 0
+        while (lowBottom <= highBottom && repetitions < OFFSET_RESOLVE_REPETITIONS) {
+            val candidateBottom = lowBottom + (highBottom - lowBottom) / 2
+            item.moveAbove(candidateBottom)
+            val evaluatedTop = item.offset
+            val diff = evaluatedTop - targetTopOffset
+            val absDiff = abs(diff)
+            if (absDiff < minDiff) {
+                minDiff = absDiff
+                bestBottom = candidateBottom
+            }
+            if (diff == 0) break
+
+            // Heuristic projection (secant / fixed-point jump):
+            // Assuming the transformed height stays relatively constant, adjusting candidateBottom
+            // by `diff` directly projects our next bound towards the target offset.
+            if (diff > 0) {
+                highBottom = candidateBottom - diff
+            } else {
+                lowBottom = candidateBottom - diff
+            }
+            repetitions++
+        }
+        // Ensure the mutated item settles at the position that yielded the minimal difference
+        if (item.offset != targetTopOffset) {
+            item.moveAbove(bestBottom)
+        }
+        return item
+    }
+
+    private fun resolveMeasuredItemForFixedBottomOffset(
+        index: Int,
+        targetBottomOffset: Int,
+        maxHeight: Int,
+        measuredItemProvider: MeasuredItemProvider,
+    ): TransformingLazyColumnMeasuredItem {
+        val item =
+            measuredItemProvider.upwardMeasuredItem(
+                index = index,
+                offset = targetBottomOffset,
+                maxHeight = maxHeight,
+            )
+        if (
+            targetBottomOffset - item.measuredHeight / 2 <= maxHeight / 2 ||
+                item.measuredHeight == item.transformedHeight
+        ) {
+            return item
+        }
+
+        var lowTop = targetBottomOffset - item.transformedHeight
+        var highTop = targetBottomOffset
+        var bestTop = lowTop
+        var minDiff = Int.MAX_VALUE
+        var repetitions = 0
+        while (lowTop <= highTop && repetitions < OFFSET_RESOLVE_REPETITIONS) {
+            val candidateTop = lowTop + (highTop - lowTop) / 2
+            item.moveBelow(candidateTop)
+            val evaluatedBottom = item.offset + item.transformedHeight
+            val diff = evaluatedBottom - targetBottomOffset
+            val absDiff = abs(diff)
+            if (absDiff < minDiff) {
+                minDiff = absDiff
+                bestTop = candidateTop
+            }
+            if (diff == 0) break
+
+            // Heuristic projection (secant / fixed-point jump):
+            // Assuming the transformed height stays relatively constant, adjusting candidateTop
+            // by `diff` directly projects our next bound towards the target offset.
+            if (diff > 0) {
+                highTop = candidateTop - diff
+            } else {
+                lowTop = candidateTop - diff
+            }
+            repetitions++
+        }
+        // Ensure the mutated item settles at the position that yielded the minimal difference
+        if (item.offset + item.transformedHeight != targetBottomOffset) {
+            item.moveBelow(bestTop)
+        }
+        return item
+    }
+
     private companion object {
         const val GRADIENT_DESCENT_REPETITIONS = 4
+        const val OFFSET_RESOLVE_REPETITIONS = 10
     }
+}
+
+private fun measurePinnedItemsBefore(
+    pinnedItems: IntList,
+    firstIndex: Int,
+    measuredItemProvider: MeasuredItemProvider,
+    bottomOffset: Int,
+    maxHeight: Int,
+    itemSpacingPx: Int,
+): List<TransformingLazyColumnMeasuredItem> {
+    var list: MutableList<TransformingLazyColumnMeasuredItem>? = null
+    var currentBottomOffset = bottomOffset
+    pinnedItems.forEachReversed { index ->
+        if (index < firstIndex) {
+            if (list == null) list = mutableListOf()
+            val item =
+                measuredItemProvider.upwardMeasuredItem(
+                    index,
+                    offset = currentBottomOffset,
+                    maxHeight = maxHeight,
+                )
+            currentBottomOffset -= item.transformedHeight + itemSpacingPx
+            list.add(item)
+        }
+    }
+    return list?.apply { reverse() } ?: emptyList()
+}
+
+private fun measurePinnedItemsAfter(
+    pinnedItems: IntList,
+    lastIndex: Int,
+    measuredItemProvider: MeasuredItemProvider,
+    topOffset: Int,
+    maxHeight: Int,
+    itemSpacingPx: Int,
+): List<TransformingLazyColumnMeasuredItem> {
+    var list: MutableList<TransformingLazyColumnMeasuredItem>? = null
+    var currentTopOffset = topOffset
+    pinnedItems.forEach { index ->
+        if (index > lastIndex) {
+            if (list == null) list = mutableListOf()
+            val item =
+                measuredItemProvider.downwardMeasuredItem(
+                    index,
+                    offset = currentTopOffset,
+                    maxHeight = maxHeight,
+                )
+            currentTopOffset += item.transformedHeight + itemSpacingPx
+            list.add(item)
+        }
+    }
+    return list ?: emptyList()
 }

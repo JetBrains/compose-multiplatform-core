@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Мессеж энд ирнэ.\nХоёр дахь мөрд бусад текст бий."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Богино мессеж бүхий загвартай демо"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Хэсэгчилсэн зүйлийн загварын демо"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Нягтаршуулсан зүйлийн демо"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Хэсэгчилсэн зүйлийн AlphaJump-г идэвхжүүлсэн демо"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Радио товчийн хэсэг"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Асаах/унтраах хэсэг"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"2-р жагсаалт"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Жагсаалт тус бүрийн доорх дэд текст"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Төгсгөлийн зураг, Үйлдлийн демо"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Чипийн демо"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Явцын заалтын демо"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Хэсгийн толгой хэсгийн демо"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Онцлох хэсгийн демо"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Хэсгийн загварын демо"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Газрын жагсаалтын загварын демо"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Газруудыг үзэх"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Хамгийн сүүийн үеийн онцлогууд"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Ачаалахыг идэвхжүүлсэн"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Ачаалахыг идэвхгүй болгосон"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Аппын загварыг ашиглах"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Аппын загварыг идэвхжүүлсэн"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Аппын загварыг идэвхгүй болгосон"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Дэлгэцийг ачаалж байна"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Өнгө нэмж/хасах товч"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Асаах/унтраах газрын зургийн загвар"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Контентын демонуудтай газрын зураг"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Мессежийн загварын демотой газрын зураг"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Хүснэгтийн загварын демотой газрын зураг"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Хэсэгчилсэн зүйлсийн жагсаалттай газрын зураг"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Баннерын демо"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Сайжруулсан толгой хэсгийн демо"</string>
 </resources>

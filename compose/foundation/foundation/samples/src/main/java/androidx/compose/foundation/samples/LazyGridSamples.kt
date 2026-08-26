@@ -38,11 +38,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -55,6 +56,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -99,6 +101,48 @@ fun LazyVerticalGridSpanSample() {
                 Text("Item $it", Modifier.border(1.dp, Color.Blue).height(80.dp).wrapContentSize())
             }
         }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyGridCacheWindowSample() {
+    val itemsList = (0..100).toList()
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        cacheWindow = LazyLayoutCacheWindow(aheadFraction = 0.5f, behindFraction = 0.2f),
+    ) {
+        items(itemsList) { item -> Text("Item $item") }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyGridPrefetchStrategyMigrationSample() {
+    val itemsList = (0..100).toList()
+    val state = rememberLazyGridState()
+
+    // Migrating from LazyGridPrefetchStrategy (which scheduled prefetching for individual
+    // items/lines):
+    // Use LazyLayoutCacheWindow to dynamically calculate the prefetch cache window in pixels based
+    // on average item size from LazyGridState layoutInfo.
+    val customCacheWindow =
+        remember(state) {
+            object : LazyLayoutCacheWindow {
+                override fun Density.calculateAheadWindow(viewport: Int): Int {
+                    val visibleItems = state.layoutInfo.visibleItemsInfo
+                    if (visibleItems.isEmpty()) return 0
+                    val averageItemHeight =
+                        visibleItems.sumOf { it.size.height } / visibleItems.size
+                    // Prefetch 1 line ahead based on average item height
+                    return averageItemHeight
+                }
+            }
+        }
+
+    LazyVerticalGrid(columns = GridCells.Fixed(3), state = state, cacheWindow = customCacheWindow) {
+        items(itemsList) { item -> Text("Item $item") }
     }
 }
 

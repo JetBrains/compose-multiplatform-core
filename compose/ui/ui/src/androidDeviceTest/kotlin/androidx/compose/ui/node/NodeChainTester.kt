@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -382,7 +383,7 @@ private class MockOwner(
     var semanticsChanged: Boolean = false
     val invalidatedLayers = mutableListOf<OwnedLayer>()
 
-    @InternalCoreApi override var showLayoutBounds: Boolean = false
+    override var showLayoutBounds: Boolean = false
     override val snapshotObserver = OwnerSnapshotObserver { it.invoke() }
     override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
     override var measureIteration: Long = 0
@@ -441,6 +442,9 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
 
     override val windowInfo: WindowInfo
+        get() = TODO("Not yet implemented")
+
+    override val taskDispatchers: TaskDispatchers
         get() = TODO("Not yet implemented")
 
     override val fontFamilyResolver: FontFamily.Resolver

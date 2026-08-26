@@ -1,459 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.0.0-beta02" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-beta02)" variant="all" version="9.0.0-beta02">
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Field `accessibilityActionSetExtendedSelection` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                        android.R.id.accessibilityActionSetExtendedSelection, null, null, null);"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Field `UNDEFINED` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="        public static final int UNDEFINED = AccessibilityNodeInfo.CollectionInfo.UNDEFINED;"
-        errorLine2="                                                                                 ~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Field `UNDEFINED` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            private int mItemCount = AccessibilityNodeInfo.CollectionInfo.UNDEFINED;"
-        errorLine2="                                                                          ~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Field `UNDEFINED` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="                    AccessibilityNodeInfo.CollectionInfo.UNDEFINED;"
-        errorLine2="                                                         ~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `SelectionPosition()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                mPosition = new SelectionPosition(node.unwrap(), offset);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `SelectionPosition()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                mPosition = new SelectionPosition(view, offset);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `SelectionPosition()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                mPosition = new SelectionPosition(view, virtualDescendantId, offset);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getNode()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return AccessibilityNodeInfoCompat.wrap(mPosition.getNode());"
-        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getOffset()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return mPosition.getOffset();"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `hashCode()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return mPosition != null ? mPosition.hashCode() : 0;"
-        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `equals()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return mPosition != null ? mPosition.equals(other) : false;"
-        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `Selection()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                mSelection = new Selection(start.mPosition, end.mPosition);"
-        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getStart()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return new SelectionPositionCompat(mSelection.getStart());"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getEnd()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return new SelectionPositionCompat(mSelection.getEnd());"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `hashCode()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return mSelection != null ? mSelection.hashCode() : 0;"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `equals()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="                return mSelection != null ? mSelection.equals(obj) : false;"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Field `accessibilityActionSetExtendedSelection` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="            case android.R.id.accessibilityActionSetExtendedSelection:"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getItemCount()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return ((AccessibilityNodeInfo.CollectionInfo) info).getItemCount();"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getImportantForAccessibilityItemCount()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return ((AccessibilityNodeInfo.CollectionInfo) info)"
-        errorLine2="                   ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `Builder()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `build()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setColumnCount()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setHierarchical()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setImportantForAccessibilityItemCount()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setItemCount()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setRowCount()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setSelectionMode()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.collection_info_item_counts&quot;"
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getExpandedState()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_expansion_state_api&quot;"
-        errorLine1="            return info.getExpandedState();"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setExpandedState()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_expansion_state_api&quot;"
-        errorLine1="            info.setExpandedState(state);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `isFieldRequired()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_is_required_api&quot;"
-        errorLine1="            return info.isFieldRequired();"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setFieldRequired()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_is_required_api&quot;"
-        errorLine1="            info.setFieldRequired(required);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getSupplementalDescription()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.supplemental_description&quot;"
-        errorLine1="            return info.getSupplementalDescription();"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setSupplementalDescription()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.supplemental_description&quot;"
-        errorLine1="            info.setSupplementalDescription(supplementalDescription);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getChecked()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.tri_state_checked&quot;"
-        errorLine1="            return info.getChecked();"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setChecked()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.tri_state_checked&quot;"
-        errorLine1="            info.setChecked(checked);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `addLabeledBy()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.support_multiple_labeledby&quot;"
-        errorLine1="            info.addLabeledBy(root, virtualDescendantId);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getLabeledByList()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.support_multiple_labeledby&quot;"
-        errorLine1="            List&lt;AccessibilityNodeInfo> labels = info.getLabeledByList();"
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `removeLabeledBy()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.support_multiple_labeledby&quot;"
-        errorLine1="            return info.removeLabeledBy(root, virtualDescendantId);"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setSortDirection()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_sort_direction_api&quot;"
-        errorLine1="                    new AccessibilityNodeInfo.CollectionItemInfo.Builder()"
-        errorLine2="                    ^">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `getSortDirection()` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_sort_direction_api&quot;"
-        errorLine1="            return ((AccessibilityNodeInfo.CollectionItemInfo) info).getSortDirection();"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Field `ACTION_SET_EXTENDED_SELECTION` is a flagged API and must be inside a flag check for &quot;android.view.accessibility.a11y_selection_api&quot;"
-        errorLine1="            return AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_EXTENDED_SELECTION;"
-        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `setFrameContentVelocity()` is a flagged API and must be inside a flag check for &quot;android.view.flags.view_velocity_api&quot;"
-        errorLine1="                view.setFrameContentVelocity(velocity);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/widget/NestedScrollView.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `isTransitioningToPip()` is a flagged API and must be inside a flag check for &quot;android.app.enable_pip_ui_state_callback_on_entering&quot;"
-        errorLine1="                    isTransitioningToPip = uiState.isTransitioningToPip,"
-        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/app/PictureInPictureUiStateCompat.kt"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `isTransitioningToPip()` is a flagged API and must be inside a flag check for &quot;android.app.enable_pip_ui_state_callback_on_entering&quot;"
-        errorLine1="                    isTransitioningToPip = uiState.isTransitioningToPip,"
-        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/app/PictureInPictureUiStateCompat.kt"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `isTransitioningToPip()` is a flagged API and must be inside a flag check for &quot;android.app.enable_pip_ui_state_callback_on_entering&quot;"
-        errorLine1="                    isTransitioningToPip = uiState.isTransitioningToPip,"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/app/PictureInPictureUiStateCompat.kt"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `isTransitioningToPip()` is a flagged API and must be inside a flag check for &quot;android.app.enable_pip_ui_state_callback_on_entering&quot;"
-        errorLine1="                    isTransitioningToPip = uiState.isTransitioningToPip,"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/app/PictureInPictureUiStateCompat.kt"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `createProvider()` is a flagged API and must be inside a flag check for &quot;android.view.flags.scroll_feedback_api&quot;"
-        errorLine1="            mProvider = ScrollFeedbackProvider.createProvider(view);"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `onSnapToItem()` is a flagged API and must be inside a flag check for &quot;android.view.flags.scroll_feedback_api&quot;"
-        errorLine1="            mProvider.onSnapToItem(inputDeviceId, source, axis);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `onScrollLimit()` is a flagged API and must be inside a flag check for &quot;android.view.flags.scroll_feedback_api&quot;"
-        errorLine1="            mProvider.onScrollLimit(inputDeviceId, source, axis, isStart);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
-        id="AndroidXFlaggedApi"
-        message="Method `onScrollProgress()` is a flagged API and must be inside a flag check for &quot;android.view.flags.scroll_feedback_api&quot;"
-        errorLine1="            mProvider.onScrollProgress(inputDeviceId, source, axis, deltaInPixels);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
+<issues format="6" by="lint 9.4.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.0-alpha05)" variant="all" version="9.4.0-alpha05">
 
     <issue
         id="NewApi"
-        message="`&lt;androidx.core.app.CoreComponentFactory>` requires API level 28 (current min is 23)"
+        message="`&lt;androidx.core.app.CoreComponentFactory>` requires API level 28 (current min is 24)"
         errorLine1="    &lt;application"
         errorLine2="    ^">
         <location
@@ -462,61 +12,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 24, or core library desugaring (current min is 23): `java.util.Optional#of`"
-        errorLine1="                return Optional.of(modeCompat);"
-        errorLine2="                                ~~">
-        <location
-            file="src/test/java/androidx/core/view/DisplayCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24, or core library desugaring (current min is 23): `java.util.Optional#empty`"
-        errorLine1="        return Optional.empty();"
-        errorLine2="                        ~~~~~">
-        <location
-            file="src/test/java/androidx/core/view/DisplayCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24, or core library desugaring (current min is 23): `java.util.Optional#get`"
-        errorLine1="                findNativeMode(DisplayCompat.getSupportedModes(mContext, mDefaultDisplay)).get();"
-        errorLine2="                                                                                           ~~~">
-        <location
-            file="src/test/java/androidx/core/view/DisplayCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24, or core library desugaring (current min is 23): `java.util.Optional#get`"
-        errorLine1="                findNativeMode(DisplayCompat.getSupportedModes(mContext, secondDisplay)).get();"
-        errorLine2="                                                                                         ~~~">
-        <location
-            file="src/test/java/androidx/core/view/DisplayCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24, or core library desugaring (current min is 23): `java.util.Optional#get`"
-        errorLine1="                findNativeMode(DisplayCompat.getSupportedModes(mContext, mDefaultDisplay)).get();"
-        errorLine2="                                                                                           ~~~">
-        <location
-            file="src/test/java/androidx/core/view/DisplayCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24, or core library desugaring (current min is 23): `java.util.Optional#get`"
-        errorLine1="                findNativeMode(DisplayCompat.getSupportedModes(mContext, mDefaultDisplay)).get();"
-        errorLine2="                                                                                           ~~~">
-        <location
-            file="src/test/java/androidx/core/view/DisplayCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getImportance`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getImportance`"
         errorLine1="            boolean equality = nc1.getImportance() == nc2.getImportance()"
         errorLine2="                                   ~~~~~~~~~~~~~">
         <location
@@ -525,7 +21,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getImportance`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getImportance`"
         errorLine1="            boolean equality = nc1.getImportance() == nc2.getImportance()"
         errorLine2="                                                          ~~~~~~~~~~~~~">
         <location
@@ -534,7 +30,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#canBypassDnd`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#canBypassDnd`"
         errorLine1="                    &amp;&amp; nc1.canBypassDnd() == nc2.canBypassDnd()"
         errorLine2="                           ~~~~~~~~~~~~">
         <location
@@ -543,7 +39,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#canBypassDnd`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#canBypassDnd`"
         errorLine1="                    &amp;&amp; nc1.canBypassDnd() == nc2.canBypassDnd()"
         errorLine2="                                                 ~~~~~~~~~~~~">
         <location
@@ -552,7 +48,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getLockscreenVisibility`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getLockscreenVisibility`"
         errorLine1="                    &amp;&amp; nc1.getLockscreenVisibility() == nc2.getLockscreenVisibility()"
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -561,7 +57,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getLockscreenVisibility`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getLockscreenVisibility`"
         errorLine1="                    &amp;&amp; nc1.getLockscreenVisibility() == nc2.getLockscreenVisibility()"
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -570,7 +66,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getLightColor`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getLightColor`"
         errorLine1="                    &amp;&amp; nc1.getLightColor() == nc2.getLightColor()"
         errorLine2="                           ~~~~~~~~~~~~~">
         <location
@@ -579,7 +75,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getLightColor`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getLightColor`"
         errorLine1="                    &amp;&amp; nc1.getLightColor() == nc2.getLightColor()"
         errorLine2="                                                  ~~~~~~~~~~~~~">
         <location
@@ -588,7 +84,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getId`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getId`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getId(), nc2.getId())"
         errorLine2="                                          ~~~~~">
         <location
@@ -597,7 +93,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getId`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getId`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getId(), nc2.getId())"
         errorLine2="                                                       ~~~~~">
         <location
@@ -606,7 +102,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getName`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getName`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getName(), nc2.getName())"
         errorLine2="                                          ~~~~~~~">
         <location
@@ -615,7 +111,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getName`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getName`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getName(), nc2.getName())"
         errorLine2="                                                         ~~~~~~~">
         <location
@@ -624,7 +120,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getDescription`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getDescription`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getDescription(), nc2.getDescription())"
         errorLine2="                                          ~~~~~~~~~~~~~~">
         <location
@@ -633,7 +129,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getDescription`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getDescription`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getDescription(), nc2.getDescription())"
         errorLine2="                                                                ~~~~~~~~~~~~~~">
         <location
@@ -642,7 +138,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getSound`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getSound`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getSound(), nc2.getSound())"
         errorLine2="                                          ~~~~~~~~">
         <location
@@ -651,7 +147,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getSound`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getSound`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getSound(), nc2.getSound())"
         errorLine2="                                                          ~~~~~~~~">
         <location
@@ -660,7 +156,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getVibrationPattern`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getVibrationPattern`"
         errorLine1="                    &amp;&amp; Arrays.equals(nc1.getVibrationPattern(), nc2.getVibrationPattern())"
         errorLine2="                                         ~~~~~~~~~~~~~~~~~~~">
         <location
@@ -669,7 +165,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getVibrationPattern`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getVibrationPattern`"
         errorLine1="                    &amp;&amp; Arrays.equals(nc1.getVibrationPattern(), nc2.getVibrationPattern())"
         errorLine2="                                                                    ~~~~~~~~~~~~~~~~~~~">
         <location
@@ -678,7 +174,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getGroup`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getGroup`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getGroup(), nc2.getGroup())"
         errorLine2="                                          ~~~~~~~~">
         <location
@@ -687,7 +183,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getGroup`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getGroup`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getGroup(), nc2.getGroup())"
         errorLine2="                                                          ~~~~~~~~">
         <location
@@ -696,7 +192,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getAudioAttributes`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getAudioAttributes`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getAudioAttributes(), nc2.getAudioAttributes());"
         errorLine2="                                          ~~~~~~~~~~~~~~~~~~">
         <location
@@ -705,7 +201,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getAudioAttributes`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getAudioAttributes`"
         errorLine1="                    &amp;&amp; Objects.equals(nc1.getAudioAttributes(), nc2.getAudioAttributes());"
         errorLine2="                                                                    ~~~~~~~~~~~~~~~~~~">
         <location
@@ -714,7 +210,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getImportance`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getImportance`"
         errorLine1="            assertEquals(expected.getImportance(), actual.getImportance());"
         errorLine2="                                  ~~~~~~~~~~~~~">
         <location
@@ -723,7 +219,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getLightColor`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getLightColor`"
         errorLine1="            assertEquals(expected.getLightColor(), actual.getLightColor());"
         errorLine2="                                  ~~~~~~~~~~~~~">
         <location
@@ -732,7 +228,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getId`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getId`"
         errorLine1="            assertEquals(expected.getId(), actual.getId());"
         errorLine2="                                  ~~~~~">
         <location
@@ -741,7 +237,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getName`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getName`"
         errorLine1="            assertEquals(expected.getName(), actual.getName());"
         errorLine2="                                  ~~~~~~~">
         <location
@@ -750,7 +246,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getDescription`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getDescription`"
         errorLine1="            assertEquals(expected.getDescription(), actual.getDescription());"
         errorLine2="                                  ~~~~~~~~~~~~~~">
         <location
@@ -759,7 +255,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getSound`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getSound`"
         errorLine1="            assertEquals(expected.getSound(), actual.getSound());"
         errorLine2="                                  ~~~~~~~~">
         <location
@@ -768,7 +264,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getVibrationPattern`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getVibrationPattern`"
         errorLine1="            assertArrayEquals(expected.getVibrationPattern(), actual.getVibrationPattern());"
         errorLine2="                                       ~~~~~~~~~~~~~~~~~~~">
         <location
@@ -777,7 +273,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getGroup`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getGroup`"
         errorLine1="            assertEquals(expected.getGroup(), actual.getGroup());"
         errorLine2="                                  ~~~~~~~~">
         <location
@@ -786,7 +282,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannel#getAudioAttributes`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannel#getAudioAttributes`"
         errorLine1="            assertEquals(expected.getAudioAttributes(), actual.getAudioAttributes());"
         errorLine2="                                  ~~~~~~~~~~~~~~~~~~">
         <location
@@ -795,7 +291,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannelGroup#getId`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannelGroup#getId`"
         errorLine1="            assertEquals(expected.getId(), actual.getId());"
         errorLine2="                                  ~~~~~">
         <location
@@ -804,7 +300,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 23): `android.app.NotificationChannelGroup#getName`"
+        message="Call requires API level 26 (current min is 24): `android.app.NotificationChannelGroup#getName`"
         errorLine1="            assertEquals(expected.getName(), actual.getName());"
         errorLine2="                                  ~~~~~~~">
         <location
@@ -813,7 +309,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 28 (current min is 23): `android.graphics.drawable.Icon#getType`"
+        message="Call requires API level 28 (current min is 24): `android.graphics.drawable.Icon#getType`"
         errorLine1="        assertEquals(Icon.TYPE_BITMAP, ((Icon) firstBuiltIcon).getType());"
         errorLine2="                                                               ~~~~~~~">
         <location
@@ -822,7 +318,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 28 (current min is 23): `android.graphics.drawable.Icon#getType`"
+        message="Call requires API level 28 (current min is 24): `android.graphics.drawable.Icon#getType`"
         errorLine1="        assertEquals(Icon.TYPE_BITMAP, ((Icon) rebuiltIcon).getType());"
         errorLine2="                                                            ~~~~~~~">
         <location
@@ -831,7 +327,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 28 (current min is 23): `android.graphics.drawable.Icon#getType`"
+        message="Call requires API level 28 (current min is 24): `android.graphics.drawable.Icon#getType`"
         errorLine1="        assertEquals(Icon.TYPE_RESOURCE, firstBuiltIcon.getType());"
         errorLine2="                                                        ~~~~~~~">
         <location
@@ -840,7 +336,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 28 (current min is 23): `android.graphics.drawable.Icon#getType`"
+        message="Call requires API level 28 (current min is 24): `android.graphics.drawable.Icon#getType`"
         errorLine1="        assertEquals(Icon.TYPE_RESOURCE, rebuiltIcon.getType());"
         errorLine2="                                                     ~~~~~~~">
         <location
@@ -849,16 +345,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 30 (current min is 23): `Builder`"
-        errorLine1="                new NotificationCompat.BubbleMetadata.Builder(shortcutId)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/core/app/NotificationCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 25 (current min is 23): `toShortcutInfo`"
+        message="Call requires API level 25 (current min is 24): `toShortcutInfo`"
         errorLine1="                .toShortcutInfo());"
         errorLine2="                 ~~~~~~~~~~~~~~">
         <location
@@ -867,7 +354,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 25 (current min is 23): `toShortcutInfo`"
+        message="Call requires API level 25 (current min is 24): `toShortcutInfo`"
         errorLine1="                .toShortcutInfo());"
         errorLine2="                 ~~~~~~~~~~~~~~">
         <location
@@ -876,7 +363,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 25 (current min is 23): `toShortcutInfo`"
+        message="Call requires API level 25 (current min is 24): `toShortcutInfo`"
         errorLine1="                .toShortcutInfo());"
         errorLine2="                 ~~~~~~~~~~~~~~">
         <location
@@ -885,7 +372,7 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 25 (current min is 23): `toShortcutInfo`"
+        message="Call requires API level 25 (current min is 24): `toShortcutInfo`"
         errorLine1="                .toShortcutInfo());"
         errorLine2="                 ~~~~~~~~~~~~~~">
         <location
@@ -894,38 +381,11 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 25 (current min is 23): `toShortcutInfo`"
+        message="Call requires API level 25 (current min is 24): `toShortcutInfo`"
         errorLine1="                .toShortcutInfo());"
         errorLine2="                 ~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/java/androidx/core/content/pm/ShortcutManagerCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24 (current min is 23): `android.telephony.SubscriptionManager#getDefaultSubscriptionId`"
-        errorLine1="                assertEquals(getDefaultSubscriptionId(), actual);"
-        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/core/telephony/TelephonyManagerCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 24 (current min is 23): `android.telephony.SubscriptionManager#getDefaultSubscriptionId`"
-        errorLine1="                assertEquals(expected, getDefaultSubscriptionId());"
-        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/androidx/core/telephony/TelephonyManagerCompatTest.java"/>
-    </issue>
-
-    <issue
-        id="Range"
-        message="Value must be ≥ 1 and ≤ 200 but `getSvid` can be 206"
-        errorLine1="        return mWrapped.getSvid(satelliteIndex);"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/location/GnssStatusWrapper.java"/>
     </issue>
 
     <issue
@@ -1217,501 +677,6 @@
     </issue>
 
     <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                mPosition = new SelectionPosition(node.unwrap(), offset);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                mPosition = new SelectionPosition(view, offset);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                mPosition = new SelectionPosition(view, virtualDescendantId, offset);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return AccessibilityNodeInfoCompat.wrap(mPosition.getNode());"
-        errorLine2="                                                                  ~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return mPosition.getOffset();"
-        errorLine2="                                 ~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return mPosition != null ? mPosition.hashCode() : 0;"
-        errorLine2="                                                     ~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return mPosition != null ? mPosition.equals(other) : false;"
-        errorLine2="                                                     ~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                mSelection = new Selection(start.mPosition, end.mPosition);"
-        errorLine2="                             ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return new SelectionPositionCompat(mSelection.getStart());"
-        errorLine2="                                                              ~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return new SelectionPositionCompat(mSelection.getEnd());"
-        errorLine2="                                                              ~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return mSelection != null ? mSelection.hashCode() : 0;"
-        errorLine2="                                                       ~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_selection_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                return mSelection != null ? mSelection.equals(obj) : false;"
-        errorLine2="                                                       ~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.tri_state_checked&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        return mInfo.isChecked();"
-        errorLine2="                     ~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.tri_state_checked&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        mInfo.setChecked(checked);"
-        errorLine2="              ~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.tri_state_checked&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    mInfo.isChecked() ? CHECKED_STATE_TRUE"
-        errorLine2="                          ~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.tri_state_checked&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            mInfo.setChecked(checked == CHECKED_STATE_TRUE);"
-        errorLine2="                  ~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.deprecate_ani_label_for_apis&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        mInfo.setLabelFor(labeled);"
-        errorLine2="              ~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.deprecate_ani_label_for_apis&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        mInfo.setLabelFor(root, virtualDescendantId);"
-        errorLine2="              ~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.deprecate_ani_label_for_apis&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getLabelFor());"
-        errorLine2="                                                                     ~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.support_multiple_labeledby&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        mInfo.setLabeledBy(label);"
-        errorLine2="              ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.support_multiple_labeledby&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        mInfo.setLabeledBy(root, virtualDescendantId);"
-        errorLine2="              ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.support_multiple_labeledby&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="        return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getLabeledBy());"
-        errorLine2="                                                                     ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return ((AccessibilityNodeInfo.CollectionInfo) info).getItemCount();"
-        errorLine2="                                                                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .getImportantForAccessibilityItemCount();"
-        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return new CollectionInfoCompat(new AccessibilityNodeInfo.CollectionInfo.Builder()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .setRowCount(rowCount)"
-        errorLine2="                     ~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .setColumnCount(columnCount)"
-        errorLine2="                     ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .setHierarchical(hierarchical)"
-        errorLine2="                     ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .setSelectionMode(selectionMode)"
-        errorLine2="                     ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .setItemCount(itemCount)"
-        errorLine2="                     ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .setImportantForAccessibilityItemCount(importantForAccessibilityItemCount)"
-        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.collection_info_item_counts&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    .build());"
-        errorLine2="                     ~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_expansion_state_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return info.getExpandedState();"
-        errorLine2="                        ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_expansion_state_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            info.setExpandedState(state);"
-        errorLine2="                 ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_is_required_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return info.isFieldRequired();"
-        errorLine2="                        ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_is_required_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            info.setFieldRequired(required);"
-        errorLine2="                 ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.supplemental_description&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return info.getSupplementalDescription();"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.supplemental_description&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            info.setSupplementalDescription(supplementalDescription);"
-        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.tri_state_checked&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return info.getChecked();"
-        errorLine2="                        ~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.tri_state_checked&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            info.setChecked(checked);"
-        errorLine2="                 ~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.support_multiple_labeledby&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            info.addLabeledBy(root, virtualDescendantId);"
-        errorLine2="                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.support_multiple_labeledby&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            List&lt;AccessibilityNodeInfo> labels = info.getLabeledByList();"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.support_multiple_labeledby&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return info.removeLabeledBy(root, virtualDescendantId);"
-        errorLine2="                        ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_sort_direction_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36MinorImpl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                            .setSortDirection(sortDirection)"
-        errorLine2="                             ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.accessibility.a11y_sort_direction_api&quot;; however, the containing class androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Api36MinorImpl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            return ((AccessibilityNodeInfo.CollectionItemInfo) info).getSortDirection();"
-        errorLine2="                                                                     ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.flags.view_velocity_api&quot;; however, the containing class androidx.core.widget.NestedScrollView.Api35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                view.setFrameContentVelocity(velocity);"
-        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/widget/NestedScrollView.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.app.enable_pip_ui_state_callback_on_entering&quot;; however, the containing class androidx.core.app.PictureInPictureUiStateCompat is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    isTransitioningToPip = uiState.isTransitioningToPip,"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/app/PictureInPictureUiStateCompat.kt"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.app.enable_pip_ui_state_callback_on_entering&quot;; however, the containing class androidx.core.app.PictureInPictureUiStateCompat.Companion is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                    isTransitioningToPip = uiState.isTransitioningToPip,"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/app/PictureInPictureUiStateCompat.kt"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;com.android.text.flags.deprecate_elegant_text_height_api&quot;; however, the containing class androidx.core.text.PrecomputedTextCompat.Params is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                        mPaint.getTextLocales(), mPaint.getTypeface(), mPaint.isElegantTextHeight(),"
-        errorLine2="                                                                              ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/text/PrecomputedTextCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;com.android.text.flags.deprecate_elegant_text_height_api&quot;; however, the containing class androidx.core.text.PrecomputedTextCompat.Params is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                        mPaint.getTextLocale(), mPaint.getTypeface(), mPaint.isElegantTextHeight(),"
-        errorLine2="                                                                             ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/text/PrecomputedTextCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;com.android.text.flags.deprecate_elegant_text_height_api&quot;; however, the containing class androidx.core.text.PrecomputedTextCompat.Params is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            sb.append(&quot;, elegantTextHeight=&quot; + mPaint.isElegantTextHeight());"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/text/PrecomputedTextCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.flags.scroll_feedback_api&quot;; however, the containing class androidx.core.view.ScrollFeedbackProviderCompat.ScrollFeedbackProviderApi35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            mProvider = ScrollFeedbackProvider.createProvider(view);"
-        errorLine2="                                               ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.flags.scroll_feedback_api&quot;; however, the containing class androidx.core.view.ScrollFeedbackProviderCompat.ScrollFeedbackProviderApi35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            mProvider.onSnapToItem(inputDeviceId, source, axis);"
-        errorLine2="                      ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.flags.scroll_feedback_api&quot;; however, the containing class androidx.core.view.ScrollFeedbackProviderCompat.ScrollFeedbackProviderApi35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            mProvider.onScrollLimit(inputDeviceId, source, axis, isStart);"
-        errorLine2="                      ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method guarded by Trunk Stable flag &quot;android.view.flags.scroll_feedback_api&quot;; however, the containing class androidx.core.view.ScrollFeedbackProviderCompat.ScrollFeedbackProviderApi35Impl is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            mProvider.onScrollProgress(inputDeviceId, source, axis, deltaInPixels);"
-        errorLine2="                      ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/core/view/ScrollFeedbackProviderCompat.java"/>
-    </issue>
-
-    <issue
         id="PrivateConstructorForUtilityClass"
         message="Utility class is missing private constructor"
         errorLine1="public class NotificationCompat {"
@@ -1722,11 +687,1235 @@
 
     <issue
         id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 24"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityWindowInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityWindowInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/accessibility/AccessibilityWindowInfoCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="            if (Build.VERSION.SDK_INT &lt; 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/ActivityOptionsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="            if (Build.VERSION.SDK_INT &lt; 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/ActivityOptionsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    public fun isAtLeastN(): Boolean = Build.VERSION.SDK_INT >= 24"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/BuildCompat.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/ConfigurationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/ConfigurationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/ConfigurationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/net/ConnectivityManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/net/ConnectivityManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/content/ContextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/content/ContextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/content/ContextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/content/ContextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="        if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.N) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/provider/DocumentsContractCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/provider/DocumentsContractCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/provider/DocumentsContractCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/DragAndDropPermissionsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/DragAndDropPermissionsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/DragAndDropPermissionsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="            if (Build.VERSION.SDK_INT &lt; 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/provider/FontProvider.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/provider/FontProvider.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/FrameMetricsAggregator.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/FrameMetricsAggregator.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(VERSION_CODES.N)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/GnssStatusCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/GnssStatusWrapper.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="        if (VERSION.SDK_INT &lt; VERSION_CODES.N) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/GpsStatusWrapper.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="        if (VERSION.SDK_INT &lt; VERSION_CODES.N) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/GpsStatusWrapper.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/HtmlCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/HtmlCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/HtmlCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/HtmlCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is never &lt; 24"
+        errorLine1="        if (Build.VERSION.SDK_INT &lt; 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/ICUCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/ICUCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/ICUCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LinkifyCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/LocaleListPlatformWrapper.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/LocaleManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/LocaleManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LocalePreferences.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LocalePreferences.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= VERSION_CODES.N) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LocalePreferences.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LocalePreferences.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LocalePreferences.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(VERSION_CODES.N)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/util/LocalePreferences.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(VERSION_CODES.N)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(VERSION_CODES.N)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(VERSION_CODES.N)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `VERSION.SDK_INT >= 24` is always true here (`SDK_INT` ≥ 24 and &lt; 30)"
+        errorLine1="        } else if (VERSION.SDK_INT >= 24) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
         message="Unnecessary; `SDK_INT` is always >= 30"
         errorLine1="            if (VERSION.SDK_INT >= 30) { // Satisfy reflection lint check"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NavUtils.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `Build.VERSION.SDK_INT >= 24` is always true here (`SDK_INT` ≥ 24 and &lt; 29)"
+        errorLine1="        } else if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NavUtils.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                    if (mBuilder.mChronometerCountDown &amp;&amp; Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            @RequiresApi(24)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            @RequiresApi(24)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            @RequiresApi(24)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        @RequiresApi(24)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompatBuilder.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompatBuilder.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `Build.VERSION.SDK_INT >= 24` is always true here (`SDK_INT` ≥ 24 and &lt; 26)"
+        errorLine1="        } else if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompatBuilder.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompatBuilder.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@file:RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/util/PlatformConsumer.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/util/PlatformConsumer.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/util/PlatformConsumer.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/PointerIconCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/PointerIconCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/PointerIconCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/PointerIconCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/PrecomputedTextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/PrecomputedTextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/text/PrecomputedTextCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/ProcessCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/ProcessCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/ServiceCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/ServiceCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/TextViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/TextViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/TextViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/TextViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/TextViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT >= 24` is always true here (`SDK_INT` ≥ 24 and &lt; 34)"
+        errorLine1="        } else if (SDK_INT >= 24) {"
+        errorLine2="                   ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/service/quicksettings/TileServiceCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/service/quicksettings/TileServiceCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/net/TrafficStatsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/net/TrafficStatsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/net/TrafficStatsCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `Build.VERSION.SDK_INT >= Build.VERSION_CODES.N` is always true here (`SDK_INT` ≥ 24 and &lt; 26)"
+        errorLine1="        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/graphics/TypefaceCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="@RequiresApi(24)"
+        errorLine2="~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/graphics/TypefaceCompatApi24Impl.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/UserHandleCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/UserHandleCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/UserManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/os/UserManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="        if (Build.VERSION.SDK_INT >= 24) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="    @RequiresApi(24)"
+        errorLine2="    ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ViewCompat.java"/>
     </issue>
 
     <issue
@@ -1819,6 +2008,18 @@
             file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"/>
         <location
             file="src/main/java/androidx/core/view/accessibility/AccessibilityNodeInfoCompat.java"
+            message="Setter here"/>
+    </issue>
+
+    <issue
+        id="KotlinPropertyAccess"
+        message="The getter return type (`Metric`) and setter parameter type (`int`) getter and setter methods for property `criticalMetric` should have exactly the same type to allow be accessed as a property from Kotlin; see https://android.github.io/kotlin-guides/interop.html#property-prefixes"
+        errorLine1="        public Metric getCriticalMetric() {"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
             message="Setter here"/>
     </issue>
 
@@ -3131,6 +3332,15 @@
         id="UnknownNullness"
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
         errorLine1="        public void apply(NotificationBuilderWithBuilderAccessor builderAccessor) {"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="        public void apply(NotificationBuilderWithBuilderAccessor builder) {"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/core/app/NotificationCompat.java"/>

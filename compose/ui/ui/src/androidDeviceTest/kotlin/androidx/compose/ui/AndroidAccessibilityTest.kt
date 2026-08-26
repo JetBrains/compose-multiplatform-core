@@ -40,6 +40,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityManager
+import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_RENDERING_INFO_KEY
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
@@ -128,6 +129,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.AndroidComposeView
@@ -243,7 +245,6 @@ import java.util.Date
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.After
 import org.junit.Assume
@@ -268,7 +269,7 @@ import org.mockito.kotlin.verify
 @OptIn(ExperimentalMaterialApi::class)
 @RunWith(AndroidJUnit4::class)
 class AndroidAccessibilityTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val accessibilityEventLoopIntervalMs = 100L
     private lateinit var androidComposeView: AndroidComposeView
@@ -742,12 +743,19 @@ class AndroidAccessibilityTest {
                         AccessibilityActionCompat(ACTION_FOCUS, null),
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
-                if (Build.VERSION.SDK_INT >= 26) {
+
+                if (Build.VERSION.SDK_INT >= 37) {
                     assertThat(availableExtraData)
                         .containsExactly(
                             "androidx.compose.ui.semantics.id",
-                            // TODO(b/272068594): This looks like a bug. This should be
-                            //  AccessibilityNodeInfoCompat.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
+                            "androidx.compose.ui.semantics.testTag",
+                            EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+                            EXTRA_DATA_RENDERING_INFO_KEY,
+                        )
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    assertThat(availableExtraData)
+                        .containsExactly(
+                            "androidx.compose.ui.semantics.id",
                             EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                             "androidx.compose.ui.semantics.testTag",
                         )
@@ -2216,8 +2224,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder)
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val lastButtonId = rule.onNodeWithText(lastButtonText).semanticsId()
@@ -2314,8 +2322,8 @@ class AndroidAccessibilityTest {
         val colSemanticsNode =
             rule.onNodeWithTag(columnTag).fetchSemanticsNode("can't find node with tag $columnTag")
         val viewHolder =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                    colSemanticsNode.replacedChildren[1].layoutNode]
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder) // Check that the View exists
         val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
         val thirdButtonId = rule.onNodeWithText(thirdButtonText).semanticsId()
@@ -2781,8 +2789,9 @@ class AndroidAccessibilityTest {
         assertThat(data!!.size).isEqualTo(1)
 
         val rectF = data[0] as RectF // result in screen coordinates
+        val innerCoordinatorPosition = textFieldNode.layoutNode.innerCoordinator.positionInRoot()
         val expectedRectInLocalCoords =
-            textLayoutResult.getBoundingBox(0).translate(textFieldNode.positionInWindow)
+            textLayoutResult.getBoundingBox(0).translate(innerCoordinatorPosition)
         val expectedTopLeftInScreenCoords =
             androidComposeView.localToScreen(expectedRectInLocalCoords.topLeft)
         assertThat(rectF.left).isEqualTo(expectedTopLeftInScreenCoords.x)
@@ -2793,6 +2802,48 @@ class AndroidAccessibilityTest {
         val testTagKey = "androidx.compose.ui.semantics.testTag"
         provider.addExtraDataToAccessibilityNodeInfo(textFieldNode.id, info, testTagKey, argument)
         assertThat(info.extras.getCharSequence(testTagKey)).isEqualTo(tag)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Suppress("DEPRECATION")
+    fun testCharacterLocations_withSemanticsBeforePadding_reportsCorrectBoundingBoxes() {
+        val padding = 24
+        setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                // An outer semantics modifier before padding can cause getBoundingBoxes
+                // to use the wrong position if it picks this coordinator over the inner
+                // text layout coordinator. This is the scenario being regression-tested.
+                BasicText(
+                    text = "text",
+                    modifier = Modifier.semantics {}.padding(padding.dp).testTag(tag),
+                )
+            }
+        }
+        val textNode =
+            rule.onNodeWithTag(tag).fetchSemanticsNode("couldn't find node with tag $tag")
+        val info = AccessibilityNodeInfoCompat.obtain()
+        val argument =
+            Bundle().apply {
+                putInt(EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX, 0)
+                putInt(EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH, 1)
+            }
+
+        provider.addExtraDataToAccessibilityNodeInfo(
+            textNode.id,
+            info,
+            EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
+            argument,
+        )
+
+        val data = info.extras.getParcelableArray(EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY)
+        assertThat(data!!.size).isEqualTo(1)
+
+        val rectF = data[0] as RectF
+        val viewPosition = intArrayOf(0, 0)
+        androidComposeView.getLocationOnScreen(viewPosition)
+        assertThat(rectF.left).isEqualTo(viewPosition[0].toFloat() + padding)
+        assertThat(rectF.top).isEqualTo(viewPosition[1].toFloat() + padding)
     }
 
     @Test
@@ -4268,8 +4319,9 @@ class AndroidAccessibilityTest {
         val androidView =
             rule.onNodeWithTag(tag).fetchSemanticsNode("can't find node with tag $tag")
         val viewGroup =
-            androidComposeView.androidViewsHandler.layoutNodeToHolder[androidView.layoutNode]!!.view
-                as ViewGroup
+            androidComposeView.androidViewsHandler
+                ?.layoutNodeToHolder[androidView.layoutNode]!!
+                .view as ViewGroup
         val getAccessibilityViewIdMethod =
             View::class.java.getDeclaredMethod("getAccessibilityViewId")
         getAccessibilityViewIdMethod.isAccessible = true
@@ -4305,8 +4357,8 @@ class AndroidAccessibilityTest {
         // Act.
         val buttonHolder =
             rule.runOnIdle {
-                androidComposeView.androidViewsHandler.layoutNodeToHolder[
-                        colSemanticsNode.replacedChildren[0].layoutNode]
+                androidComposeView.androidViewsHandler
+                    ?.layoutNodeToHolder[colSemanticsNode.replacedChildren[0].layoutNode]
             }
         checkNotNull(buttonHolder)
 
@@ -4377,6 +4429,47 @@ class AndroidAccessibilityTest {
                     eq(androidComposeView),
                     argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_EXIT }),
                 )
+        }
+    }
+
+    @Test
+    fun dispatchHoverEvent_returnsTrueForHandledAndFalseForUnhandled() {
+        val hoverableBoxTag = "hoverable"
+        val unhoverableBoxTag = "unhoverable"
+
+        setContent {
+            Column {
+                Box(
+                    Modifier.testTag(hoverableBoxTag).size(100.dp).semantics {
+                        contentDescription = "Hoverable Box"
+                    }
+                )
+                Box(Modifier.testTag(unhoverableBoxTag).size(100.dp))
+            }
+        }
+
+        val hoverableBounds =
+            with(rule.density) { rule.onNodeWithTag(hoverableBoxTag).getBoundsInRoot().toRect() }
+        rule.runOnUiThread {
+            val hoverEnter =
+                createHoverMotionEvent(
+                    action = ACTION_HOVER_ENTER,
+                    x = (hoverableBounds.left + hoverableBounds.right) / 2f,
+                    y = (hoverableBounds.top + hoverableBounds.bottom) / 2f,
+                )
+            assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isTrue()
+        }
+
+        val unhoverableBounds =
+            with(rule.density) { rule.onNodeWithTag(unhoverableBoxTag).getBoundsInRoot().toRect() }
+        rule.runOnUiThread {
+            val hoverEnter =
+                createHoverMotionEvent(
+                    action = ACTION_HOVER_ENTER,
+                    x = (unhoverableBounds.left + unhoverableBounds.right) / 2f,
+                    y = (unhoverableBounds.top + unhoverableBounds.bottom) / 2f,
+                )
+            assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isFalse()
         }
     }
 

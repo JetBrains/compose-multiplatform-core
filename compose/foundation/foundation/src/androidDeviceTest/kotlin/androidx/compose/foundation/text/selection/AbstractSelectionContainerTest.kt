@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,17 +53,15 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.mockito.kotlin.mock
 
 internal abstract class AbstractSelectionContainerTest {
-    @get:Rule
-    val rule = createComposeRule(StandardTestDispatcher()).also { it.mainClock.autoAdvance = false }
+    @get:Rule val rule = createComposeRule().also { it.mainClock.autoAdvance = false }
 
     protected val textContent = "Text Demo Text"
     protected val fontFamily = TEST_FONT_FAMILY
-    protected val selection = mutableStateOf<Selection?>(null)
+    protected val state = SelectionState()
     protected val fontSize = 20.sp
     protected val log = PointerInputChangeLog()
 
@@ -103,10 +100,29 @@ internal abstract class AbstractSelectionContainerTest {
                 LocalLayoutDirection provides layoutDirection,
             ) {
                 TestParent(Modifier.testTag("selectionContainer").gestureSpy(log)) {
-                    SelectionContainer(
-                        selection = selection.value,
-                        onSelectionChange = { selection.value = it },
-                    ) {
+                    SelectionContainer(state = state) {
+                        content?.invoke() ?: TestText(textContent, Modifier.fillMaxSize())
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+    }
+
+    protected fun createSelectionContainerWithState(
+        state: SelectionState,
+        isRtl: Boolean = false,
+        content: (@Composable () -> Unit)? = null,
+    ) {
+        val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+        rule.setContent {
+            CompositionLocalProvider(
+                LocalHapticFeedback provides hapticFeedback,
+                LocalLayoutDirection provides layoutDirection,
+            ) {
+                TestParent(Modifier.testTag("selectionContainer").gestureSpy(log)) {
+                    SelectionContainer(state = state) {
                         content?.invoke() ?: TestText(textContent, Modifier.fillMaxSize())
                     }
                 }

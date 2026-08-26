@@ -28,15 +28,15 @@ class StandardGrid extends Grid {
     Object[] mTmpItems;
     private int[] mTmpItemsSize;
 
-    SpanSizeLookup mSpanSizeLookup;
+    LeanbackSpanSizeLookup mSpanSizeLookup;
 
     StandardGrid() {
         setNumRows(1);
     }
 
-    void setSpanSizeLookup(SpanSizeLookup spanSizeLookup) {
+    void setSpanSizeLookup(LeanbackSpanSizeLookup spanSizeLookup) {
         if (spanSizeLookup != null
-                && !(spanSizeLookup instanceof SpanSizeLookup.DefaultSpanSizeLookup)) {
+                && !(spanSizeLookup instanceof LeanbackSpanSizeLookup.DefaultSpanSizeLookup)) {
             mSpanSizeLookup = spanSizeLookup;
             mSearchFocusInNextSpanGroup = true;
         } else {
@@ -49,7 +49,8 @@ class StandardGrid extends Grid {
     public void resetVisibleIndex() {
         super.resetVisibleIndex();
         if (mSpanSizeLookup != null) {
-            mSpanSizeLookup.clearCache();
+            mSpanSizeLookup.invalidateSpanIndexCache();
+            mSpanSizeLookup.invalidateSpanGroupIndexCache();
         }
     }
 
@@ -374,6 +375,32 @@ class StandardGrid extends Grid {
         } else {
             return mProvider.getCount() - 1;
         }
+    }
+
+    @Override
+    public int getNextPositionOfSameSpan(int focusPosition, int count, int spanGroupIndexDelta) {
+        if (spanGroupIndexDelta == 0) {
+            return focusPosition;
+        }
+        // spanGroupIndexDelta is positive or negative
+        boolean searchBackward = (mReversedFlow && spanGroupIndexDelta > 0)
+                || (!mReversedFlow && spanGroupIndexDelta < 0);
+        int searchIncremental = searchBackward ? -1 : 1;
+        int position = focusPosition;
+        int spanIndex = getSpanIndex(position);
+        int groupIndex = getSpanGroupIndex(position);
+        int targetGroupIndex = mReversedFlow ? groupIndex - spanGroupIndexDelta
+                : groupIndex + spanGroupIndexDelta;
+        for (;
+                searchBackward ? position < count : position >= 0;
+                position += searchIncremental) {
+            if (getSpanIndex(position) == spanIndex) {
+                if (getSpanGroupIndex(position) == targetGroupIndex) {
+                    break;
+                }
+            }
+        }
+        return position;
     }
 
     @Override

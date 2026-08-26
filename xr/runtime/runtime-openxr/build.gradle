@@ -37,7 +37,7 @@ dependencies {
 
     implementation(project(":xr:runtime:runtime-interfaces"))
     implementation("androidx.lifecycle:lifecycle-common:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
 
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.junit)
@@ -51,11 +51,10 @@ dependencies {
 android {
     namespace = "androidx.xr.runtime.openxr"
     sourceSets.main {
-        jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/android")
+        jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/runtime-openxr/android")
     }
-    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     sourceSets.androidTest {
-        jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
+        jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/runtime-openxr/androidTest")
     }
 }
 

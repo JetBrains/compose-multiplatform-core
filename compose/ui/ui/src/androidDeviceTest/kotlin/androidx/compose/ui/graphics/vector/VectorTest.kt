@@ -47,7 +47,6 @@ import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.AtLeastSize
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Size
@@ -89,7 +88,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -103,7 +101,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VectorTest {
 
-    @get:Rule val rule = createAndroidComposeRule<RotationActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<RotationActivity>()
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test

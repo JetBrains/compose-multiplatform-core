@@ -29,13 +29,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertIsEqualTo
-import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
@@ -47,6 +49,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -55,10 +58,13 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.screenshot.matchers.MSSIMMatcher
+import androidx.xr.glimmer.testutils.assertGlimmerSurfaceShape
 import androidx.xr.glimmer.testutils.captureToImage
+import androidx.xr.glimmer.testutils.createGlimmerRule
+import androidx.xr.glimmer.testutils.toIntArray
 import com.google.common.truth.Truth.assertThat
 import kotlin.properties.Delegates
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +76,9 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class ButtonTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0)
+    val rule = createComposeRule(config = ComposeUiTestConfig(inputMode = InputMode.Keyboard))
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun defaultSemantics() {
@@ -146,24 +154,49 @@ class ButtonTest {
         val surfaceColor = Color.Blue
         val backgroundColor = Color.Red
         rule.setGlimmerThemeContent(
-            colors = Colors(background = backgroundColor, surface = surfaceColor)
+            addInitialFocusInterceptor = true,
+            colors = Colors(background = backgroundColor, surface = surfaceColor),
         ) {
             expectedShape = GlimmerTheme.shapes.large
-            Button(onClick = {}, modifier = Modifier.testTag("button"), border = null) {
+            Button(onClick = {}, modifier = Modifier.testTag("button")) {
                 Box(Modifier.size(100.dp, 100.dp))
             }
         }
 
-        rule
-            .onNodeWithTag("button")
-            .captureToImage()
-            .assertShape(
-                density = rule.density,
-                shape = expectedShape,
-                shapeColor = surfaceColor,
-                backgroundColor = backgroundColor,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
-            )
+        val image = rule.onNodeWithTag("button").captureToImage()
+        image.assertGlimmerSurfaceShape(
+            density = rule.density,
+            shape = expectedShape,
+            backgroundColor = backgroundColor,
+        )
+        val centerColor = image.toPixelMap().run { get(width / 2, height / 2) }
+        assertThat(centerColor).isEqualTo(surfaceColor)
+    }
+
+    @Test
+    fun defaultInteractionSource_isShared_betweenSurfaceAndClickable() {
+        rule.setGlimmerThemeContent(addInitialFocusInterceptor = true) {
+            Button(onClick = {}, modifier = Modifier.testTag("button")) { Text("Send") }
+        }
+
+        val imageBefore = rule.onNodeWithTag("button").captureToImage()
+
+        rule.onNodeWithTag("button").requestFocus()
+        rule.waitForIdle()
+
+        val imageAfter = rule.onNodeWithTag("button").captureToImage()
+
+        val result =
+            // Expect similarity < 85% due to focused border.
+            MSSIMMatcher(threshold = 0.85)
+                .compareBitmaps(
+                    imageBefore.toIntArray(),
+                    imageAfter.toIntArray(),
+                    imageBefore.width,
+                    imageBefore.height,
+                )
+
+        assertThat(result.matches).isFalse()
     }
 
     @Test
@@ -180,12 +213,10 @@ class ButtonTest {
 
     @Test
     fun setsContentColor() {
-        var primary = Color.Unspecified
         var leadingIconContentColor = Color.Unspecified
         var trailingIconContentColor = Color.Unspecified
         var contentContentColor = Color.Unspecified
         rule.setGlimmerThemeContent {
-            primary = GlimmerTheme.colors.primary
             Button(
                 onClick = {},
                 leadingIcon = {
@@ -213,8 +244,8 @@ class ButtonTest {
         }
 
         rule.runOnIdle {
-            assertThat(leadingIconContentColor).isEqualTo(primary)
-            assertThat(trailingIconContentColor).isEqualTo(primary)
+            assertThat(leadingIconContentColor).isEqualTo(Color.White)
+            assertThat(trailingIconContentColor).isEqualTo(Color.White)
             assertThat(contentContentColor).isEqualTo(Color.White)
         }
     }

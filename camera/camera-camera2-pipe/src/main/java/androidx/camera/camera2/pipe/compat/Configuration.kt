@@ -24,7 +24,6 @@ import android.os.Build
 import android.util.Size
 import android.view.Surface
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraColorSpace
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
@@ -33,14 +32,14 @@ import androidx.camera.camera2.pipe.OutputStream.OutputType
 import androidx.camera.camera2.pipe.OutputStream.SensorPixelMode
 import androidx.camera.camera2.pipe.OutputStream.StreamUseCase
 import androidx.camera.camera2.pipe.OutputStream.TimestampBase
-import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.compat.OutputConfigurationWrapper.Companion.SURFACE_GROUP_ID_NONE
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.checkNOrHigher
 import androidx.camera.camera2.pipe.core.checkOOrHigher
 import androidx.camera.camera2.pipe.core.checkPOrHigher
+import androidx.camera.common.UnsafeWrapper
+import java.lang.Class
 import java.util.concurrent.Executor
-import kotlin.reflect.KClass
 
 /**
  * A data class that mirrors the fields in [android.hardware.camera2.params.SessionConfiguration] so
@@ -139,7 +138,6 @@ internal interface OutputConfigurationWrapper : UnsafeWrapper {
     }
 }
 
-@RequiresApi(24)
 internal class AndroidOutputConfiguration(
     private val output: OutputConfiguration,
     override val surfaceSharing: Boolean,
@@ -147,7 +145,6 @@ internal class AndroidOutputConfiguration(
     override val physicalCameraId: CameraId?,
 ) : OutputConfigurationWrapper {
 
-    @RequiresApi(24)
     companion object {
         /**
          * Create and validate an OutputConfiguration for Camera2. null is returned when a
@@ -362,9 +359,9 @@ internal class AndroidOutputConfiguration(
         get() = output.surfaceGroupId
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+    override fun <T : Any> unwrapAs(type: Class<T>): T? =
         when (type) {
-            OutputConfiguration::class -> output as T
+            OutputConfiguration::class.java -> output as T
             else -> null
         }
 

@@ -19,6 +19,7 @@ package androidx.room3.integration.kotlintestapp.test
 import android.content.Context
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
+import androidx.room3.ColumnTypeConverters
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -27,7 +28,6 @@ import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
-import androidx.room3.TypeConverters
 import androidx.room3.androidx.room3.integration.kotlintestapp.vo.Experiment
 import androidx.room3.androidx.room3.integration.kotlintestapp.vo.Schrodinger
 import androidx.room3.androidx.room3.integration.kotlintestapp.vo.SchrodingerConverter
@@ -75,8 +75,15 @@ class ValueClassConverterWrapperTest {
 
     @JvmInline value class NullableValue(val data: Int?)
 
+    @JvmInline
+    value class UserWithCompanion(val password: String) {
+        companion object {
+            val DEFAULT = UserWithCompanion("default")
+        }
+    }
+
     @Entity
-    @TypeConverters(DateConverter::class, SchrodingerConverter::class)
+    @ColumnTypeConverters(DateConverter::class, SchrodingerConverter::class)
     class UserInfo(
         @PrimaryKey val pk: Int,
         val userIntPwd: UserWithInt,
@@ -123,19 +130,27 @@ class ValueClassConverterWrapperTest {
         val doubleNullableData: NullableValue?,
     )
 
+    @Entity
+    class UserWithCompanionEntity(@PrimaryKey val pk: Int, val valueClass: UserWithCompanion)
+
     @Dao
     interface SampleDao {
         @Query("SELECT * FROM UserInfo") fun getEntity(): UserInfo
 
         @Query("SELECT * FROM UserInfoNullable") fun getNullableEntity(): UserInfoNullable
 
+        @Query("SELECT * FROM UserWithCompanionEntity")
+        fun getCompanionEntity(): UserWithCompanionEntity
+
         @Insert fun insert(item: UserInfo)
 
         @Insert fun insertNullableEntity(item: UserInfoNullable)
+
+        @Insert fun insertCompanionEntity(item: UserWithCompanionEntity)
     }
 
     @Database(
-        entities = [UserInfo::class, UserInfoNullable::class],
+        entities = [UserInfo::class, UserInfoNullable::class, UserWithCompanionEntity::class],
         version = 1,
         exportSchema = false,
     )
@@ -204,6 +219,17 @@ class ValueClassConverterWrapperTest {
                 "Cannot bind NULLABLE value 'data' of inline class 'NullableValue' to " +
                     "a NOT NULL column."
             )
+    }
+
+    @Test
+    fun readAndWriteValueClassWithCompanionToDatabase() {
+        val data = UserWithCompanionEntity(pk = 1, valueClass = UserWithCompanion("test"))
+
+        db.dao().insertCompanionEntity(data)
+
+        val readEntity = db.dao().getCompanionEntity()
+
+        assertThat(readEntity.valueClass).isEqualTo(data.valueClass)
     }
 
     @Before

@@ -18,6 +18,7 @@ package androidx.pdf.view.fastscroll
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.Range
 import androidx.core.content.ContextCompat
@@ -27,6 +28,7 @@ import androidx.pdf.view.FakePdfDocument
 import androidx.pdf.view.fastscroll.FastScrollDrawer.Companion.VISIBLE_ALPHA
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
@@ -36,11 +38,13 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.anyFloat
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 26)
 class FastScrollDrawerTest {
     private lateinit var context: Context
 
@@ -49,6 +53,7 @@ class FastScrollDrawerTest {
     private lateinit var pageIndicatorBackgroundDrawable: Drawable
     private lateinit var spyCanvas: Canvas
     private lateinit var fastScrollDrawer: FastScrollDrawer
+    private lateinit var fastScroller: FastScroller
 
     @Before
     fun setup() {
@@ -71,6 +76,9 @@ class FastScrollDrawerTest {
                 fastScrollVerticalThumbMarginEnd,
                 fastScrollPageIndicatorMarginEnd,
             )
+
+        val scrollCalculator = FastScrollCalculator(context)
+        fastScroller = FastScroller(fastScrollDrawer, scrollCalculator)
     }
 
     @Test
@@ -119,6 +127,25 @@ class FastScrollDrawerTest {
         assertEquals(expectedLowerPageRange, pageRange[0].toString().toInt())
         assertEquals(expectedUpperPageRange, pageRange[2].toString().toInt())
         assertEquals(expectedTotalPages, totalPages.toInt())
+    }
+
+    @Test
+    fun drawScroller_insufficientHeight_doesNotDraw() {
+        val xOffset = 500
+        val visiblePages = Range(1, 5)
+
+        fastScrollDrawer.alpha = VISIBLE_ALPHA
+        fastScroller.drawScroller(
+            spyCanvas,
+            scrollY = 100,
+            viewWidth = xOffset,
+            viewHeight = 10,
+            visiblePages = visiblePages,
+            estimatedFullHeight = 1000f,
+            paddingRect = Rect(0, 0, 0, 0),
+        )
+
+        verify(thumbDrawable, never()).draw(any())
     }
 
     @Test

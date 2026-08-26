@@ -69,7 +69,7 @@ fun particleSphere(): RemoteComposeContext {
                      */
                     droppingEngine2(
                         writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
+                        0f,
                         width,
                         height,
                         centerX,

@@ -21,6 +21,8 @@ import androidx.build.SoftwareType
 import androidx.build.addToBuildOnServer
 import androidx.build.checkapi.shouldConfigureApiTasks
 import androidx.build.getSupportRootFolder
+import androidx.build.hasAndroidTarget
+import androidx.build.hasJvmTarget
 import androidx.build.multiplatformExtension
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import org.gradle.api.DefaultTask
@@ -36,8 +38,11 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Verifies that the text of the [projectPathProvider] can be found in the [tipOfTreeBuildFile] to
- * enforce that projects enable docs generation.
+ * If [requiresDocs] is true, verifies that the text of the [projectPathProvider] can be found in
+ * the [tipOfTreeBuildFile] to enforce that projects enable docs generation.
+ *
+ * If [requiresDocs] is false, verifies that the text of the [projectPathProvider] is not in the
+ * [tipOfTreeBuildFile].
  */
 @CacheableTask
 abstract class CheckTipOfTreeDocsTask : DefaultTask() {
@@ -52,18 +57,24 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
 
     @TaskAction
     fun exec() {
-        if (!requiresDocs.get()) return
-
         val projectPath = projectPathProvider.get()
         // Make sure not to allow a partial project path match, e.g. ":activity:activity" shouldn't
         // match ":activity:activity-ktx", both need to be listed separately.
         val projectDependency = "project(\"$projectPath\")"
 
+        val fileContents = tipOfTreeBuildFile.asFile.get().readText()
+
+        if (requiresDocs.get()) {
+            requireDocs(projectPath, projectDependency, fileContents)
+        } else {
+            requireNoDocs(projectPath, projectDependency, fileContents)
+        }
+    }
+
+    fun requireDocs(projectPath: String, projectDependency: String, fileContents: String) {
         val prefix = type.get().prefix
         // Check that projects are listed with the right configuration type (docs, kmpDocs, samples)
         val fullExpectedText = "$prefix($projectDependency)"
-
-        val fileContents = tipOfTreeBuildFile.asFile.get().readText()
         val foundExpectedText = fileContents.contains(fullExpectedText)
 
         if (!foundExpectedText) {
@@ -76,8 +87,7 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
                         "'$fullExpectedText'."
                 } else {
                     "Project $projectPath not found in docs-tip-of-tree/build.gradle\n\n" +
-                        "Use the project creation script (development/project-creator/" +
-                        "create_project.py) when setting up a project to make sure all required " +
+                        "Use the project creation script (https://g3doc.corp.google.com/company/teams/androidx/api_guidelines/modules.md#module-creation) when setting up a project to make sure all required " +
                         "steps are complete.\n\n" +
                         "The project should be added to docs-tip-of-tree/build.gradle as " +
                         "\'$fullExpectedText\'.\n\n" +
@@ -90,14 +100,37 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
         }
     }
 
+    fun requireNoDocs(projectPath: String, projectDependency: String, fileContents: String) {
+        // A projects without docs can still appear in the docs-tip-of-tree file as a `stubs`
+        // dependency, which means it is included on the classpath for docs. Check if the project
+        // appears with one of the docs types that do get included in the docs.
+        val possibleTypes = DocsType.entries.joinToString("|") { "(${it.prefix})" }
+        val escapedDependency = Regex.escape(projectDependency)
+        val notStubsConfig = "($possibleTypes)\\($escapedDependency\\)".toRegex()
+        if (fileContents.contains(notStubsConfig)) {
+            throw GradleException(
+                "Project $projectPath is not configured for refdocs generation but is present in " +
+                    "docs-tip-of-tree/build.gradle.\n\n" +
+                    "If this project should have refdocs, check that the library type listed in " +
+                    "its build.gradle file is accurate and that it is not opting out of refdocs " +
+                    "generation with 'doNotDocumentReason' in the 'androidx' configuration section."
+            )
+        }
+    }
+
     companion object {
         fun Project.setUpCheckDocsTask(extension: AndroidXExtension) {
             val docsTypeProvider =
                 extension.type.map { softwareType ->
+                    val kmpExtension = multiplatformExtension
                     if (softwareType == SoftwareType.SAMPLES) {
                         DocsType.SAMPLES
-                    } else if (multiplatformExtension != null) {
-                        DocsType.KMP
+                    } else if (kmpExtension != null) {
+                        if (!kmpExtension.hasJvmTarget() && !kmpExtension.hasAndroidTarget()) {
+                            DocsType.KMP_WITHOUT_API_SINCE
+                        } else {
+                            DocsType.KMP
+                        }
                     } else {
                         DocsType.STANDARD
                     }
@@ -112,6 +145,9 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
                     task.projectPathProvider.set(path)
                     task.type.set(docsTypeProvider)
                     task.requiresDocs.set(extension.requiresDocs())
+                    task.group = "Verification"
+                    task.description =
+                        "Verifies that the project exists in docs-tip-of-tree/build.gradle"
                     task.cacheEvenIfNoOutputs()
                 }
             project.addToBuildOnServer(checkDocs)
@@ -120,6 +156,7 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
         enum class DocsType(val prefix: String) {
             STANDARD("docs"),
             KMP("kmpDocs"),
+            KMP_WITHOUT_API_SINCE("kmpDocsWithoutApiSince"),
             SAMPLES("samples"),
         }
 

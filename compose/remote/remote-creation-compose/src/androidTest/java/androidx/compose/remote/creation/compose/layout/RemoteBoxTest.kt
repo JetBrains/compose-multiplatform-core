@@ -21,13 +21,15 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.test.base.GridScreenshotUI
 import androidx.compose.remote.creation.compose.test.util.propertyName
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -41,12 +43,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RemoteBoxTest {
     @get:Rule
-    val composeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
+    val composeTestRule: RemoteScreenshotTestRule =
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
             matcher = MSSIMMatcher(threshold = 0.999),
         )
-    }
 
     private val gridScreenshotUI = GridScreenshotUI()
 
@@ -144,12 +146,12 @@ class RemoteBoxTest {
                                     RemoteBox(
                                         modifier =
                                             RemoteModifier.size(48.rdp)
-                                                .background(Color(0xFF6200EE))
+                                                .background(Color(0xFF6200EE).rc)
                                     )
                                     RemoteBox(
                                         modifier =
                                             RemoteModifier.size(24.rdp)
-                                                .background(Color(0xFF03DAC6))
+                                                .background(Color(0xFF03DAC6).rc)
                                     )
                                 }
                             }

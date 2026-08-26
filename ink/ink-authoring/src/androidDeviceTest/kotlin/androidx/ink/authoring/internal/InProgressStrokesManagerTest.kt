@@ -19,12 +19,11 @@ package androidx.ink.authoring.internal
 import android.graphics.Matrix
 import android.os.Build
 import android.view.MotionEvent
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.authoring.latency.latencyDataEqual
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.geometry.ImmutableBox
 import androidx.ink.geometry.MutableBox
@@ -58,11 +57,7 @@ import org.junit.runner.RunWith
  * by running async requests synchronously, or by queueing those async requests for the test code to
  * run at a specific time of the test.
  */
-@OptIn(
-    ExperimentalInkCustomBrushApi::class,
-    ExperimentalLatencyDataApi::class,
-    ExperimentalCustomShapeWorkflowApi::class,
-)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 @UiThreadTest
@@ -2021,7 +2016,7 @@ private class FakeClock(var timeNanos: Long = 0L) {
     }
 }
 
-@OptIn(ExperimentalLatencyDataApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class)
 private class LatencyDataRecorder() {
     val recordedData = mutableListOf<LatencyData>()
 
@@ -2046,7 +2041,7 @@ private class LatencyDataRecorder() {
     }
 }
 
-@OptIn(ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkCustomShapeWorkflowApi::class)
 private class FakeInProgressStrokePool : InProgressStrokePool<FakeShapeSpec, FakeInProgressShape> {
     private val real = InProgressStrokePoolImpl(FakeShapeWorkflow())
     var obtainCount = 0
@@ -2075,7 +2070,7 @@ private class FakeInProgressStrokePool : InProgressStrokePool<FakeShapeSpec, Fak
  * A fake for [InProgressStrokesRenderHelper] which simulates its typically multi-threaded nature in
  * a single-threaded test by providing hooks to run the queued "render thread" jobs.
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 private class FakeRenderHelper(
     private val clock: FakeClock,
     override val contentsPreservedBetweenDraws: Boolean = true,

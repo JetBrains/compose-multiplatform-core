@@ -16,13 +16,15 @@
 
 package androidx.xr.runtime
 
+import androidx.annotation.RestrictTo
+
 /** Result of a [Session.create] call. */
 public sealed class SessionCreateResult
 
 /**
  * Result of a successful [Session.create] call.
  *
- * @property session the [Session] that was created.
+ * @property session the [Session] that was created
  */
 public class SessionCreateSuccess(public val session: Session) : SessionCreateResult()
 
@@ -31,7 +33,7 @@ public class SessionCreateSuccess(public val session: Session) : SessionCreateRe
  * was unable to confirm availability, or is not installed.
  *
  * @property requiredApk the fully qualified name of the package that is missing or needs to be
- *   updated.
+ *   updated
  */
 public class SessionCreateApkRequired(public val requiredApk: String) : SessionCreateResult()
 
@@ -55,10 +57,7 @@ public class SessionCreateUnknownError(public val errorMessage: String) : Sessio
  */
 public class SessionCreateTimedOut : SessionCreateResult()
 
-/**
- * An unused result type to prevent exhaustive when clauses and force developers to provide an
- * "else" condition.
- */
+/** Placeholder result to force an 'else' branch in exhaustive when clauses. */
 private class SessionCreateUnusedResult : SessionCreateResult()
 
 /** Result of a [Session.configure] call. */
@@ -78,6 +77,7 @@ public class SessionConfigureSuccess : SessionConfigureResult()
         "SessionConfigureLibraryNotLinked(\"com.google.android.gms:play-services-location\")"
     ),
 )
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() : SessionConfigureResult()
 
 /**
@@ -106,8 +106,5 @@ public class SessionConfigureCalibrationRequired(
     public val calibrationType: RequiredCalibrationType
 ) : SessionConfigureResult()
 
-/**
- * An unused result type for Session configuration to prevent exhaustive when clauses and force
- * developers to provide an "else" condition.
- */
+/** Placeholder configure result to force an 'else' branch in exhaustive when clauses. */
 private class SessionConfigureUnusedResult : SessionConfigureResult()

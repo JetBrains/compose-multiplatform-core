@@ -31,6 +31,7 @@ import androidx.wear.compose.material3.samples.ButtonGroupSample
 import androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
 import androidx.wear.compose.material3.samples.ButtonWithImageSample
 import androidx.wear.compose.material3.samples.CustomCompositingStrategyTransformationSpecSample
+import androidx.wear.compose.material3.samples.DynamicColorSchemeSample
 import androidx.wear.compose.material3.samples.EdgeButtonSample
 import androidx.wear.compose.material3.samples.EdgeSwipeForSwipeToDismiss
 import androidx.wear.compose.material3.samples.FadingExpandingLabelButtonSample
@@ -47,6 +48,8 @@ import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSamp
 import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnSample
 import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
+import androidx.wear.compose.material3.samples.TransformationSpecButtonRowSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnFirstLayoutItemProviderSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnMinimumVerticalContentPaddingSample
 
 val WearMaterial3Demos =
@@ -83,7 +86,13 @@ val WearMaterial3Demos =
                     ),
                 ),
                 ComposableDemo("Color Scheme") { ColorSchemeDemos() },
-                ComposableDemo("Dynamic Color Scheme") { DynamicColorSchemeDemos() },
+                Material3DemoCategory(
+                    "Dynamic Color Scheme",
+                    listOf(
+                        ComposableDemo("Sample") { DynamicColorSchemeSample() },
+                        ComposableDemo("Exhaustive") { DynamicColorSchemeDemos() },
+                    ),
+                ),
                 Material3DemoCategory("Curved Text", CurvedTextDemos),
                 Material3DemoCategory("Alert Dialog", AlertDialogDemos),
                 Material3DemoCategory("Confirmation Dialog", ComfirmationDialogDemos),
@@ -124,6 +133,9 @@ val WearMaterial3Demos =
                     listOf(
                         ComposableDemo("Two buttons") { Centralize { ButtonGroupSample() } },
                         ComposableDemo("ABC") { Centralize { ButtonGroupThreeButtonsSample() } },
+                        ComposableDemo("Two buttons (RTL/LTR)") {
+                            ButtonGroupTwoButtonsWithRtlDemo()
+                        },
                         ComposableDemo("Text And Icon") { ButtonGroupDemo() },
                         ComposableDemo("ToggleButtons") { ButtonGroupToggleButtonsDemo() },
                     ),
@@ -237,6 +249,10 @@ val WearMaterial3Demos =
                         ComposableDemo("With edgeSwipeToDismiss") { params ->
                             SwipeToRevealWithEdgeSwipeToDismiss(params.swipeToDismissBoxState)
                         },
+                        ComposableDemo("Custom drag with fling") { SwipeToRevealCustomDragDemo() },
+                        ComposableDemo("Custom Action Content Spacing") {
+                            SwipeToRevealWithCustomActionContentSpacing()
+                        },
                     ),
                 ),
                 Material3DemoCategory(
@@ -261,6 +277,7 @@ val WearMaterial3Demos =
                 Material3DemoCategory(
                     title = "Transforming Lazy Column",
                     listOf(
+                        ComposableDemo("Border Colors") { BorderColors() },
                         ComposableDemo("Notifications") {
                             TransformingLazyColumnNotificationsDemo()
                         },
@@ -291,10 +308,18 @@ val WearMaterial3Demos =
                         ComposableDemo("Custom container CompositingStrategy") {
                             CustomCompositingStrategyTransformationSpecSample()
                         },
-                        ComposableDemo("Snapping behavior") { TransformingLazyColumnSnappingDemo() },
+                        ComposableDemo("Snapping behavior") {
+                            TransformingLazyColumnSnappingDemo()
+                        },
+                        ComposableDemo("First Layout Item") {
+                            TransformingLazyColumnFirstLayoutItemProviderSample()
+                        },
+                        ComposableDemo("Button Group") { TransformationSpecButtonRowSample() },
                     ),
                 ),
+                Material3DemoCategory("One Handed Gestures", OneHandedGestureDemos),
                 ComposableDemo("Text Block") { TextBlockDemo() },
+                ComposableDemo("Text Marquee") { TextMarqueeDemo() },
                 ComposableDemo("Text Weights") { TextWeightDemo() },
             )
             .sortedBy { it.title },

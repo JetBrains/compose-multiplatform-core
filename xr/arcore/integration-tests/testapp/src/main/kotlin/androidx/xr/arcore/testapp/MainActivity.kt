@@ -59,19 +59,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.arcore.testapp.capabilities.CapabilitiesActivity
 import androidx.xr.arcore.testapp.common.TestCaseButton
-import androidx.xr.arcore.testapp.depthmaps.DepthMapActivity
+import androidx.xr.arcore.testapp.depth.DepthActivity
 import androidx.xr.arcore.testapp.eyetracking.EyeTrackingActivity
 import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
 import androidx.xr.arcore.testapp.geospatial.GeospatialActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
+import androidx.xr.arcore.testapp.helloar.HelloArAugmentedImageActivity
 import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
 import androidx.xr.arcore.testapp.helloar.HelloArPlaneActivity
+import androidx.xr.arcore.testapp.helloar.HelloArQrCodeActivity
+import androidx.xr.arcore.testapp.nativedata.NativeDataActivity
 import androidx.xr.arcore.testapp.persistentanchors.PersistentAnchorsActivity
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.arcore.testapp.ui.theme.JXRARCoreTestsTheme
 import androidx.xr.arcore.testapp.ui.theme.Purple80
-import androidx.xr.runtime.XrLog
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -92,9 +95,6 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        XrLog.isEnabled = true
-        XrLog.level = XrLog.Level.VERBOSE
 
         requestUserPermissions(
             arrayOf(
@@ -190,13 +190,21 @@ class MainActivity : ComponentActivity() {
                 TestCaseColumnRowItem(R.string.face_tracking) {
                     startTest<FaceTrackingActivity>(it)
                 }
-                TestCaseColumnRowItem(R.string.depth_maps) { startTest<DepthMapActivity>(it) }
+                TestCaseColumnRowItem(R.string.depth) { startTest<DepthActivity>(it) }
                 TestCaseColumnRowItem(R.string.object_tracking) {
                     startTest<HelloArObjectActivity>(it)
                 }
                 TestCaseColumnRowItem(R.string.eye_tracking) { startTest<EyeTrackingActivity>(it) }
                 TestCaseColumnRowItem(R.string.blend_mode) { startTest<HelloArPlaneActivity>(it) }
                 TestCaseColumnRowItem(R.string.geospatial) { startTest<GeospatialActivity>(it) }
+                TestCaseColumnRowItem(R.string.capabilities) { startTest<CapabilitiesActivity>(it) }
+                TestCaseColumnRowItem(R.string.augmented_image_tracking) {
+                    startTest<HelloArAugmentedImageActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.qr_code_tracking) {
+                    startTest<HelloArQrCodeActivity>(it)
+                }
+                TestCaseColumnRowItem(R.string.native_data) { startTest<NativeDataActivity>(it) }
             }
         }
     }

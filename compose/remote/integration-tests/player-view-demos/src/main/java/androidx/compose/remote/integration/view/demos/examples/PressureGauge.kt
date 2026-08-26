@@ -25,7 +25,6 @@ import androidx.compose.remote.creation.cos
 import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.sin
-import androidx.compose.remote.creation.times
 
 /** Draw a circular pressure gauge */
 @Suppress("RestrictedApiAndroidX")
@@ -33,7 +32,10 @@ fun demoPressureGauge(): RemoteComposeWriter {
     addHeaderParam(Header.DOC_WIDTH, 500)
     addHeaderParam(Header.DOC_HEIGHT, 500)
     addHeaderParam(Header.DOC_CONTENT_DESCRIPTION, "Pressure Gauge")
-    addHeaderParam(Header.DOC_PROFILES, RcProfiles.PROFILE_ANDROIDX)
+    addHeaderParam(
+        Header.DOC_PROFILES,
+        RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+    )
 
     val rc = demo7 {
         root {

@@ -40,7 +40,7 @@ internal object PackageManagerUtils {
     /**
      * Returns Projected platform API version if it's available.
      *
-     * @throws IllegalStateException if the API version is unavailable.
+     * @throws [IllegalStateException] if the API version is unavailable
      */
     @RequiresApi(Build.VERSION_CODES.S)
     internal fun getProjectedPlatformApiVersion(context: Context): Int {
@@ -61,6 +61,11 @@ internal object PackageManagerUtils {
             throw IllegalStateException("Projected API version not found")
         }
     }
+
+    internal fun hasXrProjectedSystemService(context: Context): Boolean =
+        context.packageManager
+            .queryIntentServices(Intent(ACTION_BIND), PackageManager.MATCH_SYSTEM_ONLY)
+            .isNotEmpty()
 
     private fun findSystemServiceForIntent(context: Context, intent: Intent): ResolveInfo {
         val resolveInfoSystemApps: List<ResolveInfo> =

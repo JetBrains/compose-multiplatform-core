@@ -23,14 +23,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.layout.MovePolicy
+import androidx.xr.compose.subspace.layout.SpatialMoveEvent
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.runtime.math.Quaternion
 
 /** A sample demonstrating a simple movable component. */
@@ -38,7 +40,11 @@ import androidx.xr.runtime.math.Quaternion
 @SubspaceComposable
 @Composable
 public fun BasicMovableSample() {
-    SpatialPanel(modifier = SubspaceModifier.movable()) { Text("The user can move me around!") }
+    SpatialPanel(
+        modifier = SubspaceModifier.movable(enabled = true, movePolicy = MovePolicy.system())
+    ) {
+        Text("The user can move me around!")
+    }
 }
 
 /** A sample demonstrating a custom movable component. */
@@ -50,17 +56,19 @@ public fun CustomMovableSample() {
     var offsetY by remember { mutableStateOf(0.dp) }
     var offsetZ by remember { mutableStateOf(0.dp) }
     var rotation by remember { mutableStateOf(Quaternion.Identity) }
-
+    val density = LocalDensity.current
+    val customMovement: (SpatialMoveEvent) -> Unit = { moveEvent ->
+        offsetX = with(density) { moveEvent.pose.translation.x.toDp() }
+        offsetY = with(density) { moveEvent.pose.translation.y.toDp() }
+        offsetZ = with(density) { moveEvent.pose.translation.z.toDp() }
+        rotation = moveEvent.pose.rotation
+    }
     SpatialPanel(
         modifier =
-            SubspaceModifier.movable {
-                    offsetX = it.pose.translation.x.meters.toDp()
-                    offsetY = it.pose.translation.y.meters.toDp()
-                    offsetZ = it.pose.translation.z.meters.toDp()
-                    rotation = it.pose.rotation
-
-                    true // return true to prevent default behavior
-                }
+            SubspaceModifier.movable(
+                    enabled = true,
+                    movePolicy = MovePolicy.custom(onMove = customMovement),
+                )
                 .offset(x = offsetX, y = offsetY, z = offsetZ)
                 .rotate(rotation)
     ) {

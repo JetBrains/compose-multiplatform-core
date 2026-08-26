@@ -4,8 +4,6 @@ import androidx.room3.util.appendPlaceholders
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.prepare
-import androidx.sqlite.step
 import com.google.common.util.concurrent.ListenableFuture
 import javax.`annotation`.processing.Generated
 import kotlin.Array
@@ -17,7 +15,7 @@ import kotlin.reflect.KClass
 import kotlin.text.StringBuilder
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "OPT_IN_USAGE_ERROR", "OPT_IN_USAGE", "MemberExtensionConflict", "CAN_BE_VAL"])
 internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
@@ -37,7 +35,7 @@ internal class MyDao_Impl(
     _stringBuilder.append(")")
     val _sql: String = _stringBuilder.toString()
     return __guavaDaoReturnTypeConverter.convertAsync(__db, false) {
-      performSuspending(__db, true, false) { _connection ->
+      performSuspending<MyEntity?>(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(_sql)
         try {
           var _argIndex: Int = 1
@@ -74,6 +72,8 @@ internal class MyDao_Impl(
   }
 
   public companion object {
-    public fun getRequiredConverters(): List<KClass<*>> = emptyList()
+    public fun getRequiredColumnConverters(): List<KClass<*>> = emptyList()
+
+    public fun getRequiredDaoReturnTypeConverters(): List<KClass<*>> = emptyList()
   }
 }

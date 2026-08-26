@@ -93,8 +93,8 @@ object RoomAnnotationTypeNames {
     val DAO = XClassName.get(ROOM_PACKAGE, "Dao")
     val DATABASE = XClassName.get(ROOM_PACKAGE, "Database")
     val PRIMARY_KEY = XClassName.get(ROOM_PACKAGE, "PrimaryKey")
-    val TYPE_CONVERTERS = XClassName.get(ROOM_PACKAGE, "TypeConverters")
-    val TYPE_CONVERTER = XClassName.get(ROOM_PACKAGE, "TypeConverter")
+    val COLUMN_TYPE_CONVERTERS = XClassName.get(ROOM_PACKAGE, "ColumnTypeConverters")
+    val COLUMN_TYPE_CONVERTER = XClassName.get(ROOM_PACKAGE, "ColumnTypeConverter")
     val ENTITY = XClassName.get(ROOM_PACKAGE, "Entity")
 }
 
@@ -206,6 +206,8 @@ object KotlinTypeNames {
     val U_SHORT = XClassName.get("kotlin", "UShort")
     val U_INT = XClassName.get("kotlin", "UInt")
     val U_LONG = XClassName.get("kotlin", "ULong")
+    val PAIR = XClassName.get("kotlin", "Pair")
+    val TRIPLE = XClassName.get("kotlin", "Triple")
 }
 
 object KotlinUnsignedMemberNames {
@@ -236,9 +238,7 @@ object RoomMemberNames {
 }
 
 object SQLiteDriverMemberNames {
-    val CONNECTION_EXEC_SQL = SQLiteDriverTypeNames.SQLITE.packageMember("executeSQL")
-    val CONNECTION_PREPARE = SQLiteDriverTypeNames.SQLITE.packageMember("prepare")
-    val STATEMENT_STEP = SQLiteDriverTypeNames.SQLITE.packageMember("step")
+    val CONNECTION_EXEC_SQL = SQLiteDriverTypeNames.SQLITE.packageMember("execSQL")
 }
 
 val SUPPORTED_VALUES_TYPES =
@@ -348,12 +348,18 @@ fun Function1TypeSpec(
 fun InvokeWithLambdaParameter(
     scope: CodeGenScope,
     functionName: XMemberName,
+    functionTypeArg: XTypeName? = null,
     argFormat: List<String>,
     args: List<Any>,
     continuationParamName: String? = null,
     lambdaSpec: LambdaSpec,
 ): XCodeBlock {
-    val functionCall = XCodeBlock.of("%M", functionName)
+    val functionCall =
+        if (functionTypeArg != null) {
+            XCodeBlock.of("%M<%T>", functionName, functionTypeArg)
+        } else {
+            XCodeBlock.of("%M", functionName)
+        }
     return InvokeWithLambdaParameter(
         scope,
         functionCall,

@@ -95,9 +95,23 @@
     <string name="default_profile_text">Default Profile - Tap to print cookie.</string>
     <string name="first_profile_text">Created Profile - Tap to print cookie.</string>
     <string name="multi_profile_not_supported">Multi-Profile feature is not supported.</string>
+    <string name="preconnect_not_supported">Features are not supported.</string>
+    <string name="preconnect_url_label">URL to preconnect:</string>
+    <string name="preconnect_url_hint">https://google.com</string>
+    <string name="preconnect_enqueue_button">Enqueue Preconnect</string>
+    <string name="preconnect_startup_button">Startup WebView</string>
+    <string name="preconnect_button">Preconnect</string>
+    <string name="preconnect_load_button">Load URL in WebView</string>
+    <string name="preconnect_status_idle">Status: Idle</string>
+    <string name="preconnect_status_loading">Status: Loading %1$s…</string>
+    <string name="preconnect_status_enqueue">Status: Called EnqueuePreconnect…</string>
+    <string name="preconnect_status_preconnect">Status: Called Preconnect…</string>
     <string name="mute_audio_activity_title">Mute Audio Demo</string>
     <string name="mute_audio_not_supported">Mute Audio feature is not supported.</string>
+    <string name="profile_url_prefetch_not_supported">Profile Url Prefetch feature not supported.</string>
     <string name="mute_audio_audio_is_muted">Audio is muted.</string>
+    <string name="prefetch_activity_title">Prefetch Demo</string>
+    <string name="preconnect_activity_title">Preconnect Demo</string>
     <string name="mute_audio_audio_is_unmuted">Audio is unmuted.</string>
     <string name="webview_loaded">WebView Loaded!</string>
 
@@ -148,5 +162,26 @@
     <string name="custom_header_clear_button_label">Clear custom headers</string>
     <string name="custom_header_load_button_label">Load and show headers</string>
     <string name="custom_header_missing_input_warning">Please enter both header name and value</string>
+
+    <!-- HTTP Cache Quota -->
+    <string name="http_cache_quota_activity_title">HTTP Cache Quota Demo</string>
+    <string name="http_cache_quota_size">Quota size in bytes</string>
+    <string name="http_cache_quota_get_default">Get Default</string>
+    <string name="http_cache_quota_set_quota">Set Quota</string>
+    <string name="http_cache_quota_get_quota">Get Quota</string>
+    <string name="http_cache_quota_use_default">Use Default</string>
+    <string name="http_cache_quota_is_using_default">Is Default?</string>
+    <string name="http_cache_quota_missing_input_warning">Please enter a quota size</string>
+
+    <!-- Shared Array Buffer -->
+    <string name="shared_array_buffer_activity_title">Shared Array Buffer Demo</string>
+
+    <!-- Hyperlink Context Menu -->
+    <string name="hyperlink_context_menu_activity_title">Hyperlink Context Menu Demo</string>
+    <string name="hyperlink_context_menu_config_title">Configure Hyperlink Context Menu Items:</string>
+    <string name="checkbox_copy_address_label">Copy Link Address</string>
+    <string name="checkbox_copy_text_label">Copy Link Text</string>
+    <string name="checkbox_open_link_label">Open Link</string>
+    <string name="hyperlink_context_menu_webview_title">WebView Area:</string>
 
 </resources>

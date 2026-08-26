@@ -107,7 +107,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
     private var controlPanelEntity: PanelEntity? = null
 
     private val pickMedia =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
             Log.i(TAG, "Media Selected")
         }
 
@@ -115,18 +115,28 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "onCreate")
 
-        val session = (Session.create(this) as SessionCreateSuccess).session
-        session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN))
-        session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        lifecycleScope.launch {
+            val sessionResult = Session.create(context = this@VideoPlayerDrmTestActivity)
+            if (sessionResult is SessionCreateSuccess) {
+                val session = sessionResult.session
+                session.configure(
+                    Config.Builder().setDeviceTracking(DeviceTrackingMode.SPATIAL).build()
+                )
+                session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
-        if (movableComponentMp == null) {
-            movableComponentMp = MovableComponent.createSystemMovable(session)
-            val unused = session.scene.mainPanelEntity.addComponent(movableComponentMp!!)
+                if (movableComponentMp == null) {
+                    movableComponentMp = MovableComponent.createSystemMovable(session)
+                    @Suppress("UNUSED_VARIABLE")
+                    val unused = session.scene.mainPanelEntity.addComponent(movableComponentMp!!)
+                }
+
+                setContent { BootstrapUi(session, activity) }
+
+                checkExternalStoragePermission()
+            } else {
+                finish()
+            }
         }
-
-        setContent { BootstrapUi(session, activity) }
-
-        checkExternalStoragePermission()
     }
 
     override fun onDestroy() {
@@ -189,6 +199,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 IntSize2d(640, 480),
                 "playerControls",
                 Pose(Vector3(0.0f, -0.25f, 0.25f)), // below and slightly in front of the canvas
+                parent = session.scene.activitySpace,
             )
         controlPanelEntity!!.parent = surfaceEntity!!
 
@@ -227,10 +238,9 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         videoPlaying = false
         exoPlayer?.release()
         exoPlayer = null
-        if (surfaceEntity != null) {
-            surfaceEntity!!.dispose()
-            surfaceEntity = null
-        }
+        surfaceEntity?.removeAllComponents()
+        surfaceEntity?.parent = null
+        surfaceEntity = null
     }
 
     fun getCanvasAspectRatio(
@@ -276,6 +286,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                     shape = shape,
                     stereoMode = stereoMode,
                     surfaceProtection = surfaceContentLevel,
+                    parent = session.scene.activitySpace,
                 )
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances) (only on quad canvas)
@@ -284,6 +295,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
             movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
             if (shape is SurfaceEntity.Shape.Quad) {
+                @Suppress("UNUSED_VARIABLE")
                 val unused = surfaceEntity!!.addComponent(movableComponent!!)
             }
         }
@@ -571,11 +583,11 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 Button(onClick = { togglePassthrough(session) }) {
                     Text(text = "Toggle Passthrough", fontSize = 30.sp)
                 }
-                Button(onClick = { session.scene.requestFullSpaceMode() }) {
-                    Text(text = "Request FSM", fontSize = 30.sp)
+                Button(onClick = { session.scene.requestFullSpace() }) {
+                    Text(text = "Request Full Space", fontSize = 30.sp)
                 }
-                Button(onClick = { session.scene.requestHomeSpaceMode() }) {
-                    Text(text = "Request HSM", fontSize = 30.sp)
+                Button(onClick = { session.scene.requestHomeSpace() }) {
+                    Text(text = "Request Home Space", fontSize = 30.sp)
                 }
                 Button(onClick = { ActivityCompat.recreate(activity) }) {
                     Text(text = "Recreate Activity", fontSize = 30.sp)

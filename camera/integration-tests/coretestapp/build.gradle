@@ -123,6 +123,7 @@ dependencies {
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
+    testImplementation(project(":camera:camera-camera2-pipe"))
 
     // Transitive dependencies
     implementation 'androidx.activity:activity:1.2.3'
@@ -139,9 +140,6 @@ dependencies {
     androidTestImplementation libs.junit
     androidTestImplementation libs.kotlinCoroutinesCore
     androidTestImplementation libs.testMonitor
-    testImplementation 'org.robolectric:annotations:4.14'
-    testImplementation 'org.robolectric:shadowapi:4.14'
-    testImplementation 'org.robolectric:shadows-framework:4.14'
     testImplementation libs.kotlinCoroutinesCore
     testImplementation libs.testCore
 }

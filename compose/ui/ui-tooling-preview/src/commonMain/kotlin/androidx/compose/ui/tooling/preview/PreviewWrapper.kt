@@ -30,7 +30,7 @@ import kotlin.reflect.KClass
  *
  * @see PreviewWrapper
  */
-interface PreviewWrapperProvider {
+public interface PreviewWrapperProvider {
 
     /**
      * Wraps the provided [content] with custom UI logic or containers.
@@ -53,7 +53,7 @@ interface PreviewWrapperProvider {
      *
      * @param content The original composable content of the function annotated with [Preview].
      */
-    @Composable fun Wrap(content: @Composable () -> Unit)
+    @Composable public fun Wrap(content: @Composable () -> Unit)
 }
 
 /**
@@ -153,5 +153,5 @@ interface PreviewWrapperProvider {
  */
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.FUNCTION)
-annotation class PreviewWrapper(val wrapper: KClass<out PreviewWrapperProvider>)
+@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
+public annotation class PreviewWrapper(public val wrapper: KClass<out PreviewWrapperProvider>)

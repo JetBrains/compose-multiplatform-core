@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore
 
 import android.widget.TextView
@@ -29,6 +31,7 @@ import androidx.xr.scenecore.testing.FakeResizableComponent
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Test
@@ -63,7 +66,7 @@ class ResizableComponentTest {
     }
 
     @Before
-    fun setUp() {
+    fun setUp(): Unit = runBlocking {
         val testDispatcher = StandardTestDispatcher()
         val result = Session.create(activity, testDispatcher)
 
@@ -128,9 +131,9 @@ class ResizableComponentTest {
 
         entity.removeComponent(resizableComponent)
 
-        assertThat((entity as BaseEntity<*>).rtEntity?.getComponents()).hasSize(0)
-        // The listeners map will not be reset after removing the component.
-        assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(1)
+        assertThat(entity.rtEntity.getComponents()).hasSize(0)
+        // The listeners map will be reset after removing the component.
+        assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(0)
     }
 
     @Test
@@ -553,18 +556,21 @@ class ResizableComponentTest {
         // Detach and reattach the resizable component.
         entity.removeComponent(resizableComponent)
 
-        assertThat((entity as BaseEntity<*>).rtEntity?.getComponents()).hasSize(0)
+        assertThat(entity.rtEntity.getComponents()).hasSize(0)
+        // Runtime listeners should be cleared.
+        assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(0)
 
         rtResizableComponent = addAndGetFakeResizableComponent(entity, resizableComponent)
 
-        assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(3)
+        // preserved listeners (initialListener and resizeListener2) should be re-added.
+        assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(2)
 
         // Invoke the runtime resize event listener with a resize event.
         rtResizableComponent.onResizeEvent(rtResizeEvent)
         rtResizableComponent.onResizeEvent(rtResizeEvent)
 
-        // addComponent two times so initialListener is added two times.
-        assertThat(initialListener.callCount).isEqualTo(6)
+        // initialListener and resizeListener2 should each have been called 4 times total.
+        assertThat(initialListener.callCount).isEqualTo(4)
         assertThat(initialListener.lastEvent).isNotNull()
         assertThat(initialListener.lastEvent).isEqualTo(expectedStartResizeEvent)
         assertThat(resizeListener2.callCount).isEqualTo(4)
@@ -576,7 +582,14 @@ class ResizableComponentTest {
     fun createResizableComponent_callsRuntimeCreateResizableComponent() {
         val resizableComponent = ResizableComponent.create(session) {}
         val view = TextView(activity)
-        val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
+        val panelEntity =
+            PanelEntity.create(
+                session,
+                view,
+                IntSize2d(720, 480),
+                "test",
+                parent = session.scene.activitySpace,
+            )
         val rtResizableComponent = addAndGetFakeResizableComponent(panelEntity, resizableComponent)
 
         assertThat(rtResizableComponent.resizeEventListenersMap).hasSize(1)
@@ -598,15 +611,15 @@ class ResizableComponentTest {
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
         // 2. Get the underlying runtime components.
-        val rtComponents = (entity as BaseEntity<*>).rtEntity?.getComponents()
+        val rtComponents = entity.rtEntity.getComponents()
         assertThat(rtComponents).isNotNull()
         assertThat(rtComponents).hasSize(1)
 
         // 3. Assert the component is the correct fake type.
-        val rtComponent = rtComponents!![0]
+        val rtComponent = rtComponents[0]
         assertThat(rtComponent).isInstanceOf(FakeResizableComponent::class.java)
 
-        // 4. Return the casted component.
+        // 4. Return the cast component.
         return rtComponent as FakeResizableComponent
     }
 }

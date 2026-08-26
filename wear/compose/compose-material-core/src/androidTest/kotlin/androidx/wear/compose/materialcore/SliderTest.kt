@@ -43,13 +43,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlin.math.roundToInt
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
 public class SliderTest {
-    @get:Rule public val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule public val rule = createComposeRule()
 
     @Test
     public fun slider_button_supports_testtag() {
@@ -347,7 +347,7 @@ public class SliderTest {
             color,
             Offset(position, 0f),
             Offset(position, size.height),
-            strokeWidth = 1.dp.toPx(),
+            strokeWidth = 1.dp.toPx().roundToInt().toFloat(),
         )
     }
 

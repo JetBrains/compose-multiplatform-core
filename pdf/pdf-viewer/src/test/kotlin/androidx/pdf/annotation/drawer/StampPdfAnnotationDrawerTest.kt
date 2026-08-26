@@ -19,16 +19,17 @@ package androidx.pdf.annotation.drawer
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.RectF
-import androidx.core.graphics.transform
-import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.PdfObject
-import androidx.pdf.annotation.models.StampAnnotation
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.PdfObject
+import androidx.pdf.annotation.content.StampAnnotation
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalPdfApi::class)
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class StampPdfAnnotationDrawerTest {

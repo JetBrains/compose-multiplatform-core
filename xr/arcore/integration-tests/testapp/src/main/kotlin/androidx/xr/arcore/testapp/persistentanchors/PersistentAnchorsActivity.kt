@@ -18,6 +18,7 @@ package androidx.xr.arcore.testapp.persistentanchors
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,24 +61,26 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
-import androidx.xr.arcore.AnchorLoadInvalidUuid
+import androidx.xr.arcore.AnchorInvalidUuidException
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.RenderViewpoint
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
+import androidx.xr.arcore.testapp.common.asString
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.RenderingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.XrLog
+import androidx.xr.runtime.XrDevice
 import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
@@ -107,19 +111,22 @@ class PersistentAnchorsActivity : ComponentActivity() {
         sessionHelper =
             SessionLifecycleHelper(
                 this,
-                Config(
-                    anchorPersistence = AnchorPersistenceMode.LOCAL,
-                    deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
-                ),
+                Config.Builder()
+                    .setAnchorPersistence(AnchorPersistenceMode.LOCAL)
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .build(),
                 onSessionAvailable = { session ->
                     this.session = session
                     this.arDevice = ArDevice.getInstance(session)
+                    val xrDevice = XrDevice.getCurrentDevice(this@PersistentAnchorsActivity)
                     this.renderViewpoints = buildList {
-                        RenderViewpoint.left(session)?.let { add(it) }
-                        RenderViewpoint.right(session)?.let { add(it) }
+                        if (xrDevice.isRenderingModeSupported(RenderingMode.STEREO)) {
+                            add(RenderViewpoint.left(session))
+                            add(RenderViewpoint.right(session))
+                        }
 
-                        if (isEmpty()) {
-                            RenderViewpoint.mono(session)?.let { add(it) }
+                        if (isEmpty() && xrDevice.isRenderingModeSupported(RenderingMode.MONO)) {
+                            add(RenderViewpoint.mono(session))
                         }
                     }
 
@@ -139,7 +146,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                         arDevice.state.collect { arDeviceState -> updatePanelEntity(arDeviceState) }
                     }
 
-                    session.scene.activitySpace.addOnOriginChangedListener {
+                    session.scene.activitySpace.addOriginChangedListener {
                         updatePanelEntity(arDevice.state.value)
                         updatePanelInViewStatusUpdates(renderViewpoints.map { it.state.value })
                     }
@@ -159,9 +166,6 @@ class PersistentAnchorsActivity : ComponentActivity() {
         }
     }
 
-    // TODO(b/494286565) - Remove deprecation suppression when androidx.xr.runtime.FieldOfView is
-    // removed.
-    @Suppress("DEPRECATION")
     private fun updatePanelInViewStatusUpdates(cameraStates: List<RenderViewpoint.State>) {
         val mainPanelEntity = session.scene.mainPanelEntity
         val panelPoseInActivitySpace = mainPanelEntity.getPose()
@@ -208,8 +212,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 IntSize2d(640, 640),
                 "movableEntity",
                 movableEntityOffset,
+                session.scene.activitySpace,
             )
-        movableEntity.parent = session.scene.activitySpace
         configureComposeView(composeView, this)
     }
 
@@ -242,14 +246,14 @@ class PersistentAnchorsActivity : ComponentActivity() {
      * Checks if a rectangular panel is fully visible within the camera's field of view. Assumes the
      * camera looks down -Z axis.
      *
-     * @param cameraPoseInPerceptionSpace The position and orientation of the camera in perception
-     *   space.
-     * @param cameraFov The camera's field of view, defined by four angles.
-     * @param panelPoseInPerceptionSpace The position and orientation of the panel in perception
-     *   space.
-     * @param panelSizeInMeters The width and height of the panel.
-     * @return Returns true if all four corners of the panel are within the camera's field of view,
-     *   and false otherwise.
+     * @param cameraPoseInPerceptionSpace the position and orientation of the camera in perception
+     *   space
+     * @param cameraFov the camera's field of view, defined by four angles
+     * @param panelPoseInPerceptionSpace the position and orientation of the panel in perception
+     *   space
+     * @param panelSizeInMeters the width and height of the panel
+     * @return returns true if all four corners of the panel are within the camera's field of view,
+     *   and false otherwise
      */
     private fun isPanelInView(
         cameraPoseInPerceptionSpace: Pose,
@@ -339,6 +343,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                         .fillMaxWidth()
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState())
+                        .zIndex(0f)
             ) {
                 for (uuid in uuidsState.value) {
                     Row(
@@ -374,7 +379,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 Modifier.background(color = Color.LightGray)
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .zIndex(2f),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -415,11 +421,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
         when (anchorResult) {
             is AnchorCreateSuccess -> createAnchorPanel(anchorResult.anchor)
             is AnchorCreateResourcesExhausted -> {
-                XrLog.error { "Failed to create anchor: anchor resources exhausted." }
+                Log.e("JetpackXR", "Failed to create anchor: anchor resources exhausted.")
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                XrLog.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
+                Log.e("JetpackXR", "Failed to create anchor: ${anchorResult::class.simpleName}")
                 Toast.makeText(this, "Anchor failed to create.", Toast.LENGTH_LONG).show()
             }
         }
@@ -427,7 +433,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
     private fun createAnchorPanel(anchor: Anchor) {
         val composeView = ComposeView(this)
-        val anchorEntity = AnchorEntity.create(session, anchor)
+        val anchorSpace = AnchorSpace.create(session, anchor)
         val activity = this
 
         lifecycleScope.launch {
@@ -438,10 +444,10 @@ class PersistentAnchorsActivity : ComponentActivity() {
                             session,
                             composeView,
                             IntSize2d(640, 640),
-                            "anchorEntity ${anchor.hashCode()}",
+                            "anchorSpace ${anchor.hashCode()}",
                             Pose(),
+                            parent = anchorSpace,
                         )
-                    panelEntity.parent = anchorEntity
                     composeView.setContent { AnchorPanel(anchor, panelEntity) }
                     configureComposeView(composeView, activity)
                     cancel()
@@ -458,12 +464,13 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 Modifier.background(color = Color.White)
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .zIndex(1f),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 modifier = Modifier.padding(top = 10.dp),
-                text = "Tracking State: ${anchorState.value.trackingState}",
+                text = "Tracking State: ${anchorState.value.trackingState.asString()}",
                 fontSize = 32.sp,
             )
             Button(modifier = Modifier.padding(top = 10.dp), onClick = { persistAnchor(anchor) }) {
@@ -484,13 +491,13 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 anchor.persist()
                 uuids.emit(Anchor.getPersistedAnchorUuids(session))
             } catch (e: RuntimeException) {
-                XrLog.error(e) { "Error persisting anchor: ${e.message}" }
+                Log.e("JetpackXR", "Error persisting anchor: ${e.message}", e)
             }
         }
     }
 
     private fun deleteEntity(anchor: Anchor, entity: Entity) {
-        entity.dispose()
+        entity.parent = null
         anchor.detach()
     }
 
@@ -504,7 +511,10 @@ class PersistentAnchorsActivity : ComponentActivity() {
             try {
                 Anchor.load(session, uuid)
             } catch (e: IllegalStateException) {
-                XrLog.error(e) { "Failed to create anchor: ${e.message}" }
+                Log.e("JetpackXR", "Failed to create anchor: ${e.message}", e)
+                return
+            } catch (e: AnchorInvalidUuidException) {
+                Log.e("JetpackXR", "Failed to create anchor: ${e.message}", e)
                 return
             }
 
@@ -517,15 +527,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 }
             }
             is AnchorCreateResourcesExhausted -> {
-                XrLog.error { "Failed to load anchor: anchor resources exhausted." }
+                Log.e("JetpackXR", "Failed to load anchor: anchor resources exhausted.")
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
-            is AnchorLoadInvalidUuid -> {
-                XrLog.error { "Failed to load anchor: invalid UUID." }
-                Toast.makeText(this, "Invalid UUID.", Toast.LENGTH_LONG).show()
-            }
             else -> {
-                XrLog.error { "Failed to load anchor: ${anchorResult::class.simpleName}" }
+                Log.e("JetpackXR", "Failed to load anchor: ${anchorResult::class.simpleName}")
                 Toast.makeText(this, "Anchor failed to load.", Toast.LENGTH_LONG).show()
             }
         }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.camera.camera2
 
@@ -51,6 +52,7 @@ import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.testing.VerifyResultListener
 import androidx.camera.camera2.testing.toCameraControlAdapter
 import androidx.camera.camera2.testing.toCameraInfoAdapter
+import androidx.camera.common.unwrapAs
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -349,19 +351,14 @@ class Camera2CameraControlDeviceTest {
     }
 
     @SdkSuppress(minSdkVersion = 28)
-    @Suppress("DEPRECATION")
     @Test
     fun canSetPhysicalCameraId() = runBlocking {
-        val physicalCameraIds =
-            CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)!!
-                .physicalCameraIds
-                .toList()
+        Assume.assumeTrue(camera.cameraInfo.isLogicalMultiCameraSupported)
+        val physicalCameraInfos = camera.cameraInfo.physicalCameraInfos
+        // Skip the test if the camera has no available physical cameras.
+        Assume.assumeTrue(physicalCameraInfos.isNotEmpty())
 
-        // Skip the test if the camera is not a logical camera.
-        Assume.assumeTrue(physicalCameraIds.isNotEmpty())
-
-        // Arrange.
-        val physicalCameraId = physicalCameraIds[0]
+        val physicalCameraId = Camera2Interop.getCameraId(physicalCameraInfos.first())
         val useCase =
             ImageAnalysis.Builder()
                 .also { imageAnalysisBuilder ->
@@ -385,7 +382,7 @@ class Camera2CameraControlDeviceTest {
         // Assert.
         registerListener()
             .verify({ _, captureResult: FrameInfo ->
-                captureResult.unwrapAs(TotalCaptureResult::class)!!.let { totalCaptureResult ->
+                captureResult.unwrapAs<TotalCaptureResult>()!!.let { totalCaptureResult ->
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         totalCaptureResult.physicalCameraTotalResults.containsKey(physicalCameraId)
                     } else {

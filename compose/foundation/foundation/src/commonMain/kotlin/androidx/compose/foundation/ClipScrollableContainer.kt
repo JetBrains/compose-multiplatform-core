@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
  * @param orientation orientation of the scrolling
  */
 @Stable
-fun Modifier.clipScrollableContainer(orientation: Orientation) =
+public fun Modifier.clipScrollableContainer(orientation: Orientation): Modifier =
     then(
         if (orientation == Orientation.Vertical) {
             Modifier.clip(VerticalScrollableClipShape)
@@ -59,7 +59,8 @@ fun Modifier.clipScrollableContainer(orientation: Orientation) =
  * here. This will improve how it works in most common cases. If the user will need to have a larger
  * unclipped area for some reason they can always add the needed padding inside the scrollable area.
  */
-internal val MaxSupportedElevation = 30.dp
+internal val MaxSupportedElevation
+    get() = 30.dp
 
 private object HorizontalScrollableClipShape : Shape {
     override fun createOutline(

@@ -18,10 +18,11 @@ package androidx.pdf.annotation.manager
 
 import androidx.annotation.RestrictTo
 import androidx.pdf.EditsDraft
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
-import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.PdfAnnotation
 import androidx.pdf.annotation.draftstate.AnnotationEditsDraftState
-import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.operations.AnnotationOperationsTracker
 import androidx.pdf.annotation.registry.AnnotationHandleRegistry
 import androidx.pdf.annotation.repository.AnnotationsRepository
@@ -38,11 +39,22 @@ public interface PdfAnnotationsManager {
     public suspend fun getAnnotations(pageNum: Int): List<KeyedPdfAnnotation>
 
     /**
-     * Retrieves all local modifications made to the document annotations.
+     * Retrieves all local modifications made to the document annotations, sorted by page number.
      *
      * @return A [EditsDraft] representing the current state of all modified items.
      */
-    public suspend fun getAnnotationModifications(): EditsDraft
+    @OptIn(ExperimentalPdfApi::class) public suspend fun getAnnotationModifications(): EditsDraft
+
+    /**
+     * Clears successfully applied operations from the session state.
+     *
+     * Removes the first [appliedCount] operations from the pending set, matching the deterministic
+     * order in which they were returned by [getAnnotationModifications]. The assumption is that
+     * operations are processed in sequential order.
+     *
+     * @param appliedCount The number of successfully applied operations to remove.
+     */
+    public suspend fun clearAppliedEdits(appliedCount: Int)
 
     /**
      * Adds a new keyed annotation.

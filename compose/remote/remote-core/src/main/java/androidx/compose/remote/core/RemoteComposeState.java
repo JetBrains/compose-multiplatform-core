@@ -29,6 +29,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -64,6 +65,7 @@ public class RemoteComposeState implements CollectionsAccess {
     private final boolean[] mFloatOverride = new boolean[Limits.MAX_STATE_DATA];
 
     private int mNextId = START_ID;
+    private int mNextLocalId = 0x4000;
     private final int @NonNull [] mIdMaps =
             new int[] {START_ID, NanMap.START_VAR, NanMap.START_ARRAY};
     @Nullable private RemoteContext mRemoteContext = null;
@@ -129,6 +131,9 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /** Insert an item in the cache */
     public void updateData(int id, @NonNull Object item) {
+        if (id < 0 || id >= mDataOverride.length) {
+            return;
+        }
         if (!mDataOverride[id]) {
             Object previous = mIntDataMap.get(id);
             if (previous != item) {
@@ -184,6 +189,7 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /**
      * Get the winding associated with the path id
+     *
      * @param id the id of the path
      * @return the winding
      */
@@ -193,6 +199,7 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /**
      * Set the winding associated with the path id
+     *
      * @param id the id of the path
      * @param winding the winding
      */
@@ -207,6 +214,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param item the new value
      */
     public void overrideData(int id, @NonNull Object item) {
+        if (id < 0 || id >= mDataOverride.length) {
+            return;
+        }
         Object previous = mIntDataMap.get(id);
         if (previous != item) {
             mDataIntMap.remove(previous);
@@ -232,6 +242,9 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /** Insert an float item in the cache */
     public void updateFloat(int id, float value) {
+        if (id < 0 || id >= mFloatOverride.length) {
+            return;
+        }
         if (!mFloatOverride[id]) {
             float previous = mFloatMap.get(id);
             if (previous != value) {
@@ -249,6 +262,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param value the override value
      */
     public void overrideFloat(int id, float value) {
+        if (id < 0 || id >= mFloatOverride.length) {
+            return;
+        }
         float previous = mFloatMap.get(id);
         if (previous != value) {
             mFloatMap.put(id, value);
@@ -278,6 +294,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param value the value of the integer
      */
     public void updateInteger(int id, int value) {
+        if (id < 0 || id >= mIntegerOverride.length) {
+            return;
+        }
         if (!mIntegerOverride[id]) {
             int previous = mIntegerMap.get(id);
             if (previous != value) {
@@ -295,6 +314,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param value the new value
      */
     public void overrideInteger(int id, int value) {
+        if (id < 0 || id >= mIntegerOverride.length) {
+            return;
+        }
         int previous = mIntegerMap.get(id);
         if (previous != value) {
             mIntegerMap.put(id, value);
@@ -381,6 +403,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param id the data id to clear
      */
     public void clearDataOverride(int id) {
+        if (id < 0 || id >= mDataOverride.length) {
+            return;
+        }
         mDataOverride[id] = false;
         updateListeners(id);
     }
@@ -391,6 +416,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param id the integer id to clear
      */
     public void clearIntegerOverride(int id) {
+        if (id < 0 || id >= mIntegerOverride.length) {
+            return;
+        }
         mIntegerOverride[id] = false;
         updateListeners(id);
     }
@@ -401,6 +429,9 @@ public class RemoteComposeState implements CollectionsAccess {
      * @param id the float id to clear
      */
     public void clearFloatOverride(int id) {
+        if (id < 0 || id >= mFloatOverride.length) {
+            return;
+        }
         mFloatOverride[id] = false;
         updateListeners(id);
     }
@@ -425,6 +456,30 @@ public class RemoteComposeState implements CollectionsAccess {
     public void reset() {
         mIntWrittenMap.clear();
         mDataIntMap.clear();
+        mIntDataMap.clear();
+        mFloatMap.clear();
+        mIntegerMap.clear();
+        mColorMap.clear();
+        mDataMapMap.clear();
+        mObjectMap.clear();
+        mPathMap.clear();
+        mPathData.clear();
+        mPathWinding.clear();
+        mColorOverride.clear();
+        mCollectionMap.clear();
+        Arrays.fill(mDataOverride, false);
+        Arrays.fill(mIntegerOverride, false);
+        Arrays.fill(mFloatOverride, false);
+        mVarListeners.clear();
+        mAllVarListeners.clear();
+        mNextId = START_ID;
+        mNextLocalId = 0x4000;
+        mIdMaps[0] = START_ID;
+        mIdMaps[1] = NanMap.START_VAR;
+        mIdMaps[2] = NanMap.START_ARRAY;
+        mRepaintSeconds = Float.NaN;
+        mLastRepaint = Float.NaN;
+        mRemoteContext = null;
     }
 
     /**
@@ -447,6 +502,15 @@ public class RemoteComposeState implements CollectionsAccess {
             return mNextId++;
         }
         return mIdMaps[type]++;
+    }
+
+    /**
+     * Get the next available macro-local id
+     *
+     * @return next available local id
+     */
+    public int createNextLocalId() {
+        return mNextLocalId++;
     }
 
     /**
@@ -529,7 +593,9 @@ public class RemoteComposeState implements CollectionsAccess {
             int sub = (int) (currentTime % 60000);
             return Math.min(repaintMs, 2 + 1000 * 60 - sub);
         }
-
+        if (!Float.isNaN(mRepaintSeconds)) {
+            return (int) (mRepaintSeconds * 1000);
+        }
         return -1;
     }
 
@@ -676,10 +742,10 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /**
      * Mark the variable with id to be dirty
+     *
      * @param id
      */
     public void markVariableDirty(int id) {
         updateListeners(id);
     }
-
 }

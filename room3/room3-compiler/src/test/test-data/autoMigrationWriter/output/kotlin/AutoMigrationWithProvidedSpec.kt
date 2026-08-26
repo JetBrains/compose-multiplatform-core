@@ -3,12 +3,12 @@ package foo.bar
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.executeSQL
+import androidx.sqlite.execSQL
 import javax.`annotation`.processing.Generated
 import kotlin.Suppress
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
-@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "MemberExtensionConflict"])
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL", "OPT_IN_USAGE_ERROR", "OPT_IN_USAGE", "MemberExtensionConflict", "CAN_BE_VAL"])
 internal class MyDatabase_AutoMigration_1_2_Impl : Migration {
     private val callback: AutoMigrationSpec
 
@@ -17,7 +17,7 @@ internal class MyDatabase_AutoMigration_1_2_Impl : Migration {
     }
 
     public override suspend fun migrate(connection: SQLiteConnection) {
-        connection.executeSQL("ALTER TABLE `Song` ADD COLUMN `artistId` INTEGER DEFAULT NULL")
+        connection.execSQL("ALTER TABLE `Song` ADD COLUMN `artistId` INTEGER DEFAULT NULL")
         callback.onPostMigrate(connection)
     }
 }

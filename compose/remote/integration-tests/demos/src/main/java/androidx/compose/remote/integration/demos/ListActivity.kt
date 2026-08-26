@@ -21,7 +21,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
-import androidx.compose.remote.creation.compose.action.HostAction
+import androidx.compose.remote.creation.compose.action.hostAction
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -44,7 +44,7 @@ import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.remote.integration.demos.widget.listWidget
 import androidx.compose.remote.player.view.RemoteComposePlayer
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -52,7 +52,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteText, background, rememberRemoteScrollState, remote-player-view,
+// verticalScroll
 class ListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,7 +84,9 @@ class ListActivity : ComponentActivity() {
 
 @RemoteComposable
 @Composable
-@Suppress("RestrictedApiAndroidX")
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteText, rememberRemoteScrollState, verticalScroll, remote-player-view
 fun ScrollableList(name: String, modifier: RemoteModifier = RemoteModifier) {
     val scrollState = rememberRemoteScrollState()
     RemoteColumn(
@@ -95,13 +100,13 @@ fun ScrollableList(name: String, modifier: RemoteModifier = RemoteModifier) {
                     RemoteModifier.fillMaxWidth()
                         .height(96.rdp)
                         .border(1.rdp, Color.LightGray.rc)
-                        .clickable(HostAction("abc".rs))
+                        .clickable(hostAction("abc".rs))
                         // Must be direct child of the scrollable item
                         .semantics(mergeDescendants = true) {},
                 contentAlignment = RemoteAlignment.Center,
             ) {
                 RemoteText(
-                    if (it == 0) name else "Item $it",
+                    (if (it == 0) name else "Item $it").rs,
                     color = RemoteColor(Color.Black),
                     fontSize = 36.rsp,
                 )
@@ -110,9 +115,12 @@ fun ScrollableList(name: String, modifier: RemoteModifier = RemoteModifier) {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteText, background, rememberRemoteScrollState, remote-player-view,
+// verticalScroll
 @Preview
 @Composable
 fun ScrollableListPreview() {
-    RemotePreview { ScrollableList("ScrollableListPreview") }
+    RemoteContentPreview { ScrollableList("ScrollableListPreview") }
 }

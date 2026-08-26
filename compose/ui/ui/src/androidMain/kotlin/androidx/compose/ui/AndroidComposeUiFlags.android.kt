@@ -49,85 +49,88 @@ package androidx.compose.ui
  *      }
  */
 @ExperimentalComposeUiApi
-object AndroidComposeUiFlags {
-    /**
-     * This flag enables ComposeViewContext to be created automatically and used across ComposeViews
-     * within the same hierarchy. With the flag disabled, ComposeViewContext will only be created
-     * when explicitly provided to a ComposeView.
-     */
-    // TODO: b/479834257
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isSharedComposeViewContextEnabled: Boolean = true
-
-    /** This moves WindowInfo into the shared ComposeViewContext. */
-    // TODO: b/479837249
-    @field:Suppress("MutableBareField") @JvmField var isSharedWindowInfoEnabled: Boolean = true
-
-    /** This moves AccessibilityManager into the shared ComposeViewContext. */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    // TODO: b/479845566
-    var isSharedAccessibilityManagerEnabled: Boolean = true
-
-    /** This moves DrawScope and CanvasHolder into the shared ComposeViewContext. */
-    // TODO: b/479849019
-    @field:Suppress("MutableBareField") @JvmField var isSharedDrawingEnabled: Boolean = true
-
-    /** This moves ViewConfiguration into the shared ComposeViewContext. */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    // TODO: b/479890645
-    var isSharedViewConfigurationEnabled: Boolean = true
-
-    /** This moves Clipboard-related instances into the shared ComposeViewContext. */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    // TODO: b/479895130
-    var isSharedClipboardManagerEnabled: Boolean = true
-
-    /**
-     * This flag enables support for walking up nested scrolling in response to
-     * android.R.id.accessibilityActionShowOnScreen from Accessibility.
-     *
-     * Enabled is correct nested scrolling behavior and it should be enabled in all apps.
-     */
-    // TODO: b/474650559
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isAccessibilityShowOnScreenNestedScrollingEnabled: Boolean = true
-
-    /** This moves Haptics-related instances into the shared ComposeViewContext. */
-    // TODO: b/479895628
-    @field:Suppress("MutableBareField") @JvmField var isSharedHapticsEnabled: Boolean = true
+public object AndroidComposeUiFlags {
 
     /**
      * This flag enables using the View's handler for semantics processing instead of the Main
      * Looper. This avoids crashes in environments where Compose is used on a non-main thread.
      */
-    @field:Suppress("MutableBareField")
-    @JvmField
     // TODO remove me b/486998514
-    var isViewBasedSemanticsHandlerEnabled: Boolean = true
-
-    /** This moves Font-related instances into the shared ComposeViewContext. */
-    // TODO remove me b/479898293
-    @field:Suppress("MutableBareField") @JvmField var isSharedFontEnabled: Boolean = true
-
-    /**
-     * When enabled, forces child views to layout after measurement. Compose allows measurement
-     * without layout, but Views require measurement to be followed by layout in order to clear the
-     * requestLayout() flag. If the layout doesn't happen, and a change in that View happens again,
-     * a requestLayout() will not trigger a remeasurement.
-     */
     @field:Suppress("MutableBareField")
     @JvmField
-    // TODO remove me b/491111451
-    var isForceChildLayoutAfterMeasurementEnabled: Boolean = true
+    public var isViewBasedSemanticsHandlerEnabled: Boolean = true
 
     /** This flag enables the Android Framework implementation of VelocityTracker. */
     // TODO: b/483449576
     @field:Suppress("MutableBareField")
     @JvmField
-    var isFrameworkVelocityTrackerEnabled: Boolean = false
+    public var isFrameworkVelocityTrackerEnabled: Boolean = false
+
+    /**
+     * If enabled, the creation of the container for AndroidViews is delayed until an AndroidView is
+     * added.
+     */
+    // TODO: b/529483648
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDelayAndroidViewsHandlerCreationEnabled: Boolean = false
+
+    /**
+     * This flag forces scroll capture to center the content being rendered even if it's already
+     * visible.
+     */
+    // TODO: remove and close b/509934021
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAlwaysScrollDuringScrollCaptureEnabled: Boolean = true
+
+    /** Enables using out of frame scheduler instead of Choreographer for text input events. */
+    // TODO(b/513525072): Cleanup once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
+
+    /**
+     * Enables sorting of accessibility children based on their traversal index when the parent is a
+     * traversal group and is a merging container.
+     */
+    // TODO: b/522932901
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isTraversalGroupSortingEnabled: Boolean = true
+
+    /** Enables propagation of hideFromAccessibility to children of merging parents. */
+    // TODO: b/522817006
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isPropagateHideFromAccessibilityToMergingChildrenEnabled: Boolean = true
+
+    /**
+     * This flag enables performance improvements in accessibility, such as caching accessibility
+     * state and deferring listener registration.
+     */
+    // TODO: remove me b/529420099
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isAccessibilityPerformanceEnabled: Boolean = true
+
+    /**
+     * If enabled, WindowInsetsRulers interactions will use the delayed-initialization path to
+     * improve ComposeView startup time. If disabled, the immediate-initialization path is used
+     * instead.
+     */
+    // TODO: Remove this flag once it has soaked (b/531596705)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isDelayedWindowInsetsRulersEnabled: Boolean = true
+
+    /**
+     * This flag enables dispatching accessibility focus events (TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+     * after keyboard scroll events for screen-reader synchronization.
+     */
+    // TODO: Remove this flag once TalkBack post-scroll sync is ubiquitous (b/447669491,
+    // b/543664588)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isScrollAccessibilityFocusEventEnabled: Boolean = true
 }

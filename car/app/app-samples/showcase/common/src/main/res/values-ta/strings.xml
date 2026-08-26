@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"மெசேஜ்கள் இங்கே செல்லும்.\nகூடுதல் உரைகள் இரண்டாவது வரியில் இருக்கும்."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"குறுகிய மெசேஜ் டெம்ப்ளேட்டின் டெமோ"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"பிரிக்கப்பட்டதன் டெம்ப்ளேட் டெமோ"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"சுருக்கப்பட்ட பிரிவுகளுக்கான டெமோ"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"AlphaJump இயக்கப்பட்ட பிரிவுகளுக்கான டெமோ"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ரேடியோ பட்டன் பிரிவு"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"நிலைமாற்றம் பிரிவு"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"பட்டியல் 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"ஒவ்வொரு பட்டியலுக்கும் கீழுள்ள சுருக்க விவரம்"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"படங்கள், செயல்கள் ஆகியவற்றுக்கான டெமோவை முடித்தல்"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"சிப் டெமோ"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"செயல்நிலைப் பட்டி டெமோ"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"பிரிவுத் தலைப்பின் டெமோ"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"ஸ்பாட்லைட் பிரிவின் டெமோ"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"பெட்டி டெம்ப்ளேட்டின் டெமோ"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"இருப்பிடப் பட்டியல் டெம்ப்ளேட்டின் டெமோ"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"இடங்களைக் கண்டறியுங்கள்"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"சமீபத்திய அம்சங்கள்"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"ஏற்றுதல் இயக்கப்பட்டுள்ளது"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"ஏற்றுதல் முடக்கப்பட்டுள்ளது"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"ஆப்ஸ் தீம் பயன்படுத்துதல்"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"ஆப்ஸ் தீம் இயக்கப்பட்டுள்ளது"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"ஆப்ஸ் தீம் முடக்கப்பட்டுள்ளது"</string>
     <string name="loading_screen" msgid="4771507490730308794">"திரையை ஏற்றுகிறது"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"வண்ணத்தைச் சேர்ப்பதற்கான/அகற்றுவதற்கான நிலைமாற்றும் பட்டன்"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"நிலைமாற்றங்கள் மூலம் டெம்ப்ளேட்டை மேப் செய்தல்"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"உள்ளடக்க டெமோக்களை உடைய வரைபடம்"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"மெசேஜ் டெம்ப்ளேட் டெமோவை உடைய வரைபடம்"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"கட்ட டெம்ப்ளேட் டெமோவை உடைய வரைபடம்"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"பிரிவுகளாகப் பிரிக்கப்பட்டவற்றின் பட்டியல் உள்ள வரைபடம்"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"பேனர் டெமோ"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"மேம்பட்ட தலைப்பு வரிசை டெமோ"</string>
 </resources>

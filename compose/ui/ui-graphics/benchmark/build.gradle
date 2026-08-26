@@ -35,7 +35,10 @@ dependencies {
 }
 
 android {
-    compileSdk { version = release(35) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
+    defaultConfig {
+        minSdk { version = release(24) }
+    }
     namespace = "androidx.compose.ui.graphics.benchmark"
 }
 

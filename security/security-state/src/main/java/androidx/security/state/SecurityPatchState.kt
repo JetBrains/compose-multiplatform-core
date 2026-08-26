@@ -32,11 +32,13 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.StringDef
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
+import androidx.concurrent.futures.SuspendToFutureAdapter
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_KERNEL_VERSION
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_SYSTEM_SPL
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_SYSTEM_SUPPLEMENTAL_PATCHES
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_VENDOR_SPL
 import androidx.security.state.SecurityStateManagerCompat.Companion.KEY_VENDOR_SUPPLEMENTAL_PATCHES
+import com.google.common.util.concurrent.ListenableFuture
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -80,7 +82,7 @@ import kotlinx.serialization.json.Json
  * update security states.
  *
  * Recommended pattern of usage:
- * - call [getVulnerabilityReportUrl] and make a request to download the JSON file containing
+ * - call [createVulnerabilityReportUrl] and make a request to download the JSON file containing
  *   vulnerability report data
  * - create SecurityPatchState object, passing in the downloaded JSON as a [String]
  * - call [getPublishedSecurityPatchLevel] or other APIs
@@ -132,8 +134,15 @@ constructor(
             )
 
         /** URL for the Google-provided data of vulnerabilities from Android Security Bulletin. */
+        @Deprecated(
+            message = "This URL will stop working. Use createVulnerabilityReportUrl instead.",
+            replaceWith = ReplaceWith("SecurityPatchState.createVulnerabilityReportUrl()"),
+            level = DeprecationLevel.WARNING,
+        )
         public const val DEFAULT_VULNERABILITY_REPORTS_URL: String =
             "https://storage.googleapis.com/osv-android-api"
+
+        private const val OSV_VULNERABILITY_REPORTS_URL: String = "https://android-api.osv.dev"
 
         /**
          * Timeout in milliseconds to wait for an [IUpdateInfoService] implementation to bind.
@@ -212,6 +221,30 @@ constructor(
          * @return A fully constructed URL pointing to the specific vulnerability report for this
          *   device.
          */
+        @JvmOverloads
+        @JvmStatic
+        @RequiresApi(26)
+        public fun createVulnerabilityReportUrl(
+            serverUrl: Uri = Uri.parse(OSV_VULNERABILITY_REPORTS_URL)
+        ): Uri {
+            val newEndpoint = "v1/android_sdk_${Build.VERSION.SDK_INT}.json"
+            return serverUrl.buildUpon().appendEncodedPath(newEndpoint).build()
+        }
+
+        /**
+         * Constructs a URL for fetching vulnerability reports based on the device's Android
+         * version.
+         *
+         * @param serverUrl The base URL of the server where vulnerability reports are stored.
+         * @return A fully constructed URL pointing to the specific vulnerability report for this
+         *   device.
+         */
+        @Suppress("DEPRECATION")
+        @Deprecated(
+            message = "Use createVulnerabilityReportUrl instead.",
+            replaceWith = ReplaceWith("SecurityPatchState.createVulnerabilityReportUrl()"),
+            level = DeprecationLevel.WARNING,
+        )
         @JvmOverloads
         @JvmStatic
         @RequiresApi(26)
@@ -640,6 +673,51 @@ constructor(
             ?.let { latestDate -> DateBasedSecurityPatchLevel.fromString(latestDate) }
     }
 
+    private fun getMaxComponentSecurityPatchLevel(
+        component: String,
+        declaredSpl: DateBasedSecurityPatchLevel,
+    ): DateBasedSecurityPatchLevel {
+        val report = vulnerabilityReport ?: return declaredSpl
+
+        val oldestReportKey = report.vulnerabilities.keys.minOrNull()
+        if (oldestReportKey != null) {
+            val oldestReportSpl = DateBasedSecurityPatchLevel.fromString(oldestReportKey)
+            if (declaredSpl < oldestReportSpl) {
+                // The device is older than the report's historical records.
+                // We cannot mathematically guarantee the gap is clean, so we must safely return the
+                // device's actual SPL.
+                return declaredSpl
+            }
+        }
+
+        val globalMax = getLatestBulletinDate() ?: return declaredSpl
+        if (declaredSpl > globalMax) return globalMax
+
+        val sortedDates =
+            report.vulnerabilities.keys
+                .map { DateBasedSecurityPatchLevel.fromString(it) }
+                .filter { it > declaredSpl }
+                .sorted()
+
+        var currentSpl = declaredSpl
+        for (date in sortedDates) {
+            val hasVulnerability =
+                report.vulnerabilities[date.toString()]?.any { group ->
+                    when (component) {
+                        COMPONENT_SYSTEM_MODULES ->
+                            group.components.any { it in getSystemModules() }
+                        else -> group.components.contains(componentToString(component))
+                    }
+                } ?: false
+
+            if (hasVulnerability) {
+                break
+            }
+            currentSpl = date
+        }
+        return currentSpl
+    }
+
     private fun componentToString(@Component component: String): String {
         return component.lowercase(Locale.US)
     }
@@ -665,54 +743,47 @@ constructor(
      * This "Global Max" behavior ensures that in months where the Bulletin does not list specific
      * Mainline updates (e.g., due to Risk Based Update System (RBUS) policies), the reported SPL
      * "upgrades" to the current Bulletin date to signal ongoing compliance.
-     *
-     * @throws IllegalStateException if the vulnerability report is not loaded or contains no data.
      */
     private fun getSystemModulesSecurityPatchLevel(): DateBasedSecurityPatchLevel {
-        checkVulnerabilityReport()
+        if (vulnerabilityReport == null) {
+            // If no report is loaded, we can't determine mainline SPL accurately.
+            // However, we should return the lowest version among the monitored modules
+            // as a conservative estimate of the device state.
+            return getSystemModules()
+                .mapNotNull { module ->
+                    try {
+                        DateBasedSecurityPatchLevel.fromString(
+                            securityStateManagerCompat.getPackageVersion(module)
+                        )
+                    } catch (e: Exception) {
+                        // If a package is missing or returns a malformed version string,
+                        // skip it and focus on the valid modules.
+                        null
+                    }
+                }
+                .minOrNull() ?: DateBasedSecurityPatchLevel(1970, 1, 1)
+        }
 
         val modules: List<String> = getSystemModules()
-        var minSpl = DateBasedSecurityPatchLevel(1970, 1, 1)
-        var unpatched = false
-
-        // Determine the target "Upgraded" SPL (Global Max) from the Bulletin
-        val globalMaxSpl =
-            getLatestBulletinDate()
-                ?: throw IllegalStateException("No SPL data available for system modules.")
+        var minAdvancedSpl: DateBasedSecurityPatchLevel? = null
 
         modules.forEach { module ->
-            val maxComponentSpl = getMaxComponentSecurityPatchLevel(module) ?: return@forEach
+            val packageSplString = securityStateManagerCompat.getPackageVersion(module)
             val packageSpl: DateBasedSecurityPatchLevel
             try {
-                packageSpl =
-                    DateBasedSecurityPatchLevel.fromString(
-                        securityStateManagerCompat.getPackageVersion(module)
-                    )
+                packageSpl = DateBasedSecurityPatchLevel.fromString(packageSplString)
             } catch (e: Exception) {
                 // Prevent malformed package versions from interrupting the loop.
                 return@forEach
             }
 
-            // Check if the specific module is outdated relative to its last KNOWN update
-            if (packageSpl < maxComponentSpl) {
-                if (unpatched) {
-                    if (minSpl > packageSpl) minSpl = packageSpl
-                } else {
-                    minSpl = packageSpl
-                    unpatched = true
-                }
+            val advancedSpl = getMaxComponentSecurityPatchLevel(module, packageSpl)
+            if (minAdvancedSpl == null || advancedSpl < minAdvancedSpl) {
+                minAdvancedSpl = advancedSpl
             }
         }
 
-        // If any module is outdated, return the lowest version found (Device State).
-        if (unpatched) {
-            return minSpl
-        }
-
-        // If all modules meet their requirements, "Upgrade" the reported SPL to the
-        // Global Max (Bulletin Date). This handles Risk Based Update System (RBUS) months
-        // (hidden patches) and empty bulletins correctly.
-        return globalMaxSpl
+        return minAdvancedSpl ?: DateBasedSecurityPatchLevel(1970, 1, 1)
     }
 
     /**
@@ -741,6 +812,30 @@ constructor(
     }
 
     /**
+     * Returns the effective Security Patch Level (SPL) for the System image.
+     *
+     * This method determines the SPL based on the compliance of the device's
+     * ro.build.security_patch property against the loaded Vulnerability Report.
+     *
+     * Behavior:
+     * 1. **Compliant:** If the system SPL is up-to-date with its specific requirements in the
+     *    Vulnerability Report, this returns the **Latest SPL from the entire Vulnerability Report
+     *    (Global Max)**.
+     * 2. **Outdated:** If the system SPL is older than its required version, this returns the
+     *    actual device SPL.
+     *
+     * This "Global Max" behavior ensures that in months where the Bulletin does not list specific
+     * System updates (e.g., due to Risk Based Update System (RBUS) policies), the reported SPL
+     * "upgrades" to the current Bulletin date to signal ongoing compliance.
+     */
+    private fun getSystemSecurityPatchLevel(systemSplString: String): DateBasedSecurityPatchLevel {
+        val systemSpl = DateBasedSecurityPatchLevel.fromString(systemSplString)
+        if (vulnerabilityReport == null) return systemSpl
+
+        return getMaxComponentSecurityPatchLevel(COMPONENT_SYSTEM, systemSpl)
+    }
+
+    /**
      * Retrieves the current security patch level for a specified component.
      *
      * @param component The component for which the security patch level is requested.
@@ -764,11 +859,10 @@ constructor(
                 VersionedSecurityPatchLevel.fromString(kernelVersion)
             }
             COMPONENT_SYSTEM -> {
-                val systemSpl =
+                val systemSplString =
                     globalSecurityState.getString(KEY_SYSTEM_SPL)
                         ?: throw IllegalStateException("System SPL not available.")
-
-                DateBasedSecurityPatchLevel.fromString(systemSpl)
+                getSystemSecurityPatchLevel(systemSplString)
             }
             COMPONENT_VENDOR -> {
                 val vendorSpl =
@@ -867,33 +961,61 @@ constructor(
         @Component component: String,
         timeoutMillis: Long = UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS,
     ): SecurityPatchLevel {
-        val deviceSpl = getDeviceSecurityPatchLevel(component)
-        val results = queryAllAvailableUpdates(timeoutMillis)
+        return withContext(Dispatchers.IO) {
+            val deviceSpl = getDeviceSecurityPatchLevel(component)
+            val results = queryAllAvailableUpdates(timeoutMillis)
 
-        val maxAvailableSpl =
-            results
-                .asSequence()
-                .flatMap { it.updates }
-                .filter { update -> update.component == component }
-                .mapNotNull { update ->
-                    try {
-                        getComponentSecurityPatchLevel(component, update.securityPatchLevel)
-                    } catch (e: IllegalArgumentException) {
-                        Log.w(
-                            TAG,
-                            "Ignoring invalid SPL format from provider: ${update.securityPatchLevel}",
-                        )
-                        null
+            val maxAvailableSpl =
+                results
+                    .asSequence()
+                    .flatMap { it.updates }
+                    .filter { update -> update.component == component }
+                    .mapNotNull { update ->
+                        val spl = update.securityPatchLevel
+
+                        // Only consider updates that match the device's current SPL format.
+                        // This prevents IllegalArgumentExceptions during the maxOrNull() comparison
+                        // and safely filters out malformed strings that were parsed as the
+                        // fallback GenericStringSecurityPatchLevel.
+                        if (spl::class == deviceSpl::class) {
+                            spl
+                        } else {
+                            Log.w(
+                                TAG,
+                                "Ignoring SPL from provider for $component: format mismatch. " +
+                                    "Expected ${deviceSpl::class.simpleName}, but received ${spl::class.simpleName}.",
+                            )
+                            null
+                        }
                     }
-                }
-                .maxOrNull()
+                    .maxOrNull()
 
-        if (maxAvailableSpl != null && maxAvailableSpl > deviceSpl) {
-            return maxAvailableSpl
+            if (maxAvailableSpl != null && maxAvailableSpl > deviceSpl) {
+                return@withContext maxAvailableSpl
+            }
+
+            return@withContext deviceSpl
         }
-
-        return deviceSpl
     }
+
+    /**
+     * Fetches the latest available security patch level for a specific component.
+     *
+     * This is the Java-friendly variant of [fetchAvailableSecurityPatchLevel] returning a
+     * [ListenableFuture].
+     *
+     * @param component The component to check.
+     * @param timeoutMillis The maximum time to wait for the query to complete, in milliseconds.
+     * @return A [ListenableFuture] containing the latest [SecurityPatchLevel].
+     */
+    @JvmOverloads
+    public fun fetchAvailableSecurityPatchLevelAsync(
+        @Component component: String,
+        timeoutMillis: Long = UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS,
+    ): ListenableFuture<SecurityPatchLevel> =
+        SuspendToFutureAdapter.launchFuture(Dispatchers.IO) {
+            fetchAvailableSecurityPatchLevel(component, timeoutMillis)
+        }
 
     /**
      * Queries for available security updates from all trusted update providers.
@@ -933,6 +1055,23 @@ constructor(
                 }
 
             return@withContext deferredResults.awaitAll()
+        }
+
+    /**
+     * Queries for available security updates from all trusted update providers.
+     *
+     * This is the Java-friendly variant of [queryAllAvailableUpdates] returning a
+     * [ListenableFuture].
+     *
+     * @param timeoutMillis The maximum time to wait for each provider to respond, in milliseconds.
+     * @return A [ListenableFuture] containing a list of [UpdateCheckResult] objects.
+     */
+    @JvmOverloads
+    public fun queryAllAvailableUpdatesAsync(
+        timeoutMillis: Long = UPDATE_INFO_SERVICE_BINDING_TIMEOUT_MS
+    ): ListenableFuture<@JvmSuppressWildcards List<UpdateCheckResult>> =
+        SuspendToFutureAdapter.launchFuture(Dispatchers.IO) {
+            queryAllAvailableUpdates(timeoutMillis)
         }
 
     /**
@@ -1404,7 +1543,10 @@ constructor(
 
                     if (
                         publishedVersions
-                            .filter { it.getMajorVersion() == kernelVersion.getMajorVersion() }
+                            .filter {
+                                it.getMajorVersion() == kernelVersion.getMajorVersion() &&
+                                    it.getMinorVersion() == kernelVersion.getMinorVersion()
+                            }
                             .any { it > kernelVersion }
                     ) {
                         return false

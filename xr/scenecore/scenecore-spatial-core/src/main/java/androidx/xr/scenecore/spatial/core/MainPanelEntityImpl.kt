@@ -15,23 +15,27 @@
  */
 package androidx.xr.scenecore.spatial.core
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Rect
+import androidx.annotation.GuardedBy
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
+import androidx.xr.scenecore.runtime.requiresApiLevel
 import com.android.extensions.xr.XrExtensionResult
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
+import java.util.concurrent.Executor
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * MainPanelEntity is a special instance of a PanelEntity that is backed by the WindowLeash CPM
  * node. The content of this PanelEntity is assumed to have been previously defined and associated
  * with the Window Leash Node.
  */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 internal class MainPanelEntityImpl(
     activity: Activity,
     node: Node,
@@ -41,9 +45,7 @@ internal class MainPanelEntityImpl(
 ) : BasePanelEntity(activity, node, extensions, sceneNodeRegistry, executor), PanelEntity {
     // Note that we expect the Node supplied here to be the WindowLeash node.
     init {
-        // Read the Pixel dimensions for the primary panel off the Activity's WindowManager. Note
-        // that this requires MinAPI 30.
-        // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
+        // Read the Pixel dimensions for the primary panel off the Activity's WindowManager.
         super.sizeInPixels =
             PixelDimensions(boundsFromWindowManager.width(), boundsFromWindowManager.height())
         val cornerRadius = defaultCornerRadiusInMeters
@@ -53,8 +55,65 @@ internal class MainPanelEntityImpl(
         super.cornerRadiusValue = cornerRadius
     }
 
+    private val resizeCompleteListeners = AtomicReference<Map<Runnable, Executor>>(emptyMap())
+
+    /**
+     * Registers a callback to be invoked after an asynchronous set size operation completes.
+     *
+     * The callback is guaranteed to be invoked whether the underlying IPC call succeeds or fails
+     * (e.g., throws an exception), ensuring listeners can safely recover their state.
+     *
+     * The listener will be executed on the provided [executor].
+     *
+     * @param executor The executor on which to run the listener.
+     * @param listener The task to execute upon completion.
+     */
+    internal fun addOnSetSizeCompleteListener(executor: Executor, listener: Runnable) {
+        resizeCompleteListeners.updateAndGet { it + (listener to executor) }
+    }
+
+    /**
+     * Unregisters a previously added size-change listener. The provided `listener` must be the same
+     * instance used for registration to prevent memory leaks.
+     *
+     * @param listener The listener instance to unregister.
+     */
+    internal fun removeOnSetSizeCompleteListener(listener: Runnable) {
+        resizeCompleteListeners.updateAndGet { it - listener }
+    }
+
+    private fun notifyOnSetSizeComplete() {
+        val currentListeners = resizeCompleteListeners.get()
+        for ((listener, executor) in currentListeners) {
+            try {
+                executor.execute(listener)
+            } catch (e: RejectedExecutionException) {
+                // Catch this exception to prevent the loop from terminating early,
+                // ensuring subsequent listeners are still notified.
+            } catch (e: RuntimeException) {
+                // Catch this exception to prevent the loop from terminating early,
+                // ensuring subsequent listeners are still notified.
+            }
+        }
+    }
+
+    private val isSetSizePending = AtomicBoolean(false)
+
+    internal fun isWaitingForSetSize(): Boolean = isSetSizePending.get()
+
+    private val resizeLock = Any()
+
+    /** Indicates if the asynchronous IPC call to set the window size is currently in-flight. */
+    @GuardedBy("resizeLock") private var isExecutingSetMainWindowSizeAsync = false
+
+    /**
+     * Holds the most recent size request received while an operation is in-flight. Older pending
+     * requests are overwritten to ensure we only process the latest state.
+     */
+    @GuardedBy("resizeLock") private var latestDeferredPixelSizeRequest: PixelDimensions? = null
+
     private val boundsFromWindowManager: Rect
-        get() = activity!!.windowManager.currentWindowMetrics.bounds
+        get() = requiresApiLevel(30) { activity!!.windowManager.currentWindowMetrics.bounds }
 
     override var size: Dimensions
         get() {
@@ -83,14 +142,69 @@ internal class MainPanelEntityImpl(
             // TODO: b/376126162 - Consider calling setPixelDimensions() either when
             // setMainWindowSize's callback is called, or when the next spatial state callback with
             // the expected size is called.
+            if (value == super.sizeInPixels) {
+                return
+            }
             super.sizeInPixels = value
-            // TODO: b/376934871 - Check async results.
+            isSetSizePending.set(true)
+
+            var shouldExecuteNow = false
+            // Execute immediately, or overwrite the pending request if already busy.
+            synchronized(resizeLock) {
+                if (isExecutingSetMainWindowSizeAsync) {
+                    latestDeferredPixelSizeRequest = value
+                } else {
+                    isExecutingSetMainWindowSizeAsync = true
+                    shouldExecuteNow = true
+                }
+            }
+            if (shouldExecuteNow) {
+                executeSetMainWindowSizeAsync(value)
+            }
+        }
+
+    private fun executeSetMainWindowSizeAsync(targetSize: PixelDimensions) {
+        // TODO: b/376934871 - Check async results.
+        try {
             extensions.setMainWindowSize(
                 activity,
-                value.width,
-                value.height,
+                targetSize.width,
+                targetSize.height,
                 { obj: Runnable -> obj.run() },
-                { _: XrExtensionResult? -> },
+                { _: XrExtensionResult? -> handleSetSizeComplete() },
             )
+        } catch (e: Exception) {
+            synchronized(resizeLock) {
+                isExecutingSetMainWindowSizeAsync = false
+                latestDeferredPixelSizeRequest = null
+            }
+            isSetSizePending.set(false)
+
+            // Notify listeners to ensure UI state (e.g., restoring alpha)
+            // is properly recovered even if the IPC call fails.
+            notifyOnSetSizeComplete()
+
+            throw e
         }
+    }
+
+    private fun handleSetSizeComplete() {
+        var nextSizeToExecute: PixelDimensions? = null
+
+        synchronized(resizeLock) {
+            if (latestDeferredPixelSizeRequest != null) {
+                nextSizeToExecute = latestDeferredPixelSizeRequest
+                latestDeferredPixelSizeRequest = null
+            } else {
+                isExecutingSetMainWindowSizeAsync = false
+            }
+        }
+
+        if (nextSizeToExecute != null) {
+            executeSetMainWindowSizeAsync(nextSizeToExecute)
+        } else {
+            isSetSizePending.set(false)
+            notifyOnSetSizeComplete()
+        }
+    }
 }

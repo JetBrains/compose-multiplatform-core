@@ -28,11 +28,16 @@ import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresExtension
+import androidx.pdf.ExperimentalPdfApi
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfDocument.Companion.LINEARIZATION_STATUS_UNKNOWN
+import androidx.pdf.PdfFeature
 import androidx.pdf.RenderParams
-import androidx.pdf.annotation.KeyedPdfAnnotation
-import androidx.pdf.annotation.models.PdfObject
+import androidx.pdf.annotation.content.ImagePdfObject
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfObject
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.PdfObject
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageGotoLinkContent
@@ -76,7 +81,7 @@ import kotlinx.coroutines.withTimeout
 @OpenForTesting
 internal open class FakePdfDocument(
     /** A list of (x, y) page dimensions in content coordinates */
-    internal val pages: List<Point?> = listOf(),
+    internal val pages: List<Point?> = listOf(Point(600, 800)),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val linearizationStatus: Int = LINEARIZATION_STATUS_UNKNOWN,
     override val renderParams: RenderParams = RenderParams(RenderParams.RENDER_MODE_FOR_DISPLAY),
@@ -86,12 +91,8 @@ internal open class FakePdfDocument(
     private val textContents: List<PdfPageTextContent> = emptyList(),
     private val pageFormWidgetInfos: Map<Int, List<FormWidgetInfo>> = mapOf(),
     private val annotationsPerPage: Map<Int, List<KeyedPdfAnnotation>> = mapOf(),
+    private val pageObjectsPerPage: Map<Int, List<KeyedPdfObject>> = mapOf(),
     private val exceptionToThrow: Exception? = null,
-    @Deprecated(
-        "Deprecated, Use linearizationStatus instead",
-        replaceWith = ReplaceWith("linearizationStatus"),
-    )
-    override val isLinearized: Boolean = false,
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -134,6 +135,7 @@ internal open class FakePdfDocument(
         } ?: emptyList()
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         return null
     }
@@ -151,12 +153,30 @@ internal open class FakePdfDocument(
         return
     }
 
+    override fun isFeatureSupported(feature: PdfFeature): Boolean {
+        return true
+    }
+
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return pageLinks[pageNumber] ?: PdfDocument.PdfPageLinks(emptyList(), emptyList())
     }
 
     override suspend fun getAnnotationsForPage(pageNum: Int): List<KeyedPdfAnnotation> {
-        return annotationsPerPage.getOrDefault(pageNum, emptyList())
+        if (exceptionToThrow != null) throw exceptionToThrow
+        return annotationsPerPage[pageNum] ?: emptyList()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    override suspend fun getPageObjects(pageNum: Int, types: Long): List<KeyedPdfObject> {
+        if (exceptionToThrow != null) throw exceptionToThrow
+        return pageObjectsPerPage[pageNum]?.mapNotNull { keyedObject ->
+            keyedObject.takeIf {
+                when (it.pdfObject) {
+                    is ImagePdfObject -> PdfDocument.INCLUDE_IMAGE_PAGE_OBJECT and types != 0L
+                    is PathPdfObject -> PdfDocument.INCLUDE_PATH_PAGE_OBJECT and types != 0L
+                }
+            }
+        } ?: emptyList()
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -203,6 +223,42 @@ internal open class FakePdfDocument(
         )
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectionBounds(
+        pageNumber: Int,
+        start: SelectionBoundary,
+        stop: SelectionBoundary,
+    ): PageSelection {
+        if (exceptionToThrow != null) throw exceptionToThrow
+        // If startPoint is present use that or else estimate 0 index element closest to (0,0).
+        val startPoint = start.point ?: Point(0, 0)
+        // If stopPoint is present use that or else estimate INT_MAX index as closet to (INF,INF).
+        val stopPoint = stop.point ?: Point(Int.MAX_VALUE, Int.MAX_VALUE)
+        val selectionRect =
+            RectF(
+                    startPoint.x.toFloat(),
+                    startPoint.y.toFloat(),
+                    stopPoint.x.toFloat(),
+                    stopPoint.y.toFloat(),
+                )
+                .apply { sort() }
+
+        val selectedTextContents =
+            textContents.getOrNull(pageNumber)?.let { content ->
+                // Filter text bounds that intersect with the selection
+                val intersectingBounds =
+                    content.bounds.mapNotNull { textRect ->
+                        RectF().takeIf { it.setIntersect(selectionRect, textRect) }
+                    }
+
+                if (intersectingBounds.isNotEmpty()) {
+                    listOf(PdfPageTextContent(intersectingBounds, content.text))
+                } else emptyList()
+            } ?: emptyList()
+
+        return PageSelection(pageNumber, start, stop, selectedTextContents)
+    }
+
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
         return PageSelection(
             pageNumber,
@@ -216,7 +272,15 @@ internal open class FakePdfDocument(
         query: String,
         pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
-        return searchResults
+        if (exceptionToThrow != null) throw exceptionToThrow
+        val filtered = SparseArray<List<PageMatchBounds>>()
+        for (page in pageRange) {
+            val results = searchResults.get(page)
+            if (results != null) {
+                filtered.put(page, results)
+            }
+        }
+        return filtered
     }
 
     override suspend fun getPageInfos(pageRange: IntRange): List<PdfDocument.PageInfo> {
@@ -235,6 +299,7 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getPageInfo(pageNumber: Int, pageInfoFlags: Long): PdfDocument.PageInfo {
+        if (exceptionToThrow != null) throw exceptionToThrow
         layoutReach = maxOf(pageNumber, layoutReach)
         val size = pages[pageNumber]
         if (size == null) {

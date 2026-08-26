@@ -18,8 +18,8 @@ package androidx.car.app.model.constraints;
 
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
-import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.annotations.ExperimentalCarApi;
+import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.dialer.InCallTemplate;
 import androidx.car.app.dialer.TelephoneKeypadTemplate;
 import androidx.car.app.model.CarText;
@@ -39,7 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * Encapsulates the constraints to apply when creating {@link TabContents}.
+ * Encapsulates the constraints to apply when creating {@link androidx.car.app.model.TabContents}.
  *
  */
 @RequiresCarApi(6)

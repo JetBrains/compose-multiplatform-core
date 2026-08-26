@@ -48,17 +48,18 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.creation.compose.text.RemoteFontFamily
+import androidx.compose.remote.creation.compose.text.RemoteTypeface
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import java.text.DecimalFormat
 
-@Suppress("RestrictedApiAndroidX")
+@Suppress("RestrictedApiAndroidX") // Referring to RemoteText, background, drawAnchoredText
 @Composable
 fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 0) {
 
@@ -100,13 +101,13 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
     }
     RemoteColumn(
         modifier =
-            modifier.clip(RemoteRoundedCornerShape(18.rdp)).background(Color(3, 169, 244, 173)),
+            modifier.clip(RemoteRoundedCornerShape(18.rdp)).background(Color(3, 169, 244, 173).rc),
         horizontalAlignment = RemoteAlignment.CenterHorizontally,
         verticalArrangement = RemoteArrangement.Center,
     ) {
         RemoteText(
-            monthNames[month],
-            fontFamily = FontFamily.Serif,
+            monthNames[month].rs,
+            fontFamily = RemoteFontFamily.Serif,
             fontWeight = FontWeight.Bold,
             fontSize = 32.rsp,
             modifier = RemoteModifier.padding(bottom = 24.rdp),
@@ -117,23 +118,25 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                 if (j == 1 || j == 6) {
                     RemoteBox(
                         modifier =
-                            RemoteModifier.fillMaxHeight().width(1.rdp).background(Color.DarkGray)
+                            RemoteModifier.fillMaxHeight()
+                                .width(1.rdp)
+                                .background(Color.DarkGray.rc)
                     )
                 }
-                var modifier = RemoteModifier.padding(left = 8.rf, right = 8.rf)
+                var modifier = RemoteModifier.padding(start = 8.rf, end = 8.rf)
                 RemoteColumn(modifier = modifier, horizontalAlignment = RemoteAlignment.End) {
                     RemoteCanvas(modifier = RemoteModifier.size(20.rdp)) {
                         drawAnchoredText(
                             dayNames[j].rs,
                             40f.rf,
                             20f.rf,
-                            1f.rf,
-                            0f.rf,
                             paint =
                                 RemotePaint().apply {
                                     color = Color.White.rc
-                                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                                    typeface =
+                                        RemoteTypeface.create("default", RemoteTypeface.Style.Bold)
                                 },
+                            panX = 1f.rf,
                         )
                     }
                     for (i in 0 until 6) {
@@ -165,9 +168,8 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                                     "$number".rs,
                                     40f.rf,
                                     20f.rf,
-                                    1f.rf,
-                                    0f.rf,
                                     paint = RemotePaint().apply { color = Color.White.rc },
+                                    panX = 1f.rf,
                                 )
                             }
                         } else {
@@ -176,9 +178,8 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
                                     "$number".rs,
                                     40f.rf,
                                     20f.rf,
-                                    1f.rf,
-                                    0f.rf,
                                     paint = RemotePaint().apply { color = Color.Black.rc },
+                                    panX = 1f.rf,
                                 )
                             }
                         }
@@ -190,12 +191,15 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
 }
 
 @SuppressLint("UnrememberedMutableState")
-@Suppress("RestrictedApiAndroidX")
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteRectangleShape, RemoteText, graphicsLayer, rememberRemoteScrollState,
+// verticalScroll
 @Composable
 @RemoteComposable
 fun ScrollViewDemo() {
     val numElements = 12
-    val scrollState = rememberRemoteScrollState(evenNotches = numElements)
+    val scrollState = rememberRemoteScrollState(notches = numElements)
     val dimensionCard = 280.rdp
     val decimalFormat = remember { DecimalFormat("####0.00") }
     RemoteBox(modifier = RemoteModifier, contentAlignment = RemoteAlignment.BottomEnd) {
@@ -249,8 +253,12 @@ fun ScrollViewDemo() {
     }
 }
 
+@Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteRectangleShape, RemoteText, background, drawAnchoredText, graphicsLayer,
+// rememberRemoteScrollState, verticalScroll
 @Preview
 @Composable
-private fun CanvasCalendarMonthPreview() = RemotePreview { CanvasCalendarMonth() }
+private fun CanvasCalendarMonthPreview() = RemoteContentPreview { CanvasCalendarMonth() }
 
-@Preview @Composable private fun ScrollViewDemoPreview() = RemotePreview { ScrollViewDemo() }
+@Preview @Composable private fun ScrollViewDemoPreview() = RemoteContentPreview { ScrollViewDemo() }

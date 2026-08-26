@@ -16,7 +16,9 @@
 
 package androidx.compose.foundation.lazy
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -25,7 +27,9 @@ import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineScope
 
 /** The result of the measure pass for lazy list layout. */
-internal class LazyListMeasureResult(
+internal class LazyListMeasureResult
+@OptIn(ExperimentalFoundationApi::class)
+constructor(
     // properties defining the scroll position:
     /** The new first visible item. */
     val firstVisibleItem: LazyListMeasuredItem?,
@@ -47,6 +51,12 @@ internal class LazyListMeasureResult(
     val density: Density,
     /** Constraints used to measure children. */
     val childConstraints: Constraints,
+    /** Main axis size of sticking header items. */
+    val stickingItemsCombinedSize: Int,
+    /** Prefetch state used by the lazy layout. */
+    val prefetchState: LazyLayoutPrefetchState?,
+    /** Prefetch strategy used in our layout */
+    val prefetchStrategy: LazyListPrefetchStrategy?,
     // properties representing the info needed for LazyListLayoutInfo:
     /** see [LazyListLayoutInfo.visibleItemsInfo] */
     override val visibleItemsInfo: List<LazyListMeasuredItem>,
@@ -83,9 +93,10 @@ internal class LazyListMeasureResult(
      * [delta] and return null.
      *
      * @return new layout info if we can safely apply a passed scroll [delta] to this layout info.
-     *   If If new layout info is returned, only the placement phase is needed to apply new offsets.
-     *   If null is returned, it means we have to rerun the full measure phase to apply the [delta].
+     *   If new layout info is returned, only the placement phase is needed to apply new offsets. If
+     *   null is returned, it means we have to rerun the full measure phase to apply the [delta].
      */
+    @OptIn(ExperimentalFoundationApi::class)
     fun copyWithScrollDeltaWithoutRemeasure(
         delta: Int,
         updateAnimations: Boolean,
@@ -103,7 +114,7 @@ internal class LazyListMeasureResult(
         val first = visibleItemsInfo.first()
         val last = visibleItemsInfo.last()
         if (first.nonScrollableItem || last.nonScrollableItem) {
-            // non scrollable items like headers require special handling in the measurement.
+            // non-scrollable items like headers require special handling in the measurement.
             return null
         }
         val canApply =
@@ -143,6 +154,9 @@ internal class LazyListMeasureResult(
                 orientation = orientation,
                 afterContentPadding = afterContentPadding,
                 mainAxisItemSpacing = mainAxisItemSpacing,
+                stickingItemsCombinedSize = stickingItemsCombinedSize,
+                prefetchState = prefetchState,
+                prefetchStrategy = prefetchStrategy,
             )
         } else {
             null

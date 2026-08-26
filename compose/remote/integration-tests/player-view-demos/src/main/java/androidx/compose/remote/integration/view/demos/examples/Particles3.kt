@@ -22,6 +22,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 import androidx.compose.remote.creation.RFloat
+import androidx.compose.remote.creation.Rc
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemoteComposeWriter.IMAGE_SCALE_FIT
@@ -144,12 +145,7 @@ fun rain1(): RemoteComposeContext {
                             createCirclePath(centerX.toFloat(), centerY.toFloat(), rad.toFloat())
                         )
                     addClipPath(circle)
-                    droppingEngine(
-                        writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
-                        width,
-                        height,
-                    )
+                    droppingEngine(writer as RemoteComposeWriterAndroid, 0f, width, height)
 
                     var id = textCreateId("Simple test")
                     drawTextAnchored(id, centerX.toFloat(), centerY.toFloat(), 0f, 0f, 2)
@@ -237,9 +233,10 @@ fun warp(): RemoteComposeContext {
                     drawCircle(centerX.toFloat(), centerY.toFloat(), rad.toFloat())
                     //  val circle = addPathData(createCirclePath(centerX, centerY, rad))
                     // addClipPath(circle)
+                    addTouch(0f, 0f, 10f, 0, 0f, 0, null, null, Rc.Touch.POSITION_X)
                     warpEngine(
                         writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
+                        Rc.Touch.TOUCH_EVENT_TIME,
                         width,
                         height,
                         centerX,
@@ -343,12 +340,7 @@ fun fireworks(): RemoteComposeContext {
                     drawCircle(centerX.toFloat(), centerY.toFloat(), rad.toFloat())
                     //          val circle = addPathData(createCirclePath(centerX, centerY, rad))
                     //          addClipPath(circle)
-                    fireworksEngine(
-                        writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
-                        width,
-                        height,
-                    )
+                    fireworksEngine(writer as RemoteComposeWriterAndroid, 0f, width, height)
 
                     var id = textCreateId("Simple test")
                     drawTextAnchored(id, centerX.toFloat(), centerY.toFloat(), 0f, 0f, 2)
@@ -460,24 +452,9 @@ fun fireworks2(): RemoteComposeContext {
                     drawCircle(centerX.toFloat(), centerY.toFloat(), rad.toFloat())
                     //          val circle = addPathData(createCirclePath(centerX, centerY, rad))
                     //          addClipPath(circle)
-                    fireworksEngine2(
-                        writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
-                        width,
-                        height,
-                    )
-                    fireworksEngine2(
-                        writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
-                        width,
-                        height,
-                    )
-                    fireworksEngine2(
-                        writer as RemoteComposeWriterAndroid,
-                        ContinuousSec().toFloat(),
-                        width,
-                        height,
-                    )
+                    fireworksEngine2(writer as RemoteComposeWriterAndroid, 0f, width, height)
+                    fireworksEngine2(writer as RemoteComposeWriterAndroid, 0f, width, height)
+                    fireworksEngine2(writer as RemoteComposeWriterAndroid, 0f, width, height)
 
                     var id = textCreateId("Simple test")
                     drawTextAnchored(id, centerX.toFloat(), centerY.toFloat(), 0f, 0f, 2)

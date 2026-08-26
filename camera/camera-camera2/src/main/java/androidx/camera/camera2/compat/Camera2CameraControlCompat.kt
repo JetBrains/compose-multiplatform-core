@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.camera2.compat
 
 import androidx.annotation.GuardedBy
@@ -30,6 +32,7 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.core.CameraControl
 import androidx.camera.core.impl.Config
+import androidx.camera.core.impl.MutableConfig
 import androidx.camera.core.impl.annotation.ExecutedBy
 import dagger.Binds
 import dagger.Module
@@ -49,6 +52,8 @@ public interface Camera2CameraControlCompat : Request.Listener {
     public fun clearRequestOption()
 
     public fun cancelCurrentTask()
+
+    public fun getSynchronizedMutableConfig(): MutableConfig
 
     public fun applyAsync(
         requestControl: UseCaseCameraRequestControl?,
@@ -72,8 +77,9 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
     private val updateSignalLock = Any()
 
     @GuardedBy("lock") private var configBuilder = Camera2ImplConfig.Builder()
-    @GuardedBy("updateSignalLock") private var updateSignal: CompletableDeferred<Void?>? = null
-    @GuardedBy("updateSignalLock") private var pendingSignal: CompletableDeferred<Void?>? = null
+    @GuardedBy("updateSignalLock") private var nextSignalId = 0L
+    @GuardedBy("updateSignalLock") private var updateSignal: SignalWithId? = null
+    @GuardedBy("updateSignalLock") private var pendingSignal: SignalWithId? = null
 
     override fun addRequestOption(bundle: CaptureRequestOptions) {
         synchronized(lock) {
@@ -84,6 +90,72 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
                     Config.OptionPriority.ALWAYS_OVERRIDE,
                     bundle.retrieveOption(objectOpt),
                 )
+            }
+        }
+    }
+
+    override fun getSynchronizedMutableConfig(): MutableConfig {
+        return object : MutableConfig {
+            override fun <ValueT> insertOption(opt: Config.Option<ValueT?>, value: ValueT?) {
+                synchronized(lock) { configBuilder.mutableConfig.insertOption(opt, value) }
+            }
+
+            override fun <ValueT> insertOption(
+                opt: Config.Option<ValueT?>,
+                priority: Config.OptionPriority,
+                value: ValueT?,
+            ) {
+                synchronized(lock) {
+                    configBuilder.mutableConfig.insertOption(opt, priority, value)
+                }
+            }
+
+            override fun <ValueT> removeOption(opt: Config.Option<ValueT?>): ValueT? {
+                return synchronized(lock) { configBuilder.mutableConfig.removeOption(opt) }
+            }
+
+            override fun containsOption(id: Config.Option<*>): Boolean {
+                return synchronized(lock) { configBuilder.mutableConfig.containsOption(id) }
+            }
+
+            override fun <ValueT> retrieveOption(id: Config.Option<ValueT?>): ValueT? {
+                return synchronized(lock) { configBuilder.mutableConfig.retrieveOption(id) }
+            }
+
+            override fun <ValueT> retrieveOption(
+                id: Config.Option<ValueT?>,
+                valueIfMissing: ValueT?,
+            ): ValueT? {
+                return synchronized(lock) {
+                    configBuilder.mutableConfig.retrieveOption(id, valueIfMissing)
+                }
+            }
+
+            override fun <ValueT> retrieveOptionWithPriority(
+                id: Config.Option<ValueT?>,
+                priority: Config.OptionPriority,
+            ): ValueT? {
+                return synchronized(lock) {
+                    configBuilder.mutableConfig.retrieveOptionWithPriority(id, priority)
+                }
+            }
+
+            override fun getOptionPriority(opt: Config.Option<*>): Config.OptionPriority {
+                return synchronized(lock) { configBuilder.mutableConfig.getOptionPriority(opt) }
+            }
+
+            override fun findOptions(idSearchString: String, matcher: Config.OptionMatcher) {
+                return synchronized(lock) {
+                    configBuilder.mutableConfig.findOptions(idSearchString, matcher)
+                }
+            }
+
+            override fun listOptions(): Set<Config.Option<*>?> {
+                return synchronized(lock) { configBuilder.mutableConfig.listOptions() }
+            }
+
+            override fun getPriorities(option: Config.Option<*>): Set<Config.OptionPriority?> {
+                return synchronized(lock) { configBuilder.mutableConfig.getPriorities(option) }
             }
         }
     }
@@ -99,9 +171,11 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
         synchronized(updateSignalLock) {
             updateSignal
                 ?.also { updateSignal = null }
+                ?.signal
                 ?.cancelSignal("The camera control has became inactive.")
             pendingSignal
                 ?.also { pendingSignal = null }
+                ?.signal
                 ?.cancelSignal("The camera control has became inactive.")
         }
 
@@ -112,21 +186,23 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
         val signal: CompletableDeferred<Void?> = CompletableDeferred()
         val config = synchronized(lock) { configBuilder.build() }
         synchronized(updateSignalLock) {
+            val requestId = nextSignalId++
+
             if (requestControl != null) {
                 if (cancelPreviousTask) {
                     // Cancel the previous request signal if exist.
-                    updateSignal?.cancelSignal()
+                    updateSignal?.signal?.cancelSignal()
                 } else {
                     // propagate the result to the previous updateSignal
-                    updateSignal?.let { previousUpdateSignal ->
+                    updateSignal?.signal?.let { previousUpdateSignal ->
                         signal.propagateTo(previousUpdateSignal)
                     }
                 }
 
-                updateSignal = signal
+                updateSignal = SignalWithId(requestId, signal)
                 requestControl.updateCamera2ConfigAsync(
                     config = config,
-                    tags = mapOf(TAG_KEY to signal.hashCode()),
+                    tags = mapOf(TAG_KEY to requestId),
                 )
             } else {
                 // If there is no camera for the parameter update, the signal would be treated as a
@@ -134,8 +210,8 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
                 // applied the parameter.
 
                 // Cancel the previous request signal if it exists. Only keep the latest signal.
-                pendingSignal?.cancelSignal()
-                pendingSignal = signal
+                pendingSignal?.signal?.cancelSignal()
+                pendingSignal = SignalWithId(requestId, signal)
             }
         }
 
@@ -153,18 +229,20 @@ public class Camera2CameraControlCompatImpl @Inject constructor() : Camera2Camer
         result: FrameInfo,
     ): Unit =
         synchronized(updateSignalLock) {
-            updateSignal?.apply {
-                if (requestMetadata.containsTag(TAG_KEY, hashCode())) {
+            updateSignal?.let { (id, updateDef) ->
+                if (requestMetadata.containsTag(TAG_KEY, id)) {
                     // Going to complete the [updateSignal] if the result contains the [TAG_KEY]
-                    complete(null)
+                    updateDef.complete(null)
                     updateSignal = null
 
                     // Also complete the [pendingSignal] if it exists.
-                    pendingSignal?.also {
-                        it.complete(null)
+                    pendingSignal?.also { (_, pendingDef) ->
+                        pendingDef.complete(null)
                         pendingSignal = null
                     }
                 }
             }
         }
 }
+
+private data class SignalWithId(val id: Long, val signal: CompletableDeferred<Void?>)

@@ -17,8 +17,8 @@
 package androidx.room3.vo
 
 import androidx.room3.compiler.codegen.XTypeName
-import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.XNullability
+import androidx.room3.compiler.processing.XPropertyElement
 import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.capitalize
 import androidx.room3.ext.decapitalize
@@ -31,7 +31,7 @@ import java.util.Locale
 
 // used in cache matching, must stay as a data class or implement equals
 data class Property(
-    val element: XFieldElement,
+    val element: XPropertyElement,
     val name: String,
     val type: XType,
     var affinity: SQLTypeAffinity?,
@@ -125,9 +125,11 @@ data class Property(
     }
 
     /** definition to be used in create query */
-    fun databaseDefinition(autoIncrementPKey: Boolean): String {
+    fun databaseDefinition(autoGeneratePKey: androidx.room3.PrimaryKey.Algorithm?): String {
         val columnSpec = StringBuilder("")
-        if (autoIncrementPKey) {
+        if (autoGeneratePKey == androidx.room3.PrimaryKey.Algorithm.ROWID) {
+            columnSpec.append(" PRIMARY KEY")
+        } else if (autoGeneratePKey == androidx.room3.PrimaryKey.Algorithm.AUTOINCREMENT) {
             columnSpec.append(" PRIMARY KEY AUTOINCREMENT")
         }
         if (nonNull) {

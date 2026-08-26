@@ -15,8 +15,7 @@
  */
 package androidx.xr.compose.subspace.layout
 
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
+import androidx.annotation.FloatRange
 import androidx.xr.arcore.ArDevice
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.LocalSubspaceRootNode
@@ -29,22 +28,37 @@ import androidx.xr.compose.subspace.node.invalidatePlacement
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.DeviceTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.XrLog
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.PixelDensity
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
+ * Marks RotateToLookAtUser APIs that are experimental and likely to change or be removed in the
+ * future.
+ *
+ * Any usage of a declaration annotated with `@ExperimentalRotateToLookAtUserApi` must be accepted
+ * either by annotating that usage with `@OptIn(ExperimentalRotateToLookAtUserApi::class)` or by
+ * propagating the annotation to the containing declaration.
+ */
+@RequiresOptIn(
+    level = RequiresOptIn.Level.ERROR,
+    message = "This is an experimental API. It may be changed or removed in the future.",
+)
+@Retention(AnnotationRetention.BINARY)
+public annotation class ExperimentalRotateToLookAtUserApi
+
+/**
  * A [SubspaceModifier] that continuously rotates content so that it faces the user at all times.
  *
  * A user of this API should configure the activity's Session object with
- * [DeviceTrackingMode.SPATIAL_LAST_KNOWN] which requires `android.permission.HEAD_TRACKING` Android
- * permission be granted by the calling application. `session.configure( config =
- * session.config.copy(deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN) )`
+ * [DeviceTrackingMode.SPATIAL] which requires `android.permission.HEAD_TRACKING` Android permission
+ * be granted by the calling application. `session.configure( config =
+ * Config.Builder(session.config).setDeviceTracking(DeviceTrackingMode.SPATIAL).build() )`
  *
  * This modifier might not work as expected when used on content within a
  * [androidx.xr.compose.spatial.FollowingSubspace].
@@ -56,63 +70,94 @@ import kotlinx.coroutines.launch
  * remaining upright and aligned with gravity—combine this with [gravityAligned].
  *
  * @sample androidx.xr.compose.samples.RotateToLookAtUserBillboardSample
- * @sample androidx.xr.compose.samples.RotateToLookAtUserWithUpVectorSample
+ * @sample androidx.xr.compose.samples.RotateToLookAtUserWithConstraintsSample
  * @sample androidx.xr.compose.samples.RotateToLookAtUserUnderParentContainerSample
- * @param upDirection Defines the reference "up" direction for the content's orientation. Pointing
- *   the content's forward vector at the user leaves the rotation around that axis (roll) undefined;
- *   this vector resolves that ambiguity. The default is Vector3.Up, which corresponds to the up
- *   direction of the ActivitySpace.
+ * @param isYawUpdateEnabled Whether to update the Yaw (Y-axis rotation) to track the user. If
+ *   `false`, yaw tracking is disabled and the content retains the Y-axis rotation specified by the
+ *   layout and preceding modifiers.
+ * @param isPitchUpdateEnabled Whether to update the Pitch (X-axis rotation) to track the user. If
+ *   `false`, pitch tracking is disabled and the content retains the X-axis rotation specified by
+ *   the layout and preceding modifiers.
+ * @param pitchLimits The limits for the Pitch (X-axis rotation) to track the user. Defaults to
+ *   [PitchLimits.FullRange]. This parameter is ignored if [isPitchUpdateEnabled] is `false`.
  */
 // TODO(b/461808266): RotateToLookAtUser and FollowingSubspace not compatible with each other
 // TODO(b/487087894): [Moohan Emulator] ARCore ArDevice emit identity pose until user moves
+@ExperimentalRotateToLookAtUserApi
 public fun SubspaceModifier.rotateToLookAtUser(
-    upDirection: Vector3 = Vector3.Up
-): SubspaceModifier = this.then(RotateToLookAtUserElement(upDirection))
+    isYawUpdateEnabled: Boolean = true,
+    isPitchUpdateEnabled: Boolean = true,
+    pitchLimits: PitchLimits = PitchLimits.FullRange,
+): SubspaceModifier =
+    this.then(
+        RotateToLookAtUserElement(
+            isYawUpdateEnabled = isYawUpdateEnabled,
+            isPitchUpdateEnabled = isPitchUpdateEnabled,
+            pitchLimits = pitchLimits,
+        )
+    )
 
-private class RotateToLookAtUserElement(private val upDirection: Vector3) :
-    SubspaceModifierNodeElement<RotateToLookAtUserNode>() {
-    override fun create(): RotateToLookAtUserNode = RotateToLookAtUserNode(upDirection)
+@OptIn(ExperimentalRotateToLookAtUserApi::class)
+private class RotateToLookAtUserElement(
+    private val isYawUpdateEnabled: Boolean,
+    private val isPitchUpdateEnabled: Boolean,
+    private val pitchLimits: PitchLimits,
+) : SubspaceModifierNodeElement<RotateToLookAtUserNode>() {
+    override fun create(): RotateToLookAtUserNode =
+        RotateToLookAtUserNode(isYawUpdateEnabled, isPitchUpdateEnabled, pitchLimits)
 
     override fun update(node: RotateToLookAtUserNode) {
-        node.upDirection = upDirection
+        node.isYawUpdateEnabled = isYawUpdateEnabled
+        node.isPitchUpdateEnabled = isPitchUpdateEnabled
+        node.pitchLimits = pitchLimits
     }
 
-    override fun hashCode(): Int = upDirection.hashCode()
+    override fun hashCode(): Int {
+        var result = isYawUpdateEnabled.hashCode()
+        result = 31 * result + isPitchUpdateEnabled.hashCode()
+        result = 31 * result + pitchLimits.hashCode()
+        return result
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is RotateToLookAtUserElement) return false
-        return (upDirection == other.upDirection)
+        return isYawUpdateEnabled == other.isYawUpdateEnabled &&
+            isPitchUpdateEnabled == other.isPitchUpdateEnabled &&
+            pitchLimits == other.pitchLimits
     }
 }
 
-internal class RotateToLookAtUserNode(var upDirection: Vector3) :
+@OptIn(ExperimentalRotateToLookAtUserApi::class)
+internal class RotateToLookAtUserNode(
+    var isYawUpdateEnabled: Boolean,
+    var isPitchUpdateEnabled: Boolean,
+    var pitchLimits: PitchLimits,
+) :
     SubspaceModifier.Node(),
     SubspaceLayoutModifierNode,
     SubspaceLayoutAwareModifierNode,
     CompositionLocalConsumerSubspaceModifierNode {
     private lateinit var session: Session
+    private lateinit var spatialDensity: PixelDensity
     private lateinit var arDevice: ArDevice
     private var headPoseJob: Job? = null
     private var currentHeadPose: Pose = Pose()
 
-    private inline val density: Density
-        get() = currentValueOf(LocalDensity)
-
     override fun onAttach() {
         super.onAttach()
+
         // Initialize the Session and ArDevice once when the node is attached
         session =
             checkNotNull(currentValueOf(LocalSession)) {
                 "LocalSession must be available during onAttach."
             }
+        spatialDensity = session.scene.virtualPixelDensity
 
         if (session.config.deviceTracking == DeviceTrackingMode.DISABLED) {
-            XrLog.warn(
-                "Device tracking must be enabled in the Session config to use RotateToLookAtUser."
-            )
             return
         }
+
         arDevice = ArDevice.getInstance(session)
     }
 
@@ -126,34 +171,115 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
-        val placeable = measurable.measure(constraints)
+        val placeable: SubspacePlaceable = measurable.measure(constraints = constraints)
 
-        return layout(placeable.measuredWidth, placeable.measuredHeight, placeable.measuredDepth) {
-            // Calculate the node's current position in activity space.
-            val rootActivitySpaceTransformation =
-                currentValueOf(LocalSubspaceRootNode)?.getPose(Space.ACTIVITY) ?: Pose.Identity
-            val nodePoseInRoot = coordinates?.poseInRoot ?: Pose.Identity
-            val currentActivitySpaceTransformation =
-                rootActivitySpaceTransformation.compose(nodePoseInRoot)
-            val currentActivitySpaceRotation = currentActivitySpaceTransformation.rotation
-            val currentActivitySpaceTranslation =
-                currentActivitySpaceTransformation.translation.convertPixelsToMeters(
-                    this@RotateToLookAtUserNode.density
+        return layout(width = placeable.width, height = placeable.height, depth = placeable.depth) {
+            // Get the pose of the node in the Compose root space.
+            // Transform from Node space to root space.
+            val rootFromNodePixels: Pose = coordinates?.poseInRoot ?: Pose.Identity
+
+            // Convert the node's pose in Compose root from pixels to meters.
+            val rootFromNodeMeters: Pose = rootFromNodePixels.pxToMeters(spatialDensity)
+
+            // Fetch the root node directly from composition locals.
+            val rootNode: Entity? = currentValueOf(LocalSubspaceRootNode)
+
+            // Chain (compose) the transforms: Node -> Root -> Activity.
+            // Using transformPoseTo() which automatically handle the positioning, rotation, AND
+            // accumulated scale
+            val activitySpaceFromNode: Pose =
+                rootNode?.transformPoseTo(
+                    pose = rootFromNodeMeters,
+                    destination = session.scene.activitySpace,
+                ) ?: rootFromNodeMeters
+
+            // Extract Translation in Activity Space.
+            val nodeActivitySpaceTranslation: Vector3 = activitySpaceFromNode.translation
+            val headActivitySpaceTranslation: Vector3 = currentHeadPose.translation
+
+            // Calculate the vector pointing "from" the node "to" the head
+            val nodeToHeadDirection: Vector3 =
+                headActivitySpaceTranslation - nodeActivitySpaceTranslation
+
+            // Calculate Target Rotation:
+            // This is the absolute rotation the node needs in ActivitySpace.
+            val activitySpaceFromTargetNodeRotation: Quaternion =
+                calculateTargetNodeRotation(nodeToHeadDirection = nodeToHeadDirection)
+
+            // Apply constraints in absolute space.
+            val activitySpaceFromConstrainedNodeRotation: Quaternion =
+                applyAbsoluteRotationConstraints(
+                    activitySpaceFromNodeRotation = activitySpaceFromNode.rotation,
+                    activitySpaceFromTargetNodeRotation = activitySpaceFromTargetNodeRotation,
                 )
 
-            // Calculate the desired forward vector in activity space, pointing from
-            // the node to the user.
-            val targetVector = currentHeadPose.translation - currentActivitySpaceTranslation
-            // Calculate the desired rotation of the node in activity space based on the desired
-            // forward and up vectors.
-            val goalActivitySpaceRotation: Quaternion =
-                Quaternion.fromLookTowards(targetVector, upDirection)
-            // Determine the local rotation that must be applied to the node to achieve the desired
-            // rotation in activity space.
-            val newLocalRotation = currentActivitySpaceRotation.inverse * goalActivitySpaceRotation
-            // Place the measured content using the new local rotation, which will orient the
-            // content so that if faces the user.
-            placeable.place(Pose(translation = Vector3.Zero, rotation = newLocalRotation))
+            // Calculate Local Delta Rotation:
+            // We know: activitySpaceFromTargetNodeRotation = activitySpaceFromNode.rotation *
+            // localRotationOffset
+            // To isolate localRotationOffset, multiply both sides by the inverse of the parent
+            // rotation.
+            val nodeFromActivitySpaceRotation: Quaternion = activitySpaceFromNode.rotation.inverse
+            val nodeFromConstrainedNodeRotation: Quaternion =
+                nodeFromActivitySpaceRotation * activitySpaceFromConstrainedNodeRotation
+
+            // Place the measured content using the new local rotation offset.
+            placeable.place(
+                pose = Pose(translation = Vector3.Zero, rotation = nodeFromConstrainedNodeRotation)
+            )
+        }
+    }
+
+    private fun calculateTargetNodeRotation(nodeToHeadDirection: Vector3): Quaternion {
+        val isIntersectingOrigin: Boolean = nodeToHeadDirection.lengthSquared < MIN_LENGTH_SQUARED
+        if (isIntersectingOrigin) {
+            return Quaternion.Identity
+        }
+
+        val normalizedForwardDirection: Vector3 = nodeToHeadDirection.toNormalized()
+        val stableUp: Vector3 =
+            calculateGravityAlignedUp(forwardDirection = normalizedForwardDirection)
+
+        // Determine the rotation to achieve forward facing direction in activity space
+        return Quaternion.fromLookTowards(forward = normalizedForwardDirection, up = stableUp)
+    }
+
+    private fun applyAbsoluteRotationConstraints(
+        activitySpaceFromNodeRotation: Quaternion,
+        activitySpaceFromTargetNodeRotation: Quaternion,
+    ): Quaternion {
+        // TODO(b/532986673): Investigate alternatives to eulerAngles for clamping rotation
+        //  constraints to avoid gimbal lock when axes align at 90 degrees.
+        val nodeEulerAngles: Vector3 = activitySpaceFromNodeRotation.eulerAngles
+        val targetEulerAngles: Vector3 = activitySpaceFromTargetNodeRotation.eulerAngles
+
+        val finalYaw: Float = if (isYawUpdateEnabled) targetEulerAngles.y else nodeEulerAngles.y
+        val finalPitch: Float =
+            if (isPitchUpdateEnabled) {
+                targetEulerAngles.x.coerceIn(pitchLimits.minimumPitch, pitchLimits.maximumPitch)
+            } else {
+                nodeEulerAngles.x
+            }
+
+        return Quaternion.fromEulerAngles(
+            pitch = finalPitch,
+            yaw = finalYaw,
+            roll = targetEulerAngles.z,
+        )
+    }
+
+    private fun calculateGravityAlignedUp(forwardDirection: Vector3): Vector3 {
+        // Determine the up vector orthogonal to the target vector in the plane determined by
+        // the target vector and the gravity vector
+        val gravityVectorInActivitySpace: Vector3 = Vector3.Down
+        val rightVectorInNodeSpace: Vector3 =
+            forwardDirection.cross(other = gravityVectorInActivitySpace)
+        val isParallelToGravity = rightVectorInNodeSpace.lengthSquared < MIN_LENGTH_SQUARED
+
+        return if (isParallelToGravity) {
+            // Fallback to a stable fixed vector if user is directly above/below
+            Vector3.Forward
+        } else {
+            Vector3.Up
         }
     }
 
@@ -175,5 +301,59 @@ internal class RotateToLookAtUserNode(var upDirection: Vector3) :
     override fun onDetach() {
         super.onDetach()
         headPoseJob?.cancel()
+    }
+
+    private companion object {
+        private const val MIN_LENGTH_SQUARED = 1e-6f
+    }
+}
+
+/**
+ * Represents the limits for pitch angles in degrees.
+ *
+ * @property minimumPitch The minimum allowed pitch angle in degrees. Must be in the range
+ *   [-90.0, 90.0].
+ * @property maximumPitch The maximum allowed pitch angle in degrees. Must be in the range
+ *   [-90.0, 90.0].
+ */
+@ExperimentalRotateToLookAtUserApi
+public class PitchLimits(
+    @get:FloatRange(from = -90.0, to = 90.0)
+    @param:FloatRange(from = -90.0, to = 90.0)
+    public val minimumPitch: Float,
+    @get:FloatRange(from = -90.0, to = 90.0)
+    @param:FloatRange(from = -90.0, to = 90.0)
+    public val maximumPitch: Float,
+) {
+    init {
+        require(minimumPitch in -90f..90f) {
+            "minimumPitch ($minimumPitch) must be in the range [-90.0, 90.0]"
+        }
+        require(maximumPitch in -90f..90f) {
+            "maximumPitch ($maximumPitch) must be in the range [-90.0, 90.0]"
+        }
+        require(minimumPitch <= maximumPitch) {
+            "minimumPitch ($minimumPitch) cannot be greater than maximumPitch ($maximumPitch)"
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PitchLimits) return false
+        return minimumPitch == other.minimumPitch && maximumPitch == other.maximumPitch
+    }
+
+    override fun hashCode(): Int {
+        var result = minimumPitch.hashCode()
+        result = 31 * result + maximumPitch.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "PitchLimits(minimumPitch=$minimumPitch, maximumPitch=$maximumPitch)"
+    }
+
+    public companion object {
+        @JvmField public val FullRange: PitchLimits = PitchLimits(-90f, 90f)
     }
 }

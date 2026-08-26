@@ -19,6 +19,7 @@ package androidx.webkit;
 import android.webkit.WebSettings;
 
 import androidx.annotation.RequiresFeature;
+import androidx.annotation.RestrictTo;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -48,7 +49,28 @@ public final class SpeculativeLoadingParameters {
         mVariationsId = variationsId;
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public SpeculativeLoadingParameters(@NonNull PrefetchParameters prefetchParameters) {
+        this(
+                prefetchParameters.getAdditionalHeaders(),
+                prefetchParameters.getExpectedNoVarySearchHeader(),
+                prefetchParameters.getShouldSendClientHints(),
+                prefetchParameters.getVariationsId()
+        );
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public SpeculativeLoadingParameters(@NonNull PrerenderParameters prerenderParameters) {
+        this(
+                prerenderParameters.getAdditionalHeaders(),
+                prerenderParameters.getExpectedNoVarySearchHeader(),
+                false,
+                prerenderParameters.getVariationsId()
+        );
+    }
+
     /**
+     *
      * @return The map of the additional headers built using {@link Builder}.
      */
     public @NonNull Map<String, String> getAdditionalHeaders() {
@@ -79,27 +101,24 @@ public final class SpeculativeLoadingParameters {
 
     /**
      * A builder class to use to construct the {@link SpeculativeLoadingParameters}.
+     * @deprecated Use {@link PrerenderParameters} or {@link PrefetchParameters} instead.
      */
+    @Deprecated
     public static final class Builder {
-        private final @NonNull Map<String, String> mAdditionalHeaders;
+        private final @NonNull Map<String, String> mAdditionalHeaders = new HashMap<>();
         private @Nullable NoVarySearchHeader mExpectedNoVarySearchHeader;
         private boolean mIsJavaScriptEnabled;
         private @Nullable Integer mVariationsId;
 
-        public Builder() {
-            mAdditionalHeaders = new HashMap<>();
-            mExpectedNoVarySearchHeader = null;
-            mIsJavaScriptEnabled = false;
-            mVariationsId = null;
-        }
+        public Builder() {}
 
         /**
          * Use to finish building the PrefetchParams
          *
          * @return built PrefetchParams object.
          * @throws UnsupportedOperationException if the
-         *                                       {@link WebViewFeature#PROFILE_URL_PREFETCH}
-         *                                       feature is not supported.
+         *     {@link WebViewFeature#PROFILE_URL_PREFETCH} feature is not supported.
+         *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
          */
         @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
                 enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

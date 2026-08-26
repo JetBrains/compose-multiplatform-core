@@ -17,7 +17,6 @@
 package androidx.build.dackka
 
 import androidx.build.docs.ProjectStructureMetadata
-import com.google.gson.GsonBuilder
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
@@ -80,6 +79,9 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
      */
     @get:[InputFiles Classpath]
     abstract val androidJars: ConfigurableFileCollection
+
+    /** File to write trace to. */
+    @get:Internal abstract val traceFile: RegularFileProperty
 
     /** Lists all classpath files (jars and klibs) from [kmpDependenciesClasspathMap]. */
     @InputFiles
@@ -185,7 +187,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
 
         val externalDocs = loadPackageLists(projectListsDirectory.get().asFile)
 
-        val gson = GsonBuilder().create()
+        val gson = DokkaUtils.createGson()
         val multiplatformSourceSets =
             projectStructureMetadataFile
                 .get()
@@ -202,10 +204,6 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                             // The source set metadata includes source sets with no source files,
                             // skip these ones.
                             if (!sourceDir.exists()) return@mapNotNull null
-                            val analysisPlatform =
-                                DokkaAnalysisPlatform.valueOf(
-                                    sourceSet.analysisPlatform.uppercase()
-                                )
 
                             val dependentSourceSets = buildList {
                                 // Only include dependent source sets which have source files (the
@@ -219,7 +217,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                 // Include a dependency on the main non-KMP source set for jvm
                                 // source sets to make references from these source sets to non
                                 // KMP projects resolve (b/484050995).
-                                if (analysisPlatform.androidOrJvm()) {
+                                if (sourceSet.analysisPlatform.androidOrJvm()) {
                                     add("main")
                                 }
                             }
@@ -227,12 +225,12 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                             DokkaInputModels.SourceSet(
                                 id = sourceSetIdForSourceSet(sourceSet.name),
                                 displayName = sourceSet.name,
-                                analysisPlatform = analysisPlatform.jsonName,
+                                analysisPlatform = sourceSet.analysisPlatform,
                                 sourceRoots = objects.fileCollection().from(sourceDir),
-                                // TODO(b/181224204): KMP samples aren't supported, dackka assumes
-                                // all samples are in common
+                                // All KMP samples are in the common source set, where they can be
+                                // accessed from other KMP source sets as well.
                                 samples =
-                                    if (analysisPlatform == DokkaAnalysisPlatform.COMMON) {
+                                    if (sourceSet.name == "commonMain") {
                                         getSampleSourceFileCollection()
                                     } else {
                                         objects.fileCollection()
@@ -240,15 +238,15 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                 includes = objects.fileCollection().from(includesFiles(sourceDir)),
                                 classpath =
                                     classpathForSourceSet(
-                                        metadata.sourceSetsDependentOn(sourceSet.name),
-                                        analysisPlatform,
+                                        metadata.sourceSetsDependentOn(sourceSet.name).toList(),
+                                        sourceSet.analysisPlatform,
                                     ),
                                 externalDocumentationLinks = externalDocs,
                                 dependentSourceSets =
                                     dependentSourceSets.map { sourceSetIdForSourceSet(it) },
-                                noJdkLink = !analysisPlatform.androidOrJvm(),
+                                noJdkLink = !sourceSet.analysisPlatform.androidOrJvm(),
                                 noAndroidSdkLink =
-                                    analysisPlatform != DokkaAnalysisPlatform.ANDROID,
+                                    sourceSet.analysisPlatform != DokkaAnalysisPlatform.ANDROID,
                                 noStdlibLink = false,
                                 // Dackka source link configuration doesn't use the Dokka version
                                 sourceLinks = emptyList(),
@@ -259,7 +257,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
             DokkaInputModels.SourceSet(
                 id = sourceSetIdForSourceSet("main"),
                 displayName = "main",
-                analysisPlatform = "jvm",
+                analysisPlatform = DokkaAnalysisPlatform.ANDROID,
                 sourceRoots = objects.fileCollection().from(jvmSourcesDir),
                 // All samples are assumed to be in the common source set if there is one
                 samples =
@@ -326,7 +324,9 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
      * contains the list of packages documented at that site.
      */
     private fun loadPackageLists(packageLists: File): List<DokkaInputModels.GlobalDocsLink> {
-        return packageLists.listFiles().map { dir ->
+        return packageLists.listFiles().mapNotNull { dir ->
+            // Skip non-directory files like the README.
+            if (!dir.isDirectory) return@mapNotNull null
             val packageList = File(dir, "package-list")
             val urlFile = File(dir, "url")
             DokkaInputModels.GlobalDocsLink(
@@ -380,6 +380,7 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                                         "versionMetadataFilenames" to getVersionMetadataFiles(),
                                         "validNullabilityAnnotations" to
                                             nullabilityAnnotations.get(),
+                                        "traceFile" to traceFile.get().asFile.absolutePath,
                                     )
                                 ),
                         )

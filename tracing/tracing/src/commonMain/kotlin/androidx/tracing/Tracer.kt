@@ -16,6 +16,7 @@
 
 package androidx.tracing
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
@@ -24,19 +25,18 @@ import kotlinx.coroutines.withContext
  *
  * To obtain an instance of `Tracer` use [AbstractTraceDriver.tracer].
  */
-public abstract class Tracer(
-    /** Is set to `true` if Tracing is enabled. */
-    @JvmField
-    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
-    public val isEnabled: Boolean
-) {
-
+public abstract class Tracer {
     /**
      * Creates a [PropagationToken] that can be used for manual context propagation in
      * [androidx.tracing.Tracer].
+     *
+     * @param flowIds An optional list of `ids` that can be used to connect slices on different
+     *   tracks.
      */
     @ExperimentalContextPropagation
-    public abstract fun tokenForManualPropagation(): PropagationToken
+    public abstract fun tokenForManualPropagation(
+        flowIds: List<Long> = listOf(monotonicId())
+    ): PropagationToken
 
     /**
      * This gives the ability to control how context propagation works for a
@@ -62,8 +62,8 @@ public abstract class Tracer(
     /**
      * Writes a trace message indicating that a given section of code has begun.
      *
-     * Should be followed by a corresponding call to [AutoCloseable.close] returned by the call to
-     * `beginSection`. If the corresponding [AutoCloseable.close] is missing, the section will be
+     * Should be followed by a corresponding call to `AutoCloseable.close` returned by the call to
+     * `beginSection`. If the corresponding `AutoCloseable.close` is missing, the section will be
      * present in the trace, but non-terminating (generally shown as fading out to the left).
      *
      * @param category The category that the trace section belongs to. Apps can potentially filter
@@ -92,8 +92,8 @@ public abstract class Tracer(
     /**
      * Writes a trace message indicating that a given suspending section of code has begun.
      *
-     * Should be followed by a corresponding call to [AutoCloseable.close] returned by the call to
-     * `beginCoroutineSectionWithMetadata`. If the corresponding [AutoCloseable.close] is missing,
+     * Should be followed by a corresponding call to `AutoCloseable.close` returned by the call to
+     * `beginCoroutineSectionWithMetadata`. If the corresponding `AutoCloseable.close` is missing,
      * the section will be present in the trace, but non-terminating (generally shown as fading out
      * to the left).
      *
@@ -121,20 +121,43 @@ public abstract class Tracer(
     ): EventMetadataCloseable
 
     /**
+     * @return `true` if the provided trace [category] should be enabled.
+     *
+     * If `false` then trace events corresponding to the [category] are dropped to reduce tracing
+     * overhead. This is particularly useful when you want to lower the overhead of trace events
+     * from uninteresting or noisy categories.
+     *
+     * Note:This method should be **extremely** low overhead given it's called every time a [Tracer]
+     * can emit trace events.
+     */
+    public abstract fun isCategoryEnabled(category: String): Boolean
+
+    /**
      * @return The [Counter] instance for the provided [category] and [name]. This can be used to
      *   emit counter events.
      */
     public abstract fun counter(category: String, name: String): Counter
 
-    /** Emits a zero duration section to the Trace with the provided [category] and [name]. */
+    /**
+     * Writes a zero duration section to the Trace.
+     *
+     * @param category The category that the trace section belongs to. Apps can potentially filter
+     *   sections to the categories that they are interested in looking into.
+     * @param name The name of the code section to appear in the trace.
+     * @param token The optional [PropagationToken] instance to use for context propagation.
+     */
     @DelicateTracingApi
-    public abstract fun instant(category: String, name: String): EventMetadataCloseable
+    public abstract fun writeInstant(
+        category: String,
+        name: String,
+        token: PropagationToken?,
+    ): EventMetadataCloseable
 
     /**
      * Writes a trace message indicating that a given section of code has begun.
      *
-     * Should be followed by a corresponding call to [AutoCloseable.close] returned by the call to
-     * `beginSection`. If the corresponding [AutoCloseable.close] is missing, the section will be
+     * Should be followed by a corresponding call to `AutoCloseable.close` returned by the call to
+     * `beginSection`. If the corresponding `AutoCloseable.close` is missing, the section will be
      * present in the trace, but non-terminating (generally shown as fading out to the left).
      *
      * @param category The category that the trace section belongs to. Apps can potentially filter
@@ -176,8 +199,8 @@ public abstract class Tracer(
     /**
      * Writes a trace message indicating that a given suspending section of code has begun.
      *
-     * Should be followed by a corresponding call to [AutoCloseable.close] returned by the call to
-     * `beginCoroutineSectionWithMetadata`. If the corresponding [AutoCloseable.close] is missing,
+     * Should be followed by a corresponding call to `AutoCloseable.close` returned by the call to
+     * `beginCoroutineSectionWithMetadata`. If the corresponding `AutoCloseable.close` is missing,
      * the section will be present in the trace, but non-terminating (generally shown as fading out
      * to the left).
      *
@@ -230,8 +253,8 @@ public abstract class Tracer(
      *   sections as a forest, and require that there is at least one top level root span.
      * @param metadataBlock The lambda that can be used to decorate the trace event with additional
      *   debug annotations.
-     * @param block The block of code being traced.
-     * @return The [AutoCloseable] instance that can be used to close the trace section.
+     * @param block The [block] of code being traced.
+     * @return [T] as returned by the [block] being traced.
      */
     @JvmOverloads
     public inline fun <T> trace(
@@ -243,7 +266,7 @@ public abstract class Tracer(
         crossinline block: () -> T,
     ): T {
         val closeable =
-            if (!isEnabled) {
+            if (!isCategoryEnabled(category)) {
                 EmptyCloseable
             } else {
                 beginSection(
@@ -258,6 +281,12 @@ public abstract class Tracer(
         // AutoCloseable.use on Android.
         try {
             return block()
+        } catch (throwable: Throwable) {
+            recordExceptionAndThrow(
+                category = category,
+                name = "$name.exception",
+                throwable = throwable,
+            )
         } finally {
             closeable.close()
         }
@@ -281,8 +310,8 @@ public abstract class Tracer(
      *   sections as a forest, and require that there is at least one top level root span.
      * @param metadataBlock The lambda that can be used to decorate the trace event with additional
      *   debug annotations.
-     * @param block The suspending block of code being traced.
-     * @return The [AutoCloseable] instance that can be used to close the trace section.
+     * @param block The suspending [block] of code being traced.
+     * @return [T] as returned by the suspending [block] being traced.
      */
     @JvmOverloads
     public suspend inline fun <T> traceCoroutine(
@@ -294,7 +323,7 @@ public abstract class Tracer(
         crossinline block: suspend () -> T,
     ): T {
         val result =
-            if (!isEnabled) {
+            if (!isCategoryEnabled(category)) {
                 EmptyEventMetadataCloseable
             } else {
                 beginCoroutineSection(
@@ -319,6 +348,12 @@ public abstract class Tracer(
             } else {
                 block()
             }
+        } catch (throwable: Throwable) {
+            recordExceptionAndThrow(
+                category = category,
+                name = "$name.exception",
+                throwable = throwable,
+            )
         } finally {
             // Only have the tokenContextElement be relevant for the execution of the suspending
             // `block` and not in this finally block.
@@ -332,6 +367,7 @@ public abstract class Tracer(
      * @param category The category that the trace section belongs to. Apps can potentially filter
      *   sections to the categories that they are interested in looking into.
      * @param name The name of the code section to appear in the trace.
+     * @param token The optional [PropagationToken] instance to use for context propagation.
      * @param metadataBlock The lambda that can be used to decorate the trace event with additional
      *   debug annotations.
      */
@@ -339,10 +375,76 @@ public abstract class Tracer(
     public inline fun instant(
         category: String,
         name: String,
+        token: PropagationToken? = null,
         crossinline metadataBlock: EventMetadata.() -> Unit = {},
     ) {
-        val result = instant(category = category, name = name)
+        val result = writeInstant(category = category, name = name, token = token)
         metadataBlock(result.metadata)
         result.metadata.dispatchToTraceSink()
+    }
+
+    public companion object {
+        private val stubTracer =
+            PerfettoTracer(context = EmptyTraceContext, categoryEnabled = { false })
+
+        // The Global Tracer
+        private var tracer: Tracer = stubTracer
+
+        /**
+         * @return a [Tracer] instance that is a stub (does nothing). This is useful as a
+         *   placeholder when you want to enable / disable tracing for the program.
+         */
+        @JvmStatic
+        public fun getStubTracer(): Tracer {
+            return stubTracer
+        }
+
+        /**
+         * The Global tracer configured by the application.
+         *
+         * This is the [Tracer] that should be used by both application and library developers. You
+         * should always use [Tracer.global] and **not** cache references this field, given the
+         * [Tracer] being used, is updated after the application is initialized.
+         *
+         * The [global] tracer is typically bootstrapped during process startup. When using
+         * `androidx.tracing:tracing-wire`,
+         * `androidx.tracing.profiler.ConnectedProfilerTracingInitializer` discovers the
+         * [AbstractTraceDriver.Factory], and constructs the instance. It then registers a global
+         * [Tracer] by calling [Tracer.setGlobalTracer].
+         *
+         * Otherwise, construct [AbstractTraceDriver] during startup and register it via
+         * [Tracer.setGlobalTracer] so other components can discover and use it.
+         */
+        @JvmStatic
+        public val global: Tracer
+            get() = tracer
+
+        /**
+         * Registers the **global** [Tracer] instance.
+         *
+         * This should only ever be done **once** per process lifecycle and by the application
+         * initializing the [AbstractTraceDriver]; typically during app startup.
+         *
+         * This should **never** be called by **libraries**.
+         */
+        @JvmStatic
+        @DelicateTracingApi
+        public fun setGlobalTracer(tracer: Tracer) {
+            check(this.tracer == stubTracer) {
+                "A Tracer has already been configured. " +
+                    "setGlobalTracer() should only be called once per process."
+            }
+            this.tracer = tracer
+        }
+
+        /**
+         * Resets the [global] [Tracer] for JVM and Android tests.
+         *
+         * Note: This API should only be used in tests.
+         */
+        @VisibleForTesting
+        public fun resetGlobalTracer() {
+            tracer = stubTracer
+        }
     }
 }

@@ -22,8 +22,10 @@ import android.os.Build;
 
 import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.Features;
@@ -48,7 +50,6 @@ import androidx.appsearch.platformstorage.converter.ObserverSpecToPlatformConver
 import androidx.appsearch.platformstorage.converter.RequestToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.ResponseToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.SearchSpecToPlatformConverter;
-import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.appsearch.platformstorage.util.BatchResultCallbackAdapter;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
@@ -58,6 +59,7 @@ import androidx.core.util.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Set;
@@ -67,9 +69,8 @@ import java.util.function.Consumer;
 /**
  * An implementation of {@link GlobalSearchSession} which proxies to a
  * platform {@link android.app.appsearch.GlobalSearchSession}.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 class GlobalSearchSessionImpl implements GlobalSearchSession {
@@ -77,6 +78,9 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
     private final Executor mExecutor;
     private final Context mContext;
     private final Features mFeatures;
+    @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
+    @Nullable
+    private final PlatformConversionAdapter mAdapter;
 
     // Management of observer callbacks.
     @GuardedBy("mObserverCallbacksLocked")
@@ -84,14 +88,17 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
             android.app.appsearch.observer.ObserverCallback>>
             mObserverCallbacksLocked = new ArrayMap<>();
 
+    @OptIn(markerClass = androidx.appsearch.app.ExperimentalAppSearchApi.class)
     GlobalSearchSessionImpl(
             android.app.appsearch.@NonNull GlobalSearchSession platformSession,
             @NonNull Executor executor,
-            @NonNull Context context) {
+            @NonNull Context context,
+            @Nullable PlatformConversionAdapter adapter) {
         mPlatformSession = Preconditions.checkNotNull(platformSession);
         mExecutor = Preconditions.checkNotNull(executor);
         mContext = Preconditions.checkNotNull(context);
-        mFeatures = new FeaturesImpl(mContext);
+        mFeatures = new FeaturesImpl(mContext, /* isForEnterprise= */ false);
+        mAdapter = adapter;
     }
 
     @Override
@@ -111,7 +118,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         ApiHelperForT.getByDocumentId(mPlatformSession, packageName, databaseName,
                 RequestToPlatformConverter.toPlatformGetByDocumentIdRequest(request), mExecutor,
                 new BatchResultCallbackAdapter<>(
-                        future, GenericDocumentToPlatformConverter::toJetpackGenericDocument));
+                        future, doc -> GenericDocumentToPlatformConverter.toJetpackGenericDocument(
+                                doc, mAdapter)));
         return future;
     }
 
@@ -150,8 +158,10 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         android.app.appsearch.SearchResults platformSearchResults =
                 mPlatformSession.search(
                         queryExpression,
-                        SearchSpecToPlatformConverter.toPlatformSearchSpec(mContext, searchSpec));
-        return new SearchResultsImpl(platformSearchResults, searchSpec, mExecutor, mContext);
+                        SearchSpecToPlatformConverter.toPlatformSearchSpec(
+                                mContext, searchSpec, mAdapter));
+        return new SearchResultsImpl(
+                platformSearchResults, searchSpec, mExecutor, mContext, mAdapter);
     }
 
     @Override

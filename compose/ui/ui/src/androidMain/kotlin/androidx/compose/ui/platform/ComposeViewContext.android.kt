@@ -16,33 +16,38 @@
 
 package androidx.compose.ui.platform
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+import android.annotation.SuppressLint
 import android.content.ComponentCallbacks2
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.os.Build
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.accessibility.AccessibilityManager
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LocalHostDefaultProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
+import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.ComposeUiFlags.isMediaQueryIntegrationEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.LocalUiMediaScope
 import androidx.compose.ui.R
-import androidx.compose.ui.adaptive.obtainUiMediaScope
 import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.PlatformHapticFeedback
@@ -76,15 +81,15 @@ import androidx.savedstate.findViewTreeSavedStateRegistryOwner
  *
  * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  */
-@ExperimentalComposeViewContextApi
-class ComposeViewContext
+@OptIn(ExperimentalComposeUiApi::class)
+public class ComposeViewContext
 private constructor(
     composeViewContext: ComposeViewContext?,
     internal val view: View,
-    internal val compositionContext: CompositionContext,
-    internal val lifecycleOwner: LifecycleOwner,
-    internal val savedStateRegistryOwner: SavedStateRegistryOwner,
-    internal val viewModelStoreOwner: ViewModelStoreOwner?,
+    compositionContext: CompositionContext?,
+    lifecycleOwner: LifecycleOwner?,
+    savedStateRegistryOwner: SavedStateRegistryOwner?,
+    viewModelStoreOwner: ViewModelStoreOwner?,
     matchesContext: Boolean = composeViewContext?.view?.context == view.context,
 ) {
     /**
@@ -92,39 +97,31 @@ private constructor(
      * compose content while the [AbstractComposeView] isn't attached.
      *
      * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with
-     *   this [ComposeViewContext]. This [View] must be attached before calling this constructor and
-     *   should be attached as long as [ComposeViewContext] is expected to be around is expected to
-     *   be around.
+     *   this [ComposeViewContext]. This [View] must be attached before a [ComposeView] using the
+     *   [ComposeViewContext] has called [ComposeView.setContent]. [view] must remain attached as
+     *   long as the [ComposeViewContext] is expected to be active.
      * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with
-     *   this [ComposeViewContext]. The default value is obtained from
+     *   this [ComposeViewContext]. If `null`, the default value is used, obtained from
      *   [View.findViewTreeCompositionContext], or, if not found from the window
      *   [androidx.compose.runtime.Recomposer].
      * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
-     *   constructed with this [ComposeViewContext]. The default value is obtained from
-     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown.
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
+     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown
+     *   during composition.
      * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s
-     *   constructed with this [ComposeViewContext]. The default value is obtained from
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
      *   [View.findViewTreeSavedStateRegistryOwner]. If not found, an [IllegalStateException] will
-     *   be thrown.
+     *   be thrown during composition.
      * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
-     *   [RetainedValuesStore]s. The default value is obtained from
+     *   [RetainedValuesStore]s. If `null`, the default value is obtained from
      *   [View.findViewTreeViewModelStoreOwner].
      */
-    constructor(
+    public constructor(
         view: View,
-        compositionContext: CompositionContext =
-            view.findViewTreeCompositionContext() ?: view.windowRecomposer,
-        lifecycleOwner: LifecycleOwner =
-            view.findViewTreeLifecycleOwner()
-                ?: throw IllegalStateException(
-                    "Composed into a View which doesn't propagate ViewTreeLifecycleOwner!"
-                ),
-        savedStateRegistryOwner: SavedStateRegistryOwner =
-            view.findViewTreeSavedStateRegistryOwner()
-                ?: throw IllegalStateException(
-                    "Composed into a View which doesn't propagate ViewTreeSavedStateRegistryOwner!"
-                ),
-        viewModelStoreOwner: ViewModelStoreOwner? = view.findViewTreeViewModelStoreOwner(),
+        compositionContext: CompositionContext? = null,
+        lifecycleOwner: LifecycleOwner? = null,
+        savedStateRegistryOwner: SavedStateRegistryOwner? = null,
+        viewModelStoreOwner: ViewModelStoreOwner? = null,
     ) : this(
         view.findViewTreeComposeViewContext(),
         view,
@@ -133,6 +130,41 @@ private constructor(
         savedStateRegistryOwner,
         viewModelStoreOwner,
     )
+
+    /**
+     * The first time the values are needed, [compositionContext], [lifecycleOwner],
+     * [savedStateRegistryOwner], and [viewModelStoreOwner] will be resolved based on the [view], if
+     * the values were not provided by the constructor. [view] must be attached when values are
+     * resolved or an exception will be thrown.
+     */
+    private var areValuesResolved = false
+    private var _compositionContext: CompositionContext? = compositionContext
+    internal val compositionContext: CompositionContext
+        get() {
+            resolveValuesIfNeeded()
+            return _compositionContext!!
+        }
+
+    private var _lifecycleOwner: LifecycleOwner? = lifecycleOwner
+    internal val lifecycleOwner: LifecycleOwner
+        get() {
+            resolveValuesIfNeeded()
+            return _lifecycleOwner!!
+        }
+
+    private var _savedStateRegistryOwner: SavedStateRegistryOwner? = savedStateRegistryOwner
+    internal val savedStateRegistryOwner: SavedStateRegistryOwner
+        get() {
+            resolveValuesIfNeeded()
+            return _savedStateRegistryOwner!!
+        }
+
+    private var _viewModelStoreOwner: ViewModelStoreOwner? = viewModelStoreOwner
+    internal val viewModelStoreOwner: ViewModelStoreOwner?
+        get() {
+            resolveValuesIfNeeded()
+            return _viewModelStoreOwner
+        }
 
     /** [ImageVectorCache] provided by [LocalImageVectorCache] */
     internal val imageVectorCache: ImageVectorCache =
@@ -173,13 +205,51 @@ private constructor(
             AndroidAccessibilityManager(view.context)
         }
 
-    /** [UriHandler] provided by [LocalUriHandler] */
-    internal val uriHandler: AndroidUriHandler =
+    private var _isAccessibilityEnabled: Boolean = false
+    internal val isAccessibilityEnabled: Boolean
+        get() =
+            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+                // b/504834104 saw accessibility being called when the state wasn't enabled. This
+                // indicates that the onAccessibilityChanged() was not received before the
+                // AccessibilityManager's state changed, so we must double-check here
+                _isAccessibilityEnabled && accessibilityManager.accessibilityManager.isEnabled
+            } else {
+                accessibilityManager.accessibilityManager.isEnabled
+            }
+
+    private var _isTouchExplorationEnabled: Boolean = false
+    internal val isTouchExplorationEnabled: Boolean
+        get() =
+            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+                _isTouchExplorationEnabled
+            } else {
+                accessibilityManager.accessibilityManager.isTouchExplorationEnabled
+            }
+
+    private var _enabledServices: List<AccessibilityServiceInfo>? = null
+    internal val enabledServices: List<AccessibilityServiceInfo>
+        get() =
+            if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+                _enabledServices
+                    ?: accessibilityManager.accessibilityManager
+                        .getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
+                        .also { _enabledServices = it }
+            } else {
+                accessibilityManager.accessibilityManager.getEnabledAccessibilityServiceList(
+                    FEEDBACK_ALL_MASK
+                )
+            }
+
+    private var _uriHandler: AndroidUriHandler? =
         if (matchesContext) {
             composeViewContext!!.uriHandler
         } else {
-            AndroidUriHandler(view.context)
+            null
         }
+
+    /** [UriHandler] provided by [LocalUriHandler] */
+    internal val uriHandler: AndroidUriHandler
+        get() = _uriHandler ?: AndroidUriHandler(view.context).also { _uriHandler = it }
 
     /** [ClipboardManager] provided by [LocalClipboardManager] */
     internal val clipboardManager: AndroidClipboardManager =
@@ -190,11 +260,11 @@ private constructor(
         }
 
     /** [Clipboard] provided by [LocalClipboard] */
-    internal val clipboard: AndroidClipboard =
+    internal val clipboard: Clipboard =
         if (matchesContext) {
             composeViewContext!!.clipboard
         } else {
-            AndroidClipboard(clipboardManager)
+            AndroidClipboardImpl(clipboardManager)
         }
 
     /** [Font.ResourceLoader] provided by [LocalFontLoader] */
@@ -238,7 +308,7 @@ private constructor(
         composeViewContext?.sharedDrawScope ?: LayoutNodeDrawScope()
 
     /** [WindowInfo] provide by [LocalWindowInfo]. */
-    internal val windowInfo: LazyWindowInfo = LazyWindowInfo()
+    internal val windowInfo: LazyWindowInfo = LazyWindowInfo(view.context)
 
     /**
      * A [CanvasHolder] that can be used for all AndroidComposeViews using this
@@ -261,6 +331,12 @@ private constructor(
      */
     @get:VisibleForTesting internal var testWindowSize: IntSize = IntSize.Zero
 
+    /**
+     * Flag to indicate that a window size update is pending. Used to defer size updates to the next
+     * global layout pass when the platform returns stale bounds during configuration changes.
+     */
+    private var pendingWindowInfoUpdate = false
+
     /** Used for recalculating the window size whenever there is a change to the Window. */
     private val calculateWindowSizeLambda = {
         if (testWindowSize == IntSize.Zero) {
@@ -271,30 +347,29 @@ private constructor(
     }
 
     /**
+     * Handler used to add and remove the callable that is in charge of binder calls to the
+     * AccessibilityManager. While it is still on the UI thread (for now), it isn't during the
+     * crucial time of View creation.
+     */
+    private var handler: Handler? = null
+
+    /**
+     * `true` when the AccessibilityManager is listening or `false` when not listening. When a
+     * [ComposeViewContext] has called [stopObserving] quickly after calling [startObserving], we
+     * can avoid posting the callback removing the listener. This is important for benchmarks that
+     * operate extremely quickly.
+     */
+    private var hasAccessibilityListener = false
+
+    private var _soundEffect: SoundEffect? = null
+    internal val soundEffect: SoundEffect
+        get() = _soundEffect ?: AndroidSoundEffect(view).also { _soundEffect = it }
+
+    /**
      * A single callback that handles observing configuration changes, memory calls, window focus
      * changes, and [view] attach state changes.
      */
-    private val callback =
-        object : ComponentCallbacks2, ViewTreeObserver.OnWindowFocusChangeListener {
-            override fun onConfigurationChanged(configuration: Configuration) {
-                this@ComposeViewContext.onConfigurationChanged(configuration)
-            }
-
-            @Deprecated("This callback is superseded by onTrimMemory")
-            override fun onLowMemory() {
-                imageVectorCache.clear()
-                resourceIdCache.clear()
-            }
-
-            override fun onTrimMemory(level: Int) {
-                imageVectorCache.clear()
-                resourceIdCache.clear()
-            }
-
-            override fun onWindowFocusChanged(hasFocus: Boolean) {
-                windowInfo.isWindowFocused = hasFocus
-            }
-        }
+    internal val callback = ComposeViewContextCallback()
 
     /**
      * Called when an AndroidComposeView is attached to the window. This will start observation if
@@ -334,14 +409,35 @@ private constructor(
         windowInfo.isWindowFocused = view.hasWindowFocus()
         windowInfo.setOnInitializeContainerSize(calculateWindowSizeLambda)
         windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
+        windowInfo.observeCrossWindowBlurState()
         view.viewTreeObserver.addOnWindowFocusChangeListener(callback)
+        view.viewTreeObserver.addOnGlobalLayoutListener(callback)
+        pendingWindowInfoUpdate = false
+        if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+            val am = accessibilityManager.accessibilityManager
+            _isAccessibilityEnabled = am.isEnabled
+            _isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
+            handler = view.handler
+            handler?.post(callback)
+        }
     }
 
     /** Stop observing configuration changes and window changes. */
     private fun stopObserving() {
         view.context.unregisterComponentCallbacks(callback)
         windowInfo.setOnInitializeContainerSize(null)
+        windowInfo.stopObservingCrossWindowBlurState()
         view.viewTreeObserver.removeOnWindowFocusChangeListener(callback)
+        view.viewTreeObserver.removeOnGlobalLayoutListener(callback)
+        pendingWindowInfoUpdate = false
+        if (AndroidComposeUiFlags.isAccessibilityPerformanceEnabled) {
+            if (hasAccessibilityListener) {
+                handler?.post(callback)
+            } else {
+                handler?.removeCallbacks(callback)
+            }
+            handler = null
+        }
     }
 
     /**
@@ -359,7 +455,13 @@ private constructor(
                 fontFamilyResolver.value = createFontFamilyResolver(view.context)
             }
             if (changedFlags and MaskForNonWindowMetricsChanges.inv() != 0) {
-                windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
+                // Defer bounds updates on API <= 32 because the platform can return stale window
+                // metrics during config changes (b/525259151).
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
+                } else {
+                    pendingWindowInfoUpdate = true
+                }
             }
         }
     }
@@ -368,22 +470,31 @@ private constructor(
      * Construct a [ComposeViewContext] sharing parts with another [ComposeViewContext].
      *
      * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with
-     *   this [ComposeViewContext]. This [View] must be attached before calling this constructor.
+     *   this [ComposeViewContext]. This [View] must be attached before a [ComposeView] using the
+     *   [ComposeViewContext] has called [ComposeView.setContent]. [view] must remain attached as
+     *   long as the [ComposeViewContext] is expected to be active.
      * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with
-     *   this [ComposeViewContext].
+     *   this [ComposeViewContext]. If `null`, the default value is used, obtained from
+     *   [View.findViewTreeCompositionContext], or, if not found from the window
+     *   [androidx.compose.runtime.Recomposer].
      * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
-     *   constructed with this [ComposeViewContext].
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
+     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown
+     *   during composition.
      * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s
-     *   constructed with this [ComposeViewContext].
+     *   constructed with this [ComposeViewContext]. If `null`, the default value is obtained from
+     *   [View.findViewTreeSavedStateRegistryOwner]. If not found, an [IllegalStateException] will
+     *   be thrown during composition.
      * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
-     *   [RetainedValuesStore]s.
+     *   [RetainedValuesStore]s. If `null`, the default value is obtained from
+     *   [View.findViewTreeViewModelStoreOwner].
      */
-    fun copy(
+    public fun copy(
         view: View = this.view,
-        compositionContext: CompositionContext = this.compositionContext,
-        lifecycleOwner: LifecycleOwner = this.lifecycleOwner,
-        savedStateRegistryOwner: SavedStateRegistryOwner = this.savedStateRegistryOwner,
-        viewModelStoreOwner: ViewModelStoreOwner? = this.viewModelStoreOwner,
+        compositionContext: CompositionContext? = this._compositionContext,
+        lifecycleOwner: LifecycleOwner? = this._lifecycleOwner,
+        savedStateRegistryOwner: SavedStateRegistryOwner? = this._savedStateRegistryOwner,
+        viewModelStoreOwner: ViewModelStoreOwner? = this._viewModelStoreOwner,
     ): ComposeViewContext =
         ComposeViewContext(
             this,
@@ -394,7 +505,38 @@ private constructor(
             viewModelStoreOwner,
         )
 
+    private fun resolveValuesIfNeeded() {
+        if (!areValuesResolved) {
+            areValuesResolved = true
+            if (_compositionContext == null) {
+                _compositionContext = view.findViewTreeCompositionContext() ?: view.windowRecomposer
+            }
+            if (_lifecycleOwner == null) {
+                _lifecycleOwner =
+                    view.findViewTreeLifecycleOwner()
+                        ?: throw IllegalStateException(
+                            "Composed into a View which doesn't propagate ViewTreeLifecycleOwner!"
+                        )
+            }
+            if (_savedStateRegistryOwner == null) {
+                _savedStateRegistryOwner =
+                    view.findViewTreeSavedStateRegistryOwner()
+                        ?: throw IllegalStateException(
+                            "Composed into a View which doesn't propagate ViewTreeSavedStateRegistryOwner!"
+                        )
+            }
+            if (_viewModelStoreOwner == null) {
+                _viewModelStoreOwner = view.findViewTreeViewModelStoreOwner()
+            }
+        }
+    }
+
+    private fun resetEnabledAccessibilityServiceList() {
+        _enabledServices = null
+    }
+
     /** Provide common CompositionLocals. */
+    @SuppressLint("NullAnnotationGroup")
     @OptIn(ExperimentalComposeUiApi::class, ExperimentalMediaQueryApi::class)
     @Suppress("DEPRECATION")
     @Composable
@@ -411,44 +553,118 @@ private constructor(
             inspectionTable.add(currentComposer.compositionData)
             currentComposer.collectParameterInformation()
         }
-        val saveableStateRegistry = remember {
-            DisposableSaveableStateRegistry(owner, savedStateRegistryOwner)
-        }
-        DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
 
-        val scrollCaptureInProgress =
-            LocalScrollCaptureInProgress.current or owner.scrollCaptureInProgress
-        val hostDefaultProvider = remember(owner.view) { ViewTreeHostDefaultProvider(owner.view) }
         @Suppress("UNCHECKED_CAST")
-        CompositionLocalProvider(
-            LocalLifecycleOwner provides lifecycleOwner,
-            LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
-            LocalImageVectorCache provides imageVectorCache,
-            LocalResourceIdCache provides resourceIdCache,
-            LocalContext provides owner.context,
-            LocalInspectionTables provides inspectionTable,
-            LocalConfiguration provides owner.configuration,
-            LocalSaveableStateRegistry provides saveableStateRegistry,
-            LocalView provides owner.view,
-            LocalProvidableScrollCaptureInProgress provides scrollCaptureInProgress,
-            LocalViewConfiguration provides owner.viewConfiguration,
-            LocalHostDefaultProvider provides hostDefaultProvider,
-        ) {
-            if (isMediaQueryIntegrationEnabled) {
-                val mediaScope = obtainUiMediaScope(owner.context, owner.view, owner.windowInfo)
-                CompositionLocalProvider(LocalUiMediaScope provides mediaScope) {
-                    ProvideCommonCompositionLocals(
-                        owner = owner,
-                        uriHandler = uriHandler,
-                        content = content,
-                    )
+        if (androidx.compose.ui.ComposeUiFlags.isMinimalistLocalsEnabled) {
+            CompositionLocalProvider(
+                LocalAndroidComposeView provides owner,
+                LocalLifecycleOwner provides lifecycleOwner,
+                LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
+                LocalInspectionTables provides inspectionTable,
+                LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
+                LocalProvidableScrollCaptureInProgress providesComputed
+                    {
+                        owner.scrollCaptureInProgress
+                    },
+                LocalHostDefaultProvider providesComputed { owner.hostDefaultProvider },
+            ) {
+                ProvideCommonCompositionLocals(owner = owner, content = content)
+            }
+        } else {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides lifecycleOwner,
+                LocalSavedStateRegistryOwner provides savedStateRegistryOwner,
+                LocalImageVectorCache provides imageVectorCache,
+                LocalResourceIdCache provides resourceIdCache,
+                LocalSoundEffect providesComputed { soundEffect },
+                LocalContext provides owner.context,
+                LocalInspectionTables provides inspectionTable,
+                LocalConfiguration provides owner.configuration,
+                LocalSaveableStateRegistry providesComputed { owner.savedStateRegistry },
+                LocalView provides owner.view,
+                LocalWindow providesComputed { owner.window },
+                LocalProvidableScrollCaptureInProgress providesComputed
+                    {
+                        owner.scrollCaptureInProgress
+                    },
+                LocalViewConfiguration provides owner.viewConfiguration,
+                LocalHostDefaultProvider provides owner.hostDefaultProvider,
+            ) {
+                if (isMediaQueryIntegrationEnabled) {
+                    CompositionLocalProvider(
+                        // Defer owner.uiMediaScope evaluation until actively read in composition.
+                        LocalUiMediaScope providesComputed
+                            {
+                                owner.uiMediaScope ?: error("UiMediaScope is not initialized.")
+                            }
+                    ) {
+                        ProvideCommonCompositionLocals(owner = owner, content = content)
+                    }
+                } else {
+                    ProvideCommonCompositionLocals(owner = owner, content = content)
                 }
+            }
+        }
+    }
+
+    internal inner class ComposeViewContextCallback :
+        Runnable,
+        ComponentCallbacks2,
+        ViewTreeObserver.OnWindowFocusChangeListener,
+        ViewTreeObserver.OnGlobalLayoutListener,
+        AccessibilityManager.AccessibilityStateChangeListener,
+        AccessibilityManager.TouchExplorationStateChangeListener {
+        override fun onConfigurationChanged(configuration: Configuration) {
+            this@ComposeViewContext.onConfigurationChanged(configuration)
+        }
+
+        @Deprecated("This callback is superseded by onTrimMemory")
+        override fun onLowMemory() {
+            imageVectorCache.clear()
+            resourceIdCache.clear()
+        }
+
+        override fun onTrimMemory(level: Int) {
+            imageVectorCache.clear()
+            resourceIdCache.clear()
+        }
+
+        override fun onWindowFocusChanged(hasFocus: Boolean) {
+            windowInfo.isWindowFocused = hasFocus
+        }
+
+        override fun onAccessibilityStateChanged(enabled: Boolean) {
+            _isAccessibilityEnabled = enabled
+            if (enabled) resetEnabledAccessibilityServiceList()
+        }
+
+        override fun onTouchExplorationStateChanged(enabled: Boolean) {
+            _isTouchExplorationEnabled = enabled
+            if (enabled && _isAccessibilityEnabled) resetEnabledAccessibilityServiceList()
+        }
+
+        override fun run() {
+            val am = accessibilityManager.accessibilityManager
+            if (viewCount > 0) {
+                hasAccessibilityListener = true
+                _isAccessibilityEnabled = am.isEnabled
+                _isTouchExplorationEnabled = _isAccessibilityEnabled && am.isTouchExplorationEnabled
+                if (_isAccessibilityEnabled) {
+                    resetEnabledAccessibilityServiceList()
+                }
+                am.addAccessibilityStateChangeListener(this)
+                am.addTouchExplorationStateChangeListener(this)
             } else {
-                ProvideCommonCompositionLocals(
-                    owner = owner,
-                    uriHandler = uriHandler,
-                    content = content,
-                )
+                hasAccessibilityListener = false
+                am.removeAccessibilityStateChangeListener(this)
+                am.removeTouchExplorationStateChangeListener(this)
+            }
+        }
+
+        override fun onGlobalLayout() {
+            if (pendingWindowInfoUpdate) {
+                pendingWindowInfoUpdate = false
+                windowInfo.updateContainerSizeIfObserved(calculateWindowSizeLambda)
             }
         }
     }
@@ -476,7 +692,7 @@ private const val MaskForNonWindowMetricsChanges =
         ActivityInfo.CONFIG_FONT_SCALE or
         ActivityInfo.CONFIG_COLOR_MODE or
         ActivityInfo.CONFIG_GRAMMATICAL_GENDER or
-        ActivityInfo.CONFIG_FONT_WEIGHT_ADJUSTMENT
+        ActivityInfo.CONFIG_FONT_WEIGHT_ADJUSTMENT or
+        ActivityInfo.CONFIG_ASSETS_PATHS
 
-// TODO(b/450557132): Add when compileSdk is bumped to 36
-//   ActivityInfo.CONFIG_ASSETS_PATHS
+internal val LocalAndroidComposeView = staticCompositionLocalOf<AndroidComposeView?> { null }

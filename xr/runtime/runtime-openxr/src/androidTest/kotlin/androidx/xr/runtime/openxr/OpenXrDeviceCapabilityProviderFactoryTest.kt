@@ -18,7 +18,6 @@ package androidx.xr.runtime.openxr
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.ExperimentalXrDeviceLifecycleApi
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
@@ -27,8 +26,13 @@ import org.junit.Before
 // TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
 // supports a lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
-@OptIn(ExperimentalXrDeviceLifecycleApi::class)
 class OpenXrDeviceCapabilityProviderFactoryTest {
+
+    companion object {
+        init {
+            System.loadLibrary("androidx.xr.runtime.openxr.test")
+        }
+    }
 
     private lateinit var underTest: OpenXrDeviceCapabilityProviderFactory
 
@@ -39,8 +43,13 @@ class OpenXrDeviceCapabilityProviderFactoryTest {
 
     @Test
     fun create_returnsOpenXrDeviceCapabilityProvider() = runTest {
+        val nativeProvider = OpenXrInstanceManager()
         val provider =
-            underTest.create(ApplicationProvider.getApplicationContext(), this.coroutineContext)
+            underTest.create(
+                ApplicationProvider.getApplicationContext(),
+                this.coroutineContext,
+                nativeProvider,
+            )
 
         assertThat(provider).isInstanceOf(OpenXrDeviceCapabilityProvider::class.java)
     }

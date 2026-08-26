@@ -29,6 +29,7 @@ import androidx.camera.camera2.adapter.ZslControlImpl.Companion.RING_BUFFER_CAPA
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.testing.FakeCameraProperties
 import androidx.camera.core.impl.SessionConfig
 import com.google.common.truth.Truth.assertThat
@@ -42,7 +43,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.M)
+@Config(minSdk = 24)
 @DoNotInstrument
 class ZslControlImplTest {
     private lateinit var zslControlImpl: ZslControlImpl
@@ -311,7 +312,11 @@ class ZslControlImplTest {
             characteristicsMap[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP] =
                 streamConfigurationMap
         }
-        val cameraMetadata = FakeCameraMetadata(characteristics = characteristicsMap)
+        val cameraMetadata =
+            FakeCameraMetadata.fromTemplate(
+                template = HighEndDeviceTemplate,
+                characteristicsOverrides = characteristicsMap,
+            )
 
         return FakeCameraProperties(cameraMetadata, CameraId("0"))
     }

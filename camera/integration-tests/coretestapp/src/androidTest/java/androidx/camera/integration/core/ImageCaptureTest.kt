@@ -676,7 +676,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         }
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/452713508
+    @SdkSuppress(minSdkVersion = 25) // b/452713508
     @Test
     fun canSaveFile_withRotation() = runBlocking {
         // TODO(b/147448711) Add back in once cuttlefish has correct user cropping functionality.
@@ -1573,7 +1573,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         val builder = ImageCapture.Builder()
 
         val useCase = builder.build()
-        var camera: Camera
+        val camera: Camera
         withContext(Dispatchers.Main) {
             camera =
                 cameraProvider.bindToLifecycle(
@@ -1610,7 +1610,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         val builder = ImageCapture.Builder()
 
         val useCase = builder.build()
-        var camera: Camera
+        val camera: Camera
         withContext(Dispatchers.Main) {
             camera =
                 cameraProvider.bindToLifecycle(
@@ -1647,7 +1647,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     fun returnYuvImage_withYuvBufferFormat() = runBlocking {
         val builder = ImageCapture.Builder().setBufferFormat(ImageFormat.YUV_420_888)
         val useCase = builder.build()
-        var camera: Camera
+        val camera: Camera
         withContext(Dispatchers.Main) {
             camera =
                 cameraProvider.bindToLifecycle(
@@ -1679,7 +1679,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         val builder = ImageCapture.Builder().setBufferFormat(ImageFormat.YUV_420_888)
 
         val useCase = builder.build()
-        var camera: Camera
+        val camera: Camera
         withContext(Dispatchers.Main) {
             camera =
                 cameraProvider.bindToLifecycle(
@@ -2054,8 +2054,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
                 override fun onCaptureSuccess(image: ImageProxy) {
                     val planes = image.planes
                     val buffer = planes[0].buffer
-                    val data = ByteArray(buffer.capacity())
                     buffer.rewind()
+                    val data = ByteArray(buffer.remaining())
                     buffer[data]
 
                     image.close()

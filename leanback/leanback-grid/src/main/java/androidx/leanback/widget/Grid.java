@@ -174,7 +174,7 @@ abstract class Grid {
     /**
      * Creates a single or multiple rows (can be staggered or not staggered) grid
      */
-    public static Grid createGrid(int rows, SpanSizeLookup spanSizeLookup) {
+    public static Grid createGrid(int rows, LeanbackSpanSizeLookup spanSizeLookup) {
         Grid grid;
         if (rows == 1) {
             grid = new SingleRow();
@@ -564,6 +564,9 @@ abstract class Grid {
             mTmpItem[0] = null;
         }
     }
+
+    public abstract int getNextPositionOfSameSpan(int focusPosition, int count,
+            int spanGroupIndexDelta);
 
     /**
      * Queries items adjacent to the viewport (in the direction of da) into the prefetch registry.

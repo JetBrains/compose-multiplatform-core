@@ -19,7 +19,6 @@ package androidx.compose.foundation.layout.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexAlignContent
 import androidx.compose.foundation.layout.FlexAlignItems
 import androidx.compose.foundation.layout.FlexAlignSelf
@@ -35,7 +34,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +47,6 @@ import androidx.compose.ui.unit.sp
 
 @Sampled
 @Composable
-@OptIn(ExperimentalFlexBoxApi::class)
 fun SimpleFlexBox() {
     // FlexBox defaults to a Row-like layout (FlexDirection.Row).
     // The children will be laid out horizontally.
@@ -85,7 +83,6 @@ fun SimpleFlexBox() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxConfigReusableSample() {
@@ -101,7 +98,6 @@ fun FlexBoxConfigReusableSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxConfigResponsiveSample() {
@@ -114,7 +110,6 @@ fun FlexBoxConfigResponsiveSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexConfigScopeSample() {
@@ -131,7 +126,6 @@ fun FlexConfigScopeSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxConstraintsSample() {
@@ -148,7 +142,6 @@ fun FlexBoxConstraintsSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxDirectionSample() {
@@ -164,7 +157,6 @@ fun FlexBoxDirectionSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxWrapSample() {
@@ -180,7 +172,22 @@ fun FlexBoxWrapSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
+@Sampled
+@Composable
+fun FlexBoxMaxItemsInEachLineSample() {
+    // Can be extracted to a top-level FlexBoxConfig
+    val ThreePerLineRow = FlexBoxConfig {
+        direction(FlexDirection.Row)
+        wrap(FlexWrap.Wrap)
+        // Force a line break after every 3 items, even if more would fit.
+        maxItemsInEachLine(3)
+    }
+
+    FlexBox(modifier = Modifier.fillMaxWidth(), config = ThreePerLineRow) {
+        repeat(10) { Box(Modifier.size(60.dp).background(Color.Blue)) }
+    }
+}
+
 @Sampled
 @Composable
 fun FlexBoxJustifyContentSample() {
@@ -196,7 +203,6 @@ fun FlexBoxJustifyContentSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxAlignItemsSample() {
@@ -212,7 +218,6 @@ fun FlexBoxAlignItemsSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxAlignItemsBaselineSample() {
@@ -228,7 +233,6 @@ fun FlexBoxAlignItemsBaselineSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxAlignItemsCustomBaselineSample() {
@@ -248,7 +252,6 @@ fun FlexBoxAlignItemsCustomBaselineSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxAlignContentSample() {
@@ -264,7 +267,6 @@ fun FlexBoxAlignContentSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxRowGapSample() {
@@ -280,7 +282,6 @@ fun FlexBoxRowGapSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxColumnGapSample() {
@@ -297,7 +298,6 @@ fun FlexBoxColumnGapSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxGapSample() {
@@ -313,7 +313,6 @@ fun FlexBoxGapSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxGapDifferentSample() {
@@ -329,7 +328,6 @@ fun FlexBoxGapDifferentSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBoxScopeSample() {
@@ -348,7 +346,6 @@ fun FlexBoxScopeSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexModifierWithConfigSample() {
@@ -365,7 +362,6 @@ fun FlexModifierWithConfigSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexModifierWithLambdaSample() {
@@ -380,7 +376,6 @@ fun FlexModifierWithLambdaSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBasisDpSample() {
@@ -394,7 +389,6 @@ fun FlexBasisDpSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBasisPercentSample() {
@@ -408,7 +402,6 @@ fun FlexBasisPercentSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexConfigSample() {
@@ -425,7 +418,6 @@ fun FlexConfigSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexAlignSelfSample() {
@@ -445,7 +437,6 @@ fun FlexAlignSelfSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexAlignSelfBaselineSample() {
@@ -458,7 +449,6 @@ fun FlexAlignSelfBaselineSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexAlignSelfCustomBaselineSample() {
@@ -475,7 +465,6 @@ fun FlexAlignSelfCustomBaselineSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexOrderSample() {
@@ -493,7 +482,6 @@ fun FlexOrderSample() {
     // Visual order: Yellow, Green, Blue, Red
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexGrowSample() {
@@ -508,7 +496,6 @@ fun FlexGrowSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexShrinkSample() {
@@ -527,7 +514,6 @@ fun FlexShrinkSample() {
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @Sampled
 @Composable
 fun FlexBasisSample() {
@@ -542,5 +528,58 @@ fun FlexBasisSample() {
     FlexBox(modifier = Modifier.fillMaxWidth()) {
         Box(Modifier.height(50.dp).background(Color.Red).flex(FixedBasisGrow))
         Box(Modifier.height(50.dp).background(Color.Blue).flex(PercentBasis))
+    }
+}
+
+@Sampled
+@Composable
+fun FlexBoxConfigCombineSample() {
+    // Define partial component layout tokens
+    val BaseRow = FlexBoxConfig {
+        direction(FlexDirection.Row)
+        wrap(FlexWrap.Wrap)
+    }
+    val CenteredAlignment = FlexBoxConfig { alignItems(FlexAlignItems.Center) }
+    val StandardGaps = FlexBoxConfig { gap(8.dp) }
+
+    // Combine tokens together cleanly via factory functions or infix `then`
+    val RowTokensCombined = FlexBoxConfig(BaseRow, CenteredAlignment, StandardGaps)
+
+    // An empty call returns the default identity element gracefully without allocations
+    val EmptyExtension = FlexBoxConfig()
+
+    FlexBox(modifier = Modifier.fillMaxWidth(), config = RowTokensCombined then EmptyExtension) {
+        repeat(4) { Box(Modifier.size(60.dp).background(Color.Magenta)) }
+    }
+}
+
+@Sampled
+@Composable
+fun FlexConfigCombineSample() {
+    // Shared design system item style tokens
+    val SharedItemDefaults = FlexConfig {
+        shrink(1f)
+        basis(FlexBasis.Auto)
+    }
+
+    // Individual special-case item overrides
+    val GrowPriority = FlexConfig { grow(2f) }
+    val CenterAlignmentOverride = FlexConfig { alignSelf(FlexAlignSelf.Center) }
+
+    // Construct optimized configurations via combination APIs
+    val FlexibleHeroItem = SharedItemDefaults then GrowPriority then CenterAlignmentOverride
+    val StandardFlexibleItem = FlexConfig(SharedItemDefaults, GrowPriority)
+
+    // An empty call returns the identity element cleanly
+    val EmptyFlexExtension = FlexConfig()
+
+    FlexBox(modifier = Modifier.fillMaxWidth().height(120.dp)) {
+        // Applies premium combined config with extensions
+        Box(
+            Modifier.height(60.dp)
+                .background(Color.Cyan)
+                .flex(FlexibleHeroItem then EmptyFlexExtension)
+        )
+        Box(Modifier.height(60.dp).background(Color.Yellow).flex(StandardFlexibleItem))
     }
 }

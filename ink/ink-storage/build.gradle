@@ -22,31 +22,36 @@ plugins {
 }
 
 androidXMultiplatform {
+    // Only supported on non-Android JVM for Linux on x86_64 and Mac on arm64
     jvm()
+
+    ios()
+
     androidLibrary {
         namespace = "androidx.ink.storage"
-        compileSdk { version = release(35) }
     }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":ink:ink-nativeloader"))
-        }
-
-        jvmAndAndroidMain.dependencies {
             implementation(project(":ink:ink-brush"))
+            implementation(project(":ink:ink-nativeloader"))
             implementation(project(":ink:ink-strokes"))
         }
 
-        androidMain.dependencies {
-            implementation(project(":ink:ink-rendering"))
+        nativeMain.dependencies {
+            implementation(libs.okio)
+        }
+
+        commonTest.dependencies {
+            implementation(libs.kotlinTest)
+            implementation(libs.okio)
+            implementation(project(":kruth:kruth"))
         }
 
         jvmAndAndroidTest.dependencies {
             implementation(libs.junit)
-            implementation(libs.kotlinTest)
             implementation(libs.truth)
         }
 
@@ -63,6 +68,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Efficiently store and retrieve Ink strokes"
+    usePlatformSpecificCacheForJvmTests = true
 }
 
 // TODO: b/374774638 - Run tests on host as well as device.

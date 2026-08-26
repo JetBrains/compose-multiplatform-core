@@ -16,11 +16,19 @@
 
 package androidx.appfunctions.integration.test.agent
 
+import android.app.UiAutomation
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.ParcelFileDescriptor.AutoCloseInputStream
+import androidx.appfunctions.AppFunctionManager
+import androidx.appfunctions.metadata.AppFunctionName
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.security.MessageDigest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -48,6 +56,23 @@ internal object TestUtil {
             }
         }
         throw lastError!!
+    }
+
+    suspend fun Context.awaitAppFunctionsIndexed(
+        targetPackage: String,
+        expectedFunctionIds: Set<String> = emptySet(),
+        unexpectedFunctionIds: Set<String> = emptySet(),
+    ) {
+        retryAssert {
+            val functionIds = AppSearchMetadataHelper.collectFunctionIds(this, targetPackage)
+            assertThat(functionIds).isNotEmpty()
+            if (expectedFunctionIds.isNotEmpty()) {
+                assertThat(functionIds).containsAtLeastElementsIn(expectedFunctionIds)
+            }
+            if (unexpectedFunctionIds.isNotEmpty()) {
+                assertThat(functionIds).containsNoneIn(unexpectedFunctionIds)
+            }
+        }
     }
 
     fun Context.assertPersistedGranted(uri: Uri) {
@@ -85,7 +110,7 @@ internal object TestUtil {
     fun Context.assertReadInaccessible(uri: Uri) {
         val contentResolver = getContentResolver()
         try {
-            contentResolver.openAssetFile(uri, "r", null).use { fd -> }
+            contentResolver.openAssetFile(uri, "r", null).use { _ -> }
         } catch (_: SecurityException) {
             return
         }
@@ -124,6 +149,92 @@ internal object TestUtil {
         fail("Uri $uri is still write accessible from $packageName")
     }
 
+    /** Grants [context] the AppFunction access permission for [targetPackageName]. */
+    fun UiAutomation.grantAppFunctionAccess(context: Context, targetPackageName: String) {
+        if (Build.VERSION.SDK_INT < 37) return
+        val packageInfo =
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.GET_SIGNING_CERTIFICATES,
+            )
+        val signatures = packageInfo.signingInfo?.signingCertificateHistory
+        val certificate =
+            if (!signatures.isNullOrEmpty()) {
+                val digest =
+                    MessageDigest.getInstance("SHA-256").digest(signatures.last().toByteArray())
+                digest.joinToString("") { "%02X".format(it) }
+            } else {
+                throw IllegalStateException(
+                    "No signatures found for package ${context.packageName}"
+                )
+            }
+        val signedPackage = "${context.packageName}:$certificate"
+        executeShellCommandSync("cmd app_function purge-allowlist-cache")
+        executeShellCommandSync(
+            buildString {
+                append("cmd allowlist add-package-multimap")
+                append(" ")
+                append("$APP_FUNCTION_ALLOWLIST_ID")
+                append(" ")
+                append(signedPackage)
+                append(" ")
+                append(targetPackageName)
+            }
+        )
+        executeShellCommandSync("cmd app_function set-temporary-caller ${context.packageName}")
+        executeShellCommandSync("cmd app_function flush-allowlist-changes")
+    }
+
+    /** Revokes AppFunction access. */
+    fun UiAutomation.revokeAppFunctionAccess() {
+        if (Build.VERSION.SDK_INT < 37) return
+        executeShellCommandSync("cmd app_function purge-allowlist-cache")
+        executeShellCommandSync("cmd allowlist clear-shell-allowlist $APP_FUNCTION_ALLOWLIST_ID")
+        executeShellCommandSync("cmd app_function clear-temporary-caller")
+        executeShellCommandSync("cmd app_function flush-allowlist-changes")
+    }
+
+    /** Starts a background service using shell command to bypass background start restrictions. */
+    fun UiAutomation.startService(packageName: String, className: String, action: String) {
+        executeShellCommandSync("cmd deviceidle tempwhitelist -d 10000 $packageName")
+        executeShellCommandSync("am startservice -a $action -n $packageName/$className")
+    }
+
+    /** Sets the app function with the given state. */
+    fun setAppFunctionStateRemoteAsync(appFunctionName: AppFunctionName, state: Int) = doBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val intent =
+            android.content.Intent("androidx.appfunctions.integration.testapp.ACTION_SET_STATE")
+        intent.setPackage(appFunctionName.packageName)
+        intent.putExtra("function_id", appFunctionName.functionIdentifier)
+        intent.putExtra("state", state)
+        context.sendBroadcast(intent)
+    }
+
+    /** Verifies that the given app function has the given enabled state. */
+    suspend fun AppFunctionManager.assertAppFunctionEnabledState(
+        targetFunctionName: AppFunctionName,
+        expectedEnabled: Boolean,
+    ) {
+        val isEnabled =
+            getAppFunctionStates(
+                    appFunctionNames =
+                        listOf(
+                            AppFunctionName(
+                                targetFunctionName.packageName,
+                                targetFunctionName.functionIdentifier,
+                            )
+                        )
+                )
+                .single()
+                .isEnabled
+        assertThat(isEnabled).isEqualTo(expectedEnabled)
+    }
+
+    private fun UiAutomation.executeShellCommandSync(command: String): String =
+        AutoCloseInputStream(executeShellCommand(command)).bufferedReader().use { it.readText() }
+
     private const val RETRY_CHECK_INTERVAL_MILLIS: Long = 500
     private const val RETRY_MAX_INTERVALS: Long = 10
+    private const val APP_FUNCTION_ALLOWLIST_ID: Int = 2
 }

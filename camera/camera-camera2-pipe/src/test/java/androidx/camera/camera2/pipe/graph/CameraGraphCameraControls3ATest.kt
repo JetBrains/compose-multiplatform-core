@@ -17,9 +17,6 @@
 package androidx.camera.camera2.pipe.graph
 
 import android.content.Context
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.util.Size
@@ -33,6 +30,7 @@ import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.testing.CameraGraphSimulator
 import androidx.camera.camera2.pipe.testing.CameraPipeSimulator
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.HighEndDeviceTemplate
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -50,13 +48,7 @@ import org.junit.runner.RunWith
 class CameraGraphCameraControls3ATest {
     private val testScope = TestScope()
     private val context = ApplicationProvider.getApplicationContext() as Context
-    private val metadata =
-        FakeCameraMetadata(
-            mapOf(
-                INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE to 1.0f,
-            )
-        )
+    private val metadata = FakeCameraMetadata.fromTemplate(HighEndDeviceTemplate)
     private val streamConfig1 = CameraStream.Config.create(Size(640, 480), StreamFormat.YUV_420_888)
     private val streamConfig2 = CameraStream.Config.create(Size(640, 480), StreamFormat.YUV_420_888)
     private val graphConfig =
@@ -69,23 +61,19 @@ class CameraGraphCameraControls3ATest {
     @Before
     fun setup() {
         cameraGraph.start()
-        cameraGraph.simulateCameraStarted()
         cameraGraph.initializeSurfaces()
-        testScope.advanceUntilIdle()
+        cameraGraph.simulateCameraStarted()
         val stream1 = cameraGraph.streams[streamConfig1]!!.id
         cameraGraph.useSessionIn(testScope) {
             it.startRepeating(Request(streams = listOf(stream1)))
         }
-        testScope.advanceUntilIdle()
         cameraGraph.simulateNextFrame()
-        testScope.advanceUntilIdle()
     }
 
     @Test
     fun update3A_completesWithStatusOK() =
         testScope.runTest {
             val result3ADeferred = cameraGraph.update3A(aeMode = AeMode.OFF)
-            advanceUntilIdle()
 
             val frame = cameraGraph.simulateNextFrame()
             frame.simulateTotalCaptureResult(
@@ -103,7 +91,6 @@ class CameraGraphCameraControls3ATest {
         testScope.runTest {
             val result3ADeferred =
                 cameraGraph.lock3A(afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN)
-            advanceUntilIdle()
 
             cameraGraph
                 .simulateNextFrame()
@@ -134,7 +121,6 @@ class CameraGraphCameraControls3ATest {
     fun setTorchOn_completesWithStatusOK() =
         testScope.runTest {
             val result3ADeferred = cameraGraph.setTorchOn()
-            advanceUntilIdle()
 
             val frame = cameraGraph.simulateNextFrame()
             frame.simulateTotalCaptureResult(
@@ -154,7 +140,6 @@ class CameraGraphCameraControls3ATest {
     fun unlock3A_completesWithStatusOK() =
         testScope.runTest {
             val unlockResultDeferred = cameraGraph.unlock3A(ae = true)
-            advanceUntilIdle()
 
             cameraGraph
                 .simulateNextFrame()
@@ -174,8 +159,6 @@ class CameraGraphCameraControls3ATest {
         testScope.runTest {
             cameraGraph.lock3A(aeLockBehavior = Lock3ABehavior.IMMEDIATE)
             cameraGraph.unlock3A(ae = true)
-
-            advanceUntilIdle()
 
             val lockParams = cameraGraph.simulateNextFrame().requestSequence.requiredParameters
             val unlockParams = cameraGraph.simulateNextFrame().requestSequence.requiredParameters

@@ -22,9 +22,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.ink.geometry.PartitionedMesh
 import androidx.ink.geometry.outlinesToPath
 import androidx.ink.strokes.Stroke
-import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.StampAnnotation
-import androidx.pdf.utils.getPathInputsFromPath
+import androidx.pdf.ExperimentalPdfApi
+import androidx.pdf.annotation.content.PathPdfObject
+import androidx.pdf.annotation.content.StampAnnotation
+import androidx.pdf.annotation.content.getPathInputsFromPath
 
 /**
  * Converts this [Stroke] into a [StampAnnotation].
@@ -34,6 +35,7 @@ import androidx.pdf.utils.getPathInputsFromPath
  * @param pageNum The page number where this annotation will be placed.
  * @return A [StampAnnotation] representing this stroke.
  */
+@OptIn(ExperimentalPdfApi::class)
 internal fun Stroke.toStampAnnotation(pageNum: Int): StampAnnotation {
     val strokeMesh: PartitionedMesh = shape
     val renderGroupPaths: List<Path> =

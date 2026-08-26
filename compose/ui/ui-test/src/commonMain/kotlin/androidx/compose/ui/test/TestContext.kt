@@ -24,7 +24,7 @@ import androidx.compose.ui.node.RootForTest
  * [ComposeUiTest] and friends, for example the [InputDispatcher] or the implementation of some
  * assertions and actions.
  */
-class TestContext internal constructor(internal val testOwner: TestOwner) {
+public class TestContext internal constructor(internal val testOwner: TestOwner) {
 
     /**
      * Stores the [InputDispatcherState] of each [RootForTest]. The state will be restored in an
@@ -36,6 +36,12 @@ class TestContext internal constructor(internal val testOwner: TestOwner) {
 
     /** Platform specific additions to the [TestContext]. */
     internal val platform = createPlatformTestContext()
+
+    /**
+     * Stores the time when the first event of the first input stream was sent. This is used to
+     * align the event time with the system time.
+     */
+    internal var initialSystemTimeMillis: Long = 0L
 }
 
 /** Factory method to create a [PlatformTestContext] */

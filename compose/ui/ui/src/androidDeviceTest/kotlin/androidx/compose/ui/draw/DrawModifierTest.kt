@@ -20,11 +20,13 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.IndicationNodeFactory
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -32,6 +34,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,7 +42,6 @@ import androidx.compose.testutils.assertPixelColor
 import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.AtLeastSize
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
@@ -97,7 +99,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -112,7 +113,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DrawModifierTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Before
     fun before() {
@@ -1379,6 +1380,147 @@ class DrawModifierTest {
         }
 
         rule.runOnIdle { assertThat(drawCount).isEqualTo(2) }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testDrawBehindWhenMovedBetweenLayouts() {
+        var moveContent by mutableStateOf(false)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                val movableContent = remember {
+                    movableContentOf {
+                        Box(Modifier.size(40.dp).drawBehind { drawRect(Color.Red) })
+                    }
+                }
+
+                Box(
+                    modifier =
+                        Modifier.size(100.dp).testTag("container").drawBehind {
+                            drawRect(Color.Blue)
+                        }
+                ) {
+                    if (moveContent) {
+                        Box(Modifier.offset(60.dp, 60.dp)) { movableContent() }
+                    } else {
+                        Box(Modifier.offset(0.dp, 0.dp)) { movableContent() }
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(100, 100)) { pos ->
+            if (pos.x in 0 until 40 && pos.y in 0 until 40) {
+                Color.Red
+            } else {
+                Color.Blue
+            }
+        }
+
+        rule.runOnIdle { moveContent = true }
+
+        // Verify content actually moved and was not drawn in the old place (0, 0) - (40, 40).
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(100, 100)) { pos ->
+            if (pos.x in 60 until 100 && pos.y in 60 until 100) {
+                Color.Red
+            } else {
+                Color.Blue
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testBackgroundWhenMovedBetweenLayouts() {
+        var moveContent by mutableStateOf(false)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                val movableContent = remember {
+                    movableContentOf { Box(Modifier.size(40.dp).background(Color.Red)) }
+                }
+
+                Box(modifier = Modifier.size(100.dp).testTag("container").background(Color.Blue)) {
+                    if (moveContent) {
+                        Box(Modifier.offset(60.dp, 60.dp)) { movableContent() }
+                    } else {
+                        Box(Modifier.offset(0.dp, 0.dp)) { movableContent() }
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(100, 100)) { pos ->
+            if (pos.x in 0 until 40 && pos.y in 0 until 40) {
+                Color.Red
+            } else {
+                Color.Blue
+            }
+        }
+
+        rule.runOnIdle { moveContent = true }
+
+        // Verify content actually moved and was not drawn in the old place (0, 0) - (40, 40).
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(100, 100)) { pos ->
+            if (pos.x in 60 until 100 && pos.y in 60 until 100) {
+                Color.Red
+            } else {
+                Color.Blue
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testDrawBehindWhenReused() {
+        var key by mutableStateOf(0)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                ReusableContent(key) {
+                    Box(
+                        Modifier.size(50.dp).testTag("container").drawBehind {
+                            drawRect(if (key == 0) Color.Red else Color.Green)
+                        }
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) { Color.Red }
+
+        rule.runOnIdle { key = 1 }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) {
+            Color.Green
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testBackgroundWhenReused() {
+        var key by mutableStateOf(0)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                ReusableContent(key) {
+                    Box(
+                        Modifier.size(50.dp)
+                            .testTag("container")
+                            .background(if (key == 0) Color.Red else Color.Green)
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) { Color.Red }
+
+        rule.runOnIdle { key = 1 }
+
+        rule.onNodeWithTag("container").captureToImage().assertPixels(IntSize(50, 50)) {
+            Color.Green
+        }
     }
 
     // captureToImage() requires API level 26

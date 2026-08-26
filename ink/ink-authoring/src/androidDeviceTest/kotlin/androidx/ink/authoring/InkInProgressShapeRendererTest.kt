@@ -23,8 +23,9 @@ import android.os.Build
 import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.rendering.android.view.StrokePaintAnimator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -33,22 +34,25 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
-@OptIn(ExperimentalInkCustomBrushApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkCustomShapeWorkflowApi::class, ExperimentalInkAnimationApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class InkInProgressShapeRendererTest {
 
     private val canvas = mock<Canvas> {}
+    private val strokePaintAnimator = StrokePaintAnimator()
     private val canvasStrokeRenderer = mock<CanvasStrokeRenderer> {}
-    private val shapeRenderer = InkInProgressShapeRenderer(canvasStrokeRenderer)
+    private val shapeRenderer =
+        InkInProgressShapeRenderer(strokePaintAnimator, canvasStrokeRenderer)
 
     private val identityTransform = Matrix()
 
     @Test
     fun draw_callsCanvasStrokeRenderer() {
+        strokePaintAnimator.advanceByMillis(100L)
         val shape =
-            InkInProgressShape().apply {
+            InkInProgressShape(strokePaintAnimator).apply {
                 start(
                     Brush.createWithColorIntArgb(
                         family =
@@ -57,10 +61,8 @@ class InkInProgressShapeRendererTest {
                                     BrushPaint(
                                         textureLayers =
                                             listOf(
-                                                BrushPaint.TextureLayer(
+                                                BrushPaint.StampingTexture(
                                                     clientTextureId = "fake",
-                                                    sizeX = 128F,
-                                                    sizeY = 128F,
                                                     animationFrames = 2,
                                                     animationRows = 1,
                                                     animationColumns = 2,
@@ -78,12 +80,19 @@ class InkInProgressShapeRendererTest {
             }
 
         // 100ms + 140ms = 240ms, which loops back to progress 0 of the 240ms animation duration
+        strokePaintAnimator.advanceByMillis(140L)
         shape.update(shapeDurationMillis = 140)
         shapeRenderer.draw(canvas, shape, identityTransform)
         verify(canvasStrokeRenderer)
-            .draw(canvas, shape.inProgressStroke, identityTransform, textureAnimationProgress = 0F)
+            .draw(
+                canvas,
+                shape.inProgressStroke,
+                identityTransform,
+                animatorClockStateMillis = 240L,
+            )
 
         // 100ms + 260ms = 360ms - half of the looped 240ms animation duration
+        strokePaintAnimator.advanceByMillis(120L)
         shape.update(shapeDurationMillis = 260)
         shapeRenderer.draw(canvas, shape, identityTransform)
         verify(canvasStrokeRenderer)
@@ -91,11 +100,12 @@ class InkInProgressShapeRendererTest {
                 canvas,
                 shape.inProgressStroke,
                 identityTransform,
-                textureAnimationProgress = 0.5F,
+                animatorClockStateMillis = 360L,
             )
 
         // 100ms + 320ms = 420ms - 3/4 of the looped 240ms animation duration
         // 180 more than initial update value - 3/4 of 240ms animation duration
+        strokePaintAnimator.advanceByMillis(60L)
         shape.update(shapeDurationMillis = 320)
         shapeRenderer.draw(canvas, shape, identityTransform)
         verify(canvasStrokeRenderer)
@@ -103,7 +113,7 @@ class InkInProgressShapeRendererTest {
                 canvas,
                 shape.inProgressStroke,
                 identityTransform,
-                textureAnimationProgress = 0.75F,
+                animatorClockStateMillis = 420L,
             )
     }
 }

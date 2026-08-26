@@ -20,10 +20,10 @@ import kotlin.collections.Map
 
 /**
  * Source Files:
- * AppFunctionWithInputFromDifferentPackage.....kt
- * DiffPackageSchemas.....kt
- * DiffPackageSerializable.....kt
- * AnotherDiffPackageSerializable.....kt
+ * AppFunctionWithInputFromDifferentPackage.kt
+ * DiffPackageSchemas.kt
+ * DiffPackageSerializable.kt
+ * AnotherDiffPackageSerializable.kt
  */
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$AppFunctionWithInputFromDifferentPackage_AppFunctionInventory` : AppFunctionInventory {
@@ -36,6 +36,8 @@ public class `$AppFunctionWithInputFromDifferentPackage_AppFunctionInventory` : 
           isNullable = false,
           description = "",
           enumValues = null,
+          pattern = null,
+          format = null,
       )
 
   private val COM_TESTDATA_ANOTHERDIFFERENTPACKAGE_ANOTHERDIFFPACKAGESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:

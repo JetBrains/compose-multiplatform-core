@@ -26,12 +26,10 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.AndroidComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.UiComposable
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.util.trace
 import androidx.core.view.isEmpty
@@ -61,8 +59,7 @@ import java.lang.ref.WeakReference
  * it set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment]
  * and [androidx.navigation.NavController] will provide the correct values.
  */
-@OptIn(ExperimentalComposeViewContextApi::class)
-abstract class AbstractComposeView
+public abstract class AbstractComposeView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     ViewGroup(context, attrs, defStyleAttr) {
@@ -129,7 +126,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * compose its content when not attached to the view hierarchy. Changing this to `null` will
      * result in any existing composition being disposed.
      */
-    @ExperimentalComposeViewContextApi
     internal var composeViewContext: ComposeViewContext? = null
         set(value) {
             val existing = field
@@ -157,7 +153,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * [parent] is `null` it will be determined automatically from the window the view is attached
      * to.
      */
-    fun setParentCompositionContext(parent: CompositionContext?) {
+    public fun setParentCompositionContext(parent: CompositionContext?) {
         parentContext = parent
     }
 
@@ -176,7 +172,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      *
      * See [ViewCompositionStrategy] for more information.
      */
-    fun setViewCompositionStrategy(strategy: ViewCompositionStrategy) {
+    public fun setViewCompositionStrategy(strategy: ViewCompositionStrategy) {
         disposeViewCompositionStrategy?.invoke()
         disposeViewCompositionStrategy = strategy.installFor(this)
     }
@@ -196,11 +192,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * Enables the display of visual layout bounds for the Compose UI content of this view. This is
      * typically configured using the system developer setting for "Show layout bounds."
      */
-    @OptIn(InternalCoreApi::class)
     @InternalComposeUiApi
     @Suppress("GetterSetterNames")
     @get:Suppress("GetterSetterNames")
-    var showLayoutBounds: Boolean = false
+    public var showLayoutBounds: Boolean = false
         set(value) {
             field = value
             getChildAt(0)?.let { (it as Owner).showLayoutBounds = value }
@@ -212,7 +207,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      *
      * This property should be set prior to first composition.
      */
-    var autoClearFocusBehavior: AutoClearFocusBehavior
+    public var autoClearFocusBehavior: AutoClearFocusBehavior
         get() =
             getTag(R.id.auto_clear_focus_behavior_tag) as? AutoClearFocusBehavior
                 ?: AutoClearFocusBehavior.Default
@@ -225,7 +220,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * provide content. Initial composition will occur when the view becomes attached to a window or
      * when [createComposition] is called, whichever comes first.
      */
-    @Composable @UiComposable abstract fun Content()
+    @Composable @UiComposable public abstract fun Content()
 
     /**
      * Perform initial composition for this view. Once this method is called or the view becomes
@@ -241,7 +236,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * For best results in composing while the [ComposeView] isn't attached, use the version of this
      * with [ComposeViewContext] as an argument.
      */
-    fun createComposition() {
+    public fun createComposition() {
         check(
             parentContext != null ||
                 isAttachedToWindow ||
@@ -273,8 +268,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * @param composeViewContext The [ComposeViewContext] to use for the composition. The
      *   [ComposeViewContext.view] must be attached to the hierarchy.
      */
-    @ExperimentalComposeViewContextApi
-    fun createComposition(composeViewContext: ComposeViewContext) {
+    public fun createComposition(composeViewContext: ComposeViewContext) {
         check(composeViewContext.view.isAttachedToWindow) {
             "createComposition requires the ComposeViewContext's view to be attached to a window."
         }
@@ -418,7 +412,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * Dispose of the underlying composition and [requestLayout]. A new composition will be created
      * if [createComposition] is called or when needed to lay out this view.
      */
-    fun disposeComposition() {
+    public fun disposeComposition() {
         val child = getChildAt(0) as? AndroidComposeView
         child?.removeConnectionToComposeViewContext()
         composition?.dispose()
@@ -430,7 +424,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * `true` if this View is host to an active Compose UI composition. An active composition may
      * consume resources.
      */
-    val hasComposition: Boolean
+    public val hasComposition: Boolean
         get() = composition != null
 
     override fun onAttachedToWindow() {
@@ -496,8 +490,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         )
     }
 
-    final override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) =
-        internalOnLayout(changed, left, top, right, bottom)
+    final override fun onLayout(
+        changed: Boolean,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+    ): Unit = internalOnLayout(changed, left, top, right, bottom)
 
     internal open fun internalOnLayout(
         changed: Boolean,
@@ -605,7 +604,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
  * set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment] and
  * [androidx.navigation.NavController] will provide the correct values.
  */
-class ComposeView
+public class ComposeView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
     AbstractComposeView(context, attrs, defStyleAttr) {
@@ -622,7 +621,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     override fun getAccessibilityClassName(): CharSequence {
-        return javaClass.name
+        return "androidx.compose.ui.platform.ComposeView"
     }
 
     /**
@@ -630,8 +629,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * view becomes attached to a window or when [createComposition] is called, whichever comes
      * first.
      */
-    @OptIn(ExperimentalComposeViewContextApi::class)
-    fun setContent(content: @Composable () -> Unit) {
+    public fun setContent(content: @Composable () -> Unit) {
         shouldCreateCompositionOnAttachedToWindow = true
         this.content.value = content
         if (isAttachedToWindow || composeViewContext != null) {
@@ -640,7 +638,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     /** Here to allow extension functions */
-    companion object
+    public companion object
 }
 
 /**
@@ -653,19 +651,17 @@ internal var areWindowInsetsRulersEnabled = true
 
 /**
  * Used to disable [androidx.compose.ui.layout.WindowInsetsRulers]. This can be used when UI never
- * reads WindowInsets across the process and having WindowInsets callbacks cause frame generation
- * when no content is updated. Applications typically would not use this method, but it may be
- * necessary for system UI. This should be called before the first [ComposeView] is created to avoid
- * insets calls.
+ * reads WindowInsets across all ComposeViews to reduce the overhead of requesting WindowInsets
+ * updates. Only call this when no ComposeViews will ever need to handle insets over the lifetime of
+ * the application. This should be called before the first [ComposeView] is created.
  */
-@ExperimentalComposeUiApi
-fun ComposeView.Companion.disableWindowInsetsRulers() {
+public fun ComposeView.Companion.disableWindowInsetsRulers() {
     areWindowInsetsRulersEnabled = false
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalComposeViewContextApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 private fun View.findViewTreeComposeViewRoot(): View {
-    if (!isAttachedToWindow || !AndroidComposeUiFlags.isSharedComposeViewContextEnabled) return this
+    if (!isAttachedToWindow) return this
 
     val lifecycleOwnerDepth =
         findDepthToTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner)
@@ -744,8 +740,7 @@ private fun View.findDepthToTag(tag: Int): Int {
  * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  * @see View.composeViewContext
  */
-@ExperimentalComposeViewContextApi
-fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
+public fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
     return findViewTreeComposeViewRoot().composeViewContext
 }
 
@@ -756,7 +751,6 @@ fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
  * @see View.findViewTreeComposeViewContext
  */
 @Suppress("UNCHECKED_CAST")
-@OptIn(ExperimentalComposeViewContextApi::class)
 internal var View.composeViewContext: ComposeViewContext?
     get() =
         (getTag(R.id.androidx_compose_ui_view_compose_view_context)

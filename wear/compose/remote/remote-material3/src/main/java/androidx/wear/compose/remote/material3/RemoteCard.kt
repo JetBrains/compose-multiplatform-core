@@ -24,10 +24,13 @@ import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clickable
+import androidx.compose.remote.creation.compose.modifier.clip
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.heightIn
 import androidx.compose.remote.creation.compose.modifier.padding
+import androidx.compose.remote.creation.compose.modifier.wrapContentHeight
+import androidx.compose.remote.creation.compose.shapes.RemoteCornerBasedShape
 import androidx.compose.remote.creation.compose.shapes.RemoteShape
 import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
@@ -296,7 +299,7 @@ public class RemoteCardColors(
 @Composable
 @RemoteComposable
 internal fun RemoteModifier.remoteCardSizeModifier(): RemoteModifier =
-    this.heightIn(min = RemoteCardDefaults.Height).fillMaxWidth()
+    this.fillMaxWidth().heightIn(min = RemoteCardDefaults.Height).wrapContentHeight()
 
 @Composable
 @RemoteComposable
@@ -314,19 +317,17 @@ internal fun RemoteCardImpl(
     val containerModifier =
         modifier
             .remoteCardSizeModifier()
-            .clickable(
-                actions = buildList { add(onClick) },
-                enabled = enabled.constantValueOrNull ?: false,
-            )
             .drawWithContent {
                 drawShapedBackground(
                     shape = shape,
                     color = colors.containerColor,
                     borderColor = borderColor,
-                    borderStrokeWidth = border?.value,
+                    borderStrokeWidth = border,
                 )
                 drawContent()
             }
+            .clip(shape = shape)
+            .clickable(action = onClick, enabled = enabled.constantValueOrNull ?: false)
             .padding(contentPadding)
 
     RemoteColumn(modifier = containerModifier) {
@@ -350,29 +351,40 @@ private object RemoteOutlinedCardTokens {
 private fun RemoteDrawScope.drawShapedBackground(
     shape: RemoteShape,
     color: RemoteColor,
-    borderColor: RemoteColor?,
-    borderStrokeWidth: RemoteFloat?,
+    borderColor: RemoteColor? = null,
+    borderStrokeWidth: RemoteDp? = null,
 ) {
     drawSolidColorShape(shape, width, height, color)
 
     // Draw border if specified
     if (borderColor != null && borderStrokeWidth != null) {
-        drawBorder(borderColor, borderStrokeWidth, shape, width, height)
+        drawBorder(borderColor, borderStrokeWidth, shape)
     }
 }
 
+@Suppress("RestrictedApiAndroidX")
 private fun RemoteDrawScope.drawBorder(
     borderColor: RemoteColor,
-    borderStrokeWidth: RemoteFloat,
+    borderStrokeWidth: RemoteDp,
     shape: RemoteShape,
-    w: RemoteFloat,
-    h: RemoteFloat,
 ) {
-    with(shape.createOutline(RemoteSize(w, h), remoteDensity, layoutDirection)) {
+    val strokeWidthPx = borderStrokeWidth.toPx()
+    val outline =
+        if (shape is RemoteCornerBasedShape) {
+            shape.createOutline(
+                size = RemoteSize(width, height),
+                density = remoteDensity,
+                layoutDirection = layoutDirection,
+                strokeWidth = strokeWidthPx,
+            )
+        } else {
+            shape.createOutline(RemoteSize(width, height), remoteDensity, layoutDirection)
+        }
+    with(outline) {
         drawOutline(
             RemotePaint {
                 color = borderColor
-                strokeWidth = borderStrokeWidth
+                strokeWidth = strokeWidthPx
                 style = PaintingStyle.Stroke
             }
         )

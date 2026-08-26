@@ -20,24 +20,30 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rb
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.creation.compose.state.rememberNamedRemoteBitmap
+import androidx.compose.remote.creation.compose.state.rememberMutableRemoteImageBitmap
+import androidx.compose.remote.creation.compose.state.rememberNamedRemoteImageBitmap
+import androidx.compose.remote.creation.compose.state.rememberRemoteImageBitmap
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.test.R
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.remote.player.core.platform.BitmapLoader
-import androidx.compose.ui.graphics.Color
+import androidx.compose.remote.testing.LimitsRule
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,26 +53,37 @@ import org.junit.runners.JUnit4
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(JUnit4::class)
 class RemoteImageTest {
+    private val bitmapLoader = BitmapLoader { url ->
+        val resources = ApplicationProvider.getApplicationContext<Context>().resources
+        if (url == "android.resource://androidx.compose.remote.foundation/drawable/dummy") {
+            resources.openRawResource(R.drawable.android_image)
+        } else {
+            resources.openRawResource(R.drawable.clear)
+        }
+    }
+
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY).apply {
-            bitmapLoader = BitmapLoader {
-                val resources = ApplicationProvider.getApplicationContext<Context>().resources
-                resources.openRawResource(R.drawable.clear)
-            }
-        }
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
+
+    @get:Rule val limitsRule = LimitsRule()
+
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     @Test
     fun remoteImage() {
         val size = 48
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+            bitmapLoader = bitmapLoader,
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             val avatarImage =
-                rememberNamedRemoteBitmap(name = "avatarImage") {
+                rememberNamedRemoteImageBitmap(name = "avatarImage") {
                     createImage(size, size).asImageBitmap()
                 }
             RemoteImage(
@@ -83,12 +100,13 @@ class RemoteImageTest {
     fun remoteImage_withAlpha() {
         val size = 227
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.Black,
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+            bitmapLoader = bitmapLoader,
+            playComposableWrapper = ComposableWrappers.blackBackground,
         ) {
             val backgroundImage =
-                rememberNamedRemoteBitmap(name = "backgroundImage") {
+                rememberNamedRemoteImageBitmap(name = "backgroundImage") {
                     createImage(size, size).asImageBitmap()
                 }
             RemoteImage(
@@ -103,14 +121,15 @@ class RemoteImageTest {
 
     @Test
     fun remoteImageWithDefaultUrl() {
+        limitsRule.setEnableImageUrls(true)
         val size = 48
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+            bitmapLoader = bitmapLoader,
         ) {
-            // Without PlayerState API, will be blank
             val dummyImage =
-                rememberNamedRemoteBitmap(
+                rememberNamedRemoteImageBitmap(
                     name = "dummy",
                     url = "android.resource://androidx.compose.remote.foundation/drawable/dummy",
                 )
@@ -128,12 +147,84 @@ class RemoteImageTest {
     fun remoteImageWithImageBitmap() {
         val size = 48
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(size, size, context.resources.displayMetrics.densityDpi)
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+            bitmapLoader = bitmapLoader,
         ) {
             val backgroundImage = createImage(size, size)
             RemoteImage(
-                bitmap = backgroundImage.asImageBitmap(),
+                remoteBitmap = backgroundImage.asImageBitmap().rb,
+                contentDescription = "background".rs,
+                modifier = RemoteModifier.size(size.rdp),
+                contentScale = ContentScale.Fit,
+                alpha = 0.6f.rf,
+            )
+        }
+    }
+
+    @Test
+    fun remoteImageWithUrl_whenUrlsDisabled_failsToRender() {
+        // Explicitly disable URLs and Files (restoring production default)
+        limitsRule.setEnableImageUrls(false)
+
+        val size = 48
+        assertThrows(RuntimeException::class.java) {
+            remoteComposeTestRule.runScreenshotTest(
+                remoteCreationDisplayInfo =
+                    createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+                bitmapLoader = bitmapLoader,
+            ) {
+                val dummyImage =
+                    rememberNamedRemoteImageBitmap(
+                        name = "dummy",
+                        url = "android.resource://androidx.compose.remote.foundation/drawable/dummy",
+                    )
+                RemoteImage(
+                    dummyImage,
+                    contentDescription = "background".rs,
+                    modifier = RemoteModifier.size(size.rdp),
+                    contentScale = ContentScale.Fit,
+                    alpha = DefaultAlpha.rf,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun remoteImageWithUrl() {
+        limitsRule.setEnableImageUrls(true)
+        val size = 48
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+            bitmapLoader = bitmapLoader,
+        ) {
+            val dummyImage =
+                rememberRemoteImageBitmap(
+                    url = "android.resource://androidx.compose.remote.foundation/drawable/dummy"
+                )
+            RemoteImage(
+                dummyImage,
+                contentDescription = "background".rs,
+                modifier = RemoteModifier.size(size.rdp),
+                contentScale = ContentScale.Fit,
+                alpha = DefaultAlpha.rf,
+            )
+        }
+    }
+
+    @Test
+    fun remoteImageWithMutableBitmap() {
+        val size = 48
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo =
+                createCreationDisplayInfo(context, Size(size.toFloat(), size.toFloat())),
+            bitmapLoader = bitmapLoader,
+        ) {
+            val backgroundImage = createImage(size, size).asImageBitmap()
+            val bitmap = rememberMutableRemoteImageBitmap(backgroundImage)
+            RemoteImage(
+                remoteBitmap = bitmap,
                 contentDescription = "background".rs,
                 modifier = RemoteModifier.size(size.rdp),
                 contentScale = ContentScale.Fit,

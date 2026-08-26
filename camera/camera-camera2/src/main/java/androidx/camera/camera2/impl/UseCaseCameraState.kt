@@ -29,12 +29,12 @@ import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.common.Metadata
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
@@ -294,7 +294,7 @@ constructor(
         }
     }
 
-    private fun CameraGraph.Session.update3A(parameters: Map<CaptureRequest.Key<*>, Any>?) {
+    private fun CameraGraph.Session.update3A(parameters: Map<CaptureRequest.Key<*>, Any?>?) {
         val aeMode =
             parameters.getIntOrNull(CaptureRequest.CONTROL_AE_MODE)?.let {
                 AeMode.fromIntOrNull(it)
@@ -330,7 +330,7 @@ constructor(
         }
     }
 
-    private fun Map<CaptureRequest.Key<*>, Any>?.getIntOrNull(key: CaptureRequest.Key<*>): Int? =
+    private fun Map<CaptureRequest.Key<*>, Any?>?.getIntOrNull(key: CaptureRequest.Key<*>): Int? =
         this?.get(key) as? Int
 
     public inner class RequestListener : Request.Listener {

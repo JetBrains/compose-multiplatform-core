@@ -320,6 +320,18 @@ public sealed class RemotePathNode(
         val arcStartX: RemoteFloat,
         val arcStartY: RemoteFloat,
     ) : RemotePathNode()
+
+    /** Adds a new contour containing an arc. */
+    @Immutable
+    @Suppress("DataClassDefinition")
+    public data class AddArc(
+        val left: RemoteFloat,
+        val top: RemoteFloat,
+        val right: RemoteFloat,
+        val bottom: RemoteFloat,
+        val startAngle: RemoteFloat,
+        val sweepAngle: RemoteFloat,
+    ) : RemotePathNode()
 }
 
 /**
@@ -434,8 +446,8 @@ internal fun Char.addPathNodes(
                     horizontalEllipseRadius = array[start],
                     verticalEllipseRadius = array[start + 1],
                     theta = array[start + 2],
-                    isMoreThanHalf = array[start + 3].ne(0.0f.rf),
-                    isPositiveArc = array[start + 4].ne(0.0f.rf),
+                    isMoreThanHalf = array[start + 3].isNotEqualTo(0.0f.rf),
+                    isPositiveArc = array[start + 4].isNotEqualTo(0.0f.rf),
                     arcStartDx = array[start + 5],
                     arcStartDy = array[start + 6],
                 )
@@ -446,8 +458,8 @@ internal fun Char.addPathNodes(
                     horizontalEllipseRadius = array[start],
                     verticalEllipseRadius = array[start + 1],
                     theta = array[start + 2],
-                    isMoreThanHalf = array[start + 3].ne(0.0f.rf),
-                    isPositiveArc = array[start + 4].ne(0.0f.rf),
+                    isMoreThanHalf = array[start + 3].isNotEqualTo(0.0f.rf),
+                    isPositiveArc = array[start + 4].isNotEqualTo(0.0f.rf),
                     arcStartX = array[start + 5],
                     arcStartY = array[start + 6],
                 )

@@ -21,7 +21,7 @@ import android.graphics.Bitmap
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.DeadObjectException
+import android.os.RemoteException
 import android.util.Size
 import androidx.annotation.AnyThread
 import androidx.annotation.GuardedBy
@@ -31,9 +31,9 @@ import androidx.core.graphics.toRect
 import androidx.pdf.PdfDocument
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.util.ExceptionUtils.isHandledRemoteException
 import androidx.pdf.util.PAGE_BITMAP_REQUEST_NAME
 import androidx.pdf.util.PAGE_BITMAP_TILE_REQUEST_NAME
-import androidx.pdf.util.PAGE_RELEASE_REQUEST_NAME
 import androidx.pdf.util.RectUtils
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -246,22 +246,7 @@ internal class BitmapFetcher(
         pageBitmaps = null
         fetchingWorkHandle?.cancel()
         fetchingWorkHandle = null
-        try {
-            bitmapSource.close()
-        } catch (e: DeadObjectException) {
-            val exception =
-                RequestFailedException(
-                    requestMetadata =
-                        RequestMetadata(
-                            requestName = PAGE_RELEASE_REQUEST_NAME,
-                            pageRange = pageNum..pageNum,
-                        ),
-                    throwable = e,
-                    // Release page is a fire-and-forget request, no need to show error on UI
-                    showError = false,
-                )
-            errorFlow.tryEmit(exception)
-        }
+        bitmapSource.close()
     }
 
     /** Fetch a [FullPageBitmap] */
@@ -319,7 +304,9 @@ internal class BitmapFetcher(
                 val bitmap = bitmapSource.getBitmap(size)
                 ensureActive()
                 onReady(bitmap)
-            } catch (e: DeadObjectException) {
+            } catch (e: RemoteException) {
+                if (!e.isHandledRemoteException) throw e
+
                 val exception =
                     RequestFailedException(
                         requestMetadata =
@@ -367,8 +354,10 @@ internal class BitmapFetcher(
                     ensureActive()
                     tile.bitmap = bitmap
                     onBitmapReady(pageNum)
-                } catch (e: DeadObjectException) {
-                    // Service was disconnected.
+                } catch (e: RemoteException) {
+                    if (!e.isHandledRemoteException) throw e
+
+                    // Service was disconnected or another IPC error occurred.
                     val exception =
                         RequestFailedException(
                             requestMetadata =

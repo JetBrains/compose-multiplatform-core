@@ -17,26 +17,16 @@
 
 package androidx.compose.ui.adaptive
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.input.InputManager
-import android.os.Handler
-import android.os.Looper
 import android.view.InputDevice
 import android.view.MotionEvent
-import android.view.View
-import android.view.ViewTreeObserver
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
@@ -46,18 +36,14 @@ import androidx.compose.ui.UiMediaScope.Posture
 import androidx.compose.ui.UiMediaScope.ViewingDistance
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.unit.Dp
-import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.window.layout.FoldingFeature
-import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowLayoutInfo
-import kotlinx.coroutines.flow.collectLatest
 
 @Stable
 internal class UiMediaScopeImpl(
     context: Context,
-    inputManager: InputManager,
+    internal val inputManager: InputManager,
     windowInfo: WindowInfo,
     imeVisibility: Boolean,
 ) : UiMediaScope {
@@ -106,95 +92,8 @@ internal class UiMediaScopeImpl(
             }
 }
 
-/**
- * A composable function that creates and populates a [UiMediaScope] with information about the
- * current device and window environment.
- *
- * This function is the core implementation that backs the `mediaQuery` composable. It gathers
- * various pieces of context-dependent information and makes them available through the
- * [UiMediaScope] interface.
- */
-@Composable
-internal fun obtainUiMediaScope(
-    context: Context,
-    view: View,
-    windowInfo: WindowInfo,
-): UiMediaScope {
-    val inputManager = remember { context.getSystemService(Context.INPUT_SERVICE) as InputManager }
-    val initialImeVisibility = remember { ViewCompat.getRootWindowInsets(view).isImeVisible }
-    val scope = remember {
-        UiMediaScopeImpl(context, inputManager, windowInfo, initialImeVisibility)
-    }
-    scope._windowInfo = windowInfo
-
-    // Window posture
-    LaunchedEffect(context) {
-        WindowInfoTracker.getOrCreate(context).windowLayoutInfo(context).collectLatest { layout ->
-            scope._windowPosture = resolvePosture(layout)
-        }
-    }
-
-    // Input Devices (Pointer & Physical Keyboard)
-    DisposableEffect(context) {
-        val listener =
-            object : InputManager.InputDeviceListener {
-                override fun onInputDeviceAdded(id: Int) = update()
-
-                override fun onInputDeviceRemoved(id: Int) = update()
-
-                override fun onInputDeviceChanged(id: Int) = update()
-
-                fun update() {
-                    scope._anyPointer = resolvePointerPrecision(inputManager)
-                    scope.hasPhysicalKeyboard = hasPhysicalKeyboard(inputManager)
-                }
-            }
-
-        inputManager.registerInputDeviceListener(listener, Handler(Looper.getMainLooper()))
-
-        listener.update()
-
-        onDispose { inputManager.unregisterInputDeviceListener(listener) }
-    }
-
-    // IME listener (Virtual Keyboard)
-    DisposableEffect(view) {
-        val listener =
-            ViewTreeObserver.OnGlobalLayoutListener {
-                scope.isImeVisible = ViewCompat.getRootWindowInsets(view).isImeVisible
-            }
-
-        view.viewTreeObserver.addOnGlobalLayoutListener(listener)
-
-        onDispose { view.viewTreeObserver.removeOnGlobalLayoutListener(listener) }
-    }
-
-    // Docked state receiver for reachability
-    DisposableEffect(context) {
-        val filter = IntentFilter(Intent.ACTION_DOCK_EVENT)
-        val receiver =
-            object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    scope.isDocked = isDocked(intent)
-                }
-            }
-        val stickyIntent =
-            ContextCompat.registerReceiver(
-                context,
-                receiver,
-                filter,
-                ContextCompat.RECEIVER_EXPORTED,
-            )
-        scope.isDocked = isDocked(stickyIntent)
-
-        onDispose { context.unregisterReceiver(receiver) }
-    }
-
-    return scope
-}
-
 /** Resolves the device [Posture] from the given [WindowLayoutInfo]. */
-private fun resolvePosture(layoutInfo: WindowLayoutInfo): Posture {
+internal fun resolvePosture(layoutInfo: WindowLayoutInfo): Posture {
     @Suppress("ListIterator")
     val fold =
         layoutInfo.displayFeatures.filterIsInstance<FoldingFeature>().firstOrNull {
@@ -209,7 +108,7 @@ private fun resolvePosture(layoutInfo: WindowLayoutInfo): Posture {
 }
 
 /** Checks if a physical, alphabetic keyboard is currently connected to the device. */
-private fun hasPhysicalKeyboard(inputManager: InputManager?): Boolean {
+internal fun hasPhysicalKeyboard(inputManager: InputManager?): Boolean {
     if (inputManager == null) return false
 
     return inputManager.inputDeviceIds?.any { id ->
@@ -222,16 +121,24 @@ private fun hasPhysicalKeyboard(inputManager: InputManager?): Boolean {
  * Resolves the highest precision pointer type available based on all connected input devices.
  *
  * Priority: Fine > Coarse > Blunt > None.
+ *
+ * The resolution is evaluated using a two-tiered approach:
+ * 1. Valid Hardware Sources: Pointer input devices reporting valid X/Y axes motion ranges.
+ * 2. Emulator fallback heuristics: Emulated input devices reporting composite sources with
+ *    different precision classes are further evaluated on secondary axes (touch, scroll).
+ *
+ * A valid hardware source is always preferred over the fallback heuristic to avoid false positives.
  */
-private fun resolvePointerPrecision(inputManager: InputManager?): PointerPrecision {
+internal fun resolvePointerPrecision(inputManager: InputManager?): PointerPrecision {
     if (inputManager == null) return PointerPrecision.None
 
     var pointerPrecision = PointerPrecision.None
+    var fallbackPrecision = PointerPrecision.None
 
     for (id in inputManager.inputDeviceIds) {
         val device = inputManager.getInputDevice(id) ?: continue
 
-        // High Precision (Fine)
+        // Relies on input devices reporting primary X/Y motion ranges.
         if (
             device.hasValidPointerSource(InputDevice.SOURCE_MOUSE) ||
                 device.hasValidPointerSource(InputDevice.SOURCE_STYLUS) ||
@@ -240,23 +147,32 @@ private fun resolvePointerPrecision(inputManager: InputManager?): PointerPrecisi
             return PointerPrecision.Fine
         }
 
-        // Limited Precision (Coarse)
         if (device.hasValidPointerSource(InputDevice.SOURCE_TOUCHSCREEN)) {
             pointerPrecision = PointerPrecision.Coarse
-            continue
-        }
-
-        // Low Precision (Blunt)
-        if (
+        } else if (
             pointerPrecision == PointerPrecision.None &&
                 (device.hasValidPointerSource(InputDevice.SOURCE_JOYSTICK) ||
                     device.hasValidPointerSource(InputDevice.SOURCE_GAMEPAD))
         ) {
             pointerPrecision = PointerPrecision.Blunt
         }
+
+        // Fallback heuristic for emulators: Tracked separately to ensure precision evaluated from
+        // a valid hardware source is not overridden by this fallback heuristic.
+        if (device.hasFallbackFinePointer()) {
+            fallbackPrecision = PointerPrecision.Fine
+        } else if (
+            fallbackPrecision != PointerPrecision.Fine && device.hasFallbackCoarsePointer()
+        ) {
+            fallbackPrecision = PointerPrecision.Coarse
+        }
     }
 
-    return pointerPrecision
+    if (pointerPrecision != PointerPrecision.None) {
+        return pointerPrecision
+    }
+
+    return fallbackPrecision
 }
 
 /**
@@ -270,10 +186,34 @@ private fun InputDevice.hasValidPointerSource(
     return (sources and source == source) && getMotionRange(axis, source) != null
 }
 
-private val WindowInsetsCompat?.isImeVisible: Boolean
+/**
+ * Checks for a fine pointer precision using a fallback mechanism for emulated devices.
+ *
+ * Some environments, such as Desktop or XR emulators, may not correctly report standard primary
+ * motion ranges for X/Y axes but do expose vertical scroll axes with composite sources.
+ */
+private fun InputDevice.hasFallbackFinePointer(): Boolean {
+    return getMotionRange(MotionEvent.AXIS_X)?.isFromSource(InputDevice.SOURCE_MOUSE) == true &&
+        getMotionRange(MotionEvent.AXIS_VSCROLL) != null
+}
+
+/**
+ * Checks for a coarse pointer precision using a fallback mechanism for emulated devices.
+ *
+ * Some environments, such as Phone & Tablet emulators, may not correctly report standard primary
+ * motion ranges for X/Y axes but do expose touch axes with composite sources.
+ */
+private fun InputDevice.hasFallbackCoarsePointer(): Boolean {
+    return getMotionRange(MotionEvent.AXIS_X)?.isFromSource(InputDevice.SOURCE_TOUCHSCREEN) ==
+        true &&
+        (getMotionRange(MotionEvent.AXIS_TOUCH_MAJOR) != null ||
+            getMotionRange(MotionEvent.AXIS_TOUCH_MINOR) != null)
+}
+
+internal val WindowInsetsCompat?.isImeVisible: Boolean
     get() = this?.isVisible(WindowInsetsCompat.Type.ime()) == true
 
-private fun isDocked(intent: Intent?): Boolean {
+internal fun isDocked(intent: Intent?): Boolean {
     if (intent == null) return false
     val dockState = intent.getIntExtra(Intent.EXTRA_DOCK_STATE, Intent.EXTRA_DOCK_STATE_UNDOCKED)
     return dockState != Intent.EXTRA_DOCK_STATE_UNDOCKED

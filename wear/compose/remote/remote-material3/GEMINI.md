@@ -12,14 +12,13 @@
 
 ## Testing Patterns
 
-Tests are located in `src/androidTest/java/` and typically use `RemoteComposeScreenshotTestRule` for
-screenshot testing.
+Tests are located in `src/androidTest/java/` and typically use `RemoteScreenshotTestRule` for screenshot testing.
 
 ### Guidelines
 
-- **Use Test Rule**: ALWAYS use `RemoteComposeScreenshotTestRule` to manage screenshot testing.
+- **Use Test Rule**: ALWAYS use `RemoteScreenshotTestRule` to manage screenshot testing.
 - **Define Golden Directory**: Use `SCREENSHOT_GOLDEN_DIRECTORY` (defined in `TestConstants.kt`) to specify where golden images are stored.
-- **Configure Display**: Use `CreationDisplayInfo` to define the display metrics for the test (e.g., 500x500 dimension).
+- **Configure Display**: Use `RemoteCreationDisplayInfo` to define the display metrics for the test (e.g., 500x500 dimension).
 
 ### Example Structure
 
@@ -30,20 +29,17 @@ screenshot testing.
 class RemoteIconFromResTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-        )
-
-    private val creationDisplayInfo =
-        CreationDisplayInfo(
-            500,
-            500,
-            ApplicationProvider.getApplicationContext().resources.displayMetrics.densityDpi
+            context = ApplicationProvider.getApplicationContext(),
         )
 
     @Test
     fun iconsFromRes() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(500f, 500f))
+        ) {
             // Your Remote Composables here
             RemoteRow {
                 Icon(resId = R.drawable.test_vector)
@@ -85,7 +81,7 @@ fun RemoteIconSimpleSample(modifier: RemoteModifier = RemoteModifier) {
 
 @WearPreviewDevices
 @Composable
-fun RemoteIconSimpleSamplePreview() = RemotePreview { Container { RemoteIconSimpleSample() } }
+fun RemoteIconSimpleSamplePreview() = RemoteContentPreview { Container { RemoteIconSimpleSample() } }
 ```
 
 ## Preview Patterns
@@ -99,7 +95,7 @@ Previews are located in `samples/src/main/java/.../previews/` and are essential 
 - **Testing**: Test ALL variants in an automated way.
 - **Annotations**:
     - Annotate the preview function with `@WearPreviewDevices`.
-- **RemotePreview**: Wrap the composable to be previewed in a `RemotePreview`.
+- **RemoteContentPreview**: Wrap the composable to be previewed in a `RemoteContentPreview`.
 - **Profile Parameters**: Use `@PreviewParameter(ProfilePreviewParameterProvider::class)` to test
   against different profiles if needed.
 - **Container**: Use a `Container` helper composable to center content.
@@ -112,7 +108,7 @@ Previews are located in `samples/src/main/java/.../previews/` and are essential 
 private fun RemoteIconPreview(
     @PreviewParameter(ProfilePreviewParameterProvider::class) profile: Profile
 ) =
-    RemotePreview(profile = profile) {
+    RemoteContentPreview(profile = profile) {
         Container {
             RemoteIcon(imageVector = TestImageVectors.VolumeUp, contentDescription = null)
         }

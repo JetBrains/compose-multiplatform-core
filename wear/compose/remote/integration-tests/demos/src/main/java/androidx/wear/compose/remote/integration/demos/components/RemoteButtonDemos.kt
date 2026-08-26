@@ -29,10 +29,14 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.remote.material3.previews.RemoteButtonEnabled
+import androidx.wear.compose.remote.material3.previews.RemoteButtonTwoLineText
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithBackground
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithBorder
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIcon
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIconAndLongLabel
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithIconAndSecondaryLabel
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithLongLabel
+import androidx.wear.compose.remote.material3.previews.RemoteButtonWithMultilineLabel
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithSecondaryLabel
 import androidx.wear.compose.remote.material3.previews.RemoteButtonWithShape
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
@@ -61,17 +65,17 @@ fun RemoteButtonDemos(modifier: Modifier = Modifier) {
                     )
                 }
             }
-            item { RemoteDemoItem("Label") { RemoteButtonEnabled() } }
-            item { RemoteDemoItem("Border") { RemoteButtonWithBorder() } }
-            item { RemoteDemoItem("Secondary label") { RemoteButtonWithSecondaryLabel() } }
-            item { RemoteDemoItem("Icon") { RemoteButtonWithIcon() } }
-            item {
-                RemoteDemoItem("Icon and secondary label") {
-                    RemoteButtonWithIconAndSecondaryLabel()
-                }
-            }
-            item { RemoteDemoItem("Custom shape") { RemoteButtonWithShape() } }
-            item { RemoteDemoItem("Background") { RemoteButtonWithBackground() } }
+            remoteDemoItem("Label") { RemoteButtonEnabled() }
+            remoteDemoItem("Two-line label") { RemoteButtonTwoLineText() }
+            remoteDemoItem("Long label") { RemoteButtonWithLongLabel() }
+            remoteDemoItem("Multiline label") { RemoteButtonWithMultilineLabel() }
+            remoteDemoItem("Border") { RemoteButtonWithBorder() }
+            remoteDemoItem("Secondary label") { RemoteButtonWithSecondaryLabel() }
+            remoteDemoItem("Icon") { RemoteButtonWithIcon() }
+            remoteDemoItem("Icon and long label") { RemoteButtonWithIconAndLongLabel() }
+            remoteDemoItem("Icon and secondary label") { RemoteButtonWithIconAndSecondaryLabel() }
+            remoteDemoItem("Custom shape") { RemoteButtonWithShape() }
+            remoteDemoItem("Background") { RemoteButtonWithBackground() }
         }
     }
 }

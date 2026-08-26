@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -129,7 +129,7 @@ fun SimpleFlowRowMaxLinesWithSeeMore() {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SimpleFlowRowWithMaxHeight() {
-    var initialHeight = 200.dp
+    val initialHeight = 200.dp
     var height by remember { mutableStateOf(initialHeight) }
 
     Text(
@@ -280,7 +280,7 @@ internal fun DynamicSeeMoreForDrawText(
             // This happens during draw phase.
             val collapseText = if (isHorizontal) "^" else "<"
             val remainingItems = shownItemCount()?.let { totalCount - it }
-            var textLayoutResult: TextLayoutResult =
+            val textLayoutResult: TextLayoutResult =
                 textMeasurer.measure(
                     text = if (remainingItems == 0) collapseText else "+$remainingItems",
                     style = TextStyle(fontSize = 18.sp),

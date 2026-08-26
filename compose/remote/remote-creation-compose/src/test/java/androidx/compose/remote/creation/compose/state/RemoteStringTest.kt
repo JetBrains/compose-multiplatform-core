@@ -21,6 +21,7 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
+import androidx.compose.remote.core.operations.TextTransform
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
@@ -601,6 +602,78 @@ class RemoteStringTest {
     }
 
     @Test
+    fun uppercase_nop_elidesTextTransform() {
+        val percentage = RemoteFloat(45.5f)
+        val source = percentage.toRemoteString(DecimalFormat("#0.0")) + RemoteString("%")
+        val result = source.uppercase()
+        val resultId = result.getIdForCreationState(creationState)
+
+        val doc = makeAndPaintCoreDocument()
+
+        assertThat(context.getText(resultId)).isEqualTo("45.5%")
+        assertThat(resultId).isEqualTo(source.getIdForCreationState(creationState))
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).isEmpty()
+    }
+
+    @Test
+    fun uppercase_dynamic_withLowerLetters_emitsTextTransform() {
+        val s =
+            selectIfLt(namedRemoteFloat, RemoteFloat(0f), RemoteString("abc"), RemoteString("def"))
+        val result = s.uppercase()
+        val resultId = result.getIdForCreationState(creationState)
+
+        val doc = makeAndUpdateCoreDocument {}
+
+        assertThat(context.getText(resultId)).isEqualTo("DEF")
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).hasSize(1)
+    }
+
+    @Test
+    fun uppercase_nested_elidesSecondTransform() {
+        val s =
+            selectIfLt(namedRemoteFloat, RemoteFloat(0f), RemoteString("abc"), RemoteString("def"))
+        val upper1 = s.uppercase()
+        val upper2 = upper1.uppercase()
+        val resultId = upper2.getIdForCreationState(creationState)
+
+        val doc = makeAndUpdateCoreDocument {}
+
+        assertThat(context.getText(resultId)).isEqualTo("DEF")
+        assertThat(resultId).isEqualTo(upper1.getIdForCreationState(creationState))
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).hasSize(1)
+    }
+
+    @Test
+    fun uppercase_namedString_emitsTextTransform() {
+        val named = RemoteString.createNamedRemoteString("str", "123%")
+        val upper = named.uppercase()
+        upper.getIdForCreationState(creationState)
+
+        val doc = makeAndUpdateCoreDocument {}
+
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).hasSize(1)
+    }
+
+    @Test
+    fun uppercase_nonEnglishUncased_elidesTextTransform() {
+        val s =
+            selectIfLt(
+                namedRemoteFloat,
+                RemoteFloat(0f),
+                RemoteString("こんにちは"),
+                RemoteString("مرحبا"),
+            )
+        val result = s.uppercase()
+        val resultId = result.getIdForCreationState(creationState)
+
+        val doc = makeAndUpdateCoreDocument {}
+
+        assertThat(context.getText(resultId)).isEqualTo("مرحبا")
+        assertThat(resultId).isEqualTo(s.getIdForCreationState(creationState))
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).isEmpty()
+    }
+
+    @Test
     fun lowercase() {
         val s = RemoteString("Hello world")
         val result = s.lowercase()
@@ -609,6 +682,48 @@ class RemoteStringTest {
         makeAndPaintCoreDocument()
 
         assertThat(context.getText(resultId)).isEqualTo("hello world")
+    }
+
+    @Test
+    fun lowercase_nop_elidesTextTransform() {
+        val percentage = RemoteFloat(45.5f)
+        val source = percentage.toRemoteString(DecimalFormat("#0.0")) + RemoteString("%")
+        val result = source.lowercase()
+        val resultId = result.getIdForCreationState(creationState)
+
+        val doc = makeAndPaintCoreDocument()
+
+        assertThat(context.getText(resultId)).isEqualTo("45.5%")
+        assertThat(resultId).isEqualTo(source.getIdForCreationState(creationState))
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).isEmpty()
+    }
+
+    @Test
+    fun lowercase_dynamic_withUpperLetters_emitsTextTransform() {
+        val s =
+            selectIfLt(namedRemoteFloat, RemoteFloat(0f), RemoteString("ABC"), RemoteString("DEF"))
+        val result = s.lowercase()
+        val resultId = result.getIdForCreationState(creationState)
+
+        val doc = makeAndUpdateCoreDocument {}
+
+        assertThat(context.getText(resultId)).isEqualTo("def")
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).hasSize(1)
+    }
+
+    @Test
+    fun lowercase_nested_elidesSecondTransform() {
+        val s =
+            selectIfLt(namedRemoteFloat, RemoteFloat(0f), RemoteString("ABC"), RemoteString("DEF"))
+        val lower1 = s.lowercase()
+        val lower2 = lower1.lowercase()
+        val resultId = lower2.getIdForCreationState(creationState)
+
+        val doc = makeAndUpdateCoreDocument {}
+
+        assertThat(context.getText(resultId)).isEqualTo("def")
+        assertThat(resultId).isEqualTo(lower1.getIdForCreationState(creationState))
+        assertThat(doc.operations.filterIsInstance<TextTransform>()).hasSize(1)
     }
 
     @Test
@@ -895,6 +1010,102 @@ class RemoteStringTest {
         assertThat(id1).isNotEqualTo(id2)
     }
 
+    @Test
+    fun computeRequiredCodePointSet_selectIfLt_float_constant() {
+        val s = selectIfLt(RemoteFloat(10f), RemoteFloat(20f), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 =
+            selectIfLt(RemoteFloat(20f), RemoteFloat(10f), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfLt_int_constant() {
+        val s = selectIfLt(RemoteInt(10), RemoteInt(20), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 = selectIfLt(RemoteInt(20), RemoteInt(10), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfLe_float_constant() {
+        val s = selectIfLe(RemoteFloat(10f), RemoteFloat(10f), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 =
+            selectIfLe(RemoteFloat(20f), RemoteFloat(10f), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfLe_int_constant() {
+        val s = selectIfLe(RemoteInt(10), RemoteInt(10), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 = selectIfLe(RemoteInt(20), RemoteInt(10), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfGt_float_constant() {
+        val s = selectIfGt(RemoteFloat(20f), RemoteFloat(10f), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 =
+            selectIfGt(RemoteFloat(10f), RemoteFloat(20f), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfGt_int_constant() {
+        val s = selectIfGt(RemoteInt(20), RemoteInt(10), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 = selectIfGt(RemoteInt(10), RemoteInt(20), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfGe_float_constant() {
+        val s = selectIfGe(RemoteFloat(10f), RemoteFloat(10f), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 =
+            selectIfGe(RemoteFloat(10f), RemoteFloat(20f), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIfGe_int_constant() {
+        val s = selectIfGe(RemoteInt(10), RemoteInt(10), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A")
+
+        val s2 = selectIfGe(RemoteInt(10), RemoteInt(20), RemoteString("A"), RemoteString("B"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("B")
+    }
+
+    @Test
+    fun computeRequiredCodePointSet_selectIf_dynamic() {
+        val s = selectIfLt(namedRemoteInt, RemoteInt(20), RemoteString("A"), RemoteString("B"))
+        assertThat(s.computeRequiredCodePointSet(creationState)).containsExactly("A", "B")
+
+        val s2 =
+            selectIfGt(namedRemoteFloat, RemoteFloat(20f), RemoteString("C"), RemoteString("D"))
+        assertThat(s2.computeRequiredCodePointSet(creationState)).containsExactly("C", "D")
+    }
+
+    @Test
+    fun mutableRemoteString_smokeTest() {
+        val mutableStr = MutableRemoteString("test")
+        val result = mutableStr + RemoteString("!")
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getText(resultId)).isEqualTo("test!")
+    }
+
     private fun makeAndPaintCoreDocument() =
         CoreDocument().apply {
             val buffer = creationState.document.buffer
@@ -919,4 +1130,32 @@ class RemoteStringTest {
                 op.apply(context)
             }
         }
+
+    @Test
+    fun toDebugString_concatenation() {
+        val s = RemoteString.createNamedRemoteString("s", "hi")
+        val expr = s + RemoteString(" there")
+        assertThat(expr.toDebugString()).isEqualTo("""user:s + " there"""")
+    }
+
+    @Test
+    fun toDebugString_select() {
+        val x = RemoteFloat.createNamedRemoteFloat("x", 1f)
+        val y = RemoteFloat.createNamedRemoteFloat("y", 2f)
+        val sel = selectIfLt(x, y, RemoteString("A"), RemoteString("B"))
+        assertThat(sel.toDebugString()).isEqualTo("""user:x < user:y ? "A" : "B"""")
+    }
+
+    @Test
+    fun toDebugString_contextVariable() {
+        val continuousSecFloat = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)
+        val strExpr = continuousSecFloat.toRemoteString()
+        assertThat(strExpr.toDebugString()).isEqualTo("context:continuous_sec.toRemoteString()")
+    }
+
+    @Test
+    fun toDebugString_constant() {
+        val rs = RemoteString("hello")
+        assertThat(rs.toDebugString()).isEqualTo("\"hello\"")
+    }
 }

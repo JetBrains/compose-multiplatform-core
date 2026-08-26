@@ -20,9 +20,9 @@ import androidx.annotation.Sampled
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Eye
 import androidx.xr.arcore.HitResult
+import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.hitTest
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Ray
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.MainScope

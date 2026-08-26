@@ -17,10 +17,8 @@
 package androidx.text.vertical
 
 import android.graphics.Canvas
-import android.os.Build
 import android.text.Spanned
 import android.text.TextPaint
-import androidx.annotation.RequiresApi
 import kotlin.math.max
 
 /**
@@ -56,12 +54,11 @@ internal inline fun forEachRubySpanTransition(
  * @param paint The paint used for text rendering.
  * @param rubySpan The rubySpan attached to the range.
  */
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class RubyLayoutRun(
     text: CharSequence,
     start: Int,
     end: Int,
-    @OrientationMode textOrientation: Int,
+    textOrientation: TextOrientation,
     paint: TextPaint,
     rubySpan: RubySpan,
 ) : LayoutRun(text, start, end) {
@@ -86,8 +83,8 @@ internal class RubyLayoutRun(
 
     private val rubyScale = rubySpan.textScale
     private val rubyLayoutRuns: LineLayout =
-        withTempScale(paint, rubyScale) {
-            createLineLayout(rubySpan.text, 0, rubySpan.text.length, paint, rubySpan.orientation)
+        paint.withTextScale(rubyScale) {
+            createLineLayout(rubySpan.text, 0, rubySpan.text.length, this, rubySpan.orientation)
         }
     private val bodyLayoutRuns: LineLayout =
         createLineLayout(text, start, end, paint, textOrientation)
@@ -111,7 +108,7 @@ internal class RubyLayoutRun(
         bodyLayoutRuns.draw(canvas, originX, bodyY, paint)
 
         val rubyX = originX + bodyLayoutRuns.rightSide - rubyLayoutRuns.leftSide
-        withTempScale(paint, rubyScale) { rubyLayoutRuns.draw(canvas, rubyX, rubyY, paint) }
+        paint.withTextScale(rubyScale) { rubyLayoutRuns.draw(canvas, rubyX, rubyY, this) }
     }
 
     override fun getCharAdvances(out: FloatArray, paint: TextPaint) {

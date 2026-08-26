@@ -64,13 +64,20 @@ public interface RemoteState<T> {
     public val asEncoded: RemoteState<*>
         get() = this
 
+    /** Returns the expression as a human-readable string. */
+    @Suppress("HiddenAbstractMethodInInterface")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun toDebugString(): String
+
     /**
      * Represents the domain (namespace) for named remote states.
      *
      * Named states are used to identify variables that can be updated externally or shared across
      * different parts of a remote document.
      */
-    public open class Domain internal constructor(internal val coreDomain: String?) {
+    public open class Domain
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    constructor(@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val coreDomain: String?) {
         /**
          * A string representation of the domain followed by a colon separator, or an empty string
          * if the domain is null. This is used to namespace named remote states.
@@ -98,6 +105,9 @@ public interface RemoteState<T> {
         /** The system-defined domain, used for platform-level or framework state. */
         public object System : Domain(RemoteDomains.SYSTEM.toString())
 
+        /** The domain for states that do not belong to any specific domain. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public object None : Domain(null)
+
         override fun toString(): String {
             return coreDomain ?: ""
         }
@@ -113,16 +123,62 @@ public interface RemoteState<T> {
 }
 
 /** Common base interface for all Remote types. */
-public abstract class BaseRemoteState<T : Any> internal constructor() : RemoteState<T> {
-    /**
-     * A unique key used for caching the remote representation (e.g., expression or ID) of this
-     * state.
-     */
+public abstract class BaseRemoteState<T : Any>
+internal constructor(initialCacheKey: RemoteStateCacheKey) : RemoteState<T> {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    internal abstract val cacheKey: RemoteStateCacheKey
+    internal open val cacheKey: RemoteStateCacheKey = initialCacheKey
+
+    init {
+        // Register with BaseRemoteStateCacheKey.
+        if (initialCacheKey is BaseRemoteStateCacheKey) {
+            initialCacheKey.setState(this)
+        }
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toDebugString(): String = cacheKey.toDebugString()
 
     /** The constant value or null if there isn't one. */
     public abstract override val constantValueOrNull: T?
+
+    /**
+     * Returns `true` if this [BaseRemoteState] is structurally equal to [other].
+     *
+     * Two remote states are structurally equal if:
+     * - They are the same instance (`this === other`).
+     * - Both evaluate to constant values and those constant values are equal.
+     * - Both are dynamic and have equal [cacheKey]s representing identical AST DAGs.
+     *
+     * @param other The other [BaseRemoteState] to compare with.
+     * @return `true` if structurally equal, `false` otherwise.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public open fun isStructurallyEqual(other: BaseRemoteState<*>?): Boolean {
+        if (this === other) return true
+        if (other == null) return false
+        return cacheKey == other.cacheKey
+    }
+
+    /**
+     * Traverses this [BaseRemoteState] expression DAG using the provided [visitor].
+     *
+     * @param visitor The visitor that inspects each node.
+     * @return The result of visiting this node.
+     */
+    internal open fun <R> accept(visitor: RemoteStateVisitor<R>): R =
+        cacheKey.accept(visitor, mutableMapOf())
+
+    /**
+     * Traverses this [BaseRemoteState] expression DAG using the provided [visitor].
+     *
+     * @param memo A memoization map to ensure shared DAG nodes are visited once.
+     * @param visitor The visitor that inspects each node.
+     * @return The result of visiting this node.
+     */
+    internal open fun <R> accept(
+        memo: MutableMap<RemoteStateCacheKey, R>,
+        visitor: RemoteStateVisitor<R>,
+    ): R = cacheKey.accept(visitor, memo)
 
     /**
      * Returns a new or cached id for this [RemoteState] within the [RemoteComposeCreationState].

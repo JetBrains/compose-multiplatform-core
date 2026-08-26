@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Zde bude zpráva.\nDalší text na druhém řádku."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Ukázka šablony krátkých zpráv"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Ukázka šablony položky se sekcemi"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Ukázka zhuštěné položky"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Ukázka položky se sekcemi s aktivovaným AlphaJump"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Sekce s přepínači"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Sekce s přepínačem"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Seznam 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Popis pod každým seznamem"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Ukončit ukázku obrázku a akcí"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Ukázka štítku"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Ukázka ukazatele průběhu"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Ukázka záhlaví sekce"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Ukázka sekce Rychlé tipy"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Ukázka šablony panelu"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Ukázka šablony seznamu míst"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Procházet místa"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Nejnovější funkce"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Načítání povoleno"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Načítání zakázáno"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Použít motiv aplikace"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Motiv aplikace byl aktivován"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Motiv aplikace byl deaktivován"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Načítání obrazovky"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Přepnutím přidáte/odeberete barvu"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Šablona mapy s přepínači"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Ukázky map s obsahem"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Ukázka šablony mapy se zprávou"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Ukázka šablony mapy s mřížkou"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Mapa se seznamem položek s oddíly"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Ukázka banneru"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Ukázka vylepšeného záhlaví"</string>
 </resources>

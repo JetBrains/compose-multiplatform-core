@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Mesaj buraya gelir.\nİkinci satırda daha fazla metin bulunur."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Kısa Mesaj Şablonu Demosu"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Bölümlere Ayrılmış Öğe Şablonu Demosu"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Daraltılmış Öğe Demosu"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Bölümlere ayrılmış öğe AlphaJump etkin demosu"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Radyo Düğmesi Bölümü"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Bölümü Aç/Kapat"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"Liste 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Her listenin altında alt metin"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Görüntü ve işlemler demosunu sonlandır"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Çip Demosu"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"İlerleme Çubuğu Demosu"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Bölüm Başlığı Demosu"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Öne Çıkanlar Bölümü Demosu"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Bölme Şablonu Demosu"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Yer Listesi Şablonu Demosu"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Yerlere Göz At"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"En Yeni Özellikler"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Yükleme işlemi etkinleştirildi"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Yükleme işlemi devre dışı bırakıldı"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Uygulama Teması\'nı kullanın"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Uygulama Teması etkin"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Uygulama Teması devre dışı"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Yükleme ekranı"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Renk eklemek/kaldırmak için açın/kapatın"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Açma/Kapatma Düğmesi İçeren Harita Şablonu"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"İçerik Bulunan Harita Demoları"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Mesaj Şablonu İçeren Harita Demosu"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Izgara Şablonu İçeren Harita Demosu"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Bölümlere Ayrılmış Öğe Listesi İçeren Harita"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Banner Demosu"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Gelişmiş Başlık Demosu"</string>
 </resources>

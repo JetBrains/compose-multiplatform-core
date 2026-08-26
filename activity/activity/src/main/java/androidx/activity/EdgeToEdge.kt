@@ -83,48 +83,22 @@ public fun ComponentActivity.enableEdgeToEdge(
     val view = window.decorView
     val impl =
         Impl
-            ?: (if (Build.VERSION.SDK_INT >= 35) {
-                    EdgeToEdgeApi35()
-                } else if (Build.VERSION.SDK_INT >= 30) {
-                    EdgeToEdgeApi30()
-                } else if (Build.VERSION.SDK_INT >= 29) {
-                    EdgeToEdgeApi29()
-                } else if (Build.VERSION.SDK_INT >= 28) {
-                    EdgeToEdgeApi28()
-                } else if (Build.VERSION.SDK_INT >= 26) {
-                    EdgeToEdgeApi26()
-                } else {
-                    EdgeToEdgeApi23()
-                })
-                .also { Impl = it }
-    val setup = Runnable {
-        impl.setUp(
-            statusBarStyle,
-            navigationBarStyle,
-            window,
-            view,
-            statusBarStyle.detectDarkMode(view.resources),
-            navigationBarStyle.detectDarkMode(view.resources),
-        )
-    }
-    (view as ViewGroup).apply {
-        if (!children.any { it.tag is EdgeToEdgeImpl }) {
-            // Adds a view to listen to configuration changes.
-            addView(
-                object : View(view.context) {
-                        override fun onConfigurationChanged(newConfig: Configuration) {
-                            setup.run()
-                        }
-                    }
-                    .apply {
-                        tag = impl
-                        visibility = View.GONE
-                        setWillNotDraw(true)
-                    }
-            )
-        }
-    }
-    setup.run()
+            ?: when {
+                Build.VERSION.SDK_INT >= 35 -> EdgeToEdgeApi35()
+                Build.VERSION.SDK_INT >= 30 -> EdgeToEdgeApi30()
+                Build.VERSION.SDK_INT >= 29 -> EdgeToEdgeApi29()
+                Build.VERSION.SDK_INT >= 28 -> EdgeToEdgeApi28()
+                Build.VERSION.SDK_INT >= 26 -> EdgeToEdgeApi26()
+                else -> EdgeToEdgeApi23()
+            }.also { Impl = it }
+    impl.setUp(
+        statusBarStyle,
+        navigationBarStyle,
+        window,
+        view,
+        statusBarStyle.detectDarkMode(view.resources),
+        navigationBarStyle.detectDarkMode(view.resources),
+    )
     impl.adjustLayoutInDisplayCutoutMode(window)
 }
 
@@ -355,7 +329,7 @@ private class EdgeToEdgeApi35 : EdgeToEdgeApi30() {
         val navBarColor = navigationBarStyle.getScrimWithEnforcedContrast(navigationBarIsDark)
         (view as? ViewGroup)?.apply {
             if (
-                !children.any {
+                children.none {
                     it.tag.run {
                         if (this is List<*> && size == 4 && get(0) is ColorProtection) {
                             forEach { protection ->

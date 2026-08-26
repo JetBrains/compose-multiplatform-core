@@ -47,9 +47,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -78,6 +80,7 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMapNotNull
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.material3.ButtonDefaults.buttonColors
 import androidx.wear.compose.material3.internal.Icons
 import androidx.wear.compose.material3.internal.Plurals
@@ -103,17 +106,30 @@ import java.util.Locale
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerSample
  *
+ * ![TimePickerSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerSample_CompositeImage.png)
+ *
  * Example of a [TimePicker] with seconds:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWithSecondsSample
+ *
+ * ![TimePickerWithSecondsSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerWithSecondsSample_CompositeImage.png)
  *
  * Example of a 12 hour clock [TimePicker]:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWith12HourClockSample
  *
+ * ![TimePickerWith12HourClockSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerWith12HourClockSample_CompositeImage.png)
+ *
  * Example of a [TimePicker] with just minutes and seconds:
  *
  * @sample androidx.wear.compose.material3.samples.TimePickerWithMinutesAndSecondsSample
+ *
+ * ![TimePickerWithMinutesAndSecondsSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimePickerWithMinutesAndSecondsSample_CompositeImage.png)
+ *
  * @param initialTime The initial time to be displayed in the TimePicker.
  * @param onTimePicked The callback that is called when the user confirms the time selection. It
  *   provides the selected time as [LocalTime]. Note that any time components not displayed in the
@@ -284,11 +300,11 @@ public fun TimePicker(
                         TimePickerSelection.Second -> secondString
                         TimePickerSelection.None ->
                             if (touchExplorationServicesEnabled) instructionHeadingString else ""
-                        else -> ""
+                        else -> null
                     }
 
                 FadeLabel(
-                    text = heading,
+                    text = heading ?: "",
                     animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                     modifier =
                         Modifier.height(headingHeight)
@@ -298,7 +314,13 @@ public fun TimePicker(
                             )
                             .fillMaxWidth()
                             .align(Alignment.CenterHorizontally)
-                            .semantics(mergeDescendants = true) { heading() },
+                            .then(
+                                if (heading != null) {
+                                    Modifier.semantics(mergeDescendants = true) { heading() }
+                                } else {
+                                    Modifier.drawWithContent {}.clearAndSetSemantics {}
+                                }
+                            ),
                     color = colors.pickerLabelColor,
                     style = layoutConfig.labelTextStyle,
                     maxLines = maxTextLines,
@@ -363,8 +385,20 @@ public fun TimePicker(
         }
     }
 
+    val isReduceMotionEnabled = LocalReduceMotion.current
+
     if (!inspectionMode) {
-        LaunchedEffect(Unit) { fullyDrawn.animateTo(1f) }
+        LaunchedEffect(Unit) {
+            if (isReduceMotionEnabled) {
+                // Await one frame to allow the ScalingLazyColumn layout positioning to settle
+                // silently before revealing the UI, avoiding a 1-frame visual stutter where
+                // static elements (like the colon separator) appear before the digit columns.
+                withFrameNanos {}
+                fullyDrawn.snapTo(1f)
+            } else {
+                fullyDrawn.animateTo(1f)
+            }
+        }
     }
 }
 

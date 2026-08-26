@@ -19,6 +19,7 @@ package androidx.appsearch.app;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.collection.ArraySet;
@@ -32,8 +33,9 @@ import java.util.Objects;
 /**
  * Represents a collection of search features that can be enabled or disabled for specific
  * search operations.
- * @exportToFramework:hide
  */
+@HideInPlatform
+// @exportToFramework:skipFile()
 //TODO(b/387291182) unhide this class when it is supported in SearchSpec
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalAppSearchApi
@@ -78,7 +80,6 @@ public class SearchFeatures extends EnabledFeatures {
      * Returns whether the LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION feature is enabled.
      */
     @ExperimentalAppSearchApi
-    @FlaggedApi(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public boolean isListFilterMatchScoreExpressionFunctionEnabled() {
         return mEnabledFeatures.contains(
                 FeatureConstants.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION);
@@ -216,7 +217,6 @@ public class SearchFeatures extends EnabledFeatures {
                 enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                 name = Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
         @ExperimentalAppSearchApi
-        @FlaggedApi(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
         public @NonNull Builder setListFilterMatchScoreExpressionFunctionEnabled(boolean enabled) {
             modifyEnabledFeature(
                     FeatureConstants.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION, enabled);

@@ -17,37 +17,49 @@
 package androidx.text.vertical
 
 /**
- * Properties of a text annotation (i.e. ruby and emphasis marks).
+ * Represents the position of a text annotation (i.e. ruby and emphasis marks) relative to the base
+ * text.
  *
- * @property value The integer value
+ * @property value The integer representation of this position, used for serialization.
  */
-public enum class AnnotationPosition private constructor(@JvmField public val value: Int) {
-    /** The text annotation position is unknown. */
-    UNKNOWN(-1),
-    /**
-     * For horizontal text, the text annotation should be positioned above the base text.
-     *
-     * For vertical text, it should be positioned to the right. See the
-     * [tts:rubyPosition](https://www.w3.org/TR/ttml2/#style-attribute-rubyPosition) attribute in
-     * TTML2 for more information.
-     */
-    BEFORE(0),
-    /**
-     * For horizontal text, the text annotation should be positioned below the base text.
-     *
-     * For vertical text, it should be positioned to the left, See the
-     * [tts:rubyPosition](https://www.w3.org/TR/ttml2/#style-attribute-rubyPosition) attribute in
-     * TTML2 for more information.
-     */
-    AFTER(1);
-
+public sealed class AnnotationPosition protected constructor(@JvmField public val value: Int) {
     public companion object {
+        /** The text annotation position is unknown. */
+        @JvmField public val Unknown: AnnotationPosition = UnknownImpl
+        /**
+         * For horizontal text, the text annotation should be positioned above the base text.
+         *
+         * For vertical text, it should be positioned to the right. See the
+         * [tts:rubyPosition](https://www.w3.org/TR/ttml2/#style-attribute-rubyPosition) attribute
+         * in TTML2 for more information.
+         */
+        @JvmField public val Before: AnnotationPosition = BeforeImpl
+        /**
+         * For horizontal text, the text annotation should be positioned below the base text.
+         *
+         * For vertical text, it should be positioned to the left. See the
+         * [tts:rubyPosition](https://www.w3.org/TR/ttml2/#style-attribute-rubyPosition) attribute
+         * in TTML2 for more information.
+         */
+        @JvmField public val After: AnnotationPosition = AfterImpl
+
         @JvmStatic
+        @JvmName("fromInt")
         public fun fromInt(value: Int): AnnotationPosition =
             when (value) {
-                BEFORE.value -> BEFORE
-                AFTER.value -> AFTER
-                else -> UNKNOWN
+                Before.value -> Before
+                After.value -> After
+                else -> Unknown
             }
     }
+
+    // Prevents exhaustive `when` usage for Kotlin consumers, making it safe
+    // to add new types in the future (go/android-api-guidelines#classes-sealed)
+    private object Hidden : AnnotationPosition(Int.MAX_VALUE)
 }
+
+private object UnknownImpl : AnnotationPosition(-1)
+
+private object BeforeImpl : AnnotationPosition(0)
+
+private object AfterImpl : AnnotationPosition(1)

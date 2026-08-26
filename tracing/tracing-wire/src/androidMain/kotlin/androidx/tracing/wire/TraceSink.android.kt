@@ -14,116 +14,73 @@
  * limitations under the License.
  */
 
-@file:JvmName("TraceSinkUtils") // Provide a reasonable name for Java users.
+@file:JvmName("TraceSinks") // Provide a reasonable name for Java users.
 
 package androidx.tracing.wire
 
-import android.content.ComponentCallbacks2
 import android.content.Context
-import android.content.res.Configuration
-import androidx.tracing.AbstractTraceSink
-import androidx.tracing.PooledTracePacketArray
 import java.io.File
 import java.io.OutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import kotlin.coroutines.CoroutineContext
-import okio.BufferedSink
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import okio.appendingSink
 import okio.buffer
 import okio.sink
 
-private fun File.perfettoTraceFile(): File {
-    val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault())
-    formatter.timeZone = TimeZone.getTimeZone("UTC")
-    val traceFile = File(this, "perfetto-${formatter.format(Date())}.perfetto-trace")
-    return traceFile
-}
-
+/**
+ * Creates a [androidx.tracing.wire.TraceSink] that writes trace events to the provided
+ * [outputStream].
+ *
+ * @see [androidx.tracing.wire.TraceSink]
+ */
+@JvmOverloads
 public fun TraceSink(
-    context: Context,
-    sequenceId: Int,
-    coroutineContext: CoroutineContext,
-    outputStream: OutputStream,
-): AbstractTraceSink =
+    outputProvider: () -> OutputStream,
+    sequenceId: Int = 1,
+    coroutineContext: CoroutineContext = Dispatchers.IO + NonCancellable,
+): TraceSink =
     TraceSink(
-        context = context,
         sequenceId = sequenceId,
         coroutineContext = coroutineContext,
-        bufferedSink = outputStream.sink().buffer(),
+        sinkProvider = { outputProvider().sink().buffer() },
     )
 
+/**
+ * Creates a [androidx.tracing.wire.TraceSink] that writes trace events to the provided
+ * [fileProvider].
+ *
+ * @see [androidx.tracing.wire.TraceSink]
+ */
 @JvmOverloads
 public fun TraceSink(
     context: Context,
-    sequenceId: Int,
-    coroutineContext: CoroutineContext,
-    traceFile: File = context.filesDir.perfettoTraceFile(),
-): AbstractTraceSink {
+    sequenceId: Int = 1,
+    coroutineContext: CoroutineContext = Dispatchers.IO + NonCancellable,
+    fileProvider: () -> File = { context.createPerfettoFile() },
+): TraceSink {
     val sink =
         TraceSink(
-            context = context,
             sequenceId = sequenceId,
-            bufferedSink = traceFile.appendingSink().buffer(),
+            sinkProvider = { fileProvider().appendingSink().buffer() },
             coroutineContext = coroutineContext,
         )
     return sink
 }
 
-private class TraceSinkDelegate(private val context: Context, private val sink: TraceSink) :
-    AbstractTraceSink() {
-    private val callback: FlushCallback = FlushCallback(sink)
+// The designated directory for all traces on Android.
+// Makes it easy for Profilers to pull the traces.
+private const val TRACES_DIRECTORY = "perfetto_traces"
 
-    init {
-        context.applicationContext.registerComponentCallbacks(callback)
+internal fun Context.getOrCreateTracesDirectory(): File {
+    val directory = File(noBackupFilesDir, TRACES_DIRECTORY)
+    if (!directory.exists()) {
+        directory.mkdirs()
     }
-
-    override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
-        sink.enqueue(pooledPacketArray)
-    }
-
-    override fun onDroppedTraceEvent() {
-        sink.onDroppedTraceEvent()
-    }
-
-    override fun flush() {
-        sink.flush()
-    }
-
-    override fun close() {
-        sink.close()
-        context.applicationContext.unregisterComponentCallbacks(callback)
-    }
+    return directory
 }
 
-@JvmInline
-private value class FlushCallback(private val sink: TraceSink) : ComponentCallbacks2 {
-    override fun onTrimMemory(level: Int) {
-        sink.flush()
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        // Nothing to do.
-    }
-
-    override fun onLowMemory() {
-        sink.flush()
-    }
-}
-
-private fun TraceSink(
-    context: Context,
-    sequenceId: Int,
-    coroutineContext: CoroutineContext,
-    bufferedSink: BufferedSink,
-): AbstractTraceSink {
-    val sink =
-        TraceSink(
-            sequenceId = sequenceId,
-            bufferedSink = bufferedSink,
-            coroutineContext = coroutineContext,
-        )
-    return TraceSinkDelegate(context = context, sink = sink)
+private fun Context.createPerfettoFile(): File {
+    val directory = getOrCreateTracesDirectory()
+    return directory.createPerfettoFile()
 }

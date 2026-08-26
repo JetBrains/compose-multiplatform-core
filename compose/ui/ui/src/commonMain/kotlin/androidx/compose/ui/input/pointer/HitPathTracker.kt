@@ -22,11 +22,11 @@ import androidx.collection.MutableObjectList
 import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.util.PointerIdArray
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.dispatchForKind
 import androidx.compose.ui.node.layoutCoordinates
@@ -157,6 +157,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      * @param internalPointerEvent The change to dispatch.
      * @return whether this event was dispatched to a [PointerInputFilter]
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     fun dispatchChanges(
         internalPointerEvent: InternalPointerEvent,
         isInBounds: Boolean = true,
@@ -239,7 +240,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
  * pointer or [PointerInputFilter] information.
  */
 /*@VisibleForTesting*/
-@OptIn(InternalCoreApi::class)
 internal open class NodeParent {
     val children: MutableVector<Node> = mutableVectorOf()
 
@@ -368,7 +368,6 @@ internal open class NodeParent {
  * hit it (tracked as [PointerId]s).
  */
 /*@VisibleForTesting*/
-@OptIn(InternalCoreApi::class)
 internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
     // Note: pointerIds are stored in a structure specific to their value type (PointerId).
@@ -482,6 +481,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
      *
      * @see clearCache
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun buildCache(
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
@@ -578,17 +578,32 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         if (activeHoverChange != null) {
             if (!isInBounds) {
                 isIn = false
-            } else if (!isIn && (activeHoverChange.pressed || activeHoverChange.previousPressed)) {
+
+                // During a trackpad pan, we suppress new hit tests to prevent entering new items
+                // while scrolling. However, we still need to recalculate `isIn` for existing hit
+                // paths so we can detect and dispatch Exit events when the scrolled items move
+                // out of bounds from under the stationary cursor.
+            } else if (
+                !isIn &&
+                    (activeHoverChange.pressed ||
+                        activeHoverChange.previousPressed ||
+                        internalPointerEvent.activeGesture == PointerClassification.Pan)
+            ) {
                 // We have to recalculate isIn because we didn't redo hit testing
                 val size = coordinates!!.size
                 @Suppress("DEPRECATION")
                 isIn = !activeHoverChange.isOutOfBounds(size)
             }
+            val isPan =
+                event.type == PointerEventType.PanStart ||
+                    event.type == PointerEventType.PanMove ||
+                    event.type == PointerEventType.PanEnd
             if (
                 isIn != wasIn &&
                     (event.type == PointerEventType.Move ||
                         event.type == PointerEventType.Enter ||
-                        event.type == PointerEventType.Exit)
+                        event.type == PointerEventType.Exit ||
+                        (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan))
             ) {
                 event.type =
                     if (isIn) {
@@ -604,9 +619,12 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         }
 
         val changed =
-            childChanged ||
-                event.type != PointerEventType.Move ||
-                hasPositionChanged(pointerEvent, event)
+            // Fixes Draggable Velocity Tracker
+            ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled ||
+                // Older way optimizes not triggering move events when location hasn't changed
+                (childChanged ||
+                    event.type != PointerEventType.Move ||
+                    hasPositionChanged(pointerEvent, event))
         pointerEvent = event
         return changed
     }
@@ -692,7 +710,16 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
 
             val removePointerId = (released && nonHoverEventStream) || (released && outsideArea)
 
-            if (removePointerId) {
+            // During a trackpad Pan (scroll) gesture, items scroll off-screen and should be pruned
+            // immediately to trigger hover Exit events and clear their hover state.
+            // Other gestures (like Pinch) should not prune intermediate nodes until the gesture
+            // ends.
+            val isPan = internalPointerEvent.activeGesture == PointerClassification.Pan
+            val isGestureOngoing =
+                internalPointerEvent.activeGesture != PointerClassification.None &&
+                    !internalPointerEvent.isGestureEnd
+
+            if (removePointerId && (isPan || !isGestureOngoing)) {
                 pointerIds.remove(change.id)
             }
         }

@@ -16,6 +16,9 @@
 
 package androidx.tracing
 
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
+
 /**
  * Receives [PooledTracePacketArray]s from [Track]s and asynchronously serializes them to a file or
  * buffer, depending on implementation.
@@ -60,8 +63,12 @@ public abstract class AbstractTraceSink : AutoCloseable {
 }
 
 /** An empty trace sink that writes nowhere. */
-internal class EmptyTraceSink : AbstractTraceSink() {
+@RestrictTo(Scope.LIBRARY_GROUP)
+public object EmptyTraceSink : AbstractTraceSink() {
+    internal val enqueues = AtomicInteger(0)
+
     override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
+        enqueues.incrementAndGet()
         pooledPacketArray.recycle()
     }
 
@@ -74,6 +81,7 @@ internal class EmptyTraceSink : AbstractTraceSink() {
     }
 
     override fun close() {
-        // Does nothing
+        // Reset on close
+        enqueues.set(0)
     }
 }

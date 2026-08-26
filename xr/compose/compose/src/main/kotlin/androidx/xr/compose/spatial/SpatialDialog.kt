@@ -32,7 +32,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -61,12 +62,13 @@ import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.spatialComposeView
 import androidx.xr.compose.unit.IntVolumeSize
-import androidx.xr.compose.unit.Meter.Companion.meters
-import androidx.xr.compose.unit.toMeter
+import androidx.xr.compose.unit.toMeters
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PixelDensity
 import androidx.xr.scenecore.scene
 
 /**
@@ -193,9 +195,7 @@ private fun LayoutSpatialDialog(
     val parentEntity = findNearestParentEntity()
     val context = LocalContext.current
     val compositionContext = rememberCompositionContext()
-    // TODO(b/474652577): Update from deprecated currentCompositeKey to currentCompositeKeyCode
-    //  once we update JXR Compose to Compile SDK 35
-    @Suppress("DEPRECATION") val localId = currentCompositeKeyHash
+    val localId = currentCompositeKeyHashCode
 
     BackHandler {
         if (properties.dismissOnBackPress) {
@@ -225,29 +225,34 @@ private fun LayoutSpatialDialog(
         Spacer(Modifier.size(1.dp))
     }
 
+    val density = LocalDensity.current
+    val pixelDensity = session.scene.virtualPixelDensity
     val zDepth by
         updateTransition(targetState = spatialElevationLevel, label = "restingLevelTransition")
             .animateFloat(
                 transitionSpec = { properties.backgroundContentAnimationSpec },
                 label = "zDepth",
             ) { state ->
-                state.toMeter().toM()
+                state.toMeters(density, pixelDensity)
             }
 
     val holder =
-        remember(parentView) {
+        remember(parentView, session) {
             SpatialDialogRenderer(
                 localId = localId,
                 context = context,
                 session = session,
                 parentView = parentView,
+                onDismissRequest = onDismissRequest,
+                properties = properties,
                 compositionContext = compositionContext,
+                pixelDensity = pixelDensity,
             )
         }
 
     SideEffect {
         holder.parentEntity = parentEntity
-        holder.poseInMeters = Pose(translation = MeterPosition(z = zDepth.meters).toVector3())
+        holder.poseInMeters = Pose(translation = Vector3(z = zDepth))
         holder.content = content
     }
 }
@@ -264,11 +269,14 @@ private fun LayoutSpatialDialog(
  * and the [CorePanelEntity].
  */
 private class SpatialDialogRenderer(
-    private val localId: Int,
+    private val localId: Long,
     private val context: Context,
     private val session: Session,
     private val parentView: View,
+    private val onDismissRequest: () -> Unit,
+    private val properties: SpatialDialogProperties,
     private val compositionContext: CompositionContext,
+    private val pixelDensity: PixelDensity,
 ) : RememberObserver {
 
     private var panelEntity: CorePanelEntity? = null
@@ -297,13 +305,15 @@ private class SpatialDialogRenderer(
         this.view = view
         panelEntity =
             CorePanelEntity(
-                    PanelEntity.create(
-                        session = session,
-                        view = view,
-                        pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
-                        name = "ElevatedPanel:${view.id}",
-                        parent = session.scene.activitySpace,
-                    )
+                    pixelDensity = pixelDensity,
+                    entity =
+                        PanelEntity.create(
+                            session = session,
+                            view = view,
+                            pixelDimensions = IntSize2d(IntSize.Zero.width, IntSize.Zero.height),
+                            name = "ElevatedPanel:${view.id}",
+                            parent = session.scene.activitySpace,
+                        ),
                 )
                 .apply {
                     parent = parentEntity
@@ -313,10 +323,19 @@ private class SpatialDialogRenderer(
         view.setContent {
             Box(
                 modifier =
-                    Modifier.constrainTo(Constraints()).onSizeChanged {
-                        panelEntity?.size =
-                            IntVolumeSize(width = it.width, height = it.height, depth = 0)
-                    }
+                    Modifier.onClickOutside(
+                            enabled = true,
+                            onClickOutside = {
+                                if (properties.dismissOnClickOutside) {
+                                    onDismissRequest()
+                                }
+                            },
+                        )
+                        .constrainTo(Constraints())
+                        .onSizeChanged {
+                            panelEntity?.size =
+                                IntVolumeSize(width = it.width, height = it.height, depth = 0)
+                        }
             ) {
                 content()
             }
@@ -325,6 +344,8 @@ private class SpatialDialogRenderer(
 
     override fun onForgotten() {
         panelEntity?.dispose()
+        panelEntity = null
+        view?.setContent {}
         view?.disposeComposition()
     }
 

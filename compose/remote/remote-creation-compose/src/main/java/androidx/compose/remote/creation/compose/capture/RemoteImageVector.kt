@@ -20,12 +20,13 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.rf
-import androidx.compose.remote.creation.compose.vector.RemotePathBuilder
 import androidx.compose.remote.creation.compose.vector.RemotePathData
 import androidx.compose.remote.creation.compose.vector.RemotePathNode
+import androidx.compose.remote.creation.compose.vector.RemotePathScope
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -69,7 +70,7 @@ internal constructor(
      * ImageVector before it is composed through The generated ImageVector is recommended to be
      * memoized across composition calls to avoid doing redundant work
      */
-    @Suppress("MissingGetterMatchingBuilder")
+    @Suppress("MissingGetterMatchingBuilder", "EmptyBuilder")
     public class Builder(
 
         /**
@@ -160,7 +161,6 @@ internal constructor(
          *
          * @return This ImageVector.Builder instance as a convenience for chaining calls
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         internal fun clearGroup(): Builder {
             ensureNotConsumed()
             val popped = nodes.pop()
@@ -487,7 +487,7 @@ internal constructor(
  * @param strokeLineMiter specifies the miter limit for a stroked path
  * @param pathFillType specifies the winding rule that decides how the interior of a [Path] is
  *   calculated.
- * @param pathBuilder [RemotePathBuilder] lambda for adding [RemotePathNode]s to this path.
+ * @param pathBuilder [RemotePathScope] lambda for adding [RemotePathNode]s to this path.
  */
 public fun RemoteImageVector.Builder.path(
     name: String = DefaultPathName,
@@ -500,7 +500,7 @@ public fun RemoteImageVector.Builder.path(
     strokeLineJoin: StrokeJoin = DefaultStrokeLineJoin,
     strokeLineMiter: RemoteFloat = DefaultStrokeLineMiter,
     pathFillType: PathFillType = DefaultFillType,
-    pathBuilder: RemotePathBuilder.() -> Unit,
+    pathBuilder: RemotePathScope.() -> Unit,
 ): RemoteImageVector.Builder =
     addPath(
         RemotePathData(pathBuilder),

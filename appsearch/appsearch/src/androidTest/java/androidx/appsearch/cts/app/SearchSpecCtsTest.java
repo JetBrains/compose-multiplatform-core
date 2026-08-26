@@ -202,7 +202,6 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO)
     public void testBuildSearchSpec_retrieveEmbeddingMatchInfo() {
         List<String> expectedPropertyPaths1 = ImmutableList.of("path1", "path2");
         List<String> expectedPropertyPaths2 = ImmutableList.of("path3", "path4");
@@ -322,7 +321,6 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testBuildSearchSpec_matchScoreExpression() {
         SearchSpec searchSpec = new SearchSpec.Builder()
                 .setNumericSearchEnabled(true)
@@ -646,7 +644,6 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
     public void testSetFeatureEnabledToFalse_matchScoreExpression() {
         SearchSpec.Builder builder = new SearchSpec.Builder();
         SearchSpec searchSpec = builder
@@ -894,7 +891,6 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingSearch() {
         EmbeddingVector embedding1 = new EmbeddingVector(
                 new float[]{1.1f, 2.2f, 3.3f}, "my_model_v1");
@@ -913,7 +909,6 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testRebuild_embeddingSearch() {
         EmbeddingVector embedding1 = new EmbeddingVector(
                 new float[]{1.1f, 2.2f, 3.3f}, "my_model_v1");
@@ -945,19 +940,28 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
     public void testBuildSearchSpec_embeddingSearch() {
         SearchSpec searchSpec = new SearchSpec.Builder()
                 .setNumericSearchEnabled(true)
                 .setVerbatimSearchEnabled(true)
                 .setListFilterQueryLanguageEnabled(true)
                 .setListFilterHasPropertyFunctionEnabled(true)
+                .setEmbeddingQueryProbeCount(5)
                 .build();
 
         assertThat(searchSpec.isNumericSearchEnabled()).isTrue();
         assertThat(searchSpec.isVerbatimSearchEnabled()).isTrue();
         assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isTrue();
         assertThat(searchSpec.isListFilterHasPropertyFunctionEnabled()).isTrue();
+        assertThat(searchSpec.getEmbeddingQueryProbeCount()).isEqualTo(5);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+    public void testBuildSearchSpec_defaultEmbeddingQueryProbeCount() {
+        SearchSpec searchSpec = new SearchSpec.Builder().build();
+        assertThat(searchSpec.getEmbeddingQueryProbeCount()).isEqualTo(10);
     }
 
     @Test
@@ -1257,8 +1261,7 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
     public void testSearchSpecBuilder_copyConstructor_embeddingParameters() {
         EmbeddingVector embedding1 = new EmbeddingVector(
                 new float[]{1.1f, 2.2f, 3.3f}, "my_model_v1");
@@ -1272,8 +1275,7 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
-            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
     public void testSearchSpecBuilder_copyConstructor_clearEmbeddingParameters() {
         EmbeddingVector embedding1 = new EmbeddingVector(
                 new float[]{1.1f, 2.2f, 3.3f}, "my_model_v1");
@@ -1390,8 +1392,7 @@ public class SearchSpecCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
-            Flags.FLAG_ENABLE_EMBEDDING_MATCH_INFO})
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
     public void testSearchSpecBuilder_copyConstructor_embeddingMatchInfo() {
         SearchSpec searchSpec = new SearchSpec.Builder()
                 .setRetrieveEmbeddingMatchInfos(true)

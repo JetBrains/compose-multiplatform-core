@@ -16,13 +16,14 @@
 
 package androidx.compose.material3
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.internal.DropdownMenuPositionProvider
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.material3.tokens.MenuTokens
@@ -31,38 +32,47 @@ import androidx.compose.material3.tokens.ShapeTokens
 import androidx.compose.material3.tokens.StandardMenuTokens
 import androidx.compose.material3.tokens.VibrantMenuTokens
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
+import kotlin.jvm.JvmName
 
 /** Contains default values used for [DropdownMenu] and [DropdownMenuItem]. */
-object MenuDefaults {
+public object MenuDefaults {
+    /** The default [PopupProperties] used in [DropdownMenu] and [DropdownMenuPopup] */
+    public val DefaultMenuProperties: PopupProperties = PopupProperties(focusable = true)
+
     /** The default tonal elevation for a menu. */
-    val TonalElevation = ElevationTokens.Level0
+    public val TonalElevation: Dp = ElevationTokens.Level0
 
     /** The default shadow elevation for a menu. */
-    val ShadowElevation = MenuTokens.ContainerElevation
+    public val ShadowElevation: Dp = MenuTokens.ContainerElevation
 
     /** The default leading icon size for a menu item. */
-    val LeadingIconSize = SegmentedMenuTokens.ItemLeadingIconSize
+    public val LeadingIconSize: Dp = SegmentedMenuTokens.ItemLeadingIconSize
 
     /** The default trailing icon size for a menu item. */
-    val TrailingIconSize =
-        if (shouldUsePrecisionPointerComponentSizing.value) {
-            24.dp
-        } else {
-            SegmentedMenuTokens.ItemTrailingIconSize
-        }
+    public val TrailingIconSize: Dp
+        get() =
+            if (shouldUsePrecisionPointerComponentSizing.value) {
+                24.dp
+            } else {
+                SegmentedMenuTokens.ItemTrailingIconSize
+            }
 
     /** The default shape for a menu. */
-    val shape
+    public val shape: Shape
         @Composable get() = MenuTokens.ContainerShape.value
 
     /** The default container color for a menu. */
-    val containerColor
+    public val containerColor: Color
         @Composable get() = MenuTokens.ContainerColor.value
 
     /**
@@ -74,8 +84,8 @@ object MenuDefaults {
      * prominent so should be used sparingly.
      */
     // TODO update with tokens when available
-    @ExperimentalMaterial3ExpressiveApi
-    val groupStandardContainerColor: Color
+
+    public val groupStandardContainerColor: Color
         @Composable get() = StandardMenuTokens.ContainerColor.value
 
     /**
@@ -87,13 +97,12 @@ object MenuDefaults {
      * prominent so should be used sparingly.
      */
     // TODO update with tokens when available
-    @ExperimentalMaterial3ExpressiveApi
-    val groupVibrantContainerColor: Color
+
+    public val groupVibrantContainerColor: Color
         @Composable get() = VibrantMenuTokens.ContainerColor.value
 
     /** The default shape for the leading group of a menu. */
-    @ExperimentalMaterial3ExpressiveApi
-    val leadingGroupShape: Shape
+    public val leadingGroupShape: Shape
         @Composable
         get() =
             RoundedCornerShape(
@@ -104,13 +113,11 @@ object MenuDefaults {
             )
 
     /** The default shape for the middle group of a menu. */
-    @ExperimentalMaterial3ExpressiveApi
-    val middleGroupShape: Shape
+    public val middleGroupShape: Shape
         @Composable get() = SegmentedMenuTokens.GroupShape.value
 
     /** The default shape for the trailing group of a menu. */
-    @ExperimentalMaterial3ExpressiveApi
-    val trailingGroupShape: Shape
+    public val trailingGroupShape: Shape
         @Composable
         get() =
             RoundedCornerShape(
@@ -121,8 +128,7 @@ object MenuDefaults {
             )
 
     /** The default shape for the leading item of a menu or group. */
-    @ExperimentalMaterial3ExpressiveApi
-    val leadingItemShape: Shape
+    public val leadingItemShape: Shape
         @Composable
         get() =
             RoundedCornerShape(
@@ -133,13 +139,11 @@ object MenuDefaults {
             )
 
     /** The default shape for the middle item of a menu or group. */
-    @ExperimentalMaterial3ExpressiveApi
-    val middleItemShape: Shape
+    public val middleItemShape: Shape
         @Composable get() = SegmentedMenuTokens.ItemShape.value
 
     /** The default shape for the trailing item of a menu or group. */
-    @ExperimentalMaterial3ExpressiveApi
-    val trailingItemShape: Shape
+    public val trailingItemShape: Shape
         @Composable
         get() =
             RoundedCornerShape(
@@ -150,38 +154,37 @@ object MenuDefaults {
             )
 
     /** The default shape for a standalone item of a menu or group. */
-    @ExperimentalMaterial3ExpressiveApi
-    val standaloneItemShape: Shape
+    public val standaloneItemShape: Shape
         @Composable get() = middleItemShape
 
     /** The selected shape for items of a group. */
-    @ExperimentalMaterial3ExpressiveApi
-    val selectedItemShape: Shape
+    public val selectedItemShape: Shape
         @Composable get() = SegmentedMenuTokens.ItemSelectedShape.value
 
     /** The default shape for a standalone group of a menu. */
-    @ExperimentalMaterial3ExpressiveApi
-    val standaloneGroupShape: Shape
+    public val standaloneGroupShape: Shape
         @Composable get() = SegmentedMenuTokens.ContainerShape.value
 
     /** The shape for a group of a menu that is no longer being hovered. */
-    @ExperimentalMaterial3ExpressiveApi
-    val inactiveGroupShape: Shape
+    public val inactiveGroupShape: Shape
         @Composable get() = SegmentedMenuTokens.InactiveContainerShape.value
 
     /** The default spacing between each menu group. Usually used in a [Spacer]'s height */
-    @ExperimentalMaterial3ExpressiveApi val GroupSpacing: Dp = SegmentedMenuTokens.SegmentedGap
+    public val GroupSpacing: Dp = SegmentedMenuTokens.SegmentedGap
 
     /**
      * The default padding for a [HorizontalDivider] used in a menu group. Use this padding value in
      * a [HorizontalDivider]'s padding modifier.
      */
-    @ExperimentalMaterial3ExpressiveApi
-    val HorizontalDividerPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+    public val HorizontalDividerPadding: PaddingValues =
+        PaddingValues(horizontal = 12.dp, vertical = 2.dp)
 
-    /** The default horizontal padding for a menu group label. Please see [MenuDefaults.Label]. */
-    @ExperimentalMaterial3ExpressiveApi
-    val DropdownMenuGroupLabelHorizontalPadding = PaddingValues(start = 12.dp, end = 4.dp)
+    /**
+     * The default horizontal padding for a menu group label. Please see
+     * [MenuDefaults.DropdownMenuGroupLabel].
+     */
+    public val DropdownMenuGroupLabelHorizontalPadding: PaddingValues =
+        PaddingValues(start = 12.dp, end = 4.dp)
 
     /**
      * A [MenuGroupShapes] constructor that the group in [index] should have when there are [count]
@@ -190,9 +193,8 @@ object MenuDefaults {
      * @param index the index for this group in the menu.
      * @param count the count of groups in this menu.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun groupShape(index: Int, count: Int): MenuGroupShapes {
+    public fun groupShape(index: Int, count: Int): MenuGroupShapes {
         if (count == 1) {
             return MaterialTheme.shapes.defaultMenuStandaloneGroupShapes
         }
@@ -213,9 +215,8 @@ object MenuDefaults {
      * @param index the index for this item in the menu or group.
      * @param count the count of items in this menu or group.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun itemShape(index: Int, count: Int): MenuItemShapes {
+    public fun itemShape(index: Int, count: Int): MenuItemShapes {
         if (count == 1) {
             return MaterialTheme.shapes.defaultMenuStandaloneItemShapes
         }
@@ -231,11 +232,12 @@ object MenuDefaults {
      * Creates a [MenuItemColors] that represents the default text and icon colors used in a
      * [DropdownMenuItemContent].
      */
-    @Composable fun itemColors(): MenuItemColors = MaterialTheme.colorScheme.defaultMenuItemColors
+    @Composable
+    public fun itemColors(): MenuItemColors = MaterialTheme.colorScheme.defaultMenuItemColors
 
     /**
-     * Creates a [MenuItemShapes] that represents the shapes used in a toggleable or selectable
-     * [DropdownMenuItem], allowing for overrides.
+     * Creates a [MenuItemShapes] that represents the shapes used in a [CheckableDropdownMenuItem]
+     * or [SelectableDropdownMenuItem], allowing for overrides.
      *
      * There is a convenience function that can be used to easily determine the shape to be used at
      * [MenuDefaults.itemShape].
@@ -245,17 +247,16 @@ object MenuDefaults {
      * @param selectedShape the shape when selected. It uses [selectedItemShape] as the default if
      *   null is provided.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun itemShapes(shape: Shape? = null, selectedShape: Shape? = null): MenuItemShapes =
+    public fun itemShapes(shape: Shape? = null, selectedShape: Shape? = null): MenuItemShapes =
         MaterialTheme.shapes.defaultMenuStandaloneItemShapes.copy(
             shape = shape,
             selectedShape = selectedShape,
         )
 
     /**
-     * Creates a [MenuItemShapes] that represents the shapes used in a toggleable or selectable
-     * [DropdownMenuItem].
+     * Creates a [MenuItemShapes] that represents the shapes used in a [CheckableDropdownMenuItem]
+     * or [SelectableDropdownMenuItem].
      *
      * There is a convenience function that can be used to easily determine the shape to be used at
      * [MenuDefaults.itemShape].
@@ -263,9 +264,8 @@ object MenuDefaults {
      * This [MenuItemShapes] has [MenuDefaults.standaloneItemShape] as the shape and
      * [MenuDefaults.selectedItemShape] as the selected shape.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun itemShapes(): MenuItemShapes = MaterialTheme.shapes.defaultMenuStandaloneItemShapes
+    public fun itemShapes(): MenuItemShapes = MaterialTheme.shapes.defaultMenuStandaloneItemShapes
 
     /**
      * Creates a [MenuGroupShapes] that represents the default shapes used in a [DropdownMenuGroup],
@@ -279,9 +279,8 @@ object MenuDefaults {
      * @param inactiveShape the shape when no longer being hovered. It uses [inactiveGroupShape] as
      *   the default if null is provided.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun groupShapes(shape: Shape? = null, inactiveShape: Shape? = null): MenuGroupShapes =
+    public fun groupShapes(shape: Shape? = null, inactiveShape: Shape? = null): MenuGroupShapes =
         MaterialTheme.shapes.defaultMenuStandaloneGroupShapes.copy(
             shape = shape,
             inactiveShape = inactiveShape,
@@ -294,22 +293,23 @@ object MenuDefaults {
      * [MenuDefaults.inactiveGroupShape] as the inactive shape, the inactive shape is the shape of
      * the group after it is no longer being hovered.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun groupShapes(): MenuGroupShapes = MaterialTheme.shapes.defaultMenuStandaloneGroupShapes
+    public fun groupShapes(): MenuGroupShapes =
+        MaterialTheme.shapes.defaultMenuStandaloneGroupShapes
 
     /**
      * The default label recommended to be used within a [DropdownMenuGroup].
      *
      * Labels can be used to categorize parts of the group or the entire group
      *
+     * @param modifier the [Modifier] to be applied to this label.
      * @param contentAlignment the alignment of the label's content.
      * @param padding the padding applied to the label's content.
      * @param content the content of the label.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun Label(
+    public fun DropdownMenuGroupLabel(
+        modifier: Modifier = Modifier,
         contentAlignment: Alignment = Alignment.CenterStart,
         padding: PaddingValues = DropdownMenuGroupLabelHorizontalPadding,
         content: @Composable () -> Unit,
@@ -318,7 +318,8 @@ object MenuDefaults {
         ProvideTextStyle(MaterialTheme.typography.labelLarge) {
             Box(
                 modifier =
-                    Modifier.sizeIn(
+                    modifier
+                        .sizeIn(
                             minWidth = DropdownMenuItemDefaultMinWidth,
                             maxWidth = DropdownMenuItemDefaultMaxWidth,
                             minHeight = DropdownMenuGroupDefaultMinHeight,
@@ -335,54 +336,31 @@ object MenuDefaults {
      * The default horizontal padding for a menu group trailing label. Please see
      * [MenuDefaults.DropdownMenuItemTrailingLabel].
      */
-    @ExperimentalMaterial3ExpressiveApi
-    val DropdownMenuItemTrailingLabelHorizontalPadding =
-        if (shouldUsePrecisionPointerComponentSizing.value) {
-            PaddingValues(start = 0.dp, end = 6.dp)
-        } else {
-            PaddingValues(all = 0.dp)
-        }
+    public val DropdownMenuItemTrailingLabelHorizontalPadding: PaddingValues
+        get() =
+            if (shouldUsePrecisionPointerComponentSizing.value) {
+                PaddingValues(start = 0.dp, end = 6.dp)
+            } else {
+                PaddingValues(all = 0.dp)
+            }
 
     /**
      * The default trailing label recommended to be used within a [DropdownMenuItem] which can be
      * passed to its trailingIcon param.
      *
+     * @param modifier the [Modifier] to be applied to this dropdown menu item trailing label.
      * @param padding the padding applied to the label's content.
      * @param content the content of the label.
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun DropdownMenuItemTrailingLabel(
+    public fun DropdownMenuItemTrailingLabel(
+        modifier: Modifier = Modifier,
         padding: PaddingValues = DropdownMenuItemTrailingLabelHorizontalPadding,
         content: @Composable () -> Unit,
     ) {
         // TODO replace the typography with token when available
         ProvideTextStyle(MaterialTheme.typography.labelLarge) {
-            Box(modifier = Modifier.padding(padding)) { content() }
-        }
-    }
-
-    /**
-     * [Column] of a label and its supporting text. Used in a [DropdownMenuItem]'s text parameter
-     * when a supporting text is desired.
-     *
-     * @param supportingText the supporting text of the label.
-     * @param content the content of the label.
-     */
-    @Deprecated(
-        "Removed in favor of the DropdownMenuItem APIs that have supportingText as a parameter.",
-        level = DeprecationLevel.WARNING,
-    )
-    @ExperimentalMaterial3ExpressiveApi
-    @Composable
-    fun LabelWithSupportingText(
-        supportingText: @Composable () -> Unit,
-        content: @Composable () -> Unit,
-    ) {
-        // TODO replace the typography with token when available
-        Column {
-            ProvideTextStyle(MaterialTheme.typography.labelLarge, content = content)
-            ProvideTextStyle(MaterialTheme.typography.bodyMedium, content = supportingText)
+            Box(modifier = modifier.padding(padding)) { content() }
         }
     }
 
@@ -401,7 +379,7 @@ object MenuDefaults {
      *   when not enabled
      */
     @Composable
-    fun itemColors(
+    public fun itemColors(
         textColor: Color = Color.Unspecified,
         leadingIconColor: Color = Color.Unspecified,
         trailingIconColor: Color = Color.Unspecified,
@@ -420,11 +398,18 @@ object MenuDefaults {
 
     /**
      * Creates a [MenuItemColors] that represents the default text, icon, and container colors used
-     * in a standard color variant [DropdownMenuItem].
+     * in a vibrant color variant [DropdownMenuItem].
+     */
+    @Composable
+    public fun itemVibrantColors(): MenuItemColors =
+        MaterialTheme.colorScheme.defaultMenuItemVibrantColors
+
+    /**
+     * Creates a [MenuItemColors] that represents the default text, icon, and container colors used
+     * in a vibrant color variant [DropdownMenuItem]. This uses the [Color.Unspecified] to mean “use
+     * the value from the source”.
      *
      * @param textColor the text color of this [DropdownMenuItem] when enabled
-     * @param containerColor the container color of this [DropdownMenuItem] when enabled and
-     *   unselected
      * @param leadingIconColor the leading icon color of this [DropdownMenuItem] when enabled
      * @param trailingIconColor the trailing icon color of this [DropdownMenuItem] when enabled
      * @param disabledTextColor the text color of this [DropdownMenuItem] when not enabled
@@ -432,46 +417,112 @@ object MenuDefaults {
      *   enabled
      * @param disabledTrailingIconColor the trailing icon color of this [DropdownMenuItem] when not
      *   enabled
-     * @param selectedContainerColor the container color of this [DropdownMenuItem] when enabled and
-     *   selected
-     * @param selectedTextColor the text color of this [DropdownMenuItem] when enabled and selected
-     * @param selectedLeadingIconColor the leading icon color of this [DropdownMenuItem] when
-     *   enabled and selected
-     * @param selectedTrailingIconColor the trailing icon color of this [DropdownMenuItem] when
-     *   enabled and selected
      */
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun selectableItemColors(
+    public fun itemVibrantColors(
         textColor: Color = Color.Unspecified,
-        containerColor: Color = Color.Unspecified,
         leadingIconColor: Color = Color.Unspecified,
         trailingIconColor: Color = Color.Unspecified,
         disabledTextColor: Color = Color.Unspecified,
         disabledLeadingIconColor: Color = Color.Unspecified,
         disabledTrailingIconColor: Color = Color.Unspecified,
-        selectedContainerColor: Color = Color.Unspecified,
-        selectedTextColor: Color = Color.Unspecified,
-        selectedLeadingIconColor: Color = Color.Unspecified,
-        selectedTrailingIconColor: Color = Color.Unspecified,
     ): MenuItemColors =
+        MaterialTheme.colorScheme.defaultMenuItemVibrantColors.copy(
+            textColor = textColor,
+            leadingIconColor = leadingIconColor,
+            trailingIconColor = trailingIconColor,
+            disabledTextColor = disabledTextColor,
+            disabledLeadingIconColor = disabledLeadingIconColor,
+            disabledTrailingIconColor = disabledTrailingIconColor,
+        )
+
+    /**
+     * Creates a [SelectableMenuItemColors] that represents the default text, icon, and container
+     * colors used in a standard color variant [SelectableDropdownMenuItem] or
+     * [CheckableDropdownMenuItem]. This uses the [Color.Unspecified] to mean “use the value from
+     * the source”.
+     *
+     * When the item is disabled, disabled colors take priority over selected colors.
+     *
+     * @param textColor the text color of this menu item when enabled and unselected/unchecked
+     * @param containerColor the container color of this menu item when enabled and
+     *   unselected/unchecked
+     * @param leadingIconColor the leading icon color of this menu item when enabled
+     * @param trailingContentColor the trailing content color of this menu item when enabled
+     * @param disabledTextColor the text color of this menu item when not enabled; takes priority if
+     *   the item is both selected/checked and disabled
+     * @param disabledContainerColor the container color of this menu item when not enabled; takes
+     *   priority if the item is both selected/checked and disabled
+     * @param disabledLeadingIconColor the leading icon color of this menu item when not enabled;
+     *   takes priority if the item is both selected/checked and disabled
+     * @param disabledTrailingContentColor the trailing content color of this menu item when not
+     *   enabled; takes priority if the item is both selected/checked and disabled
+     * @param selectedTextColor the text color of this menu item when enabled and selected/checked
+     * @param selectedContainerColor the container color of this menu item when enabled and
+     *   selected/checked
+     * @param selectedLeadingIconColor the leading icon color of this menu item when enabled and
+     *   selected/checked
+     * @param selectedTrailingContentColor the trailing content color of this menu item when enabled
+     *   and selected/checked
+     */
+    @Composable
+    public fun selectableItemColors(
+        textColor: Color = Color.Unspecified,
+        containerColor: Color = Color.Unspecified,
+        leadingIconColor: Color = Color.Unspecified,
+        trailingContentColor: Color = Color.Unspecified,
+        disabledTextColor: Color = Color.Unspecified,
+        disabledContainerColor: Color = Color.Unspecified,
+        disabledLeadingIconColor: Color = Color.Unspecified,
+        disabledTrailingContentColor: Color = Color.Unspecified,
+        selectedTextColor: Color = Color.Unspecified,
+        selectedContainerColor: Color = Color.Unspecified,
+        selectedLeadingIconColor: Color = Color.Unspecified,
+        selectedTrailingContentColor: Color = Color.Unspecified,
+    ): SelectableMenuItemColors =
         MaterialTheme.colorScheme.defaultMenuSelectableItemColors.copy(
             textColor = textColor,
             containerColor = containerColor,
             leadingIconColor = leadingIconColor,
-            trailingIconColor = trailingIconColor,
+            trailingContentColor = trailingContentColor,
             disabledTextColor = disabledTextColor,
+            disabledContainerColor = disabledContainerColor,
             disabledLeadingIconColor = disabledLeadingIconColor,
-            disabledTrailingIconColor = disabledTrailingIconColor,
-            selectedContainerColor = selectedContainerColor,
+            disabledTrailingContentColor = disabledTrailingContentColor,
             selectedTextColor = selectedTextColor,
+            selectedContainerColor = selectedContainerColor,
             selectedLeadingIconColor = selectedLeadingIconColor,
-            selectedTrailingIconColor = selectedTrailingIconColor,
+            selectedTrailingContentColor = selectedTrailingContentColor,
         )
 
     /**
+     * Delegates to selectableItemColors to resolve unspecified tokens against MenuTokens
+     * (StandardMenuTokens), then adapts the resolved colors into MenuItemColors for binary
+     * compatibility.
+     */
+    @Composable
+    internal fun selectableItemColorsLegacy(): MenuItemColors {
+        val colors = selectableItemColors()
+        return MenuItemColors(
+            textColor = colors.textColor,
+            leadingIconColor = colors.leadingIconColor,
+            trailingIconColor = colors.trailingContentColor,
+            disabledTextColor = colors.disabledTextColor,
+            disabledLeadingIconColor = colors.disabledLeadingIconColor,
+            disabledTrailingIconColor = colors.disabledTrailingContentColor,
+            containerColor = colors.containerColor,
+            disabledContainerColor = colors.disabledContainerColor,
+        )
+    }
+
+    /**
      * Creates a [MenuItemColors] that represents the default text, icon, and container colors used
-     * in a vibrant color variant [DropdownMenuItem].
+     * in a standard color variant [DropdownMenuItem]. This uses the Color.Unspecified to mean “use
+     * the value from the source”
+     *
+     * Delegates to [selectableItemColors] to resolve unspecified tokens against MenuTokens
+     * (StandardMenuTokens), then adapts the resolved colors into [MenuItemColors] for binary
+     * compatibility.
      *
      * @param textColor the text color of this [DropdownMenuItem] when enabled
      * @param containerColor the container color of this [DropdownMenuItem] when enabled and
@@ -479,6 +530,7 @@ object MenuDefaults {
      * @param leadingIconColor the leading icon color of this [DropdownMenuItem] when enabled
      * @param trailingIconColor the trailing icon color of this [DropdownMenuItem] when enabled
      * @param disabledTextColor the text color of this [DropdownMenuItem] when not enabled
+     * @param disabledContainerColor the container color of this [DropdownMenuItem] when not enabled
      * @param disabledLeadingIconColor the leading icon color of this [DropdownMenuItem] when not
      *   enabled
      * @param disabledTrailingIconColor the trailing icon color of this [DropdownMenuItem] when not
@@ -491,34 +543,203 @@ object MenuDefaults {
      * @param selectedTrailingIconColor the trailing icon color of this [DropdownMenuItem] when
      *   enabled and selected
      */
-    @ExperimentalMaterial3ExpressiveApi
+    @Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    @JvmName("selectableItemColors")
     @Composable
-    fun selectableItemVibrantColors(
+    public fun selectableItemColorsLegacy(
         textColor: Color = Color.Unspecified,
         containerColor: Color = Color.Unspecified,
         leadingIconColor: Color = Color.Unspecified,
         trailingIconColor: Color = Color.Unspecified,
         disabledTextColor: Color = Color.Unspecified,
+        disabledContainerColor: Color = Color.Unspecified,
         disabledLeadingIconColor: Color = Color.Unspecified,
         disabledTrailingIconColor: Color = Color.Unspecified,
         selectedContainerColor: Color = Color.Unspecified,
         selectedTextColor: Color = Color.Unspecified,
         selectedLeadingIconColor: Color = Color.Unspecified,
         selectedTrailingIconColor: Color = Color.Unspecified,
-    ): MenuItemColors =
+    ): MenuItemColors {
+        val colors =
+            selectableItemColors(
+                textColor = textColor,
+                containerColor = containerColor,
+                leadingIconColor = leadingIconColor,
+                trailingContentColor = trailingIconColor,
+                disabledTextColor = disabledTextColor,
+                disabledContainerColor = disabledContainerColor,
+                disabledLeadingIconColor = disabledLeadingIconColor,
+                disabledTrailingContentColor = disabledTrailingIconColor,
+                selectedTextColor = selectedTextColor,
+                selectedContainerColor = selectedContainerColor,
+                selectedLeadingIconColor = selectedLeadingIconColor,
+                selectedTrailingContentColor = selectedTrailingIconColor,
+            )
+        return MenuItemColors(
+            textColor = colors.textColor,
+            leadingIconColor = colors.leadingIconColor,
+            trailingIconColor = colors.trailingContentColor,
+            disabledTextColor = colors.disabledTextColor,
+            disabledLeadingIconColor = colors.disabledLeadingIconColor,
+            disabledTrailingIconColor = colors.disabledTrailingContentColor,
+            containerColor = colors.containerColor,
+            disabledContainerColor = colors.disabledContainerColor,
+        )
+    }
+
+    /**
+     * Creates a [SelectableMenuItemColors] that represents the default text, icon, and container
+     * colors used in a vibrant color variant [SelectableDropdownMenuItem] or
+     * [CheckableDropdownMenuItem]. This uses the [Color.Unspecified] to mean “use the value from
+     * the source”.
+     *
+     * When the item is disabled, disabled colors take priority over selected colors.
+     *
+     * @param textColor the text color of this menu item when enabled and unselected/unchecked
+     * @param containerColor the container color of this menu item when enabled and
+     *   unselected/unchecked
+     * @param leadingIconColor the leading icon color of this menu item when enabled
+     * @param trailingContentColor the trailing content color of this menu item when enabled
+     * @param disabledTextColor the text color of this menu item when not enabled; takes priority if
+     *   the item is both selected/checked and disabled
+     * @param disabledContainerColor the container color of this menu item when not enabled; takes
+     *   priority if the item is both selected/checked and disabled
+     * @param disabledLeadingIconColor the leading icon color of this menu item when not enabled;
+     *   takes priority if the item is both selected/checked and disabled
+     * @param disabledTrailingContentColor the trailing content color of this menu item when not
+     *   enabled; takes priority if the item is both selected/checked and disabled
+     * @param selectedTextColor the text color of this menu item when enabled and selected/checked
+     * @param selectedContainerColor the container color of this menu item when enabled and
+     *   selected/checked
+     * @param selectedLeadingIconColor the leading icon color of this menu item when enabled and
+     *   selected/checked
+     * @param selectedTrailingContentColor the trailing content color of this menu item when enabled
+     *   and selected/checked
+     */
+    @Composable
+    public fun selectableItemVibrantColors(
+        textColor: Color = Color.Unspecified,
+        containerColor: Color = Color.Unspecified,
+        leadingIconColor: Color = Color.Unspecified,
+        trailingContentColor: Color = Color.Unspecified,
+        disabledTextColor: Color = Color.Unspecified,
+        disabledContainerColor: Color = Color.Unspecified,
+        disabledLeadingIconColor: Color = Color.Unspecified,
+        disabledTrailingContentColor: Color = Color.Unspecified,
+        selectedTextColor: Color = Color.Unspecified,
+        selectedContainerColor: Color = Color.Unspecified,
+        selectedLeadingIconColor: Color = Color.Unspecified,
+        selectedTrailingContentColor: Color = Color.Unspecified,
+    ): SelectableMenuItemColors =
         MaterialTheme.colorScheme.defaultMenuSelectableItemVibrantColors.copy(
             textColor = textColor,
             containerColor = containerColor,
             leadingIconColor = leadingIconColor,
-            trailingIconColor = trailingIconColor,
+            trailingContentColor = trailingContentColor,
             disabledTextColor = disabledTextColor,
+            disabledContainerColor = disabledContainerColor,
             disabledLeadingIconColor = disabledLeadingIconColor,
-            disabledTrailingIconColor = disabledTrailingIconColor,
-            selectedContainerColor = selectedContainerColor,
+            disabledTrailingContentColor = disabledTrailingContentColor,
             selectedTextColor = selectedTextColor,
+            selectedContainerColor = selectedContainerColor,
             selectedLeadingIconColor = selectedLeadingIconColor,
-            selectedTrailingIconColor = selectedTrailingIconColor,
+            selectedTrailingContentColor = selectedTrailingContentColor,
         )
+
+    /**
+     * Creates a [MenuItemColors] that represents the default text, icon, and container colors used
+     * in a vibrant color variant [DropdownMenuItem]. This uses the Color.Unspecified to mean “use
+     * the value from the source”
+     *
+     * @param textColor the text color of this [DropdownMenuItem] when enabled
+     * @param containerColor the container color of this [DropdownMenuItem] when enabled and
+     *   unselected
+     * @param leadingIconColor the leading icon color of this [DropdownMenuItem] when enabled
+     * @param trailingIconColor the trailing icon color of this [DropdownMenuItem] when enabled
+     * @param disabledTextColor the text color of this [DropdownMenuItem] when not enabled
+     * @param disabledContainerColor the container color of this [DropdownMenuItem] when not enabled
+     * @param disabledLeadingIconColor the leading icon color of this [DropdownMenuItem] when not
+     *   enabled
+     * @param disabledTrailingIconColor the trailing icon color of this [DropdownMenuItem] when not
+     *   enabled
+     * @param selectedContainerColor the container color of this [DropdownMenuItem] when enabled and
+     *   selected
+     * @param selectedTextColor the text color of this [DropdownMenuItem] when enabled and selected
+     * @param selectedLeadingIconColor the leading icon color of this [DropdownMenuItem] when
+     *   enabled and selected
+     * @param selectedTrailingIconColor the trailing icon color of this [DropdownMenuItem] when
+     *   enabled and selected
+     */
+    @Deprecated("Maintained for binary compatibility.", level = DeprecationLevel.HIDDEN)
+    @JvmName("selectableItemVibrantColors")
+    @Composable
+    public fun selectableItemVibrantColorsLegacy(
+        textColor: Color = Color.Unspecified,
+        containerColor: Color = Color.Unspecified,
+        leadingIconColor: Color = Color.Unspecified,
+        trailingIconColor: Color = Color.Unspecified,
+        disabledTextColor: Color = Color.Unspecified,
+        disabledContainerColor: Color = Color.Unspecified,
+        disabledLeadingIconColor: Color = Color.Unspecified,
+        disabledTrailingIconColor: Color = Color.Unspecified,
+        selectedContainerColor: Color = Color.Unspecified,
+        selectedTextColor: Color = Color.Unspecified,
+        selectedLeadingIconColor: Color = Color.Unspecified,
+        selectedTrailingIconColor: Color = Color.Unspecified,
+    ): MenuItemColors {
+        val colors =
+            selectableItemVibrantColors(
+                textColor = textColor,
+                containerColor = containerColor,
+                leadingIconColor = leadingIconColor,
+                trailingContentColor = trailingIconColor,
+                disabledTextColor = disabledTextColor,
+                disabledContainerColor = disabledContainerColor,
+                disabledLeadingIconColor = disabledLeadingIconColor,
+                disabledTrailingContentColor = disabledTrailingIconColor,
+                selectedTextColor = selectedTextColor,
+                selectedContainerColor = selectedContainerColor,
+                selectedLeadingIconColor = selectedLeadingIconColor,
+                selectedTrailingContentColor = selectedTrailingIconColor,
+            )
+        return MenuItemColors(
+            textColor = colors.textColor,
+            leadingIconColor = colors.leadingIconColor,
+            trailingIconColor = colors.trailingContentColor,
+            disabledTextColor = colors.disabledTextColor,
+            disabledLeadingIconColor = colors.disabledLeadingIconColor,
+            disabledTrailingIconColor = colors.disabledTrailingContentColor,
+            containerColor = colors.containerColor,
+            disabledContainerColor = colors.disabledContainerColor,
+        )
+    }
+
+    /**
+     * Creates and remembers a [DropdownMenuPopupPositionProvider] that positions a dropdown menu
+     * relative to its anchor.
+     *
+     * @param dropdownMenuAnchorPosition The positioning strategy to use. This determines the
+     *   preferred alignment of the menu relative to the anchor. There are predefined positions,
+     *   please see [MenuAnchorPosition.Above], [MenuAnchorPosition.Below],
+     *   [MenuAnchorPosition.Left], [MenuAnchorPosition.Right], [MenuAnchorPosition.Start], and
+     *   [MenuAnchorPosition.End]. A custom positioning can also be defined through the use of
+     *   [MenuAnchorPosition.Custom].
+     * @param offset An optional [DpOffset] to apply to the final calculated position.
+     */
+    @Composable
+    public fun rememberDropdownMenuPopupPositionProvider(
+        dropdownMenuAnchorPosition: MenuAnchorPosition,
+        offset: DpOffset = DpOffset(0.dp, 0.dp),
+    ): DropdownMenuPopupPositionProvider {
+        val density = LocalDensity.current
+        return remember(dropdownMenuAnchorPosition, offset, density) {
+            DropdownMenuPositionProvider(
+                dropdownMenuAnchorPosition = dropdownMenuAnchorPosition,
+                contentOffset = offset,
+                density = density,
+            )
+        }
+    }
 
     internal val ColorScheme.defaultMenuItemColors: MenuItemColors
         get() {
@@ -540,41 +761,9 @@ object MenuDefaults {
                     .also { defaultMenuItemColorsCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    internal val ColorScheme.defaultMenuSelectableItemColors: MenuItemColors
+    internal val ColorScheme.defaultMenuItemVibrantColors: MenuItemColors
         get() {
-            return defaultMenuSelectableItemColorsCached
-                ?: MenuItemColors(
-                        textColor = fromToken(StandardMenuTokens.ItemLabelTextColor),
-                        containerColor = fromToken(StandardMenuTokens.ContainerColor),
-                        leadingIconColor = fromToken(StandardMenuTokens.ItemLeadingIconColor),
-                        trailingIconColor = fromToken(StandardMenuTokens.ItemTrailingIconColor),
-                        disabledTextColor =
-                            fromToken(StandardMenuTokens.ItemDisabledLabelTextColor)
-                                .copy(alpha = StandardMenuTokens.ItemDisabledLabelTextOpacity),
-                        disabledLeadingIconColor =
-                            fromToken(StandardMenuTokens.ItemDisabledLeadingIconColor)
-                                .copy(alpha = StandardMenuTokens.ItemDisabledLeadingIconOpacity),
-                        disabledTrailingIconColor =
-                            fromToken(StandardMenuTokens.ItemDisabledTrailingIconColor)
-                                .copy(alpha = StandardMenuTokens.ItemDisabledTrailingIconOpacity),
-                        disabledContainerColor = fromToken(StandardMenuTokens.ContainerColor),
-                        selectedTextColor =
-                            fromToken(StandardMenuTokens.ItemSelectedLabelTextColor),
-                        selectedContainerColor =
-                            fromToken(StandardMenuTokens.ItemSelectedContainerColor),
-                        selectedLeadingIconColor =
-                            fromToken(StandardMenuTokens.ItemSelectedLeadingIconColor),
-                        selectedTrailingIconColor =
-                            fromToken(StandardMenuTokens.ItemSelectedTrailingIconColor),
-                    )
-                    .also { defaultMenuSelectableItemColorsCached = it }
-        }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    internal val ColorScheme.defaultMenuSelectableItemVibrantColors: MenuItemColors
-        get() {
-            return defaultMenuSelectableItemVibrantColorsCached
+            return defaultMenuItemVibrantColorsCached
                 ?: MenuItemColors(
                         textColor = fromToken(VibrantMenuTokens.ItemLabelTextColor),
                         containerColor = fromToken(VibrantMenuTokens.ContainerColor),
@@ -590,44 +779,114 @@ object MenuDefaults {
                             fromToken(VibrantMenuTokens.ItemDisabledTrailingIconColor)
                                 .copy(alpha = VibrantMenuTokens.ItemDisabledTrailingIconOpacity),
                         disabledContainerColor = fromToken(VibrantMenuTokens.ContainerColor),
+                    )
+                    .also { defaultMenuItemVibrantColorsCached = it }
+        }
+
+    internal val ColorScheme.defaultMenuSelectableItemColors: SelectableMenuItemColors
+        get() {
+            return defaultMenuSelectableItemColorsCached
+                ?: SelectableMenuItemColors(
+                        textColor = fromToken(StandardMenuTokens.ItemLabelTextColor),
+                        containerColor = fromToken(StandardMenuTokens.ContainerColor),
+                        leadingIconColor = fromToken(StandardMenuTokens.ItemLeadingIconColor),
+                        trailingContentColor = fromToken(StandardMenuTokens.ItemTrailingIconColor),
+                        disabledTextColor =
+                            fromToken(StandardMenuTokens.ItemDisabledLabelTextColor)
+                                .copy(alpha = StandardMenuTokens.ItemDisabledLabelTextOpacity),
+                        disabledLeadingIconColor =
+                            fromToken(StandardMenuTokens.ItemDisabledLeadingIconColor)
+                                .copy(alpha = StandardMenuTokens.ItemDisabledLeadingIconOpacity),
+                        disabledTrailingContentColor =
+                            fromToken(StandardMenuTokens.ItemDisabledTrailingIconColor)
+                                .copy(alpha = StandardMenuTokens.ItemDisabledTrailingIconOpacity),
+                        disabledContainerColor = fromToken(StandardMenuTokens.ContainerColor),
+                        selectedTextColor =
+                            fromToken(StandardMenuTokens.ItemSelectedLabelTextColor),
+                        selectedContainerColor =
+                            fromToken(StandardMenuTokens.ItemSelectedContainerColor),
+                        selectedLeadingIconColor =
+                            fromToken(StandardMenuTokens.ItemSelectedLeadingIconColor),
+                        selectedTrailingContentColor =
+                            fromToken(StandardMenuTokens.ItemSelectedTrailingIconColor),
+                    )
+                    .also { defaultMenuSelectableItemColorsCached = it }
+        }
+
+    internal val ColorScheme.defaultMenuSelectableItemVibrantColors: SelectableMenuItemColors
+        get() {
+            return defaultMenuSelectableItemVibrantColorsCached
+                ?: SelectableMenuItemColors(
+                        textColor = fromToken(VibrantMenuTokens.ItemLabelTextColor),
+                        containerColor = fromToken(VibrantMenuTokens.ContainerColor),
+                        leadingIconColor = fromToken(VibrantMenuTokens.ItemLeadingIconColor),
+                        trailingContentColor = fromToken(VibrantMenuTokens.ItemTrailingIconColor),
+                        disabledTextColor =
+                            fromToken(VibrantMenuTokens.ItemDisabledLabelTextColor)
+                                .copy(alpha = VibrantMenuTokens.ItemDisabledLabelTextOpacity),
+                        disabledLeadingIconColor =
+                            fromToken(VibrantMenuTokens.ItemDisabledLeadingIconColor)
+                                .copy(alpha = VibrantMenuTokens.ItemDisabledLeadingIconOpacity),
+                        disabledTrailingContentColor =
+                            fromToken(VibrantMenuTokens.ItemDisabledTrailingIconColor)
+                                .copy(alpha = VibrantMenuTokens.ItemDisabledTrailingIconOpacity),
+                        disabledContainerColor = fromToken(VibrantMenuTokens.ContainerColor),
                         selectedTextColor = fromToken(VibrantMenuTokens.ItemSelectedLabelTextColor),
                         selectedContainerColor =
                             fromToken(VibrantMenuTokens.ItemSelectedContainerColor),
                         selectedLeadingIconColor =
                             fromToken(VibrantMenuTokens.ItemSelectedLeadingIconColor),
-                        selectedTrailingIconColor =
+                        selectedTrailingContentColor =
                             fromToken(VibrantMenuTokens.ItemSelectedTrailingIconColor),
                     )
                     .also { defaultMenuSelectableItemVibrantColorsCached = it }
         }
 
+    /** Default horizontal arrangement for a menu item. */
+    public val DropdownMenuItemHorizontalArrangement: Arrangement.Horizontal
+        get() = itemHorizontalArrangement()
+
+    internal fun itemHorizontalArrangement(
+        hasLeadingIcon: Boolean = true,
+        hasTrailingIcon: Boolean = true,
+    ): Arrangement.Horizontal {
+        val spacing = if (shouldUsePrecisionPointerComponentSizing.value) 12.dp else 8.dp
+        return MenuArrangement(spacing, hasLeadingIcon, hasTrailingIcon)
+    }
+
     /** Default padding used for [DropdownMenuItem]. */
-    val DropdownMenuItemContentPadding =
+    public val DropdownMenuItemContentPadding: PaddingValues =
         PaddingValues(horizontal = DropdownMenuItemHorizontalPadding, vertical = 0.dp)
 
     private val SelectableItemVerticalPadding = 12.dp
 
-    /** Default padding used for [DropdownMenuItem] that are selectable. */
-    val DropdownMenuSelectableItemContentPadding =
-        if (shouldUsePrecisionPointerComponentSizing.value) {
-            PaddingValues(
-                start = 16.dp,
-                end = 10.dp,
-                top = SelectableItemVerticalPadding,
-                bottom = SelectableItemVerticalPadding,
-            )
-        } else {
-            PaddingValues(
-                horizontal = DropdownMenuItemHorizontalPadding,
-                vertical = SelectableItemVerticalPadding,
-            )
-        }
+    /**
+     * Default padding used for [SelectableDropdownMenuItem] and [CheckableDropdownMenuItem] (or
+     * [DropdownMenuItem] with custom shapes).
+     */
+    public val DropdownMenuSelectableItemContentPadding: PaddingValues
+        get() =
+            if (shouldUsePrecisionPointerComponentSizing.value) {
+                PaddingValues(
+                    start = 16.dp,
+                    end = 10.dp,
+                    top = SelectableItemVerticalPadding,
+                    bottom = SelectableItemVerticalPadding,
+                )
+            } else {
+                PaddingValues(
+                    horizontal = DropdownMenuItemHorizontalPadding,
+                    vertical = SelectableItemVerticalPadding,
+                )
+            }
 
     /** Default padding used for [DropdownMenuGroup]. */
-    val DropdownMenuGroupContentPadding =
+    public val DropdownMenuGroupContentPadding: PaddingValues =
         PaddingValues(horizontal = 0.dp, vertical = DropdownMenuGroupVerticalPadding)
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal val dropdownMenuIconTextPadding
+        get() = if (shouldUsePrecisionPointerComponentSizing.value) 12.dp else 8.dp
+
     internal val Shapes.defaultMenuStandaloneItemShapes: MenuItemShapes
         get() {
             return defaultMenuStandaloneItemShapesCached
@@ -638,7 +897,6 @@ object MenuDefaults {
                     .also { defaultMenuStandaloneItemShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuLeadingItemShapes: MenuItemShapes
         get() {
             return defaultMenuLeadingItemShapesCached
@@ -655,7 +913,6 @@ object MenuDefaults {
                     .also { defaultMenuLeadingItemShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuMiddleItemShapes: MenuItemShapes
         get() {
             return defaultMenuMiddleItemShapesCached
@@ -666,7 +923,6 @@ object MenuDefaults {
                     .also { defaultMenuMiddleItemShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuTrailingItemShapes: MenuItemShapes
         get() {
             return defaultMenuTrailingItemShapesCached
@@ -683,7 +939,6 @@ object MenuDefaults {
                     .also { defaultMenuTrailingItemShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuStandaloneGroupShapes: MenuGroupShapes
         get() {
             return defaultMenuStandaloneGroupShapesCached
@@ -694,7 +949,6 @@ object MenuDefaults {
                     .also { defaultMenuStandaloneGroupShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuLeadingGroupShapes: MenuGroupShapes
         get() {
             return defaultMenuLeadingGroupShapesCached
@@ -711,7 +965,6 @@ object MenuDefaults {
                     .also { defaultMenuLeadingGroupShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuMiddleGroupShapes: MenuGroupShapes
         get() {
             return defaultMenuMiddleGroupShapesCached
@@ -722,7 +975,6 @@ object MenuDefaults {
                     .also { defaultMenuMiddleGroupShapesCached = it }
         }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     internal val Shapes.defaultMenuTrailingGroupShapes: MenuGroupShapes
         get() {
             return defaultMenuTrailingGroupShapesCached

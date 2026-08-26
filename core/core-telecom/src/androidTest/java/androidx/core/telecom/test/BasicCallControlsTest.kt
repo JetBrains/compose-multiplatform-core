@@ -16,6 +16,7 @@
 
 package androidx.core.telecom.test
 
+import android.media.ToneGenerator
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.telecom.Call
@@ -408,6 +409,92 @@ class BasicCallControlsTest : BaseTelecomTest() {
     }
 
     /**
+     * Assert that an outgoing audio call settles on the earpiece endpoint and remains an audio
+     * call, recovering from any platform bugs that might incorrectly upgrade the call to video and
+     * speaker.
+     */
+    @SdkSuppress(minSdkVersion = VERSION_CODES.VANILLA_ICE_CREAM)
+    @LargeTest
+    @Test(timeout = 15000)
+    fun testOutgoingAudioCall_EnforcesEarpieceAndAudio() {
+        runBlocking {
+            val audioOutgoingAttributes =
+                CallAttributesCompat(
+                    OUTGOING_NAME,
+                    TEST_ADDRESS,
+                    CallAttributesCompat.DIRECTION_OUTGOING,
+                    CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
+                    ALL_CALL_CAPABILITIES,
+                )
+
+            usingIcs { ics ->
+                assertWithinTimeout_addCall(audioOutgoingAttributes) {
+                    launch {
+                        val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)
+                        assertNotNull("The returned Call object is <NULL>", call)
+                        assertEquals(CallControlResult.Success(), setActive())
+                        TestUtils.waitOnCallState(call!!, Call.STATE_ACTIVE)
+
+                        val availableEndpointsList = availableEndpoints.first()
+                        // only run the following asserts if theres another endpoint available
+                        // (This will most likely the speaker endpoint)
+                        if (availableEndpointsList.size > 1) {
+                            var settledEndpoint: CallEndpointCompat? = null
+                            var settledCallType: Int = CallAttributesCompat.CALL_TYPE_AUDIO_CALL
+
+                            // 1. Collect updates in the background. If the platform bugs out and
+                            // tries to force the call to VIDEO and SPEAKER, the jetpack layer
+                            // should intercept it and force it back to AUDIO and EARPIECE.
+                            val endpointCollectorJob = launch {
+                                currentCallEndpoint.collect { endpoint ->
+                                    settledEndpoint = endpoint
+                                }
+                            }
+                            val callTypeCollectorJob = launch {
+                                callTypeFlow().collect { type -> settledCallType = type }
+                            }
+
+                            // 2. Allow time for the platform to exhibit any buggy behavior
+                            // and for our Jetpack workaround to intercept and fix it.
+                            delay(3000)
+
+                            // 3. Stop collecting now that the route should be stable
+                            endpointCollectorJob.cancel()
+                            callTypeCollectorJob.cancel()
+
+                            // 4. Assert the finalized state is correct
+                            assertNotNull("Never received an endpoint update", settledEndpoint)
+                            assertEquals(
+                                "Audio call routing failed to settle on the EARPIECE endpoint",
+                                CallEndpointCompat.TYPE_EARPIECE,
+                                settledEndpoint?.type,
+                            )
+
+                            assertEquals(
+                                "Call type unexpectedly changed from AUDIO",
+                                CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
+                                settledCallType,
+                            )
+                        } else {
+                            Log.i(
+                                TAG,
+                                "testOutgoingAudioCall_EnforcesEarpieceAndAudio:" +
+                                    "No other endpoint available to switch to",
+                            )
+                        }
+
+                        // Clean up
+                        assertEquals(
+                            CallControlResult.Success(),
+                            disconnect(DisconnectCause(DisconnectCause.LOCAL)),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * ********************************************************************************************
      * Helpers
      * *******************************************************************************************
@@ -607,5 +694,96 @@ class BasicCallControlsTest : BaseTelecomTest() {
             }
         }
         return null
+    }
+
+    /**
+     * Verifies that calling CallControlScope.disconnect with DisconnectCause.ERROR maps the cause
+     * to DisconnectCause.LOCAL on SDK < 38 and disconnects successfully using V2 APIs.
+     */
+    @SdkSuppress(minSdkVersion = VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testDisconnectWithErrorCause() {
+        runBlocking {
+            usingIcs { ics ->
+                mCallsManager.addCall(
+                    TestUtils.INCOMING_CALL_ATTRIBUTES,
+                    TestUtils.mOnAnswerLambda,
+                    TestUtils.mOnDisconnectLambda,
+                    TestUtils.mOnSetActiveLambda,
+                    TestUtils.mOnSetInActiveLambda,
+                ) {
+                    launch {
+                        val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)
+                        assertNotNull("The returned Call object is <NULL>", call)
+                        assertEquals(CallControlResult.Success(), setActive())
+                        TestUtils.waitOnCallState(call!!, Call.STATE_ACTIVE)
+
+                        // Disconnect the call with ERROR disconnect cause:
+                        val errorCause =
+                            DisconnectCause(
+                                DisconnectCause.ERROR,
+                                "label",
+                                "description",
+                                "reason",
+                                ToneGenerator.TONE_PROP_BEEP,
+                            )
+                        assertEquals(CallControlResult.Success(), disconnect(errorCause))
+                        TestUtils.waitOnCallState(call, Call.STATE_DISCONNECTED)
+                        if (Build.VERSION.SDK_INT < 38) {
+                            assertEquals(DisconnectCause.LOCAL, call.details.disconnectCause.code)
+                        } else {
+                            assertEquals(DisconnectCause.ERROR, call.details.disconnectCause.code)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Verifies that calling CallControlScope.disconnect with DisconnectCause.ERROR maps the cause
+     * to DisconnectCause.LOCAL and disconnects successfully using legacy ConnectionService APIs.
+     */
+    @SdkSuppress(minSdkVersion = VERSION_CODES.O)
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testDisconnectWithErrorCause_BackwardsCompat() {
+        setUpBackwardsCompatTest()
+        runBlocking {
+            usingIcs { ics ->
+                mCallsManager.addCall(
+                    TestUtils.INCOMING_CALL_ATTRIBUTES,
+                    TestUtils.mOnAnswerLambda,
+                    TestUtils.mOnDisconnectLambda,
+                    TestUtils.mOnSetActiveLambda,
+                    TestUtils.mOnSetInActiveLambda,
+                ) {
+                    launch {
+                        val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)
+                        assertNotNull("The returned Call object is <NULL>", call)
+                        assertEquals(CallControlResult.Success(), setActive())
+                        TestUtils.waitOnCallState(call!!, Call.STATE_ACTIVE)
+
+                        // Disconnect the call with ERROR disconnect cause:
+                        val errorCause =
+                            DisconnectCause(
+                                DisconnectCause.ERROR,
+                                "label",
+                                "description",
+                                "reason",
+                                ToneGenerator.TONE_PROP_BEEP,
+                            )
+                        assertEquals(CallControlResult.Success(), disconnect(errorCause))
+                        TestUtils.waitOnCallState(call, Call.STATE_DISCONNECTED)
+                        if (Build.VERSION.SDK_INT < 38) {
+                            assertEquals(DisconnectCause.LOCAL, call.details.disconnectCause.code)
+                        } else {
+                            assertEquals(DisconnectCause.ERROR, call.details.disconnectCause.code)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

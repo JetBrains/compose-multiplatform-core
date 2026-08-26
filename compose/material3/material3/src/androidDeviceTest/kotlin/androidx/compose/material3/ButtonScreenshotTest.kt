@@ -22,8 +22,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
@@ -36,7 +42,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +51,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ButtonScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -60,6 +65,39 @@ class ButtonScreenshotTest {
             .onNode(hasClickAction())
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "button_light_theme")
+    }
+
+    @Test
+    fun default_Button_lightTheme_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+
+                Button(
+                    onClick = { /* doSomething() */ },
+                    modifier = Modifier.focusRequester(focusRequester).testTag("default button"),
+                ) {
+                    Text("Button")
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule
+            .onNodeWithTag("default button")
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "button_lightTheme_focused_insetFocusRings")
     }
 
     @Test
@@ -168,6 +206,42 @@ class ButtonScreenshotTest {
             .onNode(hasClickAction())
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "outlined_button_light_theme")
+    }
+
+    @Test
+    fun outlinedButton_lightTheme_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+
+                OutlinedButton(
+                    onClick = { /* doSomething() */ },
+                    modifier = Modifier.focusRequester(focusRequester).testTag("outlined button"),
+                ) {
+                    Text("Outlined Button")
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule
+            .onNodeWithTag("outlined button")
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "outlined_button_lightTheme_focused_insetFocusRings",
+            )
     }
 
     @Test
@@ -310,7 +384,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "button_withIcon_disabled_darkTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun button_withAnimatedShape_default_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -329,7 +402,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "button_withAnimatedShape_default_lightTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun button_withAnimatedShape_default_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -348,7 +420,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "button_withAnimatedShape_default_darkTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun elevatedButton_withAnimatedShape_default_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -370,7 +441,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun elevatedButton_withAnimatedShape_default_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -392,7 +462,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun filledTonalButton_withAnimatedShape_default_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -414,11 +483,10 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun filledTonalButton_withAnimatedShape_default_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
-            Button(
+            FilledTonalButton(
                 onClick = {},
                 shapes = ButtonDefaults.shapes(),
                 modifier = Modifier.testTag(buttonTestTag),
@@ -436,7 +504,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun outlinedButton_withAnimatedShape_default_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -458,7 +525,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun outlinedButton_withAnimatedShape_default_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -480,7 +546,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun textButton_withAnimatedShape_default_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -499,7 +564,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "textButton_withAnimatedShape_default_lightTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun textButton_withAnimatedShape_default_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -518,7 +582,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "textButton_withAnimatedShape_default_darkTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun button_withAnimatedShape_pressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -548,7 +611,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "button_withAnimatedShape_pressed_lightTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun button_withAnimatedShape_pressed_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -578,7 +640,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "button_withAnimatedShape_pressed_darkTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun elevatedButton_withAnimatedShape_pressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -611,7 +672,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun elevatedButton_withAnimatedShape_pressed_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -644,7 +704,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun filledTonalButton_withAnimatedShape_pressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -677,7 +736,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun filledTonalButton_withAnimatedShape_pressed_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -710,7 +768,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun outlinedButton_withAnimatedShape_pressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -743,7 +800,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun outlinedButton_withAnimatedShape_pressed_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {
@@ -776,7 +832,6 @@ class ButtonScreenshotTest {
             )
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun textButton_withAnimatedShape_pressed_lightTheme() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -806,7 +861,6 @@ class ButtonScreenshotTest {
             .assertAgainstGolden(screenshotRule, "textButton_withAnimatedShape_pressed_lightTheme")
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun textButton_withAnimatedShape_pressed_darkTheme() {
         rule.setMaterialContent(darkColorScheme()) {

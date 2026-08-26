@@ -234,6 +234,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"پیغام یہاں جاتا ہے۔\nدوسری لان پر مزید ٹیکسٹ۔"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"پیغام کی تمثیل کا ڈیمو ترتیب دیں"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"سیکشن کردہ آئٹم کی تمثیل کا ڈیمو"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"مختصر آئٹم ڈیمو"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"‏سیکشن کردہ آئٹم AlphaJump فعال کردہ ڈیمو"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ریڈیو بٹن کا سیکشن"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"سیکشن ٹوگل کریں"</string>
@@ -244,9 +245,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"فہرست 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"ہر فہرست کے نیچے ذیلی ٹیکسٹ"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"تصویر اور کارروائیوں کا ڈیمو ختم کریں"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"چِپ ڈیمو"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"پیش رفت بار کا ڈیمو"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"سیکشن ہیڈر ڈیمو"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"اسپاٹ لائٹ سیکشن کا ڈیمو"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"پین کی تمثیل کا ڈیمو"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"مقام کی فہرست کی تمثیل کا ڈیمو"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"مقامات براؤز کریں"</string>
@@ -375,6 +377,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"تازہ ترین خصوصیات"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"لوڈنگ فعال ہے"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"لوڈنگ غیر فعال ہے"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"ایپ تھیم استعمال کریں"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"ایپ تھیم فعال ہو گئی"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"ایپ تھیم غیر فعال ہو گئی"</string>
     <string name="loading_screen" msgid="4771507490730308794">"اسکرین لوڈ ہو رہی ہے"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"رنگ کو شامل/ہٹانے کے لیے ٹوگل کریں"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"ٹوگلز کے ساتھ نقشے کی تمثیل"</string>
@@ -386,4 +391,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"مواد کے ڈیموز والا نقشہ"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"پیغام کی تمثیل کے ڈیمو والا نقشہ"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"گرڈ کی تمثیل کے ڈیمو والا نقشہ"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"سیکشن کردہ آئٹمز کی فہرست کے ساتھ نقشہ"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"بینر ڈیمو"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"بہتر کردہ ہیڈر ڈیمو"</string>
 </resources>

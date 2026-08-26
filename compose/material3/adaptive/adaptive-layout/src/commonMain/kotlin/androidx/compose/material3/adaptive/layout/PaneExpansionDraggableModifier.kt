@@ -84,7 +84,7 @@ internal fun Modifier.paneExpansionDraggable(
 )
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun PaneExpansionState.defaultDragHandleSemantics(): SemanticsPropertyReceiver.() -> Unit {
+public fun PaneExpansionState.defaultDragHandleSemantics(): SemanticsPropertyReceiver.() -> Unit {
     val coroutineScope = rememberCoroutineScope()
     val contentDesc = getString(Strings.defaultPaneExpansionDragHandleContentDescription)
     val currentAnchor = currentAnchor
@@ -145,6 +145,7 @@ private data class MinTouchTargetSizeElement(val size: Dp) :
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private class MinTouchTargetSizeNode(var size: Dp) : ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
         ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {

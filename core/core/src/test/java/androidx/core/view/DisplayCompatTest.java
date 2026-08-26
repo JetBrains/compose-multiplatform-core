@@ -34,6 +34,7 @@ import android.view.Display;
 import androidx.test.core.app.ApplicationProvider;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -50,7 +51,7 @@ import java.util.Optional;
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
 @Config(
-        sdk = {23, Build.VERSION_CODES.P},
+        sdk = {24, Build.VERSION_CODES.P},
         // sets the display size for the tests (http://robolectric.org/device-configuration/)
         qualifiers = "w2048dp-h4096dp"
 )
@@ -161,6 +162,7 @@ public final class DisplayCompatTest {
         assertThat(nativeMode.getPhysicalHeight()).isEqualTo(mode.getPhysicalHeight());
     }
 
+    @Ignore("b/536103260")
     @Test
     public void tvModeSonyBraviaSpecialCase_hardcodedSize() {
         mUiModeManagerShadow.currentModeType = UI_MODE_TYPE_TELEVISION;

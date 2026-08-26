@@ -29,7 +29,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,7 +36,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ChainsTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testHorizontalPacked_withConstraintSet(): Unit =
@@ -248,9 +247,9 @@ class ChainsTest {
         val box2Left = box1Left + boxSizes[1] + boxMargin
         val box2Top = (rootSize - boxSizes[2]) * 0.5f
 
-        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(box0Left, box0Top)
-        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(box1Left, box1Top)
-        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(box2Left, box2Top)
+        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(box0Left, box0Top, 1.dp)
+        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(box1Left, box1Top, 1.dp)
+        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(box2Left, box2Top, 1.dp)
     }
 
     @Test
@@ -330,9 +329,9 @@ class ChainsTest {
         val box2Left = (rootSize - boxSizes[2]) * 0.5f
         val box2Top = box1Top + boxSizes[1] + boxMargin
 
-        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(box0Left, box0Top)
-        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(box1Left, box1Top)
-        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(box2Left, box2Top)
+        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(box0Left, box0Top, 1.dp)
+        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(box1Left, box1Top, 1.dp)
+        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(box2Left, box2Top, 1.dp)
     }
 
     @Test

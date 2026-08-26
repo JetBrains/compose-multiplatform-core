@@ -28,6 +28,8 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.URI_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.URI_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.toAppFunctionDatatype
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
@@ -54,6 +56,7 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.KSValueParameter
+import java.util.ArrayList
 
 /**
  * A helper class that provides methods to construct
@@ -128,7 +131,7 @@ class AppFunctionMetadataCreatorHelper(
      *   interface types. The @AppFunctionSerializableInterface should only be considered as a
      *   supported type when processing schema definitions.
      * @param parameterDescriptionMap a mapping of the function's parameter names to their
-     *   descriptions.
+     *   descriptions from KDoc.
      * @return A list of [AppFunctionParameterMetadata].
      */
     fun buildParameterTypeMetadataList(
@@ -159,12 +162,22 @@ class AppFunctionMetadataCreatorHelper(
                         parameter.annotations,
                     )
 
+            val overrideInstruction =
+                parameter.annotations
+                    .findAnnotation(IntrospectionHelper.AppFunctionInstructionAnnotation.CLASS_NAME)
+                    ?.requirePropertyValueOfType(
+                        IntrospectionHelper.AppFunctionInstructionAnnotation.PROPERTY_INSTRUCTION,
+                        String::class,
+                    )
+
             add(
                 AppFunctionParameterMetadata(
                     name = checkNotNull(parameter.name).asString(),
                     isRequired = !parameter.isEffectivelyOptional(),
                     dataType = dataTypeMetadata,
-                    description = parameterDescriptionMap[parameter.name?.asString()].orEmpty(),
+                    description =
+                        overrideInstruction
+                            ?: parameterDescriptionMap[parameter.name?.asString()].orEmpty(),
                 )
             )
         }
@@ -377,6 +390,25 @@ class AppFunctionMetadataCreatorHelper(
                     description = description,
                 )
             }
+            URI_SINGULAR ->
+                buildUriObjectTypeMetadata(
+                    annotations,
+                    isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
+                )
+            URI_LIST ->
+                AppFunctionArrayTypeMetadata(
+                    itemType =
+                        buildUriObjectTypeMetadata(
+                            annotations,
+                            isNullable =
+                                AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
+                                    .isNullable,
+                            description = "",
+                        ),
+                    isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
+                )
             PARCELABLE_SINGULAR ->
                 AppFunctionParcelableTypeMetadata(
                     qualifiedName =
@@ -474,6 +506,50 @@ class AppFunctionMetadataCreatorHelper(
             )
     }
 
+    private fun buildUriObjectTypeMetadata(
+        annotations: Sequence<KSAnnotation>,
+        isNullable: Boolean,
+        description: String,
+    ): AppFunctionObjectTypeMetadata {
+        val uriConstraint =
+            annotations.findAnnotation(
+                IntrospectionHelper.AppFunctionUriValueConstraintAnnotation.CLASS_NAME
+            )
+        val allowedSchemes =
+            uriConstraint
+                ?.requirePropertyValueOfType(
+                    IntrospectionHelper.AppFunctionUriValueConstraintAnnotation
+                        .PROPERTY_ALLOWED_SCHEMES,
+                    ArrayList::class,
+                )
+                ?.filterIsInstance<String>() ?: emptyList()
+
+        val pattern = buildAllowedSchemeRegex(allowedSchemes)
+
+        val uriStringMetadata =
+            AppFunctionStringTypeMetadata(
+                isNullable = false,
+                description = "",
+                pattern = pattern,
+                format = AppFunctionStringTypeMetadata.FORMAT_URI,
+            )
+        return AppFunctionObjectTypeMetadata(
+            properties = mapOf(IntrospectionHelper.UriClass.PROPERTY_URI_NAME to uriStringMetadata),
+            required = listOf(IntrospectionHelper.UriClass.PROPERTY_URI_NAME),
+            qualifiedName = IntrospectionHelper.UriClass.URI_CLASS_NAME.canonicalName,
+            isNullable = isNullable,
+            description = description,
+        )
+    }
+
+    private fun buildAllowedSchemeRegex(allowedSchemes: List<String>): String? {
+        return when (allowedSchemes.size) {
+            0 -> null
+            1 -> "^${Regex.escape(allowedSchemes.single())}:.*"
+            else -> "^(${allowedSchemes.joinToString("|") { scheme -> Regex.escape(scheme) }}):.*"
+        }
+    }
+
     /**
      * Adds the [AppFunctionDataTypeMetadata] for a serializable/capability type to the shared data
      * type map.
@@ -519,6 +595,7 @@ class AppFunctionMetadataCreatorHelper(
             } else {
                 annotatedSerializable.jvmQualifiedName
             }
+
         // This type has already been added to the sharedDataMap.
         if (seenDataTypeQualifiers.contains(serializableTypeQualifiedName)) {
             return
@@ -553,7 +630,6 @@ class AppFunctionMetadataCreatorHelper(
             // serializable to match.
             val matchAllSuperTypesList: List<AppFunctionDataTypeMetadata> = buildList {
                 for (serializableSuperType in superTypesWithSerializableAnnotation) {
-
                     addSerializableTypeMetadataToSharedDataTypeMap(
                         AnnotatedAppFunctionSerializable(serializableSuperType),
                         unvisitedSerializableProperties,
@@ -584,7 +660,7 @@ class AppFunctionMetadataCreatorHelper(
                             capabilitySuperType
                                 .getDeclaredProperties()
                                 .map {
-                                    AppFunctionPropertyDeclaration(
+                                    AppFunctionPropertyDeclaration.create(
                                         property = it,
                                         isDescribedByKDoc = false,
                                         // Property from interface is always required as there is
@@ -718,10 +794,7 @@ class AppFunctionMetadataCreatorHelper(
                             seenDataTypeQualifiers,
                             resolvedAnnotatedSerializableProxies,
                             allowSerializableInterfaceTypes,
-                            // Remove type parameter in case of generic type.
-                            sharedDataTypeDescriptionMap[
-                                "${serializableTypeQualifiedName.substringBefore("<")}#${property.name}"]
-                                ?: "",
+                            description = property.description,
                             annotations = property.propertyAnnotations,
                         )
                     put(property.name, innerAppFunctionDataTypeMetadata)
@@ -745,11 +818,13 @@ class AppFunctionMetadataCreatorHelper(
     private fun AppFunctionTypeReference.toAppFunctionDataType(): Int {
         return when (this.typeCategory) {
             PRIMITIVE_SINGULAR -> selfTypeReference.toAppFunctionDatatype()
+            URI_SINGULAR,
             SERIALIZABLE_INTERFACE_SINGULAR,
             SERIALIZABLE_PROXY_SINGULAR,
             SERIALIZABLE_SINGULAR -> AppFunctionObjectTypeMetadata.TYPE
             PRIMITIVE_ARRAY,
             PRIMITIVE_LIST,
+            URI_LIST,
             SERIALIZABLE_INTERFACE_LIST,
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> AppFunctionArrayTypeMetadata.TYPE
@@ -762,11 +837,13 @@ class AppFunctionMetadataCreatorHelper(
         return when (this.typeCategory) {
             SERIALIZABLE_INTERFACE_LIST,
             SERIALIZABLE_PROXY_LIST,
-            SERIALIZABLE_LIST -> AppFunctionObjectTypeMetadata.TYPE
+            SERIALIZABLE_LIST,
+            URI_LIST -> AppFunctionObjectTypeMetadata.TYPE
             PRIMITIVE_ARRAY -> selfTypeReference.toAppFunctionDatatype()
             PRIMITIVE_LIST -> itemTypeReference.toAppFunctionDatatype()
             PARCELABLE_LIST -> AppFunctionParcelableTypeMetadata.TYPE
             PRIMITIVE_SINGULAR,
+            URI_SINGULAR,
             SERIALIZABLE_INTERFACE_SINGULAR,
             SERIALIZABLE_PROXY_SINGULAR,
             SERIALIZABLE_SINGULAR,

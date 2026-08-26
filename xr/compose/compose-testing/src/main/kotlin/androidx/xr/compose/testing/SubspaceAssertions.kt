@@ -16,129 +16,112 @@
 
 package androidx.xr.compose.testing
 
-import android.content.res.Resources
-import androidx.annotation.RestrictTo
+import androidx.compose.ui.test.assertIsEqualTo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Entity
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import kotlin.math.abs
-
-/**
- * Asserts that the Entity associated with the current Subspace layout node is a direct descendant
- * of the [expectedAncestor] Entity.
- *
- * @param expectedAncestor the ancestor entity that is expected to be found in the current
- *   hierarchy.
- * @throws AssertionError if no entity is found or the expected ancestor is not in the current
- *   entities' hierarchy.
- */
-@CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SubspaceSemanticsNodeInteraction.assertEntityIsDescendantOf(
-    expectedAncestor: Entity
-): SubspaceSemanticsNodeInteraction {
-    val entity =
-        fetchSemanticsNode().semanticsEntity
-            ?: throw AssertionError("Did not find an associated entity for $this.")
-
-    var current: Entity? = entity
-    while (current != null) {
-        if (current == expectedAncestor) {
-            return this // Found the ancestor
-        }
-        current = current.parent
-    }
-    throw AssertionError(
-        "Entity $entity of $this is not a descendant of the expected ancestor $expectedAncestor."
-    )
-}
 
 /**
  * Asserts that the layout of this node has width equal to [expectedWidth].
  *
  * @param expectedWidth The width to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertWidthIsEqualTo(
-    expectedWidth: Dp
+    expectedWidth: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.width.assertIsEqualTo(expectedWidth, "width") }
+    return withSize { it.width.assertIsEqualTo(expectedWidth, "width", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has width that is NOT equal to [expectedWidth].
  *
  * @param expectedWidth The width to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertWidthIsNotEqualTo(
-    expectedWidth: Dp
+    expectedWidth: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.width.assertIsNotEqualTo(expectedWidth, "width") }
+    return withSize { it.width.assertIsNotEqualTo(expectedWidth, "width", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has height equal to [expectedHeight].
  *
  * @param expectedHeight The height to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
+ * @sample androidx.xr.compose.testing.samples.subspaceNodeMatcherProperties
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertHeightIsEqualTo(
-    expectedHeight: Dp
+    expectedHeight: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.height.assertIsEqualTo(expectedHeight, "height") }
+    return withSize { it.height.assertIsEqualTo(expectedHeight, "height", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has height that is NOT equal to [expectedHeight].
  *
  * @param expectedHeight The height to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertHeightIsNotEqualTo(
-    expectedHeight: Dp
+    expectedHeight: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.height.assertIsNotEqualTo(expectedHeight, "height") }
+    return withSize { it.height.assertIsNotEqualTo(expectedHeight, "height", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has depth that is NOT equal to [expectedDepth].
  *
  * @param expectedDepth The depth to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertDepthIsNotEqualTo(
-    expectedDepth: Dp
+    expectedDepth: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.depth.assertIsNotEqualTo(expectedDepth, "depth") }
+    return withSize { it.depth.assertIsNotEqualTo(expectedDepth, "depth", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has depth equal to [expectedDepth].
  *
  * @param expectedDepth The depth to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertDepthIsEqualTo(
-    expectedDepth: Dp
+    expectedDepth: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.depth.assertIsEqualTo(expectedDepth, "depth") }
+    return withSize { it.depth.assertIsEqualTo(expectedDepth, "depth", tolerance) }
 }
 
 /**
@@ -146,14 +129,16 @@ public fun SubspaceSemanticsNodeInteraction.assertDepthIsEqualTo(
  * [expectedMinWidth].
  *
  * @param expectedMinWidth The minimum width to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertWidthIsAtLeast(
-    expectedMinWidth: Dp
+    expectedMinWidth: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.width.assertIsAtLeast(expectedMinWidth, "width") }
+    return withSize { it.width.assertIsAtLeast(expectedMinWidth, "width", tolerance) }
 }
 
 /**
@@ -161,14 +146,16 @@ public fun SubspaceSemanticsNodeInteraction.assertWidthIsAtLeast(
  * [expectedMinHeight].
  *
  * @param expectedMinHeight The minimum height to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertHeightIsAtLeast(
-    expectedMinHeight: Dp
+    expectedMinHeight: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.height.assertIsAtLeast(expectedMinHeight, "height") }
+    return withSize { it.height.assertIsAtLeast(expectedMinHeight, "height", tolerance) }
 }
 
 /**
@@ -176,14 +163,16 @@ public fun SubspaceSemanticsNodeInteraction.assertHeightIsAtLeast(
  * [expectedMinDepth].
  *
  * @param expectedMinDepth The minimum depth to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertDepthIsAtLeast(
-    expectedMinDepth: Dp
+    expectedMinDepth: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withSize { it.depth.assertIsAtLeast(expectedMinDepth, "depth") }
+    return withSize { it.depth.assertIsAtLeast(expectedMinDepth, "depth", tolerance) }
 }
 
 /**
@@ -193,20 +182,22 @@ public fun SubspaceSemanticsNodeInteraction.assertDepthIsAtLeast(
  * @param expectedX The x position to assert.
  * @param expectedY The y position to assert.
  * @param expectedZ The z position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertPositionInRootIsEqualTo(
     expectedX: Dp,
     expectedY: Dp,
     expectedZ: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
 
     return withPositionInRoot {
-        it.x.toDp().assertIsEqualTo(expectedX, "x")
-        it.y.toDp().assertIsEqualTo(expectedY, "y")
-        it.z.toDp().assertIsEqualTo(expectedZ, "z")
+        it.x.toDp().assertIsEqualTo(expectedX, "x", tolerance)
+        it.y.toDp().assertIsEqualTo(expectedY, "y", tolerance)
+        it.z.toDp().assertIsEqualTo(expectedZ, "z", tolerance)
     }
 }
 
@@ -215,33 +206,45 @@ public fun SubspaceSemanticsNodeInteraction.assertPositionInRootIsEqualTo(
  * the given position.
  *
  * @param expectedX The x position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertXPositionInRootIsEqualTo(
-    expectedX: Dp
+    expectedX: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withPositionInRoot { it.x.toDp().assertIsEqualTo(expectedX, "x") }
+    return withPositionInRoot { it.x.toDp().assertIsEqualTo(expectedX, "x", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has the left position in the root composable that is equal
  * to the given position.
  *
+ * In Subspace, the x position (e.g. [assertXPositionInRootIsEqualTo]) refers to the center of the
+ * node along the X-axis. The left position refers to the position of the left edge (minimum X
+ * boundary) of the node's bounding volume, calculated as (center X - width / 2).
+ *
  * @param expectedLeft The left position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertLeftPositionInRootIsEqualTo(
-    expectedLeft: Dp
+    expectedLeft: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve the node.")
-    (node.poseInRoot.translation.x.toDp() - node.size.width.toDp() / 2.0f).assertIsEqualTo(
-        expectedLeft,
-        "left",
-    )
+    with(node.density) {
+        (node.poseInRoot.translation.x.toDp() - node.size.width.toDp() / 2.0f).assertIsEqualTo(
+            expectedLeft,
+            "left",
+            tolerance,
+        )
+    }
+
     return this
 }
 
@@ -250,33 +253,45 @@ public fun SubspaceSemanticsNodeInteraction.assertLeftPositionInRootIsEqualTo(
  * the given position.
  *
  * @param expectedY The y position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertYPositionInRootIsEqualTo(
-    expectedY: Dp
+    expectedY: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withPositionInRoot { it.y.toDp().assertIsEqualTo(expectedY, "y") }
+    return withPositionInRoot { it.y.toDp().assertIsEqualTo(expectedY, "y", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has the top position in the root composable that is equal to
  * the given position.
  *
+ * In Subspace, the y position (e.g. [assertYPositionInRootIsEqualTo]) refers to the center of the
+ * node along the Y-axis. The top position refers to the position of the top edge (maximum Y
+ * boundary) of the node's bounding volume, calculated as (center Y + height / 2).
+ *
  * @param expectedTop The top position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertTopPositionInRootIsEqualTo(
-    expectedTop: Dp
+    expectedTop: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve the node.")
-    (node.poseInRoot.translation.y.toDp() + node.size.height.toDp() / 2.0f).assertIsEqualTo(
-        expectedTop,
-        "top",
-    )
+    with(node.density) {
+        (node.poseInRoot.translation.y.toDp() + node.size.height.toDp() / 2.0f).assertIsEqualTo(
+            expectedTop,
+            "top",
+            tolerance,
+        )
+    }
+
     return this
 }
 
@@ -285,14 +300,16 @@ public fun SubspaceSemanticsNodeInteraction.assertTopPositionInRootIsEqualTo(
  * the given position.
  *
  * @param expectedZ The z position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertZPositionInRootIsEqualTo(
-    expectedZ: Dp
+    expectedZ: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withPositionInRoot { it.z.toDp().assertIsEqualTo(expectedZ, "z") }
+    return withPositionInRoot { it.z.toDp().assertIsEqualTo(expectedZ, "z", tolerance) }
 }
 
 /**
@@ -301,20 +318,22 @@ public fun SubspaceSemanticsNodeInteraction.assertZPositionInRootIsEqualTo(
  * @param expectedX The x position to assert.
  * @param expectedY The y position to assert.
  * @param expectedZ The z position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertPositionIsEqualTo(
     expectedX: Dp,
     expectedY: Dp,
     expectedZ: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
 
     return withPosition {
-        it.x.toDp().assertIsEqualTo(expectedX, "x")
-        it.y.toDp().assertIsEqualTo(expectedY, "y")
-        it.z.toDp().assertIsEqualTo(expectedZ, "z")
+        it.x.toDp().assertIsEqualTo(expectedX, "x", tolerance)
+        it.y.toDp().assertIsEqualTo(expectedY, "y", tolerance)
+        it.z.toDp().assertIsEqualTo(expectedZ, "z", tolerance)
     }
 }
 
@@ -322,42 +341,48 @@ public fun SubspaceSemanticsNodeInteraction.assertPositionIsEqualTo(
  * Asserts that the layout of this node has the x position that is equal to the given position.
  *
  * @param expectedX The x position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertXPositionIsEqualTo(
-    expectedX: Dp
+    expectedX: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withPosition { it.x.toDp().assertIsEqualTo(expectedX, "x") }
+    return withPosition { it.x.toDp().assertIsEqualTo(expectedX, "x", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has the y position that is equal to the given position.
  *
  * @param expectedY The y position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertYPositionIsEqualTo(
-    expectedY: Dp
+    expectedY: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withPosition { it.y.toDp().assertIsEqualTo(expectedY, "y") }
+    return withPosition { it.y.toDp().assertIsEqualTo(expectedY, "y", tolerance) }
 }
 
 /**
  * Asserts that the layout of this node has the z position that is equal to the given position.
  *
  * @param expectedZ The z position to assert.
+ * @param tolerance The tolerance within which the values should be treated as equal. Defaults to
+ *   0.5.dp.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertZPositionIsEqualTo(
-    expectedZ: Dp
+    expectedZ: Dp,
+    tolerance: Dp = Dp(.5f),
 ): SubspaceSemanticsNodeInteraction {
-    return withPosition { it.z.toDp().assertIsEqualTo(expectedZ, "z") }
+    return withPosition { it.z.toDp().assertIsEqualTo(expectedZ, "z", tolerance) }
 }
 
 /**
@@ -367,11 +392,10 @@ public fun SubspaceSemanticsNodeInteraction.assertZPositionIsEqualTo(
  * This assertion uses a tolerance to account for floating-point inaccuracies.
  *
  * @param expected The expected rotation in the root space to assert.
- * @param tolerance The maximum allowed difference in degrees.
+ * @param tolerance The maximum allowed angular distance in degrees between the orientations.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationInRootIsEqualTo(
     expected: Quaternion,
     tolerance: Float = 0.01f,
@@ -400,11 +424,10 @@ public fun SubspaceSemanticsNodeInteraction.assertRotationInRootIsEqualTo(
  * This assertion uses a tolerance to account for floating-point inaccuracies.
  *
  * @param expected The rotation to assert.
- * @param tolerance The maximum allowed difference in degrees.
+ * @param tolerance The maximum allowed angular distance in degrees between the orientations.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationIsEqualTo(
     expected: Quaternion,
     tolerance: Float = 0.01f,
@@ -432,10 +455,10 @@ public fun SubspaceSemanticsNodeInteraction.assertRotationIsEqualTo(
  *
  * Additional assertions with custom tolerances may be performed on the individual values.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.getSize(): DpVolumeSize {
     lateinit var size: DpVolumeSize
     withSize { size = it }
+
     return size
 }
 
@@ -444,10 +467,10 @@ public fun SubspaceSemanticsNodeInteraction.getSize(): DpVolumeSize {
  *
  * Additional assertions with custom tolerances may be performed on the individual values.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.getPosition(): Vector3 {
     lateinit var position: Vector3
     withPosition { position = it }
+
     return position
 }
 
@@ -456,10 +479,10 @@ public fun SubspaceSemanticsNodeInteraction.getPosition(): Vector3 {
  *
  * Additional assertions with custom tolerances may be performed on the individual values.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.getPositionInRoot(): Vector3 {
     lateinit var position: Vector3
     withPositionInRoot { position = it }
+
     return position
 }
 
@@ -468,10 +491,10 @@ public fun SubspaceSemanticsNodeInteraction.getPositionInRoot(): Vector3 {
  *
  * Additional assertions with custom tolerances may be performed on the individual values.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.getRotation(): Quaternion {
     lateinit var rotation: Quaternion
     withRotation { rotation = it }
+
     return rotation
 }
 
@@ -480,38 +503,44 @@ public fun SubspaceSemanticsNodeInteraction.getRotation(): Quaternion {
  *
  * Additional assertions with custom tolerances may be performed on the individual values.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.getRotationInRoot(): Quaternion {
     lateinit var rotation: Quaternion
     withRotationInRoot { rotation = it }
+
     return rotation
 }
 
 @CanIgnoreReturnValue
 private fun SubspaceSemanticsNodeInteraction.withSize(
-    assertion: (DpVolumeSize) -> Unit
+    assertion: Density.(DpVolumeSize) -> Unit
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve size of the node.")
-    val size = node.size.let { DpVolumeSize(it.width.toDp(), it.height.toDp(), it.depth.toDp()) }
-    assertion.invoke(size)
+    with(node.density) {
+        val size =
+            node.size.let { DpVolumeSize(it.width.toDp(), it.height.toDp(), it.depth.toDp()) }
+        assertion(size)
+    }
+
     return this
 }
 
 @CanIgnoreReturnValue
 private fun SubspaceSemanticsNodeInteraction.withPosition(
-    assertion: (Vector3) -> Unit
+    assertion: Density.(Vector3) -> Unit
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve position of the node.")
-    assertion.invoke(node.pose.translation)
+    node.density.assertion(node.pose.translation)
+
     return this
 }
 
 @CanIgnoreReturnValue
 private fun SubspaceSemanticsNodeInteraction.withPositionInRoot(
-    assertion: (Vector3) -> Unit
+    assertion: Density.(Vector3) -> Unit
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve position of the node.")
-    assertion.invoke(node.poseInRoot.translation)
+    node.density.assertion(node.poseInRoot.translation)
+
     return this
 }
 
@@ -520,7 +549,8 @@ private fun SubspaceSemanticsNodeInteraction.withRotation(
     assertion: (Quaternion) -> Unit
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve rotation of the node.")
-    assertion.invoke(node.pose.rotation)
+    assertion(node.pose.rotation)
+
     return this
 }
 
@@ -529,7 +559,8 @@ private fun SubspaceSemanticsNodeInteraction.withRotationInRoot(
     assertion: (Quaternion) -> Unit
 ): SubspaceSemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve rotation of the node.")
-    assertion.invoke(node.poseInRoot.rotation)
+    assertion(node.poseInRoot.rotation)
+
     return this
 }
 
@@ -547,27 +578,6 @@ private fun Dp.isWithinTolerance(reference: Dp, tolerance: Dp): Boolean {
 }
 
 /**
- * Asserts that this value is equal to the given [expected] value.
- *
- * Performs the comparison with the given [tolerance] or the default one if none is provided. It is
- * recommended to use tolerance when comparing positions and size coming from the framework as there
- * can be rounding operation performed by individual layouts so the values can be slightly off from
- * the expected ones.
- *
- * @param expected The expected value to which this one should be equal to.
- * @param subject Used in the error message to identify which item this assertion failed on.
- * @param tolerance The tolerance within which the values should be treated as equal.
- * @throws AssertionError if comparison fails.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun Dp.assertIsEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
-    if (!isWithinTolerance(expected, tolerance)) {
-        // Comparison failed, report the error in DPs
-        throw AssertionError("Actual $subject is $this, expected $expected (tolerance: $tolerance)")
-    }
-}
-
-/**
  * Asserts that this value is NOT equal to the given [expected] value.
  *
  * Performs the comparison with the given [tolerance] or the default one if none is provided.
@@ -577,7 +587,7 @@ public fun Dp.assertIsEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(
  * @param tolerance The tolerance within which the values should be treated as equal.
  * @throws AssertionError if comparison fails.
  */
-private fun Dp.assertIsNotEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
+internal fun Dp.assertIsNotEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
     if (isWithinTolerance(expected, tolerance)) {
         // Comparison failed, report the error in DPs
         throw AssertionError(
@@ -599,23 +609,11 @@ private fun Dp.assertIsNotEqualTo(expected: Dp, subject: String, tolerance: Dp =
  * @param tolerance The tolerance within which the values should be treated as equal.
  * @throws AssertionError if comparison fails.
  */
-private fun Dp.assertIsAtLeast(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
+internal fun Dp.assertIsAtLeast(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
     if (!(isWithinTolerance(expected, tolerance) || (!isUnspecified && this > expected))) {
         // Comparison failed, report the error in DPs
         throw AssertionError(
             "Actual $subject is $this, expected at least $expected (tolerance: $tolerance)"
         )
     }
-}
-
-/** Converts a float to a [Dp] value. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun Float.toDp(): Dp {
-    return Dp(this / Resources.getSystem().displayMetrics.density)
-}
-
-/** Converts an integer to a [Dp] value. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun Int.toDp(): Dp {
-    return Dp(this.toFloat() / Resources.getSystem().displayMetrics.density)
 }

@@ -27,9 +27,11 @@ import androidx.build.checkapi.shouldWriteVersionedApiFile
 import androidx.build.getDistributionDirectory
 import androidx.build.getLibraryClasspath
 import androidx.build.getSupportRootFolder
+import androidx.build.isKlibCrossCompilationEnabled
 import androidx.build.isWriteVersionedApiFilesEnabled
 import androidx.build.metalava.UpdateApiTask
 import androidx.build.multiplatformExtension
+import androidx.build.nativeTargets
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import androidx.build.version
 import com.android.utils.appendCapitalized
@@ -40,12 +42,12 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.abi.tools.KlibTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation.Companion.MAIN_COMPILATION_NAME
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager
 
@@ -78,12 +80,26 @@ class BinaryCompatibilityValidation(
             val checkAll: TaskProvider<Task> = project.tasks.register(CHECK_NAME)
             val updateAll: TaskProvider<Task> = project.tasks.register(UPDATE_NAME)
             configureKlibTasks(project, checkAll, updateAll)
-            if (project.multiplatformExtension?.hasUnsupportedTargets() == false) {
-                project.addToCheckTask(checkAll)
-                project.addToBuildOnServer(checkAll)
-                project.tasks.named("updateApi", UpdateApiTask::class.java) {
-                    it.dependsOn(updateAll)
+            val hasUnsupportedTargets =
+                project.multiplatformExtension?.hasUnsupportedTargets() ?: false
+            val canCrossCompile = project.isKlibCrossCompilationEnabled()
+            val isAbiValidationEnabledProvider =
+                canCrossCompile.map { enabled -> !hasUnsupportedTargets || enabled }
+
+            val abiCheckDependencyProvider =
+                isAbiValidationEnabledProvider.map { enabled ->
+                    if (enabled) checkAll else emptyList<Any>()
                 }
+            val abiUpdateDependencyProvider =
+                isAbiValidationEnabledProvider.map { enabled ->
+                    if (enabled) updateAll else emptyList<Any>()
+                }
+
+            project.addToCheckTask(abiCheckDependencyProvider)
+            project.addToBuildOnServer(abiCheckDependencyProvider)
+
+            project.tasks.named("updateApi", UpdateApiTask::class.java).configure { updateApiTask ->
+                updateApiTask.dependsOn(abiUpdateDependencyProvider)
             }
         }
 
@@ -104,13 +120,21 @@ class BinaryCompatibilityValidation(
         val klibDumpDir = project.layout.buildDirectory.dir(KLIB_DUMPS_DIRECTORY)
         val klibDumpFile = klibDumpDir.map { it.file(CURRENT_API_FILE_NAME) }
 
+        // A project can only build/validate its ABI on the current host when all of its targets are
+        // supported there, or when the unsupported (Apple) targets can be cross-compiled. The
+        // latter
+        // is exactly what `kotlin.native.enableKlibsCrossCompilation` controls; it is disabled when
+        // the project, or one of its dependencies (including a prebuilt one), uses C-interop.
+        val cannotCrossCompileProperty =
+            project.objects
+                .property(Boolean::class.javaObjectType)
+                .value(project.isKlibCrossCompilationEnabled().map { enabled -> !enabled })
         val generateAbi =
             project.generateAbiTask(
                 klibDumpFile,
                 abiToolsClasspath,
                 kotlinMultiplatformExtension.hasUnsupportedTargets(),
-                kotlinMultiplatformExtension.hasCInterop(),
-                project.providers.gradleProperty(CROSS_COMPILATION_FLAG).get() == "true",
+                cannotCrossCompileProperty,
             )
         val generatedAndMergedApiFile: Provider<RegularFileProperty> =
             generateAbi.map { it.abiFile }
@@ -238,8 +262,7 @@ class BinaryCompatibilityValidation(
         mergeFile: Provider<RegularFile>,
         runtimeClasspath: FileCollection,
         hasUnsupportedTargets: Boolean,
-        hasCInterop: Boolean,
-        crossCompilationEnabled: Boolean,
+        cannotCrossCompileProperty: Property<Boolean>,
     ) =
         project.tasks.register(GENERATE_NAME, GenerateAbiTask::class.java) {
             // This only affects the external process launched by this task,
@@ -261,11 +284,12 @@ class BinaryCompatibilityValidation(
                 }
             )
             it.group = ABI_GROUP_NAME
+            val projectPath = project.path
             it.doFirst {
                 runHostCompatibilityChecks(
+                    projectPath,
                     hasUnsupportedTargets,
-                    hasCInterop,
-                    crossCompilationEnabled,
+                    cannotCrossCompileProperty.get(),
                 )
             }
         }
@@ -279,51 +303,31 @@ private fun Project.getRequiredCompatibilityAbiLocation(suffix: String) =
         enforceVersionContinuity = isWriteVersionedApiFilesEnabled(),
     )
 
-private fun KotlinMultiplatformExtension.nativeTargets() =
-    targets.withType(KotlinNativeTarget::class.java).matching {
-        it.platformType == KotlinPlatformType.native
-    }
-
-private fun KotlinMultiplatformExtension.hasCInterop(): Boolean {
-    val mainCompilations = nativeTargets().map { it.compilations.getByName(MAIN_COMPILATION_NAME) }
-    return mainCompilations.any { it.cinterops.isNotEmpty() }
-}
-
 private fun KotlinMultiplatformExtension.hasUnsupportedTargets(): Boolean {
     val hostManager = HostManager()
     return nativeTargets().any { !hostManager.isEnabled(it.konanTarget) }
 }
 
 private fun runHostCompatibilityChecks(
+    projectPath: String,
     hasUnsupportedTargets: Boolean,
-    hasCInterop: Boolean,
-    crossCompilationEnabled: Boolean,
+    cannotCrossCompile: Boolean,
 ) {
     if (!hasUnsupportedTargets) {
         // running on mac, or project has no mac targets. No further checks necessary
         return
     }
-    if (hasCInterop) {
-        // It's impossible to run these tasks on the current host, because they require cinterop
-        // so cross compilation is not an option
+    if (cannotCrossCompile) {
+        // It's impossible to run these tasks on the current host, because the unsupported targets
+        // use cinterop and so cannot be cross-compiled here.
         throw GradleException(
             """
-            Project uses cinterop and cannot be compiled on the current host (${HostManager.host}).
+            Project $projectPath uses cinterop (or depends on a project that uses cinterop) and cannot be compiled on the current host (${HostManager.host}).
 
             ABI checks and updates need to compile all targets to run. Please run these tasks on a Mac machine which can build all targets.
         """
         )
     }
-    // Unsupported targets exist, but they can be built by enabling cross compilation just for the
-    // ABI tasks
-    if (!crossCompilationEnabled)
-        throw GradleException(
-            """
-        Project requires cross compilation to be compiled on the current host (${HostManager.host}).
-
-        Please re-run the tasks with cross compilation enabled using the flag '-Pkotlin.native.enableKlibsCrossCompilation=true'
-    """
-        )
 }
 
 // Not ideal to have a list instead of a pattern to match but this is all the API supports right now
@@ -342,8 +346,8 @@ private val nonPublicMarkers =
         "androidx.camera.core.ExperimentalUseCaseApi",
         "androidx.car.app.annotations.ExperimentalCarApi",
         "androidx.compose.animation.ExperimentalAnimationApi",
+        "androidx.compose.animation.ExperimentalLookaheadAnimationVisualDebugApi",
         "androidx.compose.animation.ExperimentalSharedTransitionApi",
-        "androidx.compose.animation.core.ExperimentalAnimatableApi",
         "androidx.compose.animation.core.ExperimentalAnimationSpecApi",
         "androidx.compose.animation.core.ExperimentalTransitionApi",
         "androidx.compose.animation.core.InternalAnimationApi",
@@ -351,16 +355,26 @@ private val nonPublicMarkers =
         "androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi",
         "androidx.compose.foundation.ExperimentalFoundationApi",
         "androidx.compose.foundation.InternalFoundationApi",
+        "androidx.compose.foundation.layout.ExperimentalFlexBoxApi",
         "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+        "androidx.compose.foundation.style.ExperimentalFoundationStyleApi",
         "androidx.compose.material.ExperimentalMaterialApi",
+        "androidx.compose.material3.ExperimentalMaterial3Api",
+        "androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi",
+        "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+        "androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi",
+        "androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi",
+        "androidx.compose.remote.creation.ExperimentalRemoteCreationApi",
         "androidx.compose.runtime.ExperimentalComposeApi",
         "androidx.compose.runtime.ExperimentalComposeRuntimeApi",
         "androidx.compose.runtime.InternalComposeApi",
         "androidx.compose.runtime.InternalComposeTracingApi",
         "androidx.compose.ui.ExperimentalComposeUiApi",
+        "androidx.compose.ui.ExperimentalIndirectPointerApi",
         "androidx.compose.ui.ExperimentalIndirectTouchTypeApi",
+        "androidx.compose.ui.ExperimentalMediaQueryApi",
         "androidx.compose.ui.InternalComposeUiApi",
-        "androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi",
+        "androidx.compose.ui.graphics.ExperimentalGraphicsApi",
         "androidx.compose.ui.node.InternalCoreApi",
         "androidx.compose.ui.test.ExperimentalTestApi",
         "androidx.compose.ui.test.InternalTestApi",
@@ -374,8 +388,15 @@ private val nonPublicMarkers =
         "androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi",
         "androidx.health.connect.client.ExperimentalDeduplicationApi",
         "androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi",
-        "androidx.ink.authoring.ExperimentalLatencyDataApi",
+        "androidx.ink.authoring.ExperimentalInkHandoffApi",
+        "androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi",
+        "androidx.ink.authoring.ExperimentalInkLatencyDataApi",
+        "androidx.ink.brush.ExperimentalInkAnimationApi",
+        "androidx.ink.brush.ExperimentalInkBrushCompatibilityApi",
         "androidx.ink.brush.ExperimentalInkCustomBrushApi",
+        "androidx.ink.strokes.ExperimentalInkEraserApi",
+        "androidx.ink.brush.ExperimentalInkCrossPlatformRenderingApi",
+        "androidx.ink.nativeloader.InkInternalOnlyApi",
         "androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi",
         "androidx.paging.ExperimentalPagingApi",
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.RegisterSourceOptIn",
@@ -385,14 +406,16 @@ private val nonPublicMarkers =
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn",
         "androidx.room3.ExperimentalRoomApi",
         "androidx.room3.compiler.processing.ExperimentalProcessingApi",
+        "androidx.tracing.ExperimentalContextPropagation",
+        "androidx.tracing.wire.ExperimentalRingBufferApi",
         "androidx.tv.foundation.ExperimentalTvFoundationApi",
         "androidx.wear.compose.foundation.ExperimentalWearFoundationApi",
         "androidx.wear.compose.material.ExperimentalWearMaterialApi",
         "androidx.window.core.ExperimentalWindowApi",
-        "androidx.compose.material3.ExperimentalMaterial3Api",
+        "androidx.window.core.ExperimentalWindowCoreApi",
     )
 
-const val NEW_ISSUE_URL = "https://b.corp.google.com/issues/new?component=1102332"
+const val NEW_ISSUE_URL = "https://issuetracker.google.com/issues/new?component=1102332"
 
 private fun KotlinNativeTarget.compileDependencyFiles(): FileCollection =
     compilations.getByName(MAIN_COMPILATION_NAME).compileDependencyFiles.filter {

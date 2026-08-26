@@ -16,12 +16,11 @@
 
 package androidx.xr.scenecore.spatial.rendering
 
-import android.util.Log
 import androidx.annotation.MainThread
-import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.impl.impress.ImpressNode
 import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
 import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.function.Consumer
@@ -97,8 +96,7 @@ internal class GltfAnimationFeatureImpl(
                     }
                 } catch (e: Exception) {
                     if (e is CancellationException) throw e
-                    // Some other error happened.  Log it and stop the animation.
-                    Log.e("GltfAnimationFeatureImpl", "Could not start animation: $e")
+                    // Some other error happened. Stop the animation.
                 } finally {
                     if (currentAnimationJob === coroutineContext[Job]) {
                         animationState = GltfEntity.AnimationState.STOPPED

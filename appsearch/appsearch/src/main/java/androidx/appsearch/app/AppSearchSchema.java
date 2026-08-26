@@ -28,15 +28,16 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.exceptions.IllegalSchemaException;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.appsearch.safeparcel.AbstractSafeParcelable;
-import androidx.appsearch.safeparcel.PropertyConfigParcel;
 import androidx.appsearch.safeparcel.PropertyConfigParcel.DocumentIndexingConfigParcel;
 import androidx.appsearch.safeparcel.PropertyConfigParcel.JoinableConfigParcel;
 import androidx.appsearch.safeparcel.PropertyConfigParcel.StringIndexingConfigParcel;
+import androidx.appsearch.safeparcel.PropertyConfigParcel;
 import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.AppSearchSchemaCreator;
 import androidx.appsearch.util.IndentingStringBuilder;
@@ -230,11 +231,11 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @Override
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public int hashCode() {
-        return ObjectsCompat.hash(
-            getSchemaType(),
-            getProperties(),
-            getParentTypes(),
-            getDescription());
+        int result = mSchemaType.hashCode();
+        result = 31 * result + mPropertyConfigParcels.hashCode();
+        result = 31 * result + mParentTypes.hashCode();
+        result = 31 * result + mDescription.hashCode();
+        return result;
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -445,9 +446,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          *
          * <p>NOTE: The integer values of these constants must match the proto enum constants in
          * com.google.android.icing.proto.PropertyConfigProto.DataType.Code.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef(value = {
                 DATA_TYPE_STRING,
@@ -465,41 +465,36 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
 
         /**
          * Constant value for String data type.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_STRING = 1;
 
         /**
          * Constant value for Long data type.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_LONG = 2;
 
         /**
          * Constant value for Double data type.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_DOUBLE = 3;
 
         /**
          * Constant value for Boolean data type.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_BOOLEAN = 4;
 
         /**
          * Unstructured BLOB.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_BYTES = 5;
 
@@ -507,25 +502,22 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          * Indicates that the property is itself a {@link GenericDocument}, making it part of a
          * hierarchical schema. Any property using this DataType MUST have a valid
          * {@link PropertyConfig#getSchemaType}.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_DOCUMENT = 6;
 
         /**
          * Indicates that the property is an {@link EmbeddingVector}.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_EMBEDDING = 7;
 
         /**
          * Indicates that the property is an {@link AppSearchBlobHandle}.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public static final int DATA_TYPE_BLOB_HANDLE = 8;
 
@@ -534,9 +526,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          *
          * <p>NOTE: The integer values of these constants must match the proto enum constants in
          * com.google.android.icing.proto.PropertyConfigProto.Cardinality.Code.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef(value = {
                 CARDINALITY_REPEATED,
@@ -665,9 +656,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
 
         /**
          * Returns the type of data the property contains (such as string, int, bytes, etc).
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @DataType
         public int getDataType() {
@@ -707,8 +697,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          *
          * @throws IllegalArgumentException if the bundle does no contain a recognized
          *                                  value in its {@code DATA_TYPE_FIELD}.
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public static @NonNull PropertyConfig fromParcel(
@@ -744,8 +734,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     public static final class StringPropertyConfig extends PropertyConfig {
         /**
          * Encapsulates the configurations on how AppSearch should query/index these terms.
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef(value = {
                 INDEXING_TYPE_NONE,
@@ -780,9 +770,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          *
          * <p>NOTE: The integer values of these constants must match the proto enum constants in
          * com.google.android.icing.proto.IndexingConfig.TokenizerType.Code.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef(value = {
                 TOKENIZER_TYPE_NONE,
@@ -851,8 +840,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          * The joinable value type of the property. By setting the appropriate joinable value type
          * for a property, the client can use the property for joining documents from other schema
          * types using Search API (see {@link JoinSpec}).
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         // NOTE: The integer values of these constants must match the proto enum constants in
         // com.google.android.icing.proto.JoinableConfig.ValueType.Code.
         @IntDef(value = {
@@ -887,9 +876,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          * The delete propagation type of the property. By setting the delete propagation type for a
          * property, the client can propagate deletion between the document and the referenced
          * document. The propagation direction is determined by the delete propagation type.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         // NOTE: The integer values of these constants must match the proto enum constants in
         // com.google.android.icing.proto.JoinableConfig.DeletePropagationType.Code.
         @IntDef(value = {
@@ -1252,9 +1240,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
         /**
          * Encapsulates the configurations on how AppSearch should query/index these 64-bit
          * integers.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @IntDef(value = {
                 INDEXING_TYPE_NONE,
                 INDEXING_TYPE_RANGE
@@ -1947,20 +1934,20 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG)
-    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public static final class EmbeddingPropertyConfig extends PropertyConfig {
         /**
          * Encapsulates the configurations on how AppSearch should query/index these embedding
          * vectors.
-         *
-         * @exportToFramework:hide
          */
+        @HideInPlatform
         @IntDef(value = {
                 INDEXING_TYPE_NONE,
-                INDEXING_TYPE_SIMILARITY
+                INDEXING_TYPE_SIMILARITY,
+                INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR
         })
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(RetentionPolicy.SOURCE)
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public @interface IndexingType {
         }
 
@@ -1976,10 +1963,25 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
         public static final int INDEXING_TYPE_SIMILARITY = 1;
 
         /**
-         * Indicates whether the vector contents of this property should be quantized.
+         * Embedding vectors in this property will be indexed for Approximate Nearest Neighbor
+         * (ANN) search.
          *
-         * @exportToFramework:hide
+         * <p>The index maintains clusters of embedding vectors to offer faster search latency
+         * than a full linear scan, but does not guarantee 100% recall. This allows tuning the
+         * trade-off between search latency and recall at search time by configuring the number
+         * of clusters to search via {@link SearchSpec.Builder#setEmbeddingQueryProbeCount(int)}.
          */
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SCHEMA_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+        @FlaggedApi(Flags.FLAG_ENABLE_EMBEDDING_APPROXIMATE_NEAREST_NEIGHBOR)
+        @ExperimentalAppSearchApi
+        public static final int INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR = 2;
+
+        /**
+         * Indicates whether the vector contents of this property should be quantized.
+         */
+        @HideInPlatform
         @IntDef(value = {
                 QUANTIZATION_TYPE_NONE,
                 QUANTIZATION_TYPE_8_BIT,
@@ -2020,7 +2022,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
          */
         @EmbeddingPropertyConfig.QuantizationType
         @ExperimentalAppSearchApi
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION)
         public int getQuantizationType() {
             PropertyConfigParcel.EmbeddingIndexingConfigParcel indexingConfigParcel =
                     mPropertyConfigParcel.getEmbeddingIndexingConfigParcel();
@@ -2031,7 +2032,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
         }
 
         /** Builder for {@link EmbeddingPropertyConfig}. */
-        @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
         @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public static final class Builder {
             private final String mPropertyName;
@@ -2094,7 +2094,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
             public @NonNull EmbeddingPropertyConfig.Builder setIndexingType(
                     @EmbeddingPropertyConfig.IndexingType int indexingType) {
                 Preconditions.checkArgumentInRange(
-                        indexingType, INDEXING_TYPE_NONE, INDEXING_TYPE_SIMILARITY,
+                        indexingType, INDEXING_TYPE_NONE,
+                        INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR,
                         "indexingType");
                 mIndexingType = indexingType;
                 return this;
@@ -2115,7 +2116,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
             @RequiresFeature(
                     enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                     name = Features.SCHEMA_EMBEDDING_QUANTIZATION)
-            @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION)
             @CanIgnoreReturnValue
             public @NonNull EmbeddingPropertyConfig.Builder setQuantizationType(
                     @EmbeddingPropertyConfig.QuantizationType int quantizationType) {
@@ -2145,14 +2145,12 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.SCHEMA_BLOB_HANDLE)
-    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     public static final class BlobHandlePropertyConfig extends PropertyConfig {
         BlobHandlePropertyConfig(@NonNull PropertyConfigParcel propertyConfigParcel) {
             super(propertyConfigParcel);
         }
 
         /** Builder for {@link BlobHandlePropertyConfig}. */
-        @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
         public static final class Builder {
             private final String mPropertyName;
             private String mDescription = "";

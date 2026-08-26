@@ -84,7 +84,7 @@ public final class WebViewBuilder {
     /**
      * Create a new builder with settings initialized to the given preset Preset.
      *
-     * <p>Currently, only the {@link PRESET_LEGACY} preset is supported.
+     * <p>Currently, only the {@link #PRESET_LEGACY} preset is supported.
      */
     public WebViewBuilder(@Preset int preset) {
         if (preset != PRESET_LEGACY) {
@@ -102,7 +102,7 @@ public final class WebViewBuilder {
      * built WebView.
      *
      * <p>This needs to be called in order to allow specific origin patterns to inject JavaScript
-     * interfaces via {@link RestrictionAllowlist#addJavaScriptInterface(Object, String)}.
+     * interfaces via {@link RestrictionAllowlist.Builder#addJavaScriptInterface(Object, String)}.
      */
     // We prefer a one-directional switch in order to improve app code auditability.
     @SuppressWarnings("BuilderSetStyle")
@@ -119,8 +119,8 @@ public final class WebViewBuilder {
      *
      * @param profileName The name of the profile to use.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#MULTI_PROFILE}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#MULTI_PROFILE} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -154,8 +154,8 @@ public final class WebViewBuilder {
      * @throws WebViewBuilderException if there was an issue with validation or constructing the
      *                                 WebView.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V1}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V1} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @UiThread
     @RequiresFeature(
@@ -194,8 +194,8 @@ public final class WebViewBuilder {
      *                                 WebView.
      * @throws IllegalStateException if the WebView has already been used or configured in some way.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V2}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#WEBVIEW_BUILDER_EXPERIMENTAL_V2} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @UiThread
     @RequiresFeature(

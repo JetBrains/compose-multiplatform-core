@@ -249,6 +249,23 @@ class CreateLibraryBuildInfoFileTaskTest {
     }
 
     @Test
+    fun buildInfoTaskPopulatesAllDependenciesForNativeTarget() {
+        setupBuildInfoProjectWithNativeTarget()
+        gradleRunner
+            .withArguments("createLibraryBuildInfoFilesLinuxX64", "--no-configuration-cache")
+            .build()
+
+        val buildInfoFile =
+            distDir.root.resolve("build-info/androidx.build_info_test_test-linuxx64_build_info.txt")
+        assertThat(buildInfoFile.exists()).isTrue()
+
+        val buildInfo = parseBuildInfo(buildInfoFile)
+
+        assertThat(buildInfo.allDependencies.map { "${it.groupId}:${it.artifactId}" })
+            .contains("androidx.collection:collection")
+    }
+
+    @Test
     fun hasApplePlatform_withAtLeastOnePlatformIdentifierTargetingAnApplePlatform_returnsTrue() {
         val platforms =
             setOf(PlatformIdentifier.ANDROID, PlatformIdentifier.IOS_ARM_64, PlatformIdentifier.JVM)
@@ -259,6 +276,79 @@ class CreateLibraryBuildInfoFileTaskTest {
     fun hasApplePlatform_withNoPlatformIdentifiersTargetingAnApplePlatform_returnsFalse() {
         val platforms = setOf(PlatformIdentifier.ANDROID, PlatformIdentifier.JVM)
         assertThat(hasApplePlatform(platforms)).isFalse()
+    }
+
+    @Test
+    fun computeBuildTarget_applePlatformThatCannotCrossCompile_returnsMacTarget() {
+        assertThat(computeBuildTarget(hasApplePlatform = true, crossCompilationEnabled = false))
+            .isEqualTo("androidx_multiplatform_mac")
+    }
+
+    @Test
+    fun computeBuildTarget_applePlatformThatCanCrossCompile_returnsAndroidxTarget() {
+        assertThat(computeBuildTarget(hasApplePlatform = true, crossCompilationEnabled = true))
+            .isEqualTo("androidx")
+    }
+
+    @Test
+    fun computeBuildTarget_noApplePlatform_returnsAndroidxTarget() {
+        assertThat(computeBuildTarget(hasApplePlatform = false, crossCompilationEnabled = false))
+            .isEqualTo("androidx")
+        assertThat(computeBuildTarget(hasApplePlatform = false, crossCompilationEnabled = true))
+            .isEqualTo("androidx")
+    }
+
+    private fun setupBuildInfoProjectWithNativeTarget() {
+        File(projectSetup.rootDir, "settings.gradle").writeText("rootProject.name = \"test\"")
+        projectSetup.buildFile.writeText(
+            """
+                import androidx.build.buildInfo.CreateLibraryBuildInfoFileTaskKt
+                plugins {
+                    id("org.jetbrains.kotlin.multiplatform")
+                    id("maven-publish")
+                }
+                ext {
+                    supportRootFolder = new File("${projectSetup.rootDir}")
+                }
+                ${projectSetup.repositories}
+                version = "0.0.1"
+                group = "androidx.build_info_test"
+                kotlin {
+                    linuxX64()
+                    sourceSets {
+                        linuxX64Main {
+                            dependencies {
+                                implementation("androidx.collection:collection:1.5.0")
+                            }
+                        }
+                    }
+                }
+                afterEvaluate {
+                    publishing {
+                        publications.withType(MavenPublication) {
+                            // This test is set up such that putting `it.artifactId` in a provider
+                            // directly means that the `MavenPublication` object no longer exists when
+                            // the provider is evaluated.
+                            def artifactId = it.artifactId
+                            CreateLibraryBuildInfoFileTaskKt.createBuildInfoTask(
+                                project,
+                                it,
+                                null,
+                                project.provider { artifactId },
+                                project.provider { "fakeSha" },
+                                project.provider { false }, // shouldPublishDocs
+                                true, // isKmp
+                                project.provider { "androidx" },
+                                ["linuxx64"].toSet(),
+                                project.provider { [] },
+                                it.name,
+                            )
+                        }
+                    }
+                }
+            """
+                .trimIndent()
+        )
     }
 
     private fun setupBuildInfoProject() {
@@ -317,7 +407,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                                 project.provider { "fakeSha" },
                                 project.provider { false },
                                 false,
-                                "androidx",
+                                project.provider { "androidx" },
                                 ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
                                 project.provider { ["test.xml"] },
                                 it.name,
@@ -382,7 +472,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                                 project.provider { "fakeSha" },
                                 project.provider { false },
                                 false,
-                                "androidx",
+                                project.provider { "androidx" },
                                 ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
                                 project.provider { ["test.xml"] },
                                 it.name
@@ -443,7 +533,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                                 project.provider { "fakeSha" },
                                 project.provider { false },
                                 false,
-                                "androidx",
+                                project.provider { "androidx" },
                                 [].toSet(),
                                 project.provider { [] },
                                 it.name
@@ -510,7 +600,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                                 project.provider { "fakeSha" },
                                 project.provider { false }, // shouldPublishDocs
                                 true, // isKmp
-                                "androidx",
+                                project.provider { "androidx" },
                                 ["android", "jvm"].toSet(),
                                 project.provider { ["test.xml"] },
                                 it.name,

@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"پیام اینجا می‌رود.\nنوشتار بیشتر در خط دوم."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"نسخه نمونه الگوی پیام کوتاه"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"نسخه نمایشی الگوی مورد بخش‌بندی‌شده"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"نسخه نمایشی مورد فشرده"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"‏نسخه نمایشی فعالسازی AlphaJump برای مورد بخش‌بندی‌شده"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"بخش دکمه رادیویی"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"بخش دکمه مبدل"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"فهرست ۲"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"نوشتار فرعی زیر هر فهرست"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"پایان دادن به نسخه نمایشی تصویر و کنش‌ها"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"نسخه نمایشی تراشه"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"نسخه نمایشی نوار پیشرفت"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"نسخه نمایشی عنوان بخش"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"نسخه نمایشی بخش «لحظات برجسته»"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"الگوی قاب نمونه"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"نمونه الگوی فهرست مکان"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"مرور مکان‌ها"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"جدیدترین ویژگی‌ها"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"بار کردن فعال شد"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"بار کردن غیرفعال شد"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"استفاده از «زمینه برنامه»"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"«زمینه برنامه» فعال است"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"«زمینه برنامه» غیرفعال است"</string>
     <string name="loading_screen" msgid="4771507490730308794">"صفحه بار کردن"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"برای افزودن/ برداشتن رنگ، تغییر وضعیت دهید"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"الگوی نقشه با کلیدها"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"نسخه‌های نمایشی نقشه با محتوا"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"نسخه نمایشی نقشه با الگوی پیام"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"نسخه نمایشی نقشه با الگوی جدولی"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"نقشه با فهرست موارد بخش‌بندی‌شده"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"نسخه نمایشی برنما"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"نسخه نمایشی سرایند بهبودیافته"</string>
 </resources>

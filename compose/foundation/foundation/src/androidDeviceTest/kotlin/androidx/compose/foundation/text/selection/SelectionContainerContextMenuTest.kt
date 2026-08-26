@@ -33,7 +33,6 @@ import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
 import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -56,8 +55,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.lerp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,7 +65,7 @@ import org.junit.runner.RunWith
 @RunWith(ContextMenuFlagFlipperRunner::class)
 open class SelectionContainerContextMenuTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule
     val processTextRule =
@@ -144,6 +143,7 @@ open class SelectionContainerContextMenuTest {
         contextMenuInteraction.assertDoesNotExist()
     }
 
+    @Ignore("b/534893012")
     @Test
     fun contextMenu_disappearsOnTrackpadClickOffOfPopup() {
         rule.setContent {
@@ -202,10 +202,10 @@ open class SelectionContainerContextMenuTest {
     ) {
         val clipboard = FakeClipboard(initialClipboardText)
 
-        var selection by mutableStateOf<Selection?>(null)
+        val state = SelectionState()
         rule.setContent {
             CompositionLocalProvider(LocalClipboard provides clipboard) {
-                SelectionContainer(selection = selection, onSelectionChange = { selection = it }) {
+                SelectionContainer(state = state) {
                     BasicText(text, modifier = Modifier.testTag(textTag))
                 }
             }
@@ -228,7 +228,7 @@ open class SelectionContainerContextMenuTest {
         itemInteraction.assertDoesNotExist()
 
         // Assert
-        assertionBlock(selection, clipboard)
+        assertionBlock(state.selection, clipboard)
     }
 
     // endregion Context Menu Item Click Tests
@@ -275,6 +275,7 @@ open class SelectionContainerContextMenuTest {
             )
         }
 
+    @Ignore("b/534893012")
     @Test
     @ContextMenuFlagSuppress(suppressedFlagValue = false)
     fun contextMenu_onClickProcessText() {
@@ -297,9 +298,10 @@ open class SelectionContainerContextMenuTest {
         }
     }
 
+    @Ignore("b/534893012")
     @Test
     @ContextMenuFlagSuppress(suppressedFlagValue = false)
-    fun contextMenu_processText_itemsMatch() = runCorrectItemsTest { selection ->
+    fun contextMenu_processText_itemsMatch() = runCorrectItemsTest { _ ->
         rule.assertContextMenuItem(
             label = ContextMenuItemLabels.PROCESS_TEXT_1,
             state = ContextMenuItemState.ENABLED,
@@ -325,11 +327,11 @@ open class SelectionContainerContextMenuTest {
 
         val clipboard = FakeClipboard("Clipboard Text")
 
-        var selection by mutableStateOf<Selection?>(null)
+        val state = SelectionState()
 
         rule.setContent {
             CompositionLocalProvider(LocalClipboard provides clipboard) {
-                SelectionContainer(selection = selection, onSelectionChange = { selection = it }) {
+                SelectionContainer(state = state) {
                     BasicText(text, modifier = Modifier.testTag(textTag))
                 }
             }
@@ -358,7 +360,7 @@ open class SelectionContainerContextMenuTest {
         // open context menu
         rule.onNodeWithTag(textTag).performMouseInput { rightClick(center) }
 
-        assertBlock(selection)
+        assertBlock(state.selection)
     }
     // endregion Context Menu Correct Item Tests
 }

@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("RestrictedApiAndroidX")
+@file:Suppress(
+    "RestrictedApiAndroidX"
+) // Referring to RemoteText, background, drawCircle, remote-core
 
 package androidx.compose.remote.integration.view.demos.examples
 
 import androidx.compose.remote.core.operations.layout.Component
-import androidx.compose.remote.creation.compose.action.ValueChange
+import androidx.compose.remote.creation.compose.action.valueChange
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -50,7 +52,7 @@ import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.ri
 import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.integration.view.demos.examples.SwitchState.*
-import androidx.compose.remote.tooling.preview.RemotePreview
+import androidx.compose.remote.tooling.preview.RemoteContentPreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,7 +64,7 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
         modifier =
             modifier
                 .clip(RemoteRoundedCornerShape(20.rdp))
-                .background(Color(63, 81, 181, 255))
+                .background(Color(63, 81, 181, 255).rc)
                 .padding(2.rdp),
         contentAlignment = RemoteAlignment.CenterEnd,
     ) {
@@ -75,7 +77,7 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
 
 @Preview
 @Composable
-private fun SwitchWidgetOnStatePreview() = RemotePreview { SwitchWidgetOnState() }
+fun SwitchWidgetOnStatePreview() = RemoteContentPreview { SwitchWidgetOnState() }
 
 @Composable
 @RemoteComposable
@@ -85,7 +87,7 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier) {
             modifier
                 // todo: use the animationId
                 .clip(RemoteRoundedCornerShape(20.rdp))
-                .background(Color(100, 100, 100))
+                .background(Color(100, 100, 100).rc)
                 .padding(8.rdp)
                 .then(modifier),
         contentAlignment = RemoteAlignment.CenterStart,
@@ -99,7 +101,7 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier) {
 
 @Preview
 @Composable
-private fun SwitchWidgetOffStatePreview() = RemotePreview { SwitchWidgetOffState() }
+fun SwitchWidgetOffStatePreview() = RemoteContentPreview { SwitchWidgetOffState() }
 
 @Composable
 @RemoteComposable
@@ -123,7 +125,7 @@ enum class SwitchState(val visibility: RemoteInt) {
 fun SwitchWidget(value: MutableRemoteEnum<SwitchState>) {
     val modifier =
         RemoteModifier.clickable(
-            ValueChange(remoteState = value.remoteInt, updatedValue = (value.remoteInt + 1) % 2)
+            valueChange(remoteState = value.remoteInt, updatedValue = (value.remoteInt + 1) % 2)
         )
 
     RemoteBox(
@@ -131,7 +133,8 @@ fun SwitchWidget(value: MutableRemoteEnum<SwitchState>) {
         contentAlignment = RemoteAlignment.CenterStart,
     ) {
         val modifierSize = RemoteModifier.size(60.rdp, 36.rdp)
-        RemoteStateLayout(modifier = RemoteModifier.wrapContentSize(), state = value) { state ->
+        RemoteStateLayout(modifier = RemoteModifier.wrapContentSize(), currentState = value) { state
+            ->
             RemoteBox {
                 when (state) {
                     Off -> SwitchWidgetOffState(modifier = modifierSize)
@@ -152,9 +155,9 @@ fun RowSwitch(
     modifier: RemoteModifier = RemoteModifier,
 ) {
     Row(modifier = modifier, verticalAlignment = RemoteAlignment.CenterVertically) {
-        RemoteText(label)
+        RemoteText(label.rs)
         SwitchWidget(state)
-        RemoteText("State value is ")
+        RemoteText("State value is ".rs)
         RemoteText(state.toRemoteString { it.name.rs })
     }
 }
@@ -167,7 +170,7 @@ fun StateInfo(
     modifier: RemoteModifier = RemoteModifier,
 ) {
     Row(modifier = modifier, verticalAlignment = RemoteAlignment.CenterVertically) {
-        RemoteText(label)
+        RemoteText(label.rs)
         RemoteText(state.toRemoteString { it.name.rs })
     }
 }
@@ -178,16 +181,16 @@ fun Divider(modifier: RemoteModifier = RemoteModifier) {
     RemoteBox(
         modifier =
             modifier
-                .padding(left = 8.rdp, right = 8.rdp)
+                .padding(start = 8.rdp, end = 8.rdp)
                 .size(2.rdp, 8.rdp)
-                .background(Color.LightGray)
+                .background(Color.LightGray.rc)
     )
 }
 
 @Composable
 @RemoteComposable
 fun SwitchWidgetDemo() {
-    RemoteColumn(modifier = Modifier.padding(8.rdp).background(Color.LightGray)) {
+    RemoteColumn(modifier = Modifier.padding(8.rdp).background(Color.LightGray.rc)) {
         val checkedA = rememberMutableRemoteEnum(Off)
         val checkedB = rememberMutableRemoteEnum(Off)
         val checkedC = rememberMutableRemoteEnum(On)
@@ -215,4 +218,6 @@ fun SwitchWidgetDemo() {
 val RemoteEnum<SwitchState>.visibility: RemoteInt
     get() = toRemoteInt { it.visibility }
 
-@Preview @Composable private fun SwitchWidgetDemoPreview() = RemotePreview { SwitchWidgetDemo() }
+@Preview(widthDp = 400, heightDp = 800)
+@Composable
+fun SwitchWidgetDemoPreview() = RemoteContentPreview { SwitchWidgetDemo() }

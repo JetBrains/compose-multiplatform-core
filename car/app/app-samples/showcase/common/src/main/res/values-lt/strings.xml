@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Čia pateikiamas pranešimas.\nDaugiau teksto antroje eilutėje."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Trumpųjų pranešimų šablonų demonstracinė versija"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Į skiltis suskirstyto elemento šablono demonstracinė versija"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Glausto elemento demonstracinė versija"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Į skiltis suskirstyto elemento „AlphaJump“ įgalinta demonstracinė versija"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Akutės skiltis"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Perjungimo skiltis"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"2 sąrašas"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Kiekvieno sąrašo paantraštė"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"Pabaigos vaizdo ir veiksmų demonstracinė versija"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Mikroschemos demonstracinė versija"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Eigos juostos demonstracinė versija"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Skilties antraštės demonstracinė versija"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"„Spotlight“ skilties demonstracinė versija"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Srities šablono demonstracinė versija"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Vietų sąrašo šablono demonstracinė versija"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Naršyti vietas"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Naujausios funkcijos"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Įkėlimas įgalintas"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Įkėlimas išjungtas"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Naudoti programos temą"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"Programos tema įjungta"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"Programos tema išjungta"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Įkeliamas ekranas"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Perjunkite norėdami pridėti ar pašalinti spalvą"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Žemėlapio šablonas su perjungikliais"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Žemėlapio su turiniu demonstracinės versijos"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Žemėlapio su pranešimo šablonu demonstracinė versija"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Žemėlapio su tinklelio šablonu demonstracinė versija"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Žemėlapis su į skiltis suskirstytų elementų sąrašu"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Reklamjuostės demonstracinė versija"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Patobulintos antraštės demonstracinė versija"</string>
 </resources>

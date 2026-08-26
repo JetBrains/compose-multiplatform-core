@@ -18,7 +18,7 @@ package androidx.xr.arcore.playservices
 
 import androidx.kruth.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import com.google.ar.core.AugmentedFace as ArCore1xAugmentedFace
 import com.google.ar.core.Pose as ArCore1xPose
 import com.google.ar.core.TrackingState as ArCore1xTrackingState

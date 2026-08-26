@@ -35,7 +35,7 @@ import org.robolectric.shadows.ShadowSystemProperties
  * Prefer real system-level testing where possible. This rule is intended only for local tests that
  * simulate cross-app interactions via AppFunctions.
  *
- * Any functions annotated with [androidx.appfunctions.service.AppFunction] in test code will be
+ * Any functions annotated with [androidx.appfunctions.AppFunction] in test code will be
  * automatically registered in this environment during initialization, provided the
  * `appfunctions-compiler` is applied to the test configuration with the
  * `appfunctions:aggregateAppFunctions` compiler option set to true.
@@ -160,11 +160,11 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
     override fun apply(base: Statement?, description: Description?): Statement =
         object : Statement() {
             override fun evaluate() {
-                base?.evaluate()
                 // Robolectric platform doesn't set these properties, we have checks for certain
                 // AppSearch features that are only available if the sdk extensions for T are above
                 // 13.
                 ShadowSystemProperties.override(T_EXTENSION_PROPERTY_STRING, "13")
+                base?.evaluate()
             }
         }
 

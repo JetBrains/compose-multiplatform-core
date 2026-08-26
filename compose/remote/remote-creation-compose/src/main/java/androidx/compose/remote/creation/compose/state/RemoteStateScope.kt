@@ -18,17 +18,23 @@ package androidx.compose.remote.creation.compose.state
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteDensity
+import androidx.compose.remote.creation.compose.capture.RemoteDensityBehavior
+import androidx.compose.remote.creation.compose.capture.toRemotePath
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.vector.RemotePathScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.LayoutDirection
 
 /** Scope for accessing remote state IDs. */
 public interface RemoteStateScope {
     /** The [RemoteComposeCreationState] associated with the document being drawn into. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val parentScope: RemoteStateScope
+    @get:Suppress("HiddenAbstractMethodInInterface")
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val parentScope: RemoteStateScope
 
     /** The [RemoteDensity] associated with the document being drawn into. */
     public val remoteDensity: RemoteDensity
@@ -40,6 +46,11 @@ public interface RemoteStateScope {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val document: RemoteComposeWriter
         get() = parentScope.document
+
+    /** The density behavior associated with the document being drawn into. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val densityBehavior: RemoteDensityBehavior
+        get() = parentScope.densityBehavior
 
     /** Returns the ID for this state within the scope. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -55,6 +66,11 @@ public interface RemoteStateScope {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val RemoteState<*>.longId: Long
         get() = (this as BaseRemoteState<*>).getLongIdForCreationState(creationState)
+}
+
+/** Build the [RemotePath], encoding using this [RemoteStateScope]. */
+public fun RemoteStateScope.remotePath(fn: RemotePathScope.() -> Unit): RemotePath {
+    return RemotePathScope().apply(fn).nodes.toRemotePath(creationState = this)
 }
 
 /** The [RemoteComposeCreationState] associated with the document being drawn into. */

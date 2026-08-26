@@ -80,7 +80,8 @@ public class MatrixFromPath extends PaintOperation implements VariableSupport, S
     @NonNull
     @Override
     public String toString() {
-        return "DrawTextOnPath ["
+        return CLASS_NAME
+                + " ["
                 + mPathId
                 + "] "
                 + Utils.floatToString(mFraction, mOutFraction)
@@ -98,9 +99,9 @@ public class MatrixFromPath extends PaintOperation implements VariableSupport, S
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
 
-        int pathId = buffer.readInt();
-        float percent = buffer.readFloat();
-        float vOffset = buffer.readFloat();
+        int pathId = buffer.readId();
+        float percent = buffer.readNanId();
+        float vOffset = buffer.readNanId();
         int flags = buffer.readInt();
         MatrixFromPath op = new MatrixFromPath(pathId, percent, vOffset, flags);
         operations.add(op);
@@ -113,7 +114,7 @@ public class MatrixFromPath extends PaintOperation implements VariableSupport, S
      */
     @NonNull
     public static String name() {
-        return "DrawTextOnPath";
+        return CLASS_NAME;
     }
 
     /**
@@ -122,7 +123,7 @@ public class MatrixFromPath extends PaintOperation implements VariableSupport, S
      * @return the opcode
      */
     public static int id() {
-        return Operations.DRAW_TEXT_ON_PATH;
+        return OP_CODE;
     }
 
     /**
@@ -173,6 +174,6 @@ public class MatrixFromPath extends PaintOperation implements VariableSupport, S
                 .addType(CLASS_NAME)
                 .add("pathId", mPathId)
                 .add("vOffset", mVOffset, mOutVOffset)
-                .add("hOffset", mFraction, mOutFraction);
+                .add("fraction", mFraction, mOutFraction);
     }
 }

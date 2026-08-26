@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -31,7 +32,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +41,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ChipScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -404,6 +404,188 @@ class ChipScreenshotTest {
             )
         }
         assertChipAgainstGolden("filterChip_elevated_selected_darkTheme")
+    }
+
+    @Test
+    fun filterChip_shapes_selected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            FilterChip(
+                selected = true,
+                onClick = {},
+                label = { Text("Filter Chip") },
+                shapes = FilterChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(FilterChipDefaults.IconSize),
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(FilterChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("filterChip_shapes_selected_lightTheme")
+    }
+
+    @Test
+    fun filterChip_shapes_notSelected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            FilterChip(
+                selected = false,
+                onClick = {},
+                label = { Text("Filter Chip") },
+                shapes = FilterChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(FilterChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("filterChip_shapes_notSelected_lightTheme")
+    }
+
+    @Test
+    fun elevatedFilterChip_shapes_selected_darkTheme() {
+        rule.setMaterialContent(darkColorScheme()) {
+            ElevatedFilterChip(
+                selected = true,
+                onClick = {},
+                label = { Text("Filter Chip") },
+                shapes = FilterChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(FilterChipDefaults.IconSize),
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(FilterChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("elevatedFilterChip_shapes_selected_darkTheme")
+    }
+
+    @Test
+    fun elevatedFilterChip_shapes_notSelected_darkTheme() {
+        rule.setMaterialContent(darkColorScheme()) {
+            ElevatedFilterChip(
+                selected = false,
+                onClick = {},
+                label = { Text("Filter Chip") },
+                shapes = FilterChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(FilterChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("elevatedFilterChip_shapes_notSelected_darkTheme")
+    }
+
+    @Test
+    fun inputChip_shapes_selected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            InputChip(
+                selected = true,
+                onClick = {},
+                label = { Text("Input Chip") },
+                shapes = InputChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(InputChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("inputChip_shapes_selected_lightTheme")
+    }
+
+    @Test
+    fun inputChip_shapes_notSelected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            InputChip(
+                selected = false,
+                onClick = {},
+                label = { Text("Input Chip") },
+                shapes = InputChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(InputChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("inputChip_shapes_notSelected_lightTheme")
+    }
+
+    @Test
+    fun inputChip_shapes_selected_darkTheme() {
+        rule.setMaterialContent(darkColorScheme()) {
+            InputChip(
+                selected = true,
+                onClick = {},
+                label = { Text("Input Chip") },
+                shapes = InputChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(InputChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("inputChip_shapes_selected_darkTheme")
+    }
+
+    @Test
+    fun inputChip_shapes_notSelected_darkTheme() {
+        rule.setMaterialContent(darkColorScheme()) {
+            InputChip(
+                selected = false,
+                onClick = {},
+                label = { Text("Input Chip") },
+                shapes = InputChipDefaults.shapes(),
+                modifier = Modifier.testTag(TestTag),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier.requiredSize(InputChipDefaults.IconSize),
+                    )
+                },
+            )
+        }
+        assertChipAgainstGolden("inputChip_shapes_notSelected_darkTheme")
     }
 
     @Test

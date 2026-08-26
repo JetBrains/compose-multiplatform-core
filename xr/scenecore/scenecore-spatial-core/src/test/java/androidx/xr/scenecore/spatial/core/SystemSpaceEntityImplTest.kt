@@ -15,6 +15,7 @@
  */
 package androidx.xr.scenecore.spatial.core
 
+import android.app.Activity
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Matrix4.Companion.fromPose
 import androidx.xr.runtime.math.Pose
@@ -36,6 +37,7 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.robolectric.Robolectric
 
 /**
  * Abstract test class for [SystemSpaceEntityImpl] implementations.
@@ -43,7 +45,7 @@ import org.mockito.kotlin.verify
  * Concrete implementations of [SystemSpaceEntityImpl] should extend this class and provide
  * implementations for its abstract methods to ensure they comply with the abstract class.
  */
-abstract class SystemSpaceEntityImplTest {
+abstract class SystemSpaceEntityImplTest : AndroidXrEntityImplTest() {
     /** Returns the [SystemSpaceEntityImpl] instance to test. */
     protected abstract val systemSpaceEntityImpl: SystemSpaceEntityImpl
 
@@ -55,6 +57,15 @@ abstract class SystemSpaceEntityImplTest {
 
     /** Returns the [ActivitySpaceImpl] instance which is the root of the Activity Space. */
     protected abstract val activitySpaceEntity: ActivitySpaceImpl
+
+    override val activity: Activity =
+        Robolectric.buildActivity(Activity::class.java).create().start().get()
+
+    override val xrExtensions = SpatialCoreXrExtensionsHolderProvider.extensionsLegacy
+
+    override val sceneNodeRegistry = SceneNodeRegistry()
+
+    override val fakeExecutor = FakeScheduledExecutorService()
 
     @Test
     fun systemSpaceEntityImplConstructor_setsNodeTransformSubscription() {
@@ -77,8 +88,8 @@ abstract class SystemSpaceEntityImplTest {
     }
 
     @Test
-    fun getPoseInOpenXrReferenceSpace_defaultsToNull() {
-        Truth.assertThat(this.systemSpaceEntityImpl.poseInOpenXrReferenceSpace).isNull()
+    fun getPoseInPlatformReferenceSpace_defaultsToNull() {
+        Truth.assertThat(this.systemSpaceEntityImpl.poseInPlatformReferenceSpace).isNull()
     }
 
     @Test
@@ -147,7 +158,7 @@ abstract class SystemSpaceEntityImplTest {
     }
 
     @Test
-    fun getPoseInOpenXrReferenceSpace_returnsPoseFromSubscribeToNodeTransform() {
+    fun getPoseInPlatformReferenceSpace_returnsPoseFromSubscribeToNodeTransform() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         // Column major, right-handed 4x4 Transformation Matrix with translation of (4, 8, 12) and
         // rotation 90 (@) around Z axis
@@ -179,7 +190,7 @@ abstract class SystemSpaceEntityImplTest {
 
         val expectedPose = Pose(Vector3(4f, 8f, 12f), fromAxisAngle(Vector3(0f, 0f, 1f), 90f))
 
-        assertPose(systemSpaceEntity.poseInOpenXrReferenceSpace!!, expectedPose)
+        assertPose(systemSpaceEntity.poseInPlatformReferenceSpace!!, expectedPose)
     }
 
     private fun sendTransformEvent(node: Node?, nodeTransform: NodeTransform?) {
@@ -267,32 +278,32 @@ abstract class SystemSpaceEntityImplTest {
         val expectedPose = Pose(Vector3.One, Quaternion.Identity)
         val expectedScale = Vector3(4f, 5f, 6f)
 
-        systemSpaceEntity.openXrReferenceSpaceTransform.set(fromPose(expectedPose))
+        systemSpaceEntity.platformReferenceSpaceTransform.set(fromPose(expectedPose))
         systemSpaceEntity._worldSpaceScale = expectedScale
         systemSpaceEntity.setOnOriginChangedListener(listener, executor)
-        systemSpaceEntity.setOpenXrReferenceSpaceTransform(Matrix4.Zero)
+        systemSpaceEntity.setPlatformReferenceSpaceTransform(Matrix4.Zero)
         executor.runAll()
 
-        Truth.assertThat(systemSpaceEntity.poseInOpenXrReferenceSpace).isEqualTo(expectedPose)
+        Truth.assertThat(systemSpaceEntity.poseInPlatformReferenceSpace).isEqualTo(expectedPose)
         Truth.assertThat(systemSpaceEntity.worldSpaceScale).isEqualTo(expectedScale)
         verify(listener, never()).run()
     }
 
     @Test
-    fun setPoseInOpenXrReferenceSpace_callsOnOriginChanged() {
+    fun setPlatformReferenceSpaceTransform_callsOnOriginChanged() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         val listener = mock<Runnable>()
         val executor = FakeScheduledExecutorService()
 
         systemSpaceEntity.setOnOriginChangedListener(listener, executor)
-        systemSpaceEntity.setOpenXrReferenceSpaceTransform(Matrix4.Identity)
+        systemSpaceEntity.setPlatformReferenceSpaceTransform(Matrix4.Identity)
         executor.runAll()
 
         verify(listener).run()
     }
 
     @Test
-    fun setPoseInOpenXrReferenceSpace_updatesPose() {
+    fun setPlatformReferenceSpaceTransform_updatesPose() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         // Column major, right-handed 4x4 Transformation Matrix with translation of (4, 8, 12)
         // and rotation 90 (@) around Z axis
@@ -319,12 +330,12 @@ abstract class SystemSpaceEntityImplTest {
             )
         val pose = Pose(Vector3(4f, 8f, 12f), fromAxisAngle(Vector3(0f, 0f, 1f), 90f))
 
-        systemSpaceEntity.setOpenXrReferenceSpaceTransform(matrix)
-        assertPose(systemSpaceEntity.poseInOpenXrReferenceSpace!!, pose)
+        systemSpaceEntity.setPlatformReferenceSpaceTransform(matrix)
+        assertPose(systemSpaceEntity.poseInPlatformReferenceSpace!!, pose)
     }
 
     @Test
-    open fun setPoseInOpenXrReferenceSpace_updatesScale() {
+    open fun setPlatformReferenceSpaceTransform_updatesScale() {
         val systemSpaceEntity = this.systemSpaceEntityImpl
         // Column major, right-handed 4x4 Transformation Matrix with translation of (4, 8, 12) and
         // rotation 90 (@) around Z axis, and scale of 3.3.
@@ -351,7 +362,7 @@ abstract class SystemSpaceEntityImplTest {
             )
         val scale = Vector3(3.3f, 3.3f, 3.3f)
 
-        systemSpaceEntity.setOpenXrReferenceSpaceTransform(matrix)
+        systemSpaceEntity.setPlatformReferenceSpaceTransform(matrix)
         // Updated to expect scale, so AnchorEntityImpl passes. ActivitySpaceImpl overrides this.
         assertVector3(systemSpaceEntity.activitySpaceScale, scale)
         assertVector3(systemSpaceEntity.worldSpaceScale, scale)

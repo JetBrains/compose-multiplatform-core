@@ -15,162 +15,100 @@
  */
 package androidx.xr.scenecore.spatial.core
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
-import android.os.Binder
-import android.os.Handler
-import android.os.Looper
-import android.view.SurfaceControlViewHost
+import android.graphics.RectF
 import android.view.View
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.impl.PerceptionSpaceScenePoseImpl
 import com.android.extensions.xr.XrExtensions
-import com.android.extensions.xr.node.Node
+import java.util.concurrent.ScheduledExecutorService
 
 /** Interface for rendering the border of an entity onto a perception plane. */
 internal interface EntityShadowRenderer {
+
+    fun enableShadow()
+
     fun updateShadow(openXrToProposedPanel: Pose, openXrToPlane: Pose, shadowDim: FloatSize2d)
 
-    fun hidePlane()
+    fun hideShadow()
 
-    fun destroy()
+    fun disableShadow()
 }
 
-// TODO: b/413661481 - Remove this suppression prior to JXR stable release.
-// For SurfaceControlViewHost and getDisplay
-@SuppressLint("NewApi")
 internal class EntityShadowRendererImpl(
     private val activitySpaceImpl: ActivitySpaceImpl,
     private val perceptionSpaceScenePose: PerceptionSpaceScenePoseImpl,
     private val activity: Activity,
     private val xrExtensions: XrExtensions,
+    private val entityRegistry: SceneNodeRegistry,
+    private val executor: ScheduledExecutorService,
 ) : EntityShadowRenderer {
-    private val handler: Handler = Handler(Looper.getMainLooper())
-    private var entityShadowNode: Node? = null
-    private var surfaceControlViewHost: SurfaceControlViewHost? = null
+    private var panelEntity: PanelEntityImpl? = null
     private var isVisible = false
+
+    private val marginInMeters: Float
+        get() = PANEL_BORDER_ADDED_MARGIN / RuntimeUtils.getDefaultPixelsPerMeter(xrExtensions)
+
+    override fun enableShadow() {
+        if (panelEntity != null) return
+        val entityShadowNode = xrExtensions.createNode()
+        val view: View = EntityShadowView(activity)
+        val dimensions = Dimensions(1f, 1f, 0f)
+
+        panelEntity =
+            PanelEntityImpl(
+                activity,
+                entityShadowNode,
+                view,
+                xrExtensions,
+                entityRegistry,
+                dimensions,
+                "PanelRenderer",
+                executor,
+            )
+        panelEntity?.parent = activitySpaceImpl
+        panelEntity?.setHidden(true)
+    }
 
     override fun updateShadow(
         openXrToProposedPanel: Pose,
         openXrToPlane: Pose,
         shadowDim: FloatSize2d,
     ) {
-        // If there is no panel shadow node, create it.
-        if (entityShadowNode == null) {
-            createEntityShadow(openXrToProposedPanel, openXrToPlane, shadowDim)
-            return
-        }
-
         val panelPoseInActivitySpace =
             calculateProjectedPanelPoseInActivitySpace(openXrToProposedPanel, openXrToPlane)
-        xrExtensions.createNodeTransaction().use { transaction ->
-            if (!isVisible) {
-                transaction.setVisibility(entityShadowNode, true)
-                isVisible = true
-            }
-            transaction
-                .setPosition(
-                    entityShadowNode,
-                    panelPoseInActivitySpace.translation.x,
-                    panelPoseInActivitySpace.translation.y,
-                    panelPoseInActivitySpace.translation.z,
+
+        panelEntity?.let { panel ->
+            panel.size =
+                Dimensions(
+                    width = (shadowDim.width + marginInMeters) * SHADOW_SIZE_ADDED_MARGIN,
+                    height = (shadowDim.height + marginInMeters) * SHADOW_SIZE_ADDED_MARGIN,
+                    depth = 0f,
                 )
-                .setOrientation(
-                    entityShadowNode,
-                    panelPoseInActivitySpace.rotation.x,
-                    panelPoseInActivitySpace.rotation.y,
-                    panelPoseInActivitySpace.rotation.z,
-                    panelPoseInActivitySpace.rotation.w,
-                )
-                .apply()
+            panel.setPose(panelPoseInActivitySpace)
+            panel.setHidden(false)
+            isVisible = true
         }
     }
 
-    override fun hidePlane() {
-        if (!isVisible || entityShadowNode == null) {
+    override fun hideShadow() {
+        if (!isVisible) {
             return
         }
-        xrExtensions.createNodeTransaction().use { transaction ->
-            transaction.setVisibility(entityShadowNode, false).apply()
-        }
+        panelEntity?.setHidden(true)
         isVisible = false
     }
 
-    override fun destroy() {
-        synchronized(this) {
-            handler.removeCallbacksAndMessages(null)
-            surfaceControlViewHost?.let { handler.post { it.release() } }
-            entityShadowNode?.let {
-                xrExtensions.createNodeTransaction().use { transaction ->
-                    transaction.setParent(it, null).apply()
-                }
-            }
-            surfaceControlViewHost = null
-            entityShadowNode = null
-        }
-    }
-
-    private fun createEntityShadow(
-        openXrToProposedPanel: Pose,
-        openXrToPlane: Pose,
-        shadowDim: FloatSize2d,
-    ) {
-        val shadowWidth = shadowDim.width + PANEL_BORDER_ADDED_MARGIN
-        val shadowDepth = shadowDim.height + PANEL_BORDER_ADDED_MARGIN
-        val view: View = EntityShadowView(activity)
-
-        val panelPoseInActivitySpace =
-            calculateProjectedPanelPoseInActivitySpace(openXrToProposedPanel, openXrToPlane)
-
-        entityShadowNode = xrExtensions.createNode()
-
-        // TODO(b/484421916): Use PanelEntityImpl instead as it does the same thing as below
-        // The surfaceControlViewHost needs to be created on the main thread.
-        // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
-        handler.post {
-            synchronized(this) {
-                if (entityShadowNode == null) return@post
-                activity.display?.let {
-                    surfaceControlViewHost = SurfaceControlViewHost(activity, it, Binder())
-                    surfaceControlViewHost?.setView(view, shadowWidth.toInt(), shadowDepth.toInt())
-                    surfaceControlViewHost?.surfacePackage?.let { surfacePackage ->
-                        xrExtensions.createNodeTransaction().use { transaction ->
-                            transaction
-                                .setName(entityShadowNode, "PanelRenderer")
-                                .setSurfacePackage(entityShadowNode, surfacePackage)
-                                .setWindowBounds(
-                                    surfacePackage,
-                                    shadowWidth.toInt(),
-                                    shadowDepth.toInt(),
-                                )
-                                .setVisibility(entityShadowNode, true)
-                                .setPosition(
-                                    entityShadowNode,
-                                    panelPoseInActivitySpace.translation.x,
-                                    panelPoseInActivitySpace.translation.y,
-                                    panelPoseInActivitySpace.translation.z,
-                                )
-                                .setOrientation(
-                                    entityShadowNode,
-                                    panelPoseInActivitySpace.rotation.x,
-                                    panelPoseInActivitySpace.rotation.y,
-                                    panelPoseInActivitySpace.rotation.z,
-                                    panelPoseInActivitySpace.rotation.w,
-                                )
-                                .setParent(entityShadowNode, activitySpaceImpl.getNode())
-                                .apply()
-                        }
-                        surfacePackage.release()
-                    }
-                }
-            }
-        }
-        isVisible = true
+    override fun disableShadow() {
+        panelEntity?.dispose()
+        panelEntity = null
     }
 
     private fun calculateProjectedPanelPoseInActivitySpace(
@@ -195,28 +133,44 @@ internal class EntityShadowRendererImpl(
     private class EntityShadowView(context: Context) : View(context) {
         override fun onDrawForeground(canvas: Canvas) {
             super.onDrawForeground(canvas)
-            val border = Path()
-            border.addRoundRect(
-                HALF_STROKE_WIDTH,
-                HALF_STROKE_WIDTH,
-                canvas.width - HALF_STROKE_WIDTH,
-                canvas.height - HALF_STROKE_WIDTH,
-                CORNER_RADIUS,
-                CORNER_RADIUS,
-                Path.Direction.CW,
-            )
-            val paint = Paint()
-            paint.setColor(-0xab9c61)
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = STROKE_WIDTH
-            canvas.drawPath(border, paint)
+            val fillPaint =
+                Paint().apply {
+                    color = Color.parseColor(SHADOW_COLOR_HEX)
+                    alpha = FILL_ALPHA
+                    style = Paint.Style.FILL
+                    isAntiAlias = true
+                }
+
+            val rectF =
+                RectF(
+                    HALF_STROKE_WIDTH,
+                    HALF_STROKE_WIDTH,
+                    canvas.width - HALF_STROKE_WIDTH,
+                    canvas.height - HALF_STROKE_WIDTH,
+                )
+            canvas.drawRoundRect(rectF, CORNER_RADIUS, CORNER_RADIUS, fillPaint)
+
+            val borderPaint =
+                Paint().apply {
+                    color = Color.parseColor(SHADOW_COLOR_HEX)
+                    alpha = BORDER_ALPHA
+                    style = Paint.Style.STROKE
+                    strokeWidth = STROKE_WIDTH
+                    isAntiAlias = true
+                }
+            canvas.drawRoundRect(rectF, CORNER_RADIUS, CORNER_RADIUS, borderPaint)
         }
     }
 
-    companion object {
+    private companion object {
         private const val STROKE_WIDTH = 20f
         private const val HALF_STROKE_WIDTH = STROKE_WIDTH / 2
         private const val CORNER_RADIUS = 20f
         private const val PANEL_BORDER_ADDED_MARGIN = 50f
+        private const val SHADOW_SIZE_ADDED_MARGIN = 1.2f
+        private const val SHADOW_COLOR_HEX = "#9ECAFF"
+
+        private const val FILL_ALPHA = 150
+        private const val BORDER_ALPHA = 180
     }
 }

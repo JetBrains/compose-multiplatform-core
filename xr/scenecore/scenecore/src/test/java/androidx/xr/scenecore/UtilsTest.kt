@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.scenecore
 
-import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.PlaneType
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -123,21 +123,24 @@ class UtilsTest {
         val currentInputRay = Ray(vector1, vector2)
         val entityRegistry = EntityRegistry()
         val activitySpace = mock<RtActivitySpace>()
-        entityRegistry.setEntityForRtEntity(activitySpace, mock<Entity>())
+        val mockEntity = mock<Entity>()
+        entityRegistry.setEntityForRtEntity(activitySpace, mockEntity)
         val moveEvent =
-            RuntimeMoveEvent(
-                    RuntimeMoveEvent.MOVE_STATE_ONGOING,
-                    initialInputRay,
-                    currentInputRay,
-                    Pose(),
-                    Pose(vector1, Quaternion.Identity),
-                    vector1,
-                    vector1,
-                    activitySpace,
-                    null,
-                    null,
-                )
-                .toMoveEvent(entityRegistry)
+            requireNotNull(
+                RuntimeMoveEvent(
+                        RuntimeMoveEvent.MOVE_STATE_ONGOING,
+                        initialInputRay,
+                        currentInputRay,
+                        Pose(),
+                        Pose(vector1, Quaternion.Identity),
+                        vector1,
+                        vector1,
+                        activitySpace,
+                        null,
+                        null,
+                    )
+                    .toMoveEvent(entityRegistry)
+            )
 
         assertThat(moveEvent.moveState).isEqualTo(MoveEvent.MOVE_STATE_ONGOING)
 
@@ -177,10 +180,40 @@ class UtilsTest {
     }
 
     @Test
+    fun toMoveEvent_returnsNull_whenParentNotRegistered() {
+        val vector0 = Vector3(0f, 0f, 0f)
+        val vector1 = Vector3(1f, 1f, 1f)
+        val vector2 = Vector3(2f, 2f, 2f)
+
+        val initialInputRay = Ray(vector0, vector1)
+        val currentInputRay = Ray(vector1, vector2)
+        val entityRegistry = EntityRegistry()
+        val activitySpace = mock<RtActivitySpace>()
+
+        val moveEvent =
+            RuntimeMoveEvent(
+                    RuntimeMoveEvent.MOVE_STATE_ONGOING,
+                    initialInputRay,
+                    currentInputRay,
+                    Pose(),
+                    Pose(vector1, Quaternion.Identity),
+                    vector1,
+                    vector1,
+                    activitySpace,
+                    null,
+                    null,
+                )
+                .toMoveEvent(entityRegistry)
+
+        assertThat(moveEvent).isNull()
+    }
+
+    @Test
     fun verifyRtInputEventToInputEventConversion() {
         val entityRegistry = EntityRegistry()
         val activitySpace = mock<RtActivitySpace>()
-        entityRegistry.setEntityForRtEntity(activitySpace, mock<Entity>())
+        val mockEntity = mock<Entity>()
+        entityRegistry.setEntityForRtEntity(activitySpace, mockEntity)
         val inputEvent =
             RuntimeInputEvent(
                     RuntimeInputEvent.Source.HANDS,
@@ -533,13 +566,13 @@ class UtilsTest {
         whenever(
                 mockRuntime.createAnchorPlacementForPlanes(
                     setOf(RtPlaneType.HORIZONTAL),
-                    setOf(RtPlaneSemantic.ANY),
+                    RtPlaneSemantic.entries.toSet(),
                 )
             )
             .thenReturn(mockAnchorPlacement1)
         whenever(
                 mockRuntime.createAnchorPlacementForPlanes(
-                    setOf(RtPlaneType.ANY),
+                    RtPlaneType.entries.toSet(),
                     setOf(RtPlaneSemantic.WALL, RtPlaneSemantic.FLOOR),
                 )
             )
@@ -575,9 +608,9 @@ class UtilsTest {
     fun planeTypeToSceneCoreOrientation_convertsCorrectly() {
         assertThat(
                 listOf(
-                        Plane.Type.HORIZONTAL_UPWARD_FACING,
-                        Plane.Type.HORIZONTAL_DOWNWARD_FACING,
-                        Plane.Type.VERTICAL,
+                        PlaneType.HORIZONTAL_UPWARD_FACING,
+                        PlaneType.HORIZONTAL_DOWNWARD_FACING,
+                        PlaneType.VERTICAL,
                     )
                     .map { it.toSceneCoreOrientation() }
             )
@@ -589,15 +622,17 @@ class UtilsTest {
             .inOrder()
     }
 
+    // TODO: b/500464864 - Cleanup when PlaneSemanticType.ANY is removed.
+    @Suppress("DEPRECATION")
     @Test
     fun planeLabelToSceneCoreSemanticType_convertsCorrectly() {
         assertThat(
                 listOf(
-                        Plane.Label.FLOOR,
-                        Plane.Label.TABLE,
-                        Plane.Label.WALL,
-                        Plane.Label.CEILING,
-                        Plane.Label.UNKNOWN,
+                        PlaneLabel.FLOOR,
+                        PlaneLabel.TABLE,
+                        PlaneLabel.WALL,
+                        PlaneLabel.CEILING,
+                        PlaneLabel.UNKNOWN,
                     )
                     .map { it.toSceneCoreSemanticType() }
             )

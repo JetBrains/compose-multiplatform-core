@@ -40,6 +40,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.Space
+import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
 import org.junit.Rule
@@ -349,10 +350,15 @@ class GravityAlignedTest {
     @Test
     fun gravityAligned_onSubspace_alignsTiltedRootToWorld() {
         composeTestRule.configureFakeSession()
-        val tiltedRootNode = Entity.create(checkNotNull(composeTestRule.session), "tiltedRootNode")
+        val tiltedRootNode =
+            Entity.create(
+                checkNotNull(composeTestRule.session),
+                "tiltedRootNode",
+                parent = checkNotNull(composeTestRule.session).scene.activitySpace,
+            )
         val tiltedRootRotation = Quaternion.fromEulerAngles(pitch = 20f, yaw = 60f, roll = -25f)
         tiltedRootNode.setPose(
-            relativeTo = Space.REAL_WORLD,
+            relativeTo = Space.ACTIVITY,
             pose = Pose(rotation = tiltedRootRotation),
         )
 
@@ -378,7 +384,7 @@ class GravityAlignedTest {
 
         assertNotNull(panelEntity)
 
-        val actualFinalWorldRotation = panelEntity.getPose(relativeTo = Space.REAL_WORLD).rotation
+        val actualFinalWorldRotation = panelEntity.getPose(relativeTo = Space.ACTIVITY).rotation
         val angleDifference = Quaternion.angle(actualFinalWorldRotation, yawOnlyRotation)
 
         assertThat(angleDifference).isLessThan(0.01f)

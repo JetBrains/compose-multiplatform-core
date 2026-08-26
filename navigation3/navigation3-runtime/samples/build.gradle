@@ -34,7 +34,7 @@ plugins {
 dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity-compose:1.12.1")
     implementation("androidx.compose.animation:animation:1.7.5")
     implementation("androidx.compose.foundation:foundation:1.7.5")
     implementation("androidx.compose.foundation:foundation-layout:1.7.5")
@@ -56,10 +56,9 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2025"
     description = "Contains the sample code for Navigation"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
     namespace = "androidx.navigation3.runtime.samples"
 }

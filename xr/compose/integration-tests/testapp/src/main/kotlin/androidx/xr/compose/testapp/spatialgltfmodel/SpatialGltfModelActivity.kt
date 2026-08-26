@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:kotlin.OptIn(androidx.xr.compose.subspace.ExperimentalSpatialGltfModelApi::class)
+
 package androidx.xr.compose.testapp.spatialgltfmodel
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
@@ -36,7 +39,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -57,32 +59,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialGltfModel
-import androidx.xr.compose.subspace.SpatialGltfModelAnimation
-import androidx.xr.compose.subspace.SpatialGltfModelAnimation.AnimationState.Companion.Paused
-import androidx.xr.compose.subspace.SpatialGltfModelAnimation.AnimationState.Companion.Playing
 import androidx.xr.compose.subspace.SpatialGltfModelSource
 import androidx.xr.compose.subspace.SpatialGltfModelState
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
+import androidx.xr.compose.subspace.layout.MovePolicy
+import androidx.xr.compose.subspace.layout.SpatialMoveEvent
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.heightIn
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.subspace.rememberSpatialGltfModelState
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
-import androidx.xr.compose.unit.Meter
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -90,9 +93,9 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AlphaMode
 import androidx.xr.scenecore.GltfModelNode
 import androidx.xr.scenecore.KhronosPbrMaterial
+import androidx.xr.scenecore.PixelDensity
+import androidx.xr.scenecore.scene
 import java.nio.file.Paths
-import kotlin.math.roundToLong
-import kotlin.time.Duration.Companion.milliseconds
 
 class SpatialGltfModelActivity : ComponentActivity() {
 
@@ -109,10 +112,8 @@ class SpatialGltfModelActivity : ComponentActivity() {
 
     @Composable
     fun SpatialContent(state: DragonControlState) {
-        val session = LocalSession.current
-        LaunchedEffect(session) {
-            state.initializeSession(checkNotNull(session) { "session must be initialized" })
-        }
+        val session = LocalSession.current ?: return
+        LaunchedEffect(session) { state.initializeSession(session) }
 
         SpatialRow {
             DragonModel(state = state, modifier = SubspaceModifier.fillMaxWidth(0.7f))
@@ -147,6 +148,21 @@ class SpatialGltfModelActivity : ComponentActivity() {
                     checked = state.useRotation,
                     onCheckedChange = { state.useRotation = !state.useRotation },
                 )
+
+                SwitchRow(
+                    label = "Use App-Managed Movement (movable)",
+                    checked = state.useCustomMovement,
+                    onCheckedChange = { state.useCustomMovement = it },
+                )
+
+                if (state.useCustomMovement) {
+                    Button(
+                        onClick = { state.resetCustomMovement() },
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    ) {
+                        Text("Reset Model Position")
+                    }
+                }
 
                 Spacer(Modifier.height(16.dp))
 
@@ -195,117 +211,6 @@ class SpatialGltfModelActivity : ComponentActivity() {
                                 Text("Select a node", color = Color.Gray)
                             }
                         }
-                    }
-                }
-
-                // Animation List & Animation Controls
-                Row(Modifier.weight(1f)) {
-                    Column(Modifier.weight(0.4f).fillMaxSize()) {
-                        Text(
-                            "Animations (${state.animations.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        LazyColumn(
-                            Modifier.fillMaxWidth()
-                                .weight(1f)
-                                .background(Color.LightGray.copy(alpha = 0.1f))
-                        ) {
-                            itemsIndexed(state.animations) { ix, animation ->
-                                val isSelected = state.selectedAnimation == animation
-                                val displayName = animation.name ?: "Animation $ix"
-                                val playingText =
-                                    when (animation.animationState) {
-                                        Playing,
-                                        Paused -> " (${animation.animationState})"
-                                        else -> ""
-                                    }
-                                Text(
-                                    text = "$displayName$playingText",
-                                    fontSize = 14.sp,
-                                    fontWeight =
-                                        if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    modifier =
-                                        Modifier.fillMaxWidth()
-                                            .clickable { state.selectedAnimation = animation }
-                                            .background(
-                                                if (isSelected) Color.Blue.copy(alpha = 0.2f)
-                                                else Color.Transparent
-                                            )
-                                            .padding(8.dp),
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.width(16.dp))
-
-                    Column(Modifier.weight(0.6f).fillMaxSize()) {
-                        val animation = state.selectedAnimation
-                        if (animation != null) {
-                            AnimationControls(animation)
-                        } else {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("Select an animation", color = Color.Gray)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun AnimationControls(animation: SpatialGltfModelAnimation) {
-        var seekStartTime by remember(animation) { mutableStateOf(0.milliseconds) }
-
-        LaunchedEffect(seekStartTime) { animation.seekTo(seekStartTime) }
-
-        Column(Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
-            Text("Animation Controls", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-
-            LazyColumn {
-                item {
-                    SliderRow(
-                        label = "Speed",
-                        value = animation.speed,
-                        min = -2f,
-                        max = 2f,
-                        onValueChange = { animation.speed = it },
-                    )
-                }
-                item {
-                    SliderRow(
-                        label = "Seek to (ms)",
-                        value = seekStartTime.inWholeMilliseconds.toFloat(),
-                        min = 0f,
-                        max = animation.duration.inWholeMilliseconds.toFloat(),
-                        onValueChange = { seekStartTime = it.roundToLong().milliseconds },
-                    )
-                }
-                item {
-                    if (animation.animationState != Playing) {
-                        Button(
-                            onClick = {
-                                animation.start()
-                                seekStartTime = 0.milliseconds
-                            }
-                        ) {
-                            Text("Play")
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                animation.loop()
-                                seekStartTime = 0.milliseconds
-                            }
-                        ) {
-                            Text("Play Looping")
-                        }
-                    } else {
-                        Button(onClick = { animation.stop() }) { Text("Stop") }
-                        Spacer(Modifier.width(8.dp))
-                        Button(onClick = { animation.pause() }) { Text("Pause") }
                     }
                 }
             }
@@ -395,9 +300,12 @@ class SpatialGltfModelActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("PrimitiveInCollection")
     @Composable
     @SubspaceComposable
     fun DragonModel(state: DragonControlState, modifier: SubspaceModifier = SubspaceModifier) {
+        val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+        val pixelDensity = remember { session.scene.virtualPixelDensity }
         val dragonModelState =
             rememberSpatialGltfModelState(
                 source = SpatialGltfModelSource.fromPath(Paths.get("models", "Dragon_Evolved.gltf"))
@@ -408,14 +316,46 @@ class SpatialGltfModelActivity : ComponentActivity() {
                 source = SpatialGltfModelSource.fromPath(Paths.get("models", "xyzArrows.glb"))
             )
 
+        val density = LocalDensity.current
+
+        val customMovement: (SpatialMoveEvent) -> Unit = { event ->
+            val deltaX = event.pose.translation.x - event.previousPose.translation.x
+            val deltaY = event.pose.translation.y - event.previousPose.translation.y
+            val deltaZ = event.pose.translation.z - event.previousPose.translation.z
+
+            val deltaRot = event.previousPose.rotation.inverse * event.pose.rotation
+
+            with(density) {
+                state.customX += pixelDensity.convertMetersToPixels(deltaX).toDp()
+                state.customY += pixelDensity.convertMetersToPixels(deltaY).toDp()
+                state.customZ += pixelDensity.convertMetersToPixels(deltaZ).toDp()
+            }
+            state.customRotation *= deltaRot
+        }
+
         LaunchedEffect(dragonModelState) { state.dragonModelState = dragonModelState }
 
-        SpatialGltfModel(state = dragonModelState, modifier = modifier) {
+        val movementModifier =
+            if (state.useCustomMovement) {
+                modifier
+                    .offset(x = state.customX, y = state.customY, z = state.customZ)
+                    .rotate(state.customRotation)
+                    .movable(
+                        movePolicy =
+                            MovePolicy.custom(scaleWithDistance = false, onMove = customMovement)
+                    )
+            } else {
+                modifier.movable(movePolicy = MovePolicy.system(scaleWithDistance = false))
+            }
+
+        SpatialGltfModel(state = dragonModelState, modifier = movementModifier) {
             val selectedNode = state.selectedNode
             if (selectedNode != null) {
                 val nodeOffset =
                     createSpatialOffset(
                         translation = selectedNode.modelPose.translation,
+                        pixelDensity = pixelDensity,
+                        density = density,
                         rotation = if (state.useRotation) selectedNode.modelPose.rotation else null,
                     )
 
@@ -444,6 +384,23 @@ class SpatialGltfModelActivity : ComponentActivity() {
         }
     }
 
+    /** Converts a 3D translation to a SubspaceOffset. */
+    fun createSpatialOffset(
+        translation: Vector3,
+        pixelDensity: PixelDensity,
+        density: Density,
+        rotation: Quaternion? = null,
+    ): SubspaceModifier {
+        return with(density) {
+            SubspaceModifier.offset(
+                    x = pixelDensity.convertMetersToPixels(translation.x).toDp(),
+                    y = pixelDensity.convertMetersToPixels(translation.y).toDp(),
+                    z = pixelDensity.convertMetersToPixels(translation.z).toDp(),
+                )
+                .let { if (rotation != null) it.rotate(rotation) else it }
+        }
+    }
+
     data class TransformData(
         val translation: Vector3 = Vector3(0f, 0f, 0f),
         val rotationEuler: Vector3 = Vector3(0f, 0f, 0f),
@@ -455,20 +412,28 @@ class SpatialGltfModelActivity : ComponentActivity() {
         val nodes: List<GltfModelNode>
             get() = dragonModelState?.nodes ?: emptyList()
 
-        val animations: List<SpatialGltfModelAnimation>
-            get() = dragonModelState?.animations ?: emptyList()
-
         var selectedNode by mutableStateOf<GltfModelNode?>(null)
 
-        var selectedAnimation by mutableStateOf<SpatialGltfModelAnimation?>(null)
         var useRotation by mutableStateOf(false)
         var showArrows by mutableStateOf(false)
 
-        // Material Override State
+        var useCustomMovement by mutableStateOf(false)
+
+        var customX by mutableStateOf(0.dp)
+        var customY by mutableStateOf(0.dp)
+        var customZ by mutableStateOf(0.dp)
+        var customRotation by mutableStateOf(Quaternion.Identity)
+
+        fun resetCustomMovement() {
+            customX = 0.dp
+            customY = 0.dp
+            customZ = 0.dp
+            customRotation = Quaternion.Identity
+        }
+
         var overrideMaterial: KhronosPbrMaterial? = null
         val isMaterialOverridden by derivedStateOf { overriddenMaterials.containsKey(selectedNode) }
 
-        // New State for Material Properties
         var metallic by mutableFloatStateOf(1.0f)
         var roughness by mutableFloatStateOf(0.0f)
 
@@ -480,7 +445,6 @@ class SpatialGltfModelActivity : ComponentActivity() {
         suspend fun initializeSession(session: Session) {
             if (this.session == null) {
                 this.session = session
-                // Create material with initial values
                 val mat = KhronosPbrMaterial.create(session, AlphaMode.OPAQUE)
                 mat.setMetallicFactor(metallic)
                 mat.setRoughnessFactor(roughness)
@@ -564,18 +528,9 @@ class SpatialGltfModelActivity : ComponentActivity() {
             node.localScale = scale
         }
     }
-
-    /** Converts a 3D translation to a SubspaceOffset. */
-    fun createSpatialOffset(translation: Vector3, rotation: Quaternion? = null): SubspaceModifier {
-        return SubspaceModifier.offset(
-                x = Meter(translation.x).toDp(),
-                y = Meter(translation.y).toDp(),
-                z = Meter(translation.z).toDp(),
-            )
-            .let { if (rotation != null) it.rotate(rotation) else it }
-    }
 }
 
+@Suppress("DEPRECATION")
 @Composable
 fun SliderRow(label: String, value: Float, min: Float, max: Float, onValueChange: (Float) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {

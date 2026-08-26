@@ -16,33 +16,67 @@
 
 package androidx.build.intellij
 
+import androidx.build.BuildEnvironment
 import androidx.build.ProjectLayoutType
-import org.gradle.api.DefaultTask
+import androidx.build.getSdkPath
+import androidx.build.getVersionByName
+import androidx.build.ide.ManagedIdeTask
+import androidx.build.ide.configureIntellijLikeIde
+import androidx.build.ide.writeAndroidSdkPath
+import java.io.File
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskAction
-import org.gradle.work.DisableCachingByDefault
 
-@DisableCachingByDefault(because = "the purpose of this task is to launch IntelliJ")
-abstract class IntelliJTask : DefaultTask() {
-    @TaskAction
-    fun intellijw() {
-        println("ran intellij task")
-    }
+fun Project.configureIntelliJTask(task: ManagedIdeTask) {
+    task.ideName.convention("IntelliJ")
 
-    companion object {
-        private const val INTELLIJ_TASK = "intellij"
+    val intelliJVersion = getVersionByName("intelliJVersion")
 
-        fun Project.registerIntelliJTask() {
-            val studioTask =
-                when (ProjectLayoutType.from(this)) {
-                    ProjectLayoutType.ANDROIDX -> RootIntelliJTask::class.java
-                    ProjectLayoutType.PLAYGROUND -> return
-                }
-            tasks.register(INTELLIJ_TASK, studioTask)
+    val ext = if (task.osName == "linux") "tar.gz" else "dmg"
+    task.ideArchiveName.convention("intellij-$intelliJVersion-${task.osName}.$ext")
+
+    val downloadUrl =
+        if (task.osName == "mac_arm" || task.osName == "mac") {
+            "https://download.jetbrains.com/idea/idea-$intelliJVersion-aarch64.dmg"
+        } else {
+            "https://download.jetbrains.com/idea/idea-$intelliJVersion.tar.gz"
         }
+    task.archiveUrl.convention(downloadUrl)
+
+    task.licenseAgreementPath.convention("https://www.jetbrains.com/legal/docs/toolbox/user/")
+
+    task.ideBinaryRelativePath.convention(
+        if (task.osName == "linux") "bin/idea" else "Contents/MacOS/idea"
+    )
+
+    val vmOptionsFile =
+        objects.fileProperty().apply {
+            set(layout.projectDirectory.file("development/intellij/idea.vmoptions"))
+        }
+    val ideaPropertiesFile =
+        objects.fileProperty().apply {
+            set(layout.projectDirectory.file("development/intellij/idea.properties"))
+        }
+
+    task.configureIntellijLikeIde(
+        envPrefix = "IDEA",
+        ideaPropertiesFile = ideaPropertiesFile,
+        vmOptionsFile = vmOptionsFile,
+    )
+
+    val configBaseDir =
+        layout.dir(
+            providers.environmentVariable("HOME").map { File(it, ".IntelliJAndroidX/config") }
+        )
+    val sdkPath = getSdkPath()
+
+    task.provisionAction.set {
+        val configBaseDirFile = configBaseDir.get().asFile
+        it.writeAndroidSdkPath(configBaseDirFile, sdkPath)
+        BuildEnvironment.setupSymlinksIfNeeded(sdkPath)
     }
 }
 
-/** Task for launching intellij in the frameworks/support project */
-@DisableCachingByDefault(because = "the purpose of this task is to launch IntelliJ")
-abstract class RootIntelliJTask : IntelliJTask() {}
+fun Project.registerIntelliJTask() {
+    if (ProjectLayoutType.from(this) == ProjectLayoutType.PLAYGROUND) return
+    tasks.register("intellij", ManagedIdeTask::class.java) { task -> configureIntelliJTask(task) }
+}

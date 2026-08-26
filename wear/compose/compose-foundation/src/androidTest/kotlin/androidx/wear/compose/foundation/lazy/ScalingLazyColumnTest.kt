@@ -32,12 +32,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -70,7 +72,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -84,7 +85,7 @@ public class ScalingLazyColumnTest {
     private val scalingLazyColumnTag = "scalingLazyColumnTag"
     private val firstItemTag = "firstItemTag"
 
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private var itemSizePx: Int = 50
     private var itemSizeDp: Dp = Dp.Infinity
@@ -619,7 +620,9 @@ public class ScalingLazyColumnTest {
         state: ScalingLazyListState,
         currentInfo: StableRef<ScalingLazyListLayoutInfo?>,
     ) {
-        currentInfo.value = state.layoutInfo
+        LaunchedEffect(Unit) {
+            snapshotFlow { state.layoutInfo }.collect { currentInfo.value = it }
+        }
     }
 
     @Test

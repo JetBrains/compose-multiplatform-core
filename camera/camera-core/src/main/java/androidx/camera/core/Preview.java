@@ -65,6 +65,7 @@ import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.TextureView;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -105,6 +106,11 @@ import androidx.lifecycle.LifecycleOwner;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -155,6 +161,23 @@ import java.util.concurrent.Executor;
  * </pre>
  */
 public final class Preview extends UseCase {
+
+    /** The preview is not yet producing frames, is being recreated, or has been stopped. */
+    public static final int STREAM_STATE_IDLE = 0;
+
+    /** The camera is actively producing frames for the provided {@link Surface}. */
+    public static final int STREAM_STATE_STREAMING = 1;
+
+    /**
+     * Definitions for the preview stream state.
+     */
+    @Documented
+    @Retention(RetentionPolicy.SOURCE)
+    @Target({ElementType.TYPE_USE})
+    @IntDef({STREAM_STATE_IDLE, STREAM_STATE_STREAMING})
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @interface StreamState {
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime constant] - Stays constant for the lifetime of the UseCase. Which means
@@ -297,6 +320,7 @@ public final class Preview extends UseCase {
     /**
      * Creates previously allocated {@link DeferrableSurface} include those allocated by nodes.
      */
+    @MainThread
     private void clearPipeline() {
         // Closes the old error listener
         if (mCloseableErrorListener != null) {
@@ -354,9 +378,9 @@ public final class Preview extends UseCase {
                     if (getCamera() == null) {
                         return;
                     }
-
+                    Logger.w(TAG, "SessionConfig onError: error = " + error);
                     updateConfigAndOutput((PreviewConfig) getCurrentConfig(),
-                            getAttachedStreamSpec());
+                            requireNonNull(getAttachedStreamSpec()));
                     notifyReset();
                 });
 
@@ -388,6 +412,52 @@ public final class Preview extends UseCase {
         if (setTargetRotationInternal(targetRotation)) {
             sendTransformationInfoIfReady();
         }
+    }
+
+    /**
+     * Sets the mirror mode.
+     *
+     * <p>Valid values include: {@link MirrorMode#MIRROR_MODE_OFF},
+     * {@link MirrorMode#MIRROR_MODE_ON} and {@link MirrorMode#MIRROR_MODE_ON_FRONT_ONLY}.
+     * If not set, it defaults to {@link MirrorMode#MIRROR_MODE_ON_FRONT_ONLY}.
+     *
+     * <p>For API 32 and below, it will be no-op.
+     *
+     * @param mirrorMode The mirror mode.
+     */
+    public void setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
+        if (Build.VERSION.SDK_INT < 33) {
+            return;
+        }
+        if (setMirrorModeInternal(mirrorMode)) {
+            CameraInternal camera = getCamera();
+            if (camera == null) {
+                return;
+            }
+            // When attached to VirtualCamera (e.g. under StreamSharing), skip creating a temporary
+            // SurfaceRequest that StreamSharing.updateConfigAndOutput() would immediately recreate.
+            if (camera.getHasTransform()) {
+                updateConfigAndOutput((PreviewConfig) getCurrentConfig(),
+                        requireNonNull(getAttachedStreamSpec()));
+            }
+            notifyReset();
+        }
+    }
+
+    /**
+     * Returns the mirror mode.
+     *
+     * <p>If not set, it defaults to {@link MirrorMode#MIRROR_MODE_ON_FRONT_ONLY}.
+     *
+     * @return The mirror mode.
+     */
+    @MirrorMode.Mirror
+    public int getMirrorMode() {
+        int mirrorMode = getMirrorModeInternal();
+        if (mirrorMode == MIRROR_MODE_UNSPECIFIED) {
+            return MIRROR_MODE_ON_FRONT_ONLY;
+        }
+        return mirrorMode;
     }
 
     private void sendTransformationInfoIfReady() {
@@ -492,6 +562,7 @@ public final class Preview extends UseCase {
         setSurfaceProvider(DEFAULT_SURFACE_PROVIDER_EXECUTOR, surfaceProvider);
     }
 
+    @MainThread
     private void updateConfigAndOutput(@NonNull PreviewConfig config,
             @NonNull StreamSpec streamSpec) {
         mSessionConfigBuilder = createPipeline(config, streamSpec);
@@ -832,6 +903,7 @@ public final class Preview extends UseCase {
     @SuppressWarnings({"ObjectToString", "HiddenSuperclass"})
     public static final class Builder
             implements UseCaseConfig.Builder<Preview, PreviewConfig, Builder>,
+            UseCase.InteropConfigurable<Builder>,
             ImageOutputConfig.Builder<Builder>,
             ImageInputConfig.Builder<Builder>,
             ThreadConfig.Builder<Builder> {
@@ -890,6 +962,12 @@ public final class Preview extends UseCase {
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
         public @NonNull MutableConfig getMutableConfig() {
+            return mMutableConfig;
+        }
+
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Override
+        public @NonNull MutableConfig getInteropMutableConfig() {
             return mMutableConfig;
         }
 
@@ -1047,7 +1125,6 @@ public final class Preview extends UseCase {
          * @return The current Builder.
          * @see android.hardware.camera2.params.OutputConfiguration#setMirrorMode(int)
          */
-        @ExperimentalMirrorMode
         @Override
         public @NonNull Builder setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
             if (Build.VERSION.SDK_INT >= 33) {

@@ -67,7 +67,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.fail
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,7 +87,7 @@ private val TestColors =
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContextMenuUiTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val tag = "testTag"
     private val longText = "M ".repeat(200).trimEnd()
@@ -251,8 +250,10 @@ class ContextMenuUiTest {
             val action = accessibilityAction.action
             assertThat(action).isNotNull()
             assertThat(onClickCount).isEqualTo(0)
-            action!!.invoke()
-            assertThat(onClickCount).isEqualTo(1)
+            rule.runOnUiThread {
+                action!!.invoke()
+                assertThat(onClickCount).isEqualTo(1)
+            }
         }
     }
 
@@ -272,8 +273,10 @@ class ContextMenuUiTest {
             val action = accessibilityAction.action
             assertThat(action).isNotNull()
             assertThat(onClickCount).isEqualTo(0)
-            action!!.invoke()
-            assertThat(onClickCount).isEqualTo(0)
+            rule.runOnUiThread {
+                action!!.invoke()
+                assertThat(onClickCount).isEqualTo(0)
+            }
         }
     }
 

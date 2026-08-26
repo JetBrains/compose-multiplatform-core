@@ -16,17 +16,14 @@
 
 package androidx.xr.compose.subspace
 
+import android.content.Context
 import android.net.Uri
-import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.annotation.RawRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.RememberObserver
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,7 +32,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.subspace.SpatialGltfModelSource.Companion.fromData
 import androidx.xr.compose.subspace.SpatialGltfModelSource.Companion.fromPath
 import androidx.xr.compose.subspace.SpatialGltfModelSource.Companion.fromUri
 import androidx.xr.compose.subspace.layout.CoreModelEntity
@@ -50,23 +46,14 @@ import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.GltfAnimation
-import androidx.xr.scenecore.GltfAnimationStartOptions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.GltfModelNode
 import androidx.xr.scenecore.scene
 import java.nio.file.Path
 import java.util.Collections
-import java.util.function.Consumer
 import kotlin.math.roundToInt
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.CancellationException
 
 /**
  * This composable renders a glTF or .glb model that is loaded asynchronously from the provided
@@ -89,50 +76,37 @@ import kotlinx.coroutines.supervisorScope
  *   the model has finished loading. You can use the [state] parameter to observe the loading status
  *   via [SpatialGltfModelState.status].
  *
+ * **Failure Behavior:** If the model fails to load for any reason, this composable will render
+ * nothing. You can inspect the exact reason for the failure by observing
+ * [SpatialGltfModelState.status].
+ *
  * @param state A [SpatialGltfModelState] object to observe and control the SpatialGltfModel. This
  *   can be created using [rememberSpatialGltfModelState]. The state should be created with a
  *   [SpatialGltfModelSource] that defines where to load the 3D model from. Use the helper functions
- *   [fromPath], [fromUri], or [fromData] to create a [SpatialGltfModelSource].
+ *   [fromPath] or [fromUri] to create a [SpatialGltfModelSource].
  * @param modifier The [SubspaceModifier] to be applied to this SpatialGltfModel.
  * @param content The content within the space of the [SpatialGltfModel]
  * @sample androidx.xr.compose.samples.SpatialGltfModelSample
  */
 @Composable
 @SubspaceComposable
+@ExperimentalSpatialGltfModelApi
 public fun SpatialGltfModel(
     state: SpatialGltfModelState,
     modifier: SubspaceModifier = SubspaceModifier,
     content: @Composable @SubspaceComposable () -> Unit = {},
 ) {
-    var loadingFailed by remember(state) { mutableStateOf(false) }
-    if (loadingFailed) return // Do not proceed until the source has changed.
-
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val coreModelEntity = remember { CoreModelEntity() }
-    var intrinsicSize by remember { mutableStateOf(IntVolumeSize.Zero) }
+    val coreModelEntity = remember { CoreModelEntity(session.scene.virtualPixelDensity) }
 
-    LaunchedEffect(state) {
-        supervisorScope {
-            launch(
-                CoroutineExceptionHandler { _, throwable ->
-                    state.setLoadResult(Result.failure(throwable.cause ?: throwable))
-                    loadingFailed = true
-                }
-            ) {
-                val model = state.source.createModel(session)
-                val entity =
-                    GltfModelEntity.create(session, model, parent = session.scene.activitySpace)
-                coreModelEntity.attachEntity(entity)
-                state.setLoadResult(Result.success(coreModelEntity))
-                intrinsicSize = coreModelEntity.intrinsicSize
-            }
-        }
-    }
+    LaunchedEffect(state, session, coreModelEntity) { state.load(session, coreModelEntity) }
+
+    if (state.status is SpatialGltfModelStatus.Failed) return // Do not proceed if loading failed
 
     SubspaceLayout(
         modifier = modifier,
         coreEntity = coreModelEntity,
-        measurePolicy = SpatialGltfModelMeasurePolicy(intrinsicSize),
+        measurePolicy = SpatialGltfModelMeasurePolicy(state.modelSize),
         content = content,
     )
 }
@@ -143,9 +117,11 @@ public fun SpatialGltfModel(
  * @param source The [SpatialGltfModelSource] that defines where to load the 3D model from.
  */
 @Composable
+@ExperimentalSpatialGltfModelApi
 public fun rememberSpatialGltfModelState(source: SpatialGltfModelSource): SpatialGltfModelState =
     remember(source) { SpatialGltfModelStateHolder(SpatialGltfModelState(source)) }.state
 
+@kotlin.OptIn(ExperimentalSpatialGltfModelApi::class)
 private class SpatialGltfModelStateHolder(val state: SpatialGltfModelState) : RememberObserver {
     override fun onRemembered() {}
 
@@ -161,8 +137,8 @@ private class SpatialGltfModelStateHolder(val state: SpatialGltfModelState) : Re
 /**
  * A state object that can be hoisted to observe and control a [SpatialGltfModel].
  *
- * A `SpatialGltfModelState` can be used to query loading and animation status, and to start or stop
- * animations on the associated `SpatialGltfModel`.
+ * A `SpatialGltfModelState` can be used to query loading status on the associated
+ * `SpatialGltfModel`.
  *
  * To create and remember a `SpatialGltfModelState`, use [rememberSpatialGltfModelState]. If a
  * `SpatialGltfModelState` instance is manually created using the constructor then the caller needs
@@ -170,8 +146,11 @@ private class SpatialGltfModelStateHolder(val state: SpatialGltfModelState) : Re
  *
  * @param source The [SpatialGltfModelSource] that defines where to load the 3D model from.
  */
+@ExperimentalSpatialGltfModelApi
 public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) : AutoCloseable {
-    private val coreEntityActionQueue = ActionQueue<CoreModelEntity>()
+
+    internal var modelSize by mutableStateOf(IntVolumeSize.Zero)
+        private set
 
     /**
      * The current [SpatialGltfModelStatus] of the glTF model.
@@ -183,6 +162,9 @@ public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) 
      */
     public val status: SpatialGltfModelStatus
         get() = _status.value
+
+    private val _status: MutableState<SpatialGltfModelStatus> =
+        mutableStateOf(SpatialGltfModelStatus.Loading)
 
     /**
      * The subnodes defined in the glTF model.
@@ -198,49 +180,30 @@ public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) 
 
     private val _nodes: SnapshotStateList<GltfModelNode> = mutableStateListOf()
 
-    private val _status: MutableState<SpatialGltfModelStatus> =
-        mutableStateOf(SpatialGltfModelStatus.Loading())
+    // TODO (b/527562998) - Re-add the glTF animation APIs after Beta 1.0
+    internal suspend fun load(session: Session, coreModelEntity: CoreModelEntity) {
+        try {
+            _status.value = SpatialGltfModelStatus.Loading
+            val model = source.createModel(session)
+            val entity =
+                GltfModelEntity.create(session, model, parent = session.scene.activitySpace)
 
-    /**
-     * The animations defined in the glTF model.
-     *
-     * Each animation can be controlled individually and multiple animations may be playing at one
-     * time as long as those animations affect different parts of the model.
-     *
-     * @sample androidx.xr.compose.samples.SpatialGltfModelAnimationSample
-     */
-    public val animations: List<SpatialGltfModelAnimation>
-        @RequiresApi(Build.VERSION_CODES.O) get() = Collections.unmodifiableList(_animations)
+            coreModelEntity.attachEntity(entity)
 
-    private val _animations: SnapshotStateList<SpatialGltfModelAnimation> = mutableStateListOf()
+            modelSize = coreModelEntity.modelSize
 
-    internal fun setLoadResult(result: Result<CoreModelEntity>) {
-        result
-            .onSuccess { coreEntity ->
-                coreEntityActionQueue.value = coreEntity
-                _status.value = SpatialGltfModelStatus.Loaded()
-                _nodes.clear()
-                _nodes.addAll(coreEntity.nodes)
+            _nodes.clear()
+            _nodes.addAll(coreModelEntity.nodes)
 
-                // Usage of the Animation API requires SDK >= 26
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    _animations.clear()
-                    _animations.addAll(
-                        coreEntity.animations?.fastMap(::SpatialGltfModelAnimation) ?: emptyList()
-                    )
-                }
-            }
-            .onFailure { exception ->
-                val gltfException =
-                    exception as? GltfLoadException ?: GltfLoadException(cause = exception)
-                _status.value = SpatialGltfModelStatus.Failed(gltfException)
-            }
+            _status.value = SpatialGltfModelStatus.Loaded
+        } catch (throwable: Throwable) {
+            if (throwable is CancellationException) throw throwable
+            _status.value = SpatialGltfModelStatus.Failed(throwable.cause ?: throwable)
+        }
     }
 
     override fun close() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            _animations.fastForEach { it.close() }
-        }
+        // Reserved for future cleanup
     }
 }
 
@@ -248,13 +211,14 @@ public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) 
  * An object that describes and contains information relevant to the current loading state of the
  * glTF model.
  */
+@ExperimentalSpatialGltfModelApi
 public abstract class SpatialGltfModelStatus private constructor() {
 
     /** The glTF model is fully loaded and ready to be displayed. */
-    public class Loaded : SpatialGltfModelStatus()
+    @ExperimentalSpatialGltfModelApi public object Loaded : SpatialGltfModelStatus()
 
     /** The glTF model is currently loading and is not ready to be displayed. */
-    public class Loading : SpatialGltfModelStatus()
+    @ExperimentalSpatialGltfModelApi public object Loading : SpatialGltfModelStatus()
 
     /**
      * The glTF model has failed to load properly.
@@ -263,7 +227,8 @@ public abstract class SpatialGltfModelStatus private constructor() {
      *
      * @param exception thrown when the glTF model tried to load.
      */
-    public class Failed(public val exception: GltfLoadException) : SpatialGltfModelStatus() {
+    @ExperimentalSpatialGltfModelApi
+    public class Failed(public val exception: Throwable) : SpatialGltfModelStatus() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Failed) return false
@@ -282,8 +247,9 @@ public abstract class SpatialGltfModelStatus private constructor() {
 /**
  * Defines the source for a 3D model to be rendered by the [SpatialGltfModel] composable.
  *
- * Instances of [SpatialGltfModelSource] are created using [fromPath], [fromUri], or [fromData].
+ * Instances of [SpatialGltfModelSource] are created using [fromPath] or [fromUri].
  */
+@ExperimentalSpatialGltfModelApi
 public interface SpatialGltfModelSource {
 
     /**
@@ -294,6 +260,7 @@ public interface SpatialGltfModelSource {
      */
     public suspend fun createModel(session: Session): GltfModel
 
+    @ExperimentalSpatialGltfModelApi
     public companion object {
         /**
          * Creates a [SpatialGltfModelSource] that loads a `glTF` model from a [Path] relative to
@@ -308,6 +275,7 @@ public interface SpatialGltfModelSource {
          * @throws IllegalArgumentException if [path] is an absolute path.
          */
         @JvmStatic
+        @ExperimentalSpatialGltfModelApi
         public fun fromPath(path: Path): SpatialGltfModelSource = PathGltfModelSource(path)
 
         private data class PathGltfModelSource(private val path: Path) : SpatialGltfModelSource {
@@ -327,7 +295,9 @@ public interface SpatialGltfModelSource {
          * @return A [SpatialGltfModelSource] that can be used with the [SpatialGltfModel]
          *   composable.
          */
-        @JvmStatic public fun fromUri(uri: Uri): SpatialGltfModelSource = UriGltfModelSource(uri)
+        @JvmStatic
+        @ExperimentalSpatialGltfModelApi
+        public fun fromUri(uri: Uri): SpatialGltfModelSource = UriGltfModelSource(uri)
 
         private data class UriGltfModelSource(private val uri: Uri) : SpatialGltfModelSource {
             override suspend fun createModel(session: Session): GltfModel =
@@ -335,53 +305,42 @@ public interface SpatialGltfModelSource {
         }
 
         /**
-         * Creates a [SpatialGltfModelSource] that loads a `glTF` model from a [ByteArray].
-         *
-         * This is useful for loading models that are embedded directly in the application or
-         * generated at runtime.
+         * Creates a [SpatialGltfModelSource] that loads a `glTF` model from a resource ID.
          *
          * Currently, only binary `glTF` (`.glb`) files are supported.
          *
-         * @param assetData The byte array data of a binary `glTF` (`.glb`) model.
-         * @param assetKey A unique key to identify the model in the internal cache. If not
-         *   provided, the [hashCode] of the [assetData] will be used. Providing a stable key can
-         *   improve performance by avoiding redundant parsing of the same model data.
+         * @param context The context to use for loading the resource.
+         * @param resId The resource ID of the binary `glTF` (`.glb`) model to be loaded.
          * @return A [SpatialGltfModelSource] that can be used with the [SpatialGltfModel]
          *   composable.
          */
         @JvmStatic
-        public fun fromData(
-            assetData: ByteArray,
-            assetKey: String = assetData.hashCode().toString(),
-        ): SpatialGltfModelSource = DataGltfModelSource(assetData, assetKey)
+        @ExperimentalSpatialGltfModelApi
+        public fun fromResource(context: Context, @RawRes resId: Int): SpatialGltfModelSource =
+            ResourceGltfModelSource(context.applicationContext, resId)
 
-        private class DataGltfModelSource(
-            private val assetData: ByteArray,
-            private val assetKey: String,
+        private data class ResourceGltfModelSource(
+            private val context: Context,
+            @RawRes private val resId: Int,
         ) : SpatialGltfModelSource {
-            override suspend fun createModel(session: Session): GltfModel =
-                GltfModel.create(session, assetData, assetKey)
+            override suspend fun createModel(session: Session): GltfModel {
+                // TODO(b/508296996): Revisit this implementation when SceneCore 1.1 stabilizes the
+                // byte-array API.
+                //
+                // Commented out restricted API usage:
+                // val inputStream = context.resources.openRawResource(resId)
+                // val byteArray = inputStream.use { it.readBytes() }
+                // val key = resId.toString(radix = 16)
+                // return GltfModel.create(session, byteArray, key)
 
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (other !is DataGltfModelSource) return false
-
-                if (!assetData.contentEquals(other.assetData)) return false
-                if (assetKey != other.assetKey) return false
-
-                return true
-            }
-
-            override fun hashCode(): Int {
-                var result = assetData.contentHashCode()
-                result = 31 * result + assetKey.hashCode()
-                return result
+                val uri = Uri.parse("android.resource://${context.packageName}/$resId")
+                return GltfModel.create(session, uri)
             }
         }
     }
 }
 
-private class SpatialGltfModelMeasurePolicy(private val intrinsicSize: IntVolumeSize) :
+private class SpatialGltfModelMeasurePolicy(private val modelSize: IntVolumeSize) :
     SubspaceMeasurePolicy {
     override fun SubspaceMeasureScope.measure(
         measurables: List<SubspaceMeasurable>,
@@ -389,16 +348,16 @@ private class SpatialGltfModelMeasurePolicy(private val intrinsicSize: IntVolume
     ): SubspaceMeasureResult {
 
         val boxSize: IntVolumeSize =
-            if (intrinsicSize == IntVolumeSize.Zero) {
+            if (modelSize == IntVolumeSize.Zero) {
                 IntVolumeSize(constraints.minWidth, constraints.minHeight, constraints.minDepth)
             } else {
                 val scales =
-                    constraints.map(intrinsicSize.toFloatSize3d()) { value, min, max ->
+                    constraints.map(modelSize.toFloatSize3d()) { value, min, max ->
                         value.coerceIn(min, max) / value.coerceAtLeast(1f)
                     }
                 val scaleFactor = minOf(scales.width, scales.height, scales.depth)
 
-                constraints.map(intrinsicSize) { value, min, max ->
+                constraints.map(modelSize) { value, min, max ->
                     (value * scaleFactor).roundToInt().coerceIn(min, max)
                 }
             }
@@ -437,213 +396,10 @@ private class SpatialGltfModelMeasurePolicy(private val intrinsicSize: IntVolume
 
         other as SpatialGltfModelMeasurePolicy
 
-        return intrinsicSize == other.intrinsicSize
+        return modelSize == other.modelSize
     }
 
     override fun hashCode(): Int {
-        return intrinsicSize.hashCode()
+        return modelSize.hashCode()
     }
 }
-
-/**
- * An animation that is attached to a glTF model.
- *
- * This may be used to inspect or control the state of this animation.
- */
-@RequiresApi(Build.VERSION_CODES.O)
-public class SpatialGltfModelAnimation internal constructor(private val animation: GltfAnimation) :
-    AutoCloseable {
-
-    private val stateListener: Consumer<GltfAnimation.AnimationState> =
-        Consumer<GltfAnimation.AnimationState> { state ->
-                _animationState.value = AnimationState.fromSceneCoreAnimationState(state)
-            }
-            .also { animation.addAnimationStateListener(it) }
-
-    /** The current animation state of the [SpatialGltfModelAnimation]. */
-    @JvmInline
-    public value class AnimationState private constructor(private val value: Int) {
-        override fun toString(): String =
-            when (this) {
-                Playing -> "Playing"
-                Stopped -> "Stopped"
-                Paused -> "Paused"
-                else -> "Unknown"
-            }
-
-        public companion object {
-            /** The animation is currently playing. */
-            public val Playing: AnimationState = AnimationState(0)
-
-            /** The animation is currently stopped. */
-            public val Stopped: AnimationState = AnimationState(1)
-
-            /** The animation is currently paused. */
-            public val Paused: AnimationState = AnimationState(2)
-
-            internal fun fromSceneCoreAnimationState(
-                state: GltfAnimation.AnimationState
-            ): AnimationState =
-                when (state) {
-                    GltfAnimation.AnimationState.PLAYING -> Playing
-                    GltfAnimation.AnimationState.PAUSED -> Paused
-                    GltfAnimation.AnimationState.STOPPED -> Stopped
-                    else -> Stopped
-                }
-        }
-    }
-
-    /**
-     * The current playing state of this animation.
-     *
-     * This is backed by a snapshot [State] object that is updated whenever the animation state
-     * changes and may trigger recomposition.
-     *
-     * @see AnimationState
-     */
-    public val animationState: AnimationState
-        get() = _animationState.value
-
-    private val _animationState: MutableState<AnimationState> =
-        mutableStateOf(AnimationState.fromSceneCoreAnimationState(animation.animationState))
-
-    /**
-     * The name of this animation or null if the animation does not have a name.
-     *
-     * The name is not guaranteed to be unique across all animations.
-     */
-    public val name: String?
-        get() = animation.name
-
-    /** The duration of this animation. */
-    public val duration: Duration
-        get() = animation.duration.toKotlinDuration()
-
-    /**
-     * The playback rate for this animation.
-     *
-     * Negative multipliers will play the animation in reverse.
-     */
-    public var speed: Float
-        get() = _speed.floatValue
-        set(value) {
-            // Update immediately if the animation is playing or paused; otherwise, store the speed
-            // to be updated on the next call to start or loop.
-            val sceneCoreState = animation.animationState
-            if (
-                sceneCoreState == GltfAnimation.AnimationState.PLAYING ||
-                    sceneCoreState == GltfAnimation.AnimationState.PAUSED
-            ) {
-                animation.setSpeed(value)
-            }
-
-            _speed.floatValue = value
-        }
-
-    private val _speed: MutableFloatState = mutableFloatStateOf(1.0f)
-
-    private var seekStartTime: Duration = 0.seconds
-
-    /**
-     * Starts playing this animation. The animation will play once and stop once it reaches its
-     * duration.
-     *
-     * This transitions the animation state to [AnimationState.Playing].
-     *
-     * If the animation is already looping, calling this will start the animation again but it won't
-     * loop when the animation is over.
-     */
-    public fun start() {
-        animation.start(
-            options =
-                GltfAnimationStartOptions(
-                    shouldLoop = false,
-                    speed = speed,
-                    seekStartTime = seekStartTime.toJavaDuration(),
-                )
-        )
-        seekStartTime = 0.seconds
-    }
-
-    /**
-     * Starts playing this animation. The animation will play and repeat from the beginning when it
-     * reaches its duration.
-     *
-     * This transitions the animation state to [AnimationState.Playing].
-     *
-     * If the animation is already playing, calling this will start the animation again but it will
-     * now loop instead of ending when the animation is over.
-     */
-    public fun loop() {
-        animation.start(
-            options =
-                GltfAnimationStartOptions(
-                    shouldLoop = true,
-                    speed = speed,
-                    seekStartTime = seekStartTime.toJavaDuration(),
-                )
-        )
-        seekStartTime = 0.seconds
-    }
-
-    /**
-     * Stops this animation.
-     *
-     * This resets the playback time to 0 and transitions the animation state to
-     * [AnimationState.Stopped]. If this animation is not currently playing or pausing, this method
-     * has no effect.
-     */
-    public fun stop() {
-        animation.stop()
-    }
-
-    /**
-     * Pauses this animation.
-     *
-     * This freezes the animation at the current frame and transitions the animation state to
-     * [AnimationState.Paused]. Use [start] to continue playback.
-     *
-     * Note: Calling [start] or [loop] while in the [AnimationState.Paused] state will resume the
-     * animation from the current frame. To reset the animation, call stop() or seekTo(0.seconds).
-     */
-    public fun pause() {
-        animation.pause()
-    }
-
-    /**
-     * Seeks the animation to a specific time offset from the start of the animation.
-     *
-     * If the [animationState] of the animation is [AnimationState.Stopped], this will set the start
-     * time of the animation that will take effect when the animation is played next. The state of
-     * glTF will not update until the next time [start] or [loop] is called.
-     *
-     * @param time The offset from the beginning of the animation. It must be greater than or equal
-     *   to zero. If [time] is larger than the duration of the animation, the duration of the
-     *   animation will be used instead.
-     * @throws IllegalArgumentException if [time] is negative.
-     */
-    public fun seekTo(time: Duration) {
-        require(!time.isNegative()) { "time must be non-negative" }
-
-        if (animation.animationState == GltfAnimation.AnimationState.STOPPED) {
-            seekStartTime = time
-        } else {
-            animation.seekTo(time.toJavaDuration())
-        }
-    }
-
-    override fun close() {
-        animation.removeAnimationStateListener(stateListener)
-    }
-}
-
-/**
- * Exception thrown when a glTF model fails to load.
- *
- * @param message the detail message.
- * @param cause the underlying cause of the failure.
- */
-public class GltfLoadException(
-    message: String? = "Failed to load glTF model",
-    cause: Throwable? = null,
-) : RuntimeException(message, cause)

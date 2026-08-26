@@ -28,11 +28,17 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.captureToImage
@@ -44,7 +50,6 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,7 +58,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavigationRailScreenshotTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -253,6 +258,57 @@ class NavigationRailScreenshotTest {
             interaction = null,
             goldenIdentifier = "navigationRail_lightTheme_transparentIndicator",
         )
+    }
+
+    @Test
+    fun navigationRail_firstItem_focused_insetFocusRings() {
+        val focusRequester = FocusRequester()
+        var localInputModeManager: InputModeManager? = null
+
+        composeTestRule.setMaterialContent(lightColorScheme()) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            CompositionLocalProvider(
+                LocalRippleThemeConfiguration provides
+                    RippleDefaults.InsetFocusRingThemeConfiguration
+            ) {
+                localInputModeManager = LocalInputModeManager.current
+                Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
+                    NavigationRail {
+                        NavigationRailItem(
+                            icon = { Icon(Icons.Filled.Favorite, null) },
+                            label = { Text("Favorites") },
+                            selected = true,
+                            onClick = {},
+                            modifier = Modifier.focusRequester(focusRequester),
+                        )
+                        NavigationRailItem(
+                            icon = { Icon(Icons.Filled.Home, null) },
+                            label = { Text("Home") },
+                            selected = false,
+                            onClick = {},
+                        )
+                        NavigationRailItem(
+                            icon = { Icon(Icons.Filled.Search, null) },
+                            label = { Text("Search") },
+                            selected = false,
+                            onClick = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(Tag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "navigationRail_firstItem_focused_insetFocusRings")
     }
 
     /**

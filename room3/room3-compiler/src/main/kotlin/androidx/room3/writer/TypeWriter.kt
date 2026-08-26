@@ -101,12 +101,17 @@ abstract class TypeWriter(val context: WriterContext) {
                 addAnnotation(
                     KAnnotationSpec.builder(Suppress::class)
                         .addMember(
-                            "names = [%S, %S, %S, %S, %S]",
+                            "names = [%S, %S, %S, %S, %S, %S, %S, %S]",
                             "UNCHECKED_CAST",
                             "DEPRECATION",
                             "REDUNDANT_PROJECTION",
                             "REMOVAL",
+                            "OPT_IN_USAGE_ERROR",
+                            "OPT_IN_USAGE",
                             "MemberExtensionConflict", // b/493549452
+                            // Extra Kotlin compiler warning
+                            // (https://kotlinlang.org/docs/whatsnew21.html#extra-compiler-checks)
+                            "CAN_BE_VAL",
                         )
                         .build()
                 )
@@ -211,6 +216,7 @@ abstract class TypeWriter(val context: WriterContext) {
         val codeLanguage: CodeLanguage,
         val targetPlatforms: Set<XProcessingEnv.Platform>,
         val javaLambdaSyntaxAvailable: Boolean,
+        val validateChunkSize: Int,
     ) {
         companion object {
             fun fromProcessingContext(context: Context) =
@@ -218,6 +224,7 @@ abstract class TypeWriter(val context: WriterContext) {
                     codeLanguage = context.codeLanguage,
                     targetPlatforms = context.processingEnv.targetPlatforms,
                     javaLambdaSyntaxAvailable = context.javaLambdaSyntaxAvailable,
+                    validateChunkSize = context.validateChunkSize,
                 )
         }
     }

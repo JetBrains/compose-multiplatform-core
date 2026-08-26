@@ -68,6 +68,9 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
 
     internal companion object {
         private const val TAG = "PreviewData"
+        private const val MAX_FORMAT_STRING_LEN = 1024
+        // Reject any conversion with an explicit width/precision ≥ 5 digits.
+        private val INVALID_FORMAT_WIDTH = Regex("%[-#+ 0,(]*\\d{5,}")
 
         // XML Tags
         private const val TAG_COMPLICATION = "complication"
@@ -605,7 +608,7 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
             onNonCommonTag: ((XmlResourceParser) -> Boolean)? = null,
             onTextResolved: (String, String) -> Unit,
         ) {
-            while (parser.next() != XmlPullParser.END_TAG || parser.name != TAG_COMPLICATION) {
+            while (parser.isBeforeEndTag(TAG_COMPLICATION)) {
                 if (parser.eventType != XmlPullParser.START_TAG) {
                     continue
                 }
@@ -648,7 +651,7 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
 
             if (dictionaryKey != null) {
                 val replacements = PersistableBundle()
-                while (parser.next() != XmlPullParser.END_TAG || parser.name != TAG_EXTENDED_DATA) {
+                while (parser.isBeforeEndTag(TAG_EXTENDED_DATA)) {
                     if (parser.eventType != XmlPullParser.START_TAG) {
                         continue
                     }
@@ -754,7 +757,7 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
             parentTagName: String,
         ): String? {
             var text: String? = null
-            while (parser.next() != XmlPullParser.END_TAG || parser.name != parentTagName) {
+            while (parser.isBeforeEndTag(parentTagName)) {
                 if (parser.eventType != XmlPullParser.START_TAG) {
                     continue
                 }
@@ -764,8 +767,9 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
                         TAG_FORMATTED ->
                             parseFormattedText(parser, parserContext, providerContext, textUtils)
                         TAG_TIME -> parseTimeText(parser, parserContext, providerContext, textUtils)
-                        TAG_DATE -> parseDateText(parser, parserContext, textUtils)
-                        TAG_TIME_DIFFERENCE -> parseTimeDifferenceText(parser, parserContext)
+                        TAG_DATE -> parseDateText(parser, parserContext, providerContext, textUtils)
+                        TAG_TIME_DIFFERENCE ->
+                            parseTimeDifferenceText(parser, parserContext, providerContext)
                         else -> null
                     }
             }
@@ -853,29 +857,38 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
                 )
 
             val params = mutableListOf<Any>()
-            var eventType: Int
-            while (
-                parser.next().also { eventType = it } != XmlPullParser.END_TAG ||
-                    parser.name != TAG_FORMATTED
-            ) {
-                if (eventType == XmlPullParser.START_TAG && parser.name == TAG_PARAM) {
-                    parser.nextTag() // Move to the param's type tag
+            while (parser.isBeforeEndTag(TAG_FORMATTED)) {
+                if (parser.eventType == XmlPullParser.START_TAG && parser.name == TAG_PARAM) {
+                    // Advance to the <param>'s single child; bail out on empty <param/>.
+                    if (parser.nextTag() == XmlPullParser.END_TAG) {
+                        continue
+                    }
                     when (parser.name) {
                         TAG_TIME ->
                             parseTimeText(parser, parserContext, providerContext, textUtils)?.let {
                                 params.add(it)
                             }
                         TAG_DATE ->
-                            parseDateText(parser, parserContext, textUtils)?.let { params.add(it) }
+                            parseDateText(parser, parserContext, providerContext, textUtils)?.let {
+                                params.add(it)
+                            }
                         TAG_PLAIN ->
                             parsePlainTextToAny(parser, providerContext)?.let { params.add(it) }
                         TAG_TIME_DIFFERENCE ->
-                            parseTimeDifferenceText(parser, parserContext)?.let { params.add(it) }
+                            parseTimeDifferenceText(parser, parserContext, providerContext)?.let {
+                                params.add(it)
+                            }
                     }
                     parser.nextTag() // Move to the param type's end tag
                 }
             }
-            return String.format(formatString, *params.toTypedArray())
+            if (
+                formatString.length > MAX_FORMAT_STRING_LEN ||
+                    INVALID_FORMAT_WIDTH.containsMatchIn(formatString)
+            ) {
+                throw XmlPullParserException("Rejected invalid format string")
+            }
+            return String.format(Locale.getDefault(), formatString, *params.toTypedArray())
         }
 
         private fun parseTimeText(
@@ -884,9 +897,10 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
             providerContext: Context,
             textUtils: ComplicationTextFormatting,
         ): String? {
-            val instantStr = parser.getAttributeValue(null, ATTR_INSTANT) ?: return null
             try {
-                val instant = Instant.ofEpochSecond(instantStr.toLong())
+                val instantSeconds =
+                    getInstantSeconds(parser, ATTR_INSTANT, providerContext) ?: return null
+                val instant = Instant.ofEpochSecond(instantSeconds)
                 val shouldShorten =
                     parser.getAttributeValue(null, ATTR_SHOULD_SHORTEN_AM_PM)?.toBoolean() ?: false
                 val timeComponent = parser.getAttributeValue(null, ATTR_TIME_COMPONENT)
@@ -919,7 +933,11 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
                             DateFormat.format(timeOnlyFormat, Date.from(instant)).toString()
                         }
                         TIME_COMPONENT_AM_PM_ONLY -> {
-                            DateFormat.format("a", Date.from(instant)).toString()
+                            if (DateFormat.is24HourFormat(providerContext)) {
+                                ""
+                            } else {
+                                DateFormat.format("a", Date.from(instant)).toString()
+                            }
                         }
                         else -> {
                             Log.w(TAG, "Unknown timeComponent: $timeComponent")
@@ -946,11 +964,13 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
         private fun parseDateText(
             parser: XmlResourceParser,
             parserContext: Context,
+            providerContext: Context,
             textUtils: ComplicationTextFormatting,
         ): String? {
-            val targetInstantStr = parser.getAttributeValue(null, ATTR_INSTANT) ?: return null
             try {
-                val instant = Instant.ofEpochSecond(targetInstantStr.toLong())
+                val instantSeconds =
+                    getInstantSeconds(parser, ATTR_INSTANT, providerContext) ?: return null
+                val instant = Instant.ofEpochSecond(instantSeconds)
                 val formatsStr = parser.getAttributeValue(null, ATTR_FORMATS)
                 val fallback = parser.getAttributeValue(null, ATTR_FALLBACK)
 
@@ -978,21 +998,21 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
         private fun parseTimeDifferenceText(
             parser: XmlResourceParser,
             parserContext: Context,
+            providerContext: Context,
         ): String? {
-            val typeStr = parser.getAttributeValue(null, ATTR_TYPE)
-            val targetInstantStr = parser.getAttributeValue(null, ATTR_TARGET_INSTANT)
-            val currentInstantStr = parser.getAttributeValue(null, ATTR_CURRENT_INSTANT)
-            val minUnitStr = parser.getAttributeValue(null, ATTR_MIN_UNIT)
-            val displayAsNow =
-                parser.getAttributeValue(null, ATTR_DISPLAY_AS_NOW)?.toBoolean() ?: false
-
-            if (typeStr == null || targetInstantStr == null || currentInstantStr == null) {
-                return null
-            }
-
             try {
-                val instant = Instant.ofEpochSecond(targetInstantStr.toLong())
-                val currentInstant = Instant.ofEpochSecond(currentInstantStr.toLong())
+                val typeStr = parser.getAttributeValue(null, ATTR_TYPE) ?: return null
+                val targetInstantSeconds =
+                    getInstantSeconds(parser, ATTR_TARGET_INSTANT, providerContext) ?: return null
+                val currentInstantSeconds =
+                    getInstantSeconds(parser, ATTR_CURRENT_INSTANT, providerContext) ?: return null
+
+                val minUnitStr = parser.getAttributeValue(null, ATTR_MIN_UNIT)
+                val displayAsNow =
+                    parser.getAttributeValue(null, ATTR_DISPLAY_AS_NOW)?.toBoolean() ?: false
+
+                val instant = Instant.ofEpochSecond(targetInstantSeconds)
+                val currentInstant = Instant.ofEpochSecond(currentInstantSeconds)
                 val style = TimeDifferenceStyle.valueOf(typeStr)
                 val minUnit =
                     if (minUnitStr != null) {
@@ -1014,6 +1034,24 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
                 Log.e(TAG, "Invalid attribute in <time-difference> tag", e)
                 return null
             }
+        }
+
+        @Throws(NumberFormatException::class)
+        private fun getInstantSeconds(
+            parser: XmlResourceParser,
+            attributeName: String,
+            providerContext: Context,
+        ): Long? {
+            val attrValue = parser.getAttributeValue(null, attributeName) ?: return null
+            if (attrValue.startsWith("@")) {
+                val resolvedValue = resolveTextResource(providerContext, attrValue)
+                if (resolvedValue is Number) {
+                    return resolvedValue.toLong()
+                } else if (resolvedValue is String) {
+                    return resolvedValue.toLong()
+                }
+            }
+            return attrValue.toLong()
         }
 
         private fun parseColorRampFromAttribute(
@@ -1116,8 +1154,21 @@ internal constructor(private val data: Map<ComplicationType, ComplicationData>) 
                 when (parser.next()) {
                     XmlPullParser.END_TAG -> depth--
                     XmlPullParser.START_TAG -> depth++
+                    XmlPullParser.END_DOCUMENT -> return
                 }
             }
+        }
+
+        @Throws(XmlPullParserException::class, IOException::class)
+        private fun XmlResourceParser.isBeforeEndTag(targetTagName: String): Boolean {
+            val event = next()
+            if (event == XmlPullParser.END_DOCUMENT) {
+                return false
+            }
+            if (event == XmlPullParser.END_TAG && name == targetTagName) {
+                return false
+            }
+            return true
         }
     }
 }

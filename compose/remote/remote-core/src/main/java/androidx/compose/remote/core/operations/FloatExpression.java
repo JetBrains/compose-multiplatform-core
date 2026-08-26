@@ -25,6 +25,7 @@ import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -49,20 +50,28 @@ import java.util.Objects;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FloatExpression extends Operation
-        implements ComponentData, VariableSupport, Serializable {
+        implements ComponentData, VariableSupport, Serializable, VariableProvider {
     private static final int OP_CODE = Operations.ANIMATED_FLOAT;
     private static final String CLASS_NAME = "FloatExpression";
     public int mId;
     public float @NonNull [] mSrcValue;
     public float @Nullable [] mSrcAnimation;
-    @Nullable
-    public FloatAnimation mFloatAnimation;
-    @Nullable
-    private SpringStopEngine mSpring;
+    @Nullable public FloatAnimation mFloatAnimation;
+    @Nullable private SpringStopEngine mSpring;
     public float @Nullable [] mPreCalcValue;
     private float mLastChange = Float.NaN;
     private float mLastCalculatedValue = Float.NaN;
     @NonNull AnimatedFloatExpression mExp = new AnimatedFloatExpression();
+
+    @Override
+    public int getId() {
+        return mId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mId = id;
+    }
 
     public FloatExpression(int id, float @NonNull [] value, float @Nullable [] animation) {
         this.mId = id;
@@ -114,6 +123,7 @@ public class FloatExpression extends Operation
             }
         }
         float v = mLastCalculatedValue;
+        boolean isStartup = Float.isNaN(mLastCalculatedValue);
         if (value_changed) { // inputs changed check if output changed
             v = mExp.eval(mPreCalcValue, mPreCalcValue.length);
             if (v != mLastCalculatedValue) {
@@ -132,6 +142,9 @@ public class FloatExpression extends Operation
             }
             mFloatAnimation.setTargetValue(v);
         } else if (value_changed && mSpring != null) {
+            if (isStartup) {
+                mSpring.setInitialValue(v);
+            }
             mSpring.setTargetValue(v);
         }
     }
@@ -185,6 +198,20 @@ public class FloatExpression extends Operation
                 markDirty();
             }
         } else if (mSpring != null) { // support damped spring animation
+            if (Float.isNaN(mLastCalculatedValue)) { // startup
+                try {
+                    mLastCalculatedValue =
+                            mExp.eval(
+                                    Objects.requireNonNull(context.getCollectionsAccess()),
+                                    mPreCalcValue,
+                                    mPreCalcValue.length);
+                    mSpring.setTargetValue(mLastCalculatedValue);
+                    mSpring.setInitialValue(mLastCalculatedValue);
+                } catch (Exception e) {
+                    throw new RuntimeException(
+                            this.toString() + " len = " + mPreCalcValue.length, e);
+                }
+            }
             float lastComputedValue = mSpring.get(t);
             float epsilon = 0.01f;
             if (lastComputedValue != mLastAnimatedValue
@@ -273,9 +300,9 @@ public class FloatExpression extends Operation
     /**
      * Writes out the operation to the buffer
      *
-     * @param buffer    The buffer to write to
-     * @param id        the id of the resulting float
-     * @param value     the float expression array
+     * @param buffer The buffer to write to
+     * @param id the id of the resulting float
+     * @param value the float expression array
      * @param animation the animation expression array
      */
     public static void apply(
@@ -308,27 +335,28 @@ public class FloatExpression extends Operation
     /**
      * Read this operation and add it to the list of operations
      *
-     * @param buffer     the buffer to read
+     * @param buffer the buffer to read
      * @param operations the list of operations that will be added to
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int id = buffer.readInt();
+        int id = buffer.declareId();
         int len = buffer.readInt();
         int valueLen = len & 0xFFFF;
+        int animLen = (len >> 16) & 0xFFFF;
+
         if (valueLen > Limits.MAX_EXPRESSION_SIZE) {
             throw new RuntimeException("Float expression too long");
         }
-        int animLen = (len >> 16) & 0xFFFF;
         float[] values = new float[valueLen];
         for (int i = 0; i < values.length; i++) {
-            values[i] = buffer.readFloat();
+            values[i] = buffer.readNanId();
         }
 
         float[] animation;
         if (animLen != 0) {
             animation = new float[animLen];
             for (int i = 0; i < animation.length; i++) {
-                animation[i] = buffer.readFloat();
+                animation[i] = buffer.readNanId();
             }
         } else {
             animation = null;

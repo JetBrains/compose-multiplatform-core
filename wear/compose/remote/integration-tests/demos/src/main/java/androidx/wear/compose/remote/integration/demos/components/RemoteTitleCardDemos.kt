@@ -31,6 +31,7 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardDefault
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTitleSubtitle
 import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTitleTime
+import androidx.wear.compose.remote.material3.previews.RemoteTitleCardWithTwoLineTitle
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 
 @Composable
@@ -57,16 +58,15 @@ fun RemoteTitleCardDemos(modifier: Modifier = Modifier) {
                     )
                 }
             }
-            item { RemoteDemoItem("Default", documentHeight = 150) { RemoteTitleCardDefault() } }
-            item {
-                RemoteDemoItem("Title and subtitle", documentHeight = 150) {
-                    RemoteTitleCardWithTitleSubtitle()
-                }
+            remoteDemoItem("Default", documentHeight = 150) { RemoteTitleCardDefault() }
+            remoteDemoItem("Title and subtitle", documentHeight = 150) {
+                RemoteTitleCardWithTitleSubtitle()
             }
-            item {
-                RemoteDemoItem("Title and time", documentHeight = 150) {
-                    RemoteTitleCardWithTitleTime()
-                }
+            remoteDemoItem("Title and time", documentHeight = 150) {
+                RemoteTitleCardWithTitleTime()
+            }
+            remoteDemoItem("Two-line title and subtitle", documentHeight = 170) {
+                RemoteTitleCardWithTwoLineTitle()
             }
         }
     }

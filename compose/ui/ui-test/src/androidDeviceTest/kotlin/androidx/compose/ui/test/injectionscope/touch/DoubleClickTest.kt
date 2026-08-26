@@ -19,8 +19,11 @@ package androidx.compose.ui.test.injectionscope.touch
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.testutils.WithViewConfiguration
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventType.Companion.Move
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Press
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Release
 import androidx.compose.ui.input.pointer.PointerType.Companion.Touch
@@ -38,7 +41,6 @@ import androidx.compose.ui.test.util.SinglePointerInputRecorder
 import androidx.compose.ui.test.util.verify
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,7 +74,7 @@ class DoubleClickTest(private val config: TestConfig) {
         }
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recordedDoubleClicks = mutableListOf<Offset>()
 
@@ -120,18 +122,32 @@ class DoubleClickTest(private val config: TestConfig) {
         recorder.assertIsDoubleClick(expectedClickPosition)
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun SinglePointerInputRecorder.assertIsDoubleClick(position: Offset) {
-        assertThat(events).hasSize(4)
+        val hasExtraMove = ComposeUiFlags.isTriggerMoveEventsWhenLocationHasNotChangedEnabled
+        assertThat(events).hasSize(if (hasExtraMove) 6 else 4)
         val t0 = events[0].timestamp
         val id0 = events[0].id
 
         events[0].verify(t0 + 0, id0, true, position, Touch, Press)
-        events[1].verify(t0 + eventPeriodMillis, id0, false, position, Touch, Release)
+        if (hasExtraMove) {
+            events[1].verify(t0 + eventPeriodMillis, id0, true, position, Touch, Move)
+            events[2].verify(t0 + eventPeriodMillis, id0, false, position, Touch, Release)
 
-        val t1 = events[1].timestamp + expectedDelay
-        val id1 = events[2].id
+            val t1 = events[2].timestamp + expectedDelay
+            val id1 = events[3].id
 
-        events[2].verify(t1 + 0, id1, true, position, Touch, Press)
-        events[3].verify(t1 + eventPeriodMillis, id1, false, position, Touch, Release)
+            events[3].verify(t1 + 0, id1, true, position, Touch, Press)
+            events[4].verify(t1 + eventPeriodMillis, id1, true, position, Touch, Move)
+            events[5].verify(t1 + eventPeriodMillis, id1, false, position, Touch, Release)
+        } else {
+            events[1].verify(t0 + eventPeriodMillis, id0, false, position, Touch, Release)
+
+            val t1 = events[1].timestamp + expectedDelay
+            val id1 = events[2].id
+
+            events[2].verify(t1 + 0, id1, true, position, Touch, Press)
+            events[3].verify(t1 + eventPeriodMillis, id1, false, position, Touch, Release)
+        }
     }
 }

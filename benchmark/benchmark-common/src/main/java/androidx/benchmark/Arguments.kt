@@ -16,11 +16,11 @@
 
 package androidx.benchmark
 
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.benchmark.Arguments.startupInsightsHelpUrlBaseOverride
 import androidx.test.platform.app.InstrumentationRegistry
 
 /** This allows tests to override arguments from code */
@@ -104,9 +104,6 @@ object Arguments {
 
     internal var error: String? = null
     internal val additionalTestOutputDir: String?
-
-    internal val zipInMemoryTraceData: Boolean
-
     private val targetPackageName: String?
 
     val payload: Map<String, String>
@@ -131,12 +128,7 @@ object Arguments {
         val argumentName = "profiling.mode"
         val argumentValue = getBenchmarkArgument(argumentName, "DEFAULT_VAL")
         if (argumentValue == "DEFAULT_VAL") {
-            return if (Build.VERSION.SDK_INT <= 21) {
-                // Have observed stack corruption on API 21, we haven't spent the time to find out
-                // why, or if it's better on other low API levels. See b/300658578
-                // TODO: consider adding warning here
-                null to true
-            } else if (DeviceInfo.methodTracingAffectsMeasurements) {
+            return if (DeviceInfo.methodTracingAffectsMeasurements) {
                 // We warn here instead of in Errors since this doesn't affect all measurements -
                 // BenchmarkState throws rather than measuring incorrectly, and the first benchmark
                 // can still measure with a trace safely
@@ -198,10 +190,6 @@ object Arguments {
                 // fullTracing.enable is the legacy/compat name
                 ?: arguments.getBenchmarkArgument("fullTracing.enable")?.toBoolean()
                 ?: false
-
-        zipInMemoryTraceData = // experimental
-            arguments.getBenchmarkArgument("zipTraceWithInMemoryEvents.enable")?.toBoolean()
-                ?: false // off by default due to issue opening in Studio
 
         _startupInsightsHelpUrlBase =
             arguments.getBenchmarkArgument("startupInsights.helpUrlBase", defaultValue = null)
@@ -348,14 +336,14 @@ object Arguments {
                 .getBenchmarkArgument("measureRepeatedOnMainThread.throwOnDeadline")
                 ?.toBoolean() ?: true
 
-        requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: false
+        requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: true
         requireJitDisabledIfRooted =
             arguments.getBenchmarkArgument("requireJitDisabledIfRooted")?.toBoolean() ?: false
         requireLockedClocks =
             arguments.getBenchmarkArgument("requireLockedClocks")?.toBoolean() ?: false
 
         throwOnMainThreadMeasureRepeated =
-            arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: false
+            arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: true
 
         killExistingPerfettoRecordings =
             arguments.getBenchmarkArgument("killExistingPerfettoRecordings")?.toBoolean()

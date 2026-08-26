@@ -19,8 +19,8 @@ package androidx.compose.foundation.gestures.snapping
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import androidx.compose.foundation.lazy.LazyListMeasuredItem
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasuredItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Density
@@ -38,7 +38,7 @@ import kotlin.math.sign
  *   within the viewport.
  * @return A [SnapLayoutInfoProvider] that can be used with [snapFlingBehavior]
  */
-fun SnapLayoutInfoProvider(
+public fun SnapLayoutInfoProvider(
     lazyListState: LazyListState,
     snapPosition: SnapPosition = SnapPosition.Center,
 ): SnapLayoutInfoProvider =
@@ -68,7 +68,7 @@ fun SnapLayoutInfoProvider(
             var upperBoundOffset = Float.POSITIVE_INFINITY
 
             layoutInfo.visibleItemsInfo.fastForEach { item ->
-                if ((item as? LazyLayoutMeasuredItem)?.nonScrollableItem == true) return@fastForEach
+                if ((item as? LazyListMeasuredItem)?.nonScrollableItem == true) return@fastForEach
                 val offset =
                     calculateDistanceToDesiredSnapPosition(
                         mainAxisViewPortSize = layoutInfo.singleAxisViewportSize,
@@ -111,7 +111,7 @@ fun SnapLayoutInfoProvider(
  *   within the viewport.
  */
 @Composable
-fun rememberSnapFlingBehavior(
+public fun rememberSnapFlingBehavior(
     lazyListState: LazyListState,
     snapPosition: SnapPosition = SnapPosition.Center,
 ): FlingBehavior {
@@ -128,11 +128,14 @@ internal value class FinalSnappingItem
 internal constructor(@Suppress("unused") private val value: Int) {
     companion object {
 
-        val ClosestItem: FinalSnappingItem = FinalSnappingItem(0)
+        inline val ClosestItem: FinalSnappingItem
+            get() = FinalSnappingItem(0)
 
-        val NextItem: FinalSnappingItem = FinalSnappingItem(1)
+        inline val NextItem: FinalSnappingItem
+            get() = FinalSnappingItem(1)
 
-        val PreviousItem: FinalSnappingItem = FinalSnappingItem(2)
+        inline val PreviousItem: FinalSnappingItem
+            get() = FinalSnappingItem(2)
     }
 }
 

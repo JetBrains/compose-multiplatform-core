@@ -16,6 +16,7 @@
 
 package androidx.ink.authoring.internal
 
+import android.annotation.SuppressLint
 import android.graphics.Matrix
 import android.view.MotionEvent
 import androidx.annotation.AnyThread
@@ -24,8 +25,8 @@ import androidx.annotation.Size
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
-import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
-import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.ExperimentalInkCustomShapeWorkflowApi
+import androidx.ink.authoring.ExperimentalInkLatencyDataApi
 import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.ShapeWorkflow
@@ -60,7 +61,7 @@ import java.util.concurrent.atomic.AtomicReference
  * synchronization depends on HWUI frames while user inputs may happen multiple times per HWUI frame
  * without a guaranteed order.
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkLatencyDataApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 internal class InProgressStrokesManager<
     ShapeSpecT : Any,
     InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
@@ -346,7 +347,9 @@ internal class InProgressStrokesManager<
      * Start building a stroke with the [event] data for [pointerId].
      *
      * @param event The first [MotionEvent] as part of a Stroke's input data, typically an
-     *   ACTION_DOWN.
+     *   ACTION_DOWN. This should be obtained from [android.view.View.OnTouchListener] or a similar
+     *   API. If the input data is synthetic, prefer to use the version of [startStroke] that
+     *   accepts a [StrokeInput].
      * @param pointerId The index of the relevant pointer in the [event].
      * @param motionEventToWorldTransform The matrix that transforms [event] coordinates into the
      *   client app's "world" coordinates, which typically is defined by how a client app's document
@@ -547,7 +550,7 @@ internal class InProgressStrokesManager<
                 }
                 check(predictedInputs.isEmpty())
                 check(predictedInputLatencyDatas.isEmpty())
-                if (prediction != null) {
+                if (prediction != null && !realInputs.isEmpty()) {
                     // The real and predicted MotionEvents don't necessarily align pointers by their
                     // index,
                     // but rather their ID. And there isn't always necessarily a prediction for
@@ -563,6 +566,22 @@ internal class InProgressStrokesManager<
                             motionEventToStrokeTransform = strokeState.motionEventToStrokeTransform,
                             strokeStartTimeMillis = strokeState.startEventTimeMillis,
                             strokeUnitLengthCm = strokeState.strokeUnitLengthCm,
+                            // We can't necessarily rely on the predicted MotionEvent to have the
+                            // same InputDevice
+                            // metadata as real inputs, so use the real MotionEvent to determine
+                            // which of the
+                            // optional fields should be present or absent. Predicted MotionEvents
+                            // should have the
+                            // optional fields set according to the real MotionEvents used for
+                            // prediction, but
+                            // the presence or absence of the optional fields can't be determined
+                            // from the return
+                            // values themselves as the return value when absent (0) is within the
+                            // valid range for
+                            // pressure/tilt/orientation.
+                            forceHasPressure = realInputs.hasPressure(),
+                            forceHasTilt = realInputs.hasTilt(),
+                            forceHasOrientation = realInputs.hasOrientation(),
                             outBatch = predictedInputs,
                         )
                         // TODO b/306361370 - Generate LatencyData only for those inputs that pass
@@ -1440,6 +1459,7 @@ internal class InProgressStrokesManager<
         // Test-only hook to allow blocking the render thread immediately after stroke cohort
         // handoffs
         // are paused.
+        @SuppressLint("VisibleForTests")
         awaitAfterStartOfHandoffTestLatch?.apply {
             inProgressStrokesRenderHelper.executeOnRenderThread {
                 check(await(10, TimeUnit.SECONDS)) {
@@ -1508,7 +1528,7 @@ internal class InProgressStrokesManager<
     private sealed interface Action
 
     /** Represents the data passed to [startStroke]. */
-    private data class StartAction<ShapeSpecT>(
+    private class StartAction<ShapeSpecT>(
         val strokeInput: StrokeInput,
         val strokeId: InProgressStrokeId,
         val motionEventToStrokeTransform: Matrix,
@@ -1521,7 +1541,7 @@ internal class InProgressStrokesManager<
      * Represents the data passed to [addToStroke]. This is meant to be overwritten for recycling
      * purposes, so it is not immutable like the less frequent start/finish actions.
      */
-    private data class AddAction(
+    private class AddAction(
         val realInputs: MutableStrokeInputBatch = MutableStrokeInputBatch(),
         val predictedInputs: MutableStrokeInputBatch = MutableStrokeInputBatch(),
         var strokeId: InProgressStrokeId = InProgressStrokeId.create(),
@@ -1550,7 +1570,7 @@ internal class InProgressStrokesManager<
     }
 
     /** Represents the data passed to [finishStroke]. */
-    private data class FinishAction(
+    private class FinishAction(
         val strokeInput: StrokeInput?,
         val strokeId: InProgressStrokeId,
         /**
@@ -1567,14 +1587,11 @@ internal class InProgressStrokesManager<
     private object AnimationFrameAction : Action
 
     /** Represents the data passed to [cancelStroke]. */
-    private data class CancelAction(
-        val strokeId: InProgressStrokeId,
-        val latencyData: LatencyData,
-    ) : Action
+    private class CancelAction(val strokeId: InProgressStrokeId, val latencyData: LatencyData) :
+        Action
 
     /** Represents an update to [motionEventToViewTransform]. */
-    private data class MotionEventToViewTransformAction(val motionEventToViewTransform: Matrix) :
-        Action
+    private class MotionEventToViewTransformAction(val motionEventToViewTransform: Matrix) : Action
 
     /**
      * Represents a request to clear the data of a stroke cohort being handed off by
@@ -1630,10 +1647,10 @@ internal class InProgressStrokesManager<
      * A result of [claimStrokesToHandOff] that indicates that no strokes are currently in progress,
      * and nothing else is preventing handoff of the provided strokes.
      *
-     * @param finishedStrokes The finished strokes (which cannot be empty), with map iteration order
+     * @param finishedCohort The finished strokes (which cannot be empty), with map iteration order
      *   in stroke z-order, from back to front.
      */
-    private data class Finished<CompletedShapeT : Any>(
+    private class Finished<CompletedShapeT : Any>(
         @Size(min = 1) val finishedCohort: List<FinishedStroke<CompletedShapeT>>
     ) : ClaimStrokesToHandOffResult {
         init {

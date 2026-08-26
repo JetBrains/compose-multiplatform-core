@@ -152,6 +152,11 @@ fun KSDeclaration.getJvmClassName(): String {
     return toClassName().reflectionName().substringAfterLast('.')
 }
 
+/** Checks if [KSTypeReference] is parameterized */
+fun KSTypeReference.isParametrized(): Boolean {
+    return resolve().arguments.isNotEmpty()
+}
+
 /**
  * Resolves the type reference to the parameterized type if it is a list.
  *
@@ -217,7 +222,14 @@ fun <T : Any> KSAnnotation.requirePropertyValueOfType(
     val propertyValue =
         this.arguments.singleOrNull { it.name?.asString() == propertyName }?.value
             ?: throw ProcessingException("Unable to find property with name: $propertyName", this)
-    return expectedType.cast(propertyValue)
+    return try {
+        expectedType.cast(propertyValue)
+    } catch (e: ClassCastException) {
+        throw ProcessingException(
+            "Property $propertyName is not of expected type ${expectedType.simpleName}",
+            this,
+        )
+    }
 }
 
 // TODO: Import KotlinPoet KSP to replace these KSPUtils.

@@ -82,6 +82,7 @@ private constructor(
         input.readInt(),
         input.readBundle(ComplicationData::class.java.classLoader)
             ?: Bundle().also { Log.w(TAG, "ComplicationData parcel input has null bundle.") },
+        0,
     )
 
     // This constructor should only be used with a fully-owned Bundle, as this Bundle can be mutated
@@ -89,7 +90,8 @@ private constructor(
     private constructor(
         @ComplicationType type: Int,
         bundle: Bundle,
-    ) : this(type, toFields(bundle, type), bundle)
+        depth: Int,
+    ) : this(type, toFields(bundle, type, depth), bundle)
 
     private val bundle: Bundle
         get() = _bundle ?: toBundle(fields).also { _bundle = it }
@@ -269,6 +271,16 @@ private constructor(
 
         @Throws(IOException::class, ClassNotFoundException::class)
         private fun readObject(ois: ObjectInputStream) {
+            readObjectInternal(ois, 0)
+        }
+
+        @Throws(IOException::class, ClassNotFoundException::class)
+        private fun readObjectInternal(ois: ObjectInputStream, depth: Int) {
+            if (depth > MAX_NESTING_DEPTH) {
+                throw IOException(
+                    "ComplicationData serialization nesting exceeds $MAX_NESTING_DEPTH"
+                )
+            }
             val versionNumber = ois.readInt()
             if (versionNumber != VERSION_NUMBER) {
                 // Give up if there's a version skew.
@@ -333,7 +345,13 @@ private constructor(
             }
             if (isFieldValidForType(FIELD_DYNAMIC_VALUE, type)) {
                 ois.readNullable { ois.readByteArray() }
-                    ?.let { fields[FIELD_DYNAMIC_VALUE] = DynamicFloat.fromByteArray(it) }
+                    ?.let {
+                        try {
+                            fields[FIELD_DYNAMIC_VALUE] = DynamicFloat.fromByteArray(it)
+                        } catch (e: IllegalArgumentException) {
+                            Log.w(TAG, "Could not parse DynamicFloat", e)
+                        }
+                    }
             }
             if (isFieldValidForType(FIELD_VALUE_TYPE, type)) {
                 fields[FIELD_VALUE_TYPE] = ois.readInt()
@@ -426,25 +444,25 @@ private constructor(
             if (timelineEntryType != 0) {
                 fields[FIELD_TIMELINE_ENTRY_TYPE] = timelineEntryType
             }
-            ois.readList { SerializedForm().apply { readObject(ois) } }
+            ois.readList { SerializedForm().apply { readObjectInternal(ois, depth + 1) } }
                 .map { it.complicationData!! }
                 .takeIf { it.isNotEmpty() }
                 ?.let { fields[EXP_FIELD_LIST_ENTRIES] = it }
             if (isFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type)) {
-                ois.readNullable { SerializedForm().apply { readObject(ois) } }
+                ois.readNullable { SerializedForm().apply { readObjectInternal(ois, depth + 1) } }
                     ?.let {
                         fields[FIELD_PLACEHOLDER_TYPE] = it.complicationData!!.type
                         fields[FIELD_PLACEHOLDER_FIELDS] = it.complicationData!!
                     }
             }
             if (isFieldValidForType(FIELD_ORIGINAL_FIELDS, type)) {
-                ois.readNullable { SerializedForm().apply { readObject(ois) } }
+                ois.readNullable { SerializedForm().apply { readObjectInternal(ois, depth + 1) } }
                     ?.let {
                         fields[FIELD_ORIGINAL_TYPE] = it.complicationData!!.type
                         fields[FIELD_ORIGINAL_FIELDS] = it.complicationData!!
                     }
             }
-            ois.readList { SerializedForm().apply { readObject(ois) } }
+            ois.readList { SerializedForm().apply { readObjectInternal(ois, depth + 1) } }
                 .map { it.complicationData!! }
                 .takeIf { it.isNotEmpty() }
                 ?.let { fields[FIELD_TIMELINE_ENTRIES] = it }
@@ -1198,7 +1216,32 @@ private constructor(
         }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun toStringNoRedaction(): String = "ComplicationData{mType=$type, mFields=$fields}"
+    public fun toStringNoRedaction(): String =
+        "ComplicationData{mType=$type, mFields=${getFieldsString()}}"
+
+    private fun getFieldsString(): String {
+        if (!hasRangedDynamicValue()) {
+            return fields.toString()
+        }
+
+        val isLogSetToVerbose = Log.isLoggable(TAG, Log.VERBOSE)
+        return buildString {
+            append('{')
+            for ((key, value) in fields) {
+                append(key).append('=')
+                if (key == FIELD_DYNAMIC_VALUE && !isLogSetToVerbose) {
+                    append("VALUE_HIDDEN_UNLESS_VERBOSE")
+                } else {
+                    append(value)
+                }
+                append(", ")
+            }
+            if (length > 1) {
+                setLength(length - 2)
+            }
+            append('}')
+        }
+    }
 
     override fun equals(other: Any?): Boolean =
         other is ComplicationData &&
@@ -1990,6 +2033,13 @@ private constructor(
 
     public companion object {
         private const val TAG = "ComplicationData"
+
+        /**
+         * Maximum allowed nesting depth for child ComplicationData objects (e.g., placeholders).
+         * This caps recursive unmarshalling to prevent StackOverflowErrors from malicious payloads.
+         */
+        internal const val MAX_NESTING_DEPTH = 8
+
         public const val PLACEHOLDER_STRING: String = "__placeholder__"
 
         /**
@@ -2433,7 +2483,15 @@ private constructor(
                 override fun newArray(size: Int): Array<ComplicationData?> = Array(size) { null }
             }
 
-        private fun toFields(bundle: Bundle, @ComplicationType type: Int): MutableMap<String, Any> {
+        private fun toFields(
+            bundle: Bundle,
+            @ComplicationType type: Int,
+            depth: Int,
+        ): MutableMap<String, Any> {
+            if (depth > MAX_NESTING_DEPTH) {
+                Log.w(TAG, "ComplicationData nesting exceeds $MAX_NESTING_DEPTH; truncating.")
+                return mutableMapOf()
+            }
             bundle.classLoader = ComplicationData::class.java.classLoader
             val fields = mutableMapOf<String, Any>()
             // Helper methods to avoid key repetition.
@@ -2444,16 +2502,62 @@ private constructor(
                 if (bundle.containsKey(typeKey) && bundle.getBundle(fieldsKey) != null) {
                     fields[typeKey] = bundle.getInt(typeKey) // Safety, generally unnecessary.
                     fields[fieldsKey] =
-                        ComplicationData(bundle.getInt(typeKey), bundle.getBundle(fieldsKey)!!)
+                        ComplicationData(
+                            bundle.getInt(typeKey),
+                            bundle.getBundle(fieldsKey)!!,
+                            depth + 1,
+                        )
                 }
             }
             fun putComplicationDataArrayFromBundle(arrayKey: String, entryTypeKey: String) {
                 putFromBundle(arrayKey) { key ->
-                    @Suppress("DEPRECATION")
-                    bundle.getParcelableArray(key)?.map {
-                        it as Bundle
-                        it.classLoader = ComplicationData::class.java.classLoader
-                        ComplicationData(it.getInt(entryTypeKey, type), it)
+                    // Use API 33+ typed unparceling to verify class assignability before CREATOR
+                    // executes,
+                    // mitigating CWE-502 arbitrary gadget instantiation from malformed payloads.
+                    val array =
+                        try {
+                            if (Build.VERSION.SDK_INT >= 33) {
+                                bundle.getParcelableArray(key, Bundle::class.java)
+                            } else {
+                                @Suppress("deprecation") bundle.getParcelableArray(key)
+                            }
+                        } catch (e: BadParcelableException) {
+                            Log.w(TAG, "Could not unparcel ComplicationData array: $key", e)
+                            null
+                        } catch (e: RuntimeException) {
+                            Log.w(
+                                TAG,
+                                "RuntimeException unparceling ComplicationData array: $key",
+                                e,
+                            )
+                            null
+                        }
+                    array?.mapNotNull { element ->
+                        val entryBundle = element as? Bundle
+                        if (entryBundle == null) {
+                            Log.w(
+                                TAG,
+                                "Timeline/list entry in $key is not a Bundle, skipping: " +
+                                    (element?.javaClass?.name ?: "null"),
+                            )
+                            null
+                        } else {
+                            try {
+                                entryBundle.classLoader = ComplicationData::class.java.classLoader
+                                ComplicationData(
+                                    entryBundle.getInt(entryTypeKey, type),
+                                    entryBundle,
+                                    depth + 1,
+                                )
+                            } catch (e: RuntimeException) {
+                                Log.w(
+                                    TAG,
+                                    "Could not unparcel ComplicationData array entry in $key",
+                                    e,
+                                )
+                                null
+                            }
+                        }
                     }
                 }
             }
@@ -2470,7 +2574,14 @@ private constructor(
             putFromBundle(FIELD_EXTRAS) { GetParcelableHelper.getPersistableBundle(bundle, it) }
             putFromBundle(FIELD_VALUE, bundle::getFloat)
             putFromBundle(FIELD_DYNAMIC_VALUE) { key ->
-                bundle.getByteArray(key)?.let { DynamicFloat.fromByteArray(it) }
+                bundle.getByteArray(key)?.let {
+                    try {
+                        DynamicFloat.fromByteArray(it)
+                    } catch (e: IllegalArgumentException) {
+                        Log.w(TAG, "Could not parse DynamicFloat", e)
+                        null
+                    }
+                }
             }
             putFromBundle(FIELD_VALUE_TYPE, bundle::getInt)
             putFromBundle(FIELD_MIN_VALUE, bundle::getFloat)
@@ -2627,16 +2738,28 @@ private constructor(
             return bundle
         }
 
-        private fun <T : Parcelable?> Bundle.getParcelableFieldOrWarn(key: String): T? =
+        private inline fun <reified T : Parcelable> Bundle.getParcelableFieldOrWarn(
+            key: String
+        ): T? =
             try {
-                @Suppress("deprecation") getParcelable<T>(key)
+                // Use API 33+ typed unparceling to verify class assignability before CREATOR
+                // executes,
+                // mitigating CWE-502 arbitrary gadget instantiation from malformed payloads.
+                if (Build.VERSION.SDK_INT >= 33) {
+                    getParcelable(key, T::class.java)
+                } else {
+                    @Suppress("deprecation") getParcelable<T>(key)
+                }
             } catch (e: BadParcelableException) {
                 Log.w(
                     TAG,
-                    "Could not unparcel ComplicationData. Provider apps must exclude wearable " +
+                    "Could not unparcel ComplicationData field $key. Provider apps must exclude wearable " +
                         "support complication classes from proguard.",
                     e,
                 )
+                null
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "RuntimeException unparceling ComplicationData field: $key", e)
                 null
             }
 

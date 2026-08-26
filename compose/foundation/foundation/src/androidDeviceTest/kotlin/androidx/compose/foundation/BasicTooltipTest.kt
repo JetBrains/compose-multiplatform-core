@@ -30,8 +30,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
@@ -61,7 +59,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +67,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class BasicTooltipTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun tooltip_handleDefaultGestures_enabled() {
@@ -121,22 +118,19 @@ class BasicTooltipTest {
         rule.waitForIdle()
         Truth.assertThat(state.isVisible).isFalse()
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
-            // Hover over the anchor with trackpad input
-            rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { enter() }
+        // Hover over the anchor with trackpad input
+        rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { enter() }
 
-            // Check that the tooltip is now showing
-            rule.waitForIdle()
-            Truth.assertThat(state.isVisible).isTrue()
+        // Check that the tooltip is now showing
+        rule.waitForIdle()
+        Truth.assertThat(state.isVisible).isTrue()
 
-            // Hover away from the anchor
-            rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { exit() }
+        // Hover away from the anchor
+        rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { exit() }
 
-            // Check that the tooltip is now dismissed
-            rule.waitForIdle()
-            Truth.assertThat(state.isVisible).isFalse()
-        }
+        // Check that the tooltip is now dismissed
+        rule.waitForIdle()
+        Truth.assertThat(state.isVisible).isFalse()
     }
 
     @Test
@@ -177,17 +171,14 @@ class BasicTooltipTest {
 
         rule.onNodeWithTag(TOOLTIP_ANCHOR).performMouseInput { exit() }
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (ComposeUiFlags.isTrackpadGestureHandlingEnabled) {
-            // Hover over the anchor with mouse input
-            rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { enter() }
+        // Hover over the anchor with mouse input
+        rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { enter() }
 
-            // Check that the tooltip is still not showing
-            rule.waitForIdle()
-            Truth.assertThat(state.isVisible).isFalse()
+        // Check that the tooltip is still not showing
+        rule.waitForIdle()
+        Truth.assertThat(state.isVisible).isFalse()
 
-            rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { exit() }
-        }
+        rule.onNodeWithTag(TOOLTIP_ANCHOR).performTrackpadInput { exit() }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)

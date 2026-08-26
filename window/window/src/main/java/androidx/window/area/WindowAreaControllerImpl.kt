@@ -69,7 +69,7 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
         WINDOW_AREA_STATUS_UNKNOWN
 
     private var activeWindowAreaSession: Boolean = false
-    private var presentationSessionActive: Boolean = false
+    private var presentationSessionActiveWindowAreaToken: WindowAreaToken? = null
 
     private val lock = Any()
 
@@ -89,25 +89,29 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
         }
 
     override fun addWindowAreasListener(executor: Executor, listener: Consumer<List<WindowArea>>) {
+        var listenersWasEmpty = false
         synchronized(lock) {
-            if (listeners.isEmpty()) {
-                listeners.add(Pair(executor, listener))
-                initializeExtensionListeners()
-            } else {
-                listeners.add(Pair(executor, listener))
-                executor.execute { listener.accept(currentWindowAreaMap.values.toList()) }
+            listenersWasEmpty = listeners.isEmpty()
+            for (listenerPair in listeners) {
+                if (listenerPair.second == listener) return
             }
+            listeners.add(Pair(executor, listener))
+        }
+        if (listenersWasEmpty) {
+            initializeExtensionListeners()
+        } else {
+            executor.execute { listener.accept(currentWindowAreaMap.values.toList()) }
         }
     }
 
     override fun removeWindowAreasListener(listener: Consumer<List<WindowArea>>) {
+        var listenersAreEmpty = false
         synchronized(lock) {
             val valueToRemove = listeners.firstOrNull { it.second == listener }
             valueToRemove?.let { listenerToRemove -> listeners.remove(listenerToRemove) }
-            if (listeners.isEmpty()) {
-                removeExtensionListeners()
-            }
+            listenersAreEmpty = listeners.isEmpty()
         }
+        if (listenersAreEmpty) removeExtensionListeners()
     }
 
     private fun initializeExtensionListeners() {
@@ -141,7 +145,7 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
         currentRearDisplayPresentationStatus =
             WindowAreaAdapter.translate(
                 extensionWindowAreaStatus.windowAreaStatus,
-                presentationSessionActive,
+                presentationSessionActiveWindowAreaToken != null,
             )
         val rearDisplayWindowMetrics = getRearDisplayMetrics(windowAreaComponent)
 
@@ -239,6 +243,16 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
         executor: Executor,
         windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback,
     ) {
+        if (presentationSessionActiveWindowAreaToken == windowAreaToken) {
+            executor.execute {
+                windowAreaPresentationSessionCallback.onSessionEnded(
+                    IllegalStateException(
+                        "Pending presentation session on this window area " + "already in progress"
+                    )
+                )
+            }
+        }
+
         val windowArea = synchronized(lock) { currentWindowAreaMap[windowAreaToken] }
 
         if (windowArea?.type != TYPE_REAR_FACING) {
@@ -250,7 +264,16 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
             return
         }
 
-        startRearDisplayPresentationMode(activity, executor, windowAreaPresentationSessionCallback)
+        try {
+            startRearDisplayPresentationMode(
+                windowAreaToken,
+                activity,
+                executor,
+                windowAreaPresentationSessionCallback,
+            )
+        } catch (e: Exception) {
+            windowAreaPresentationSessionCallback.onSessionEnded(e)
+        }
     }
 
     private fun startRearDisplayMode(activity: Activity) {
@@ -279,6 +302,7 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
 
     @ExperimentalWindowApi
     private fun startRearDisplayPresentationMode(
+        windowAreaToken: WindowAreaToken,
         activity: Activity,
         executor: Executor,
         windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback,
@@ -292,7 +316,7 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
             return
         }
 
-        presentationSessionActive = true
+        presentationSessionActiveWindowAreaToken = windowAreaToken
         windowAreaComponent.startRearDisplayPresentationSession(
             activity,
             RearDisplayPresentationSessionConsumer(
@@ -401,7 +425,7 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
                     SESSION_STATE_CONTENT_VISIBLE ->
                         windowAreaPresentationSessionCallback.onContainerVisibilityChanged(true)
                     SESSION_STATE_INACTIVE -> {
-                        presentationSessionActive = false
+                        presentationSessionActiveWindowAreaToken = null
                         windowAreaPresentationSessionCallback.onSessionEnded(null)
                     }
                     else -> {

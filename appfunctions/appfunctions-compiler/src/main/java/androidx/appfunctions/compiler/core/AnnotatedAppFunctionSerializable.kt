@@ -56,7 +56,19 @@ open class AnnotatedAppFunctionSerializable(override val classDeclaration: KSCla
 
     /** A description of the AppFunctionSerializable class and its intended use. */
     override fun getDescription(sharedDataTypeDescriptionMap: Map<String, String>): String {
-        return docString.ifEmpty { sharedDataTypeDescriptionMap[jvmQualifiedName] ?: "" }
+        val instructionAnnotation =
+            classDeclaration.annotations.findAnnotation(
+                IntrospectionHelper.AppFunctionInstructionAnnotation.CLASS_NAME
+            )
+        if (instructionAnnotation != null) {
+            return instructionAnnotation.requirePropertyValueOfType(
+                IntrospectionHelper.AppFunctionInstructionAnnotation.PROPERTY_INSTRUCTION,
+                String::class,
+            )
+        }
+        return sanitizeKDoc(
+            docString.ifEmpty { sharedDataTypeDescriptionMap[jvmQualifiedName] ?: "" }
+        )
     }
 
     /**

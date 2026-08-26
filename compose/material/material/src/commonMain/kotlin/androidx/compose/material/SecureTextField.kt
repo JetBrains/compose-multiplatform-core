@@ -85,7 +85,8 @@ import androidx.compose.ui.text.input.VisualTransformation
  * @param textObfuscationCharacter the character to use while obfuscating the text. It doesn't have
  *   an effect when [textObfuscationMode] is set to [TextObfuscationMode.Visible].
  * @param keyboardOptions software keyboard options that contains configuration such as
- *   [KeyboardType] and [ImeAction].
+ *   [KeyboardType] and [ImeAction]. If using [TextObfuscationMode.Visible], consider passing
+ *   [KeyboardType.PasswordVisible] instead to indicate to the IME that the input is visible.
  * @param onKeyboardAction Called when the user presses the action button in the input method editor
  *   (IME), or by pressing the enter key on a hardware keyboard. By default this parameter is null,
  *   and would execute the default behavior for a received IME Action e.g., [ImeAction.Done] would
@@ -101,7 +102,7 @@ import androidx.compose.ui.text.input.VisualTransformation
  *   interactions will still happen internally.
  */
 @Composable
-fun SecureTextField(
+public fun SecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -112,7 +113,7 @@ fun SecureTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     inputTransformation: InputTransformation? = null,
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
     keyboardOptions: KeyboardOptions = SecureTextFieldKeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,
@@ -223,7 +224,7 @@ fun SecureTextField(
  *   interactions will still happen internally.
  */
 @Composable
-fun OutlinedSecureTextField(
+public fun OutlinedSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -234,7 +235,7 @@ fun OutlinedSecureTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     inputTransformation: InputTransformation? = null,
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.System,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
     keyboardOptions: KeyboardOptions = SecureTextFieldKeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,

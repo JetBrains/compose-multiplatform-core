@@ -33,6 +33,8 @@ import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.ExperimentalLookaheadAnimationVisualDebugApi
+import androidx.compose.animation.LookaheadAnimationVisualDebugging
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
@@ -69,11 +71,20 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEvent.Companion.EDGE_LEFT
+import androidx.navigationevent.NavigationEvent.Companion.EDGE_NONE
+import androidx.navigationevent.NavigationEvent.Companion.EDGE_RIGHT
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.lang.reflect.Method
+import org.jetbrains.annotations.TestOnly
 
 private const val TOOLS_NS_URI = "http://schemas.android.com/tools"
 private const val DESIGN_INFO_METHOD = "getDesignInfo"
@@ -178,6 +189,12 @@ internal class ComposeViewAdapter : FrameLayout {
 
     /** Callback invoked when onDraw has been called. */
     private var onDraw = {}
+
+    /** Boolean specifying whether to enable animation debugging. */
+    private var lookaheadAnimationVisualDebuggingEnabled: Boolean = false
+
+    /** Boolean specifying whether to print animated element keys */
+    private var lookaheadAnimationVisualDebuggingKeyLabelEnabled: Boolean = false
 
     private val debugBoundsPaint =
         Paint().apply {
@@ -402,7 +419,12 @@ internal class ComposeViewAdapter : FrameLayout {
     /** Clock that controls the animations defined in the context of this [ComposeViewAdapter]. */
     @VisibleForTesting internal lateinit var clock: PreviewAnimationClock
 
+    @get:TestOnly
+    internal val clockInitialized: Boolean
+        get() = this::clock.isInitialized
+
     /** Wraps a given [Preview] method an does any necessary setup. */
+    @OptIn(ExperimentalLookaheadAnimationVisualDebugApi::class)
     @Composable
     private fun WrapPreview(content: @Composable () -> Unit) {
         // We need to replace the FontResourceLoader to avoid using ResourcesCompat.
@@ -413,10 +435,76 @@ internal class ComposeViewAdapter : FrameLayout {
             LocalFontLoader provides LayoutlibFontResourceLoader(context),
             LocalFontFamilyResolver provides createFontFamilyResolver(context),
             LocalOnBackPressedDispatcherOwner provides FakeOnBackPressedDispatcherOwner,
+            LocalNavigationEventDispatcherOwner provides FakeOnBackPressedDispatcherOwner,
             LocalActivityResultRegistryOwner provides FakeActivityResultRegistryOwner,
         ) {
-            Inspectable(slotTableRecord, content)
+            if (lookaheadAnimationVisualDebuggingEnabled) {
+                LookaheadAnimationVisualDebugging(
+                    isEnabled = true,
+                    isShowKeyLabelEnabled = lookaheadAnimationVisualDebuggingKeyLabelEnabled,
+                ) {
+                    Inspectable(slotTableRecord, content)
+                }
+            } else Inspectable(slotTableRecord, content)
         }
+    }
+
+    @SuppressLint("VisibleForTests")
+    @Suppress("DEPRECATION")
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Composable
+    private fun InvokeComposableViaReflection(
+        className: String,
+        methodName: String,
+        parameterProvider: Class<out PreviewParameterProvider<*>>?,
+        parameterProviderIndex: Int,
+        animationClockStartTime: Long,
+    ) {
+        val composer = currentComposer
+        // We need to delay the reflection instantiation of the class until we are in
+        // the composable to ensure all the right initialization has happened and the
+        // Composable class loads correctly.
+        val innerComposable =
+            @Composable {
+                try {
+                    ComposableInvoker.invokeComposable(
+                        className,
+                        methodName,
+                        composer,
+                        *getPreviewProviderParameters(parameterProvider, parameterProviderIndex),
+                    )
+                } catch (t: Throwable) {
+                    // If there is an exception, store it for later but do not catch it
+                    // so compose can handle it and dispose correctly.
+                    var exception: Throwable = t
+                    // Find the root cause and use that for the delayedException.
+                    while (exception is ReflectiveOperationException) {
+                        exception = exception.cause ?: break
+                    }
+                    delayedException.set(exception)
+                    throw t
+                }
+            }
+        if (animationClockStartTime >= 0) {
+            // When animation inspection is enabled, i.e. when a valid (non-negative)
+            // `animationClockStartTime` is passed, set the Preview Animation Clock.
+            // This clock will control the animations defined in this
+            // `ComposeViewAdapter` from Android Studio.
+            clock =
+                PreviewAnimationClock(requestLayout = ::requestLayout) {
+                    // Invalidate the descendants of this ComposeViewAdapter's only
+                    // grandchild (an AndroidOwner) when setting the clock time to make
+                    // sure the Compose Preview will animate when the states are read
+                    // inside the draw scope.
+                    val composeView = getChildAt(0) as ComposeView
+                    (composeView.getChildAt(0) as? ViewRootForTest)?.invalidateDescendants()
+                    // Send pending apply notifications to ensure the animation duration
+                    // will be read in the correct frame.
+                    Snapshot.sendApplyNotifications()
+                }
+        }
+
+        innerComposable()
     }
 
     /**
@@ -433,6 +521,10 @@ internal class ComposeViewAdapter : FrameLayout {
      * @param debugViewInfos if true, it will generate the [ViewInfo] structures and will log it.
      * @param animationClockStartTime if positive, [clock] will be defined and will control the
      *   animations defined in the context of the `@Composable` being previewed.
+     * @param lookaheadAnimationVisualDebuggingEnabled Boolean specifying whether to enable
+     *   animation debugging.
+     * @param lookaheadAnimationVisualDebuggingKeyLabelEnabled Boolean specifying whether to print
+     *   animated element keys
      * @param lookForDesignInfoProviders if true, it will try to populate [designInfoList].
      * @param designInfoProvidersArgument String to use as an argument when populating
      *   [designInfoList].
@@ -451,6 +543,8 @@ internal class ComposeViewAdapter : FrameLayout {
         debugPaintBounds: Boolean = false,
         debugViewInfos: Boolean = false,
         animationClockStartTime: Long = -1,
+        lookaheadAnimationVisualDebuggingEnabled: Boolean = false,
+        lookaheadAnimationVisualDebuggingKeyLabelEnabled: Boolean = false,
         lookForDesignInfoProviders: Boolean = false,
         designInfoProvidersArgument: String? = null,
         onCommit: () -> Unit = {},
@@ -461,68 +555,32 @@ internal class ComposeViewAdapter : FrameLayout {
         this.composableName = methodName
         this.lookForDesignInfoProviders = lookForDesignInfoProviders
         this.designInfoProvidersArgument = designInfoProvidersArgument ?: ""
+        this.lookaheadAnimationVisualDebuggingEnabled = lookaheadAnimationVisualDebuggingEnabled
+        this.lookaheadAnimationVisualDebuggingKeyLabelEnabled =
+            lookaheadAnimationVisualDebuggingKeyLabelEnabled
         this.onDraw = onDraw
         previewComposition =
             @Composable {
                 SideEffect(onCommit)
-
                 WrapPreview {
-                    val composer = currentComposer
-                    // We need to delay the reflection instantiation of the class until we are in
-                    // the composable to ensure all the right initialization has happened and the
-                    // Composable class loads correctly.
-                    val innerComposable =
-                        @Composable {
-                            try {
-                                ComposableInvoker.invokeComposable(
-                                    className,
-                                    methodName,
-                                    composer,
-                                    *getPreviewProviderParameters(
-                                        parameterProvider,
-                                        parameterProviderIndex,
-                                    ),
-                                )
-                            } catch (t: Throwable) {
-                                // If there is an exception, store it for later but do not catch it
-                                // so compose can handle it and dispose correctly.
-                                var exception: Throwable = t
-                                // Find the root cause and use that for the delayedException.
-                                while (exception is ReflectiveOperationException) {
-                                    exception = exception.cause ?: break
-                                }
-                                delayedException.set(exception)
-                                throw t
-                            }
-                        }
-                    if (animationClockStartTime >= 0) {
-                        // When animation inspection is enabled, i.e. when a valid (non-negative)
-                        // `animationClockStartTime` is passed, set the Preview Animation Clock.
-                        // This clock will control the animations defined in this
-                        // `ComposeViewAdapter` from Android Studio.
-                        clock =
-                            PreviewAnimationClock(requestLayout = ::requestLayout) {
-                                // Invalidate the descendants of this ComposeViewAdapter's only
-                                // grandchild (an AndroidOwner) when setting the clock time to make
-                                // sure the Compose Preview will animate when the states are read
-                                // inside the draw scope.
-                                val composeView = getChildAt(0) as ComposeView
-                                (composeView.getChildAt(0) as? ViewRootForTest)
-                                    ?.invalidateDescendants()
-                                // Send pending apply notifications to ensure the animation duration
-                                // will be read in the correct frame.
-                                Snapshot.sendApplyNotifications()
-                            }
-                    }
-                    // The [PreviewWrapperProvider] allows for custom behavior logic to be applied
-                    // to the preview content.
+                    // The [PreviewWrapperProvider] allows for custom behavior logic to be
+                    // applied to the preview content.
                     // If a wrapper class is specified, we instantiate it and call its [Wrap]
                     // function, passing the composable function as the content. This enables
-                    // features like Remote Compose, custom theme injection, or specialized layout
-                    // containers.
-                    previewWrapperProvider?.let { wrapperClass ->
-                        instantiatePreviewWrapperProvider(wrapperClass).Wrap(innerComposable)
-                    } ?: innerComposable()
+                    // features like Remote Compose, custom theme injection, or specialized
+                    // layout containers.
+                    instantiatePreviewWrapperProvider(previewWrapperProvider)
+                        .Wrap(
+                            @Composable {
+                                InvokeComposableViaReflection(
+                                    className,
+                                    methodName,
+                                    parameterProvider,
+                                    parameterProviderIndex,
+                                    animationClockStartTime,
+                                )
+                            }
+                        )
                 }
             }
         composeView.setContent(previewComposition)
@@ -578,6 +636,27 @@ internal class ComposeViewAdapter : FrameLayout {
                 -1L
             }
 
+        val lookaheadAnimationVisualDebuggingEnabled =
+            try {
+                attrs
+                    .getAttributeValue(TOOLS_NS_URI, "lookaheadAnimationVisualDebuggingEnabled")
+                    .toBoolean()
+            } catch (e: Exception) {
+                false
+            }
+
+        val lookaheadAnimationVisualDebuggingKeyLabelEnabled =
+            try {
+                attrs
+                    .getAttributeValue(
+                        TOOLS_NS_URI,
+                        "lookaheadAnimationVisualDebuggingKeyLabelEnabled",
+                    )
+                    .toBoolean()
+            } catch (e: Exception) {
+                false
+            }
+
         init(
             className = className,
             methodName = methodName,
@@ -589,6 +668,9 @@ internal class ComposeViewAdapter : FrameLayout {
             debugViewInfos =
                 attrs.getAttributeBooleanValue(TOOLS_NS_URI, "printViewInfos", debugViewInfos),
             animationClockStartTime = animationClockStartTime,
+            lookaheadAnimationVisualDebuggingEnabled = lookaheadAnimationVisualDebuggingEnabled,
+            lookaheadAnimationVisualDebuggingKeyLabelEnabled =
+                lookaheadAnimationVisualDebuggingKeyLabelEnabled,
             lookForDesignInfoProviders =
                 attrs.getAttributeBooleanValue(
                     TOOLS_NS_URI,
@@ -626,11 +708,194 @@ internal class ComposeViewAdapter : FrameLayout {
         }
 
     private val FakeOnBackPressedDispatcherOwner =
-        object : OnBackPressedDispatcherOwner {
+        object : OnBackPressedDispatcherOwner, NavigationEventDispatcherOwner {
+
             override val onBackPressedDispatcher = OnBackPressedDispatcher()
+
+            override val navigationEventDispatcher =
+                NavigationEventDispatcher(
+                    onBackCompletedFallback = { onBackPressedDispatcher.onBackPressed() }
+                )
+
+            private val directNavigationEventInput: DirectNavigationEventInput by lazy {
+                DirectNavigationEventInput().also { input ->
+                    navigationEventDispatcher.addInput(input)
+                }
+            }
 
             override val lifecycle: LifecycleRegistry
                 get() = FakeSavedStateRegistryOwner.lifecycleRegistry
+
+            /**
+             * Checks if back navigation is possible.
+             *
+             * @return `true` if back navigation can be performed, `false` otherwise
+             */
+            fun canBackPress(): Boolean {
+                val history = navigationEventDispatcher.history.value
+                return history.currentIndex > 0
+            }
+
+            /**
+             * Starts back navigation.
+             *
+             * @param edge string describing the edge used for back navigation:
+             *     - `"EDGE_LEFT"`: indicates the navigation gesture originates from the left edge
+             *       of the screen, see [EDGE_LEFT]
+             *     - `"EDGE_RIGHT"`: indicates the navigation gesture originates from the right edge
+             *       of the screen, see [EDGE_RIGHT]
+             *     - any other value: indicates the navigation event was not caused by an edge
+             *       swipe, such as a 3-button navigation press or a hardware back button event, see
+             *       [EDGE_NONE]
+             */
+            fun onBackPressStarted(edge: String) {
+                directNavigationEventInput.backStarted(
+                    NavigationEvent(getNavigationEdgeFromString(edge))
+                )
+            }
+
+            /**
+             * Sets the progress of back navigation.
+             *
+             * @param progress progress of back navigation
+             * @param edge string describing the edge used for back navigation:
+             *     - `"EDGE_LEFT"`: indicates the navigation gesture originates from the left edge
+             *       of the screen, see [EDGE_LEFT]
+             *     - `"EDGE_RIGHT"`: indicates the navigation gesture originates from the right edge
+             *       of the screen, see [EDGE_RIGHT]
+             *     - any other value: indicates the navigation event was not caused by an edge
+             *       swipe, such as a 3-button navigation press or a hardware back button event, see
+             *       [EDGE_NONE]
+             */
+            fun onBackPressProgress(progress: Float, edge: String) {
+                directNavigationEventInput.backProgressed(
+                    NavigationEvent(getNavigationEdgeFromString(edge), progress)
+                )
+            }
+
+            /** Performs back navigation. */
+            fun onBackPressCompleted() {
+                directNavigationEventInput.backCompleted()
+            }
+
+            /** Cancels back navigation progress. */
+            fun onBackPressCancelled() {
+                directNavigationEventInput.backCancelled()
+            }
+
+            /**
+             * Checks if forward navigation is possible.
+             *
+             * @return `true` if forward navigation can be performed, `false` otherwise
+             */
+            fun canForwardPress(): Boolean {
+                val history = navigationEventDispatcher.history.value
+                return history.currentIndex >= 0 &&
+                    history.currentIndex < history.mergedHistory.size - 1
+            }
+
+            /**
+             * Starts forward navigation.
+             *
+             * @param edge string describing the edge used for forward navigation:
+             *     - `"EDGE_LEFT"`: indicates the navigation gesture originates from the left edge
+             *       of the screen, see [EDGE_LEFT]
+             *     - `"EDGE_RIGHT"`: indicates the navigation gesture originates from the right edge
+             *       of the screen, see [EDGE_RIGHT]
+             *     - any other value: indicates the navigation event was not caused by an edge
+             *       swipe, such as a 3-button navigation press or a hardware back button event, see
+             *       [EDGE_NONE]
+             */
+            fun onForwardPressStarted(edge: String) {
+                directNavigationEventInput.forwardStarted(
+                    NavigationEvent(getNavigationEdgeFromString(edge))
+                )
+            }
+
+            /**
+             * Sets the progress of forward navigation.
+             *
+             * @param progress progress of forward navigation
+             * @param edge string describing the edge used for forward navigation:
+             *     - `"EDGE_LEFT"`: indicates the navigation gesture originates from the left edge
+             *       of the screen, see [EDGE_LEFT]
+             *     - `"EDGE_RIGHT"`: indicates the navigation gesture originates from the right edge
+             *       of the screen, see [EDGE_RIGHT]
+             *     - any other value: indicates the navigation event was not caused by an edge
+             *       swipe, such as a 3-button navigation press or a hardware back button event, see
+             *       [EDGE_NONE]
+             */
+            fun onForwardPressProgress(progress: Float, edge: String) {
+                directNavigationEventInput.forwardProgressed(
+                    NavigationEvent(getNavigationEdgeFromString(edge), progress)
+                )
+            }
+
+            /** Performs forward navigation. */
+            fun onForwardPressCompleted() {
+                directNavigationEventInput.forwardCompleted()
+            }
+
+            /** Cancels forward navigation progress. */
+            fun onForwardPressCancelled() {
+                directNavigationEventInput.forwardCancelled()
+            }
+
+            fun getHistory(): List<Any> {
+                return navigationEventDispatcher.history.value.mergedHistory
+            }
+
+            fun getCurrentIndex(): Int {
+                return navigationEventDispatcher.history.value.currentIndex
+            }
+
+            /**
+             * Pops the back stack until reaching the specified [navigationState] in history.
+             *
+             * @param navigationState the target state in history to navigate back to
+             * @return `true` if navigation was performed to reach [navigationState], `false`
+             *   otherwise
+             */
+            fun backToState(navigationState: Any): Boolean {
+                val history = navigationEventDispatcher.history.value
+                if (history.currentIndex <= 0) return false
+
+                // mergedHistory contains past (0 until currentIndex), current (currentIndex), and
+                // forward (currentIndex + 1 until size) states. We only search the back stack
+                // (past states) to ensure we do not match the active state or future/forward
+                // states.
+                val backStack = history.mergedHistory.take(history.currentIndex)
+                val targetIndex =
+                    backStack.indexOfFirst { it === navigationState }.takeIf { it >= 0 }
+                        ?: backStack.lastIndexOf(navigationState)
+
+                if (targetIndex < 0) {
+                    return false
+                }
+
+                val maxSteps = history.currentIndex - targetIndex
+                repeat(maxSteps) {
+                    // Stop if we have reached the root or back navigation is no longer possible
+                    // to prevent popping past the root and triggering the fallback dispatcher.
+                    if (!canBackPress()) {
+                        return true
+                    }
+                    onBackPressCompleted()
+                    // Stop early if a multi-pop back press already reached or passed the target
+                    // index.
+                    if (navigationEventDispatcher.history.value.currentIndex <= targetIndex) {
+                        return true
+                    }
+                }
+                return true
+            }
+
+            private fun getNavigationEdgeFromString(edge: String): Int =
+                when (edge) {
+                    "EDGE_LEFT" -> EDGE_LEFT
+                    "EDGE_RIGHT" -> EDGE_RIGHT
+                    else -> EDGE_NONE
+                }
         }
 
     private val FakeActivityResultRegistryOwner =

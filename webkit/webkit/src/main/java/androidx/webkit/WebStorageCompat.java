@@ -62,8 +62,8 @@ public final class WebStorageCompat {
      * @param executor     Executor to run the {@code doneCallback}.
      * @param doneCallback callback that will be invoked when deletion is complete.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#DELETE_BROWSING_DATA}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#DELETE_BROWSING_DATA} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.DELETE_BROWSING_DATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -88,8 +88,8 @@ public final class WebStorageCompat {
      *
      * @see #deleteBrowsingData(WebStorage, Executor, Runnable)
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#DELETE_BROWSING_DATA}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#DELETE_BROWSING_DATA} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.DELETE_BROWSING_DATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -127,8 +127,8 @@ public final class WebStorageCompat {
      * of the {@code domain} parameter.
      * @throws IllegalArgumentException if unable to parse the {@code domain} as a domain name.
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#DELETE_BROWSING_DATA}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#DELETE_BROWSING_DATA} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.DELETE_BROWSING_DATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -154,8 +154,8 @@ public final class WebStorageCompat {
      *
      * @see #deleteBrowsingDataForSite(WebStorage, String, Executor, Runnable)
      * @throws UnsupportedOperationException if the
-     *                                       {@link WebViewFeature#DELETE_BROWSING_DATA}
-     *                                       feature is not supported.
+     *     {@link WebViewFeature#DELETE_BROWSING_DATA} feature is not supported.
+     *     This should be checked before use with {@link WebViewFeature#isFeatureSupported}.
      */
     @RequiresFeature(name = WebViewFeature.DELETE_BROWSING_DATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

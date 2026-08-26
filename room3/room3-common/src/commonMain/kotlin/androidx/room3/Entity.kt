@@ -34,7 +34,7 @@ package androidx.room3
  *
  * The persisted properties types define the column type affinity of the mapping SQLite table.
  * Supported types are primitives, [String], [ByteArray] and enums. Additional types can be
- * supported via [TypeConverter] functions.
+ * supported via [ColumnTypeConverter] functions.
  *
  * Example:
  * ```
@@ -121,4 +121,21 @@ public annotation class Entity(
      * @return The list of property names.
      */
     val ignoredColumns: Array<String> = [],
+
+    /**
+     * If set to `true`, the mapping SQLite table will be created using the `WITHOUT ROWID` option.
+     *
+     * This is useful for tables that have small non-integer or composite (multi-column) primary
+     * keys as it can save space and improve performance by avoiding the generation of a separate
+     * row ID.
+     *
+     * Note that tables without row ID cannot set [PrimaryKey.autoGenerate] to `true` on their
+     * primary key property.
+     *
+     * See also [WITHOUT ROWID Optimization Documentation](https://sqlite.org/withoutrowid.html)
+     *
+     * @return True if the table should be created without row ID, false otherwise. Defaults to
+     *   false.
+     */
+    val withoutRowId: Boolean = false,
 )

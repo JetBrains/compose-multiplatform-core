@@ -20,8 +20,9 @@ import androidx.annotation.Sampled
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.PlaneLabel
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
@@ -102,7 +103,7 @@ private fun renderFunction(
     pose: Pose,
     extents: FloatSize2d,
     vertices: List<Vector2>,
-    label: Plane.Label,
+    label: PlaneLabel,
 ) {}
 
 private val yourCoroutineScope = MainScope()

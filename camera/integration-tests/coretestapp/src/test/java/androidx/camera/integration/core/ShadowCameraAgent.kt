@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.os.Handler
 import android.util.Log
-import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
@@ -36,6 +35,18 @@ class ShadowCameraAgent(val testHandler: Handler) {
 
     private var listenerRegisteredLatch = CountDownLatch(1)
     private var nextOpenError: DeviceOpenError? = null
+    var openAttempts = 0
+        private set
+
+    private var persistentOpenError: DeviceOpenError? = null
+
+    fun incrementOpenAttempts() {
+        openAttempts++
+    }
+
+    fun failAllOpenCallsWith(error: DeviceOpenError?) {
+        persistentOpenError = error
+    }
 
     private data class OpenCameraInfo(
         val device: CameraDevice,
@@ -43,11 +54,18 @@ class ShadowCameraAgent(val testHandler: Handler) {
         val executor: Executor,
     )
 
-    private val openCameras = Collections.synchronizedMap(mutableMapOf<String, OpenCameraInfo>())
-    private val availabilityCallbacks =
-        Collections.synchronizedMap(LinkedHashMap<CameraManager.AvailabilityCallback, Handler>())
+    // Using IdentityHashMap to ensure we track specific CameraDevice instances by reference.
+    // Regular HashMaps might fail if the framework stub's equals/hashCode is not tied to identity.
+    private val openCameras = java.util.IdentityHashMap<CameraDevice, OpenCameraInfo>()
+
+    // Dual-index for O(1) lookup by cameraId.
+    private val cameraIdToDevices = mutableMapOf<String, MutableSet<CameraDevice>>()
+
+    private val availabilityCallbacks = LinkedHashMap<CameraManager.AvailabilityCallback, Handler>()
     private val availabilityCallbackExecutors =
-        Collections.synchronizedMap(LinkedHashMap<CameraManager.AvailabilityCallback, Executor>())
+        LinkedHashMap<CameraManager.AvailabilityCallback, Executor>()
+
+    private val lock = Any()
 
     enum class DeviceErrorScenario {
         ON_ERROR,
@@ -65,12 +83,10 @@ class ShadowCameraAgent(val testHandler: Handler) {
     /** Manually triggers the onCameraAvailable callback for all registered listeners. */
     fun triggerOnCameraAvailable(cameraId: String) {
         Log.d("ShadowAgent", "Triggering onCameraAvailable for $cameraId")
-        synchronized(availabilityCallbacks) {
+        synchronized(lock) {
             availabilityCallbacks.forEach { (callback, handler) ->
                 handler.post { callback.onCameraAvailable(cameraId) }
             }
-        }
-        synchronized(availabilityCallbackExecutors) {
             availabilityCallbackExecutors.forEach { (callback, executor) ->
                 executor.execute { callback.onCameraAvailable(cameraId) }
             }
@@ -80,12 +96,10 @@ class ShadowCameraAgent(val testHandler: Handler) {
     /** Manually triggers the onCameraUnavailable callback for all registered listeners. */
     fun triggerOnCameraUnavailable(cameraId: String) {
         Log.d("ShadowAgent", "Triggering onCameraUnavailable for $cameraId")
-        synchronized(availabilityCallbacks) {
+        synchronized(lock) {
             availabilityCallbacks.forEach { (callback, handler) ->
                 handler.post { callback.onCameraUnavailable(cameraId) }
             }
-        }
-        synchronized(availabilityCallbackExecutors) {
             availabilityCallbackExecutors.forEach { (callback, executor) ->
                 executor.execute { callback.onCameraUnavailable(cameraId) }
             }
@@ -94,7 +108,20 @@ class ShadowCameraAgent(val testHandler: Handler) {
 
     /** Fires an error or disconnect callback on a specific open camera device. */
     fun notifyOpenDeviceError(cameraId: String, scenario: DeviceErrorScenario) {
-        val openInfo = openCameras.remove(cameraId) ?: return
+        val openInfo =
+            synchronized(lock) {
+                val devices = cameraIdToDevices[cameraId]
+                val device = devices?.firstOrNull() ?: return@synchronized null
+
+                // Remove from primary map and cleanup index
+                val info = openCameras.remove(device)
+                devices.remove(device)
+                if (devices.isEmpty()) {
+                    cameraIdToDevices.remove(cameraId)
+                }
+                info
+            } ?: return
+
         when (scenario) {
             DeviceErrorScenario.ON_ERROR -> {
                 Log.d("ShadowAgent", "Simulating onError for $cameraId.")
@@ -112,6 +139,24 @@ class ShadowCameraAgent(val testHandler: Handler) {
         }
     }
 
+    /** Closes all open devices and clears the internal tracking state. */
+    fun closeAllOpenDevices() {
+        val devicesToClose =
+            synchronized(lock) {
+                val snapshot = openCameras.keys.toList()
+                openCameras.clear()
+                cameraIdToDevices.clear()
+                snapshot
+            }
+        devicesToClose.forEach {
+            try {
+                it.close()
+            } catch (e: Exception) {
+                Log.e("ShadowAgent", "Failed to close device ${it.id}", e)
+            }
+        }
+    }
+
     /** Configures the agent to fail the next attempt to open a camera. */
     fun failNextOpenCameraWith(error: DeviceOpenError?) {
         nextOpenError = error
@@ -122,6 +167,9 @@ class ShadowCameraAgent(val testHandler: Handler) {
      * This is called by the shadow to inject the failure.
      */
     fun consumeNextOpenError(): DeviceOpenError? {
+        if (persistentOpenError != null) {
+            return persistentOpenError
+        }
         val error = nextOpenError
         nextOpenError = null
         return error
@@ -136,21 +184,27 @@ class ShadowCameraAgent(val testHandler: Handler) {
         callback: CameraManager.AvailabilityCallback,
         handler: Handler,
     ) {
-        availabilityCallbacks[callback] = handler
-        listenerRegisteredLatch.countDown()
+        synchronized(lock) {
+            availabilityCallbacks[callback] = handler
+            listenerRegisteredLatch.countDown()
+        }
     }
 
     fun registerAvailabilityCallback(
         executor: Executor,
         callback: CameraManager.AvailabilityCallback,
     ) {
-        availabilityCallbackExecutors[callback] = executor
-        listenerRegisteredLatch.countDown()
+        synchronized(lock) {
+            availabilityCallbackExecutors[callback] = executor
+            listenerRegisteredLatch.countDown()
+        }
     }
 
     fun unregisterAvailabilityCallback(callback: CameraManager.AvailabilityCallback) {
-        availabilityCallbacks.remove(callback)
-        availabilityCallbackExecutors.remove(callback)
+        synchronized(lock) {
+            availabilityCallbacks.remove(callback)
+            availabilityCallbackExecutors.remove(callback)
+        }
     }
 
     fun registerOpenDevice(
@@ -158,11 +212,21 @@ class ShadowCameraAgent(val testHandler: Handler) {
         callback: CameraDevice.StateCallback,
         executor: Executor,
     ) {
-        openCameras[device.id] = OpenCameraInfo(device, callback, executor)
+        synchronized(lock) {
+            openCameras[device] = OpenCameraInfo(device, callback, executor)
+            cameraIdToDevices.getOrPut(device.id) { mutableSetOf() }.add(device)
+        }
     }
 
     fun unregisterDevice(device: CameraDevice) {
-        openCameras.remove(device.id)
+        synchronized(lock) {
+            openCameras.remove(device)
+            val devices = cameraIdToDevices[device.id]
+            devices?.remove(device)
+            if (devices.isNullOrEmpty()) {
+                cameraIdToDevices.remove(device.id)
+            }
+        }
     }
 
     fun hijackSessionAndFireCallback(

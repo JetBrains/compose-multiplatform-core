@@ -276,7 +276,7 @@ internal class SlotTableAddressSpace(
                 groups.groupSlotRange(group, newRange)
                 newRange
             } else
-                slotAddressAndSize(range) { address, size ->
+                slotAddressAndSize(range) { _, size ->
                     if (offset >= size) {
                         growSlotRangeAtGroup(group, size, offset + 1)
                     } else range
@@ -1101,10 +1101,11 @@ internal fun SlotTableAddressSpace.buildTrace(
             if (HasObjectKeyFlag in flags)
                 slots[
                     slotAddressOf(groups.groupSlotRange(currentGroup)) + objectKeySlotIndex(flags)]
-            else null
+            else Composer.Empty
 
+        val groupKey = groups.groupKey(currentGroup)
         traceBuilder.processEdge(
-            groupKey = groups.groupKey(currentGroup),
+            groupKey = groupKey,
             objectKey = objectKey,
             sourceInformation = sourceInformationOf(currentGroup),
             childData = childData,

@@ -47,14 +47,13 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalTestApi::class)
 class SelectionCopyTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val fontFamily = TEST_FONT_FAMILY
     private val fontSize = 20.sp
@@ -62,7 +61,7 @@ class SelectionCopyTest {
 
     private val textTag = "textTag"
 
-    private val selection = mutableStateOf<Selection?>(null)
+    val state = SelectionState()
     private val startClipboardText = "Clipboard content at start of test."
 
     @Suppress("DEPRECATION")
@@ -135,11 +134,7 @@ class SelectionCopyTest {
 
     @Composable
     private fun TestContent(textContent: String) {
-        SelectionContainer(
-            selection = selection.value,
-            onSelectionChange = { selection.value = it },
-            modifier = Modifier.fillMaxSize(),
-        ) {
+        SelectionContainer(state = state, modifier = Modifier.fillMaxSize()) {
             BasicText(
                 text = textContent,
                 modifier = Modifier.wrapContentSize().testTag(textTag),
@@ -174,7 +169,7 @@ class SelectionCopyTest {
 
     private fun assertSelection(text: String, selectionRange: Pair<Int, Int>?) {
         Truth.assertAbout(SelectionSubject.withContent(text))
-            .that(selection.value)
+            .that(state.selection)
             .hasSelection(
                 expected = selectionRange?.run { TextRange(first, second) },
                 startTextDirection = ResolvedTextDirection.Ltr,

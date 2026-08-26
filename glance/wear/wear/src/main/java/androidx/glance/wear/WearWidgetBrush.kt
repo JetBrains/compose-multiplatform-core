@@ -18,10 +18,13 @@ package androidx.glance.wear
 
 import androidx.compose.remote.creation.compose.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.shaders.horizontalGradient
+import androidx.compose.remote.creation.compose.shaders.image
 import androidx.compose.remote.creation.compose.shaders.solidColor
 import androidx.compose.remote.creation.compose.shaders.verticalGradient
 import androidx.compose.remote.creation.compose.state.RemoteColor
+import androidx.compose.remote.creation.compose.state.RemoteImageBitmap
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.layout.ContentScale
 
 /**
  * Defines a brush for a Wear Widget surface.
@@ -49,7 +52,7 @@ public sealed class WearWidgetBrush {
      * Returns a [WearWidgetBrush] representing this brush followed by [other] in sequence.
      */
     internal open infix fun then(other: WearWidgetBrush): WearWidgetBrush =
-        if (other === WearWidgetBrush) this else Combined(this, other)
+        if (other.isEmpty()) this else Combined(this, other)
 
     /** A single element contained within a [WearWidgetBrush] chain. */
     internal data class Element(internal val brush: RemoteBrush) : WearWidgetBrush() {
@@ -143,3 +146,31 @@ public fun WearWidgetBrush.horizontalGradient(colors: List<RemoteColor>): WearWi
             )
         )
     )
+
+/**
+ * Creates a [WearWidgetBrush] with a bitmap.
+ *
+ * Because the image is drawn using [TileMode.Decal], it does not repeat if the surface is larger
+ * than the scaled [bitmap].
+ *
+ * Example:
+ * ```
+ *  WearWidgetBrush.image(bitmap, ContentScale.Crop)
+ * ```
+ *
+ * @param bitmap The [RemoteImageBitmap] to draw.
+ * @param contentScale The [ContentScale] to apply to the bitmap when fitting it to the surface, by
+ *   default [ContentScale.Fit].
+ */
+public fun WearWidgetBrush.image(
+    bitmap: RemoteImageBitmap,
+    contentScale: ContentScale = ContentScale.Fit,
+): WearWidgetBrush =
+    then(
+        WearWidgetBrush.Element(
+            RemoteBrush.image(bitmap, TileMode.Decal, TileMode.Decal, contentScale)
+        )
+    )
+
+/** Returns `true` if this [WearWidgetBrush] is empty (contains no elements), false otherwise. */
+internal fun WearWidgetBrush.isEmpty(): Boolean = this === WearWidgetBrush

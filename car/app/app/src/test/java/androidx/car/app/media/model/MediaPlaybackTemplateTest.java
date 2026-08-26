@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 import androidx.car.app.model.Action;
+import androidx.car.app.model.Banner;
+import androidx.car.app.model.CarColor;
 import androidx.car.app.model.Header;
 
 import org.junit.Test;
@@ -65,6 +67,15 @@ public class MediaPlaybackTemplateTest {
     }
 
     @Test
+    public void createInstance_bannerProvided_isValid() {
+        Banner banner = new Banner.Builder().setTitle("Banner").build();
+        MediaPlaybackTemplate template =
+                new MediaPlaybackTemplate.Builder().setBanner(banner).build();
+
+        assertEquals(template.getBanner(), banner);
+    }
+
+    @Test
     public void equals() {
         MediaPlaybackTemplate template1 =
                 new MediaPlaybackTemplate.Builder().setHeader(HEADER).build();
@@ -96,4 +107,41 @@ public class MediaPlaybackTemplateTest {
 
         assertNotEquals(template1, template2);
     }
+
+    @Test
+    public void notEquals_differentBanners() {
+        Banner banner = new Banner.Builder().setTitle("Banner").build();
+        MediaPlaybackTemplate template1 =
+                new MediaPlaybackTemplate.Builder().setBanner(banner).build();
+
+        MediaPlaybackTemplate template2 =
+                new MediaPlaybackTemplate.Builder().setBanner(null).build();
+
+        assertNotEquals(template1, template2);
+    }
+
+    @Test
+    public void createInstance_mediaAccentColorProvided_isValid() {
+        CarColor color = CarColor.BLUE;
+        MediaPlaybackTemplate template =
+                new MediaPlaybackTemplate.Builder().setMediaAccentColor(color).build();
+
+        assertEquals(template.getMediaAccentColor(), color);
+    }
+
+    @Test
+    public void notEquals_differentMediaAccentColors() {
+        MediaPlaybackTemplate template1 =
+                new MediaPlaybackTemplate.Builder()
+                        .setMediaAccentColor(CarColor.BLUE)
+                        .build();
+
+        MediaPlaybackTemplate template2 =
+                new MediaPlaybackTemplate.Builder()
+                        .setMediaAccentColor(CarColor.RED)
+                        .build();
+
+        assertNotEquals(template1, template2);
+    }
+
 }

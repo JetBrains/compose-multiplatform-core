@@ -26,10 +26,10 @@ import androidx.sqlite.SQLITE_DATA_TEXT
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
-import androidx.sqlite.executeSQL
-import androidx.sqlite.open
-import androidx.sqlite.prepare
-import androidx.sqlite.step
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.async.open
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
 import kotlin.test.Test
 import kotlinx.coroutines.test.runTest
 
@@ -282,6 +282,46 @@ abstract class BaseConformanceTest {
             assertThat(it.step()).isTrue() // SQLITE_ROW
             assertThat(it.getColumnType(0)).isEqualTo(SQLITE_DATA_NULL)
             assertThat(it.isNull(0)).isTrue()
+        }
+    }
+
+    @Test
+    fun bindTextThenNullAndReadNull() = testWithConnection { connection ->
+        connection.executeSQL("CREATE TABLE Test (col TEXT)")
+        connection.prepare("INSERT INTO Test (col) VALUES (?)").use {
+            it.bindText(1, "hello")
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+            it.reset()
+            it.bindNull(1)
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+        }
+        connection.prepare("SELECT * FROM Test").use {
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.isNull(0)).isFalse()
+            assertThat(it.getText(0)).isEqualTo("hello")
+
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.isNull(0)).isTrue()
+        }
+    }
+
+    @Test
+    fun bindNullThenTextAndReadText() = testWithConnection { connection ->
+        connection.executeSQL("CREATE TABLE Test (col TEXT)")
+        connection.prepare("INSERT INTO Test (col) VALUES (?)").use {
+            it.bindNull(1)
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+            it.reset()
+            it.bindText(1, "hello")
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+        }
+        connection.prepare("SELECT * FROM Test").use {
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.isNull(0)).isTrue()
+
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.isNull(0)).isFalse()
+            assertThat(it.getText(0)).isEqualTo("hello")
         }
     }
 

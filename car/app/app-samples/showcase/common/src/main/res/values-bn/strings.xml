@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"মেসেজে এখানে লেখা হবে।\nবেশি টেক্সট হলে, দ্বিতীয় লাইনে লিখুন।"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"ছোট মেসেজ টেমপ্লেট সংক্রান্ত ডেমো"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"বিভাগ অনুযায়ী আইটেম টেমপ্লেটের ডেমো"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"কন্ডেন্সড আইটেম ডেমো"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Item AlphaJump-চালু করা ডেমো বিভাগ অনুযায়ী সাজানো হয়েছে"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"রেডিও বাটন বিভাগ"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"টগল বিভাগ"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"তালিকা ২"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"প্রতিটি তালিকায় থাকা সাবটেক্সট"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"ছবি ও অ্যাকশনের ডেমো শেষ করুন"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"চিপ ডেমো"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"প্রগ্রেস বার ডেমো"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"বিভাগের হেডার ডেমো"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"স্পটলাইট বিভাগের ডেমো"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"প্যানেল টেমপ্লেটের ডেমো"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"জায়গার তালিকার টেমপ্লেটের ডেমো"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"জায়গা ব্রাউজ করুন"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"লেটেস্ট ফিচার"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"লোডিং চালু হয়েছে"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"লোডিং বন্ধ হয়ে গেছে"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"অ্যাপ থিম ব্যবহার করুন"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"অ্যাপ থিম চালু করা হয়েছে"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"অ্যাপ থিম বন্ধ করা হয়েছে"</string>
     <string name="loading_screen" msgid="4771507490730308794">"স্ক্রিন লোড হচ্ছে"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"কালার যোগ করতে/সরাতে টগল করুন"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"টগল সহ ম্যাপ টেমপ্লেট"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"কন্টেন্ট সহ ম্যাপ সম্পর্কিত ডেমো"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"মেসেজ টেমপ্লেট সহ ম্যাপ সম্পর্কিত ডেমো"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"গ্রিড টেমপ্লেট সহ ম্যাপ সম্পর্কিত ডেমো"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"বিভাগ অনুযায়ী সাজানো আইটেমের তালিকাসহ ম্যাপ"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"ব্যানার ডেমো"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"উন্নত হেডার ডেমো"</string>
 </resources>

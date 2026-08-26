@@ -233,6 +233,7 @@ constructor(
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
+        retainLocks: Boolean,
     ): Deferred<Result3A> = withSessionLockAsync {
         controller3A.update3A(
             aeMode = aeMode,
@@ -243,6 +244,7 @@ constructor(
             aeRegions = aeRegions,
             afRegions = afRegions,
             awbRegions = awbRegions,
+            retainLocks = retainLocks,
         )
     }
 
@@ -307,18 +309,21 @@ constructor(
         lockedTimeLimitNs: Long,
     ): Deferred<Result3A> = withSessionLockAsync {
         controller3A.lock3A(
-            aeRegions,
-            afRegions,
-            awbRegions,
-            aeLockBehavior,
-            afLockBehavior,
-            awbLockBehavior,
-            afTriggerStartAeMode,
-            convergedCondition,
-            lockedCondition,
-            frameLimit,
-            convergedTimeLimitNs,
-            lockedTimeLimitNs,
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+            aeLockBehavior = aeLockBehavior,
+            afLockBehavior = afLockBehavior,
+            awbLockBehavior = awbLockBehavior,
+            afTriggerStartAeMode = afTriggerStartAeMode,
+            convergedCondition = convergedCondition,
+            lockedCondition = lockedCondition,
+            frameLimit = frameLimit,
+            convergedTimeLimitNs = convergedTimeLimitNs,
+            lockedTimeLimitNs = lockedTimeLimitNs,
         )
     }
 
@@ -352,14 +357,7 @@ constructor(
     override fun toString(): String = id.toString()
 
     private fun createSessionFromToken(token: Token) =
-        CameraGraphSessionImpl(
-            token,
-            graphProcessor,
-            controller3A,
-            frameCaptureQueue,
-            parameters,
-            listeners,
-        )
+        CameraGraphSessionImpl(token, graphProcessor, controller3A, parameters, listeners)
 
     /**
      * Acquires a [GraphSessionLock] token and executes the given code block. The code block(s) will

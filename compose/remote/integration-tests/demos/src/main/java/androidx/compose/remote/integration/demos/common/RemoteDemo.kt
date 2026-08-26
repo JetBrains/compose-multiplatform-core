@@ -19,9 +19,15 @@ package androidx.compose.remote.integration.demos.common
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.creation.compose.capture.captureSingleRemoteDocument
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.RemoteDocument
+import androidx.compose.remote.player.core.platform.AndroidCustomContext
+import androidx.compose.remote.player.core.platform.BitmapLoader
+import androidx.compose.remote.player.core.state.StateUpdater
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,17 +43,27 @@ import androidx.compose.ui.platform.LocalWindowInfo
 @Suppress("RestrictedApiAndroidX")
 fun RemoteDemo(
     modifier: Modifier = Modifier,
+    profile: Profile = RcPlatformProfiles.ANDROIDX,
     init: (RemoteComposePlayer) -> Unit = {},
     update: (RemoteComposePlayer) -> Unit = {},
+    onNamedAction: (String, Any?, StateUpdater) -> Unit = { _, _, _ -> },
+    bitmapLoader: BitmapLoader? = null,
+    customSupport: AndroidCustomContext? = null,
     content: @Composable @RemoteComposable () -> Unit,
 ) {
     var documentState by remember { mutableStateOf<RemoteDocument?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         val context = LocalContext.current
-        // TODO(b/495316956): pass LayoutDirection to captureSingleRemoteDocument
+        val creationDisplayInfo = createCreationDisplayInfo()
         LaunchedEffect(Unit) {
-            val captured = captureSingleRemoteDocument(context = context, content = content)
+            val captured =
+                captureSingleRemoteDocument(
+                    creationDisplayInfo = creationDisplayInfo,
+                    context = context,
+                    profile = profile,
+                    content = content,
+                )
             documentState = RemoteDocument(captured.bytes)
         }
 
@@ -55,13 +71,15 @@ fun RemoteDemo(
             val windowInfo = LocalWindowInfo.current
             RemoteDocumentPlayer(
                 document = documentState!!.document,
-                windowInfo.containerSize.width,
-                windowInfo.containerSize.height,
+                documentWidth = windowInfo.containerSize.width,
+                documentHeight = windowInfo.containerSize.height,
                 modifier = modifier.fillMaxSize(),
                 debugMode = 0,
                 init = init,
                 update = update,
-                onNamedAction = { _, _, _ -> },
+                onNamedAction = onNamedAction,
+                bitmapLoader = bitmapLoader,
+                customSupport = customSupport,
             )
         }
     }

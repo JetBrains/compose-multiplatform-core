@@ -35,10 +35,11 @@ import androidx.savedstate.savedState
 import kotlin.jvm.JvmOverloads
 
 /**
- * Manages a set of [ViewModelStore] instances scoped to a parent [ViewModelStore].
+ * Manages a set of child [ViewModelStore] instances scoped to a parent [ViewModelStore].
  *
- * This class allows the creation of "child" scopes that survive configuration changes (via the
- * parent) but can be independently cleared when no longer needed.
+ * This class allows the creation of child [ViewModelStore] instances that survive configuration
+ * changes (retained via the parent [ViewModelStore]) but can be independently cleared when no
+ * longer needed.
  *
  * **Important:** This class prevents a child [ViewModel] from being cleared while they are still in
  * use (e.g., during exit animations). Consumers must call [acquireToken] to mark a child
@@ -50,8 +51,8 @@ import kotlin.jvm.JvmOverloads
  * that runs independently. It manages its own state and will not be automatically cleared by
  * configuration changes; you must manually call [clearAllKeys] to clean it up.
  *
- * @param parentStore The parent [ViewModelStore] to bind to, or `null` for an independent root
- *   provider.
+ * @param parentStore The parent [ViewModelStore] used to retain child [ViewModelStore] instances
+ *   across configuration changes, or `null` for an independent root provider.
  * @param parentKey A unique identifier used to scope this provider and its underlying state within
  *   the [parentStore]. Providers sharing the same key will share the same internal state. A `null`
  *   key is valid and acts as its own distinct shared scope. Defaults to `null`.
@@ -74,7 +75,8 @@ public constructor(
     /**
      * Constructs a [ViewModelStoreProvider] bound to a parent [ViewModelStoreOwner].
      *
-     * @param parentOwner The parent [ViewModelStoreOwner] to bind to, or `null` for an independent
+     * @param parentOwner The parent [ViewModelStoreOwner] whose [ViewModelStore] is used to retain
+     *   child [ViewModelStore] instances across configuration changes, or `null` for an independent
      *   root provider.
      * @param parentKey A unique identifier used to scope this provider and its underlying state
      *   within the [parentOwner]. Providers sharing the same key will share the same internal
@@ -108,6 +110,8 @@ public constructor(
         parentStore?.getOrPut(parentKey) { StateHolder() } ?: StateHolder()
     }
 
+    private val owners = mutableScatterMapOf<Any?, ViewModelStoreOwner>()
+
     /**
      * Increments the reference count for the [ViewModelStore] associated with the given [key],
      * ensuring it is not cleared until the returned [ReferenceToken] is released.
@@ -123,6 +127,7 @@ public constructor(
         return ReferenceToken {
             entry.refCount--
             if (entry.isDisposable && entry.refCount <= 0) {
+                owners.remove(key)
                 stateHolder.remove(key)
             }
         }
@@ -178,24 +183,26 @@ public constructor(
         defaultCreationExtras: CreationExtras = this.defaultCreationExtras,
         defaultFactory: Factory = this.defaultFactory,
     ): ViewModelStoreOwner {
-        val viewModelStore = getOrCreate(key)
-        return if (savedStateRegistryOwner == null) {
-            // If no saved state is required, return a basic owner.
-            ViewModelStoreOwner(
-                viewModelStore = viewModelStore,
-                defaultArgs = defaultArgs,
-                defaultFactory = defaultFactory,
-                defaultCreationExtras = defaultCreationExtras,
-            )
-        } else {
-            // If saved state is required, return the full delegate owner.
-            ViewModelStoreOwner(
-                viewModelStore = viewModelStore,
-                savedStateRegistryOwner = savedStateRegistryOwner,
-                defaultArgs = defaultArgs,
-                defaultFactory = defaultFactory,
-                defaultCreationExtras = defaultCreationExtras,
-            )
+        return owners.getOrPut(key) {
+            val viewModelStore = getOrCreate(key)
+            if (savedStateRegistryOwner == null) {
+                // If no saved state is required, return a basic owner.
+                ViewModelStoreOwner(
+                    viewModelStore = viewModelStore,
+                    defaultArgs = defaultArgs,
+                    defaultFactory = defaultFactory,
+                    defaultCreationExtras = defaultCreationExtras,
+                )
+            } else {
+                // If saved state is required, return the full delegate owner.
+                ViewModelStoreOwner(
+                    viewModelStore = viewModelStore,
+                    savedStateRegistryOwner = savedStateRegistryOwner,
+                    defaultArgs = defaultArgs,
+                    defaultFactory = defaultFactory,
+                    defaultCreationExtras = defaultCreationExtras,
+                )
+            }
         }
     }
 
@@ -209,6 +216,7 @@ public constructor(
      *   scope associated with the `null` key.
      */
     public fun clearKey(key: Any?) {
+        owners.remove(key)
         stateHolder.clearKey(key)
     }
 
@@ -220,7 +228,14 @@ public constructor(
      * marked as removable and will be deferred until their count reaches zero.
      */
     public fun clearAllKeys() {
-        stateHolder.clearAllKeys()
+        val entry = stateHolder.entries[ProviderMarkerKey]
+        if (entry != null && entry.refCount > 0) {
+            // Abort clearing if there are active provider-level references.
+            // Cleanup is deferred until the last ProviderMarkerKey token is released.
+            return
+        }
+        owners.clear()
+        stateHolder.onCleared()
     }
 
     /**
@@ -235,6 +250,23 @@ public constructor(
      * immediately cleared.
      */
     public fun interface ReferenceToken : AutoCloseable
+
+    /**
+     * A special marker key that can be used with [acquireToken] to manage the lifecycle of the
+     * shared state associated with a particular [parentKey].
+     *
+     * When multiple instances of [ViewModelStoreProvider] are created with the same [parentStore]
+     * and [parentKey], they share a single internal state. By calling
+     * `acquireToken(ProviderMarkerKey)` on *any* of these instances, you increment a reference
+     * count on this shared state. The shared state will not be fully cleared (and thus, no child
+     * [ViewModelStore] instances within it will be cleared) until all tokens acquired with
+     * [ProviderMarkerKey] have been released via [ReferenceToken.close].
+     *
+     * This is useful in advanced scenarios where different parts of an application might create
+     * [ViewModelStoreProvider] instances with the same key but have different lifecycle
+     * requirements.
+     */
+    public object ProviderMarkerKey
 
     /** Holds the state for a single child [store]. */
     private data class Entry(
@@ -266,7 +298,7 @@ public constructor(
             }
         }
 
-        fun clearAllKeys() {
+        public override fun onCleared() {
             // We do not force dispose; we always wait for the reference count to hit 0.
             // This prevents ViewModels from being cleared while still in use (e.g., in an
             // animating dialog window living for extra frames).
@@ -276,10 +308,6 @@ public constructor(
                     remove(entry.key)
                 }
             }
-        }
-
-        override fun onCleared() {
-            clearAllKeys()
         }
     }
 }

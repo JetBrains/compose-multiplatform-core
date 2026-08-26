@@ -36,8 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -74,10 +72,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
-import org.junit.Assume.assumeFalse
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -90,7 +85,7 @@ private const val EDGE_FUZZ_FACTOR = 0.2f
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformableTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var scope: CoroutineScope
 
@@ -1001,16 +996,11 @@ class TransformableTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformable_ctrlAndTrackpadScrollUp_doesZoomIn() {
-        assumeTrue(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
 
@@ -1046,16 +1036,11 @@ class TransformableTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformable_ctrlAndTrackpadScrollDown_doesZoomOut() {
-        assumeTrue(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
 
@@ -1138,16 +1123,11 @@ class TransformableTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     // Classification is only supported on API 34+
     @SdkSuppress(minSdkVersion = 34)
     @Test
+    @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
     fun transformableInsideScroll_ctrlAndTrackpadScroll_doesZoomNoScroll_withFlags() {
-        assumeTrue(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
         var cumulativeScale = 1.0f
         val centroids = mutableListOf<Offset>()
         val scrollState = ScrollState(0)
@@ -1190,53 +1170,6 @@ class TransformableTest {
             centroids.forEach { centroid ->
                 assertThatOffset(centroid).equalsWithTolerance(assertNotNull(Offset(20f, 30f)))
             }
-        }
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
-    @Test
-    fun transformableInsideScroll_ctrlAndTrackpadScroll_doesPanNoScroll_withoutFlags() {
-        assumeFalse(
-            ComposeUiFlags.isTrackpadGestureHandlingEnabled &&
-                ComposeFoundationFlags.isTrackpadGestureHandlingEnabled
-        )
-
-        var cumulativeScale = 1.0f
-        var cumulativePan = Offset.Zero
-        val scrollState = ScrollState(0)
-
-        rule.setContentAndGetScope {
-            Column(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
-                Box(
-                    Modifier.size(100.dp)
-                        .testTag(TEST_TAG)
-                        .transformable(
-                            state =
-                                rememberTransformableState { _, zoom, pan, _ ->
-                                    cumulativeScale *= zoom
-                                    cumulativePan += pan
-                                }
-                        )
-                )
-                Box(Modifier.size(100.dp))
-            }
-        }
-
-        rule.onNodeWithTag(TEST_TAG).performMultiModalInput {
-            key {
-                withKeysDown(listOf(Key.CtrlLeft)) {
-                    trackpad {
-                        moveTo(Offset(20f, 30f))
-                        pan(Offset(0f, 100f))
-                    }
-                }
-            }
-        }
-
-        rule.runOnIdle {
-            assertWithMessage("Should not scroll").that(scrollState.value).isEqualTo(0)
-            assertWithMessage("Should not have scaled").that(cumulativeScale).isEqualTo(1f)
-            assertWithMessage("Should have panned").that(cumulativePan).isEqualTo(Offset(0f, 100f))
         }
     }
 
@@ -1296,7 +1229,10 @@ class TransformableTest {
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG).performTrackpadInput { pan(Offset(0f, 100f)) }
+        rule.onNodeWithTag(TEST_TAG).performTrackpadInput {
+            moveTo(center)
+            pan(Offset(0f, 100f))
+        }
 
         rule.runOnIdle {
             assertWithMessage("Should not scroll").that(scrollState.value).isEqualTo(0)

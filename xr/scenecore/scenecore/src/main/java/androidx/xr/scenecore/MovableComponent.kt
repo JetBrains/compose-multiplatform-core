@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-@file:Suppress("BanConcurrentHashMap")
+@file:Suppress("BanConcurrentHashMap", "OPT_IN_USAGE")
 
 package androidx.xr.scenecore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.Plane
+import androidx.xr.arcore.Trackable
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent.Companion.createAnchorable
 import androidx.xr.scenecore.MovableComponent.Companion.createSystemMovable
+import androidx.xr.scenecore.runtime.HandlerExecutor
+import androidx.xr.scenecore.runtime.MovableComponent as RtMovableComponent
 import androidx.xr.scenecore.runtime.MoveEventListener as RtMoveEventListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
@@ -44,37 +48,59 @@ import kotlinx.coroutines.flow.StateFlow
  * [MovableComponent.createSystemMovable] will create the Component and move the attached Entity
  * when the user drags it to a position recommended by the system.
  * [MovableComponent.createAnchorable] will create the Component, move the attached Entity when the
- * user drags it, and also potentially reparent the Entity to a new [AnchorEntity]. This will occur
+ * user drags it, and also potentially reparent the Entity to a new [AnchorSpace]. This will occur
  * if the user lets go of the Entity near a perception plane that matches the settings in the
  * provided [AnchorPlacement].
  *
- * This component cannot be attached to an [AnchorEntity] or to the [ActivitySpace]. Calling
+ * This component cannot be attached to an [AnchorSpace] or to the [ActivitySpace]. Calling
  * [Entity.addComponent] to an Entity with these types will return false.
  */
 public class MovableComponent
 private constructor(
     private val session: Session,
-    private val entityRegistry: EntityRegistry,
+    entityRegistry: EntityRegistry,
     private val systemMovable: Boolean = true,
     private val scaleInZ: Boolean = true,
     private val anchorPlacement: Set<AnchorPlacement> = emptySet(),
     private val disposeParentOnReAnchor: Boolean = true,
     private val initialListener: EntityMoveListener? = null,
     private val initialListenerExecutor: Executor? = null,
-) : Component {
+    private val trackable: Trackable<Trackable.State>? = null,
+    private val poseExtractor: ((Any?) -> Pose?)? = null,
+) : Component() {
 
     private val sceneRuntime = session.sceneRuntime
     private val anchorable = !anchorPlacement.isEmpty()
-    private var createdAnchorEntity: AnchorEntity? = null
+    private var createdAnchorSpace: AnchorSpace? = null
 
-    internal val rtMovableComponent by lazy {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val rtMovableComponent: RtMovableComponent by lazy {
         sceneRuntime.createMovableComponent(systemMovable, scaleInZ, anchorable)
     }
+    internal val rtTrackableComponent by lazy {
+        sceneRuntime.createTrackableComponent(
+            session.lifecycleOwner,
+            requireNotNull(trackable),
+            requireNotNull(poseExtractor),
+        )
+    }
+
     private val moveListenersMap = ConcurrentHashMap<EntityMoveListener, Executor>()
+
     private val rtMoveEventListener: RtMoveEventListener = RtMoveEventListener { rtMoveEvent ->
-        val moveEvent = rtMoveEvent.toMoveEvent(entityRegistry)
-        val updatedReformEventInfo: UpdatedReformEventInfo? =
-            if (anchorable) getUpdatedReformEventPoseAndParent(moveEvent) else null
+        // The converted move event can be null if the move event cannot be constructed and we
+        // return early.
+        val moveEvent = rtMoveEvent.toMoveEvent(entityRegistry) ?: return@RtMoveEventListener
+        var updatedReformEventInfo: UpdatedReformEventInfo? = null
+        if (anchorable) {
+            updatedReformEventInfo = getUpdatedReformEventPoseAndParent(moveEvent)
+        } else if (systemMovable && (entity is GltfModelEntity || entity is MeshEntity)) {
+            entity?.apply {
+                // TODO(b/495925250): Add SceneCore unit tests for movable glTFs
+                setPose(moveEvent.currentPose)
+                setScale(moveEvent.currentScale)
+            }
+        }
         moveListenersMap.forEach { (entityMoveListener, executor) ->
             executor.execute {
                 when (moveEvent.moveState) {
@@ -106,14 +132,13 @@ private constructor(
                                 moveEvent.currentInputRay,
                                 updatedReformEventInfo?.pose ?: moveEvent.currentPose,
                                 updatedReformEventInfo?.scale ?: moveEvent.currentScale,
-                                updatedReformEventInfo?.parent ?: moveEvent.initialParent,
+                                updatedReformEventInfo?.parent ?: moveEvent.updatedParent,
                             )
                         }
                 }
             }
         }
     }
-
     private var entity: Entity? = null
     private lateinit var planesFlow: StateFlow<Collection<Plane>>
 
@@ -127,14 +152,8 @@ private constructor(
             val planeSemantic = planeData.label.toSceneCoreSemanticType()
             for (anchorPlacementSpec in anchorPlacement) {
                 if (
-                    (anchorPlacementSpec.anchorablePlaneOrientations.contains(planeOrientation) ||
-                        anchorPlacementSpec.anchorablePlaneOrientations.contains(
-                            PlaneOrientation.ANY
-                        )) &&
-                        (anchorPlacementSpec.anchorablePlaneSemanticTypes.contains(planeSemantic) ||
-                            anchorPlacementSpec.anchorablePlaneSemanticTypes.contains(
-                                PlaneSemanticType.ANY
-                            )) &&
+                    anchorPlacementSpec.anchorablePlaneOrientations.contains(planeOrientation) &&
+                        anchorPlacementSpec.anchorablePlaneSemanticTypes.contains(planeSemantic) &&
                         planeData.trackingState == TrackingState.TRACKING
                 ) {
                     outPlane = it
@@ -162,15 +181,25 @@ private constructor(
         }
 
     override fun onAttach(entity: Entity): Boolean {
-        if (entity is AnchorEntity || entity is ActivitySpace) {
+        if (entity is AnchorSpace || entity is ActivitySpace) {
             return false
         }
         if (this.entity != null) {
             return false
         }
-        this.entity = entity
-        val attached = (entity as BaseEntity<*>).rtEntity!!.addComponent(rtMovableComponent)
+
+        // Adds TrackableComponent instead of MovableComponent.
+        if (trackable != null && poseExtractor != null) {
+            val attached = entity.rtEntity.addComponent(rtTrackableComponent)
+            if (attached) {
+                this.entity = entity
+            }
+            return attached
+        }
+
+        val attached = entity.rtEntity.addComponent(rtMovableComponent)
         if (attached) {
+            this.entity = entity
             if (anchorable) {
                 planesFlow = Plane.subscribe(session)
             }
@@ -187,7 +216,14 @@ private constructor(
     }
 
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtMovableComponent)
+        // Removes TrackableComponent instead of MovableComponent if trackable is non-null.
+        if (trackable != null && poseExtractor != null) {
+            entity.rtEntity.removeComponent(rtTrackableComponent)
+        } else {
+            rtMovableComponent.removeMoveEventListener(rtMoveEventListener)
+            entity.rtEntity.removeComponent(rtMovableComponent)
+        }
+
         this.entity = null
     }
 
@@ -249,11 +285,12 @@ private constructor(
                     when (entity) {
                         is PanelEntity ->
                             moveEventPoseInOxr.getForwardVectorToUpRotation(anchorablePlanePose)
-                        is GltfModelEntity ->
+                        is GltfModelEntity,
+                        is MeshEntity ->
                             moveEventPoseInOxr.getUpVectorToUpRotation(anchorablePlanePose)
                         else ->
                             throw IllegalArgumentException(
-                                "Movable component can be applied to either a PanelEntity or GltfModelEntity"
+                                "Movable component can be applied to either a PanelEntity, GltfModelEntity, or MeshEntity"
                             )
                     }
                 val rotatedPose = Pose(moveEventPoseInOxr.translation, rotation)
@@ -266,14 +303,14 @@ private constructor(
                 val anchorResult = anchorablePlane.createAnchor(Pose.Identity)
                 if (anchorResult is AnchorCreateSuccess) {
                     updatedPose = poseToAnchor
-                    updatedParent = AnchorEntity.create(session, anchorResult.anchor)
-                    createdAnchorEntity = updatedParent
+                    updatedParent = AnchorSpace.create(session, anchorResult.anchor)
+                    createdAnchorSpace = updatedParent
                 }
             }
         } else {
             entity?.let { entity ->
                 if (
-                    entity.parent == createdAnchorEntity &&
+                    entity.parent == createdAnchorSpace &&
                         moveEvent.moveState == MoveEvent.MOVE_STATE_END
                 ) {
                     updatedParent = session.scene.activitySpace
@@ -289,10 +326,11 @@ private constructor(
 
         // If the parent of the entity is changing, update its scale to reflect the ratio of the
         // scale of the initial parent to the scale of the updated parent. This preserves activity
-        // space scaling when anchoring to an AnchorEntity, and removes it when anchoring back to
+        // space scaling when anchoring to an AnchorSpace, and removes it when anchoring back to
         // the activity space.
         if (updatedParent != null && updatedParent != initialParent) {
             entity?.let {
+                @Suppress("DEPRECATION") // TODO - b/415320653: Space.REAL_WORLD
                 updatedScale =
                     it.getScale() * initialParent.getScale(Space.REAL_WORLD) /
                         updatedParent.getScale(Space.REAL_WORLD)
@@ -305,12 +343,12 @@ private constructor(
                 entity.parent = updatedParent
                 if (
                     prevParent != null &&
-                        prevParent == createdAnchorEntity &&
+                        prevParent == createdAnchorSpace &&
                         disposeParentOnReAnchor &&
                         prevParent.children.isEmpty()
                 ) {
-                    prevParent.dispose()
-                    createdAnchorEntity = null
+                    prevParent?.disposeInternal()
+                    createdAnchorSpace = null
                 }
             }
             entity.setPose(updatedPose)
@@ -371,6 +409,8 @@ private constructor(
             disposeParentOnReAnchor: Boolean = true,
             initialListener: EntityMoveListener? = null,
             initialListenerExecutor: Executor? = null,
+            trackable: Trackable<Trackable.State>? = null,
+            poseExtractor: ((Any?) -> Pose?)? = null,
         ): MovableComponent {
             return MovableComponent(
                 session,
@@ -381,6 +421,8 @@ private constructor(
                 disposeParentOnReAnchor,
                 initialListener,
                 initialListenerExecutor,
+                trackable,
+                poseExtractor,
             )
         }
 
@@ -390,10 +432,10 @@ private constructor(
          * This [Component] can be attached to a single instance of an [Entity]. When attached, this
          * Component will enable the user to translate the Entity by pointing and dragging on it.
          *
-         * When created with this function the MovableComponent will not move or rescale the Entity
+         * When created with this function the MovableComponent will not move or rescale the Entity,
          * but it could be done using the [EntityMoveListener.onMoveUpdate] callback.
          *
-         * This component cannot be attached to an [AnchorEntity] or to the [ActivitySpace]. Calling
+         * This component cannot be attached to an [AnchorSpace] or to the [ActivitySpace]. Calling
          * [Entity.addComponent] to an Entity with these types will return false.
          *
          * @param session The [Session] instance.
@@ -434,7 +476,7 @@ private constructor(
          * [EntityMoveListener] can be attached to received callbacks when the Entity is being
          * moved.
          *
-         * This component cannot be attached to an [AnchorEntity] or to the [ActivitySpace]. Calling
+         * This component cannot be attached to an [AnchorSpace] or to the [ActivitySpace]. Calling
          * [Entity.addComponent] to an Entity with these types will return false.
          *
          * @param session The [Session] instance.
@@ -463,21 +505,27 @@ private constructor(
          * Component will enable the user to translate the Entity by pointing and dragging on it.
          *
          * When created with this function the MovableComponent will move and potentially Anchor the
-         * Entity. When anchored a new [AnchorEntity] will be created and set as the parent of the
-         * Entity. If the entity is moved off of a created [AnchorEntity] it will be reparented to
+         * Entity. When anchored a new [AnchorSpace] will be created and set as the parent of the
+         * Entity. If the entity is moved off of a created [AnchorSpace] it will be reparented to
          * the [ActivitySpace]. An [EntityMoveListener] can be attached to receive callbacks when
-         * the Entity is being moved and to see if it was reparented to an AnchorEntity.
+         * the Entity is being moved and to see if it was reparented to an AnchorSpace.
          *
-         * This component cannot be attached to an AnchorEntity or to the ActivitySpace. Calling
+         * This component cannot be attached to an AnchorSpace or to the ActivitySpace. Calling
          * [Entity.addComponent] to an Entity with these types will return false.
+         *
+         * This functionality requires [Session] to be called with
+         * [androidx.xr.runtime.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL]. This configuration
+         * requires that the `SCENE_UNDERSTANDING_COARSE` Android permission is granted. If not
+         * granted, the `anchorable` functionality will be disabled, and the element will behave as
+         * if the anchoring functionality was not applied.
          *
          * @param session The [Session] instance.
          * @param anchorPlacement A Set containing different [AnchorPlacement] for how to anchor the
          *   Entity with a MovableComponent. When empty this Entity will not be anchored.
          * @param disposeParentOnReAnchor A Boolean, which if set to true, when an Entity is moved
-         *   off of an [AnchorEntity] that was created by the underlying MovableComponent, and the
-         *   AnchorEntity has no other children, the AnchorEntity will be disposed, and the
-         *   underlying Anchor will be detached.
+         *   off of an [AnchorSpace] that was created by the underlying MovableComponent, and the
+         *   AnchorSpace has no other children, the AnchorSpace will be disposed, and the underlying
+         *   Anchor will be detached.
          * @return MovableComponent instance.
          * @throws IllegalArgumentException if created with an Empty Set of for anchorPlacement
          */

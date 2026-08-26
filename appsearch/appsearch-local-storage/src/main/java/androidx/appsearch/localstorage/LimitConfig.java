@@ -17,11 +17,12 @@
 package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 
 /**
  * Defines limits placed on users of AppSearch and enforced by {@link AppSearchImpl}.
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface LimitConfig {
     /**
@@ -71,7 +72,6 @@ public interface LimitConfig {
      */
     int getMaxSuggestionCount();
 
-
     /**
      * Returns the maximum number of {@link android.os.ParcelFileDescriptor} that a single app could
      * open for read and write blob from AppSearch.
@@ -84,4 +84,11 @@ public interface LimitConfig {
      * #getMaxDocumentSizeBytes().
      */
     int getMaxByteLimitForBatchPut();
+
+    /**
+     * Returns the maximum number of bytes that AppSearch will accumulate across multiple native
+     * pages before returning a single response to the client. This limit is used to prevent the
+     * stitched page returned over Binder from exceeding the transaction size limit.
+     */
+    int getMaxAccumulatedResultBytes();
 }

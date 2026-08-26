@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"మెసేజ్‌ను ఇక్కడ టైప్ చేయాలి.\nరెండవ లైన్‌లో మరింత టెక్స్ట్‌ను జోడించవచ్చు."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"షార్ట్ మెసేజ్ టెంప్లేట్ డెమో"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"విభజించిన ఐటెమ్ టెంప్లేట్ డెమో"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"సంక్షిప్త ఐటెమ్ డెమో"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"విభజించిన ఐటెమ్ AlphaJump ఎనేబుల్ చేసిన డెమో"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"రేడియో బటన్ విభాగం"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"టోగుల్ విభాగం"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"లిస్ట్ 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"ప్రతి లిస్ట్ కింద సబ్‌టెక్స్ట్"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"ఇమేజ్, చర్యల డెమోను ముగించండి"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"చిప్ డెమో"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"ప్రోగ్రెస్ బార్ డెమో"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"విభాగం హెడర్ డెమో"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"స్పాట్‌లైట్ విభాగం డెమో"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"పేన్ టెంప్లేట్ డెమో"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"స్థలాల లిస్ట్ టెంప్లేట్ డెమో"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"స్థలాలను బ్రౌజ్ చేయండి"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"ఇటీవలి ఫీచర్‌లు"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"లోడింగ్ ఎనేబుల్ చేయబడింది"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"లోడింగ్ డిజేబుల్ చేయబడింది"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"యాప్ థీమ్‌ను ఉపయోగించండి"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"యాప్ థీమ్ ఎనేబుల్ అయ్యింది"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"యాప్ థీమ్ డిజేబుల్ అయ్యింది"</string>
     <string name="loading_screen" msgid="4771507490730308794">"లోడింగ్ స్క్రీన్"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"రంగును జోడించడానికి/తీసివేయడానికి టోగుల్ చేయండి"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"టోగుల్స్‌తో మ్యాప్ టెంప్లేట్"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"కంటెంట్ డెమోలు గల మ్యాప్"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"మెసేజ్ టెంప్లేట్ డెమో గల మ్యాప్"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"గ్రిడ్ టెంప్లేట్ డెమో గల మ్యాప్"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"విభాగాల వారీ ఐటెమ్‌ల లిస్ట్‌తో మ్యాప్"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"బ్యానర్ డెమో"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"మెరుగైన హెడర్ డెమో"</string>
 </resources>

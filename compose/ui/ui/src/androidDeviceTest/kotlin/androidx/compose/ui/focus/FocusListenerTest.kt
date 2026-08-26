@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
@@ -43,14 +41,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class FocusListenerTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     // When we clear focus on Pre P devices, request focus is called even when we are
     // in touch mode.
@@ -138,14 +135,9 @@ class FocusListenerTest {
         rule.onNodeWithTag("item2").requestFocus()
 
         // Assert.
-        val expectedResults: MutableList<Pair<Int?, Int?>> =
-            @OptIn(ExperimentalComposeUiApi::class)
-            if (isOptimizedFocusEventDispatchEnabled) {
-                mutableListOf(Pair(item1Id, item2Id))
-            } else {
-                mutableListOf(Pair(item1Id, null), Pair(null, item2Id))
-            }
-        rule.runOnIdle { assertThat(listener).isEqualTo(TestFocusListener(expectedResults)) }
+        rule.runOnIdle {
+            assertThat(listener).isEqualTo(TestFocusListener(mutableListOf(Pair(item1Id, item2Id))))
+        }
     }
 
     @Test

@@ -21,8 +21,8 @@ import kotlin.collections.Map
 
 /**
  * Source Files:
- * NestedDerivedSerializableInputFunctions.....kt
- * NestedDerivedSerializable.....kt
+ * NestedDerivedSerializableInputFunctions.kt
+ * NestedDerivedSerializable.kt
  */
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : AppFunctionInventory {
@@ -43,6 +43,8 @@ public class `$NestedDerivedSerializableInputFunctions_AppFunctionInventory` : A
           isNullable = false,
           description = "",
           enumValues = null,
+          pattern = null,
+          format = null,
       )
 
   private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:

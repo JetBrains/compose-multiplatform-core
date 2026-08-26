@@ -24,7 +24,9 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.SpatialExternalSurfaceDefaults.SPHERE_RADIUS_METERS
 import androidx.xr.compose.subspace.draw.SpatialFeatheringEffect
 import androidx.xr.compose.subspace.layout.CoreSphereSurfaceEntity
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
@@ -36,9 +38,9 @@ import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
 import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.unit.VolumeConstraints
-import androidx.xr.compose.unit.toMeter
+import androidx.xr.compose.unit.toMeters
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
@@ -47,7 +49,7 @@ import androidx.xr.scenecore.scene
 internal object SpatialExternalSurfaceDefaults {
 
     /** Default radius for spheres. */
-    internal val sphereRadius: Dp = Meter(15f).toDp()
+    internal const val SPHERE_RADIUS_METERS: Float = 15f
 }
 
 /**
@@ -141,17 +143,6 @@ public value class StereoMode private constructor(internal val value: SurfaceEnt
  *
  * @see [SpatialExternalSurface]
  */
-@Deprecated("Use SpatialExternalSurfaceProtection instead.")
-public typealias SurfaceProtection = SpatialExternalSurfaceProtection
-
-/**
- * Specifies if the Surface should be backed by [android.hardware.HardwareBuffer]s with the
- * USAGE_PROTECTED_CONTENT flag set. These buffers support hardware paths for decoding protected
- * content.
- *
- * @see [SpatialExternalSurface]
- * @see https://developer.android.com/reference/android/media/MediaDrm
- */
 @JvmInline
 public value class SpatialExternalSurfaceProtection
 private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
@@ -183,14 +174,17 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  * cannot be used for rendering still images.
  *
  * It is not currently possible to synchronize StereoMode changes with application rendering or
- * video decoding. This composable currently cannot render in front of other panels, so [dragPolicy]
+ * video decoding. This composable currently cannot render in front of other panels, so [movable]
  * usage is not recommended if there are other panels in the layout, aside from the content block of
  * this Composable.
  *
  * Playing certain content will require the proper [SpatialExternalSurfaceProtection]. This is
  * mainly used to protect DRM video content.
  *
- * @param modifier SubspaceModifiers to apply to the SpatialSurfacePanel.
+ * @param modifier SubspaceModifiers to apply to the SpatialExternalSurface. The depth field in
+ *   size-based modifiers affects this surface's layout size, but will not affect how the surface is
+ *   rendered. The rendered shape will be a flat rectangle that is positioned on the front face of
+ *   the rectangular prism created by the layout size.
  * @param stereoMode The [StereoMode] which describes how parts of the surface are displayed to the
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to the canvas of the surface exposed
@@ -198,13 +192,6 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  * @param surfaceProtection Sets the Surface's content protection. Use this to redact content in
  *   screen recordings. Setting this to [SpatialExternalSurfaceProtection.Protected] is required if
  *   decoding DRM media content.
- * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
- *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
- *   anchoring to real-world surfaces. If a policy is provided, draggable UI controls will be shown,
- *   allowing the user to manipulate the panel in 3D space. If null, no motion behavior is applied.
- * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
- *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
- *   element in 3D space. If null, there is no resize behavior applied to the element.
  * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
  * @param superSamplingPattern The pattern to use to super sample this surface, or
  *   [SuperSamplingPattern.None] to disable super sampling.
@@ -221,15 +208,12 @@ public fun SpatialExternalSurface(
     modifier: SubspaceModifier = SubspaceModifier,
     featheringEffect: SpatialFeatheringEffect? = null,
     surfaceProtection: SpatialExternalSurfaceProtection = SpatialExternalSurfaceProtection.None,
-    dragPolicy: DragPolicy? = null,
-    resizePolicy: ResizePolicy? = null,
     interactionPolicy: InteractionPolicy? = null,
     superSamplingPattern: SuperSamplingPattern = SuperSamplingPattern.Pentagon,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
-    val finalModifier =
-        buildSpatialPanelModifier(modifier, dragPolicy, resizePolicy, interactionPolicy)
-    val session = LocalSession.current
+    val finalModifier = buildSpatialPanelModifier(modifier, interactionPolicy)
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val density = LocalDensity.current
 
     // When surface protection changes, the surface entity has to be recreated because protection is
@@ -237,13 +221,15 @@ public fun SpatialExternalSurface(
     val coreSurfaceEntity =
         remember(surfaceProtection, superSamplingPattern) {
             CoreSurfaceEntity(
-                SurfaceEntity.create(
-                    session = checkNotNull(session) { "Session is required" },
-                    stereoMode = stereoMode.value,
-                    surfaceProtection = surfaceProtection.value,
-                    superSampling = superSamplingPattern.value,
-                    parent = session.scene.activitySpace,
-                ),
+                pixelDensity = session.scene.virtualPixelDensity,
+                surfaceEntity =
+                    SurfaceEntity.create(
+                        session = session,
+                        stereoMode = stereoMode.value,
+                        surfaceProtection = surfaceProtection.value,
+                        superSampling = superSamplingPattern.value,
+                        parent = session.scene.activitySpace,
+                    ),
                 localDensity = density,
             )
         }
@@ -288,10 +274,13 @@ public fun SpatialExternalSurface(
  * mainly used to protect DRM video content.
  *
  * @param modifier SubspaceModifiers to apply to the hemisphere. A sphere's measured size is
- *   automatically inferred from [radius] and does not need to be set through a modifier.
+ *   automatically inferred from [radius] and does not need to be set through a modifier. Note: the
+ *   [movable] modifier should not be used with this composable due to its similarity with the
+ *   environment and not having any layout size.
  * @param stereoMode The [StereoMode] which describes how parts of the surface are displayed to the
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
- * @param radius The radius of the dome displaying the video.
+ * @param radius The radius of the dome displaying the video. If unspecified, the radius will be a
+ *   dp value equivalent to 15 meters. See [androidx.xr.scenecore.PixelDensity] for conversions.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to the canvas of the surface exposed
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated]. For hemisphere domes, vertical feathering
  *   applies to the top and bottom poles of the dome, while horizontal feathering applies to the
@@ -311,7 +300,7 @@ public fun SpatialExternalSurface(
 public fun SpatialExternalSurfaceHemisphere(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
-    radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
+    radius: Dp = Dp.Unspecified,
     featheringEffect: SpatialFeatheringEffect? = null,
     surfaceProtection: SpatialExternalSurfaceProtection = SpatialExternalSurfaceProtection.None,
     interactionPolicy: InteractionPolicy? = null,
@@ -353,10 +342,13 @@ public fun SpatialExternalSurfaceHemisphere(
  * mainly used to protect DRM video content.
  *
  * @param modifier SubspaceModifiers to apply to the sphere. A sphere's measured size is
- *   automatically inferred from [radius] and does not need to be set through a modifier.
+ *   automatically inferred from [radius] and does not need to be set through a modifier. Note: the
+ *   [movable] modifier should not be used with this composable due to its similarity with the
+ *   environment and not having any layout size.
  * @param stereoMode The [StereoMode] which describes how parts of the surface are displayed to the
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
- * @param radius The radius of the dome displaying the video.
+ * @param radius The radius of the dome displaying the video. If unspecified, the radius will be a
+ *   dp value equivalent to 15 meters. See [androidx.xr.scenecore.PixelDensity] for conversions.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to the canvas of the surface exposed
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated]. For sphere domes, vertical feathering
  *   applies to the top and bottom poles of the dome, while horizontal feathering applies to the
@@ -376,7 +368,7 @@ public fun SpatialExternalSurfaceHemisphere(
 public fun SpatialExternalSurfaceSphere(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
-    radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
+    radius: Dp = Dp.Unspecified,
     featheringEffect: SpatialFeatheringEffect? = null,
     surfaceProtection: SpatialExternalSurfaceProtection = SpatialExternalSurfaceProtection.None,
     interactionPolicy: InteractionPolicy? = null,
@@ -402,7 +394,7 @@ private fun SpatialExternalSurfaceBaseSphere(
     stereoMode: StereoMode,
     isHemisphere: Boolean,
     modifier: SubspaceModifier = SubspaceModifier,
-    radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
+    radius: Dp = Dp.Unspecified,
     featheringEffect: SpatialFeatheringEffect? = null,
     surfaceProtection: SpatialExternalSurfaceProtection = SpatialExternalSurfaceProtection.None,
     interactionPolicy: InteractionPolicy?,
@@ -410,28 +402,35 @@ private fun SpatialExternalSurfaceBaseSphere(
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val pixelDensity = session.scene.virtualPixelDensity
     val density = LocalDensity.current
-
-    val meterRadius = radius.toMeter().value
-    val finalModifier = buildSpatialPanelModifier(modifier, null, null, interactionPolicy)
+    val meterRadius =
+        if (radius.isSpecified) {
+            radius.toMeters(density, pixelDensity)
+        } else {
+            SPHERE_RADIUS_METERS
+        }
+    val finalModifier = buildSpatialPanelModifier(modifier, interactionPolicy)
 
     val coreSurfaceEntity =
         remember(surfaceProtection, superSamplingPattern) {
             CoreSphereSurfaceEntity(
-                SurfaceEntity.create(
-                    session = checkNotNull(session) { "Session is required" },
-                    stereoMode = stereoMode.value,
-                    surfaceProtection = surfaceProtection.value,
-                    superSampling = superSamplingPattern.value,
-                    parent = session.scene.activitySpace,
-                    shape =
-                        if (isHemisphere) {
-                            SurfaceEntity.Shape.Hemisphere(meterRadius)
-                        } else {
-                            SurfaceEntity.Shape.Sphere(meterRadius)
-                        },
-                ),
-                density,
+                pixelDensity = pixelDensity,
+                surfaceEntity =
+                    SurfaceEntity.create(
+                        session = session,
+                        stereoMode = stereoMode.value,
+                        surfaceProtection = surfaceProtection.value,
+                        superSampling = superSamplingPattern.value,
+                        parent = session.scene.activitySpace,
+                        shape =
+                            if (isHemisphere) {
+                                SurfaceEntity.Shape.Hemisphere(meterRadius)
+                            } else {
+                                SurfaceEntity.Shape.Sphere(meterRadius)
+                            },
+                    ),
+                initialDensity = density,
             )
         }
 
@@ -454,7 +453,10 @@ private fun SpatialExternalSurfaceBaseSphere(
 
         if (session.scene.spatialEnvironment.preferredSpatialEnvironment == null) {
             session.scene.spatialEnvironment.preferredSpatialEnvironment =
-                SpatialEnvironment.SpatialEnvironmentPreference(skybox = null, geometry = null)
+                SpatialEnvironment.SpatialEnvironmentPreference(
+                    imageBasedLightingAsset = null,
+                    geometry = null,
+                )
             temporaryEnvironmentSet = true
         }
 
@@ -464,11 +466,11 @@ private fun SpatialExternalSurfaceBaseSphere(
         val passthroughListener = { passthrough: Float ->
             coreSurfaceEntity.isBoundaryAvailable = passthrough != 1.0f
         }
-        session.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener(passthroughListener)
+        session.scene.spatialEnvironment.addPassthroughOpacityChangedListener(passthroughListener)
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         onDispose {
-            session.scene.spatialEnvironment.removeOnPassthroughOpacityChangedListener(
+            session.scene.spatialEnvironment.removePassthroughOpacityChangedListener(
                 passthroughListener
             )
             if (temporaryEnvironmentSet) {

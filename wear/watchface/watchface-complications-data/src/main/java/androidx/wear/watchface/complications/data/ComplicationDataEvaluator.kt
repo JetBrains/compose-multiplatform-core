@@ -40,6 +40,7 @@ import java.util.concurrent.Executor
 import java.util.function.Supplier
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -119,6 +120,7 @@ constructor(
                 if (keepDynamicValues && evaluatedData.isInvalid()) {
                     // Setting invalidated data.
                     WireComplicationData.Builder(evaluatedData)
+                        .setDataSource(unevaluatedData.dataSource)
                         .setInvalidatedData(unevaluatedData)
                         .build()
                 } else {
@@ -336,21 +338,33 @@ constructor(
         bindingRequest: (Executor, DynamicTypeValueReceiver<T>) -> DynamicTypeBindingRequest
     ): Flow<T?> =
         callbackFlow {
-                // Binding DynamicTypeEvaluator to the provided binding request.
-                val boundDynamicType: BoundDynamicType =
-                    evaluator.bind(
-                        bindingRequest(
-                            currentCoroutineContext().asExecutor(),
-                            // Emitting values to the callbackFlow's channel.
-                            DynamicTypeValueReceiverToChannel(channel),
+                try {
+                    // Binding DynamicTypeEvaluator to the provided binding request.
+                    val boundDynamicType: BoundDynamicType =
+                        evaluator.bind(
+                            bindingRequest(
+                                currentCoroutineContext().asExecutor(),
+                                // Emitting values to the callbackFlow's channel.
+                                DynamicTypeValueReceiverToChannel(channel),
+                            )
                         )
-                    )
-                // Start evaluation.
-                // TODO(b/267599473): Remove dispatches when DynamicTypeEvaluator is thread safe.
-                Dispatchers.Main.immediate { boundDynamicType.startEvaluation() }
-                awaitClose {
-                    // Stop evaluation when the Flow (created by callbackFlow) is closed.
-                    CoroutineScope(Dispatchers.Main.immediate).launch { boundDynamicType.close() }
+                    // Start evaluation.
+                    // TODO(b/267599473): Remove dispatches when DynamicTypeEvaluator is thread
+                    // safe.
+                    Dispatchers.Main.immediate { boundDynamicType.startEvaluation() }
+                    awaitClose {
+                        // Stop evaluation when the Flow (created by callbackFlow) is closed.
+                        CoroutineScope(Dispatchers.Main.immediate).launch {
+                            boundDynamicType.close()
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    // Allow CancellationException to propagate.
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed or rejected binding dynamic type for complication", e)
+                    channel.trySend(null)
+                    channel.close()
                 }
             }
             .conflate() // We only care about the latest data for each field.

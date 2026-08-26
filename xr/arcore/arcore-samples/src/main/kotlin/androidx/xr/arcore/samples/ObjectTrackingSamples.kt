@@ -20,9 +20,9 @@ import androidx.annotation.Sampled
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.AugmentedObject
+import androidx.xr.arcore.TrackingState
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.scene

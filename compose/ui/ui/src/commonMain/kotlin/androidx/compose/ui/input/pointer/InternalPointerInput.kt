@@ -18,7 +18,6 @@ package androidx.compose.ui.input.pointer
 
 import androidx.collection.LongSparseArray
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.node.InternalCoreApi
 
 /**
  * The normalized data structure for pointer input event information that is taken in processed by
@@ -26,8 +25,6 @@ import androidx.compose.ui.node.InternalCoreApi
  *
  * All pointer locations are relative to the device screen.
  */
-@InternalCoreApi
-@Suppress("KmpExperimentalMismatch") // actuals are not experimental
 internal expect class PointerInputEvent {
     val uptime: Long
     val pointers: List<PointerInputEventData>
@@ -55,6 +52,15 @@ internal data class PointerInputEventData(
     val originalEventPosition: Offset = Offset.Zero,
 )
 
+/** The classification of the current gesture. */
+internal enum class PointerClassification {
+    None,
+    Ambiguous,
+    DeepPress,
+    Pinch,
+    Pan,
+}
+
 /**
  * Represents a pointer input event internally.
  *
@@ -62,7 +68,6 @@ internal data class PointerInputEventData(
  * is efficient to split the changes between those that are relevant to the sub tree and those that
  * are not.
  */
-@OptIn(InternalCoreApi::class)
 internal expect class InternalPointerEvent(
     changes: LongSparseArray<PointerInputChange>,
     pointerInputEvent: PointerInputEvent,
@@ -76,4 +81,8 @@ internal expect class InternalPointerEvent(
     var suppressMovementConsumption: Boolean
 
     fun activeHoverEvent(pointerId: PointerId): Boolean
+
+    val activeGesture: PointerClassification
+    val isGestureStart: Boolean
+    val isGestureEnd: Boolean
 }

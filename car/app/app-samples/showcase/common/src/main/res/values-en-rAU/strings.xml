@@ -232,6 +232,7 @@
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Message goes here.\nMore text on second line."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Short message template demo"</string>
     <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Sectioned item template demo"</string>
+    <string name="condensed_item_demo_title" msgid="225744083182855764">"Condensed item demo"</string>
     <string name="sectioned_item_alpha_jump_demo_title" msgid="1923794280863081616">"Sectioned item AlphaJump enabled demo"</string>
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Radio button section"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Toggle section"</string>
@@ -242,9 +243,10 @@
     <string name="sectioned_item_list_two_title" msgid="4941545381743022833">"List 2"</string>
     <string name="sectioned_item_list_subtext" msgid="2963927693547537519">"Subtext under each list"</string>
     <string name="end_image_and_action_demo_title" msgid="6451955718459316414">"End image and actions demo"</string>
-    <!-- no translation found for chip_demo_title (814337127879515513) -->
-    <skip />
+    <string name="chip_demo_title" msgid="814337127879515513">"Chip demo"</string>
     <string name="progress_bar_demo_title" msgid="1759206063037269237">"Progress bar demo"</string>
+    <string name="section_header_demo_title" msgid="4880150421750399922">"Section header demo"</string>
+    <string name="spotlight_section_demo_title" msgid="4149938914167169739">"Spotlight section demo"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Pane template demo"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Place list template demo"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Browse places"</string>
@@ -371,6 +373,9 @@
     <string name="latest_feature_title" msgid="7929405790070777460">"Latest features"</string>
     <string name="loading_toggle_enabled" msgid="8828072732804454994">"Loading enabled"</string>
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Loading disabled"</string>
+    <string name="app_theme_title" msgid="5002857339487981595">"Use app theme"</string>
+    <string name="app_theme_enabled" msgid="3146649362736130743">"App theme enabled"</string>
+    <string name="app_theme_disabled" msgid="947882095780434267">"App theme disabled"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Loading screen"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Toggle to add/remove colour"</string>
     <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Map template with toggles"</string>
@@ -382,4 +387,7 @@
     <string name="map_with_content_demo_title" msgid="1032610482145018739">"Map with content demos"</string>
     <string name="map_with_message_demo_title" msgid="7007078234918054436">"Map with message template demo"</string>
     <string name="map_with_grid_demo_title" msgid="688667167861193192">"Map with grid template demo"</string>
+    <string name="map_with_sectioned_items_demo_title" msgid="8566567348699628797">"Map with sectioned items list"</string>
+    <string name="banner_demo_title" msgid="6740573531391394513">"Banner demo"</string>
+    <string name="enhanced_header_demo_title" msgid="5926669146325565791">"Enhanced header demo"</string>
 </resources>
