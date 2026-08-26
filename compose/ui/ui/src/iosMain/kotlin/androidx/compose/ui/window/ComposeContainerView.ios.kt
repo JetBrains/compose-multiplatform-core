@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.uikit.utils.CMPContainerView
+import androidx.compose.ui.node.WeakReference
 import androidx.compose.ui.unit.toDpSize
 import kotlin.math.max
 import kotlinx.cinterop.CValue
@@ -28,6 +29,7 @@ import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectEqualToRect
 import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGSize
 import platform.UIKit.UIColor
 import platform.UIKit.UIEvent
 import platform.UIKit.UIGraphicsImageRenderer
@@ -56,11 +58,33 @@ internal class ComposeContainerView(
     private var onLayoutSubviews: () -> Unit = {}
     private var onTraitCollectionDidChange: () -> Unit = {}
     private var foregroundStateListener: SceneForegroundStateListener? = null
+    private var onIntrinsicContentSizeInvalidated: (() -> Unit)? = null
+    var onSizeThatFits: (CValue<CGSize>) -> CValue<CGSize>? = { null }
+    var onIntrinsicContentSize: () -> CValue<CGSize>? = { null }
 
     val redrawer: MetalRedrawer? get() = metalView?.redrawer
 
     override fun canBecomeFirstResponder(): Boolean {
         return true
+    }
+
+    override fun sizeThatFits(size: CValue<CGSize>): CValue<CGSize> =
+        onSizeThatFits(size) ?: super.sizeThatFits(size)
+
+    /**
+     * Exposes `super.sizeThatFits` so sizing interop logic can obtain UIKit's default fallback
+     * without re-entering [onSizeThatFits].
+     */
+    fun superSizeThatFits(size: CValue<CGSize>): CValue<CGSize> {
+        return super.sizeThatFits(size)
+    }
+
+    override fun intrinsicContentSize(): CValue<CGSize> =
+        onIntrinsicContentSize() ?: super.intrinsicContentSize()
+
+    override fun invalidateIntrinsicContentSize() {
+        super.invalidateIntrinsicContentSize()
+        onIntrinsicContentSizeInvalidated?.invoke()
     }
 
     override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
@@ -273,4 +297,15 @@ internal class ComposeContainerView(
             this.drawViewHierarchyInRect(bounds, false)
         }
     }
+
+    fun <T : Any> setIntrinsicContentSizeInvalidationHandler(
+        owner: T,
+        handler: T.() -> Unit
+    ) {
+        val ownerRef = WeakReference(owner)
+        onIntrinsicContentSizeInvalidated = {
+            ownerRef.get()?.handler()
+        }
+    }
+
 }
