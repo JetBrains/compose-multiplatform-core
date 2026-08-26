@@ -4698,6 +4698,11 @@ sealed interface androidx.compose.ui.viewinterop/UIKitInteropInteractionMode { /
 }
 
 // Targets: [ios]
+final class androidx.compose.ui.uikit/ComposeUIViewConfiguration : androidx.compose.ui.uikit/ComposeContainerConfiguration { // androidx.compose.ui.uikit/ComposeUIViewConfiguration|null[0]
+    constructor <init>() // androidx.compose.ui.uikit/ComposeUIViewConfiguration.<init>|<init>(){}[0]
+}
+
+// Targets: [ios]
 final class androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration : androidx.compose.ui.uikit/ComposeContainerConfiguration { // androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration|null[0]
     constructor <init>() // androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration.<init>|<init>(){}[0]
 
@@ -4913,6 +4918,12 @@ final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitI
 
 // Targets: [ios]
 final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop_getter|androidx_compose_ui_viewinterop_UIKitInteropRemeasureRequester$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.window/ComposeUIView(kotlin/Function1<androidx.compose.ui.uikit/ComposeUIViewConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIView // androidx.compose.ui.window/ComposeUIView|ComposeUIView(kotlin.Function1<androidx.compose.ui.uikit.ComposeUIViewConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.window/ComposeUIView(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIView // androidx.compose.ui.window/ComposeUIView|ComposeUIView(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.window/ComposeUIViewController(kotlin/Function1<androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration, kotlin/Unit> = ..., kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): platform.UIKit/UIViewController // androidx.compose.ui.window/ComposeUIViewController|ComposeUIViewController(kotlin.Function1<androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration,kotlin.Unit>;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
