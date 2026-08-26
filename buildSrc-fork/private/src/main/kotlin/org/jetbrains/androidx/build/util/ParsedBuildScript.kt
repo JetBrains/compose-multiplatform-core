@@ -68,13 +68,23 @@ internal class ParsedBuildScript(val text: String) {
                         when {
                             lineText.isBlank() -> add(Line.Blank)
                             lineText.trimStart().startsWith("//") -> comments += lineText.trimStart()
+                            // By design, only simple dependency declarations are managed;
+                            // other lines are not supported at the moment.
                             else -> parseLine(lineText)?.let { line ->
                                 add(line.copy(comments = comments.toList()))
                                 comments.clear()
                             }
                         }
                     }
-                    nesting += lineText.count { it == '{' } - lineText.count { it == '}' }
+                    val nestingChange =
+                        lineText.count { it == '{' } - lineText.count { it == '}' }
+                    if (nesting == 0 && nestingChange > 0) {
+                        println(
+                            "Warning: jbVerifyForkDependencies ignores unsupported nested blocks: " +
+                                lineText
+                        )
+                    }
+                    nesting += nestingChange
                 }
             }
         }
