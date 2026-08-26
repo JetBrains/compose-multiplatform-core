@@ -30,4 +30,8 @@ NS_ASSUME_NONNULL_END
 
 - (void)deactivateTextInputInteractionIfNeeded;
 
+- (nullable UIView *)inputView;
+
+- (nullable UIView *)inputAccessoryView;
+
 @end

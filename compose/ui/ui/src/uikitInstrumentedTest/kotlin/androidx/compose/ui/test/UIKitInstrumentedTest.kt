@@ -203,7 +203,7 @@ internal fun runUIKitInstrumentedTest(
  */
 @OptIn(ExperimentalForeignApi::class)
 internal class UIKitInstrumentedTest(
-    private val useHostingView: Boolean
+    val useHostingView: Boolean
 ) {
     companion object {
         fun delay(timeoutMillis: Long) {
@@ -344,7 +344,7 @@ internal class UIKitInstrumentedTest(
             configuration = configuration,
             content = content,
         ).also {
-            hostingView = it
+            this.hostingView = it
         }
     }
 

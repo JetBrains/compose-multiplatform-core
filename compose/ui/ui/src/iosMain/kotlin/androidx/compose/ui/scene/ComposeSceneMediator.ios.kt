@@ -40,8 +40,8 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.PointerKeyboardModifiers
 import androidx.compose.ui.input.key.internal
+import androidx.compose.ui.input.key.PointerKeyboardModifiers
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.HistoricalChange
@@ -76,6 +76,8 @@ import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
+import androidx.compose.ui.uikit.density
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -95,8 +97,8 @@ import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.IosInteropContainer
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.BackgroundInputView
-import androidx.compose.ui.window.KeyboardInsetsManager
 import androidx.compose.ui.window.FocusedViewsList
+import androidx.compose.ui.window.KeyboardInsetsManager
 import androidx.compose.ui.window.OverlayInputView
 import androidx.compose.ui.window.IosPrefetchScheduler
 import androidx.compose.ui.window.TouchesEventKind
@@ -201,7 +203,6 @@ internal class ComposeSceneMediator(
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
-
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
     private var animateKeyboardOffsetChanges by mutableStateOf(false)
     private val platformScreenReader = object : PlatformScreenReader {
@@ -300,7 +301,7 @@ internal class ComposeSceneMediator(
      * Density of the hosting UIKit screen.
      *
      * This value is intentionally separate from [composeSceneDensity] so we can support setting
-     * composeSceneDensity without regressions.
+     * [composeSceneDensity] without regressions.
      */
     private val screenDensity: Density get() = windowContext.screenDensity
 
@@ -522,7 +523,7 @@ internal class ComposeSceneMediator(
             scrollDelta = delta.toOffset(composeSceneDensity) * SCROLL_DELTA_MULTIPLIER,
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
         )
     }
 
@@ -551,7 +552,7 @@ internal class ComposeSceneMediator(
             ),
             timeMillis = event.timeMillis,
             nativeEvent = event,
-            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
         )
     }
 
@@ -632,7 +633,7 @@ internal class ComposeSceneMediator(
             nativeEvent = event,
             button = event?.getButton(previousButtonMask, eventKind, previousTouchEventKind),
             buttons = PointerButtons(pointerButtonsMask),
-            keyboardModifiers = PointerKeyboardModifiers(event.modifierFlagsOrZero)
+            keyboardModifiers = PointerKeyboardModifiers(modifierFlags =event.modifierFlagsOrZero)
         ).also {
             previousButtonMask = event.buttonMaskOrZero
             if (eventKind != TouchesEventKind.MOVED) {
@@ -821,6 +822,8 @@ internal class ComposeSceneMediator(
         this.onPreviewKeyEvent = onPreviewKeyEvent ?: { false }
         this.onKeyEvent = onKeyEvent ?: { false }
     }
+
+    fun measureSceneSize(constraints: Constraints): IntSize = scene.measureContent(constraints)
 
     /**
      * Converts [UIPress] objects to [KeyEvent] and dispatches them to the appropriate handlers.

@@ -17,6 +17,7 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.EmptyTextEditingDelegate
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.ViewConfiguration
@@ -55,9 +56,12 @@ internal open class ComposeTextInputConnection(
     // Fixes a problem where the menu is shown before the textInputView gets its final layout.
     private var showMenuOrUpdatePosition = {}
 
+    override val isInteractive: Boolean = true
+
     override val textInputView =
         ComposeTextInputView(
             doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis,
+            input = EmptyTextEditingDelegate,
         ).also {
             it.setAutoresizingMask(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
@@ -76,7 +80,7 @@ internal open class ComposeTextInputConnection(
         // Out-of-bounds non-empty frame is required to hide text keyboard focus frame
         val outOfBoundsFrame = CGRectMake(-100000.0, 0.0, 1.0, 1.0)
 
-        textInputView.input = null
+        textInputView.input = EmptyTextEditingDelegate
 
         showMenuOrUpdatePosition = {}
         textInputView.let { view ->

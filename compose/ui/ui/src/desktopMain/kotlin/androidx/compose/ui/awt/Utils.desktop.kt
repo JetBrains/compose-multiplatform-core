@@ -27,6 +27,7 @@ import java.awt.EventQueue
 import java.awt.Graphics
 import java.awt.Rectangle
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.swing.JComponent
 import javax.swing.JLayeredPane
 import javax.swing.RootPaneContainer
 import kotlin.math.ceil
@@ -183,4 +184,12 @@ internal class DebouncingEdtExecutor {
             }
         }
     }
+}
+
+/**
+ * Disables double-buffering for the given window.
+ */
+internal fun RootPaneContainer.disableDoubleBuffering() {
+    rootPane.isDoubleBuffered = false
+    (contentPane as? JComponent)?.isDoubleBuffered = false
 }

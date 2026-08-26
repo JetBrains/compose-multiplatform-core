@@ -29,4 +29,5 @@ val BugReproducers = Screen.Selection(
     WebBaselineAlways0,
     ResizePopupCrashOnJS,
     ResizeInLazyList,
+    VectorPainterInPainter,
 )

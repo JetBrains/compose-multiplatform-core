@@ -198,6 +198,11 @@ internal class SwingInteropViewGroup(
             }
         }
         isFocusCycleRoot = true
+
+        // `true` is already the default in JPanel, but setting it explicitly because we disable
+        // double buffering at the root (ComposeWindow, ComposeDialog), so we need it enabled here
+        // or else Swing interop won't be double-buffered.
+        isDoubleBuffered = true
     }
 
     override fun getPreferredSize(): Dimension {

@@ -145,4 +145,12 @@
     }
 }
 
+- (UIView *)inputView {
+    CMP_ABSTRACT_FUNCTION_CALLED;
+}
+
+- (UIView *)inputAccessoryView {
+    CMP_ABSTRACT_FUNCTION_CALLED;
+}
+
 @end

@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
+import kotlin.time.Duration
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,19 +44,19 @@ internal class FocusedViewsList {
     fun addAndFocus(view: UIView) {
         activeViews += view
         resignedViews -= view
-        rootList().onListHierarchyChanged(delayMillis = null)
+        rootList().onListHierarchyChanged(delay = null)
     }
 
     /**
      * Remove the view from the list and resigns first responder.
      * The last element in the list will become a new first responder.
      */
-    fun remove(view: UIView, delayMillis: Long = 0) {
+    fun remove(view: UIView, delay: Duration = Duration.ZERO) {
         if (activeViews.contains(view)) {
             resignedViews += view
             activeViews = activeViews.filter { it != view }
 
-            rootList().onListHierarchyChanged(delayMillis)
+            rootList().onListHierarchyChanged(delay)
         }
     }
 
@@ -80,7 +81,7 @@ internal class FocusedViewsList {
         parent?.children?.remove(this)
         parent?.let {
             parent = null
-            it.rootList().onListHierarchyChanged(delayMillis = 0)
+            it.rootList().onListHierarchyChanged(delay = Duration.ZERO)
         }
         children.fastForEach { it.disposeChild() }
 
@@ -91,7 +92,7 @@ internal class FocusedViewsList {
         }
     }
 
-    private fun onListHierarchyChanged(delayMillis: Long?) {
+    private fun onListHierarchyChanged(delay: Duration?) {
         fun refocusOnLastViewInHierarchy() {
             val viewToFocus = lastViewToFocus()
             if (viewToFocus != null) {
@@ -101,11 +102,11 @@ internal class FocusedViewsList {
                 resignScheduledViews()
             }
         }
-        if (delayMillis == null) {
+        if (delay == null) {
             refocusOnLastViewInHierarchy()
         } else {
             mainScope.launch {
-                delay(delayMillis)
+                delay(delay)
                 refocusOnLastViewInHierarchy()
             }
         }
