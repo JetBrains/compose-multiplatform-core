@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalMediaQueryApi::class)
 
 package androidx.compose.ui.platform
 
@@ -69,7 +68,7 @@ val LocalPlatformPrefetchScheduler = staticCompositionLocalOf<PlatformPrefetchSc
     error("CompositionLocal LocalPlatformPrefetchScheduler not present")
 }
 
-@OptIn(InternalComposeApi::class)
+@OptIn(ExperimentalMediaQueryApi::class)
 @Composable
 internal fun ProvidePlatformCompositionLocals(
     vararg values: ProvidedValue<*>,

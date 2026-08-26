@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalMediaQueryApi::class)
 
 package androidx.compose.ui.platform
 
@@ -232,6 +231,7 @@ interface PlatformContext {
      * using media state remains safe on platforms that do not provide a richer
      * implementation.
      */
+    @OptIn(ExperimentalMediaQueryApi::class)
     val mediaEnvironment: UiMediaScope get() = EmptyMediaEnvironment
 
     interface RootForTestListener {
@@ -411,6 +411,7 @@ private object NoOpHapticFeedback : HapticFeedback {
     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }
 
+@OptIn(ExperimentalMediaQueryApi::class)
 private object EmptyMediaEnvironment : UiMediaScope {
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat
