@@ -27,9 +27,11 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
 import kotlin.js.js
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
@@ -173,6 +175,33 @@ internal class ComposeWebSemanticsListener(
     private val webNodes = MutableScatterMap<Int, HTMLElement>()
     private val elementToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
 
+    /**
+     * The scroll offsets (in CSS px) we last derived from the Compose scroll state and applied to
+     * the scrollable elements ourselves. A "scroll" event whose offset differs from this value is
+     * a scroll initiated by the browser or an assistive technology and must be forwarded to
+     * Compose via [SemanticsActions.ScrollBy]; a matching offset is just the echo of our own
+     * programmatic assignment and must be ignored.
+     */
+    private val expectedScrollOffsets = MutableScatterMap<Int, Offset>()
+
+    /**
+     * The scroll offsets computed from the Compose scroll state during the current tree sync.
+     * They are moved into [expectedScrollOffsets] (and applied to the elements) by
+     * [applyScrollOffsets] after the whole tree is synced — unless the element's offset was
+     * changed by an AT in the meantime, see [applyScrollOffsets].
+     */
+    private val pendingScrollOffsets = MutableScatterMap<Int, Offset>()
+
+    /**
+     * Invisible elements stretching the scrollable containers to their full content extent
+     * (viewport + maxValue of the scroll range), so the browser exposes them to assistive
+     * technologies as scrollable and gives them the correct scroll range.
+     */
+    private val scrollSizers = MutableScatterMap<Int, HTMLElement>()
+
+    // Ids of the nodes that have the `onScroll` listener attached to their html element.
+    private val scrollListenersAttached = MutableIntSet()
+
     // A reusable set of node ids for sync purposes
     private val allNodesIds = MutableIntSet()
 
@@ -192,6 +221,55 @@ internal class ComposeWebSemanticsListener(
         ) {
             config[SemanticsActions.OnClick].action?.invoke()
         }
+    }
+
+    /**
+     * Shared "scroll" listener for all scroll container nodes.
+     *
+     * Assistive technologies never send an explicit "scroll" command to a web page. Instead they
+     * ask the *browser* to scroll: either by requesting an element to be brought into view when
+     * the screen reader cursor moves to it, or via dedicated scroll gestures (e.g. the VoiceOver
+     * three-finger swipe) targeting an element the browser exposed as scrollable. In both cases
+     * the only thing the page observes is a change of `scrollLeft`/`scrollTop` and a "scroll"
+     * event. Here we translate that offset change back into a [SemanticsActions.ScrollBy] action,
+     * so Compose performs the actual scroll of the content.
+     *
+     * Note: "scroll" events don't bubble, so this listener is attached per scrollable element
+     * rather than delegated to [webSemanticsRoot].
+     */
+    private val onScroll: (Event) -> Unit = onScroll@ { event ->
+        val element = event.target as? HTMLElement ?: return@onScroll
+        val semanticsNode = elementToSemanticsNode[element] ?: return@onScroll
+
+        val expected = expectedScrollOffsets[semanticsNode.id] ?: return@onScroll
+        val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
+        val deltaCssPx = actual - expected
+        // The epsilon absorbs Float->Double conversion noise and fractional offsets stored by
+        // the browser, so our own programmatic writes are never misread as an AT scroll.
+        if (abs(deltaCssPx.x) < SCROLL_EPSILON_CSS_PX && abs(deltaCssPx.y) < SCROLL_EPSILON_CSS_PX) {
+            return@onScroll
+        }
+
+        // Remember the offset the AT scrolled to, so the deltas of the follow-up scroll events
+        // arriving before the next a11y tree sync are computed against the up-to-date offset.
+        expectedScrollOffsets[semanticsNode.id] = actual
+
+        val config = semanticsNode.config
+        if (config.contains(SemanticsProperties.Disabled)) return@onScroll
+
+        val density = semanticsNode.layoutNode.density.density
+        // The DOM scroll offset grows in the "forward" direction of the a11y element, while
+        // ScrollBy expects deltas in the Compose scroll direction, so flip the sign for
+        // reversed scrolling (see how expectedScrollOffsets values are computed in syncNode).
+        val hReverse =
+            config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.reverseScrolling == true
+        val vReverse =
+            config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)?.reverseScrolling == true
+
+        val dx = deltaCssPx.x * density * (if (hReverse) -1f else 1f)
+        val dy = deltaCssPx.y * density * (if (vReverse) -1f else 1f)
+
+        config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(dx, dy)
     }
 
 
@@ -218,8 +296,13 @@ internal class ComposeWebSemanticsListener(
             }
             nodes.remove(it)
             nodeToParent.remove(it)
+            expectedScrollOffsets.remove(it)
+            pendingScrollOffsets.remove(it)
+            scrollSizers.remove(it)
+            scrollListenersAttached.remove(it)
         }
 
+        applyScrollOffsets()
         updateInertRoots()
     }
 
@@ -354,14 +437,177 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-modal")
         }
 
-        val density = sn.layoutNode.density
-        sn.boundsInRoot.let { rect ->
-            val newPosition = rootOffset + rect.topLeft.div(density.density)
-            val width = rect.width.div(density.density)
-            val height = rect.height.div(density.density)
+        syncScrollability(sn, config, htmlNode)
 
-            setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, width, height)
+        val density = sn.layoutNode.density.density
+
+        // Note: the unclipped geometry (positionInRoot + size) is used instead of boundsInRoot.
+        // Within a scroll container the children must be laid out at their full, unclipped
+        // positions in the container's content coordinate space: this is the geometry the browser
+        // uses to compute the scroll offset when an assistive technology asks to bring a
+        // (partially) offscreen element into view.
+        val positionInRoot = sn.positionInRoot
+        val width = sn.size.width / density
+        val height = sn.size.height / density
+
+        val parentNode = nodeToParent[sn.id]?.let { nodes[it] }
+        if (parentNode == null) {
+            // An owner root: positioned in viewport coordinates, as before.
+            htmlNode.style.position = "fixed"
+            val left = rootOffset.x + positionInRoot.x / density
+            val top = rootOffset.y + positionInRoot.y / density
+            setSizeAndPosition(htmlNode, left, top, width, height)
+        } else {
+            // Positioned relative to the parent node's element (the nearest positioned ancestor).
+            // If the parent is a scroll container, the position is in its *content* coordinate
+            // space: the visible offset within the parent plus the parent's scroll offset. The
+            // browser then subtracts the DOM scroll offset back when rendering, so the element
+            // still overlays the same content on the canvas, but scrolling machinery
+            // (scroll-into-view, AT scroll gestures) now sees the correct geometry.
+            htmlNode.style.position = "absolute"
+            // The parent is synced before its children in the DFS, so a scrollable parent has
+            // its fresh offset in pendingScrollOffsets by now.
+            val parentScrollCssPx = pendingScrollOffsets[parentNode.id]
+                ?: expectedScrollOffsets[parentNode.id]
+                ?: Offset.Zero
+            val left =
+                (positionInRoot.x - parentNode.positionInRoot.x) / density + parentScrollCssPx.x
+            val top =
+                (positionInRoot.y - parentNode.positionInRoot.y) / density + parentScrollCssPx.y
+            setSizeAndPosition(htmlNode, left, top, width, height)
         }
+    }
+
+    /**
+     * Makes the [htmlNode] of a semantics node with scroll semantics a real CSS scroll container:
+     * an element with a non-`visible` `overflow` and an inner "sizer" element stretching its
+     * scrollable extent to the full content size.
+     *
+     * This is what browsers derive "scrollability" from — there is no ARIA attribute for it.
+     * Only a genuine CSS scroll container is exposed to assistive technologies as scrollable
+     * (with its scroll range taken from the layout), can be targeted by AT scroll gestures, and
+     * gets scrolled by the browser when an AT asks to bring one of its descendants into view.
+     *
+     * The DOM scroll offset is kept in sync with the Compose scroll state:
+     * - Compose -> DOM: [expectedScrollOffsets] is computed here from the ScrollAxisRanges and
+     *   applied to the elements in [applyScrollOffsets] after the tree sync.
+     * - DOM -> Compose: [onScroll] translates offsets diverging from [expectedScrollOffsets]
+     *   into [SemanticsActions.ScrollBy].
+     */
+    private fun syncScrollability(
+        sn: SemanticsNode,
+        config: SemanticsConfiguration,
+        htmlNode: HTMLElement,
+    ) {
+        val nodeId = sn.id
+        val vRange = config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        val hRange = config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+        val canScroll = (vRange != null || hRange != null) &&
+            config.getOrNull(SemanticsActions.ScrollBy)?.action != null
+
+        if (!canScroll) {
+            if (scrollListenersAttached.remove(nodeId)) {
+                // The node is no longer a scroll container
+                htmlNode.removeEventListener("scroll", onScroll)
+                resetScrollContainerStyle(htmlNode)
+                htmlNode.removeAttribute("aria-orientation")
+                scrollSizers.remove(nodeId)?.remove()
+                expectedScrollOffsets.remove(nodeId)
+                pendingScrollOffsets.remove(nodeId)
+            }
+            return
+        }
+
+        setScrollContainerStyle(htmlNode, hRange != null, vRange != null)
+
+        if ((vRange != null) xor (hRange != null)) {
+            htmlNode.setAttribute(
+                "aria-orientation",
+                if (vRange != null) "vertical" else "horizontal"
+            )
+        } else {
+            htmlNode.removeAttribute("aria-orientation")
+        }
+
+        val density = sn.layoutNode.density.density
+        val maxH = hRange?.maxValue?.invoke()?.coerceAtLeast(0f) ?: 0f
+        val maxV = vRange?.maxValue?.invoke()?.coerceAtLeast(0f) ?: 0f
+
+        // Content extent = viewport + the remaining scroll range reported by Compose.
+        val viewportWidth = sn.size.width / density
+        val viewportHeight = sn.size.height / density
+        val contentWidth =
+            (viewportWidth + maxH / density).coerceAtMost(MAX_SCROLL_EXTENT_CSS_PX)
+        val contentHeight =
+            (viewportHeight + maxV / density).coerceAtMost(MAX_SCROLL_EXTENT_CSS_PX)
+
+        val sizer = scrollSizers.getOrPut(nodeId) { createScrollSizer() }
+        setSizeAndPosition(sizer, 0f, 0f, contentWidth, contentHeight)
+        // (Re-)append: the sync of a node with children clears all its element's children,
+        // and setting innerText (Text/EditableText semantics) drops them as well.
+        htmlNode.appendChild(sizer)
+
+        // The DOM scroll offset always grows in the element's "forward" direction, so a reversed
+        // Compose scroll value is mirrored within its range. The offsets are clamped to the
+        // (possibly capped) sizer extent — a value the browser can actually store — so a huge
+        // Compose scroll offset is never misread back as an AT scroll delta.
+        val scrollLeftCssPx = hRange?.let {
+            val value = it.value().coerceIn(0f, maxH)
+            ((if (it.reverseScrolling) maxH - value else value) / density)
+                .coerceIn(0f, (contentWidth - viewportWidth).coerceAtLeast(0f))
+        } ?: 0f
+        val scrollTopCssPx = vRange?.let {
+            val value = it.value().coerceIn(0f, maxV)
+            ((if (it.reverseScrolling) maxV - value else value) / density)
+                .coerceIn(0f, (contentHeight - viewportHeight).coerceAtLeast(0f))
+        } ?: 0f
+        pendingScrollOffsets[nodeId] = Offset(scrollLeftCssPx, scrollTopCssPx)
+
+        if (scrollListenersAttached.add(nodeId)) {
+            htmlNode.addEventListener("scroll", onScroll)
+        }
+    }
+
+    /**
+     * Applies [pendingScrollOffsets] to the scrollable elements and promotes them to
+     * [expectedScrollOffsets]. Must run after the whole tree sync: `scrollTop`/`scrollLeft`
+     * assignments are clamped by the browser to the current scrollable extent, so the sizers and
+     * children must already be attached.
+     *
+     * The assignment fires a "scroll" event, which [onScroll] recognizes as our own (the offset
+     * matches the expected one) and ignores.
+     *
+     * Race guard: "scroll" events are dispatched asynchronously (in the rendering steps), while
+     * this sync may run from a timer task in between. If an AT changed the element's offset and
+     * its "scroll" event hasn't been processed yet (the current offset diverges from the last
+     * expected one), the pending offset is NOT applied: overwriting the offset would silently
+     * swallow the AT scroll, and updating [expectedScrollOffsets] would corrupt the delta
+     * [onScroll] is about to compute. The next sync (triggered by the very ScrollBy the event
+     * will invoke) reconciles the DOM offset with the Compose state.
+     */
+    private fun applyScrollOffsets() {
+        pendingScrollOffsets.forEach { id, offset ->
+            val element = webNodes[id] ?: return@forEach
+
+            val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
+            val lastExpected = expectedScrollOffsets[id]
+            if (lastExpected != null &&
+                (abs(actual.x - lastExpected.x) >= SCROLL_EPSILON_CSS_PX ||
+                    abs(actual.y - lastExpected.y) >= SCROLL_EPSILON_CSS_PX)
+            ) {
+                // Unprocessed AT scroll — leave both the element and expectedScrollOffsets as is.
+                return@forEach
+            }
+
+            expectedScrollOffsets[id] = offset
+            if (abs(actual.x - offset.x) >= SCROLL_EPSILON_CSS_PX) {
+                element.scrollLeft = offset.x.toDouble()
+            }
+            if (abs(actual.y - offset.y) >= SCROLL_EPSILON_CSS_PX) {
+                element.scrollTop = offset.y.toDouble()
+            }
+        }
+        pendingScrollOffsets.clear()
     }
 
 
@@ -376,6 +622,10 @@ internal class ComposeWebSemanticsListener(
         webNodes.clear()
         elementToSemanticsNode.clear()
         allNodesIds.clear()
+        expectedScrollOffsets.clear()
+        pendingScrollOffsets.clear()
+        scrollSizers.clear()
+        scrollListenersAttached.clear()
 
         invalidationChannel.close()
         syncTriggerChannel.close()
@@ -384,6 +634,51 @@ internal class ComposeWebSemanticsListener(
         removeAllChildrenOf(webSemanticsRoot)
         hasStopped = true
     }
+}
+
+/**
+ * A safety cap for the scroll sizer extent (browsers cap element sizes at ~33 million px;
+ * Compose may report huge maxValues, e.g. for lazy lists with estimated sizes).
+ */
+private const val MAX_SCROLL_EXTENT_CSS_PX = 4_000_000f
+
+/**
+ * Tolerance for comparing DOM scroll offsets: browsers may store fractional offsets, and the
+ * Float<->Double conversions add noise. Differences below this threshold are never treated as
+ * an AT-initiated scroll.
+ */
+private const val SCROLL_EPSILON_CSS_PX = 0.5f
+
+private fun createScrollSizer(): HTMLElement {
+    val sizer = document.createElement("div") as HTMLElement
+    // The sizer is a layout-only element: hide it from assistive technologies.
+    sizer.setAttribute("aria-hidden", "true")
+    sizer.style.position = "absolute"
+    return sizer
+}
+
+private fun setScrollContainerStyle(
+    element: HTMLElement, horizontal: Boolean, vertical: Boolean
+) {
+    // language=javascript
+    js(
+        """
+       element.style.overflowX = horizontal ? "scroll" : "hidden";
+       element.style.overflowY = vertical ? "scroll" : "hidden";
+       element.style.scrollbarWidth = "none";
+    """
+    )
+}
+
+private fun resetScrollContainerStyle(element: HTMLElement) {
+    // language=javascript
+    js(
+        """
+       element.style.overflowX = "";
+       element.style.overflowY = "";
+       element.style.scrollbarWidth = "";
+    """
+    )
 }
 
 private fun setSizeAndPosition(
