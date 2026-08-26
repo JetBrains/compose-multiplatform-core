@@ -160,7 +160,7 @@ val NativePopupWithComposePopupExample = Screen.Example("Native popup with Compo
         Button(
             onClick = {
                 val composeViewController = ComposeUIViewController {
-                    IosDemo("", null)
+                    IosDemo(arg = "")
                 }
 
                 viewController.presentViewController(composeViewController, true, null)
