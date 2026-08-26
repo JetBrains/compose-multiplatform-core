@@ -42,7 +42,6 @@ dependencies {
 
 android {
     namespace = "androidx.a2ui.core"
-    compileSdk { version = release(35) }
 }
 
 androidx {

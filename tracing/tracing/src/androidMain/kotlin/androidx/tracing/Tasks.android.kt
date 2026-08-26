@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3
+package androidx.tracing
 
 import androidx.annotation.RestrictTo
+import androidx.tracing.support.Tid
 
-@Retention(AnnotationRetention.BINARY)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-annotation class Material3ExpressiveApi
+@Suppress("NOTHING_TO_INLINE")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public actual inline fun currentTaskId(): Long {
+    return Tid.getTid()
+}

@@ -49,10 +49,10 @@ import androidx.compose.material3.SuggestionChipDefaults.defaultElevatedSuggesti
 import androidx.compose.material3.internal.animateElevation
 import androidx.compose.material3.internal.rememberAnimatedShape
 import androidx.compose.material3.tokens.AssistChipTokens
+import androidx.compose.material3.tokens.ChipsTokens
 import androidx.compose.material3.tokens.FilterChipTokens
 import androidx.compose.material3.tokens.InputChipTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
-import androidx.compose.material3.tokens.ShapeTokens
 import androidx.compose.material3.tokens.SuggestionChipTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -724,7 +724,6 @@ fun FilterChip(
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@Material3ExpressiveApi
 @Composable
 fun FilterChip(
     selected: Boolean,
@@ -998,7 +997,6 @@ fun ElevatedFilterChip(
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@Material3ExpressiveApi
 @Composable
 fun ElevatedFilterChip(
     selected: Boolean,
@@ -1290,7 +1288,6 @@ fun InputChip(
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@Material3ExpressiveApi
 @Composable
 fun InputChip(
     selected: Boolean,
@@ -2230,13 +2227,12 @@ object FilterChipDefaults {
     val HorizontalSpacing = 8.dp
 
     /** The compact horizontal spacing between the icon and label of a filter chip. */
-    @Material3ExpressiveApi val CompactHorizontalSpacing = 4.dp
+    val CompactHorizontalSpacing = 4.dp
 
     /** Returns the default arrangement of the icons and label within a filter chip. */
     fun horizontalArrangement(): Arrangement.Horizontal = DefaultHorizontalArrangement
 
     /** Returns the default arrangement of the icons and label within a compact filter chip. */
-    @Material3ExpressiveApi
     fun horizontalArrangement(
         hasLeadingIcon: Boolean,
         hasTrailingIcon: Boolean,
@@ -2274,9 +2270,7 @@ object FilterChipDefaults {
      * Creates a [SelectableChipColors] that represents the default container and content colors
      * used in a tonal [FilterChip].
      */
-    @Material3ExpressiveApi
-    @Composable
-    fun tonalFilterChipColors() = MaterialTheme.colorScheme.defaultTonalFilterChipColors
+    @Composable fun tonalFilterChipColors() = MaterialTheme.colorScheme.defaultTonalFilterChipColors
 
     /**
      * Creates a [SelectableChipColors] that represents the default container and content colors
@@ -2364,9 +2358,9 @@ object FilterChipDefaults {
     internal val ColorScheme.defaultTonalFilterChipColors: SelectableChipColors
         get() {
             return defaultTonalFilterChipColorsCached
-                ?: defaultFilterChipColors.copy(leadingIconColor = onSurfaceVariant).also {
-                    defaultTonalFilterChipColorsCached = it
-                }
+                ?: defaultFilterChipColors
+                    .copy(leadingIconColor = fromToken(ChipsTokens.UnselectedLeadingIconColor))
+                    .also { defaultTonalFilterChipColorsCached = it }
         }
 
     /**
@@ -2447,7 +2441,6 @@ object FilterChipDefaults {
      * Creates a [SelectableChipColors] that represents the default container and content colors
      * used in an elevated, tonal [FilterChip].
      */
-    @Material3ExpressiveApi
     @Composable
     fun tonalElevatedFilterChipColors() =
         MaterialTheme.colorScheme.defaultTonalElevatedFilterChipColors
@@ -2539,9 +2532,9 @@ object FilterChipDefaults {
     internal val ColorScheme.defaultTonalElevatedFilterChipColors: SelectableChipColors
         get() {
             return defaultTonalElevatedFilterChipColorsCached
-                ?: defaultElevatedFilterChipColors.copy(leadingIconColor = onSurfaceVariant).also {
-                    defaultTonalElevatedFilterChipColorsCached = it
-                }
+                ?: defaultElevatedFilterChipColors
+                    .copy(leadingIconColor = fromToken(ChipsTokens.UnselectedLeadingIconColor))
+                    .also { defaultTonalElevatedFilterChipColorsCached = it }
         }
 
     /**
@@ -2581,7 +2574,7 @@ object FilterChipDefaults {
      * Creates a [ChipShapes] that represents the default shape, pressed shape, and selected shape
      * used in a chip.
      */
-    @Material3ExpressiveApi @Composable fun shapes() = MaterialTheme.shapes.defaultChipShapes
+    @Composable fun shapes() = MaterialTheme.shapes.defaultChipShapes
 
     /**
      * Creates a [ChipShapes] that represents the default shape, pressed shape, and selected shape
@@ -2591,7 +2584,6 @@ object FilterChipDefaults {
      * @param selectedShape the unchecked shape for [ChipShapes]
      * @param pressedShape the pressed shape for [ChipShapes]
      */
-    @Material3ExpressiveApi
     @Composable
     fun shapes(
         shape: Shape? = null,
@@ -2608,10 +2600,9 @@ object FilterChipDefaults {
         get() {
             return defaultChipShapesCached
                 ?: ChipShapes(
-                        // TODO: Update with chip shape tokens
-                        shape = ShapeTokens.CornerMedium,
-                        selectedShape = ShapeTokens.CornerFull,
-                        pressedShape = ShapeTokens.CornerSmall,
+                        shape = fromToken(ChipsTokens.UnselectedShape),
+                        selectedShape = fromToken(ChipsTokens.SelectedShape),
+                        pressedShape = fromToken(ChipsTokens.PressedShape),
                     )
                     .also { defaultChipShapesCached = it }
         }
@@ -2635,7 +2626,7 @@ object InputChipDefaults {
     val HorizontalSpacing = 8.dp
 
     /** The compact horizontal spacing between the icon and label of an input chip. */
-    @Material3ExpressiveApi val CompactHorizontalSpacing = 4.dp
+    val CompactHorizontalSpacing = 4.dp
 
     /** Returns the default arrangement of the icons/avatar and label within an input chip. */
     fun horizontalArrangement(): Arrangement.Horizontal = DefaultHorizontalArrangement
@@ -2643,7 +2634,6 @@ object InputChipDefaults {
     /**
      * Returns the default arrangement of the icons/avatar and label within a compact input chip.
      */
-    @Material3ExpressiveApi
     fun horizontalArrangement(
         hasAvatar: Boolean,
         hasLeadingIcon: Boolean,
@@ -2692,9 +2682,7 @@ object InputChipDefaults {
      * Creates a [SelectableChipColors] that represents the default container and content colors
      * used in a tonal [InputChip].
      */
-    @Material3ExpressiveApi
-    @Composable
-    fun tonalInputChipColors() = MaterialTheme.colorScheme.defaultTonalInputChipColors
+    @Composable fun tonalInputChipColors() = MaterialTheme.colorScheme.defaultTonalInputChipColors
 
     /**
      * Creates a [SelectableChipColors] that represents the default container, label, and icon
@@ -2781,9 +2769,9 @@ object InputChipDefaults {
     internal val ColorScheme.defaultTonalInputChipColors: SelectableChipColors
         get() {
             return defaultTonalInputChipColorsCached
-                ?: defaultInputChipColors.copy(leadingIconColor = onSurfaceVariant).also {
-                    defaultTonalInputChipColorsCached = it
-                }
+                ?: defaultInputChipColors
+                    .copy(leadingIconColor = fromToken(ChipsTokens.UnselectedLeadingIconColor))
+                    .also { defaultTonalInputChipColorsCached = it }
         }
 
     /**
@@ -2861,7 +2849,7 @@ object InputChipDefaults {
      * Creates a [ChipShapes] that represents the default shape, pressed shape, and selected shape
      * used in a chip.
      */
-    @Material3ExpressiveApi @Composable fun shapes() = MaterialTheme.shapes.defaultChipShapes
+    @Composable fun shapes() = MaterialTheme.shapes.defaultChipShapes
 
     /**
      * Creates a [ChipShapes] that represents the default shape, pressed shape, and selected shape
@@ -2871,7 +2859,6 @@ object InputChipDefaults {
      * @param selectedShape the unchecked shape for [ChipShapes]
      * @param pressedShape the pressed shape for [ChipShapes]
      */
-    @Material3ExpressiveApi
     @Composable
     fun shapes(
         shape: Shape? = null,
@@ -2888,10 +2875,9 @@ object InputChipDefaults {
         get() {
             return defaultChipShapesCached
                 ?: ChipShapes(
-                        // TODO: Update with chip shape tokens
-                        shape = ShapeTokens.CornerMedium,
-                        selectedShape = ShapeTokens.CornerFull,
-                        pressedShape = ShapeTokens.CornerSmall,
+                        shape = fromToken(ChipsTokens.UnselectedShape),
+                        selectedShape = fromToken(ChipsTokens.SelectedShape),
+                        pressedShape = fromToken(ChipsTokens.PressedShape),
                     )
                     .also { defaultChipShapesCached = it }
         }
@@ -4208,7 +4194,6 @@ internal constructor(
  * @property selectedShape is the selected shape.
  * @property pressedShape is the pressed shape.
  */
-@Material3ExpressiveApi
 @Immutable
 class ChipShapes(
     val shape: Shape,

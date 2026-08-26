@@ -156,9 +156,9 @@ package androidx.navigation3.runtime.deeplink {
     method public boolean filterRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
   }
 
-  public static class DeepLinkMatcher.MatchResult<T> implements java.lang.Comparable<androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T>> {
+  public static class DeepLinkMatcher.MatchResult<T> implements java.lang.Comparable<androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>> {
     ctor public DeepLinkMatcher.MatchResult(T key);
-    method public int compareTo(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> other);
+    method public int compareTo(androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T> other);
     method @InaccessibleFromKotlin public final T getKey();
     property public final T key;
   }
@@ -169,9 +169,11 @@ package androidx.navigation3.runtime.deeplink {
     method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUri(android.net.Uri uri, optional String? mimeType, optional String? action);
     method public static androidx.navigation3.runtime.deeplink.DeepLinkRequest fromUriString(String uri, optional String? mimeType, optional String? action);
     method @InaccessibleFromKotlin public String? getAction();
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.Object> getExtras();
     method @InaccessibleFromKotlin public String? getMimeType();
     method @InaccessibleFromKotlin public android.net.Uri? getUri();
     property public String? action;
+    property public java.util.Map<java.lang.String,java.lang.Object> extras;
     property public String? mimeType;
     property public android.net.Uri? uri;
     field public static final androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion Companion;
@@ -214,7 +216,8 @@ package androidx.navigation3.runtime.deeplink {
   }
 
   public class UriMatchResult<T> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<T> {
-    ctor public UriMatchResult(T key, java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> arguments);
+    ctor @BytecodeOnly public UriMatchResult(Object!, java.util.Map!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public UriMatchResult(T key, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> arguments);
     method @InaccessibleFromKotlin public final java.util.Map<java.lang.String,java.util.List<java.lang.String>> getArguments();
     method @InaccessibleFromKotlin protected final boolean isExactPath();
     method @InaccessibleFromKotlin protected final void setExactPath(boolean);
