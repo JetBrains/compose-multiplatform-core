@@ -60,15 +60,27 @@ internal abstract class VerifyForkDependenciesTask : DefaultTask() {
     fun verify() {
         val originalText = buildFile.readText()
         val forkText = forkFile.readText()
-        if (updatedForkText(originalText, forkText) != forkText) {
+        val expectedForkText = updatedForkText(originalText, forkText)
+        if (expectedForkText != forkText) {
             throw GradleException(
                 buildString {
                     appendLine("Fork dependencies are out of date.")
                     appendLine("Run ./gradlew jbUpdateForkDependencies to update them.")
+                    appendLine()
+                    appendLine("Diff:")
+                    append(textDiff(forkText, expectedForkText))
                 }.trimEnd()
             )
         }
     }
+}
+
+fun textDiff(one: String, two: String): String {
+    val oneLines = one.lines().toSet()
+    val twoLines = two.lines().toSet()
+    val diffLines = oneLines.filter { it !in twoLines }.map { "-$it" } +
+        twoLines.filter { it !in oneLines }.map { "+$it" }
+    return diffLines.joinToString("\n")
 }
 
 @DisableCachingByDefault(because = "Updates source files.")
