@@ -22,6 +22,7 @@ import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.managers.LayoutManager;
+import androidx.compose.remote.core.operations.layout.measure.ComponentMeasurePool;
 import androidx.compose.remote.core.operations.layout.utils.DebugLog;
 import androidx.compose.remote.core.operations.utilities.ArrayAccess;
 import androidx.compose.remote.core.operations.utilities.CollectionsAccess;
@@ -73,6 +74,12 @@ public abstract class RemoteContext {
     private boolean mUseChoreographer = true;
 
     private int mTouchVersion = LayoutManager.DEFAULT_TOUCH_VERSION;
+
+    private final ComponentMeasurePool mComponentMeasurePool = new ComponentMeasurePool();
+
+    public @NonNull ComponentMeasurePool getComponentMeasurePool() {
+        return mComponentMeasurePool;
+    }
 
     public RemoteContext() {
         this(RemoteClock.SYSTEM);
@@ -366,6 +373,25 @@ public abstract class RemoteContext {
      * @param type 0 = none, 1-21 ,see HapticFeedbackConstants
      */
     public abstract void hapticEffect(int type);
+
+    /**
+     * Load sound data for a given sound ID. Accepts WAV-formatted bytes (produced by
+     * {@link androidx.compose.remote.core.operations.utilities.ToneSynthesizer}) or SC-format
+     * bytes (from {@link androidx.compose.remote.core.operations.SoundData}).
+     *
+     * @param soundId the ID under which the sound is registered
+     * @param data    WAV or SC-format audio bytes
+     */
+    public void loadSound(int soundId, byte @NonNull [] data) {
+    }
+
+    /**
+     * Trigger playback of a previously loaded sound.
+     *
+     * @param soundId the ID of the sound to play
+     */
+    public void playSound(int soundId) {
+    }
 
     /** Set the repaint flag. This will trigger a repaint of the current document. */
     public void needsRepaint() {

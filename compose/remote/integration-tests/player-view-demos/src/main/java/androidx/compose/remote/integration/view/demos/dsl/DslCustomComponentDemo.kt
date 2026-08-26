@@ -175,30 +175,25 @@ public fun dslCustomComponentDemo(): ByteArray {
             // Native hosted Custom Component ProgressBar!
             val progressProps =
                 listOf(
-                    // PROP_PROGRESS = 5
                     CustomProperty(
                         SupportProgressBar.PROP_PROGRESS,
                         CustomProperty.FLOAT_PROP,
                         slider,
                     ),
-                    // PROP_MAX_PROGRESS = 6
                     CustomProperty(
                         SupportProgressBar.PROP_MAX_PROGRESS,
                         CustomProperty.INT_PROP,
                         100,
                     ),
-                    // PROP_INDETERMINATE = 7 (false)
                     CustomProperty(
                         SupportProgressBar.PROP_INDETERMINATE,
                         CustomProperty.INT_PROP,
                         0,
                     ),
-                    // PROP_PROGRESS_COLOR = 8 (Sky Blue)
                     CustomProperty.color(
                         SupportProgressBar.PROP_PROGRESS_COLOR,
                         Color.rgb(56, 189, 248).rcColor(),
                     ),
-                    // Return float
                     prop,
                 )
             Row(Modifier.padding(8f), vertical = RcVerticalPositioning.Center) {
