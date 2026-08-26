@@ -408,8 +408,7 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
 }
 
 private object NoOpHapticFeedback : HapticFeedback {
-    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
-    }
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }
 
 private object EmptyMediaEnvironment : UiMediaScope {
