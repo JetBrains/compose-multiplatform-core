@@ -173,7 +173,7 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : UiMediaScope, Keyb
         duration: Double,
         animationOptions: UIViewAnimationOptions
     ) {
-        isImeShowing.value = false //targetFrame is CGRectZero.readValue()
+        isImeShowing.value = false
     }
 
     override fun keyboardWillChangeFrame(
