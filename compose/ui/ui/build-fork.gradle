@@ -97,6 +97,7 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-test"))
         }
 
+        // jbVerifyForkDependencies: suppress
         jvmAndAndroidMain.dependencies {
         }
 
