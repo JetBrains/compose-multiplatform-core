@@ -121,15 +121,6 @@ public object ComposeUiFlags {
     public var isSkipNonImportantSemanticsNodesHitTestEnabled: Boolean = true
 
     /**
-     * Enables fix where coroutine scope lambda and scope are cleared on node detachment to prevent
-     * reference leaking.
-     */
-    // TODO: b/506963276
-    @field:Suppress("MutableBareField")
-    @JvmField
-    public var isClearNestedScrollCoroutineScopeFixEnabled: Boolean = true
-
-    /**
      * This flag controls whether the fix for velocity tracker usage in Draggable and related
      * classes is enabled to a) properly track velocity per pointer and b) make sure to also take
      * the pointer events into account that don't move at the beginning of the gesture in order to
@@ -144,7 +135,7 @@ public object ComposeUiFlags {
     // TODO: b/535296682 - Cleanup feature flag
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isTrackpadPanHoverFixEnabled: Boolean = true
+    public var isTrackpadPanHoverFixEnabled: Boolean = false
 
     /**
      * Enables re-interpreting trackpad pinch gestures (CLASSIFICATION_PINCH) as mouse events with

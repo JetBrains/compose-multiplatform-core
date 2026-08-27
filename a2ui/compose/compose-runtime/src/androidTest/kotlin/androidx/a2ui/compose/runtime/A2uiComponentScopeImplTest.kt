@@ -26,9 +26,11 @@ import androidx.a2ui.model.catalog.A2uiFunctionReturnType
 import androidx.a2ui.model.protocol.A2uiClientErrorMessage
 import androidx.a2ui.model.protocol.A2uiComponentPayload
 import androidx.a2ui.model.protocol.A2uiDataPath
+import androidx.a2ui.model.protocol.A2uiEventAction
 import androidx.a2ui.model.protocol.A2uiException
 import androidx.a2ui.model.protocol.A2uiException.A2uiRuntimeException
 import androidx.a2ui.model.protocol.A2uiExecutionContext
+import androidx.a2ui.model.protocol.A2uiFunctionCallAction
 import androidx.a2ui.model.protocol.A2uiUserAction
 import androidx.a2ui.model.schema.A2uiObjectSchema
 import androidx.a2ui.model.schema.A2uiSchema
@@ -38,7 +40,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -47,7 +48,6 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertIs
-import kotlinx.coroutines.CoroutineScope
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -489,7 +489,6 @@ class A2uiComponentScopeImplTest {
                     id = "test_scope",
                     baseDataPath = A2uiDataPath("/base"),
                     surface = customSurface,
-                    surfaceScope = rememberCoroutineScope(),
                 )
             result = with(scope) { props.bind(propDef) }
         }
@@ -1213,23 +1212,109 @@ class A2uiComponentScopeImplTest {
         assertThat(dispatchedErrors.first().context["path"]).isEqualTo("/base")
     }
 
+    @Test
+    fun dispatchAction_eventAction_dispatchesToSurface() = runComposeUiTest {
+        setContent {
+            val scope = rememberComponentScope(path = "/base")
+            scope.dispatchAction(
+                mapOf(
+                    "event" to mapOf("name" to "submit_form", "context" to mapOf("itemId" to "123"))
+                )
+            )
+        }
+        waitForIdle()
+
+        assertThat(dispatchedActions).hasSize(1)
+        val action = assertIs<A2uiEventAction>(dispatchedActions.first())
+        assertThat(action.surfaceId).isEqualTo(TestSurfaceId)
+        assertThat(action.componentId).isEqualTo(TestComponentId)
+        assertThat(action.eventName).isEqualTo("submit_form")
+        assertThat(action.context).isEqualTo(mapOf("itemId" to "123"))
+    }
+
+    @Test
+    fun dispatchAction_eventActionWithoutContext_dispatchesWithEmptyContext() = runComposeUiTest {
+        setContent {
+            val scope = rememberComponentScope(path = "/base")
+            scope.dispatchAction(mapOf("event" to mapOf("name" to "click")))
+        }
+        waitForIdle()
+
+        assertThat(dispatchedActions).hasSize(1)
+        val action = assertIs<A2uiEventAction>(dispatchedActions.first())
+        assertThat(action.surfaceId).isEqualTo(TestSurfaceId)
+        assertThat(action.componentId).isEqualTo(TestComponentId)
+        assertThat(action.eventName).isEqualTo("click")
+        assertThat(action.context).isEmpty()
+    }
+
+    @Test
+    fun dispatchAction_functionCallAction_dispatchesToSurface() = runComposeUiTest {
+        setContent {
+            val scope = rememberComponentScope(path = "/base")
+            scope.dispatchAction(
+                mapOf(
+                    "functionCall" to
+                        mapOf("call" to "openUrl", "args" to mapOf("url" to "https://example.com"))
+                )
+            )
+        }
+        waitForIdle()
+
+        assertThat(dispatchedActions).hasSize(1)
+        val action = assertIs<A2uiFunctionCallAction>(dispatchedActions.first())
+        assertThat(action.surfaceId).isEqualTo(TestSurfaceId)
+        assertThat(action.componentId).isEqualTo(TestComponentId)
+        assertThat(action.functionName).isEqualTo("openUrl")
+        assertThat(action.args).isEqualTo(mapOf("url" to "https://example.com"))
+    }
+
+    @Test
+    fun dispatchAction_functionCallActionWithoutArgs_dispatchesWithEmptyArgs() = runComposeUiTest {
+        setContent {
+            val scope = rememberComponentScope(path = "/base")
+            scope.dispatchAction(mapOf("functionCall" to mapOf("call" to "refresh")))
+        }
+        waitForIdle()
+
+        assertThat(dispatchedActions).hasSize(1)
+        val action = assertIs<A2uiFunctionCallAction>(dispatchedActions.first())
+        assertThat(action.surfaceId).isEqualTo(TestSurfaceId)
+        assertThat(action.componentId).isEqualTo(TestComponentId)
+        assertThat(action.functionName).isEqualTo("refresh")
+        assertThat(action.args).isEmpty()
+    }
+
+    @Test
+    fun dispatchAction_invalidPayloadNoEventOrFunctionCall_throws() = runComposeUiTest {
+        var e: Exception? = null
+        setContent {
+            val scope = rememberComponentScope(path = "/base")
+            e =
+                assertThrows(IllegalStateException::class.java) {
+                    scope.dispatchAction(mapOf("unknownKey" to "value"))
+                }
+        }
+        waitForIdle()
+
+        assertThat(e)
+            .hasMessageThat()
+            .contains("Action payload failed to match either 'event' or 'functionCall'")
+    }
+
     @Composable
-    private fun rememberComponentScope(
-        path: String,
-        coroutineScope: CoroutineScope = rememberCoroutineScope(),
-    ) =
-        remember(path, coroutineScope) {
+    private fun rememberComponentScope(path: String) =
+        remember(path) {
             A2uiComponentScopeImpl(
-                id = "test_component_scope",
+                id = TestComponentId,
                 baseDataPath = A2uiDataPath(path),
                 surface = surface,
-                surfaceScope = coroutineScope,
             )
         }
 
     private fun createCatalog(functions: List<A2uiFunction> = emptyList()) =
         object : A2uiCoreCatalog {
-            override val id: String = "TestCatalog"
+            override val id: String = TestCatalogId
             override val componentDefinitions: A2uiCoreComponentDefinitionCollection =
                 A2uiCoreComponentDefinitionCollection()
             override val functions: A2uiFunctionCollection = A2uiFunctionCollection(functions)
@@ -1238,7 +1323,7 @@ class A2uiComponentScopeImplTest {
 
     private fun createSurface(catalog: A2uiCoreCatalog) =
         A2uiCoreSurfaceModel(
-            id = "test_surface",
+            id = TestSurfaceId,
             catalog = catalog,
             dataModel = dataModel,
             componentRegistry = componentRegistry,
@@ -1246,3 +1331,7 @@ class A2uiComponentScopeImplTest {
             onDispatchError = { dispatchedErrors.add(it) },
         )
 }
+
+private const val TestCatalogId = "TestCatalog"
+private const val TestSurfaceId = "TestSurface"
+private const val TestComponentId = "TestComponent"

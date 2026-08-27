@@ -16,6 +16,7 @@
 package androidx.lifecycle
 
 import android.os.Bundle
+import androidx.lifecycle.ViewModelProvider.Companion.VIEW_MODEL_KEY
 import androidx.lifecycle.ViewModelProvider.Factory
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -40,7 +41,8 @@ import androidx.savedstate.SavedStateRegistryOwner
     "Use `viewModelFactory` or implement `ViewModelProvider.Factory`, combined with `CreationExtras.createSavedStateHandle()`."
 )
 public abstract class AbstractSavedStateViewModelFactory : Factory {
-    private val owner: SavedStateRegistryOwner?
+    private val savedStateRegistryOwner: SavedStateRegistryOwner?
+    private val viewModelStoreOwner: ViewModelStoreOwner?
     private val defaultArgs: Bundle?
 
     /**
@@ -51,7 +53,8 @@ public abstract class AbstractSavedStateViewModelFactory : Factory {
      * details.
      */
     public constructor() {
-        this.owner = null
+        this.savedStateRegistryOwner = null
+        this.viewModelStoreOwner = null
         this.defaultArgs = null
     }
 
@@ -61,9 +64,14 @@ public abstract class AbstractSavedStateViewModelFactory : Factory {
      * @param owner [SavedStateRegistryOwner] that will provide restored state for created
      *   [ViewModel]s. Must implement [ViewModelStoreOwner] to support state retention.
      * @param defaultArgs default values to populate the [SavedStateHandle] if no state is restored
+     * @throws IllegalArgumentException if the [owner] does not implement [ViewModelStoreOwner]
      */
     public constructor(owner: SavedStateRegistryOwner, defaultArgs: Bundle?) {
-        this.owner = owner
+        require(owner is ViewModelStoreOwner) {
+            "SavedStateRegistryOwner must implement ViewModelStoreOwner to support SavedStateHandles"
+        }
+        this.savedStateRegistryOwner = owner
+        this.viewModelStoreOwner = owner
         this.defaultArgs = defaultArgs
     }
 
@@ -83,7 +91,7 @@ public abstract class AbstractSavedStateViewModelFactory : Factory {
             }
 
         // If a factory constructed in the old way use the old infra to create SavedStateHandle.
-        return if (owner != null) {
+        return if (savedStateRegistryOwner != null) {
             create(key, modelClass)
         } else {
             create(key, modelClass, extras.createSavedStateHandle())
@@ -91,16 +99,32 @@ public abstract class AbstractSavedStateViewModelFactory : Factory {
     }
 
     private fun <T : ViewModel> create(key: String, modelClass: Class<T>): T {
-        if (owner == null) {
+        if (savedStateRegistryOwner == null || viewModelStoreOwner == null) {
             throw UnsupportedOperationException(
                 "AbstractSavedStateViewModelFactory constructed with empty constructor supports " +
                     "only calls to create(modelClass: Class<T>, extras: CreationExtras)."
             )
         }
 
-        val controller = SavedStateHandleController.getOrCreate(owner)
-        controller.attachSavedStateHandleOnNextRecreation()
-        val handle = controller.getOrCreateHandle(key, defaultArgs)
+        // Register controller under host. Ensures createSavedStateHandle() resolves it.
+        val controller =
+            SavedStateHandleController.getOrCreate(savedStateRegistryOwner, viewModelStoreOwner)
+        attachSavedStateHandleOnNextRecreation(savedStateRegistryOwner, controller)
+
+        // Construct CreationExtras. Preserves owner default extras, overrides with factory keys.
+        val extras =
+            CreationExtras(initialExtras = viewModelStoreOwner.defaultViewModelCreationExtras) {
+                this[SAVED_STATE_REGISTRY_OWNER_KEY] = savedStateRegistryOwner
+                this[VIEW_MODEL_STORE_OWNER_KEY] = viewModelStoreOwner
+                this[VIEW_MODEL_KEY] = key
+                if (defaultArgs != null) {
+                    this[DEFAULT_ARGS_KEY] = defaultArgs
+                }
+            }
+
+        // Retrieve SavedStateHandle from registered controller via CreationExtras.
+        val handle = extras.createSavedStateHandle()
+
         return create(key, modelClass, handle)
     }
 
