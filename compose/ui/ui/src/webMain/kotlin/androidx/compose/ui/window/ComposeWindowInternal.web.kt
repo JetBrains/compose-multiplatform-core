@@ -468,6 +468,9 @@ internal class ComposeWindow(
     // is nested in a scrollable html container
     private val rootScrollObserver = RootScrollObserver()
 
+
+
+
     private fun initEvents(canvas: HTMLCanvasElement) {
 
         val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
@@ -573,8 +576,8 @@ internal class ComposeWindow(
         val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
             processKeyboardEvent(event)
         }
-        addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
-        addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)
+        addTypedEvent("keydown", onKeyboardEventCallback)
+        addTypedEvent("keyup", onKeyboardEventCallback)
 
         addTypedEvent<FocusEvent>("focus") { event ->
             canvasFocused = true
@@ -584,21 +587,28 @@ internal class ComposeWindow(
             canvasFocused = false
         }
 
+        fun updateFocusAndLifecycle(isFocused: Boolean, lifecycleEvent: Lifecycle.Event) {
+            _windowInfo.isWindowFocused = isFocused
+            archComponentsOwner.lifecycle.handleLifecycleEvent(lifecycleEvent)
+        }
+
+        // listening focus and blur for resolving _windowInfo.isWindowFocused in the majority of desktop secnarios
         state.globalEvents.addDisposableEvent("focus") {
-            _windowInfo.isWindowFocused = true
-            archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+            updateFocusAndLifecycle(isFocused = true, Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
-            _windowInfo.isWindowFocused = false
-            archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+            updateFocusAndLifecycle(isFocused = false, Lifecycle.Event.ON_PAUSE)
         }
 
-        state.globalEvents.addDisposableEvent("visibilitychange") { event ->
-            archComponentsOwner.lifecycle.handleLifecycleEvent(
-                if (documentIsVisible()) Lifecycle.Event.ON_START
-                else Lifecycle.Event.ON_STOP
-            )
+        // folding / unfolding / switching between app etc on mobile apps
+        // (focus/blur approach is relevant on mobile as well but need to co-supported with visibilitychange)
+        state.globalEvents.addDisposableEvent("visibilitychange") {
+            if (documentIsVisible()) {
+                updateFocusAndLifecycle(isFocused = true, Lifecycle.Event.ON_RESUME)
+            } else {
+                updateFocusAndLifecycle(isFocused = false, Lifecycle.Event.ON_STOP)
+            }
         }
     }
 
