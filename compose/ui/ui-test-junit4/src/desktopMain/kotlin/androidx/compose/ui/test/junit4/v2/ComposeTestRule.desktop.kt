@@ -23,6 +23,8 @@ import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.DesktopComposeTestRule
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.time.Duration
 
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 actual fun createComposeRule(effectContext: CoroutineContext): ComposeContentTestRule =
@@ -44,3 +46,6 @@ actual fun createComposeRule(config: ComposeUiTestConfig): ComposeContentTestRul
             useStandardTestDispatcherForComposition = true,
         )
     )
+
+actual fun createComposeRule(): ComposeContentTestRule =
+    createComposeRule(effectContext = EmptyCoroutineContext)
