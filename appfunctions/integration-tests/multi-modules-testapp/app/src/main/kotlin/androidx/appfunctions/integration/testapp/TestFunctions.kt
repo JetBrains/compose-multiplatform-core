@@ -277,6 +277,12 @@ class TestFunctions {
     @AppFunction
     @Deprecated("deprecatedFunction is deprecated")
     fun deprecatedFunction(appFunctionContext: AppFunctionContext) {}
+
+    @AppFunction(isEnabled = false)
+    fun functionDisabledByDefault(appFunctionContext: AppFunctionContext) {}
+
+    @AppFunction(isEnabled = true)
+    fun functionEnabledByDefault(appFunctionContext: AppFunctionContext) {}
 }
 
 @Suppress("UNUSED_PARAMETER")
@@ -304,6 +310,20 @@ class NotesFunctions : CreateNoteAppFunction {
      *   as response.
      */
     @AppFunction(isDescribedByKDoc = true)
+    override suspend fun createNote(
+        appFunctionContext: AppFunctionContext,
+        parameters: CreateNoteAppFunction.Parameters,
+        tag: String?,
+    ): CreateNoteAppFunction.Response {
+        return CreateNoteAppFunction.Response(
+            AppFunctionNote(id = "testId", title = parameters.title),
+            tag = tag,
+        )
+    }
+}
+
+class NotesFunctions_disabledByDefault : CreateNoteAppFunction {
+    @AppFunction(isEnabled = false)
     override suspend fun createNote(
         appFunctionContext: AppFunctionContext,
         parameters: CreateNoteAppFunction.Parameters,

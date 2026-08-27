@@ -23,6 +23,9 @@ import androidx.compose.runtime.Composable
  * A spacer that takes up space as defined by the provided [modifier].
  *
  * This delegates to [RemoteBox] which handles the layout recording or foundation Box dispatching.
+ *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteSpacerSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteSpacerWeightSample
  */
 @RemoteComposable
 @Composable

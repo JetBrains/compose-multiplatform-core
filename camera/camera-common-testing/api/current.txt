@@ -121,6 +121,28 @@ package androidx.camera.common.testing {
     method @BytecodeOnly public static androidx.camera.common.testing.FakeCaptureResult! invoke-pESMVW0$default(androidx.camera.common.testing.FakeCaptureResult.Companion!, String!, long, androidx.camera.common.CaptureRequestWrapper!, java.util.Map!, java.util.Map!, int, Object!);
   }
 
+  public final class FakeColorSpaceProfiles implements androidx.camera.common.ColorSpaceProfilesWrapper {
+    ctor public FakeColorSpaceProfiles();
+    ctor @BytecodeOnly public FakeColorSpaceProfiles(java.util.Map!, java.util.Map!, java.util.Map!, java.util.Map!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeColorSpaceProfiles(optional java.util.Map<java.lang.Integer,? extends java.util.Set<java.lang.String>> supportedColorSpaces, optional java.util.Map<java.lang.String,? extends java.util.Set<java.lang.Integer>> supportedImageFormats, optional java.util.Map<kotlin.Pair<java.lang.String,java.lang.Integer>,? extends java.util.Set<java.lang.Long>> supportedDynamicRangeProfiles, optional java.util.Map<kotlin.Pair<java.lang.Integer,java.lang.Long>,? extends java.util.Set<java.lang.String>> supportedColorSpacesForDynamicRange);
+    method public java.util.Set<java.lang.String> getSupportedColorSpaces(int imageFormat);
+    method public java.util.Set<java.lang.String> getSupportedColorSpacesForDynamicRange(int imageFormat, long dynamicRangeProfile);
+    method public java.util.Set<java.lang.Long> getSupportedDynamicRangeProfiles(String cameraColorSpace, int imageFormat);
+    method public java.util.Set<java.lang.Integer> getSupportedImageFormatsForColorSpace(String cameraColorSpace);
+    method public <T> T? unwrapAs(Class<T> type);
+  }
+
+  public final class FakeDynamicRangeProfiles implements androidx.camera.common.DynamicRangeProfilesWrapper {
+    ctor public FakeDynamicRangeProfiles();
+    ctor @BytecodeOnly public FakeDynamicRangeProfiles(java.util.Set!, java.util.Map!, java.util.Set!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeDynamicRangeProfiles(optional java.util.Set<java.lang.Long> supportedProfiles, optional java.util.Map<java.lang.Long,? extends java.util.Set<java.lang.Long>> compatibleProfiles, optional java.util.Set<java.lang.Long> extraLatencyProfiles);
+    method public java.util.Set<java.lang.Long> getCompatibleProfiles(long profile);
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.Long> getSupportedProfiles();
+    method public boolean hasExtraLatency(long profile);
+    method public <T> T? unwrapAs(Class<T> type);
+    property public java.util.Set<java.lang.Long> supportedProfiles;
+  }
+
   public class FakeImage implements androidx.camera.common.MutableImageWrapper {
     ctor public FakeImage(int width, int height, int format, long timestamp);
     ctor public FakeImage(int width, int height, int format, long timestamp, optional java.nio.ByteBuffer? byteBuffer);
@@ -172,6 +194,63 @@ package androidx.camera.common.testing {
     property public java.nio.ByteBuffer buffer;
     property public int pixelStride;
     property public int rowStride;
+  }
+
+  public final class FakeStreamConfigurationMap implements androidx.camera.common.StreamConfigurationMapWrapper {
+    ctor @BytecodeOnly public FakeStreamConfigurationMap(java.util.LinkedHashMap!, java.util.List!, java.util.Map!, java.util.Set!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeStreamConfigurationMap(java.util.LinkedHashMap<androidx.camera.common.testing.FakeStreamConfigurationMap.OutputKey,androidx.camera.common.testing.FakeStreamConfigurationMap.OutputValues> outputsTable);
+    ctor public FakeStreamConfigurationMap(java.util.LinkedHashMap<androidx.camera.common.testing.FakeStreamConfigurationMap.OutputKey,androidx.camera.common.testing.FakeStreamConfigurationMap.OutputValues> outputsTable, optional java.util.List<androidx.camera.common.testing.FakeStreamConfigurationMap.InputTableEntry> inputTable);
+    ctor public FakeStreamConfigurationMap(java.util.LinkedHashMap<androidx.camera.common.testing.FakeStreamConfigurationMap.OutputKey,androidx.camera.common.testing.FakeStreamConfigurationMap.OutputValues> outputsTable, optional java.util.List<androidx.camera.common.testing.FakeStreamConfigurationMap.InputTableEntry> inputTable, optional java.util.Map<java.lang.Integer,? extends java.util.List<java.lang.Integer>> outputFormatsForInputFormats);
+    ctor public FakeStreamConfigurationMap(java.util.LinkedHashMap<androidx.camera.common.testing.FakeStreamConfigurationMap.OutputKey,androidx.camera.common.testing.FakeStreamConfigurationMap.OutputValues> outputsTable, optional java.util.List<androidx.camera.common.testing.FakeStreamConfigurationMap.InputTableEntry> inputTable, optional java.util.Map<java.lang.Integer,? extends java.util.List<java.lang.Integer>> outputFormatsForInputFormats, optional java.util.Set<? extends java.lang.Class<? extends java.lang.Object?>> outputClassTypes);
+    method public java.util.List<android.util.Size> getHighResolutionOutputSizes(int format);
+    method public java.util.List<android.util.Range<java.lang.Integer>> getHighSpeedVideoFpsRanges();
+    method public java.util.List<android.util.Range<java.lang.Integer>> getHighSpeedVideoFpsRangesFor(android.util.Size size);
+    method public java.util.List<android.util.Size> getHighSpeedVideoSizes();
+    method public java.util.List<android.util.Size> getHighSpeedVideoSizesFor(android.util.Range<java.lang.Integer> fpsRange);
+    method public java.util.List<java.lang.Integer> getInputFormats();
+    method public java.util.List<android.util.Size> getInputSizes(int format);
+    method public java.util.List<java.lang.Integer> getOutputFormats();
+    method public long getOutputMinFrameDuration(int format, android.util.Size size);
+    method public <T> long getOutputMinFrameDuration(Class<T> klass, android.util.Size size);
+    method public java.util.List<android.util.Size> getOutputSizes(int format);
+    method public <T> java.util.List<android.util.Size> getOutputSizes(Class<T> klass);
+    method public long getOutputStallDuration(int format, android.util.Size size);
+    method public <T> long getOutputStallDuration(Class<T> klass, android.util.Size size);
+    method public java.util.List<java.lang.Integer> getValidOutputFormatsForInput(int inputFormat);
+    method public boolean isOutputSupportedFor(android.view.Surface surface);
+    method public boolean isOutputSupportedFor(int format);
+    method public <T> boolean isOutputSupportedFor(Class<T> klass);
+    method public <T> T? unwrapAs(Class<T> type);
+  }
+
+  public static final class FakeStreamConfigurationMap.InputTableEntry {
+    ctor public FakeStreamConfigurationMap.InputTableEntry(int format, android.util.Size size);
+    method @InaccessibleFromKotlin public int getFormat();
+    method @InaccessibleFromKotlin public android.util.Size getSize();
+    property public int format;
+    property public android.util.Size size;
+  }
+
+  public static final class FakeStreamConfigurationMap.OutputKey {
+    ctor public FakeStreamConfigurationMap.OutputKey(int format, android.util.Size size);
+    method @InaccessibleFromKotlin public int getFormat();
+    method @InaccessibleFromKotlin public android.util.Size getSize();
+    property public int format;
+    property public android.util.Size size;
+  }
+
+  public static final class FakeStreamConfigurationMap.OutputValues {
+    ctor public FakeStreamConfigurationMap.OutputValues();
+    ctor public FakeStreamConfigurationMap.OutputValues(optional long minDuration);
+    ctor public FakeStreamConfigurationMap.OutputValues(optional long minDuration, optional long stallDuration);
+    ctor @BytecodeOnly public FakeStreamConfigurationMap.OutputValues(long, long, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeStreamConfigurationMap.OutputValues(optional long minDuration, optional long stallDuration, optional java.util.List<android.util.Range<java.lang.Integer>> highSpeedFpsRanges);
+    method @InaccessibleFromKotlin public java.util.List<android.util.Range<java.lang.Integer>> getHighSpeedFpsRanges();
+    method @InaccessibleFromKotlin public long getMinDuration();
+    method @InaccessibleFromKotlin public long getStallDuration();
+    property public java.util.List<android.util.Range<java.lang.Integer>> highSpeedFpsRanges;
+    property public long minDuration;
+    property public long stallDuration;
   }
 
 }

@@ -82,6 +82,8 @@ public fun RemoteImage(
  * A composable that lays out and draws a given [RemoteImageBitmap]. This is the remote equivalent
  * of [androidx.compose.foundation.Image].
  *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteImageSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteImageFitSample
  * @param remoteBitmap the [RemoteImageBitmap] to be drawn.
  * @param contentDescription the Text used by accessibility services to describe what this image
  *   represents.

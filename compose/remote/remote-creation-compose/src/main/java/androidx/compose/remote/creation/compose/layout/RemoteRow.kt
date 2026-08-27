@@ -74,6 +74,8 @@ internal class RemoteRowNode : RemoteComposeNode() {
  * `RemoteRow` allows you to arrange children horizontally and control their [horizontalArrangement]
  * (spacing) and [verticalAlignment].
  *
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteRowSample
+ * @sample androidx.compose.remote.creation.compose.samples.RemoteRowWeightSample
  * @param modifier The modifier to be applied to this row.
  * @param horizontalArrangement The horizontal arrangement of the children.
  * @param verticalAlignment The vertical alignment of the children.

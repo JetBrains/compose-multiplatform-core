@@ -16,13 +16,13 @@
 
 package androidx.pdf.signature
 
-import androidx.pdf.models.Signature
+import android.graphics.Path
+import androidx.pdf.signature.model.Signature
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @Config(sdk = [Config.TARGET_SDK])
@@ -30,57 +30,8 @@ import org.robolectric.annotation.Config
 class SignatureViewTest {
 
     @Test
-    fun setSignature_callsInvalidate() {
+    fun settingSignatureData_updatesAllProperties() {
         val view = SignatureView(ApplicationProvider.getApplicationContext())
-        val shadowView = shadowOf(view)
-        shadowView.clearWasInvalidated()
-
-        val signature =
-            Signature.DrawnSignature(
-                id = "123",
-                pageNum = 0,
-                xCoord = 30f,
-                yCoord = 20f,
-                width = 25f,
-                height = 100f,
-                isSelected = false,
-                drawnPath = emptyList(),
-            )
-
-        view.setSignature(signature)
-
-        assertThat(shadowView.wasInvalidated()).isTrue()
-    }
-
-    @Test
-    fun setSameSignature_doesNotCallInvalidate() {
-        val view = SignatureView(ApplicationProvider.getApplicationContext())
-        val shadowView = shadowOf(view)
-
-        val signature =
-            Signature.DrawnSignature(
-                id = "123",
-                pageNum = 0,
-                xCoord = 30f,
-                yCoord = 20f,
-                width = 25f,
-                height = 100f,
-                isSelected = false,
-                drawnPath = emptyList(),
-            )
-
-        view.setSignature(signature)
-        shadowView.clearWasInvalidated()
-
-        view.setSignature(signature)
-
-        assertThat(shadowView.wasInvalidated()).isFalse()
-    }
-
-    @Test
-    fun setDifferentSignature_updatesModelAndCallsInvalidate() {
-        val view = SignatureView(ApplicationProvider.getApplicationContext())
-        val shadowView = shadowOf(view)
 
         val initialSignature =
             Signature.DrawnSignature(
@@ -91,11 +42,19 @@ class SignatureViewTest {
                 width = 25f,
                 height = 100f,
                 isSelected = false,
-                drawnPath = emptyList(),
+                drawnPath = Path(),
             )
-        view.setSignature(initialSignature)
 
-        shadowView.clearWasInvalidated()
+        view.signatureData = initialSignature
+
+        assertThat(view.signatureData?.id).isEqualTo("123")
+        assertThat(view.signatureData?.pageNum).isEqualTo(0)
+        assertThat(view.signatureData?.xCoord).isEqualTo(30f)
+        assertThat(view.signatureData?.yCoord).isEqualTo(20f)
+        assertThat(view.signatureData?.width).isEqualTo(25f)
+        assertThat(view.signatureData?.height).isEqualTo(100f)
+        assertThat(view.signatureData?.isSelected).isFalse()
+        assertThat((view.signatureData as? Signature.DrawnSignature)?.drawnPath?.isEmpty).isTrue()
 
         val updatedSignature =
             Signature.DrawnSignature(
@@ -106,10 +65,97 @@ class SignatureViewTest {
                 width = 75f,
                 height = 200f,
                 isSelected = true,
-                drawnPath = emptyList(),
+                drawnPath = Path(),
             )
 
-        view.setSignature(updatedSignature)
+        view.signatureData = updatedSignature
+
+        assertThat(view.signatureData?.id).isEqualTo("456")
+        assertThat(view.signatureData?.pageNum).isEqualTo(1)
+        assertThat(view.signatureData?.xCoord).isEqualTo(50f)
+        assertThat(view.signatureData?.yCoord).isEqualTo(60f)
+        assertThat(view.signatureData?.width).isEqualTo(75f)
+        assertThat(view.signatureData?.height).isEqualTo(200f)
+        assertThat(view.signatureData?.isSelected).isTrue()
+        assertThat((view.signatureData as? Signature.DrawnSignature)?.drawnPath?.isEmpty).isTrue()
+    }
+
+    @Test
+    fun settingSignatureData_callsInvalidate() {
+        val view = SignatureView(ApplicationProvider.getApplicationContext())
+        val shadowView = org.robolectric.Shadows.shadowOf(view)
+        shadowView.clearWasInvalidated()
+
+        val signature =
+            Signature.DrawnSignature(
+                id = "123",
+                pageNum = 0,
+                xCoord = 30f,
+                yCoord = 20f,
+                width = 25f,
+                height = 100f,
+                isSelected = false,
+                drawnPath = Path(),
+            )
+        view.signatureData = signature
+        assertThat(shadowView.wasInvalidated()).isTrue()
+    }
+
+    @Test
+    fun settingSameSignatureData_doesNotCallInvalidate() {
+        val view = SignatureView(ApplicationProvider.getApplicationContext())
+        val shadowView = org.robolectric.Shadows.shadowOf(view)
+
+        val signature =
+            Signature.DrawnSignature(
+                id = "123",
+                pageNum = 0,
+                xCoord = 30f,
+                yCoord = 20f,
+                width = 25f,
+                height = 100f,
+                isSelected = false,
+                drawnPath = Path(),
+            )
+
+        view.signatureData = signature
+        shadowView.clearWasInvalidated()
+        view.signatureData = signature
+        assertThat(shadowView.wasInvalidated()).isFalse()
+    }
+
+    @Test
+    fun togglingSelectionState_callsInvalidate() {
+        val view = SignatureView(ApplicationProvider.getApplicationContext())
+        val shadowView = org.robolectric.Shadows.shadowOf(view)
+
+        val unselectedSignature =
+            Signature.DrawnSignature(
+                id = "123",
+                pageNum = 0,
+                xCoord = 0f,
+                yCoord = 0f,
+                width = 0f,
+                height = 0f,
+                isSelected = false,
+                drawnPath = Path(),
+            )
+        view.signatureData = unselectedSignature
+        shadowView.clearWasInvalidated()
+
+        val selectedSignature =
+            Signature.DrawnSignature(
+                id = "123",
+                pageNum = 0,
+                xCoord = 0f,
+                yCoord = 0f,
+                width = 0f,
+                height = 0f,
+                isSelected = true,
+                drawnPath = Path(),
+            )
+        view.signatureData = selectedSignature
+
         assertThat(shadowView.wasInvalidated()).isTrue()
     }
 }

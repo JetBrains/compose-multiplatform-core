@@ -24,6 +24,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor.AutoCloseInputStream
+import androidx.appfunctions.metadata.AppFunctionName
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.security.MessageDigest
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +55,13 @@ internal object TestUtil {
             }
         }
         throw lastError!!
+    }
+
+    suspend fun Context.awaitAppFunctionsIndexed(targetPackage: String) {
+        retryAssert {
+            val functionIds = AppSearchMetadataHelper.collectFunctionIds(this, targetPackage)
+            assertThat(functionIds).isNotEmpty()
+        }
     }
 
     fun Context.assertPersistedGranted(uri: Uri) {
@@ -176,9 +185,19 @@ internal object TestUtil {
         executeShellCommandSync("am startservice -a $action -n $packageName/$className")
     }
 
-    private fun UiAutomation.executeShellCommandSync(command: String) {
-        AutoCloseInputStream(executeShellCommand(command)).bufferedReader().use { it.readText() }
+    /** Sets the app function with the given state. */
+    fun setAppFunctionStateRemoteAsync(appFunctionName: AppFunctionName, state: Int) = doBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val intent =
+            android.content.Intent("androidx.appfunctions.integration.testapp.ACTION_SET_STATE")
+        intent.setPackage(appFunctionName.packageName)
+        intent.putExtra("function_id", appFunctionName.functionIdentifier)
+        intent.putExtra("state", state)
+        context.sendBroadcast(intent)
     }
+
+    private fun UiAutomation.executeShellCommandSync(command: String): String =
+        AutoCloseInputStream(executeShellCommand(command)).bufferedReader().use { it.readText() }
 
     private const val RETRY_CHECK_INTERVAL_MILLIS: Long = 500
     private const val RETRY_MAX_INTERVALS: Long = 10
