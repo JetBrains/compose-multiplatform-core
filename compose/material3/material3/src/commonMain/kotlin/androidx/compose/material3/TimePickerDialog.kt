@@ -492,7 +492,6 @@ object TimePickerDialogDefaults {
      * @param modifier the [Modifier] to be applied to this title
      * @param displayMode the current display mode of the time picker
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     fun Title(displayMode: TimePickerDisplayMode, modifier: Modifier = Modifier) {
         val titleRes =
@@ -522,17 +521,20 @@ value class TimePickerDisplayMode internal constructor(internal val value: Int) 
 
     companion object {
         /** Time picker input mode */
-        val Picker = TimePickerDisplayMode(0)
+        val Picker
+            get() = TimePickerDisplayMode(0)
 
         /** Time text input mode */
-        val Input = TimePickerDisplayMode(1)
+        val Input
+            get() = TimePickerDisplayMode(1)
 
         /**
          * Time scroll wheel mode.
          *
          * This mode displays the time selection using vertical scroll wheels (e.g. [ScrollField]).
          */
-        val Scroll = TimePickerDisplayMode(2)
+        val Scroll
+            get() = TimePickerDisplayMode(2)
     }
 
     override fun toString() =

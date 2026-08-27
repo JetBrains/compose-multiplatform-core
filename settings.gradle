@@ -111,7 +111,7 @@ getGradle().beforeProject { project ->
     )
 
     // https://youtrack.jetbrains.com/issue/KT-58223
-    def kotlinDir = new File(System.getenv("OUT_DIR"), ".kotlin")
+    def kotlinDir = new File(project.ext.outDir, ".kotlin")
     project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
     project.setProperty("kotlin.user.home", kotlinDir.absolutePath)
 }
@@ -673,6 +673,7 @@ includeProject(":compose:remote:remote-player-compose-testutils", [BuildType.MAI
 includeProject(":compose:remote:remote-testing", [BuildType.MAIN])
 includeProject(":compose:remote:remote-lint", [BuildType.MAIN])
 includeProject(":compose:ui:ui-tooling-preview:ui-tooling-preview-samples", "compose/ui/ui-tooling-preview/samples", [BuildType.COMPOSE])
+includeProject(":concurrent:concurrent", [BuildType.MAIN])
 includeProject(":core:locationbutton:locationbutton", [BuildType.MAIN])
 includeProject(":core:locationbutton:locationbutton-testing", [BuildType.MAIN])
 includeProject(":core:locationbutton:locationbutton-compose", [BuildType.MAIN])

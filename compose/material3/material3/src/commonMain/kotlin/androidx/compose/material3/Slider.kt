@@ -439,12 +439,7 @@ fun Slider(
  */
 @Deprecated(
     "Maintained for binary compatibility. Use the version with topToBottom instead.",
-    replaceWith =
-        ReplaceWith(
-            "VerticalSlider(state, modifier, enabled, !reverseDirection, colors, " +
-                "interactionSource, thumb, track)"
-        ),
-    level = DeprecationLevel.WARNING,
+    level = DeprecationLevel.HIDDEN,
 )
 @ExperimentalMaterial3ExpressiveApi
 @JvmName("VerticalSlider")
@@ -3809,7 +3804,9 @@ internal value class SliderRange(val packedValue: Long) {
          * Represents an unspecified [SliderRange] value, usually a replacement for `null` when a
          * primitive value is desired.
          */
-        @Stable val Unspecified = SliderRange(Float.NaN, Float.NaN)
+        @Stable
+        val Unspecified
+            get() = SliderRange(Float.NaN, Float.NaN)
     }
 
     /** String representation of the [SliderRange] */
