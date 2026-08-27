@@ -29,7 +29,6 @@ import androidx.compose.ui.geometry.Offset
 internal class DefaultMeshGradientRenderer : BaseMeshGradientRenderer() {
     private val paint = Paint()
 
-    @Suppress("PrimitiveInCollection")
     override fun drawTriangles(
         canvas: Canvas,
         surfacePositions: FloatArray,
@@ -37,22 +36,23 @@ internal class DefaultMeshGradientRenderer : BaseMeshGradientRenderer() {
         indices: ShortArray,
         vertexCount: Int,
     ) {
-        val vertexPositions =
-            List(vertexCount) { i -> Offset(surfacePositions[i * 2], surfacePositions[i * 2 + 1]) }
+        val vertexPositions = List(vertexCount) { i ->
+            Offset(surfacePositions[i * 2], surfacePositions[i * 2 + 1])
+        }
         val vertexColors = List(vertexCount) { i -> Color(surfaceColors[i]) }
         val vertexIndices = List(indices.size) { i -> indices[i].toInt() }
 
         canvas.drawVertices(
-            vertices =
-                Vertices(
-                    vertexMode = VertexMode.Triangles,
-                    positions = vertexPositions,
-                    textureCoordinates = vertexPositions,
-                    colors = vertexColors,
-                    indices = vertexIndices,
-                ),
+            vertices = Vertices(
+                vertexMode = VertexMode.Triangles,
+                positions = vertexPositions,
+                textureCoordinates = vertexPositions,
+                colors = vertexColors,
+                indices = vertexIndices,
+            ),
             blendMode = BlendMode.Dst,
             paint = paint,
         )
     }
 }
+
