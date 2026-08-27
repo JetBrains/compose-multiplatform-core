@@ -39,15 +39,9 @@ import androidx.navigation.toRoute
 import androidx.savedstate.read
 import androidx.testutils.TestNavigator
 import androidx.testutils.test
-<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
 import kotlin.test.Test
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
-=======
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
-import kotlin.reflect.typeOf
->>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -57,10 +51,6 @@ import kotlinx.serialization.serializer
     ExperimentalSerializationApi::class
 )
 class NavHostControllerTest {
-<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
-=======
-    @get:Rule val composeTestRule = createComposeRule()
->>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostControllerTest.kt
 
     @Test
     fun testRememberNavController() = runComposeUiTestOnUiThread {

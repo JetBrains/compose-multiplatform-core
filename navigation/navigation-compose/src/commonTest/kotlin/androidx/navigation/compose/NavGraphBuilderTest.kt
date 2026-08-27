@@ -37,20 +37,13 @@ import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
 import kotlin.test.Test
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavGraphBuilderTest.kt
 import kotlinx.serialization.InternalSerializationApi
-=======
->>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavGraphBuilderTest.kt
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 @OptIn(ExperimentalTestApi::class)
 @ExperimentalCoroutinesApi
 class NavGraphBuilderTest {
-<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavGraphBuilderTest.kt
-=======
-    @get:Rule val composeTestRule = createComposeRule()
->>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavGraphBuilderTest.kt
 
     @Test
     fun testDeepLink() = runComposeUiTestOnUiThread {
