@@ -18,11 +18,10 @@ package androidx.compose.ui.test.v2
 
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Size
-import androidx.compose.runtime.Immutable
-import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.MainTestClock
@@ -37,15 +36,6 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
-
-@Immutable
-actual class ComposeTestConfig
-actual constructor(
-    actual val effectContext: CoroutineContext,
-    actual val runTestContext: CoroutineContext,
-    actual val testTimeout: Duration,
-    actual val inputMode: InputMode,
-)
 
 /**
  * Sets up the test environment, runs the given [test][block] and then tears down the test
@@ -103,7 +93,7 @@ actual fun runComposeUiTest(
 
 @ExperimentalTestApi
 actual fun runComposeUiTest(
-    config: ComposeTestConfig,
+    config: ComposeUiTestConfig,
     block: suspend ComposeUiTest.() -> Unit,
 ): TestResult {
     // TODO(Merge) Implement after merging 0221de5bb907a9b49017d40a2c8507bac7ad3a0b
