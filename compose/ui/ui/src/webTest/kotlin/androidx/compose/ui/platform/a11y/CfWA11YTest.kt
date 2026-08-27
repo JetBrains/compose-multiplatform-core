@@ -992,9 +992,9 @@ class CfWA11YTest : OnCanvasTests {
     }
 }
 
-private external interface TestMutationObserver : JsAny
+internal external interface TestMutationObserver : JsAny
 
-private fun createMutationObserver(onRemoved: (JsAny) -> Unit): TestMutationObserver =
+internal fun createMutationObserver(onRemoved: (JsAny) -> Unit): TestMutationObserver =
     js(
         """
         new MutationObserver(records => {
@@ -1007,10 +1007,10 @@ private fun createMutationObserver(onRemoved: (JsAny) -> Unit): TestMutationObse
         """
     )
 
-private fun observeChildListMutations(observer: TestMutationObserver, element: HTMLElement) {
+internal fun observeChildListMutations(observer: TestMutationObserver, element: HTMLElement) {
     js("observer.observe(element, { childList: true, subtree: true })")
 }
 
-private fun disconnectMutationObserver(observer: TestMutationObserver) {
+internal fun disconnectMutationObserver(observer: TestMutationObserver) {
     js("observer.disconnect()")
 }

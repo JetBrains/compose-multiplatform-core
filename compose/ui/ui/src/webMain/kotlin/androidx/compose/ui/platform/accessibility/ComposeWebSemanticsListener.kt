@@ -474,22 +474,9 @@ internal class ComposeWebSemanticsListener(
             config = config,
             rootPosition = rootPosition,
         )
-        val hadLinkChildren = (0 until htmlNode.children.length).any {
-            val child = htmlNode.children.item(it) as? HTMLElement
-            child?.let { elementToSemanticsNode[it] }
-                ?.config
-                ?.contains(SemanticsProperties.LinkTestMarker) == true
-        }
-        if (linksCount > 0 || hadLinkChildren) {
-            // Text fragments are not semantics nodes, so this mixed-content subtree still has to
-            // be rebuilt. The semantic container is preserved, and regular semantics subtrees are
-            // reconciled incrementally.
-            removeAllChildrenOf(htmlNode)
-            if (textParts == null) {
-                htmlNode.innerText = text
-            }
-        } else if (htmlNode.innerText != text) {
-            htmlNode.innerText = text
+        val mixedContent = mutableListOf<Any>()
+        if (textParts == null) {
+            mixedContent.add(text)
         }
 
         var linkIndex = 0
@@ -507,7 +494,7 @@ internal class ComposeWebSemanticsListener(
             }
 
             if (textParts != null) {
-                htmlNode.appendText(textParts[linkIndex])
+                mixedContent.add(textParts[linkIndex])
             }
 
             val linkChildren = child.replacedChildren
@@ -517,7 +504,7 @@ internal class ComposeWebSemanticsListener(
                 rootPosition = rootPosition,
                 text = split?.linkTexts?.getOrNull(linkIndex),
             )
-            htmlNode.appendChild(linkHtmlNode)
+            mixedContent.add(linkHtmlNode)
             expectedChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
             // A link node is expected to be a leaf, but don't rely on it.
             pushChildren(linkChildren, child.id)
@@ -526,16 +513,55 @@ internal class ComposeWebSemanticsListener(
         }
 
         if (textParts != null) {
-            htmlNode.appendText(textParts.last())
+            mixedContent.add(textParts.last())
         }
 
+        reconcileMixedContent(htmlNode, mixedContent)
         deferredChildren?.let { pushChildren(it, node.id) }
         return htmlNode
     }
 
-    private fun HTMLElement.appendText(text: String?) {
-        if (text.isNullOrEmpty()) return
-        appendChild(document.createTextNode(text))
+    /** Reconciles the text fragments and semantic link elements at the start of a text node. */
+    private fun reconcileMixedContent(parent: HTMLElement, content: List<Any>) {
+        var current = parent.firstChild
+
+        content.fastForEach { item ->
+            when (item) {
+                is String -> {
+                    if (item.isEmpty()) return@fastForEach
+
+                    if (current != null && current !is HTMLElement) {
+                        if (current?.textContent != item) {
+                            current?.textContent = item
+                        }
+                        current = current?.nextSibling
+                    } else {
+                        parent.insertBefore(document.createTextNode(item), current)
+                    }
+                }
+                is HTMLElement -> {
+                    if (item !== current) {
+                        parent.insertBefore(item, current)
+                    }
+                    current = item.nextSibling
+                }
+                else -> error("Unsupported mixed content type: ${item::class}")
+            }
+        }
+
+        // Regular semantics children follow the mixed text/link prefix and are reconciled later.
+        while (current != null) {
+            val currentElement = current as? HTMLElement
+            val isRegularSemanticsChild = currentElement
+                ?.let { elementToSemanticsNode[it] }
+                ?.config
+                ?.contains(SemanticsProperties.LinkTestMarker) == false
+            if (isRegularSemanticsChild) break
+
+            val next = current?.nextSibling
+            parent.removeChild(current!!)
+            current = next
+        }
     }
 
     internal fun stop() {
