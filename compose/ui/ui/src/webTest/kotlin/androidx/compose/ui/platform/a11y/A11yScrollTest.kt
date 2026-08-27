@@ -18,11 +18,15 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.getValue
@@ -278,6 +282,46 @@ class A11yScrollTest : OnCanvasTests {
         assertTrue(
             abs(visibleTop - 50.0) <= 2.0,
             "Item visible position must be shifted by the scroll offset, got $visibleTop"
+        )
+    }
+
+    @Test
+    fun lazyGridItemsRemainAlignedWithComposeAfterRepeatedScrolls() = runApplicationTest {
+        val state = LazyGridState()
+
+        createComposeWindow {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.testTag("scrollable").size(300.dp),
+                state = state,
+            ) {
+                items(100) { index ->
+                    Box(Modifier.testTag("item$index").size(100.dp))
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        state.scrollToItem(30)
+        awaitA11YChanges()
+        state.scrollToItem(60)
+        awaitA11YChanges()
+
+        awaitCondition("the second target item must be present in the a11y tree") {
+            getShadowRoot().getElementById("item60") != null
+        }
+
+        val container = getScrollableElement()
+        val item = assertNotNull(getShadowRoot().getElementById("item60") as? HTMLElement)
+        val containerBounds = container.getBoundingClientRect()
+        val itemBounds = item.getBoundingClientRect()
+
+        assertTrue(
+            itemBounds.bottom > containerBounds.top && itemBounds.top < containerBounds.bottom,
+            "A visible Compose item must also be inside the a11y scroll container: " +
+                "container=[${containerBounds.top}, ${containerBounds.bottom}], " +
+                "item=[${itemBounds.top}, ${itemBounds.bottom}], " +
+                "scrollTop=${container.scrollTop}, offsetTop=${item.offsetTop}"
         )
     }
 
