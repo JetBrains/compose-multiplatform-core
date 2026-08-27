@@ -117,7 +117,7 @@ public open class RecordingCanvas(bitmap: Bitmap, public val enableOptimizations
      * @return The [CanvasOperationBuffer.SpanOp] representing the recorded operation's span.
      */
     internal fun recordRenderingOp(op: CanvasOp): CanvasOperationBuffer.SpanOp {
-        if (op is CanvasOp.Draw) {
+        if (op.triggersDrawCall()) {
             markDrawCall()
         }
         if (currentSaveNode != null) {
@@ -226,14 +226,17 @@ public open class RecordingCanvas(bitmap: Bitmap, public val enableOptimizations
         val prevInsertPoint = buffer.insertPoint
         val prevSaveNode = currentSaveNode
         val prevLastRenderingOp = buffer.lastRenderingOp
+        val prevSaveCounter = saveCounter
         buffer.insertPoint = childSpan
         currentSaveNode = null
+        saveCounter = 0
         try {
             action()
         } finally {
             buffer.insertPoint = prevInsertPoint
             currentSaveNode = prevSaveNode
             buffer.lastRenderingOp = prevLastRenderingOp
+            saveCounter = prevSaveCounter
         }
         return childSpan
     }
@@ -1585,7 +1588,7 @@ public open class RecordingCanvas(bitmap: Bitmap, public val enableOptimizations
 
         val op =
             recordRenderingOp(
-                CanvasOp.Draw { writer ->
+                CanvasOp.DrawConditionally(condition, childSpan) { writer, creationState ->
                     if (condition.hasConstantValue) {
                         if (condition.constantValue) {
                             childSpan.record(writer, creationState)
@@ -1630,7 +1633,7 @@ public open class RecordingCanvas(bitmap: Bitmap, public val enableOptimizations
 
         val op =
             recordRenderingOp(
-                CanvasOp.Draw { writer ->
+                CanvasOp.Draw(switchesCanvas = true) { writer ->
                     writer.drawOnBitmap(bitmapId, 1, 0)
                     forceSendingPaint = true
                     childSpan.record(writer, creationState)
@@ -1667,7 +1670,7 @@ public open class RecordingCanvas(bitmap: Bitmap, public val enableOptimizations
 
         val op =
             recordRenderingOp(
-                CanvasOp.Draw { writer ->
+                CanvasOp.Draw(switchesCanvas = true) { writer ->
                     writer.drawOnBitmap(bitmapId, 0, clearColor)
                     forceSendingPaint = true
                     childSpan.record(writer, creationState)

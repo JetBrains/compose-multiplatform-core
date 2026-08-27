@@ -20,6 +20,7 @@ import androidx.collection.MutableObjectIntMap
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.state.BaseRemoteState
+import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteOperationCacheKey
 import androidx.compose.remote.creation.compose.state.RemoteStateCacheKey
@@ -100,11 +101,52 @@ internal sealed class CanvasOp {
     /** Returns true if this operation modifies the canvas transform or clip state. */
     open fun hasTransformsOrClips(): Boolean = false
 
+    /** Returns true if this operation performs drawing or contains drawing operations. */
+    open fun containsDrawCalls(): Boolean = false
+
+    /** Returns true if this operation switches the target canvas (e.g. drawToOffscreenBitmap). */
+    open fun switchesCanvas(): Boolean = false
+
+    /**
+     * Returns true if recording this operation should immediately trigger marking a draw call in
+     * the current save node.
+     */
+    open fun triggersDrawCall(): Boolean = containsDrawCalls()
+
+    /**
+     * Returns true if this operation has child canvas commands (e.g. drawing, transforms, clips,
+     * loops, etc.).
+     */
+    open fun hasChildCommands(): Boolean = false
+
+    /**
+     * Recursively optimizes or elides operations within child scopes or spans owned by this
+     * operation.
+     */
+    open fun optimizeChildScopes(buffer: CanvasOperationBuffer) {}
+
+    /**
+     * Evaluates whether this operation should be elided during the optimization pass.
+     *
+     * @param buffer The [CanvasOperationBuffer] running the optimization.
+     * @return True if this operation should be elided, false otherwise.
+     */
+    open fun shouldElide(buffer: CanvasOperationBuffer): Boolean = false
+
     /** Represents an actual drawing or state-setting operation (e.g., drawRect). */
-    class Draw(val action: (RemoteComposeWriter) -> Unit) : CanvasOp() {
+    class Draw(val switchesCanvas: Boolean = false, val action: (RemoteComposeWriter) -> Unit) :
+        CanvasOp() {
+        constructor(action: (RemoteComposeWriter) -> Unit) : this(false, action)
+
         override fun write(writer: RemoteComposeWriter, creationState: RemoteComposeCreationState) {
             action(writer)
         }
+
+        override fun containsDrawCalls(): Boolean = true
+
+        override fun switchesCanvas(): Boolean = switchesCanvas
+
+        override fun hasChildCommands(): Boolean = true
 
         override fun toString(): String = "Draw"
     }
@@ -116,6 +158,10 @@ internal sealed class CanvasOp {
         }
 
         override fun hasTransformsOrClips(): Boolean = true
+
+        override fun containsDrawCalls(): Boolean = false
+
+        override fun hasChildCommands(): Boolean = true
 
         override fun toString(): String = "Clip"
     }
@@ -131,6 +177,10 @@ internal sealed class CanvasOp {
         }
 
         override fun hasTransformsOrClips(): Boolean = true
+
+        override fun containsDrawCalls(): Boolean = false
+
+        override fun hasChildCommands(): Boolean = true
 
         override fun toString(): String = "Transform(${op.javaClass.simpleName})"
     }
@@ -164,9 +214,41 @@ internal sealed class CanvasOp {
 
         override fun hasTransformsOrClips(): Boolean {
             for (i in 0 until children.size) {
-                if (children[i].hasTransformsOrClips()) return true
+                val child = children[i]
+                // Ignore child Save nodes; any transforms inside them self-balance upon restore
+                // and do not leak net state changes into this parent scope.
+                if (child !is Save && child.hasTransformsOrClips()) return true
             }
             return false
+        }
+
+        override fun containsDrawCalls(): Boolean {
+            for (i in 0 until children.size) {
+                if (children[i].containsDrawCalls()) return true
+            }
+            return false
+        }
+
+        override fun switchesCanvas(): Boolean {
+            for (i in 0 until children.size) {
+                if (children[i].switchesCanvas()) return true
+            }
+            return false
+        }
+
+        override fun triggersDrawCall(): Boolean = false
+
+        override fun hasChildCommands(): Boolean {
+            if (elisionMode == ElisionMode.DISCARD) return false
+            for (i in 0 until children.size) {
+                if (children[i].hasChildCommands()) return true
+            }
+            return false
+        }
+
+        override fun optimizeChildScopes(buffer: CanvasOperationBuffer) {
+            buffer.maybeElide(children)
+            hasDrawCalls = containsDrawCalls()
         }
 
         override fun write(writer: RemoteComposeWriter, creationState: RemoteComposeCreationState) {
@@ -195,6 +277,46 @@ internal sealed class CanvasOp {
         override fun write(writer: RemoteComposeWriter, creationState: RemoteComposeCreationState) {
             creationState.getOrPutVariableId(key) { state.writeToDocument(creationState) }
         }
+
+        override fun containsDrawCalls(): Boolean = false
+
+        override fun hasChildCommands(): Boolean = false
+    }
+
+    /**
+     * Represents a conditional drawing block (`drawConditionally`).
+     *
+     * Typically [childSpan] will be a [CanvasOperationBuffer.Span], which if hasChildCommands will
+     * return false if empty.
+     *
+     * @property condition The condition that controls execution of the child span.
+     * @property childSpan The child [CanvasOperationBuffer.Span] holding conditional operations.
+     * @property action The action that writes the conditional block to the writer.
+     */
+    class DrawConditionally(
+        val condition: RemoteBoolean,
+        val childSpan: CanvasOperationBuffer.Span,
+        val action: (RemoteComposeWriter, RemoteComposeCreationState) -> Unit,
+    ) : CanvasOp() {
+        override fun write(writer: RemoteComposeWriter, creationState: RemoteComposeCreationState) {
+            action(writer, creationState)
+        }
+
+        override fun hasTransformsOrClips(): Boolean = childSpan.hasTransformsOrClips()
+
+        override fun containsDrawCalls(): Boolean = childSpan.containsDrawCalls()
+
+        override fun switchesCanvas(): Boolean = childSpan.switchesCanvas()
+
+        override fun hasChildCommands(): Boolean = childSpan.hasChildCommands()
+
+        override fun optimizeChildScopes(buffer: CanvasOperationBuffer) {
+            buffer.optimizeSpan(childSpan)
+        }
+
+        override fun shouldElide(buffer: CanvasOperationBuffer) = !childSpan.hasChildCommands()
+
+        override fun toString(): String = "DrawConditionally(${condition.toDebugString()})"
     }
 
     /** The strategy for rendering a [Save] node during flush. */
@@ -232,11 +354,63 @@ internal class CanvasOperationBuffer(val enableOptimizations: Boolean = false) {
         val operations = ArrayList<SpanOp>()
         var child: Span? = null
         var next: Span? = null
+        var optimized = false
 
         fun record(writer: RemoteComposeWriter, creationState: RemoteComposeCreationState) {
             for (i in 0 until operations.size) {
                 operations[i].op.write(writer, creationState)
             }
+        }
+
+        fun hasTransformsOrClips(): Boolean {
+            for (i in 0 until operations.size) {
+                val op = operations[i].op
+                // Ignore child Save nodes; any transforms inside them self-balance upon restore
+                // and do not leak net state changes into this span.
+                if (op !is CanvasOp.Save && op.hasTransformsOrClips()) return true
+            }
+            var currentChild = child
+            while (currentChild != null) {
+                if (currentChild.hasTransformsOrClips()) return true
+                currentChild = currentChild.next
+            }
+            return false
+        }
+
+        fun containsDrawCalls(): Boolean {
+            for (i in 0 until operations.size) {
+                if (operations[i].op.containsDrawCalls()) return true
+            }
+            var currentChild = child
+            while (currentChild != null) {
+                if (currentChild.containsDrawCalls()) return true
+                currentChild = currentChild.next
+            }
+            return false
+        }
+
+        fun switchesCanvas(): Boolean {
+            for (i in 0 until operations.size) {
+                if (operations[i].op.switchesCanvas()) return true
+            }
+            var currentChild = child
+            while (currentChild != null) {
+                if (currentChild.switchesCanvas()) return true
+                currentChild = currentChild.next
+            }
+            return false
+        }
+
+        fun hasChildCommands(): Boolean {
+            for (i in 0 until operations.size) {
+                if (operations[i].op.hasChildCommands()) return true
+            }
+            var currentChild = child
+            while (currentChild != null) {
+                if (currentChild.hasChildCommands()) return true
+                currentChild = currentChild.next
+            }
+            return false
         }
 
         fun sortAllSpans() {
@@ -391,7 +565,11 @@ internal class CanvasOperationBuffer(val enableOptimizations: Boolean = false) {
      * It runs the elision pass to identify useless save/restores, flattens (inlines) them, and then
      * optimizes transforms in the resulting simplified tree.
      */
-    private fun optimizeSpan(span: Span) {
+    internal fun optimizeSpan(span: Span) {
+        if (span.optimized) return
+        span.optimized = true
+
+        maybeElide(span)
         elisionPassSpan(span)
         flattenSpan(span)
         optimizeTransformsSpan(span)
@@ -400,6 +578,26 @@ internal class CanvasOperationBuffer(val enableOptimizations: Boolean = false) {
         while (currentChild != null) {
             optimizeSpan(currentChild)
             currentChild = currentChild.next
+        }
+    }
+
+    internal fun maybeElide(span: Span) {
+        span.operations.removeAll { spanOp ->
+            val op = spanOp.op
+            op.optimizeChildScopes(this)
+            if (op.shouldElide(this)) {
+                routeDependenciesAround(spanTreeRoot, spanOp)
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    internal fun maybeElide(ops: MutableList<CanvasOp>) {
+        ops.removeAll { op ->
+            op.optimizeChildScopes(this)
+            op.shouldElide(this)
         }
     }
 
@@ -746,44 +944,7 @@ internal class CanvasOperationBuffer(val enableOptimizations: Boolean = false) {
     ): Boolean {
         var currentSeenDrawCall = seenDrawCall
         for (i in ops.size - 1 downTo 0) {
-            val child = ops[i]
-            when (child) {
-                is CanvasOp.Draw -> {
-                    currentSeenDrawCall = true
-                }
-                is CanvasOp.Save -> {
-                    if (!child.hasDrawCalls) {
-                        child.elisionMode = CanvasOp.ElisionMode.DISCARD
-                    } else {
-                        val hasTransformsOrClips = child.hasTransformsOrClips()
-                        if (!hasTransformsOrClips) {
-                            // No state changes, safe to inline anywhere!
-                            child.elisionMode = CanvasOp.ElisionMode.INLINE
-                            currentSeenDrawCall =
-                                elisionPass(child.children, currentSeenDrawCall, isRootSpan)
-                        } else if (!currentSeenDrawCall) {
-                            // Has transforms/clips, but no drawing after it.
-                            // Safe to inline only if it's the root span (to prevent leakage to
-                            // sibling branches in child spans).
-                            if (isRootSpan) {
-                                child.elisionMode = CanvasOp.ElisionMode.INLINE
-                                currentSeenDrawCall =
-                                    elisionPass(child.children, currentSeenDrawCall, isRootSpan)
-                            } else {
-                                child.elisionMode = CanvasOp.ElisionMode.PRESERVE
-                                elisionPass(child.children, false, isRootSpan)
-                                currentSeenDrawCall = true
-                            }
-                        } else {
-                            // Has transforms/clips and drawing after it. Must preserve.
-                            child.elisionMode = CanvasOp.ElisionMode.PRESERVE
-                            elisionPass(child.children, false, isRootSpan)
-                            currentSeenDrawCall = true
-                        }
-                    }
-                }
-                else -> {}
-            }
+            currentSeenDrawCall = processOpForElision(ops[i], currentSeenDrawCall, isRootSpan)
         }
         return currentSeenDrawCall
     }
@@ -793,38 +954,62 @@ internal class CanvasOperationBuffer(val enableOptimizations: Boolean = false) {
         val isRootSpan = (span == spanTreeRoot)
         var seenDrawCall = false
         for (i in span.operations.size - 1 downTo 0) {
-            val child = span.operations[i]
-            when (val op = child.op) {
-                is CanvasOp.Draw -> {
-                    seenDrawCall = true
-                }
-                is CanvasOp.Save -> {
-                    if (!op.hasDrawCalls) {
-                        op.elisionMode = CanvasOp.ElisionMode.DISCARD
-                    } else {
-                        val hasTransformsOrClips = op.hasTransformsOrClips()
-                        if (!hasTransformsOrClips) {
-                            op.elisionMode = CanvasOp.ElisionMode.INLINE
-                            seenDrawCall = elisionPass(op.children, seenDrawCall, isRootSpan)
-                        } else if (!seenDrawCall) {
-                            if (isRootSpan) {
-                                op.elisionMode = CanvasOp.ElisionMode.INLINE
-                                seenDrawCall = elisionPass(op.children, seenDrawCall, isRootSpan)
-                            } else {
-                                op.elisionMode = CanvasOp.ElisionMode.PRESERVE
-                                elisionPass(op.children, false, isRootSpan)
-                                seenDrawCall = true
-                            }
-                        } else {
-                            op.elisionMode = CanvasOp.ElisionMode.PRESERVE
-                            elisionPass(op.children, false, isRootSpan)
-                            seenDrawCall = true
-                        }
+            seenDrawCall = processOpForElision(span.operations[i].op, seenDrawCall, isRootSpan)
+        }
+    }
+
+    private fun processOpForElision(
+        op: CanvasOp,
+        seenDrawCall: Boolean,
+        isRootSpan: Boolean,
+    ): Boolean {
+        var currentSeenDrawCall = seenDrawCall
+        if (op is CanvasOp.Save) {
+            op.elisionMode =
+                when {
+                    !op.hasDrawCalls -> {
+                        // Empty save block with no drawing anywhere in its tree; safely discard.
+                        CanvasOp.ElisionMode.DISCARD
+                    }
+                    !op.hasTransformsOrClips() -> {
+                        // Save block has drawing but zero state changes (no transforms or clips).
+                        // Safe to inline its children anywhere without needing matching
+                        // save/restore.
+                        currentSeenDrawCall =
+                            elisionPass(op.children, currentSeenDrawCall, isRootSpan)
+                        CanvasOp.ElisionMode.INLINE
+                    }
+                    op.switchesCanvas() -> {
+                        // Save block has transforms/clips AND spans across a target canvas switch
+                        // (e.g. drawToOffscreenBitmap).
+                        // Must preserve save/restore bounds on the outer canvas around the
+                        // transition.
+                        elisionPass(op.children, false, isRootSpan)
+                        currentSeenDrawCall = true
+                        CanvasOp.ElisionMode.PRESERVE
+                    }
+                    !currentSeenDrawCall && isRootSpan -> {
+                        // Save block has transforms/clips, but no drawing occurs after it on the
+                        // root span.
+                        // Safe to inline on the root canvas because leaked transforms have no
+                        // visual effect.
+                        currentSeenDrawCall =
+                            elisionPass(op.children, currentSeenDrawCall, isRootSpan)
+                        CanvasOp.ElisionMode.INLINE
+                    }
+                    else -> {
+                        // Save block has transforms/clips AND drawing occurs after it (or in a
+                        // child span).
+                        // Must preserve matching save/restore to prevent transform leakage.
+                        elisionPass(op.children, false, isRootSpan)
+                        currentSeenDrawCall = true
+                        CanvasOp.ElisionMode.PRESERVE
                     }
                 }
-                else -> {}
-            }
+        } else if (op.containsDrawCalls() || op.switchesCanvas()) {
+            currentSeenDrawCall = true
         }
+        return currentSeenDrawCall
     }
 
     /**
