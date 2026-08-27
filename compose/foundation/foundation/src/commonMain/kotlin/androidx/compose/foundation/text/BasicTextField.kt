@@ -158,7 +158,7 @@ private object BasicTextFieldDefaults {
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicTextField(
+public fun BasicTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -769,7 +769,7 @@ private val MinTouchTargetSizeForHandles
  *   innerTextField exactly once.
  */
 @Composable
-fun BasicTextField(
+public fun BasicTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -926,7 +926,7 @@ fun BasicTextField(
  *   innerTextField exactly once.
  */
 @Composable
-fun BasicTextField(
+public fun BasicTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -971,7 +971,7 @@ fun BasicTextField(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicTextField(
+public fun BasicTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -1011,7 +1011,7 @@ fun BasicTextField(
 
 @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
 @Composable
-fun BasicTextField(
+public fun BasicTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
