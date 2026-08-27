@@ -4948,6 +4948,9 @@ final val androidx.compose.ui.dom/domEventOrNull // androidx.compose.ui.dom/domE
 final val androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop|#static{}androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop[0]
 
 // Targets: [js, wasmJs]
+final val androidx.compose.ui.platform.webgl/androidx_compose_ui_platform_webgl_WebGLRenderTarget$stableprop // androidx.compose.ui.platform.webgl/androidx_compose_ui_platform_webgl_WebGLRenderTarget$stableprop|#static{}androidx_compose_ui_platform_webgl_WebGLRenderTarget$stableprop[0]
+
+// Targets: [js, wasmJs]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporaryClipboard$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporaryClipboard$stableprop|#static{}androidx_compose_ui_platform_W3CTemporaryClipboard$stableprop[0]
 
 // Targets: [js, wasmJs]
@@ -4985,6 +4988,9 @@ final fun androidx.compose.ui.input.pointer/PointerIcon(kotlin/String): androidx
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter|androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.platform.webgl/androidx_compose_ui_platform_webgl_WebGLRenderTarget$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform.webgl/androidx_compose_ui_platform_webgl_WebGLRenderTarget$stableprop_getter|androidx_compose_ui_platform_webgl_WebGLRenderTarget$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporaryClipboard$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporaryClipboard$stableprop_getter|androidx_compose_ui_platform_W3CTemporaryClipboard$stableprop_getter(){}[0]

@@ -21,33 +21,27 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.animateMoveTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.dragAndDrop
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -55,6 +49,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class SelectionContainerTest {
+    @Suppress("DEPRECATION")
     @Test
     fun selectionWorksWhenDraggingFromBelowText() = runComposeUiTest {
         val selectionState = SelectionState()
@@ -84,6 +79,7 @@ class SelectionContainerTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun clickOnDisabledSelectionClearsSelection() = runComposeUiTest {
         val selectionState = SelectionState()
@@ -116,6 +112,7 @@ class SelectionContainerTest {
         assertFalse(selectionState.selection.exists())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dragToSelect() = runComposeUiTest {
         val selectionState = SelectionState()

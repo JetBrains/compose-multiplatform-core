@@ -80,6 +80,7 @@ class BackgroundTest {
         isDebugInspectorInfoEnabled = false
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun background_colorRect() = runSkikoComposeUiTest(sceneSize) {
         setContent {
@@ -105,6 +106,7 @@ class BackgroundTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun background_brushRect() = runSkikoComposeUiTest(sceneSize) {
         setContent {
@@ -133,6 +135,7 @@ class BackgroundTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun background_colorCircle() = runSkikoComposeUiTest(sceneSize) {
         setContent {
@@ -156,6 +159,7 @@ class BackgroundTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun background_brushCircle() = runSkikoComposeUiTest(sceneSize) {
         setContent {
@@ -182,6 +186,7 @@ class BackgroundTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun background_rtl_initially() = runSkikoComposeUiTest(sceneSize) {
         setContent {
@@ -210,6 +215,7 @@ class BackgroundTest {
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun background_rtl_after_switch() = runSkikoComposeUiTest(sceneSize) {
         val direction = mutableStateOf(LayoutDirection.Ltr)

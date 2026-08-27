@@ -172,12 +172,10 @@ kotlin {
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
-            }
-        }
+                implementation(libs.kotlinXw3c)
 
-        val wasmJsMain by getting {
-            dependencies {
-                api(libs.kotlinXw3c)
+                // https://github.com/mrdoob/three.js/ for WebGl demo
+                implementation(npm("three", "0.185.0"))
             }
         }
 
