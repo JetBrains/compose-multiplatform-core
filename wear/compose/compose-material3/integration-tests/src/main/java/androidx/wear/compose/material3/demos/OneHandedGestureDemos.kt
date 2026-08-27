@@ -40,7 +40,6 @@ import androidx.wear.compose.integration.demos.common.ActivityDemo
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.Material3DemoCategory
 import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.ButtonContent
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.FilledTonalButton
@@ -177,7 +176,7 @@ fun OneHandedGesturePrimaryDismissButtons() {
                         Modifier.oneHandedGesture(
                             gestureConfiguration = dismissGestureConfig,
                             interactionSource = dismissInteractionSource,
-                            gestureLabel = "dismiss",
+                            onGestureLabel = "dismiss",
                             onGestureAvailable = { dismissIndicatorState.isIndicatorActive = true },
                             onGesture = dismissOnClick,
                         ),
@@ -194,7 +193,7 @@ fun OneHandedGesturePrimaryDismissButtons() {
                         Modifier.oneHandedGesture(
                             gestureConfiguration = primaryGestureConfig,
                             interactionSource = primaryInteractionSource,
-                            gestureLabel = "confirm",
+                            onGestureLabel = "confirm",
                             onGestureAvailable = { primaryIndicatorState.isIndicatorActive = true },
                             onGesture = primaryOnClick,
                         ),
@@ -276,7 +275,7 @@ fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
                 Modifier.fillMaxSize()
                     .oneHandedGesture(
                         gestureConfiguration = scrollGestureConfig,
-                        gestureLabel = "scroll",
+                        onGestureLabel = "scroll",
                         onGestureAvailable = { scrollIndicatorState.isIndicatorActive = true },
                         onGesture = { OneHandedGestureDefaults.scrollDown(scrollState) },
                     ),
@@ -302,7 +301,7 @@ fun OneHandedGestureTransformingLazyColumnWithButtonDemo() {
                                 Modifier.oneHandedGesture(
                                     gestureConfiguration = buttonGestureSpec,
                                     interactionSource = buttonInteractionSource,
-                                    gestureLabel = "click",
+                                    onGestureLabel = "click",
                                     onGestureAvailable = {
                                         buttonIndicatorState.isIndicatorActive = true
                                     },
@@ -337,7 +336,7 @@ private fun OneHandedGestureButton(
             Modifier.oneHandedGesture(
                 gestureConfiguration = gestureConfig,
                 interactionSource = interactionSource,
-                gestureLabel = gestureLabel,
+                onGestureLabel = gestureLabel,
                 onGestureAvailable = { indicatorState.isIndicatorActive = true },
                 onGesture = onClick,
             ),
@@ -365,7 +364,7 @@ fun OHGTonalButtonDemo() {
             modifier =
                 Modifier.oneHandedGesture(
                     gestureConfiguration = gestureConfig,
-                    gestureLabel = "click",
+                    onGestureLabel = "click",
                     interactionSource = interactionSource,
                     onGestureAvailable = { indicatorState.isIndicatorActive = true },
                     onGesture = onClick,
@@ -376,7 +375,7 @@ fun OHGTonalButtonDemo() {
                 indicatorState = indicatorState,
                 gestureIndicatorTint = MaterialTheme.colorScheme.onSurfaceVariant,
             ) {
-                ButtonContent(
+                ButtonDefaults.Content(
                     secondaryLabel = { Text("Secondary Label") },
                     icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                     colors = ButtonDefaults.filledTonalButtonColors(),
@@ -402,7 +401,7 @@ fun OHGOutlinedButtonDemo() {
             modifier =
                 Modifier.oneHandedGesture(
                     gestureConfiguration = gestureConfig,
-                    gestureLabel = "click",
+                    onGestureLabel = "click",
                     interactionSource = interactionSource,
                     onGestureAvailable = { indicatorState.isIndicatorActive = true },
                     onGesture = onClick,
@@ -413,7 +412,7 @@ fun OHGOutlinedButtonDemo() {
                 indicatorState = indicatorState,
                 gestureIndicatorTint = MaterialTheme.colorScheme.primary,
             ) {
-                ButtonContent(
+                ButtonDefaults.Content(
                     secondaryLabel = { Text("Secondary Label") },
                     icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                     colors = ButtonDefaults.outlinedButtonColors(),
@@ -439,7 +438,7 @@ fun OHGChildButtonDemo() {
             modifier =
                 Modifier.oneHandedGesture(
                     gestureConfiguration = gestureConfig,
-                    gestureLabel = "click",
+                    onGestureLabel = "click",
                     interactionSource = interactionSource,
                     onGestureAvailable = { indicatorState.isIndicatorActive = true },
                     onGesture = onClick,
@@ -450,7 +449,7 @@ fun OHGChildButtonDemo() {
                 indicatorState = indicatorState,
                 gestureIndicatorTint = MaterialTheme.colorScheme.onSurface,
             ) {
-                ButtonContent(
+                ButtonDefaults.Content(
                     secondaryLabel = { Text("Secondary Label") },
                     icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                     colors = ButtonDefaults.childButtonColors(),
