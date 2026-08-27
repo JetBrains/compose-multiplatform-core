@@ -187,10 +187,10 @@ package androidx.camera.common {
   }
 
   public interface ImagePlane extends androidx.camera.common.UnsafeWrapper {
-    method @InaccessibleFromKotlin public java.nio.ByteBuffer? getBuffer();
+    method @InaccessibleFromKotlin public java.nio.ByteBuffer getBuffer();
     method @InaccessibleFromKotlin public int getPixelStride();
     method @InaccessibleFromKotlin public int getRowStride();
-    property public abstract java.nio.ByteBuffer? buffer;
+    property public abstract java.nio.ByteBuffer buffer;
     property public abstract int pixelStride;
     property public abstract int rowStride;
   }
@@ -233,8 +233,8 @@ package androidx.camera.common {
     method public <T> T? unwrapAs(Class<T> type);
   }
 
-  public final class UnsafeWrapperKt {
-    method @KotlinOnly public static inline <reified T> T? unwrapAs(androidx.camera.common.UnsafeWrapper);
+  public final class UnsafeWrappers {
+    method @KotlinOnly @kotlin.jvm.JvmSynthetic public static inline <reified T> T? unwrapAs(androidx.camera.common.UnsafeWrapper);
   }
 
 }
