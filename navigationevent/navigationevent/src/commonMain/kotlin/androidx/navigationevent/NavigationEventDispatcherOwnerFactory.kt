@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.a2ui.engine.model
+@file:JvmName("NavigationEventDispatcherOwnerFactory")
 
-import androidx.a2ui.model.protocol.A2uiDataPath
+package androidx.navigationevent
+
+import kotlin.jvm.JvmName
 
 /**
- * A callback interface provided by the framework layer during evaluation. Allows the core to read
- * from the data model synchronously while enabling the framework to track data accesses for
- * reactive updates.
+ * Creates a [NavigationEventDispatcherOwner] directly backed by the provided
+ * [NavigationEventDispatcher].
  */
-public fun interface A2uiCoreValueResolver {
-    /**
-     * Resolves a value from the data model at the given path.
-     *
-     * @param path The data path to resolve.
-     * @return The resolved value or null if the given path does not exist in the data model.
-     */
-    public fun resolve(path: A2uiDataPath): Any?
+@JvmName("create")
+public fun NavigationEventDispatcherOwner(
+    navigationEventDispatcher: NavigationEventDispatcher
+): NavigationEventDispatcherOwner {
+    return object : NavigationEventDispatcherOwner {
+        override val navigationEventDispatcher: NavigationEventDispatcher
+            get() = navigationEventDispatcher
+    }
 }
