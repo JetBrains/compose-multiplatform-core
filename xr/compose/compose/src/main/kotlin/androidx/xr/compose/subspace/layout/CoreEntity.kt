@@ -40,6 +40,7 @@ import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ActivityPanelEntity
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfAnimation
@@ -179,6 +180,10 @@ internal sealed class CoreEntity(val pixelDensity: PixelDensity, initialEntity: 
         }
 
     fun updatePoseFromLayout() {
+        if (isAnchoredToExternalSpace()) {
+            return
+        }
+
         // Skip updating the pose from layout coordinate changes if a system-initiated movement/drag
         // (e.g. via transformingMovable) is actively ongoing to prevent Compose from fighting or
         // overriding the native drag orientation/position.
@@ -188,6 +193,18 @@ internal sealed class CoreEntity(val pixelDensity: PixelDensity, initialEntity: 
 
         // Compose XR uses pixels, SceneCore uses meters.
         poseInMeters = layoutPoseInPixels.pxToMeters(pixelDensity)
+    }
+
+    /**
+     * Returns whether this entity is anchored to an external [AnchorSpace].
+     *
+     * Modifiers like [SubspaceModifier.movable] with [MovePolicy.anchor] reparent the SceneCore
+     * [Entity] to an [AnchorSpace]. Once anchored outside the normal Compose parent-child
+     * hierarchy, conventional layout coordinates no longer apply.
+     */
+    // TODO(b/530612717): Make Anchorable Panel compatible with Pose-related SubspaceModifiers
+    private fun isAnchoredToExternalSpace(): Boolean {
+        return entity?.parent is AnchorSpace
     }
 
     open fun dispose() {
@@ -555,6 +572,25 @@ internal class CoreModelEntity(pixelDensity: PixelDensity) : CoreEntity(pixelDen
     val nodes: List<GltfModelNode>
         get() = (entity as? GltfModelEntity)?.nodes ?: emptyList()
 
+    /** Scale factor calculated to uniformly fit the [GltfModelEntity] within container bounds. */
+    private var gltfUniformScale = 1f
+
+    /** Explicit scale factor applied by modifiers such as [SubspaceModifier.movable]. */
+    private var userScale = 1f
+
+    /** Sets the user-defined scale factor and applies it to the [GltfModelEntity]. */
+    override var scale: Float
+        get() = super.scale
+        set(value) {
+            // CoreEntityAccumulator calls coreEntity.scale = it when modifiers (e.g. .scale(),
+            // .movable())  are applied during recomposition. Overriding scale intercepts those
+            // calls to update userScale, preserving gltfUniformScale.
+            if (userScale != value) {
+                userScale = value
+                syncCoreEntityCombinedScale()
+            }
+        }
+
     /**
      * The size of the glTF entity will be scaled uniformly such that it fits within the most
      * restrictive dimension according to the constraints.
@@ -567,7 +603,8 @@ internal class CoreModelEntity(pixelDensity: PixelDensity) : CoreEntity(pixelDen
                     val heightScale = value.height / (modelSize.height.toFloat().coerceAtLeast(1f))
                     val widthScale = value.width / (modelSize.width.toFloat().coerceAtLeast(1f))
                     val depthScale = value.depth / (modelSize.depth.toFloat().coerceAtLeast(1f))
-                    scale = minOf(heightScale, widthScale, depthScale)
+                    gltfUniformScale = minOf(heightScale, widthScale, depthScale)
+                    syncCoreEntityCombinedScale()
                 }
                 super.size = value
             }
@@ -584,6 +621,14 @@ internal class CoreModelEntity(pixelDensity: PixelDensity) : CoreEntity(pixelDen
     @OptIn(androidx.xr.scenecore.ExperimentalGltfAnimationApi::class)
     val animations: List<GltfAnimation>?
         @RequiresApi(Build.VERSION_CODES.O) get() = (entity as? GltfModelEntity)?.getAnimations()
+
+    /**
+     * Combines [gltfUniformScale] and [userScale] to update [CoreEntity.scale], delegating to
+     * [CoreEntity]'s setter which updates [GltfModelEntity] scale in SceneCore.
+     */
+    private fun syncCoreEntityCombinedScale() {
+        super.scale = gltfUniformScale * userScale
+    }
 
     private fun onEntity(action: GltfModelEntity.() -> Unit) {
         onEntityAttached { entity -> (entity as GltfModelEntity).action() }

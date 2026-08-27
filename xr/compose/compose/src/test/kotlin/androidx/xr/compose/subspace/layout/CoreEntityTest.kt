@@ -31,6 +31,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
@@ -44,11 +46,17 @@ import androidx.xr.compose.testing.session
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.AnchorSpace
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -309,6 +317,47 @@ class CoreEntityTest {
     }
 
     @Test
+    fun coreModelEntity_scaleGetterAndSetter_updatesOnlyWhenValueChanges() {
+        val session = composeTestRule.configureFakeSession()
+        val coreModelEntity = CoreModelEntity(session.scene.virtualPixelDensity)
+
+        // Initial scale is 1.0f
+        assertThat(coreModelEntity.scale).isEqualTo(1.0f)
+
+        // Branch 1: Set a different value (2.0f), should update scale
+        coreModelEntity.scale = 2.0f
+        assertThat(coreModelEntity.scale).isEqualTo(2.0f)
+
+        // Branch 2: Set the exact same value again (2.0f), no-op path where userScale == value
+        coreModelEntity.scale = 2.0f
+        assertThat(coreModelEntity.scale).isEqualTo(2.0f)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun coreModelEntity_sizeGetterAndSetter_updatesSizeAndSyncsCombinedScale() = runTest {
+        val session = composeTestRule.configureFakeSession()
+        val coreModelEntity = CoreModelEntity(session.scene.virtualPixelDensity)
+        @Suppress("NewApi")
+        val gltfModel = GltfModel.create(session, java.nio.file.Paths.get("test.glb"))
+        val gltfEntity = GltfModelEntity.create(session, gltfModel)
+        coreModelEntity.attachEntity(gltfEntity)
+
+        val newSize = IntVolumeSize(400, 400, 400)
+        coreModelEntity.size = newSize
+
+        assertThat(coreModelEntity.size).isEqualTo(newSize)
+        // modelSize is 2000x2000x2000px, so gltfUniformScale = 400/2000 = 0.2f (non-one)
+        assertThat(coreModelEntity.scale).isEqualTo(0.2f)
+
+        // Setting the exact same size again hits the no-op path (super.size == value)
+        val currentScale = coreModelEntity.scale
+        coreModelEntity.size = newSize
+        assertThat(coreModelEntity.size).isEqualTo(newSize)
+        assertThat(coreModelEntity.scale).isEqualTo(currentScale)
+    }
+
+    @Test
     fun alpha_setAlpha_updatesEntityAlpha() {
         val session = composeTestRule.configureFakeSession()
         val testEntity = Entity.create(session = assertNotNull(session), name = "Initial")
@@ -354,5 +403,42 @@ class CoreEntityTest {
         testEntity.contentDescription = ""
 
         assertThat(coreEntity.contentDescription).isNull()
+    }
+
+    @Test
+    fun updatePoseFromLayout_whenIsAnchoredToExternalSpaceIsTrue_doesNotUpdatePose() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "TestEntity")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        val anchorResult = Anchor.create(session, Pose.Identity)
+        val success = assertIs<AnchorCreateSuccess>(anchorResult)
+        val anchorSpace = AnchorSpace.create(session, anchor = success.anchor)
+        testEntity.parent = anchorSpace
+
+        val customPose = Pose(Vector3(1f, 2f, 3f))
+        testEntity.setPose(customPose)
+
+        coreEntity.updatePoseFromLayout()
+
+        // Pose remains customPose because updatePoseFromLayout returned early when anchored to
+        // AnchorSpace.
+        assertThat(testEntity.getPose()).isEqualTo(customPose)
+    }
+
+    @Test
+    fun updatePoseFromLayout_whenIsAnchoredToExternalSpaceIsFalse_updatesPoseFromLayout() {
+        val session = composeTestRule.configureFakeSession()
+        val testEntity = Entity.create(session = session, name = "TestEntity")
+        val coreEntity = CoreGroupEntity(session.scene.virtualPixelDensity, testEntity)
+
+        val customPose = Pose(Vector3(1f, 2f, 3f))
+        testEntity.setPose(customPose)
+
+        coreEntity.updatePoseFromLayout()
+
+        // Pose is updated from layout (Pose.Identity) because entity is not anchored to
+        // AnchorSpace.
+        assertThat(testEntity.getPose()).isEqualTo(Pose.Identity)
     }
 }
