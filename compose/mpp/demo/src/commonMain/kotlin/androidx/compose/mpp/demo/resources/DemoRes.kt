@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.mpp.demo.resources
 
-import platform.Foundation.NSURL.Companion.URLWithString
-import platform.UIKit.UIApplication
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.InternalResourceApi
+import org.jetbrains.compose.resources.ResourceItem
 
-private class UIKitUriHandler : UriHandler {
-    override fun openUri(uri: String) {
-        val nsUrl = URLWithString(uri) ?: return
-        UIApplication.sharedApplication.openURL(
-            url = nsUrl,
-            options = emptyMap<Any?, Any>(),
-            completionHandler = null
-        )
+object Res {
+    object drawable {
+        @OptIn(InternalResourceApi::class)
+        val ic_image_outline: DrawableResource by lazy {
+            DrawableResource(
+                "drawable:ic_image_outline",
+                setOf(
+                    ResourceItem(setOf(), "drawable/ic_image_outline.xml", -1, -1),
+                )
+            )
+        }
     }
 }
-
-internal actual fun createPlatformUriHandler(): UriHandler = UIKitUriHandler()

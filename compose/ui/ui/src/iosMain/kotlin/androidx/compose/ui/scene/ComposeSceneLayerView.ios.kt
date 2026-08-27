@@ -27,7 +27,7 @@ import platform.UIKit.UIWindow
 /**
  * A backing ComposeSceneLayer view for each Compose scene layer.
  */
-internal class UIKitComposeSceneLayerView(
+internal class ComposeSceneLayerView(
     private var onDidMoveToWindow: (UIWindow?) -> Unit,
 ): UIView(frame = CGRectZero.readValue()) {
 

@@ -166,7 +166,7 @@ internal class DropSessionContext(
  * It is responsible for setting up the drag and drop interactions on the [view] and bridging the
  * context between iOS and Compose.
  */
-internal class UIKitDragAndDropManager(
+internal class IosDragAndDropManager(
     private val view: OverlayInputView,
     private val getComposeRootDragAndDropNode: () -> ComposeSceneDragAndDropNode
 ) : PlatformDragAndDropManager {

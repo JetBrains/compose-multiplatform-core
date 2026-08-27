@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.window.KeyboardVisibilityListener
-import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertNotNull
 import kotlin.time.Duration
@@ -80,6 +79,7 @@ import platform.Foundation.runUntilDate
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
+import platform.UIKit.UIContentSizeCategory
 import platform.UIKit.UIDevice
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
@@ -106,6 +106,7 @@ import platform.UIKit.UITouch
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UITraitEnvironmentLayoutDirection
 import platform.UIKit.UITraitEnvironmentLayoutDirectionLeftToRight
+import platform.UIKit.UITraitPreferredContentSizeCategory
 import platform.UIKit.UIUserInterfaceIdiomPad
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
@@ -202,7 +203,7 @@ internal fun runUIKitInstrumentedTest(
  */
 @OptIn(ExperimentalForeignApi::class)
 internal class UIKitInstrumentedTest(
-    private val useHostingView: Boolean
+    val useHostingView: Boolean
 ) {
     companion object {
         fun delay(timeoutMillis: Long) {
@@ -254,15 +255,21 @@ internal class UIKitInstrumentedTest(
     private var hostingViewController: ComposeHostingViewController? = null
     private var hostingView: ComposeHostingView? = null
 
-    val viewController: UIViewController get() {
-        val rootViewController = appDelegate.window?.rootViewController
-        if (rootViewController != null) { return rootViewController }
-        waitUntil { appDelegate.window?.rootViewController != null }
-        return appDelegate.window?.rootViewController ?: error("Cannot find active UIViewController")
-    }
+    val viewController: UIViewController get() = awaitViewController()
 
-    val rootRedrawer: MetalRedrawer? get() =
-        hostingView?.rootRedrawer ?: hostingViewController?.rootRedrawer
+    private val attachedViewController: UIViewController?
+        get() = appDelegate.window?.rootViewController
+
+    private fun awaitViewController(): UIViewController {
+        val rootViewController = attachedViewController
+        if (rootViewController != null) { return rootViewController }
+
+        waitUntil(
+            conditionDescription = "viewController: timeout waiting for the root view controller.",
+        ) { attachedViewController != null }
+
+        return checkNotNull(attachedViewController)
+    }
 
     val frameChoreographer: FrameChoreographer? get() =
         appDelegate.window()?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
@@ -337,7 +344,7 @@ internal class UIKitInstrumentedTest(
             configuration = configuration,
             content = content,
         ).also {
-            hostingView = it
+            this.hostingView = it
         }
     }
 
@@ -365,7 +372,7 @@ internal class UIKitInstrumentedTest(
         clearComposeContainerReferencesIfDetached()
 
         // Stop text editing and hide keyboard if any
-        viewController.view.endEditing(force = true)
+        attachedViewController?.view?.endEditing(force = true)
         waitForIdle()
 
         AccessibilityNotification.onNotificationPostedForTests = null
@@ -926,6 +933,21 @@ internal fun UIViewController.setLayoutDirection(
         setOverrideTraitCollection(
             collection = UITraitCollection.traitCollectionWithLayoutDirection(layoutDirection),
             forChildViewController = this
+        )
+    }
+}
+
+internal fun UIViewController.setPreferredContentSizeCategory(
+    preferredContentSizeCategory: UIContentSizeCategory
+) {
+    if (available(OS.Ios to OSVersion(17))) {
+        traitOverrides.setPreferredContentSizeCategory(preferredContentSizeCategory)
+    } else {
+        setOverrideTraitCollection(
+            collection = UITraitCollection.traitCollectionWithPreferredContentSizeCategory(
+                preferredContentSizeCategory
+            ),
+            forChildViewController = this,
         )
     }
 }

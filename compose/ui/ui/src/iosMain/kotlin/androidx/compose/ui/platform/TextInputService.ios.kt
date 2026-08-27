@@ -49,7 +49,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.UIKit.UIView
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal class UIKitTextInputService(
+internal class TextInputService(
     private var updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
@@ -220,7 +220,7 @@ internal class UIKitTextInputService(
         }
     }
 
-    val nativeTextInputContext = object : UIKitNativeTextInputContext {
+    val nativeTextInputContext = object : NativeTextInputContext {
         override fun usingNativeTextInput(): Boolean =
             currentInputConnection is NativeTextInputConnection
 
@@ -229,7 +229,7 @@ internal class UIKitTextInputService(
             paste: (() -> Unit)?,
             cut: (() -> Unit)?,
             selectAll: (() -> Unit)?,
-            customActions: List<UIKitNativeTextInputContextMenuCustomAction>?
+            customActions: List<NativeTextInputContextMenuCustomAction>?
         ) {
             fun update() {
                 currentInputConnection?.setAvailableEditMenuActions(

@@ -24,10 +24,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
  * elements and contains a logic for syncing changes to UIKit objects driven by Compose state
  * changes with Compose rendering.
  */
-internal class UIKitInteropContainer(
+internal class IosInteropContainer(
     val overlayContainer: InteropViewGroup,
     val backgroundContainer: InteropViewGroup,
-    private var requestRedraw: () -> Unit
+    private var requestRedraw: () -> Unit,
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
 
@@ -37,9 +37,10 @@ internal class UIKitInteropContainer(
     override val root: InteropViewGroup get() = backgroundContainer
 
     private val interopViews = mutableMapOf<InteropView, InteropViewHolder>()
-    private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
+    private var transaction = InteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
+    val hasPendingViewUpdatesOnly: Boolean get() = transaction.hasPendingViewUpdatesOnly
 
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
@@ -69,11 +70,7 @@ internal class UIKitInteropContainer(
      */
     fun dispose() {
         requestRedraw = {}
-        val lastTransaction = retrieveTransaction()
-
-        for (action in lastTransaction.actions) {
-            action.invoke()
-        }
+        retrieveTransaction().performTransaction()
 
         // snapshotObserver.stop() is not needed, because unplaceInteropView will be called
         // for all interop views and it will stop observing when the last one is removed.
@@ -82,16 +79,25 @@ internal class UIKitInteropContainer(
     /**
      * Return an object containing pending changes and reset internal storage
      */
-    fun retrieveTransaction(): UIKitInteropTransaction {
+    fun retrieveTransaction(): InteropSyncTransaction {
         val result = transaction
-        transaction = UIKitInteropMutableTransaction(
+        transaction = InteropMutableTransaction(
             isInteropActive = interopViews.isNotEmpty()
         )
         return result
     }
 
+    /**
+     * Returns the pending transaction only when it contains view updates that can run in a UIKit
+     * draw callback without a Compose render.
+     */
+    fun retrievePendingViewUpdatesTransaction(): InteropSyncTransaction {
+        if (!transaction.hasPendingViewUpdatesOnly) return InteropSyncTransaction.Empty
+        return retrieveTransaction()
+    }
+
     override fun place(holder: InteropViewHolder) {
-        holder as UIKitInteropElementHolder<*>
+        holder as IosInteropElementHolder<*>
         val interopView = checkNotNull(holder.interopView)
 
         if (interopViews.isEmpty()) {
@@ -101,7 +107,7 @@ internal class UIKitInteropContainer(
 
         val isAdded = interopViews.put(interopView, holder) == null
         val countBelow = countInteropComponentsBelow(holder) {
-            contains(it) && (it as UIKitInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
+            contains(it) && (it as IosInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
         }
         val container = if (holder.placedAsOverlay) overlayContainer else backgroundContainer
 
@@ -117,7 +123,7 @@ internal class UIKitInteropContainer(
     }
 
     override fun unplace(holder: InteropViewHolder) {
-        holder as UIKitInteropElementHolder<*>
+        holder as IosInteropElementHolder<*>
         val interopView = requireNotNull(holder.interopView)
 
         interopViews.remove(interopView)
@@ -134,11 +140,15 @@ internal class UIKitInteropContainer(
     }
 
     override fun scheduleUpdate(action: () -> Unit) {
-        requestRedraw()
-
         // Add lambda to a list of commands which will be executed later
         // in the same [CATransaction], when the next rendered Compose frame is presented.
-        transaction.add(action)
+        transaction.scheduleFrameSynchronizedAction(action)
+        requestRedraw()
+    }
+
+    override fun scheduleUpdate(holder: InteropViewHolder) {
+        transaction.scheduleViewUpdate(holder)
+        requestRedraw()
     }
 
     // TODO: Should be the same as [Owner.onInteropViewLayoutChange]?

@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -48,11 +48,12 @@ import kotlinx.coroutines.Job
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 
-internal class UIKitComposeSceneLayer(
+internal class IosComposeSceneLayer(
     private val frameChoreographer: FrameChoreographer,
-    private val onClosed: (UIKitComposeSceneLayer) -> Unit,
+    private val onClosed: (IosComposeSceneLayer) -> Unit,
     private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
     private val layersViewController: ComposeLayersViewController,
+    private val initialDensity: Density,
     private val initialLayoutDirection: LayoutDirection,
     private val onFocusConditionsChanged: () -> Unit,
     configuration: ComposeContainerConfiguration,
@@ -84,7 +85,7 @@ internal class UIKitComposeSceneLayer(
             }
         }
 
-    val interactionView = UIKitComposeSceneLayerView(
+    val interactionView = ComposeSceneLayerView(
         ::onDidMoveToWindow,
     )
 
@@ -93,7 +94,7 @@ internal class UIKitComposeSceneLayer(
     private val navigationEventDispatcher: NavigationEventDispatcher
         get() = ownerProvider.navigationEventDispatcherOwner.navigationEventDispatcher
 
-    private val navigationEventInput = UIKitNavigationEventInput(
+    private val navigationEventInput = IosBackNavigationEventInput(
         density = interactionView.density,
         initialLayoutDirection = initialLayoutDirection,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft },
@@ -102,17 +103,20 @@ internal class UIKitComposeSceneLayer(
         navigationEventDispatcher.addInput(it)
     }
 
+    private val windowContext get() = layersViewController.windowContext
+
     private val mediator = ComposeSceneMediator(
         frameChoreographer = frameChoreographer,
         onFocusBehavior = configuration.onFocusBehavior,
         isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
         focusedViewsList = focusedViewsList,
-        windowContext = layersViewController.windowContext,
+        windowContext = windowContext,
         architectureComponentsOwner = ownerProvider,
         coroutineContext = layerCoroutineContext,
         composeSceneFactory = ::createComposeScene,
         navigationEventInput = navigationEventInput,
-        interfaceOrientationState = interfaceOrientationState
+        interfaceOrientationState = interfaceOrientationState,
+        schedulePendingInteropViewUpdates = layersViewController::invalidateDraw,
     ).also {
         interactionView.embedSubview(it.backgroundView)
         it.isInterceptingOutsideEvents = consumePointerInputOutside
@@ -121,7 +125,7 @@ internal class UIKitComposeSceneLayer(
     private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
         PlatformLayersComposeScene(
             frameRecomposer = frameChoreographer.frameRecomposer,
-            density = mediator.screenDensity,
+            density = initialDensity,
             layoutDirection = initialLayoutDirection,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidateLayout = invalidateLayout,
@@ -172,7 +176,7 @@ internal class UIKitComposeSceneLayer(
 
     fun draw(canvas: Canvas) {
         if (scrimColor != null) {
-            val density = layersViewController.metalView.view.density
+            val density = windowContext.screenDensity
             val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
 
             canvas.drawRect(rect, scrimPaint)
@@ -182,6 +186,10 @@ internal class UIKitComposeSceneLayer(
     }
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
+
+    fun retrievePendingViewUpdatesInteropTransaction() = mediator.retrievePendingViewUpdatesInteropTransaction()
+
+    val needsComposeSceneDraw: Boolean get() = mediator.needsComposeSceneDraw
 
     val hasInteropViews: Boolean get() = mediator.hasInteropViews
 
@@ -248,5 +256,9 @@ internal class UIKitComposeSceneLayer(
 
     fun sceneWillDisappear() {
         mediator.sceneWillDisappear()
+    }
+
+    fun setComposeSceneFontScale(fontScale: Float) {
+        mediator.setComposeSceneFontScale(fontScale)
     }
 }

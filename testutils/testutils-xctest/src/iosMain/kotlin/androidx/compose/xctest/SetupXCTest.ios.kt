@@ -74,7 +74,7 @@ fun setupXCTestSuite(tests: Set<KClass<*>>? = null, testCases: Map<String?, Set<
 
     // Set test observer that will log test execution
     XCTestObservationCenter.sharedTestObservationCenter.addTestObserver(
-        NativeTestObserver(
+        XCTestObserver(
             testSettings
         )
     )

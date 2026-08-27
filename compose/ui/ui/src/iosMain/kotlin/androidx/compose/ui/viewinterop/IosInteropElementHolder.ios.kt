@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.toRect
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityFrame
 
-internal abstract class UIKitInteropElementHolder<T : InteropView>(
+internal abstract class IosInteropElementHolder<T : InteropView>(
     factory: () -> T,
     interopContainer: InteropContainer,
     private val interopWrappingView: InteropWrappingView,
@@ -48,7 +48,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
         group = interopWrappingView,
         compositeKeyHashCode = compositeKeyHashCode,
     ),
-    UIKitInteropLayoutNodeHolder {
+    InteropLayoutNodeHolder {
     constructor(
         factory: () -> T,
         interopContainer: InteropContainer,
@@ -73,7 +73,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     private var currentUnclippedRect: IntRect? = null
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
-    private val layout = UIKitInteropElementLayout(group = group, userComponent = userComponentView)
+    private val layout = InteropElementLayout(group = group, userComponent = userComponentView)
     override val measurePolicy: MeasurePolicy get() = layout.measurePolicy
 
     val placedAsOverlay: Boolean get() = properties.placedAsOverlay
