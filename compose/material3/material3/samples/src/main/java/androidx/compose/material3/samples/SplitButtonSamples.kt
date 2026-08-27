@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.PlainTooltip
@@ -634,7 +637,7 @@ fun XSmallFilledSplitButtonSample() {
                     contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
-                Text("My Button", style = ButtonDefaults.textStyleFor(size))
+                Text("Label", style = ButtonDefaults.textStyleFor(size))
             }
         },
         trailingButton = {
@@ -708,7 +711,7 @@ fun MediumFilledSplitButtonSample() {
                     contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
-                Text("My Button", style = ButtonDefaults.textStyleFor(size))
+                Text("Label", style = ButtonDefaults.textStyleFor(size))
             }
         },
         trailingButton = {
@@ -782,7 +785,7 @@ fun LargeFilledSplitButtonSample() {
                     contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
-                Text("My Button", style = ButtonDefaults.textStyleFor(size))
+                Text("Label", style = ButtonDefaults.textStyleFor(size))
             }
         },
         trailingButton = {
@@ -856,7 +859,7 @@ fun ExtraLargeFilledSplitButtonSample() {
                     contentDescription = "Localized description",
                 )
                 Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
-                Text("Button", style = ButtonDefaults.textStyleFor(size))
+                Text("Label", style = ButtonDefaults.textStyleFor(size))
             }
         },
         trailingButton = {

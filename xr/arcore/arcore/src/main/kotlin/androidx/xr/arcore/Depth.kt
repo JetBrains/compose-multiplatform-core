@@ -26,8 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Contains the depth information corresponding to a specific [RenderViewpoint] for left eye, right
- * eye, or mono view depending on what is supported by the runtime.
+ * Depth information corresponding to a specific [RenderViewpoint].
  *
  * The availability of depth data depends on the [DepthEstimationMode]. Depth Maps can include
  * smooth, [DepthEstimationMode.SMOOTH_ONLY], raw, [DepthEstimationMode.RAW_ONLY], or both,
@@ -41,7 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * lifecycles are controlled by the runtime so if the data will not be used upon receiving, a copy
  * should be made.
  *
- * @property state the current [State] of the depth data.
+ * @property state the current [State] of the depth data
  * @note OpenXr does not support [DepthEstimationMode.SMOOTH_AND_RAW].
  */
 @SuppressWarnings("HiddenSuperclass")
@@ -51,7 +50,7 @@ public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth)
          * Returns the Depth data associated with the left display.
          *
          * @param session the currently active [Session]
-         * @throws IllegalStateException if [androidx.xr.runtime.Config.depthEstimation] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Config.depthEstimation] is set to
          *   [DepthEstimationMode.DISABLED] or if the device does not support
          *   [androidx.xr.runtime.RenderingMode.STEREO]
          */
@@ -72,7 +71,7 @@ public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth)
          * Returns the Depth data associated with the right display.
          *
          * @param session the currently active [Session]
-         * @throws IllegalStateException if [androidx.xr.runtime.Config.depthEstimation] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Config.depthEstimation] is set to
          *   [DepthEstimationMode.DISABLED] or if the device does not support
          *   [androidx.xr.runtime.RenderingMode.STEREO]
          */
@@ -93,7 +92,7 @@ public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth)
          * Returns the Depth associated with the single device display.
          *
          * @param session the currently active [Session]
-         * @throws IllegalStateException if [Session.config] has [DepthEstimationMode] set to
+         * @throws [IllegalStateException] if [Session.config] has [DepthEstimationMode] set to
          *   DISABLED or if device does not support [androidx.xr.runtime.RenderingMode.MONO]
          */
         @JvmStatic
@@ -132,7 +131,7 @@ public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth)
      * @property smoothConfidenceMap a buffer of confidence values for each pixel in
      *   [smoothDepthMap], with 0 representing the lowest confidence and 255 representing the
      *   highest confidence
-     * @property owner self-reference to the object that owns this state.
+     * @property owner self-reference to the object that owns this state
      */
     public class State
     internal constructor(
@@ -166,6 +165,39 @@ public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth)
             result = 31 * result + owner.hashCode()
             return result
         }
+
+        /**
+         * Returns a string representation of [State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String {
+            val rawBufferInfo =
+                if (rawDepthMap != null) {
+                    "Buffer(capacity=${rawDepthMap.capacity()}, limit=${rawDepthMap.limit()})"
+                } else {
+                    "null"
+                }
+            val rawConfidenceMapInfo =
+                if (rawConfidenceMap != null) {
+                    "Buffer(capacity=${rawConfidenceMap.capacity()}, limit=${rawConfidenceMap.limit()})"
+                } else {
+                    "null"
+                }
+            val smoothBufferInfo =
+                if (smoothDepthMap != null) {
+                    "Buffer(capacity=${smoothDepthMap.capacity()}, limit=${smoothDepthMap.limit()})"
+                } else {
+                    "null"
+                }
+            val smoothConfidenceMapInfo =
+                if (smoothConfidenceMap != null) {
+                    "Buffer(capacity=${smoothConfidenceMap.capacity()}, limit=${smoothConfidenceMap.limit()})"
+                } else {
+                    "null"
+                }
+            return "State(width=$width, height=$height, rawDepthMap=$rawBufferInfo, rawConfidenceMap=$rawConfidenceMapInfo, smoothDepthMap=$smoothBufferInfo, smoothConfidenceMap=$smoothConfidenceMapInfo)"
+        }
     }
 
     private val _state =
@@ -196,4 +228,11 @@ public class Depth internal constructor(internal val runtimeDepth: RuntimeDepth)
             )
         )
     }
+
+    /**
+     * Returns a string representation of [Depth] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "Depth(state=${state.value})"
 }

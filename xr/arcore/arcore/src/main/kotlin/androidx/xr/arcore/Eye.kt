@@ -39,7 +39,7 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
          * Returns the left eye.
          *
          * @param session the [Session] to retrieve the eye from
-         * @throws IllegalStateException if [androidx.xr.runtime.Config.eyeTracking] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Config.eyeTracking] is set to
          *   [EyeTrackingMode.DISABLED]
          * @sample androidx.xr.arcore.samples.getLeftEye
          */
@@ -60,7 +60,7 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
          * Returns the right eye.
          *
          * @param session the [Session] to retrieve the eye from
-         * @throws IllegalStateException if [androidx.xr.runtime.Config.eyeTracking] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Config.eyeTracking] is set to
          *   [EyeTrackingMode.DISABLED]
          * @sample androidx.xr.arcore.samples.getRightEye
          */
@@ -94,7 +94,7 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
      * @property isOpen a flag indicating whether the eye is open
      * @property pose the [Pose] of the eye
      * @property trackingState the [androidx.xr.arcore.TrackingState] of the eye
-     * @property owner self-reference to the object that owns this state.
+     * @property owner self-reference to the object that owns this state
      */
     public class State
     internal constructor(
@@ -119,6 +119,14 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
                 trackingState == other.trackingState &&
                 owner == other.owner
         }
+
+        /**
+         * Returns a string representation of [Eye.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String =
+            "State(isOpen=$isOpen, pose=$pose, trackingState=$trackingState)"
     }
 
     private var _state =
@@ -148,4 +156,11 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) :
             )
         )
     }
+
+    /**
+     * Returns a string representation of [Eye] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "Eye(state=${state.value})"
 }

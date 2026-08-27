@@ -55,7 +55,9 @@ import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.onehandedgesture.GestureAction
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureIndicatorState
 import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
 
 @Sampled
 @Composable
@@ -370,6 +372,8 @@ fun ButtonContentWithOneHandedGestureSample() {
     var label by remember { mutableStateOf("Filled Button") }
     val onClick = remember { { label = "Gestured" } }
     val interactionSource = remember { MutableInteractionSource() }
+    val gestureConfig = rememberOneHandedGestureConfiguration(action = GestureAction.Primary)
+    val indicatorState = remember { OneHandedGestureIndicatorState() }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Button(
@@ -377,13 +381,16 @@ fun ButtonContentWithOneHandedGestureSample() {
             interactionSource = interactionSource,
             modifier =
                 Modifier.oneHandedGesture(
-                    action = GestureAction.Primary,
+                    gestureConfiguration = gestureConfig,
+                    gestureLabel = "click",
                     interactionSource = interactionSource,
+                    onGestureAvailable = { indicatorState.isIndicatorActive = true },
                     onGesture = onClick,
                 ),
         ) {
             OneHandedGestureIndicator(
-                interactionSource = interactionSource,
+                gestureConfiguration = gestureConfig,
+                indicatorState = indicatorState,
                 gestureIndicatorTint = MaterialTheme.colorScheme.onPrimary,
             ) {
                 ButtonContent(
@@ -409,6 +416,8 @@ fun CompactButtonContentWithOneHandedGestureSample() {
     var label by remember { mutableStateOf("Compact Button") }
     val onClick = remember { { label = "Gestured" } }
     val interactionSource = remember { MutableInteractionSource() }
+    val gestureConfig = rememberOneHandedGestureConfiguration(action = GestureAction.Primary)
+    val indicatorState = remember { OneHandedGestureIndicatorState() }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CompactButton(
@@ -416,13 +425,16 @@ fun CompactButtonContentWithOneHandedGestureSample() {
             interactionSource = interactionSource,
             modifier =
                 Modifier.oneHandedGesture(
-                    action = GestureAction.Primary,
+                    gestureConfiguration = gestureConfig,
+                    gestureLabel = "click",
                     interactionSource = interactionSource,
+                    onGestureAvailable = { indicatorState.isIndicatorActive = true },
                     onGesture = onClick,
                 ),
         ) {
             OneHandedGestureIndicator(
-                interactionSource = interactionSource,
+                gestureConfiguration = gestureConfig,
+                indicatorState = indicatorState,
                 gestureIndicatorTint = MaterialTheme.colorScheme.onPrimary,
             ) {
                 CompactButtonContent(
