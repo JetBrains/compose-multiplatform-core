@@ -197,6 +197,16 @@ private constructor(
 
     override fun toString(): String = "BrushCoat(tip=$tip, paintPreferences=$paintPreferences)"
 
+    /**
+     * Returns the minimum required [Version] for this [BrushCoat].
+     *
+     * By default, decoding a [BrushFamily] containing a [BrushCoat] with a minimum required version
+     * higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(BrushCoatNative.calculateMinimumRequiredVersion(nativePointer))
+
     // Companion object gets initialized before anything else.
     public companion object {
         /** Returns a new [BrushCoat.Builder]. */
@@ -232,4 +242,6 @@ internal expect object BrushCoatNative {
      * `BrushCoat`.
      */
     fun newCopyOfBrushPaintPreference(nativePointer: Long, index: Int): Long
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

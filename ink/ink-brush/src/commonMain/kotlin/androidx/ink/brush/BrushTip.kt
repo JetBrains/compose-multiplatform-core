@@ -376,6 +376,16 @@ private constructor(
             " particleGapDistanceScale=$particleGapDistanceScale," +
             " particleGapDurationMillis=$particleGapDurationMillis, behaviors=$behaviors)"
 
+    /**
+     * Returns the minimum required [Version] for this [BrushTip].
+     *
+     * By default, decoding a [BrushFamily] containing a [BrushTip] with a minimum required version
+     * higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(BrushTipNative.calculateMinimumRequiredVersion(nativePointer))
+
     public companion object {
         /** Returns a new [BrushTip.Builder]. */
         @JvmStatic public fun builder(): Builder = Builder()
@@ -423,4 +433,6 @@ expect internal object BrushTipNative {
     fun getBehaviorCount(nativePointer: Long): Int
 
     fun newCopyOfBrushBehavior(nativePointer: Long, index: Int): Long
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

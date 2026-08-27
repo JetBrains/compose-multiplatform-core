@@ -17,6 +17,7 @@
 package androidx.text.vertical.testapp
 
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.text.Layout
 import android.text.Spanned
@@ -48,18 +49,28 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.text.vertical.EmphasisStyle
 import androidx.text.vertical.FontShearSpan
 import androidx.text.vertical.compose.VerticalText
+import androidx.text.vertical.compose.VerticalTextStyle
 import androidx.text.vertical.compose.buildVerticalText
-import java.util.Locale
 
 class VerticalTextSampleActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -101,21 +112,25 @@ class VerticalTextSampleActivity : ComponentActivity() {
 }
 
 @Composable
-fun ZoomableVerticalText(content: @Composable (TextPaint) -> Unit) {
-    val fontSize = with(LocalDensity.current) { 32.sp.toPx() }
+fun ZoomableVerticalText(content: @Composable (VerticalTextStyle) -> Unit) {
+    val fontSize = 32f
     var zoom by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
-    val paint =
+    val style =
         remember(zoom) {
-            TextPaint().apply {
-                textSize = fontSize * zoom
-                typeface = Typeface.SERIF
-                textLocale =
-                    Locale.Builder()
-                        .setLocale(Locale.JAPANESE)
-                        .setUnicodeLocaleKeyword("lb", "strict")
-                        .build()
-            }
+            VerticalTextStyle(
+                fontSize = (fontSize * zoom).sp,
+                fontFamily = FontFamily.Serif,
+                localeList =
+                    LocaleList(
+                        Locale(
+                            java.util.Locale.Builder()
+                                .setLocale(java.util.Locale.JAPANESE)
+                                .setUnicodeLocaleKeyword("lb", "strict")
+                                .build()
+                        )
+                    ),
+            )
         }
 
     Box(
@@ -136,13 +151,32 @@ fun ZoomableVerticalText(content: @Composable (TextPaint) -> Unit) {
                 }
                 .graphicsLayer(translationX = offsetX)
     ) {
-        content(paint)
+        content(style)
     }
 }
 
 @Composable
-fun LegacyHorizontalText(text: Spanned, paint: TextPaint, modifier: Modifier = Modifier) {
+fun LegacyHorizontalText(text: Spanned, style: VerticalTextStyle, modifier: Modifier = Modifier) {
     var hTextLayout by remember { mutableStateOf<Layout?>(null) }
+    val density = LocalDensity.current
+    val resolver = LocalFontFamilyResolver.current
+    val paint = remember(density, resolver) { TextPaint() }
+    val typeface =
+        remember(resolver, style) {
+            resolver
+                .resolve(
+                    fontFamily = style.fontFamily,
+                    fontWeight = style.fontWeight ?: FontWeight.Normal,
+                    fontStyle = style.fontStyle ?: FontStyle.Normal,
+                    fontSynthesis = style.fontSynthesis ?: FontSynthesis.All,
+                )
+                .value as Typeface
+        }
+    remember(paint, style, typeface, density) {
+        paint.reset()
+        setStyleToPaint(style, typeface, density, paint)
+        paint
+    }
     Layout(
         modifier =
             modifier.fillMaxSize().drawWithContent {
@@ -157,21 +191,21 @@ fun LegacyHorizontalText(text: Spanned, paint: TextPaint, modifier: Modifier = M
 }
 
 @Composable
-fun LongText(paint: TextPaint, modifier: Modifier = Modifier) {
+fun LongText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     val text = remember(density) { makeSampleText(density) }
-    VerticalText(text, paint, modifier)
+    VerticalText(text, modifier, style)
 }
 
 @Composable
-fun LongHorizontalText(paint: TextPaint, modifier: Modifier = Modifier) {
+fun LongHorizontalText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     val text = remember(density) { makeSampleText(density) }
-    LegacyHorizontalText(text, paint, modifier)
+    LegacyHorizontalText(text, style, modifier)
 }
 
 @Composable
-fun ComplexHorizontalText(paint: TextPaint, modifier: Modifier = Modifier) {
+fun ComplexHorizontalText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     val text =
         remember(density) {
@@ -181,7 +215,7 @@ fun ComplexHorizontalText(paint: TextPaint, modifier: Modifier = Modifier) {
                 withEmphasis(EmphasisStyle.Sesame) { text("されてます。") }
             }
         }
-    LegacyHorizontalText(text, paint, modifier)
+    LegacyHorizontalText(text, style, modifier)
 }
 
 fun makeSampleText(density: Density) =
@@ -208,10 +242,10 @@ fun makeSampleText(density: Density) =
     }
 
 @Composable
-fun ComplexText(paint: TextPaint, modifier: Modifier = Modifier) {
+fun ComplexText(style: VerticalTextStyle, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
     val text = remember(density) { buildComplexText(density) }
-    VerticalText(text, paint, modifier)
+    VerticalText(text, modifier, style)
 }
 
 private fun buildComplexText(density: Density) =
@@ -268,3 +302,31 @@ private fun buildComplexText(density: Density) =
         }
         withEmphasis { text("傍点もSupportされてます。") }
     }
+
+private fun setStyleToPaint(
+    style: VerticalTextStyle,
+    typeface: Typeface,
+    density: Density,
+    out: TextPaint,
+) {
+    with(density) {
+        out.textSize =
+            if (style.fontSize.isSpecified) style.fontSize.toPx() else DefaultFontSize.toPx()
+        out.typeface = typeface
+        out.fontFeatureSettings = style.fontFeatureSettings
+        if (style.color.isSpecified) {
+            out.color = style.color.toArgb()
+        }
+        if (style.background.isSpecified) {
+            out.bgColor = style.background.toArgb()
+        }
+        if (Build.VERSION.SDK_INT >= 25) {
+            style.localeList
+                ?.map { it.platformLocale }
+                ?.toTypedArray()
+                ?.let { out.textLocales = android.os.LocaleList(*it) }
+        }
+    }
+}
+
+private val DefaultFontSize = 16.sp

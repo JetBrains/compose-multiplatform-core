@@ -350,12 +350,14 @@ sealed interface androidx.compose.material3/FloatingToolbarScrollBehavior : andr
         abstract fun <get-exitDirection>(): androidx.compose.material3/FloatingToolbarExitDirection // androidx.compose.material3/FloatingToolbarScrollBehavior.exitDirection.<get-exitDirection>|<get-exitDirection>(){}[0]
     abstract val flingAnimationSpec // androidx.compose.material3/FloatingToolbarScrollBehavior.flingAnimationSpec|{}flingAnimationSpec[0]
         abstract fun <get-flingAnimationSpec>(): androidx.compose.animation.core/DecayAnimationSpec<kotlin/Float> // androidx.compose.material3/FloatingToolbarScrollBehavior.flingAnimationSpec.<get-flingAnimationSpec>|<get-flingAnimationSpec>(){}[0]
+    abstract val floatingScrollBehaviorModifier // androidx.compose.material3/FloatingToolbarScrollBehavior.floatingScrollBehaviorModifier|{}floatingScrollBehaviorModifier[0]
+        abstract fun <get-floatingScrollBehaviorModifier>(): androidx.compose.ui/Modifier // androidx.compose.material3/FloatingToolbarScrollBehavior.floatingScrollBehaviorModifier.<get-floatingScrollBehaviorModifier>|<get-floatingScrollBehaviorModifier>(){}[0]
     abstract val snapAnimationSpec // androidx.compose.material3/FloatingToolbarScrollBehavior.snapAnimationSpec|{}snapAnimationSpec[0]
         abstract fun <get-snapAnimationSpec>(): androidx.compose.animation.core/AnimationSpec<kotlin/Float> // androidx.compose.material3/FloatingToolbarScrollBehavior.snapAnimationSpec.<get-snapAnimationSpec>|<get-snapAnimationSpec>(){}[0]
     abstract val state // androidx.compose.material3/FloatingToolbarScrollBehavior.state|{}state[0]
         abstract fun <get-state>(): androidx.compose.material3/FloatingToolbarState // androidx.compose.material3/FloatingToolbarScrollBehavior.state.<get-state>|<get-state>(){}[0]
 
-    abstract fun (androidx.compose.ui/Modifier).floatingScrollBehavior(): androidx.compose.ui/Modifier // androidx.compose.material3/FloatingToolbarScrollBehavior.floatingScrollBehavior|floatingScrollBehavior@androidx.compose.ui.Modifier(){}[0]
+    open fun (androidx.compose.ui/Modifier).floatingScrollBehavior(): androidx.compose.ui/Modifier // androidx.compose.material3/FloatingToolbarScrollBehavior.floatingScrollBehavior|floatingScrollBehavior@androidx.compose.ui.Modifier(){}[0]
 }
 
 abstract class androidx.compose.material3/TextFieldLabelPosition { // androidx.compose.material3/TextFieldLabelPosition|null[0]
@@ -1354,10 +1356,12 @@ final class androidx.compose.material3/ScrollFieldState { // androidx.compose.ma
         final fun <get-isScrollInProgress>(): kotlin/Boolean // androidx.compose.material3/ScrollFieldState.isScrollInProgress.<get-isScrollInProgress>|<get-isScrollInProgress>(){}[0]
     final val itemCount // androidx.compose.material3/ScrollFieldState.itemCount|{}itemCount[0]
         final fun <get-itemCount>(): kotlin/Int // androidx.compose.material3/ScrollFieldState.itemCount.<get-itemCount>|<get-itemCount>(){}[0]
-    final val selectedOption // androidx.compose.material3/ScrollFieldState.selectedOption|{}selectedOption[0]
-        final fun <get-selectedOption>(): kotlin/Int // androidx.compose.material3/ScrollFieldState.selectedOption.<get-selectedOption>|<get-selectedOption>(){}[0]
     final val targetOption // androidx.compose.material3/ScrollFieldState.targetOption|{}targetOption[0]
         final fun <get-targetOption>(): kotlin/Int // androidx.compose.material3/ScrollFieldState.targetOption.<get-targetOption>|<get-targetOption>(){}[0]
+
+    final var selectedOption // androidx.compose.material3/ScrollFieldState.selectedOption|{}selectedOption[0]
+        final fun <get-selectedOption>(): kotlin/Int // androidx.compose.material3/ScrollFieldState.selectedOption.<get-selectedOption>|<get-selectedOption>(){}[0]
+        final fun <set-selectedOption>(kotlin/Int) // androidx.compose.material3/ScrollFieldState.selectedOption.<set-selectedOption>|<set-selectedOption>(kotlin.Int){}[0]
 
     final suspend fun animateScrollToOption(kotlin/Int) // androidx.compose.material3/ScrollFieldState.animateScrollToOption|animateScrollToOption(kotlin.Int){}[0]
     final suspend fun scrollToOption(kotlin/Int) // androidx.compose.material3/ScrollFieldState.scrollToOption|scrollToOption(kotlin.Int){}[0]
@@ -3442,6 +3446,7 @@ final object androidx.compose.material3/ToggleButtonDefaults { // androidx.compo
     final fun elevatedToggleButtonColors(androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.material3/ToggleButtonColors // androidx.compose.material3/ToggleButtonDefaults.elevatedToggleButtonColors|elevatedToggleButtonColors(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
     final fun filledTonalToggleButtonColors(androidx.compose.runtime/Composer?, kotlin/Int): androidx.compose.material3/ToggleButtonColors // androidx.compose.material3/ToggleButtonDefaults.filledTonalToggleButtonColors|filledTonalToggleButtonColors(androidx.compose.runtime.Composer?;kotlin.Int){}[0]
     final fun filledTonalToggleButtonColors(androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.material3/ToggleButtonColors // androidx.compose.material3/ToggleButtonDefaults.filledTonalToggleButtonColors|filledTonalToggleButtonColors(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+    final fun outlinedToggleButtonBorder(kotlin/Boolean, kotlin/Boolean, androidx.compose.runtime/Composer?, kotlin/Int): androidx.compose.foundation/BorderStroke? // androidx.compose.material3/ToggleButtonDefaults.outlinedToggleButtonBorder|outlinedToggleButtonBorder(kotlin.Boolean;kotlin.Boolean;androidx.compose.runtime.Composer?;kotlin.Int){}[0]
     final fun outlinedToggleButtonColors(androidx.compose.runtime/Composer?, kotlin/Int): androidx.compose.material3/ToggleButtonColors // androidx.compose.material3/ToggleButtonDefaults.outlinedToggleButtonColors|outlinedToggleButtonColors(androidx.compose.runtime.Composer?;kotlin.Int){}[0]
     final fun outlinedToggleButtonColors(androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.compose.material3/ToggleButtonColors // androidx.compose.material3/ToggleButtonDefaults.outlinedToggleButtonColors|outlinedToggleButtonColors(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
     final fun shapes(androidx.compose.runtime/Composer?, kotlin/Int): androidx.compose.material3/ToggleButtonShapes // androidx.compose.material3/ToggleButtonDefaults.shapes|shapes(androidx.compose.runtime.Composer?;kotlin.Int){}[0]

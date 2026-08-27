@@ -18,7 +18,9 @@ package androidx.ink.brush.behavior
 
 import androidx.annotation.FloatRange
 import androidx.collection.MutableIntObjectMap
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.ImmutableCollections.unmodifiableList
+import androidx.ink.brush.Version
 import androidx.ink.geometry.ImmutableVec
 import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
@@ -37,6 +39,16 @@ import kotlin.jvm.JvmField
 public abstract class EasingFunction private constructor(pointerAlloc: () -> Long) {
 
     internal val nativePointer: Long by NativePointer(pointerAlloc, EasingFunctionNative::free)
+
+    /**
+     * Returns the minimum required [Version] for this [EasingFunction].
+     *
+     * By default, decoding a [androidx.ink.brush.BrushFamily] containing an [EasingFunction] with a
+     * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(EasingFunctionNative.calculateMinimumRequiredVersion(nativePointer))
 
     public companion object {
         /**
@@ -345,6 +357,16 @@ public abstract class EasingFunction private constructor(pointerAlloc: () -> Lon
 
         override fun toString(): String = "EasingFunction.StepPosition.$name"
 
+        /**
+         * Returns the minimum required [Version] for this [StepPosition].
+         *
+         * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [StepPosition] with
+         * a minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(EasingFunctionNative.getStepPositionMinimumRequiredVersion(value))
+
         public companion object {
             private val VALUE_TO_INSTANCE = MutableIntObjectMap<StepPosition>()
 
@@ -419,4 +441,8 @@ expect internal object EasingFunctionNative {
     fun getStepsCount(nativePointer: Long): Int
 
     fun getStepsPositionInt(nativePointer: Long): Int
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
+
+    fun getStepPositionMinimumRequiredVersion(stepPositionInt: Int): Int
 }

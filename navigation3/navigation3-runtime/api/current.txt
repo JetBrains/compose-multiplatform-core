@@ -139,6 +139,19 @@ package androidx.navigation3.runtime {
 
 package androidx.navigation3.runtime.deeplink {
 
+  public final class BackStackMatchResult<T extends K, K> extends androidx.navigation3.runtime.deeplink.WrappedMatchResult<T> {
+    method @InaccessibleFromKotlin public java.util.List<K> getBackStack();
+    property public java.util.List<K> backStack;
+  }
+
+  public final class BackStackMatcher<T extends K, K> extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher<T,androidx.navigation3.runtime.deeplink.BackStackMatchResult<? extends T,K>> {
+    method protected androidx.navigation3.runtime.deeplink.BackStackMatchResult<T,K>? matchRequest(androidx.navigation3.runtime.deeplink.DeepLinkRequest request);
+  }
+
+  public final class BackStackMatcherKt {
+    method public static <T extends K, K> androidx.navigation3.runtime.deeplink.BackStackMatcher<T,K> withBackStack(androidx.navigation3.runtime.deeplink.DeepLinkMatcher<? extends T,? extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>>, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>,? extends java.util.List<? extends K>> backStackBuilder);
+  }
+
   public abstract class DeepLinkMatcher<T, R extends androidx.navigation3.runtime.deeplink.DeepLinkMatcher.MatchResult<? extends T>> {
     ctor public DeepLinkMatcher();
     ctor @BytecodeOnly public DeepLinkMatcher(java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
@@ -191,6 +204,18 @@ package androidx.navigation3.runtime.deeplink {
     method public static operator androidx.navigation3.runtime.deeplink.DeepLinkRequest invoke(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion, android.content.Intent intent, optional java.util.Map<java.lang.String,?> extras);
     method @BytecodeOnly public static androidx.navigation3.runtime.deeplink.DeepLinkRequest! invoke$default(androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion!, android.content.Intent!, java.util.Map!, int, Object!);
     property public static androidx.navigation3.runtime.deeplink.RequestExtrasKey<java.lang.String> androidx.navigation3.runtime.deeplink.DeepLinkRequest.Companion.ActionExtrasKey;
+  }
+
+  public abstract class DeepLinkSerializer<T> implements kotlinx.serialization.KSerializer<T> {
+    ctor public DeepLinkSerializer();
+    method public abstract T deserialize(String value);
+    method public final T deserialize(kotlinx.serialization.encoding.Decoder decoder);
+    method @InaccessibleFromKotlin public final kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public abstract String getSerialName();
+    method public final void serialize(kotlinx.serialization.encoding.Encoder encoder, T value);
+    method public abstract String serialize(T value);
+    property public final kotlinx.serialization.descriptors.SerialDescriptor descriptor;
+    property public abstract String serialName;
   }
 
   public final class DeepLinkUriKt {

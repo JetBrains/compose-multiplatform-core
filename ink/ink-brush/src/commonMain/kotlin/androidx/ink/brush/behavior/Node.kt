@@ -17,6 +17,8 @@
 package androidx.ink.brush.behavior
 
 import androidx.annotation.RestrictTo
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.nativeloader.InkInternalOnlyApi
 import androidx.ink.nativeloader.NativePointer
 
@@ -36,6 +38,16 @@ internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @InkInternalOnlyApi
     public val nativePointer: Long by NativePointer(nativeAlloc, NodeNative::free)
+
+    /**
+     * Returns the minimum required [Version] for this [Node].
+     *
+     * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [Node] with a minimum
+     * required version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(NodeNative.calculateMinimumRequiredVersion(nativePointer))
 
     public companion object {
 
@@ -72,4 +84,6 @@ internal constructor(
  */
 expect internal object NodeNative {
     fun free(nodeNativePointer: Long)
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

@@ -41,6 +41,16 @@ private constructor(
 
     public override fun toString(): String = "InputToolType.$name"
 
+    /**
+     * Returns the minimum required [Version] for this [InputToolType].
+     *
+     * By default, decoding a [BrushFamily] containing an [InputToolType] with a minimum required
+     * version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(InputToolTypeNative.calculateMinimumRequiredVersion(value))
+
     public companion object {
         private val VALUE_TO_INSTANCE = MutableIntObjectMap<InputToolType>()
 
@@ -59,4 +69,8 @@ private constructor(
         @JvmField public val TOUCH: InputToolType = InputToolType(2, "TOUCH")
         @JvmField public val STYLUS: InputToolType = InputToolType(3, "STYLUS")
     }
+}
+
+expect internal object InputToolTypeNative {
+    fun calculateMinimumRequiredVersion(value: Int): Int
 }

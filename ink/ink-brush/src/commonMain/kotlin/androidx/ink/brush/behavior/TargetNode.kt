@@ -18,6 +18,8 @@ package androidx.ink.brush.behavior
 
 import androidx.collection.MutableIntObjectMap
 import androidx.ink.brush.ExperimentalInkAnimationApi
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.nativeloader.InkInternalOnlyApi
 import kotlin.jvm.JvmField
 
@@ -101,6 +103,16 @@ private constructor(
         internal fun toSimpleString(): String = name
 
         override fun toString(): String = "Target." + name
+
+        /**
+         * Returns the minimum required [Version] for this [Target].
+         *
+         * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [Target] with a
+         * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(TargetNodeNative.getTargetMinimumRequiredVersion(value))
 
         public companion object {
             private val VALUE_TO_INSTANCE = MutableIntObjectMap<Target>()
@@ -236,4 +248,6 @@ expect internal object TargetNodeNative {
     fun getModifierRangeStart(nativePointer: Long): Float
 
     fun getModifierRangeEnd(nativePointer: Long): Float
+
+    fun getTargetMinimumRequiredVersion(targetInt: Int): Int
 }

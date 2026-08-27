@@ -17,6 +17,8 @@
 package androidx.ink.brush.behavior
 
 import androidx.collection.MutableIntObjectMap
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.Version
 import androidx.ink.nativeloader.InkInternalOnlyApi
 import kotlin.jvm.JvmField
 
@@ -94,6 +96,16 @@ private constructor(
 
         override fun toString(): String = "BinaryOp." + name
 
+        /**
+         * Returns the minimum required [Version] for this [BinaryOp].
+         *
+         * By default, decoding a [androidx.ink.brush.BrushFamily] containing a [BinaryOp] with a
+         * minimum required version higher than [Version.MAX_SUPPORTED] will fail.
+         */
+        @ExperimentalInkCustomBrushApi
+        public fun calculateMinimumRequiredVersion(): Version =
+            Version.fromInt(BinaryOpNodeNative.getOperationMinimumRequiredVersion(value))
+
         public companion object {
             private val VALUE_TO_INSTANCE = MutableIntObjectMap<BinaryOp>()
 
@@ -135,4 +147,6 @@ expect internal object BinaryOpNodeNative {
     fun create(operation: Int): Long
 
     fun getOperationInt(nativePointer: Long): Int
+
+    fun getOperationMinimumRequiredVersion(operationInt: Int): Int
 }

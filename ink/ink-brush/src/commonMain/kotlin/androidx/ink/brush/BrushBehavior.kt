@@ -149,6 +149,16 @@ private constructor(
     override fun toString(): String =
         "BrushBehavior($terminalNodes, developerComment=$developerComment)"
 
+    /**
+     * Returns the minimum required [Version] for this [BrushBehavior].
+     *
+     * By default, decoding a [BrushFamily] containing a [BrushBehavior] with a minimum required
+     * version higher than [Version.MAX_SUPPORTED] will fail.
+     */
+    @ExperimentalInkCustomBrushApi
+    public fun calculateMinimumRequiredVersion(): Version =
+        Version.fromInt(BrushBehaviorNative.calculateMinimumRequiredVersion(nativePointer))
+
     public companion object {
         private fun newBrushBehaviorFromTerminalNodes(
             terminalNodes: List<TerminalNode>,
@@ -193,4 +203,6 @@ expect internal object BrushBehaviorNative {
     fun getDeveloperComment(nativePointer: Long): String
 
     fun newCopyOfNode(nativePointer: Long, index: Int): Long
+
+    fun calculateMinimumRequiredVersion(nativePointer: Long): Int
 }

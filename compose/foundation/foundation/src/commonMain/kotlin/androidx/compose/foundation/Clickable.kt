@@ -1694,11 +1694,8 @@ internal abstract class AbstractClickableNode(
 
     private fun shouldLazilyCreateIndication() = userProvidedInteractionSource == null
 
-    @OptIn(ExperimentalFoundationApi::class)
     protected fun playClickSound() {
-        if (ComposeFoundationFlags.isInteractionSoundEffectOnClickEnabled) {
-            currentValueOf(LocalSoundEffect)?.playClickSound()
-        }
+        currentValueOf(LocalSoundEffect)?.playClickSound()
     }
 
     protected fun performClick() {
