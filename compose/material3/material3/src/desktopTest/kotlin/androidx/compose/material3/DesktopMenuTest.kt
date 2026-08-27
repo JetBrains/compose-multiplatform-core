@@ -23,10 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.internal.DropdownMenuPositionProvider
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -55,10 +53,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(InternalComposeUiApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(InternalComposeUiApi::class)
 @RunWith(JUnit4::class)
 class DesktopMenuTest {
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 

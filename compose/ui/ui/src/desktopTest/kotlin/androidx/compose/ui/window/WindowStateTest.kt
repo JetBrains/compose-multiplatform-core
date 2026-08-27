@@ -616,6 +616,7 @@ class WindowStateTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun `can save Unspecified window size`() = runComposeUiTest {
         val expectedState = WindowState(size = DpSize.Unspecified)

@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalTestApi::class)
 class OnFirstVisibleTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun callOnFirstVisible() = runSkikoComposeUiTest(Size(100f, 200f)) {
         class ItemState(

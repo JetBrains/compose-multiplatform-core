@@ -38,6 +38,7 @@ import kotlin.test.assertEquals
 @ExperimentalTestApi
 class LayoutTest {
 
+    @Suppress("DEPRECATION")
     @Test
     // Issue: https://youtrack.jetbrains.com/issue/CMP-2696
     fun layoutInMovableContent() = runSkikoComposeUiTest {

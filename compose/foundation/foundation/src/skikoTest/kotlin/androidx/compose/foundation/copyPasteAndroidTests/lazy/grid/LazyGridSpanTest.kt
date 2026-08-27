@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalTestApi::class)
 class LazyGridSpanTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun spans() = runSkikoComposeUiTest {
         val columns = 4
@@ -119,6 +120,7 @@ class LazyGridSpanTest {
             .assertLeftPositionInRootIsEqualTo(columnWidth)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun spansWithHorizontalSpacing() = runSkikoComposeUiTest {
         val columns = 4
@@ -159,6 +161,7 @@ class LazyGridSpanTest {
             .assertWidthIsEqualTo(columnWidth * 3 + spacing * 2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun spansMultipleBlocks() = runSkikoComposeUiTest {
         val columns = 4
@@ -215,6 +218,7 @@ class LazyGridSpanTest {
             .assertWidthIsEqualTo(columnWidth)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun spansLineBreak() = runSkikoComposeUiTest {
         val columns = 4
@@ -272,6 +276,7 @@ class LazyGridSpanTest {
             .assertWidthIsEqualTo(columnWidth * 2)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun spansCalculationDoesntCrash() = runSkikoComposeUiTest {
         // regression from b/222530458
