@@ -24,5 +24,5 @@ internal actual fun VelocityPathFinder(
     endVelocity: Float,
     durationMillis: Long,
 ): VelocityPathFinder {
-    return LsqVelocityPathFinder(startPosition, endPosition, endVelocity, durationMillis)
+    return LegacyVelocityPathFinder(startPosition, endPosition, endVelocity, durationMillis)
 }
