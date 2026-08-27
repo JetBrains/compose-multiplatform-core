@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3.internal.ripple
+package androidx.compose.material3.ripple
 
 import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.node.DelegatableNode
-import androidx.compose.ui.unit.Dp
 
 internal actual fun createPlatformRippleNode(
     interactionSource: InteractionSource,
-    bounded: Boolean,
-    radius: Dp,
-    color: ColorProducer,
-    rippleNodeConfig: () -> RippleNodeConfig
+    rippleNodeConfiguration: () -> RippleNodeConfiguration,
 ): DelegatableNode {
-    return CommonRippleNode(interactionSource, bounded, radius, color, rippleNodeConfig)
+    // TODO(Merge) Implement after merging 693100af1ef688ddc632a4bb88c382e9c8a966b5
+    return CommonRippleNode(interactionSource, rippleNodeConfiguration)
 }

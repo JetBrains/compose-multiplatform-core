@@ -61,6 +61,7 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-util"))
             api(project(":compose:foundation:foundation-layout"))
             api(project(":compose:material:material-ripple"))
+            implementation(project(":compose:material3:material3-ripple"))
             api(project(":compose:runtime:runtime"))
             api(project(":compose:ui:ui"))
             api(project(":compose:foundation:foundation"))
