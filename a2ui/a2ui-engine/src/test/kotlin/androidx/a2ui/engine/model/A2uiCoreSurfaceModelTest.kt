@@ -18,9 +18,11 @@ package androidx.a2ui.engine.model
 
 import androidx.a2ui.engine.catalog.A2uiCoreCatalog
 import androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition
+import androidx.a2ui.engine.catalog.A2uiCoreComponentDefinitionCollection
 import androidx.a2ui.engine.platform.A2uiCoreComponentRegistry
 import androidx.a2ui.engine.platform.A2uiCoreDataModel
 import androidx.a2ui.model.catalog.A2uiFunction
+import androidx.a2ui.model.catalog.A2uiFunctionCollection
 import androidx.a2ui.model.catalog.A2uiFunctionDefinition
 import androidx.a2ui.model.catalog.A2uiFunctionReturnType
 import androidx.a2ui.model.protocol.A2uiClientErrorMessage
@@ -230,7 +232,7 @@ class A2uiCoreSurfaceModelTest {
         assertThat(dispatchedError).isNotNull()
         assertThat(dispatchedError?.code).isEqualTo("VALIDATION_FAILED")
         assertThat(dispatchedError?.context?.get("path"))
-            .isEqualTo("/components/$COMPONENT_ID_1.text")
+            .isEqualTo("/components/$COMPONENT_ID_1/text")
     }
 
     @Test
@@ -257,7 +259,7 @@ class A2uiCoreSurfaceModelTest {
         assertThat(dispatchedErrors.map { it.code })
             .containsExactly("VALIDATION_FAILED", "VALIDATION_FAILED")
         assertThat(dispatchedErrors.map { it.context["path"] })
-            .containsExactly("/components/$COMPONENT_ID_2.text", "/components/$COMPONENT_ID_3")
+            .containsExactly("/components/$COMPONENT_ID_2/text", "/components/$COMPONENT_ID_3")
     }
 
     @Test
@@ -612,25 +614,21 @@ class A2uiCoreSurfaceModelTest {
         override val returnType: A2uiFunctionReturnType = A2uiFunctionReturnType.STRING
     }
 
-    private class TestCatalog(override val functions: List<A2uiFunction> = emptyList()) :
-        A2uiCoreCatalog {
+    private class TestCatalog(functions: List<A2uiFunction> = emptyList()) : A2uiCoreCatalog {
         override val id: String = "test_catalog"
-        override val componentDefinitions =
-            listOf(
-                object : A2uiCoreComponentDefinition {
-                    override val name = "button"
-                    override val description = "A test button"
-                    override val propertySchema =
-                        A2uiObjectSchema(properties = mapOf("text" to A2uiStringSchema()))
-                }
+        override val componentDefinitions: A2uiCoreComponentDefinitionCollection =
+            A2uiCoreComponentDefinitionCollection(
+                listOf(
+                    object : A2uiCoreComponentDefinition {
+                        override val name = "button"
+                        override val description = "A test button"
+                        override val propertySchema =
+                            A2uiObjectSchema(properties = mapOf("text" to A2uiStringSchema()))
+                    }
+                )
             )
+        override val functions: A2uiFunctionCollection = A2uiFunctionCollection(functions)
         override val themeSchema: A2uiSchema? = null
-
-        override fun getComponentDefinition(name: String): A2uiCoreComponentDefinition? =
-            componentDefinitions.find { it.name == name }
-
-        override fun getFunction(name: String): A2uiFunction? =
-            functions.find { it.definition.name == name }
 
         override fun equals(other: Any?): Boolean = other is TestCatalog
 

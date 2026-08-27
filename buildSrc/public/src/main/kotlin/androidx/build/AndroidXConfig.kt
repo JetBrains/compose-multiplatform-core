@@ -54,10 +54,16 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
         minorString?.toInt()
     }
 
-    override val minSdk: Int = 23
+    override val minSdk: Int = 24
 
     override val targetSdk: Int by lazy {
         project.providers.gradleProperty(TARGET_SDK_VERSION).get().toInt()
+    }
+
+    override val ndkVersion: String by lazy {
+        val versionString = project.extraPropertyOrNull(NDK_VERSION)?.toString()
+        check(versionString != null) { "$NDK_VERSION is unset" }
+        versionString
     }
 
     companion object {
@@ -67,6 +73,7 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
         private const val LATEST_COMPILE_SDK_EXTENSION = "androidx.latestCompileSdkExtension"
         private const val LATEST_STABLE_MINOR_API_LEVEL = "androidx.latestStableMinorApiLevel"
         private const val TARGET_SDK_VERSION = "androidx.targetSdkVersion"
+        private const val NDK_VERSION = "androidx.ndkVersion"
 
         /**
          * Implementation detail. This should only be used by AndroidXGradleProperties for property
@@ -80,6 +87,7 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
                 LATEST_STABLE_MINOR_API_LEVEL,
                 LATEST_COMPILE_SDK_EXTENSION,
                 TARGET_SDK_VERSION,
+                NDK_VERSION,
             )
     }
 }
@@ -139,6 +147,9 @@ interface AndroidConfig {
      * This may be specified in `gradle.properties` using `androidx.targetSdkVersion`.
      */
     val targetSdk: Int
+
+    /** NDK version used for AndroidX projects. */
+    val ndkVersion: String
 }
 
 /** Default configuration values for Android Gradle Plugin. */

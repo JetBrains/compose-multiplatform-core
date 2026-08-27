@@ -22,6 +22,7 @@ import android.hardware.camera2.CaptureResult
 import android.os.Build
 import android.util.ArrayMap
 import androidx.annotation.GuardedBy
+import androidx.annotation.RestrictTo
 import androidx.camera.common.compat.Api28Compat
 import androidx.camera.common.compat.Api29Compat
 import androidx.camera.common.compat.Api35Compat
@@ -33,16 +34,21 @@ import java.lang.Class
  * This implementation caches the values retrieved from the underlying [CameraCharacteristics] to
  * avoid repeated expensive binder calls to the camera service.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class AndroidCameraCharacteristics
 @Suppress("ValueClassUsageFromConstructor")
-constructor(
-    /** The [CameraId] identifying this camera. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public constructor(
+    cameraId: CameraId,
+    private val characteristics: CameraCharacteristics,
+    override val isRestricted: Boolean = false,
+    override val dynamicKeys: Set<CameraCharacteristics.Key<*>> = emptySet(),
+) : CameraCharacteristicsWrapper {
+
     @Suppress("INAPPLICABLE_JVM_NAME")
     @get:JvmName("getCameraId")
     @get:Suppress("ValueClassUsageWithoutJvmName")
-    override val cameraId: CameraId,
-    private val characteristics: CameraCharacteristics,
-) : CameraCharacteristicsWrapper {
+    override val cameraId: CameraId = cameraId
 
     @GuardedBy("values") private val values = ArrayMap<CameraCharacteristics.Key<*>, Any?>()
 
@@ -57,6 +63,9 @@ constructor(
      */
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(key: CameraCharacteristics.Key<T>): T? {
+        if (dynamicKeys.contains(key)) {
+            return characteristics.get(key)
+        }
         // Cache the return value of calls to characteristics as the implementation performs a
         // blocking jni binder call which can be expensive when invoked frequently.
         @Suppress("UNCHECKED_CAST") var result = synchronized(values) { values[key] } as T?

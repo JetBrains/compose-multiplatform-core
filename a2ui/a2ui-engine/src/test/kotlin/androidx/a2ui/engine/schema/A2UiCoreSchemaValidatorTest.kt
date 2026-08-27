@@ -17,8 +17,9 @@
 package androidx.a2ui.engine.schema
 
 import androidx.a2ui.engine.catalog.A2uiCoreCatalog
-import androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition
+import androidx.a2ui.engine.catalog.A2uiCoreComponentDefinitionCollection
 import androidx.a2ui.model.catalog.A2uiFunction
+import androidx.a2ui.model.catalog.A2uiFunctionCollection
 import androidx.a2ui.model.catalog.A2uiFunctionDefinition
 import androidx.a2ui.model.catalog.A2uiFunctionReturnType
 import androidx.a2ui.model.protocol.A2uiException
@@ -58,7 +59,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(123, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -68,7 +69,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(true, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -90,7 +91,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("123", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -100,7 +101,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("abc", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -110,7 +111,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(true, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -132,7 +133,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("true", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -142,7 +143,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("abc", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -152,7 +153,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(123, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -171,7 +172,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("age" to 30), OBJECT_SCHEMA)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -180,7 +181,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("name" to 123), OBJECT_SCHEMA)
             }
-        assertThat(ex.context["path"]).isEqualTo("$.name")
+        assertThat(ex.context["path"]).isEqualTo("/name")
     }
 
     @Test
@@ -197,7 +198,7 @@ class A2UiCoreSchemaValidatorTest {
                     strictObjectSchema,
                 )
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -207,7 +208,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("user" to mapOf("name" to 123)), nestedSchema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$.user.name")
+        assertThat(ex.context["path"]).isEqualTo("/user/name")
     }
 
     @Test
@@ -223,7 +224,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(listOf(1, "abc", 3), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$[1]")
+        assertThat(ex.context["path"]).isEqualTo("/1")
     }
 
     @Test
@@ -236,7 +237,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("list" to listOf("a", 2, "c")), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$.list[1]")
+        assertThat(ex.context["path"]).isEqualTo("/list/1")
     }
 
     @Test
@@ -246,7 +247,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("items" to listOf(1, 2, 3)), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -264,7 +265,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("d", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -282,7 +283,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(4, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -299,7 +300,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(false, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -316,7 +317,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(listOf("a", "c"), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -333,7 +334,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("key" to "different"), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -350,7 +351,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(listOf(listOf("a", "c")), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -366,7 +367,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("outer" to mapOf("inner" to "wrong")), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -401,7 +402,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(true, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -423,7 +424,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("name" to "Alice", "age" to 30), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -463,7 +464,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("name" to "Alice"), schema) // Missing age
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -480,7 +481,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(true, schema) // Boolean matches neither
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -496,7 +497,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("b", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -512,7 +513,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(456, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -528,7 +529,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(false, schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -544,7 +545,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(listOf("a", "c", 3), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -560,7 +561,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("a" to "c"), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -576,7 +577,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(listOf(listOf("a", "c"), listOf(1, 2)), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -592,7 +593,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("outer" to mapOf("inner" to "wrong")), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -603,7 +604,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema("anything", schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -614,7 +615,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 customValidator.validateSchema(mapOf("call" to "unknownFunction"), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -626,7 +627,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 customValidator.validateSchema(mapOf("other" to "value"), schema)
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -684,7 +685,7 @@ class A2UiCoreSchemaValidatorTest {
                     schema,
                 )
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -709,7 +710,7 @@ class A2UiCoreSchemaValidatorTest {
                     schema,
                 )
             }
-        assertThat(ex.context["path"]).isEqualTo("$")
+        assertThat(ex.context["path"]).isEqualTo("/")
     }
 
     @Test
@@ -745,7 +746,7 @@ class A2UiCoreSchemaValidatorTest {
             assertFailsWith<A2uiException.A2uiValidationException> {
                 validator.validateSchema(mapOf("id" to "abc"), composite)
             }
-        assertThat(ex.context["path"]).isEqualTo("$.id")
+        assertThat(ex.context["path"]).isEqualTo("/id")
     }
 
     private fun createTestCatalog(
@@ -764,15 +765,9 @@ class A2UiCoreSchemaValidatorTest {
             }
         return object : A2uiCoreCatalog {
             override val id = "test"
-            override val componentDefinitions = emptyList<A2uiCoreComponentDefinition>()
-            override val functions = wrappedFunctions
+            override val componentDefinitions = A2uiCoreComponentDefinitionCollection()
+            override val functions = A2uiFunctionCollection(wrappedFunctions)
             override val themeSchema: A2uiSchema? = null
-
-            override fun getComponentDefinition(name: String) = null
-
-            override fun getFunction(name: String): A2uiFunction? {
-                return functions.find { it.definition.name == name }
-            }
         }
     }
 
