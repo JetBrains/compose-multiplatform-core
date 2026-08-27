@@ -76,7 +76,6 @@ package androidx.compose.ui {
     property public boolean isDelayAndroidViewsHandlerCreationEnabled;
     property public boolean isDelayedWindowInsetsRulersEnabled;
     property public boolean isFrameworkVelocityTrackerEnabled;
-    property public boolean isInteractionSoundEffectsEnabled;
     property public boolean isOutOfFrameSchedulerForTextInputEventsEnabled;
     property public boolean isPropagateHideFromAccessibilityToMergingChildrenEnabled;
     property public boolean isTraversalGroupSortingEnabled;
@@ -87,7 +86,6 @@ package androidx.compose.ui {
     field public static boolean isDelayAndroidViewsHandlerCreationEnabled;
     field public static boolean isDelayedWindowInsetsRulersEnabled;
     field public static boolean isFrameworkVelocityTrackerEnabled;
-    field public static boolean isInteractionSoundEffectsEnabled;
     field public static boolean isOutOfFrameSchedulerForTextInputEventsEnabled;
     field public static boolean isPropagateHideFromAccessibilityToMergingChildrenEnabled;
     field public static boolean isTraversalGroupSortingEnabled;
@@ -4751,8 +4749,8 @@ package androidx.compose.ui.semantics {
   }
 
   public final class SemanticsNode {
+    method public float computeEffectiveAlpha();
     method public int getAlignmentLinePosition(androidx.compose.ui.layout.AlignmentLine alignmentLine);
-    method @InaccessibleFromKotlin public float getAlpha();
     method @InaccessibleFromKotlin public androidx.compose.ui.geometry.Rect getBoundsInRoot();
     method @InaccessibleFromKotlin public androidx.compose.ui.geometry.Rect getBoundsInWindow();
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.semantics.SemanticsNode> getChildren();
@@ -4768,7 +4766,6 @@ package androidx.compose.ui.semantics {
     method @BytecodeOnly public long getSize-YbymL2g();
     method @InaccessibleFromKotlin public androidx.compose.ui.geometry.Rect getTouchBoundsInRoot();
     method @InaccessibleFromKotlin public boolean isRoot();
-    property public float alpha;
     property public androidx.compose.ui.geometry.Rect boundsInRoot;
     property public androidx.compose.ui.geometry.Rect boundsInWindow;
     property public java.util.List<androidx.compose.ui.semantics.SemanticsNode> children;
