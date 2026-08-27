@@ -97,7 +97,7 @@ fun WindowFocusDemo() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = if (isResumed) "▶️ RESUMED (≥)" else "⏸️ Not RESUMED (<)",
+            text = if (isResumed) "▶️ RESUMED" else "⏸️ NOT RESUMED",
             style = textStyle
         )
         Spacer(Modifier.height(8.dp))
