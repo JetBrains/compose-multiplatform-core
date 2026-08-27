@@ -30,6 +30,8 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -218,6 +220,152 @@ class CfWA11YTest : OnCanvasTests {
                 buttonWasRemoved,
                 "A surviving A11Y node must remain continuously connected",
             )
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun survivingNodeIsNotDetachedWhenSiblingIsRemoved() = runApplicationTest {
+        var showButton2 by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                Text("Button1")
+            }
+            if (showButton2) {
+                Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val a11yContainer = assertNotNull(getA11YContainer())
+        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+        var button1WasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === button1 ||
+                (removedNode as? HTMLElement)?.contains(button1) == true
+            ) {
+                button1WasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            showButton2 = false
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(button1, getShadowRoot().getElementById("button1"))
+            assertTrue(button1.isConnected)
+            assertFalse(button2.isConnected)
+            assertFalse(button1WasRemoved, "A surviving sibling must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun reorderedNodesRetainTheirElements() = runApplicationTest {
+        var order by mutableStateOf(listOf(1, 2, 3))
+
+        createComposeWindow {
+            Column(modifier = Modifier.testTag("parent")) {
+                order.forEach { item ->
+                    key(item) {
+                        Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
+                            Text("Button$item")
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val parent = assertNotNull(getShadowRoot().getElementById("parent") as? HTMLElement)
+        val buttons = (1..3).associateWith { item ->
+            assertNotNull(getShadowRoot().getElementById("button$item") as? HTMLElement)
+        }
+        var parentWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === parent ||
+                (removedNode as? HTMLElement)?.contains(parent) == true
+            ) {
+                parentWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+        try {
+            order = listOf(3, 1, 2)
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(parent, getShadowRoot().getElementById("parent"))
+            assertEquals(
+                listOf("button3", "button1", "button2"),
+                (0 until parent.children.length).map { parent.children[it]?.id },
+            )
+            buttons.forEach { (item, element) ->
+                assertSame(element, getShadowRoot().getElementById("button$item"))
+                assertTrue(element.isConnected)
+            }
+            assertFalse(parentWasRemoved, "The reordered children's parent must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun reparentedNodeRetainsItsElement() = runApplicationTest {
+        var moveToSecondParent by mutableStateOf(false)
+        val movableButton = movableContentOf {
+            Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
+                Text("Button")
+            }
+        }
+
+        createComposeWindow {
+            Column {
+                Box(modifier = Modifier.testTag("parent1")) {
+                    if (!moveToSecondParent) movableButton()
+                }
+                Box(modifier = Modifier.testTag("parent2")) {
+                    if (moveToSecondParent) movableButton()
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
+        val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
+        val button =
+            assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
+        var parentWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === parent1 || removedNode === parent2 ||
+                (removedNode as? HTMLElement)?.contains(parent1) == true ||
+                (removedNode as? HTMLElement)?.contains(parent2) == true
+            ) {
+                parentWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+        try {
+            moveToSecondParent = true
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(button, getShadowRoot().getElementById("movableButton"))
+            assertSame(parent2, button.parentElement)
+            assertTrue(button.isConnected)
+            assertSame(parent1, getShadowRoot().getElementById("parent1"))
+            assertSame(parent2, getShadowRoot().getElementById("parent2"))
+            assertFalse(parentWasRemoved, "Unaffected parents must not be removed")
         } finally {
             disconnectMutationObserver(observer)
         }

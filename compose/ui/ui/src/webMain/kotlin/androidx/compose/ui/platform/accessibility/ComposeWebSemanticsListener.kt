@@ -170,8 +170,9 @@ internal class ComposeWebSemanticsListener(
     private val webNodes = MutableScatterMap<Int, HTMLElement>()
     private val elementToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
 
-    // A reusable set of node ids for sync purposes
+    // Reusable collections for sync purposes.
     private val allNodesIds = MutableIntSet()
+    private val expectedChildren = mutableMapOf<HTMLElement, MutableList<HTMLElement>>()
 
     /**
      * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
@@ -194,9 +195,17 @@ internal class ComposeWebSemanticsListener(
 
     private fun syncSemanticsWithWebA11Y() {
         allNodesIds.clear()
+        nodeToParent.clear()
+        expectedChildren.clear()
 
         semanticsOwners.fastForEach {
             syncSemanticsWithWebA11Y(it)
+        }
+
+        // Place new, reordered, and reparented nodes before removing obsolete nodes. A surviving
+        // node can still be attached below an obsolete ancestor and must be moved out first.
+        expectedChildren.forEach { (parent, children) ->
+            reconcileChildren(parent, children)
         }
 
         val removedIds = mutableSetOf<Int>()
@@ -263,17 +272,18 @@ internal class ComposeWebSemanticsListener(
             // The parent is known here: it was recorded when this node was pushed to the deque.
             val htmlParent = nodeToParent[node.id]?.let { webNodes[it] } ?: webSemanticsRoot
 
-            if (config.contains(SemanticsProperties.Text)) {
+            val htmlNode = if (config.contains(SemanticsProperties.Text)) {
                 // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
                 // But for text with links we have to interleave text parts with links.
                 // We split text into parts: plain text fragments and links.
                 // That's why a text node doesn't push its children to the traversal queue.
                 // It handles its link children itself:
-                syncTextNode(node, config, children, htmlParent, rootPosition)
+                syncTextNode(node, config, children, rootPosition)
             } else {
-                syncNode(node, config, htmlParent, rootPosition, children.isNotEmpty())
-                pushChildren(children, node.id)
+                syncNode(node, config, rootPosition)
+                    .also { pushChildren(children, node.id) }
             }
+            expectedChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
         }
     }
 
@@ -288,17 +298,13 @@ internal class ComposeWebSemanticsListener(
     }
 
     /**
-     * Creates (or reuses) the HTML node corresponding to [semanticsNode], syncs its state and
-     * attaches it to [htmlParent].
-     *
-     * @param hasChildren whether the node has semantics children
+     * Creates (or reuses) the HTML node corresponding to [semanticsNode] and syncs its state.
+     * Placement is handled separately after all expected parent-child relationships are known.
      */
     private fun syncNode(
         semanticsNode: SemanticsNode,
         config: SemanticsConfiguration,
-        htmlParent: HTMLElement,
         rootPosition: Offset,
-        hasChildren: Boolean,
         text: String? = null,
     ): HTMLElement {
         val currentId = semanticsNode.id
@@ -307,14 +313,6 @@ internal class ComposeWebSemanticsListener(
         val htmlNode = if (nodes[currentId] != null) {
             nodes[currentId] = semanticsNode
             val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
-
-            if (hasChildren) {
-                // To ensure the correct order of nested nodes, we remove all of them.
-                // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
-                // Also, the code is more simple with this approach.
-                // They are added back when they are synced.
-                removeAllChildrenOf(htmlNode)
-            }
 
             syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text)
             htmlNode
@@ -331,9 +329,38 @@ internal class ComposeWebSemanticsListener(
             htmlNode
         }
 
-        htmlParent.appendChild(htmlNode)
         elementToSemanticsNode[htmlNode] = semanticsNode
         return htmlNode
+    }
+
+    private fun reconcileChildren(
+        parent: HTMLElement,
+        children: List<HTMLElement>,
+    ) {
+        var current = parent.firstElementChild?.nextSurvivingSibling()
+
+        children.fastForEach { child ->
+            if (child.parentElement !== parent || child !== current) {
+                parent.insertBefore(child, current)
+            }
+            current = child.nextElementSibling?.nextSurvivingSibling()
+        }
+    }
+
+    /** Skips obsolete semantics elements, which are removed after surviving nodes are placed. */
+    private fun org.w3c.dom.Element.nextSurvivingSibling(): HTMLElement? {
+        var element: org.w3c.dom.Element? = this
+        while (element != null) {
+            val htmlElement = element as HTMLElement
+            val semanticsNode = checkNotNull(elementToSemanticsNode[htmlElement]) {
+                "A11Y element is not associated with a semantics node"
+            }
+            if (semanticsNode.id in allNodesIds) {
+                return htmlElement
+            }
+            element = element.nextElementSibling
+        }
+        return null
     }
 
     /**
@@ -348,7 +375,7 @@ internal class ComposeWebSemanticsListener(
         text: String?,
         justCreated: Boolean = false,
     ) {
-        if (text != null) {
+        if (text != null && htmlNode.innerText != text) {
             htmlNode.innerText = text
         }
 
@@ -363,7 +390,10 @@ internal class ComposeWebSemanticsListener(
         }
 
         if (config.contains(SemanticsProperties.EditableText)) {
-            htmlNode.innerText = config[SemanticsProperties.EditableText].text
+            val editableText = config[SemanticsProperties.EditableText].text
+            if (htmlNode.innerText != editableText) {
+                htmlNode.innerText = editableText
+            }
 
             if (justCreated) {
                 htmlNode.setAttribute("contenteditable", "true")
@@ -429,9 +459,8 @@ internal class ComposeWebSemanticsListener(
         node: SemanticsNode,
         config: SemanticsConfiguration,
         children: List<SemanticsNode>,
-        htmlParent: HTMLElement,
         rootPosition: Offset,
-    ) {
+    ): HTMLElement {
         val texts = config[SemanticsProperties.Text]
         val linksCount = children.count { it.config.contains(SemanticsProperties.LinkTestMarker) }
 
@@ -439,15 +468,29 @@ internal class ComposeWebSemanticsListener(
         // Null if the parts don't surround the link children exactly: the whole text is exposed then.
         val textParts = split?.textParts?.takeIf { split.matchesLinksCount(linksCount) }
 
+        val text = texts.fastJoinToString("\n") { it.text }
         val htmlNode = syncNode(
             semanticsNode = node,
             config = config,
-            htmlParent = htmlParent,
             rootPosition = rootPosition,
-            hasChildren = children.isNotEmpty(),
-            // The text parts are appended in between the link children below.
-            text = if (textParts != null) "" else texts.fastJoinToString("\n") { it.text },
         )
+        val hadLinkChildren = (0 until htmlNode.children.length).any {
+            val child = htmlNode.children.item(it) as? HTMLElement
+            child?.let { elementToSemanticsNode[it] }
+                ?.config
+                ?.contains(SemanticsProperties.LinkTestMarker) == true
+        }
+        if (linksCount > 0 || hadLinkChildren) {
+            // Text fragments are not semantics nodes, so this mixed-content subtree still has to
+            // be rebuilt. The semantic container is preserved, and regular semantics subtrees are
+            // reconciled incrementally.
+            removeAllChildrenOf(htmlNode)
+            if (textParts == null) {
+                htmlNode.innerText = text
+            }
+        } else if (htmlNode.innerText != text) {
+            htmlNode.innerText = text
+        }
 
         var linkIndex = 0
         // Non-link children are pushed together (after the loop) to keep their relative order.
@@ -468,14 +511,14 @@ internal class ComposeWebSemanticsListener(
             }
 
             val linkChildren = child.replacedChildren
-            syncNode(
+            val linkHtmlNode = syncNode(
                 semanticsNode = child,
                 config = childConfig,
-                htmlParent = htmlNode,
                 rootPosition = rootPosition,
-                hasChildren = linkChildren.isNotEmpty(),
                 text = split?.linkTexts?.getOrNull(linkIndex),
             )
+            htmlNode.appendChild(linkHtmlNode)
+            expectedChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
             // A link node is expected to be a leaf, but don't rely on it.
             pushChildren(linkChildren, child.id)
 
@@ -487,6 +530,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         deferredChildren?.let { pushChildren(it, node.id) }
+        return htmlNode
     }
 
     private fun HTMLElement.appendText(text: String?) {
@@ -505,6 +549,7 @@ internal class ComposeWebSemanticsListener(
         webNodes.clear()
         elementToSemanticsNode.clear()
         allNodesIds.clear()
+        expectedChildren.clear()
 
         invalidationChannel.close()
         syncTriggerChannel.close()
