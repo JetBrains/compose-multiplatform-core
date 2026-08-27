@@ -2,13 +2,13 @@
 package androidx.a2ui.engine.catalog {
 
   public interface A2uiCoreCatalog {
-    method public androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition? getComponent(String name);
-    method @InaccessibleFromKotlin public java.util.List<androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition> getComponents();
+    method public androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition? getComponentDefinition(String name);
+    method @InaccessibleFromKotlin public java.util.List<androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition> getComponentDefinitions();
     method public androidx.a2ui.model.catalog.A2uiFunction? getFunction(String name);
     method @InaccessibleFromKotlin public java.util.List<androidx.a2ui.model.catalog.A2uiFunction> getFunctions();
     method @InaccessibleFromKotlin public String getId();
     method @InaccessibleFromKotlin public androidx.a2ui.model.schema.A2uiSchema? getThemeSchema();
-    property public abstract java.util.List<androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition> components;
+    property public abstract java.util.List<androidx.a2ui.engine.catalog.A2uiCoreComponentDefinition> componentDefinitions;
     property public abstract java.util.List<androidx.a2ui.model.catalog.A2uiFunction> functions;
     property public abstract String id;
     property public abstract androidx.a2ui.model.schema.A2uiSchema? themeSchema;
@@ -83,11 +83,11 @@ package androidx.a2ui.engine.processor {
     ctor @BytecodeOnly public A2uiCoreMessageProcessor(java.util.List!, kotlin.jvm.functions.Function0!, kotlin.jvm.functions.Function0!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public A2uiCoreMessageProcessor(java.util.List<? extends androidx.a2ui.engine.catalog.A2uiCoreCatalog> catalogs, kotlin.jvm.functions.Function0<? extends androidx.a2ui.engine.platform.A2uiCoreDataModel> dataModelFactory, kotlin.jvm.functions.Function0<? extends androidx.a2ui.engine.platform.A2uiCoreComponentRegistry> componentRegistryFactory, optional java.util.List<? extends androidx.a2ui.model.processor.A2uiActionInterceptor> actionInterceptors);
     method public suspend Object? collectMessages(kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<java.util.List<androidx.a2ui.model.processor.A2uiSurfaceModel>> getActiveSurfaces();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<java.util.List<androidx.a2ui.model.processor.A2uiSurfaceModel>> getActiveSurfaces();
     method @InaccessibleFromKotlin public androidx.a2ui.model.protocol.A2uiClientCapabilities getClientCapabilities();
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<androidx.a2ui.model.protocol.A2uiClientToServerMessage> getOutboundEvents();
     method public void processMessage(androidx.a2ui.model.protocol.A2uiServerToClientMessage message);
-    property public kotlinx.coroutines.flow.Flow<java.util.List<androidx.a2ui.model.processor.A2uiSurfaceModel>> activeSurfaces;
+    property public kotlinx.coroutines.flow.StateFlow<java.util.List<androidx.a2ui.model.processor.A2uiSurfaceModel>> activeSurfaces;
     property public androidx.a2ui.model.protocol.A2uiClientCapabilities clientCapabilities;
     property public kotlinx.coroutines.flow.Flow<androidx.a2ui.model.protocol.A2uiClientToServerMessage> outboundEvents;
   }
