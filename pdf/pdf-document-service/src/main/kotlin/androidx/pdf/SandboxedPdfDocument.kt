@@ -52,6 +52,7 @@ import androidx.pdf.utils.areCorePdfApisAvailableInSdk
 import androidx.pdf.utils.isAnnotationsFeatureAvailable
 import androidx.pdf.utils.isFormFillingAvailable
 import androidx.pdf.utils.isGetTopObjectAvailable
+import androidx.pdf.utils.isSignatureFeatureAvailable
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
 import java.util.Collections
@@ -270,12 +271,21 @@ public class SandboxedPdfDocument(
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     override suspend fun getTopPageObjectAtPosition(pageNum: Int, point: PointF): PdfObject? {
         val parcelablePdfObject = withDocument { document ->
             document.getTopPageObjectAtPosition(pageNum, point, intArrayOf())
         }
         return parcelablePdfObject?.toContent()
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override suspend fun addPageObject(pageNum: Int, newObject: PdfObject): String {
+        val parcelableObject = newObject.toParcelable()
+
+        return withDocument { document -> document.addPageObject(pageNum, parcelableObject) }
     }
 
     override fun addOnPdfContentInvalidatedListener(
@@ -307,6 +317,7 @@ public class SandboxedPdfDocument(
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override suspend fun applyEdits(editsDraft: EditsDraft): List<String> {
         val parcelableOperations = editsDraft.operations.map { it.toParcelable() }
@@ -384,6 +395,7 @@ public class SandboxedPdfDocument(
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun addOnEditAppliedListener(
         executor: Executor,
         listener: PdfDocument.OnEditAppliedListener,
@@ -391,6 +403,7 @@ public class SandboxedPdfDocument(
         onEditsAppliedListenerEntries.add(OnEditsAppliedListenerEntry(executor, listener))
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     override fun removeOnEditAppliedListener(listener: PdfDocument.OnEditAppliedListener) {
         for (onEditsAppliedListener in onEditsAppliedListenerEntries) {
             if (onEditsAppliedListener.listener == listener) {
@@ -409,6 +422,7 @@ public class SandboxedPdfDocument(
             PdfFeature.FORM_FILLING -> isFormFillingAvailable()
             PdfFeature.ANNOTATIONS -> isAnnotationsFeatureAvailable()
             PdfFeature.IMAGE_EXTRACTION -> isGetTopObjectAvailable()
+            PdfFeature.SIGNATURE_HANDLING -> isSignatureFeatureAvailable()
             else -> false
         }
     }
@@ -595,10 +609,9 @@ public class SandboxedPdfDocument(
         val listener: PdfDocument.OnPdfContentInvalidatedListener,
     )
 
-    private data class OnEditsAppliedListenerEntry(
-        val executor: Executor,
-        val listener: PdfDocument.OnEditAppliedListener,
-    )
+    @OptIn(ExperimentalPdfApi::class)
+    private data class OnEditsAppliedListenerEntry
+    constructor(val executor: Executor, val listener: PdfDocument.OnEditAppliedListener)
 
     /**
      * Verifies that the document has not been explicitly closed.

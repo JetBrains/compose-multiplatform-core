@@ -22,6 +22,7 @@ import android.graphics.Color
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.os.ParcelFileDescriptor
@@ -29,6 +30,7 @@ import android.os.RemoteException
 import android.util.Size
 import androidx.annotation.RequiresExtension
 import androidx.pdf.annotation.content.ImagePdfObject
+import androidx.pdf.annotation.content.PdfObject
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor.Companion.parcelSizeInBytes
 import androidx.pdf.content.PdfPageTextContent
@@ -45,6 +47,7 @@ import androidx.pdf.utils.getSampleContentStampAnnotation
 import androidx.pdf.utils.isAnnotationsFeatureAvailable
 import androidx.pdf.utils.isFormFillingAvailable
 import androidx.pdf.utils.isGetTopObjectAvailable
+import androidx.pdf.utils.isSignatureFeatureAvailable
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -369,6 +372,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     @Test
     fun getPageTopObject_validImageObject_fetchLargeImage() = runTest {
@@ -392,6 +396,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     @Test
     fun getPageTopObject_validImageObject_fetchMediumImage() = runTest {
@@ -414,6 +419,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     @Test
     fun getPageTopObject_validImageObject_fetchSmallImage() = runTest {
@@ -436,6 +442,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
     @Test
     fun getPageTopObject_validImageObject_notPresent() = runTest {
@@ -574,6 +581,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun applyEdits_emptyAnnotations_returnsEmptyResult() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -587,6 +595,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun applyEdits_addAnnotations_singleBatch_returnsSuccess() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -609,6 +618,7 @@ class SandboxedPdfDocumentTest {
 
     // This is a long running test the payload is approx 1MB and it takes time to propagate all the
     // the annotations over IPC.
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun applyEdits_addAnnotations_multipleBatches_returnsSuccess() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -627,6 +637,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun applyEdits_addAnnotations_singleInvalidAnnotation_throwsException() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -657,6 +668,7 @@ class SandboxedPdfDocumentTest {
 
     // This is a long running test the payload is approx 1MB and it takes time to propagate all the
     // the annotations over IPC.
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun applyEdits_addAnnotations_multipleBatches_singleInvalidAnnotation_throwsException() =
         runTest {
@@ -685,6 +697,7 @@ class SandboxedPdfDocumentTest {
             }
         }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun addOnEditAppliedListener_singleListener_isNotified() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -716,6 +729,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun addOnEditAppliedListener_multipleListeners_sameNotification() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -757,6 +771,7 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @OptIn(ExperimentalPdfApi::class)
     @Test
     fun removeOnEditAppliedListener_singleListener_isEmpty() = runTest {
         if (!isAnnotationsFeatureAvailable()) return@runTest
@@ -855,6 +870,42 @@ class SandboxedPdfDocumentTest {
         verify(mockRemote).releasePage(0)
     }
 
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    @Test
+    fun addPageObject_validObject_returnsStringId() = runTest {
+        if (!isSignatureFeatureAvailable()) return@runTest
+        withEditableDocument(PDF_DOCUMENT) { document ->
+            val pageNumber = 0
+            val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+            val bounds = RectF(0f, 0f, 100f, 100f) // Required for matrix transformation
+            val imageObject = ImagePdfObject(bitmap, bounds)
+
+            val resultId = document.addPageObject(pageNumber, imageObject)
+
+            assertNotNull(resultId)
+            assertThat(resultId).isNotEmpty()
+        }
+    }
+
+    @OptIn(ExperimentalPdfApi::class)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    @Test
+    fun addPageObject_unsupportedObject_throwsUnsupportedOperationException() = runTest {
+        if (!isSignatureFeatureAvailable()) return@runTest
+        withEditableDocument(PDF_DOCUMENT) { document ->
+            val pageNumber = 0
+            val unsupportedObject = org.mockito.Mockito.mock(PdfObject::class.java)
+
+            val exception =
+                assertFailsWith<UnsupportedOperationException> {
+                    document.addPageObject(pageNumber, unsupportedObject)
+                }
+
+            assertThat(exception).hasMessageThat().contains("is not currently supported")
+        }
+    }
+
     data class AppliedEdit(public val pageNum: Int, public val editId: String)
 
     companion object {
@@ -917,6 +968,7 @@ class SandboxedPdfDocumentTest {
             return true
         }
 
+        @OptIn(ExperimentalPdfApi::class)
         private fun createDraftWithLargeAnnotations(count: Int): MutableEditsDraft {
             val draft = MutableEditsDraft()
             repeat(count) { draft.insert(createContentStampAnnotationWithPath(0, it * 100)) }
