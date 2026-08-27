@@ -216,6 +216,11 @@ public fun ScreenScaffold(
  * Example of using AppScaffold and ScreenScaffold with TransformingLazyColumn:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_ScaffoldWithTLCEdgeButtonSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param scrollState The scroll state for [TransformingLazyColumn], used to drive screen
  *   transitions such as [TimeText] scroll away and showing/hiding [ScrollIndicator].
  * @param edgeButton Slot for an [EdgeButton] that takes the available space below a scrolling list.
@@ -282,6 +287,10 @@ public fun ScreenScaffold(
  * Example of using AppScaffold and ScreenScaffold:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldSample
+ *
+ * ![ScaffoldSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ScaffoldSample_CompositeImage.png)
+ *
  * @param scrollState The scroll state for [TransformingLazyColumn], used to drive screen
  *   transitions such as [TimeText] scroll away and showing/hiding [ScrollIndicator].
  * @param modifier The modifier for the screen scaffold.
@@ -459,6 +468,10 @@ public fun ScreenScaffold(
  * Example of using AppScaffold and ScreenScaffold:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldSample
+ *
+ * ![ScaffoldSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ScaffoldSample_CompositeImage.png)
+ *
  * @param scrollState The scroll state for a Column, used to drive screen transitions such as
  *   [TimeText] scroll away and showing/hiding [ScrollIndicator].
  * @param modifier The modifier for the screen scaffold.
@@ -702,6 +715,10 @@ private enum class SlotsEnum {
  * Example of using AppScaffold and ScreenScaffold:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldSample
+ *
+ * ![ScaffoldSample Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_ScaffoldSample_CompositeImage.png)
+ *
  * @param modifier The modifier for the screen scaffold.
  * @param scrollInfoProvider Provider for scroll information used to scroll away screen elements
  *   such as [TimeText] and coordinate showing/hiding the [ScrollIndicator].
