@@ -359,11 +359,10 @@ internal class ComposeWebSemanticsListener(
                 val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
 
                 if (children.isNotEmpty()) {
-                    // To ensure the correct order of nested nodes, we remove all of them.
-                    // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
-                    // Also, the code is more simple with this approach.
-                    // They are added below.
-                    removeAllChildrenOf(htmlNode)
+                    // To ensure the correct order of nested nodes, remove and re-add them below.
+                    // Keep the scroll sizer attached: removing it temporarily collapses the
+                    // element's scroll extent and makes the browser clamp its scroll offset.
+                    removeAllChildrenExcept(htmlNode, scrollSizers[currentId])
                 }
 
                 syncNode(node, config, htmlNode, rootPosition)
@@ -592,10 +591,13 @@ internal class ComposeWebSemanticsListener(
             val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
             val lastExpected = expectedScrollOffsets[id]
             if (lastExpected != null &&
-                (abs(actual.x - lastExpected.x) >= SCROLL_EPSILON_CSS_PX ||
-                    abs(actual.y - lastExpected.y) >= SCROLL_EPSILON_CSS_PX)
+                offset.isCloseTo(lastExpected) &&
+                !actual.isCloseTo(lastExpected)
             ) {
-                // Unprocessed AT scroll — leave both the element and expectedScrollOffsets as is.
+                // Compose still reports the offset we applied last time, while the DOM has moved:
+                // this is an unprocessed AT scroll. If Compose reports a new offset, it wins even
+                // when the DOM diverged, for example after lazy content was replaced and the
+                // browser temporarily clamped its scroll offset.
                 return@forEach
             }
 
@@ -648,6 +650,9 @@ private const val MAX_SCROLL_EXTENT_CSS_PX = 4_000_000f
  * an AT-initiated scroll.
  */
 private const val SCROLL_EPSILON_CSS_PX = 0.5f
+
+private fun Offset.isCloseTo(other: Offset): Boolean =
+    abs(x - other.x) < SCROLL_EPSILON_CSS_PX && abs(y - other.y) < SCROLL_EPSILON_CSS_PX
 
 private fun createScrollSizer(): HTMLElement {
     val sizer = document.createElement("div") as HTMLElement
@@ -829,6 +834,22 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
 private fun removeAllChildrenOf(element: HTMLElement) {
     // language=javascript
     js("element.replaceChildren()")
+}
+
+private fun removeAllChildrenExcept(element: HTMLElement, childToKeep: HTMLElement?) {
+    // language=javascript
+    js(
+        """
+        let child = element.firstElementChild;
+        while (child !== null) {
+            const next = child.nextElementSibling;
+            if (child !== childToKeep) {
+                child.remove();
+            }
+            child = next;
+        }
+        """
+    )
 }
 
 /**
