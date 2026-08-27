@@ -690,10 +690,9 @@ internal constructor(
         return result
     }
 
-<<<<<<< HEAD
     // Long string concatenation causes atomicfu plugin to be slow/hang.
     // See https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
-    override fun toString(): String {
+    public override fun toString(): String {
         return buildString {
             append("SpanStyle(")
             append("color=$color, ")
@@ -716,29 +715,6 @@ internal constructor(
             append("drawStyle=$drawStyle")
             append(")")
         }
-=======
-    public override fun toString(): String {
-        return "SpanStyle(" +
-            "color=$color, " +
-            "brush=$brush, " +
-            "alpha=$alpha, " +
-            "fontSize=$fontSize, " +
-            "fontWeight=$fontWeight, " +
-            "fontStyle=$fontStyle, " +
-            "fontSynthesis=$fontSynthesis, " +
-            "fontFamily=$fontFamily, " +
-            "fontFeatureSettings=$fontFeatureSettings, " +
-            "letterSpacing=$letterSpacing, " +
-            "baselineShift=$baselineShift, " +
-            "textGeometricTransform=$textGeometricTransform, " +
-            "localeList=$localeList, " +
-            "background=$background, " +
-            "textDecoration=$textDecoration, " +
-            "shadow=$shadow, " +
-            "platformStyle=$platformStyle, " +
-            "drawStyle=$drawStyle" +
-            ")"
->>>>>>> 74e5e2b695949c34290668537b1dc2b2e68ae40a
     }
 }
 

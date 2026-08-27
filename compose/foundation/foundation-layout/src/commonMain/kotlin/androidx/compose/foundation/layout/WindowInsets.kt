@@ -255,12 +255,8 @@ public fun WindowInsets.asPaddingValues(density: Density): PaddingValues =
 internal fun PaddingValues.asInsets(): WindowInsets = PaddingValuesInsets(this)
 
 /** Create a [WindowInsets] with fixed dimensions of 0 on all sides. */
-<<<<<<< HEAD
 @JsName("makeEmptyWindowInsets")
-fun WindowInsets(): WindowInsets = EmptyWindowInsets
-=======
 public fun WindowInsets(): WindowInsets = EmptyWindowInsets
->>>>>>> 74e5e2b695949c34290668537b1dc2b2e68ae40a
 
 /**
  * Create a [WindowInsets] with fixed dimensions.

@@ -39,12 +39,8 @@ public interface RectRulers {
 }
 
 /** Creates a [RectRulers]. */
-<<<<<<< HEAD
 @JsName("funRectRulers")
-fun RectRulers(): RectRulers = RectRulersImpl(null)
-=======
 public fun RectRulers(): RectRulers = RectRulersImpl(null)
->>>>>>> 74e5e2b695949c34290668537b1dc2b2e68ae40a
 
 internal fun RectRulers(name: String): RectRulers = RectRulersImpl(name)
 

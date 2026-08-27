@@ -173,8 +173,7 @@ public interface IndicationInstance {
  * @param indication [Indication] used to draw visual effects. If `null`, no visual effects will be
  *   shown for this component.
  */
-<<<<<<< HEAD
-fun Modifier.indication(
+public fun Modifier.indication(
     interactionSource: InteractionSource,
     indication: Indication?
 ): Modifier = indicationImpl(
@@ -185,11 +184,6 @@ fun Modifier.indication(
 private fun Modifier.indicationImpl(
     interactionSource: InteractionSource,
     indication: Indication?
-=======
-public fun Modifier.indication(
-    interactionSource: InteractionSource,
-    indication: Indication?,
->>>>>>> 74e5e2b695949c34290668537b1dc2b2e68ae40a
 ): Modifier {
     if (indication == null) return this
     // Fast path - ideally we should never break into the composed path below.

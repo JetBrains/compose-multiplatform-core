@@ -230,10 +230,9 @@ private constructor(
         return result
     }
 
-<<<<<<< HEAD
     // Long string concatenation causes atomicfu plugin to be slow/hang.
     // See https://youtrack.jetbrains.com/issue/KT-65645/Atomicfu-plugin-compilation-hangs-on-a-long-string-concatenation
-    override fun toString(): String {
+    public override fun toString(): String {
         return buildString {
             append("TextLayoutInput(")
             append("text=$text, ")
@@ -248,21 +247,6 @@ private constructor(
             append("constraints=$constraints")
             append(")")
         }
-=======
-    public override fun toString(): String {
-        return "TextLayoutInput(" +
-            "text=$text, " +
-            "style=$style, " +
-            "placeholders=$placeholders, " +
-            "maxLines=$maxLines, " +
-            "softWrap=$softWrap, " +
-            "overflow=$overflow, " +
-            "density=$density, " +
-            "layoutDirection=$layoutDirection, " +
-            "fontFamilyResolver=$fontFamilyResolver, " +
-            "constraints=$constraints" +
-            ")"
->>>>>>> 74e5e2b695949c34290668537b1dc2b2e68ae40a
     }
 }
 

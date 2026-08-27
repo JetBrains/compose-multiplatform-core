@@ -27,16 +27,11 @@ public fun Canvas(image: ImageBitmap): Canvas = ActualCanvas(image)
 
 internal expect fun ActualCanvas(image: ImageBitmap): Canvas
 
-<<<<<<< HEAD
 @Deprecated(
     message = "Use direct reference to platform type instead of typealias",
     level = DeprecationLevel.ERROR,
 )
-expect class NativeCanvas
-=======
-@Deprecated("Use direct reference to platform type instead of typealias")
 public expect class NativeCanvas
->>>>>>> 74e5e2b695949c34290668537b1dc2b2e68ae40a
 
 /**
  * Saves a copy of the current transform and clip on the save stack and executes the provided lambda
