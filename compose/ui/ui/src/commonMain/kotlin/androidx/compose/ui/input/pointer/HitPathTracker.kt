@@ -602,22 +602,14 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 @Suppress("DEPRECATION")
                 isIn = !activeHoverChange.isOutOfBounds(size)
             }
-<<<<<<< HEAD
-            if (event.type == PointerEventType.Move ||
-                event.type == PointerEventType.Enter ||
-                event.type == PointerEventType.Exit
-=======
             val isPan =
                 event.type == PointerEventType.PanStart ||
                     event.type == PointerEventType.PanMove ||
                     event.type == PointerEventType.PanEnd
-            if (
-                isIn != wasIn &&
-                    (event.type == PointerEventType.Move ||
-                        event.type == PointerEventType.Enter ||
-                        event.type == PointerEventType.Exit ||
-                        (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan))
->>>>>>> refs/rewritten/036129a1461cd16477f81427faa9ae422b1780e6-2
+            if (event.type == PointerEventType.Move ||
+                event.type == PointerEventType.Enter ||
+                event.type == PointerEventType.Exit ||
+                (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan)
             ) {
                 event.type = when {
                     !hasEntered && isIn -> PointerEventType.Enter
