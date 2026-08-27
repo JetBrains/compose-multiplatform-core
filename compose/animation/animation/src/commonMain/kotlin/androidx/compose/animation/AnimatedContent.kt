@@ -293,14 +293,6 @@ private class SizeTransformImpl(
 public infix fun EnterTransition.togetherWith(exit: ExitTransition): ContentTransform =
     ContentTransform(this, exit)
 
-@ExperimentalAnimationApi
-@Deprecated(
-    "Infix fun EnterTransition.with(ExitTransition) has been renamed to" + " togetherWith",
-    ReplaceWith("togetherWith(exit)"),
-)
-public infix fun EnterTransition.with(exit: ExitTransition): ContentTransform =
-    ContentTransform(this, exit)
-
 /**
  * [AnimatedContentTransitionScope] provides functions that are convenient and only applicable in
  * the context of [AnimatedContent], such as [slideIntoContainer] and [slideOutOfContainer].
@@ -792,7 +784,8 @@ internal constructor(
     }
 }
 
-private val UnspecifiedSize: IntSize = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
+private val UnspecifiedSize: IntSize
+    get() = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
 
 /**
  * The maximum number of interrupted states to keep in the composition tree at once.

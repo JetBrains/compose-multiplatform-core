@@ -420,7 +420,6 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
 /////////////////////////////
 
 includeProject(":a2ui:a2ui-core", [BuildType.COMPOSE])
-includeProject(":a2ui:a2ui-compose", [BuildType.COMPOSE])
 includeProject(":a2ui:a2ui-engine", [BuildType.COMPOSE])
 includeProject(":a2ui:a2ui-model", [BuildType.COMPOSE])
 includeProject(":a2ui:integration-tests:testapp", [BuildType.COMPOSE])
@@ -1295,6 +1294,7 @@ includeProject(":xr:runtime:runtime", [BuildType.XR])
 includeProject(":xr:runtime:runtime-interfaces", [BuildType.XR])
 includeProject(":xr:runtime:runtime-manifest", [BuildType.XR])
 includeProject(":xr:runtime:runtime-openxr", [BuildType.XR])
+includeProject(":xr:runtime:runtime-projected", [BuildType.XR])
 includeProject(":xr:runtime:runtime-testing", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore", [BuildType.XR])
 includeProject(":xr:scenecore:scenecore-projected", [BuildType.XR])

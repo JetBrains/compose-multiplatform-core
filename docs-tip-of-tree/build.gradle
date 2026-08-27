@@ -8,7 +8,6 @@ plugins {
 
 dependencies {
     docs(project(":a2ui:a2ui-core"))
-    docs(project(":a2ui:a2ui-compose"))
     docs(project(":a2ui:a2ui-engine"))
     docs(project(":a2ui:a2ui-model"))
     docs(project(":activity:activity"))
@@ -413,6 +412,7 @@ dependencies {
     docs(project(":xr:glimmer:glimmer"))
     docs(project(":xr:glimmer:glimmer-google-fonts"))
     docs(project(":xr:runtime:runtime"))
+    docs(project(":xr:runtime:runtime-projected"))
     docs(project(":xr:runtime:runtime-interfaces"))
     docs(project(":xr:runtime:runtime-manifest"))
     docs(project(":xr:runtime:runtime-openxr"))

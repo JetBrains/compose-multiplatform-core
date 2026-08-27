@@ -26,7 +26,10 @@
 package androidx.compose.remote.player.compose.embedded
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
+import androidx.collection.IntObjectMap
 import androidx.collection.ObjectIntMap
+import androidx.collection.emptyIntObjectMap
 import androidx.collection.emptyObjectIntMap
 import androidx.compose.animation.core.Easing as ComposeEasing
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -39,12 +42,16 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Limits
 import androidx.compose.remote.core.Operation
 import androidx.compose.remote.core.RemoteClock
+import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.SystemClock
 import androidx.compose.remote.core.operations.BitmapData
 import androidx.compose.remote.core.operations.ComponentValue
 import androidx.compose.remote.core.operations.Header
+import androidx.compose.remote.core.operations.ParticlesCompare
+import androidx.compose.remote.core.operations.ParticlesLoop
 import androidx.compose.remote.core.operations.Utils
+import androidx.compose.remote.core.operations.WakeIn
 import androidx.compose.remote.core.operations.layout.Component
 import androidx.compose.remote.core.operations.layout.Container
 import androidx.compose.remote.core.operations.layout.LayoutComponent
@@ -64,6 +71,9 @@ import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibil
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.core.operations.utilities.NanMap
 import androidx.compose.remote.core.operations.utilities.easing.Easing as RemoteEasing
+import androidx.compose.remote.creation.compose.action.LambdaAction
+import androidx.compose.remote.creation.compose.action.PendingIntentAction
+import androidx.compose.remote.creation.compose.capture.CapturedDocument
 import androidx.compose.remote.player.compose.ExperimentalRemotePlayerApi
 import androidx.compose.remote.player.compose.embedded.layout.RcPlayerBox
 import androidx.compose.remote.player.compose.embedded.layout.RcPlayerColumn
@@ -96,6 +106,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
+import java.io.ByteArrayInputStream
+import kotlin.math.abs
 
 /**
  * A player of a [CoreDocument].
@@ -128,6 +140,8 @@ public fun RcPlayer(
     onAction: (actionId: Int, value: String?) -> Unit = { _, _ -> },
     onNamedAction: (name: String, value: Any?, stateUpdater: StateUpdater) -> Unit = { _, _, _ -> },
     customPlugins: CustomPluginRegistry? = null,
+    lambdas: IntObjectMap<() -> Unit> = emptyIntObjectMap(),
+    pendingIntents: IntObjectMap<PendingIntent> = emptyIntObjectMap(),
 ) {
     val clock = remember {
         if (document.clock is SystemClock) {
@@ -248,11 +262,16 @@ public fun RcPlayer(
             }
         }
 
+    // Particle systems advance their simulation once per draw, so the frame loop must keep
+    // ticking (and re-invalidating the particle draw) even if no expression is otherwise
+    // time-dependent.
+    val hasParticles = remember(document) { containsParticles(document.getOperationsReflection()) }
+
     // A WakeIn requests a future repaint; with no one-shot scheduler we keep the loop alive
     // instead.
     val hasWakeIn = remember(document) { containsWakeIn(document.getOperationsReflection()) }
 
-    LaunchedEffect(document, hasAnimations, isTimeDependent, hasWakeIn) {
+    LaunchedEffect(document, hasAnimations, isTimeDependent, hasParticles, hasWakeIn) {
         val startMillis = withFrameMillis { it }
         while (true) {
             val frameMillis = withFrameMillis { it } - startMillis
@@ -273,7 +292,7 @@ public fun RcPlayer(
             // continuously-changing time variable. Animated / time-driven documents keep looping.
             // TODO: also idle animated documents between animations and re-arm on host-driven
             // variable writes (see HISTORY.md, "Plan 1").
-            if (!hasAnimations && !isTimeDependent && !hasWakeIn) break
+            if (!hasAnimations && !isTimeDependent && !hasParticles && !hasWakeIn) break
         }
     }
 
@@ -384,12 +403,20 @@ public fun RcPlayer(
             LocalRemoteActionHandler provides onAction,
             LocalRemoteNamedActionHandler provides
                 { name, value ->
+                    val lambdaId = LambdaAction.parseId(name)
+                    if (lambdaId != null) {
+                        lambdas[lambdaId]?.invoke()
+                    } else {
+                        val pendingIntentId = PendingIntentAction.parseId(name)
+                        if (pendingIntentId != null) {
+                            pendingIntents[pendingIntentId]?.send()
+                        }
+                    }
                     onNamedAction(name, value, stateUpdater)
                 },
             LocalRcCustomPlugins provides customPlugins,
         ) {
-            val rootSize =
-                androidx.compose.ui.unit.IntSize(constraints.maxWidth, constraints.maxHeight)
+            val rootSize = IntSize(constraints.maxWidth, constraints.maxHeight)
             if (document.rootLayoutComponent != null) {
                 RcPlayerRootLayoutComponent(rootSize)
             } else {
@@ -399,6 +426,51 @@ public fun RcPlayer(
             }
         }
     }
+}
+
+/**
+ * A player of a [CapturedDocument].
+ *
+ * This overload extracts the [CoreDocument] and any associated lambdas from the [CapturedDocument]
+ * and forwards them to the underlying [RcPlayer].
+ */
+@OptIn(ExperimentalRemotePlayerApi::class)
+@SuppressLint("RestrictedApiAndroidX")
+@Suppress("PrimitiveInCollection")
+@Composable
+public fun RcPlayer(
+    capturedDocument: CapturedDocument,
+    modifier: Modifier = Modifier,
+    autoUpdate: Boolean = true,
+    namedColorOverrides: ObjectIntMap<String> = emptyObjectIntMap(),
+    imageLoader: RcImageLoader? = null,
+    isShaderValid: (shaderSource: String) -> Boolean = { true },
+    onAction: (actionId: Int, value: String?) -> Unit = { _, _ -> },
+    onNamedAction: (name: String, value: Any?, stateUpdater: StateUpdater) -> Unit = { _, _, _ -> },
+    customPlugins: CustomPluginRegistry? = null,
+) {
+    val coreDoc =
+        remember(capturedDocument) {
+            CoreDocument(RemoteClock.SYSTEM).apply {
+                ByteArrayInputStream(capturedDocument.bytes).use {
+                    initFromBuffer(RemoteComposeBuffer.fromInputStream(it))
+                }
+            }
+        }
+
+    RcPlayer(
+        document = coreDoc,
+        modifier = modifier,
+        autoUpdate = autoUpdate,
+        namedColorOverrides = namedColorOverrides,
+        imageLoader = imageLoader,
+        isShaderValid = isShaderValid,
+        onAction = onAction,
+        onNamedAction = onNamedAction,
+        customPlugins = customPlugins,
+        lambdas = capturedDocument.lambdas,
+        pendingIntents = capturedDocument.pendingIntents,
+    )
 }
 
 /**
@@ -468,12 +540,10 @@ internal fun RcPlayerComponent(component: Component, modifier: Modifier = Modifi
                             val state = componentValueStateMap[op.valueId] ?: return@forEach
                             val w = sz.width.toFloat()
                             val h = sz.height.toFloat()
-                            if (
-                                op.type == ComponentValue.WIDTH && Math.abs(w - state.value) > 2.0f
-                            ) {
+                            if (op.type == ComponentValue.WIDTH && abs(w - state.value) > 2.0f) {
                                 state.value = w
                             } else if (
-                                op.type == ComponentValue.HEIGHT && Math.abs(h - state.value) > 2.0f
+                                op.type == ComponentValue.HEIGHT && abs(h - state.value) > 2.0f
                             ) {
                                 state.value = h
                             }
@@ -547,16 +617,21 @@ internal fun RcPlayerChildren(
     }
 }
 
+/** True if the op tree contains a particle loop (drives the frame-loop keepalive). */
+private fun containsParticles(operations: Collection<Operation>): Boolean =
+    operations.any { op ->
+        op is ParticlesLoop ||
+            op is ParticlesCompare ||
+            (op is Container && containsParticles(op.getList()))
+    }
+
 /**
  * True if the op tree contains a [WakeIn], which asks the runtime to repaint after a delay. The
  * embedded player has no one-shot scheduler, so we approximate by keeping the frame loop alive —
  * the content re-evaluates and redraws continuously, a superset of the requested single wake.
  */
 private fun containsWakeIn(operations: Collection<Operation>): Boolean =
-    operations.any { op ->
-        op is androidx.compose.remote.core.operations.WakeIn ||
-            (op is Container && containsWakeIn(op.getList()))
-    }
+    operations.any { op -> op is WakeIn || (op is Container && containsWakeIn(op.getList())) }
 
 private fun findBitmaps(operations: Collection<Operation>, list: MutableList<BitmapData>) {
     operations.forEach { op ->
