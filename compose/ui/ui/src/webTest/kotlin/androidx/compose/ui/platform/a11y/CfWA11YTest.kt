@@ -48,6 +48,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -165,6 +166,61 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals(1, buttonsContainer.children.length)
         assertFalse(button2.isConnected)
+    }
+
+    @Test
+    fun survivingNodeIsNotDetachedWhenSiblingIsInserted() = runApplicationTest {
+        var showButton2 by mutableStateOf(false)
+
+        createComposeWindow {
+            Button(
+                modifier = Modifier.testTag("button1"),
+                onClick = {},
+            ) {
+                Text("Button1")
+            }
+
+            if (showButton2) {
+                Button(
+                    modifier = Modifier.testTag("button2"),
+                    onClick = {},
+                ) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = assertNotNull(getA11YContainer())
+        val buttonBefore =
+            assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        var buttonWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === buttonBefore ||
+                (removedNode as? HTMLElement)?.contains(buttonBefore) == true
+            ) {
+                buttonWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            showButton2 = true
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            val buttonAfter =
+                assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+            assertSame(buttonBefore, buttonAfter)
+            assertTrue(buttonAfter.isConnected)
+            assertFalse(
+                buttonWasRemoved,
+                "A surviving A11Y node must remain continuously connected",
+            )
+        } finally {
+            disconnectMutationObserver(observer)
+        }
     }
 
     @Test
@@ -786,4 +842,27 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
+}
+
+private external interface TestMutationObserver : JsAny
+
+private fun createMutationObserver(onRemoved: (JsAny) -> Unit): TestMutationObserver =
+    js(
+        """
+        new MutationObserver(records => {
+            for (const record of records) {
+                for (const removedNode of record.removedNodes) {
+                    onRemoved(removedNode);
+                }
+            }
+        })
+        """
+    )
+
+private fun observeChildListMutations(observer: TestMutationObserver, element: HTMLElement) {
+    js("observer.observe(element, { childList: true, subtree: true })")
+}
+
+private fun disconnectMutationObserver(observer: TestMutationObserver) {
+    js("observer.disconnect()")
 }
