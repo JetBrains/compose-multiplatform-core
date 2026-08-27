@@ -94,6 +94,7 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropViewGroup
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
@@ -470,7 +471,9 @@ internal class ComposeWindow(
 
     private fun initEvents(canvas: HTMLCanvasElement) {
 
-        val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
+        val onPointerCallback: (PointerEvent) -> Unit = {
+            trace("ComposeWeb:input:pointer") { onPointerEvent(it) }
+        }
         listOf(
             "pointerenter",
             "pointerdown",
@@ -563,7 +566,7 @@ internal class ComposeWindow(
         }
 
         addTypedEvent<WheelEvent>("wheel", passive = false) { event ->
-            onWheelEvent(event)
+            trace("ComposeWeb:input:wheel") { onWheelEvent(event) }
         }
 
         canvas.addEventListener("contextmenu", { event ->
@@ -571,7 +574,7 @@ internal class ComposeWindow(
         })
 
         val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
-            processKeyboardEvent(event)
+            trace("ComposeWeb:input:key") { processKeyboardEvent(event) }
         }
         addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
         addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)

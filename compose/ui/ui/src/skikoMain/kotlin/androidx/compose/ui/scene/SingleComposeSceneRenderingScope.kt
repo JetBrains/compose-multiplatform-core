@@ -20,6 +20,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.platform.FrameRecomposer
+import androidx.compose.ui.util.trace
 
 /**
  * Coordinates synchronous rendering of a single [ComposeScene] driven by a [FrameRecomposer].
@@ -70,14 +71,15 @@ class SingleComposeSceneRenderingScope(
      * then runs the scene's measure/layout and draw phases. [nanoTime] is the frame time used to
      * drive all animations in the content (and any other code using [withFrameNanos]).
      */
-    fun ComposeScene.render(frameRecomposer: FrameRecomposer, canvas: Canvas, nanoTime: Long) {
-        postponingSceneInvalidations {
-            frameRecomposer.performFrame(nanoTime)
-            measureAndLayout()
-            draw(canvas)
+    fun ComposeScene.render(frameRecomposer: FrameRecomposer, canvas: Canvas, nanoTime: Long) =
+        trace("ComposeScene:frame") {
+            postponingSceneInvalidations {
+                frameRecomposer.performFrame(nanoTime)
+                trace("ComposeScene:measureAndLayout") { measureAndLayout() }
+                trace("ComposeScene:draw") { draw(canvas) }
+            }
+            if (hasInvalidations()) {
+                scheduleFrame()
+            }
         }
-        if (hasInvalidations()) {
-            scheduleFrame()
-        }
-    }
 }

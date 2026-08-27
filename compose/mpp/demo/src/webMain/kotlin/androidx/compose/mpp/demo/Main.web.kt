@@ -54,11 +54,16 @@ fun main() {
     }
 }
 
+private fun enableTraces() {
+    js("globalThis.__composeWebTraceEnabled = true;")
+}
+
 @OptIn(
     ExperimentalComposeUiApi::class,
     ExperimentalBrowserHistoryApi::class
 )
 fun defaultComposeDemo() {
+    enableTraces()
     ComposeViewport {
         val navController = rememberNavController()
         val fontFamilyResolver = LocalFontFamilyResolver.current

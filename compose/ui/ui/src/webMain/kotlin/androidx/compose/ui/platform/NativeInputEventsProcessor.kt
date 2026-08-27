@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.trace
 import androidx.compose.ui.util.fastForEach
 import kotlin.js.toDouble
 import kotlin.js.toInt
@@ -71,7 +72,8 @@ internal abstract class NativeInputEventsProcessor(
         }
     }
 
-    fun runCheckpoint(currentTextFieldValue: TextFieldValue) {
+    fun runCheckpoint(currentTextFieldValue: TextFieldValue) =
+        trace("ComposeWeb:input:textCheckpoint") {
         isCheckpointScheduled = false
 
         collectedEvents.sortBy { it.timeStamp.toInt() }

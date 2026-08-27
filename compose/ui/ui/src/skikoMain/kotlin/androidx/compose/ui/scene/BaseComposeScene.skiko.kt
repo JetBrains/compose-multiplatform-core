@@ -177,14 +177,16 @@ internal abstract class BaseComposeScene(
             // AndroidComposeView.dispatchDraw() begins with measureAndLayout() so layout changes
             // discovered after the host layout traversal are still settled before drawing. Keep
             // that trailing layout pass here even though measureAndLayout() is also a public phase.
-            doMeasureAndLayout()
+            trace("ComposeScene:trailingMeasureAndLayout") { doMeasureAndLayout() }
 
             // Advance the global snapshot before drawing so writes made since the last pass
             // including state objects created during a prior draw are recorded as modified and
             // visible to this draw. Lighter than sendApplyNotifications, matches what Android does.
-            Snapshot.notifyObjectsInitialized()
+            trace("ComposeScene:notifyObjectsInitialized") {
+                Snapshot.notifyObjectsInitialized()
+            }
 
-            doDraw(canvas)
+            trace("ComposeScene:drawTraversal") { doDraw(canvas) }
         }
     }
 

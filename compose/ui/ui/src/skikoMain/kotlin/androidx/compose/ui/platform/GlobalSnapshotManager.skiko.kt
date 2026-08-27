@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.snapshots.ObserverHandle
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.internal.getCurrentThreadId
+import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
@@ -119,7 +120,9 @@ internal object GlobalSnapshotManager {
                 warnIfMultipleThreads()
                 channel.consumeEach {
                     scheduled.value = false
-                    Snapshot.sendApplyNotifications()
+                    trace("GlobalSnapshotManager:sendApplyNotifications") {
+                        Snapshot.sendApplyNotifications()
+                    }
                 }
             }
             writeObserverHandle = Snapshot.registerGlobalWriteObserver {
