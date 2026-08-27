@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.ar() = mapOf(
     Strings.TimePickerMinuteTextField to "الدقائق",
     Strings.TimePickerHourTextField to "الساعات",
     Strings.TimePickerToggleKeyboard to "التبديل إلى وضع \"إدخال النص\"",
+    Strings.TimePickerToggleScroll to "التبديل إلى وضع الانتقال",
     Strings.TimePickerToggleTouch to "التبديل إلى وضع \"الساعة\"",
     Strings.TimePickerDialogTitle to "اختيار الوقت",
+    Strings.TimeScrollDialogTitle to "اختيار الوقت",
     Strings.TimeInputDialogTitle to "إدخال الوقت",
     Strings.TimePickerMinuteError to "الدقيقة: بين 0 و59",
     Strings.TimePickerHourError to "الساعة: بين 1 و12",

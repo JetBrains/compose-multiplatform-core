@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.am() = mapOf(
     Strings.TimePickerMinuteTextField to "ለደቂቃዎች",
     Strings.TimePickerHourTextField to "ለሰዓት",
     Strings.TimePickerToggleKeyboard to "ወደ የጽሑፍ ግቤት ሁነታ ቀይር",
+    Strings.TimePickerToggleScroll to "ወደ ሸብልል ሁነታ ቀይር",
     Strings.TimePickerToggleTouch to "ወደ የሰዓት ሁነታ ቀይር",
     Strings.TimePickerDialogTitle to "ጊዜ ምረጥ",
+    Strings.TimeScrollDialogTitle to "ጊዜ ምረጥ",
     Strings.TimeInputDialogTitle to "ጊዜ ያስገቡ",
     Strings.TimePickerMinuteError to "ደቂቃ ከ0–59 መሆን አለበት",
     Strings.TimePickerHourError to "ሰዓት ከ1–12 መሆን አለበት",

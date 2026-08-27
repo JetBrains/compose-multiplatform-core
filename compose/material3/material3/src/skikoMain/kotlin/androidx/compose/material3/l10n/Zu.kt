@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.zu() = mapOf(
     Strings.TimePickerMinuteTextField to "ngemizuzu",
     Strings.TimePickerHourTextField to "ngehora",
     Strings.TimePickerToggleKeyboard to "Shintshela kumodi yokufaka umbhalo",
+    Strings.TimePickerToggleScroll to "Shintshela kumodi yokuskrola",
     Strings.TimePickerToggleTouch to "Shintshela kumodi yewashi",
     Strings.TimePickerDialogTitle to "Khetha Isikhathi",
+    Strings.TimeScrollDialogTitle to "Khetha Isikhathi",
     Strings.TimeInputDialogTitle to "Faka Isikhathi",
     Strings.TimePickerMinuteError to "Umzuzu ube ngu-0–59",
     Strings.TimePickerHourError to "Ihora libe ngu-1–12",

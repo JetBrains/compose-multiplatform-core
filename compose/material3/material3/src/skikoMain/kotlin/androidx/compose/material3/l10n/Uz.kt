@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.uz() = mapOf(
     Strings.TimePickerMinuteTextField to "bir daqiqa",
     Strings.TimePickerHourTextField to "bir soat",
     Strings.TimePickerToggleKeyboard to "Matn kiritish rejimiga oʻtish",
+    Strings.TimePickerToggleScroll to "Varaqlash rejimiga almashish",
     Strings.TimePickerToggleTouch to "Soat rejimiga oʻtish",
     Strings.TimePickerDialogTitle to "Vaqtni tanlang",
+    Strings.TimeScrollDialogTitle to "Vaqtni tanlang",
     Strings.TimeInputDialogTitle to "Vaqtni kiriting",
     Strings.TimePickerMinuteError to "Daqiqa 0–59 boʻlsin",
     Strings.TimePickerHourError to "Soat 1–12 boʻlsin",

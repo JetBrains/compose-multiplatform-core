@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.km() = mapOf(
     Strings.TimePickerMinuteTextField to "រយៈពេលប៉ុន្មាននាទី",
     Strings.TimePickerHourTextField to "រយៈពេលប៉ុន្មានម៉ោង",
     Strings.TimePickerToggleKeyboard to "ប្ដូរទៅ​មុខងារបញ្ចូល​អក្សរ",
+    Strings.TimePickerToggleScroll to "ប្ដូរទៅមុខងាររំកិល",
     Strings.TimePickerToggleTouch to "ប្ដូរទៅ​មុខងារនាឡិកា",
     Strings.TimePickerDialogTitle to "ជ្រើសរើស​ពេលវេលា",
+    Strings.TimeScrollDialogTitle to "ជ្រើសរើស​ពេលវេលា",
     Strings.TimeInputDialogTitle to "បញ្ចូលម៉ោង",
     Strings.TimePickerMinuteError to "នាទីត្រូវតែពី 0–59",
     Strings.TimePickerHourError to "ម៉ោងត្រូវតែពី 1–12",

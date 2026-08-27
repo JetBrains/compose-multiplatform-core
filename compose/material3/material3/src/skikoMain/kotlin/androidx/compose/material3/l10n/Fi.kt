@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.fi() = mapOf(
     Strings.TimePickerMinuteTextField to "minuuttien osalta",
     Strings.TimePickerHourTextField to "tuntien osalta",
     Strings.TimePickerToggleKeyboard to "Vaihda tekstinsyöttötilaan",
+    Strings.TimePickerToggleScroll to "Vaihda vieritystilaan",
     Strings.TimePickerToggleTouch to "Vaihda kellotilaan",
     Strings.TimePickerDialogTitle to "Valitse aika",
+    Strings.TimeScrollDialogTitle to "Valitse aika",
     Strings.TimeInputDialogTitle to "Lisää aika",
     Strings.TimePickerMinuteError to "Minuutin on oltava 0–59",
     Strings.TimePickerHourError to "Tunnin on oltava 1–12",

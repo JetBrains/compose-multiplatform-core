@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.ky() = mapOf(
     Strings.TimePickerMinuteTextField to "мүнөткө",
     Strings.TimePickerHourTextField to "саатка",
     Strings.TimePickerToggleKeyboard to "Текст киргизүү режимине которулуу",
+    Strings.TimePickerToggleScroll to "Сыдыруу режимине которулуу",
     Strings.TimePickerToggleTouch to "Саат режимине которулуу",
     Strings.TimePickerDialogTitle to "Убакыт тандаңыз",
+    Strings.TimeScrollDialogTitle to "Убакыт тандаңыз",
     Strings.TimeInputDialogTitle to "Убакытты киргизиңиз",
     Strings.TimePickerMinuteError to "Мүнөт 0–59 болушу керек",
     Strings.TimePickerHourError to "Саат 1–12 болушу керек",

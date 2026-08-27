@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.az() = mapOf(
     Strings.TimePickerMinuteTextField to "dəqiqəlik",
     Strings.TimePickerHourTextField to "saatlıq",
     Strings.TimePickerToggleKeyboard to "Mətn daxiletmə rejiminə keçin",
+    Strings.TimePickerToggleScroll to "Sürüşdürmə rejiminə keçin",
     Strings.TimePickerToggleTouch to "Saat rejiminə keçin",
     Strings.TimePickerDialogTitle to "Vaxt seçin",
+    Strings.TimeScrollDialogTitle to "Vaxt seçin",
     Strings.TimeInputDialogTitle to "Vaxt daxil edin",
     Strings.TimePickerMinuteError to "Dəqiqə 0-59 aralığında olmalıdır",
     Strings.TimePickerHourError to "Saat 1-12 aralığında olmalıdır",
