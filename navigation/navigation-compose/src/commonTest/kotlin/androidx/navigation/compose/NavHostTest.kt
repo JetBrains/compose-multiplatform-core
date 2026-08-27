@@ -75,12 +75,24 @@ import androidx.navigation.testing.TestNavHostController
 import androidx.savedstate.SavedState
 import androidx.testutils.TestNavigator
 import androidx.testutils.test
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostTest.kt
 import kotlin.reflect.KClass
 import kotlin.test.Ignore
 import kotlin.test.Test
+=======
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+>>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostTest.kt
 
 @OptIn(ExperimentalTestApi::class)
 class NavHostTest {
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/NavHostTest.kt
+=======
+    @get:Rule val composeTestRule = createComposeRule()
+>>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostTest.kt
 
     @Test
     fun testSingleDestinationSet() = runComposeUiTestOnUiThread {

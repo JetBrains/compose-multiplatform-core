@@ -26,10 +26,23 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavigatorState
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/DialogNavigatorTest.kt
 import kotlin.test.Test
+=======
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+>>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/DialogNavigatorTest.kt
 
 @OptIn(ExperimentalTestApi::class)
 class DialogNavigatorTest {
+<<<<<<< HEAD:navigation/navigation-compose/src/commonTest/kotlin/androidx/navigation/compose/DialogNavigatorTest.kt
+=======
+    @get:Rule val rule = createComposeRule()
+>>>>>>> 5ffe16f1fd65c834220e86f83cfd8d86f98cd9a8:navigation/navigation-compose/src/androidDeviceTest/kotlin/androidx/navigation/compose/DialogNavigatorTest.kt
 
     private val defaultText = "dialogText"
 
