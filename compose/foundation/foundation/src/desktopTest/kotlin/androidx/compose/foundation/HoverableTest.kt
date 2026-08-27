@@ -46,6 +46,7 @@ class HoverableTest {
     // when listening to it via InteractionSource.collectHoveredAsState.
     // https://youtrack.jetbrains.com/issue/COMPOSE-666/Hover-does-not-trigger-on-an-element-that-appears-on-the-cursor
     @OptIn(ExperimentalComposeUiApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun collectHoveredAsStateReceivesSyntheticEnter() = runComposeUiTest {
         var isInnerBoxHovered = false

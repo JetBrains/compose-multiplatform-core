@@ -16,15 +16,15 @@
 
 package androidx.compose.ui.test
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
 import kotlin.test.Test
 import kotlin.test.assertNotEquals
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class)
 class ProvidesLocalsTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun providesWindowInfo() = runComposeUiTest {
         lateinit var windowInfo: WindowInfo

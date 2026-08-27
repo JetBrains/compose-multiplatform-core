@@ -62,7 +62,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.MouseInjectionScope
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
@@ -95,10 +94,10 @@ import org.junit.runner.RunWith
 
 
 @Suppress("WrapUnaryOperator")
-@OptIn(ExperimentalTestApi::class)
 @RunWith(Theories::class)
 class ScrollbarTest {
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 
