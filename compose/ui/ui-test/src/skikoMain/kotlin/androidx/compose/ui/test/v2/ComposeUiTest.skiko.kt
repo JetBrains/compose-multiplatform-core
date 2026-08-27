@@ -31,7 +31,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.roundToInt
 import kotlin.time.Duration
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
@@ -75,6 +74,22 @@ import kotlinx.coroutines.test.runTest
  *   platform specific timeout exception will be thrown.
  * @param block The suspendable test body.
  */
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use runComposeUiTest(config, block) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "runComposeUiTest(effectContext, runTestContext, testTimeout) { ... }\n" +
+            "After:\n" +
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout)) { ... }",
+    replaceWith =
+        ReplaceWith(
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), block)"
+        ),
+)
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
@@ -91,19 +106,26 @@ actual fun runComposeUiTest(
     }
 }
 
+@Suppress("DEPRECATION")
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     config: ComposeUiTestConfig,
     block: suspend ComposeUiTest.() -> Unit,
 ): TestResult {
     // TODO(Merge) Implement after merging 0221de5bb907a9b49017d40a2c8507bac7ad3a0b
-    return runComposeUiTest(
+    return runSkikoComposeUiTest(
         effectContext = config.effectContext,
         runTestContext = config.runTestContext,
         testTimeout = config.testTimeout,
         block = block,
     )
 }
+
+// TODO(Merge) Implement after merging fa744c811da8923e6651f861f5b86b5709acc108
+@OptIn(ExperimentalTestApi::class)
+@Suppress("DEPRECATION", "KotlinRunTestResultUnused")
+actual fun runComposeUiTest(block: suspend ComposeUiTest.() -> Unit): TestResult =
+    runComposeUiTest(ComposeUiTestConfig(), block)
 
 /**
  * Runs a Skiko-based Compose UI test within the specified configuration and test execution context.
