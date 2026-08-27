@@ -34,6 +34,8 @@ import androidx.compose.remote.core.operations.FloatFunctionCall
 import androidx.compose.remote.core.operations.ParticlesCreate
 import androidx.compose.remote.core.operations.ParticlesLoop
 import androidx.compose.remote.core.operations.TouchExpression
+import androidx.compose.remote.core.operations.layout.LayoutComponent
+import androidx.compose.remote.core.operations.layout.LayoutComponentContent
 import androidx.compose.remote.core.operations.layout.LoopOperation
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.Custom
@@ -1448,6 +1450,10 @@ internal fun androidx.compose.remote.core.operations.layout.managers.CoreText.re
         letterSpacing = coreTextLetterSpacingField.getFloat(this),
         lineHeightMultiplier = coreTextLineHeightMultiplierField.getFloat(this),
         lineHeightAdd = coreTextLineHeightAddField.getFloat(this),
+        underline = coreTextUnderlineField.getBoolean(this),
+        strikethrough = coreTextStrikethroughField.getBoolean(this),
+        fontAxis = coreTextFontAxisField.get(this) as? IntArray,
+        fontAxisValues = coreTextFontAxisValuesField.get(this) as? FloatArray,
     )
 }
 
@@ -1505,6 +1511,26 @@ private val coreTextLineHeightAddField =
     androidx.compose.remote.core.operations.layout.managers.CoreText::class
         .java
         .getDeclaredField("mLineHeightAdd")
+        .apply { isAccessible = true }
+private val coreTextUnderlineField =
+    androidx.compose.remote.core.operations.layout.managers.CoreText::class
+        .java
+        .getDeclaredField("mUnderline")
+        .apply { isAccessible = true }
+private val coreTextStrikethroughField =
+    androidx.compose.remote.core.operations.layout.managers.CoreText::class
+        .java
+        .getDeclaredField("mStrikethrough")
+        .apply { isAccessible = true }
+private val coreTextFontAxisField =
+    androidx.compose.remote.core.operations.layout.managers.CoreText::class
+        .java
+        .getDeclaredField("mFontAxis")
+        .apply { isAccessible = true }
+private val coreTextFontAxisValuesField =
+    androidx.compose.remote.core.operations.layout.managers.CoreText::class
+        .java
+        .getDeclaredField("mFontAxisValues")
         .apply { isAccessible = true }
 
 // --- TextLayout Reflection Helper ---
@@ -1619,4 +1645,12 @@ internal fun sortWithPriorities(
     @Suppress("UNCHECKED_CAST")
     return sortWithPrioritiesMethod.invoke(null, children, orientation)
         as ArrayList<androidx.compose.remote.core.operations.layout.Component>
+}
+
+// 11. LayoutComponent Content Reflection
+private val layoutContentField =
+    LayoutComponent::class.java.getDeclaredField("mContent").apply { isAccessible = true }
+
+internal fun LayoutComponent.getContentReflection(): LayoutComponentContent? {
+    return layoutContentField.get(this) as? LayoutComponentContent
 }

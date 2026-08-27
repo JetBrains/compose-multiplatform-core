@@ -19,6 +19,7 @@ package androidx.compose.foundation.lazy.layout
 import androidx.collection.mutableIntIntMapOf
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
+import androidx.compose.foundation.ComposeFoundationFlags.isCacheWindowVisibleItemCountCheckEnabled
 import androidx.compose.foundation.ComposeFoundationFlags.isMultiLaneCacheWindowEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle
@@ -77,6 +78,7 @@ private class MultiLaneCacheWindow(
     private var previousPassDelta = 0f
     private var previousPassItemCount = UnsetItemCount
     private var hasUpdatedVisibleItemsOnce = false
+    private var previousPassVisibleItemCount = 0
 
     /**
      * Indices for the start and end of the cache window for each lane. The items between
@@ -114,9 +116,6 @@ private class MultiLaneCacheWindow(
     /** End-side main-axis overflow space (extra space outside the viewport) per lane. */
     private var perLaneMainAxisExtraEndSpace = IntArray(previousLaneCount)
 
-    /** First non-visible item index adjacent to the viewport in the scroll direction per lane. */
-    private var perLaneFirstNonVisibleItemIndex = IntArray(previousLaneCount)
-
     private fun handleLaneResize() {
         val newLaneCount = maxOf(1, laneCount())
         if (previousLaneCount != newLaneCount) {
@@ -134,6 +133,7 @@ private class MultiLaneCacheWindow(
      * 1) After the first layout pass
      * 2) If any of the visible items were resized since the last measure pass.
      * 3) If the total number of items changed since the last measure pass.
+     * 4) If the number of items in the visible item set has changed.
      */
     private var shouldRefillWindow = false
 
@@ -180,12 +180,18 @@ private class MultiLaneCacheWindow(
     override fun CacheWindowScope.onVisibleItemsUpdated() {
         handleLaneResize()
         debugLog { "hasUpdatedVisibleItemsOnce=$hasUpdatedVisibleItemsOnce" }
-        if (!hasUpdatedVisibleItemsOnce && enableInitialPrefetch) {
-            val prefetchForwardWindow =
-                with(cacheWindow) { density?.calculateAheadWindow(mainAxisViewportSize) ?: 0 }
-            // we won't fill the window if we don't have a prefetch window
-            if (prefetchForwardWindow != 0) shouldRefillWindow = true
-            hasUpdatedVisibleItemsOnce = true
+        if (isCacheWindowVisibleItemCountCheckEnabled) {
+            if (!hasUpdatedVisibleItemsOnce) {
+                shouldRefillWindow = true
+                hasUpdatedVisibleItemsOnce = true
+            }
+        } else {
+            if (!hasUpdatedVisibleItemsOnce && enableInitialPrefetch) {
+                val prefetchForwardWindow =
+                    with(cacheWindow) { density?.calculateAheadWindow(mainAxisViewportSize) ?: 0 }
+                // we won't fill the window if we don't have a prefetch window
+                if (prefetchForwardWindow != 0) shouldRefillWindow = true
+            }
         }
 
         /**
@@ -193,27 +199,79 @@ private class MultiLaneCacheWindow(
          * changed.
          */
         if (previousPassItemCount != UnsetItemCount && previousPassItemCount != totalItemsCount) {
+            shouldRefillWindow = true
             onDatasetChanged()
         }
 
         itemsCount = totalItemsCount
-        // If visible items changed, update cached information. Any items that were visible
-        // and became out of bounds will either count for the cache window or be cancelled/removed
-        // by [cancelOutOfBounds]. If any items changed sizes we re-trigger the window filling
-        // update.
         if (hasVisibleItems) {
             forEachVisibleItem { index, key, mainAxisSize, lane ->
-                if (index != InvalidIndex) cacheVisibleItemsInfo(index, key, mainAxisSize, lane)
+                if (index != InvalidIndex) {
+                    debugLog { "cacheVisibleItemsInfo item=$index size=$mainAxisSize key=$key" }
+                    cacheVisibleItemsInfo(index, key, mainAxisSize, lane) { cachedSize, cachedKey ->
+                        if (cachedSize != mainAxisSize || cachedKey != key) {
+                            shouldRefillWindow = true
+                        }
+                    }
+                }
             }
+
+            /**
+             * This comparison is required because there are instances, for example when using
+             * lookahead, where the number of visible items can change without keys or sizes
+             * changing and without the dataset changing. In the case where the number of visible
+             * items decrease, the executing the refill will be cheap the items that we omitted form
+             * the new visible items list are still in the cache after having been cached with
+             * `cacheVisibleItemsInfo` from the previous invocation of `onVisibleItemsUpdated`. In
+             * the case where the visible items list increase in size, those uncached items are
+             * brought into composition by measure because they are needed in the measure pass and
+             * we use them here.
+             */
+            if (
+                isCacheWindowVisibleItemCountCheckEnabled &&
+                    visibleItemsCount != previousPassVisibleItemCount
+            ) {
+                shouldRefillWindow = true
+            }
+
+            previousPassVisibleItemCount = visibleItemsCount
+
             if (shouldRefillWindow) {
                 // refill window in accordance with last pass delta
                 debugLog { "Refill Window Forward=${previousPassDelta <= 0.0f}" }
-                refillWindow(previousPassDelta <= 0.0f)
+                if (isCacheWindowVisibleItemCountCheckEnabled) {
+                    val viewport = mainAxisViewportSize
+
+                    /**
+                     * If we are not performing any non-scroll caching, we return a window of 0. We
+                     * do this instead of completely skipping `onPrefetchForward` because
+                     * `onPrefetchForward` sets our cache window boundary item indexes which ensures
+                     * that the correct items are removed from the cache when
+                     * [androidx.compose.foundation.lazy.staggeredgrid.rememberStaggeredGridMeasurePolicy]
+                     * is called which in turn makes a call to
+                     * [androidx.compose.foundation.lazy.staggeredgrid.keepAroundItems]
+                     */
+                    val prefetchForwardWindow =
+                        if (enableInitialPrefetch) {
+                            with(cacheWindow) { density?.calculateAheadWindow(viewport) ?: 0 }
+                        } else {
+                            0
+                        }
+
+                    onPrefetchForward(
+                        prefetchForwardWindow = prefetchForwardWindow,
+                        scrollDelta = 0.0f,
+                        applyForwardPrefetch = previousPassDelta <= 0.0f,
+                    )
+                } else {
+                    refillWindow(previousPassDelta <= 0.0f)
+                }
+
                 shouldRefillWindow = false
             }
         } else {
-            // if no visible items, it means the dataset is empty and we should reset the window.
-            // Next time visible items update we we re-start the window strategy.
+            // if no visible items, it means the dataset is empty, and we should reset the window.
+            // Next time visible items update we reset the window strategy.
             resetStrategy()
         }
 
@@ -222,7 +280,6 @@ private class MultiLaneCacheWindow(
 
     private fun CacheWindowScope.onDatasetChanged() {
         debugLog { "Total Items Changed" }
-        shouldRefillWindow = true
         if (hasVisibleItems) {
             val lastLineIndex = getLastItemIndex()
 
@@ -353,7 +410,6 @@ private class MultiLaneCacheWindow(
         perLaneLastVisibleItemIndex = IntArray(newLaneCount)
         perLaneMainAxisExtraStartSpace = IntArray(newLaneCount)
         perLaneMainAxisExtraEndSpace = IntArray(newLaneCount)
-        perLaneFirstNonVisibleItemIndex = IntArray(newLaneCount)
     }
 
     /**
@@ -370,10 +426,7 @@ private class MultiLaneCacheWindow(
         val changedScrollDirection = scrollDelta.sign != previousPassDelta.sign
 
         if (applyForwardPrefetch) { // scrolling forward, starting on last visible
-            updatePerLaneVisibleItemIndexes(perLaneLastVisibleItemIndex)
-            perLaneLastVisibleItemIndex.forEachIndexed { lane, value ->
-                perLaneFirstNonVisibleItemIndex[lane] = getNextEndItemIndexInLane(lane, value)
-            }
+            updatePerLaneLastVisibleItemIndexes(perLaneLastVisibleItemIndex)
             updatePerLaneMainAxisExtraEndSpace(perLaneMainAxisExtraEndSpace)
 
             for (lane in 0 until currentLaneCount) {
@@ -404,7 +457,8 @@ private class MultiLaneCacheWindow(
                 // If we get the same delta in the next frame, would we cover the extra space needed
                 // to actually need this item? If so, mark it as urgent
                 val isUrgent: Boolean =
-                    itemIndexToPrefetch == perLaneFirstNonVisibleItemIndex[lane] &&
+                    itemIndexToPrefetch ==
+                        getNextEndItemIndexInLane(lane, perLaneLastVisibleItemIndex[lane]) &&
                         scrollDelta != 0.0f &&
                         scrollDelta.absoluteValue >= perLaneMainAxisExtraEndSpace[lane]
 
@@ -423,9 +477,6 @@ private class MultiLaneCacheWindow(
             }
         } else { // scrolling backwards, starting on first visible
             updatePerLaneFirstVisibleItemIndex(perLaneFirstVisibleItemIndex)
-            perLaneFirstVisibleItemIndex.forEachIndexed { lane, itemIndex ->
-                perLaneFirstNonVisibleItemIndex[lane] = getNextStartItemIndexInLane(lane, itemIndex)
-            }
             updatePerLaneMainAxisExtraStartSpace(perLaneMainAxisExtraStartSpace)
 
             for (lane in 0 until currentLaneCount) {
@@ -456,7 +507,8 @@ private class MultiLaneCacheWindow(
                 // If we get the same delta in the next frame, would we cover the extra space needed
                 // to actually need this item? If so, mark it as urgent
                 val isUrgent: Boolean =
-                    itemIndexToPrefetch == perLaneFirstNonVisibleItemIndex[lane] &&
+                    itemIndexToPrefetch ==
+                        getNextStartItemIndexInLane(lane, perLaneFirstVisibleItemIndex[lane]) &&
                         scrollDelta != 0.0f &&
                         scrollDelta.absoluteValue >= perLaneMainAxisExtraStartSpace[lane]
 
@@ -520,7 +572,7 @@ private class MultiLaneCacheWindow(
             }
             removeOutOfBoundsItems(0, perLaneCacheWindowStartIndex.min() - 1)
         } else { // scrolling backwards, keep around from last visible
-            updatePerLaneVisibleItemIndexes(perLaneLastVisibleItemIndex)
+            updatePerLaneLastVisibleItemIndexes(perLaneLastVisibleItemIndex)
             updatePerLaneMainAxisExtraEndSpace(perLaneMainAxisExtraEndSpace)
             for (lane in 0 until currentLaneCount) {
                 perLaneCacheWindowEndSpace[lane] =
@@ -610,14 +662,17 @@ private class MultiLaneCacheWindow(
      * of bounds requests. The same is valid if items are replaced (have the same size by key
      * changed).
      */
-    private fun cacheVisibleItemsInfo(itemIndex: Int, key: Any, itemSize: Int, lane: Int) {
-        debugLog { "cacheVisibleItemsInfo item=$itemIndex size=$itemSize key=$key" }
+    private fun cacheVisibleItemsInfo(
+        itemIndex: Int,
+        key: Any,
+        itemSize: Int,
+        lane: Int,
+        onExistingItemSizeReceive: (size: Int, key: Any) -> Unit,
+    ) {
         if (windowCacheWithItems.containsKey(itemIndex)) {
             val cachedSize = windowCacheWithItems[itemIndex]!!.mainAxisSize
             val cachedKey = windowCacheWithItems[itemIndex]!!.key
-            if (cachedSize != itemSize || cachedKey != key) {
-                shouldRefillWindow = true
-            }
+            onExistingItemSizeReceive(cachedSize, cachedKey)
         }
 
         windowCacheWithItems[itemIndex] = updateOrCreateCachedItem(itemIndex, itemSize, key)
@@ -716,7 +771,7 @@ private class MultiLaneCacheWindow(
         itemIndex: Int,
         itemSize: Int,
     ) {
-        if (currentLaneCount > 1 && isSpanLine(itemIndex)) {
+        if (currentLaneCount > 1 && isSpanItem(itemIndex)) {
             val minExtraSpace = perLaneCacheWindowEndSpace.minOrNull() ?: 0
             val newExtraSpace = minExtraSpace - itemSize
 
@@ -735,7 +790,7 @@ private class MultiLaneCacheWindow(
         itemIndex: Int,
         itemSize: Int,
     ) {
-        if (currentLaneCount > 1 && isSpanLine(itemIndex)) {
+        if (currentLaneCount > 1 && isSpanItem(itemIndex)) {
             val minExtraSpace = perLaneCacheWindowStartSpace.minOrNull() ?: 0
             val newExtraSpace = minExtraSpace - itemSize
 
