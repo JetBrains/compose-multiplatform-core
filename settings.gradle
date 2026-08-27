@@ -52,7 +52,7 @@ buildscript {
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
         } else {
-            classpath("com.android.settings:com.android.settings.gradle.plugin:9.4.0-alpha02")
+            classpath("com.android.settings:com.android.settings.gradle.plugin:9.4.0-alpha05")
         }
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
@@ -796,6 +796,7 @@ includeProject(":core:haptics:haptics-demos", "core/haptics/haptics/integration-
 includeProject(":core:uwb:uwb", [BuildType.MAIN])
 includeProject(":core:uwb:uwb-rxjava3", [BuildType.MAIN])
 includeProject(":credentials:credentials", [BuildType.MAIN])
+includeProject(":credentials:credentials-lint", [BuildType.MAIN])
 includeProject(":credentials:credentials-samples", "credentials/credentials/samples", [BuildType.MAIN])
 includeProject(":credentials:credentials-play-services-auth", [BuildType.MAIN])
 includeProject(":credentials:providerevents:providerevents", [BuildType.MAIN])
