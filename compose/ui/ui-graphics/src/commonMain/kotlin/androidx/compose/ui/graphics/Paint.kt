@@ -27,11 +27,7 @@ public expect class NativePaint
 
 public expect fun Paint(): Paint
 
-<<<<<<< HEAD
-interface Paint {
-=======
 public interface Paint {
->>>>>>> 9f4ee285f524bdb266f54d7a2fff41fb3a7a7f84
     @Suppress("DEPRECATION_ERROR")
     @Deprecated(
         message = "Use platform-specific extension to get platform reference",
