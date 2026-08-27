@@ -25,15 +25,14 @@ import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.foundation.lazy.layout.getDefaultLazyLayoutKey
-import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -59,6 +58,7 @@ import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.WearComposeFoundationFlags
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
+import androidx.wear.compose.foundation.lazy.layout.lazyLayoutItemAnimator
 import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
@@ -198,12 +198,6 @@ public fun TransformingLazyColumn(
             coroutineScope = coroutineScope,
             reverseLayout = reverseLayout,
         )
-    val reverseDirection =
-        ScrollableDefaults.reverseDirection(
-            LocalLayoutDirection.current,
-            Orientation.Vertical,
-            reverseScrolling = reverseLayout,
-        )
 
     val semanticState = remember(state) { TransformingLazyColumnSemanticState(state) }
     val focusRequester = remember { FocusRequester() }
@@ -214,7 +208,7 @@ public fun TransformingLazyColumn(
             modifier
                 .then(state.awaitLayoutModifier)
                 .then(state.remeasurementModifier)
-                .then(state.animator.modifier)
+                .lazyLayoutItemAnimator(state.animator, reverseLayout)
                 .then(
                     if (rotaryScrollableBehavior != null && userScrollEnabled)
                         Modifier.requestFocusOnHierarchyActive()
@@ -233,14 +227,13 @@ public fun TransformingLazyColumn(
                     userScrollEnabled = userScrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
-                .overscroll(overscrollEffect)
-                .scrollable(
+                .scrollableArea(
                     state = state,
-                    reverseDirection = reverseDirection,
                     enabled = userScrollEnabled,
                     orientation = Orientation.Vertical,
                     flingBehavior = flingBehavior,
                     overscrollEffect = overscrollEffect,
+                    reverseScrolling = reverseLayout,
                 )
                 .then(
                     if (
@@ -502,9 +495,10 @@ internal class TransformingLazyColumnItemProvider(
     @Composable
     override fun Item(index: Int, key: Any) {
         val itemScope =
-            remember(index, reduceMotionEnabled) {
+            remember(key, index, reduceMotionEnabled) {
                 TransformingLazyColumnItemScopeImpl(
-                    index,
+                    key = key,
+                    index = index,
                     state = state,
                     reduceMotionEnabled = reduceMotionEnabled,
                 )

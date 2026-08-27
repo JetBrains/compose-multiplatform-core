@@ -17,18 +17,25 @@
 package androidx.appfunctions.internal
 
 import android.app.appfunctions.AppFunctionManager as PlatformAppFunctionManager
+import android.app.appfunctions.AppFunctionObservation
+import android.app.appfunctions.AppFunctionObserver
 import android.content.Context
 import android.os.Build
 import android.os.OutcomeReceiver
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionSearchSpec
+import androidx.appfunctions.ObserveAppFunctionsEvent
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Reads AppFunction metadata from the platform AppFunctionManager. */
@@ -98,4 +105,34 @@ internal class PlatformAppFunctionReader(
             )
             .firstOrNull()
     }
+
+    override fun observeAppFunctions(): Flow<ObserveAppFunctionsEvent> =
+        callbackFlow {
+                val appFunctionObserver =
+                    object : AppFunctionObserver {
+                        override fun onAppFunctionMetadataChanged(
+                            changedPackageNames: Set<String>
+                        ) {
+                            trySend(ObserveAppFunctionsEvent.MetadataChanged(changedPackageNames))
+                        }
+
+                        override fun onAppFunctionStatesChanged(
+                            changedFunctionNames: Set<android.app.appfunctions.AppFunctionName>
+                        ) {
+                            trySend(
+                                ObserveAppFunctionsEvent.StatesChanged(
+                                    changedFunctionNames
+                                        .map { AppFunctionName.fromPlatformAppFunctionName(it) }
+                                        .toSet()
+                                )
+                            )
+                        }
+                    }
+
+                val observation: AppFunctionObservation =
+                    appFunctionManager.observeAppFunctions(Runnable::run, appFunctionObserver)
+
+                awaitClose { observation.cancel() }
+            }
+            .buffer(Channel.UNLIMITED)
 }
