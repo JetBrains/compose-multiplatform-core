@@ -20,12 +20,12 @@ package androidx.compose.remote.creation.compose.action {
   }
 
   public final class PendingIntentActionKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.remote.creation.compose.action.Action pendingIntentAction(android.app.PendingIntent pendingIntent);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.remote.creation.compose.action.Action pendingIntentAction(android.app.PendingIntent, androidx.compose.runtime.Composer?, int);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.compose.remote.creation.compose.action.Action pendingIntentAction(kotlin.jvm.functions.Function1<? super android.content.Context!,android.app.PendingIntent!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.compose.remote.creation.compose.action.Action pendingIntentAction(kotlin.jvm.functions.Function1<android.content.Context,android.app.PendingIntent> pendingIntent);
   }
 
   public final class ValueChangeKt {
-    method public static <T> androidx.compose.remote.creation.compose.action.Action ValueChange(androidx.compose.remote.creation.compose.state.MutableRemoteState<T> remoteState, androidx.compose.remote.creation.compose.state.RemoteState<T> updatedValue);
+    method public static <T> androidx.compose.remote.creation.compose.action.Action valueChange(androidx.compose.remote.creation.compose.state.MutableRemoteState<T> remoteState, androidx.compose.remote.creation.compose.state.RemoteState<T> updatedValue);
   }
 
 }
