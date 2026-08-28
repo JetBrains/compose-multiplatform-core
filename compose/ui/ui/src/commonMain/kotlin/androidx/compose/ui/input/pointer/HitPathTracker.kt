@@ -609,7 +609,8 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
             if (event.type == PointerEventType.Move ||
                 event.type == PointerEventType.Enter ||
                 event.type == PointerEventType.Exit ||
-                (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan)
+                // TODO(Merge) Recheck after merging 036129a1461cd16477f81427faa9ae422b1780e6
+                (ComposeUiFlags.isTrackpadPanHoverFixEnabled && isPan && isIn != hasEntered)
             ) {
                 event.type = when {
                     !hasEntered && isIn -> PointerEventType.Enter

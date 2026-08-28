@@ -24,7 +24,6 @@ internal actual data class PointerInputEvent(
     val keyboardModifiers: PointerKeyboardModifiers = PointerKeyboardModifiers(0),
     val nativeEvent: Any? = null,
     val button: PointerButton? = null,
-    // TODO(Merge) Implement after merging 036129a1461cd16477f81427faa9ae422b1780e6
     val activeGesture: PointerClassification = PointerClassification.None,
     val isGestureStart: Boolean = false,
     val isGestureEnd: Boolean = false,
