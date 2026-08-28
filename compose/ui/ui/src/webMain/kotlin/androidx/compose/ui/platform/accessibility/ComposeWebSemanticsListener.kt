@@ -471,7 +471,18 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-disabled")
         }
 
-        setA11YAriaRole(element = htmlNode, config.getRoleId())
+        val roleId = config.getRoleId()
+        setA11YAriaRole(element = htmlNode, roleId)
+
+        val isCollection =
+            roleId == AriaRoleId.List || roleId == AriaRoleId.Grid
+
+        if (isCollection) {
+            // Prevent VoiceOver from announcing every child added as a lazy collection scrolls.
+            htmlNode.setAttribute("aria-live", "off")
+        } else {
+            htmlNode.removeAttribute("aria-live")
+        }
 
         if (config.contains(SemanticsProperties.IsDialog)) {
             htmlNode.setAttribute("aria-modal", "true")
@@ -500,9 +511,7 @@ internal class ComposeWebSemanticsListener(
             )
         } else {
             htmlNode.style.position = "absolute"
-            val parentScroll = pendingScrollOffsets[parentSemanticsNode.id]
-                ?: appliedScrollOffsets[parentSemanticsNode.id]
-                ?: Offset.Zero
+            val parentScroll = scrollOffsetForGeometry(parentSemanticsNode.id, htmlParent)
             setSizeAndPosition(
                 htmlNode,
                 (positionInRoot.x - parentSemanticsNode.positionInRoot.x) / density + parentScroll.x,
@@ -513,6 +522,19 @@ internal class ComposeWebSemanticsListener(
         }
     }
 
+
+    private fun scrollOffsetForGeometry(nodeId: Int, element: HTMLElement): Offset {
+        val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
+        val lastApplied = appliedScrollOffsets[nodeId]
+
+        return if (lastApplied != null && !actual.isCloseTo(lastApplied)) {
+            // The browser changed the offset and its asynchronous scroll event may still be pending.
+            actual
+        } else {
+            // The DOM still has our previous offset; use the new Compose offset during this sync.
+            pendingScrollOffsets[nodeId] ?: actual
+        }
+    }
 
     /** Makes scroll semantics visible to the browser as a real CSS scroll container. */
     private fun syncScrollability(
@@ -565,16 +587,25 @@ internal class ComposeWebSemanticsListener(
         val sizer = scrollSizers.getOrPut(nodeId) { createScrollSizer() }
         setSizeAndPosition(sizer, 0f, 0f, contentWidth, contentHeight)
 
-        val scrollLeft = horizontalRange?.let { range ->
-            val value = range.value().coerceIn(0f, maxHorizontal)
-            ((if (range.reverseScrolling) maxHorizontal - value else value) / density)
-                .coerceIn(0f, (contentWidth - viewportWidth).coerceAtLeast(0f))
-        } ?: 0f
-        val scrollTop = verticalRange?.let { range ->
-            val value = range.value().coerceIn(0f, maxVertical)
-            ((if (range.reverseScrolling) maxVertical - value else value) / density)
-                .coerceIn(0f, (contentHeight - viewportHeight).coerceAtLeast(0f))
-        } ?: 0f
+        val isLazyLayout = config.contains(SemanticsActions.ScrollToIndex)
+        val scrollLeft = if (isLazyLayout) {
+            htmlNode.scrollLeft.toFloat()
+        } else {
+            horizontalRange?.let { range ->
+                val value = range.value().coerceIn(0f, maxHorizontal)
+                ((if (range.reverseScrolling) maxHorizontal - value else value) / density)
+                    .coerceIn(0f, (contentWidth - viewportWidth).coerceAtLeast(0f))
+            } ?: 0f
+        }
+        val scrollTop = if (isLazyLayout) {
+            htmlNode.scrollTop.toFloat()
+        } else {
+            verticalRange?.let { range ->
+                val value = range.value().coerceIn(0f, maxVertical)
+                ((if (range.reverseScrolling) maxVertical - value else value) / density)
+                    .coerceIn(0f, (contentHeight - viewportHeight).coerceAtLeast(0f))
+            } ?: 0f
+        }
         pendingScrollOffsets[nodeId] = Offset(scrollLeft, scrollTop)
 
         if (scrollListenersAttached.add(nodeId)) {

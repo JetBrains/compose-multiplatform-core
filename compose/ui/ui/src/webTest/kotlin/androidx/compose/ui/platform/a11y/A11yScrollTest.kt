@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -33,6 +35,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
@@ -42,6 +45,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -365,6 +369,140 @@ class A11yScrollTest : OnCanvasTests {
     }
 
     @Test
+    fun lazyListItemIsScrolledIntoViewByBrowser() = runApplicationTest {
+        val state = LazyListState()
+
+        createComposeWindow {
+            LazyColumn(
+                modifier = Modifier.testTag("scrollable").width(100.dp).height(150.dp),
+                state = state,
+            ) {
+                items(100) { index ->
+                    Box(Modifier.testTag("item$index").size(100.dp)) {
+                        Text(
+                            "$index",
+                            Modifier.testTag("label$index").align(Alignment.Center),
+                        )
+                    }
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val container = getScrollableElement()
+        val firstBeyondBoundsItem = assertNotNull(
+            getShadowRoot().getElementById("item2") as? HTMLElement,
+            "The first fully offscreen item must be retained in the A11Y tree",
+        )
+        val firstBeyondBoundsLabel =
+            assertNotNull(getShadowRoot().getElementById("label2") as? HTMLElement)
+        assertTrue(
+            abs(firstBeyondBoundsItem.offsetTop - 200) <= 2,
+            "The retained item must keep its content-space position, " +
+                "got offsetTop=${firstBeyondBoundsItem.offsetTop}",
+        )
+        assertTrue(
+            firstBeyondBoundsLabel.offsetTop > 0,
+            "The retained item's child must keep its position inside the item, " +
+                "got offsetTop=${firstBeyondBoundsLabel.offsetTop}",
+        )
+        assertNull(
+            getShadowRoot().getElementById("item5"),
+            "Only the configured number of beyond-bounds items may be retained",
+        )
+
+        // Approximates VoiceOver moving to the first fully offscreen retained item.
+        scrollIntoView(firstBeyondBoundsItem)
+        awaitCondition("Browser scrolling must update the LazyList state") {
+            container.scrollTop > 0.0 &&
+                (state.firstVisibleItemIndex > 0 || state.firstVisibleItemScrollOffset > 0)
+        }
+        awaitA11YChanges()
+
+        val nextBeyondBoundsItem = assertNotNull(
+            getShadowRoot().getElementById("item5") as? HTMLElement,
+            "The beyond-bounds window must advance after scrolling",
+        )
+        assertTrue(
+            abs(nextBeyondBoundsItem.offsetTop - 500) <= 2,
+            "The next retained item must keep its content-space position, " +
+                "got offsetTop=${nextBeyondBoundsItem.offsetTop}",
+        )
+
+        scrollIntoView(nextBeyondBoundsItem)
+        awaitCondition("The next retained item must become visible") {
+            val containerBounds = container.getBoundingClientRect()
+            val itemBounds = nextBeyondBoundsItem.getBoundingClientRect()
+            itemBounds.bottom > containerBounds.top && itemBounds.top < containerBounds.bottom
+        }
+    }
+
+    @Test
+    @Ignore // need something like defaultLazyListBeyondBoundsItemCount but for LazyGrid
+    fun lazyGridItemIsScrolledIntoViewByBrowser() = runApplicationTest {
+        val state = LazyGridState()
+
+        createComposeWindow {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.testTag("scrollable").width(300.dp).height(150.dp),
+                state = state,
+            ) {
+                items(100) { index ->
+                    Box(Modifier.testTag("item$index").size(100.dp)) {
+                        Text(
+                            "$index",
+                            Modifier.testTag("label$index").align(Alignment.Center),
+                        )
+                    }
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val container = getScrollableElement()
+        assertNull(
+            getShadowRoot().getElementById("item6"),
+            "The third row must not be in the initial A11Y tree",
+        )
+        val secondRowItem =
+            assertNotNull(getShadowRoot().getElementById("item3") as? HTMLElement)
+
+        // Approximates VoiceOver moving to the partially visible second row.
+        scrollIntoView(secondRowItem)
+        awaitCondition("Browser scrolling must update the LazyGrid state") {
+            container.scrollTop > 0.0 &&
+                (state.firstVisibleItemIndex > 0 || state.firstVisibleItemScrollOffset > 0)
+        }
+        awaitA11YChanges()
+
+        val thirdRowItem = assertNotNull(
+            getShadowRoot().getElementById("item6") as? HTMLElement,
+            "Scrolling to the second row must add the next row to the A11Y tree",
+        )
+        val thirdRowLabel =
+            assertNotNull(getShadowRoot().getElementById("label6") as? HTMLElement)
+        assertTrue(
+            abs(thirdRowItem.offsetTop - 200) <= 2,
+            "The newly added item must keep its content-space position, " +
+                "got offsetTop=${thirdRowItem.offsetTop}",
+        )
+        assertTrue(
+            thirdRowLabel.offsetTop > 0,
+            "The newly added item's child must retain its position inside the item, " +
+                "got offsetTop=${thirdRowLabel.offsetTop}",
+        )
+
+        // Approximates VoiceOver moving to the newly exposed third row.
+        scrollIntoView(thirdRowItem)
+        awaitCondition("The third row must become visible") {
+            val containerBounds = container.getBoundingClientRect()
+            val itemBounds = thirdRowItem.getBoundingClientRect()
+            itemBounds.bottom > containerBounds.top && itemBounds.top < containerBounds.bottom
+        }
+    }
+
+    @Test
     fun lazyGridItemsRemainAlignedWithComposeAfterRepeatedScrolls() = runApplicationTest {
         val state = LazyGridState()
 
@@ -485,4 +623,8 @@ class A11yScrollTest : OnCanvasTests {
             "The sizer must be removed when the node stops being scrollable"
         )
     }
+}
+
+private fun scrollIntoView(element: HTMLElement) {
+    js("element.scrollIntoView({ block: 'nearest', inline: 'nearest' })")
 }
