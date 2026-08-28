@@ -233,7 +233,7 @@ internal class ComposeWindow(
     )
 
     private val _windowInfo = WindowInfoImpl().apply {
-        isWindowFocused = true
+        isWindowFocused = document.hasFocus()
     }
 
     @VisibleForTesting
@@ -482,6 +482,9 @@ internal class ComposeWindow(
     // is nested in a scrollable html container
     private val rootScrollObserver = RootScrollObserver()
 
+
+
+
     private fun initEvents(canvas: HTMLCanvasElement) {
 
         val onPointerCallback: (PointerEvent) -> Unit = { onPointerEvent(it) }
@@ -587,22 +590,16 @@ internal class ComposeWindow(
         val onKeyboardEventCallback: (KeyboardEvent) -> Unit = { event ->
             processKeyboardEvent(event)
         }
-        addTypedEvent<KeyboardEvent>("keydown", onKeyboardEventCallback)
-        addTypedEvent<KeyboardEvent>("keyup", onKeyboardEventCallback)
-
-        addTypedEvent<FocusEvent>("focus") { event ->
-            canvasFocused = true
-        }
-
-        addTypedEvent<FocusEvent>("blur") { event ->
-            canvasFocused = false
-        }
+        addTypedEvent("keydown", onKeyboardEventCallback)
+        addTypedEvent("keyup", onKeyboardEventCallback)
 
         state.globalEvents.addDisposableEvent("focus") {
+            _windowInfo.isWindowFocused = true
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
+            _windowInfo.isWindowFocused = false
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
 
