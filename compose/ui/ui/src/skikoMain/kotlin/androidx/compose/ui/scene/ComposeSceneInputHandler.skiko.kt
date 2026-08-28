@@ -136,8 +136,6 @@ internal class ComposeSceneInputHandler(
             changedButton = button,
             scaleGestureFactor = scaleGestureFactor,
             panGestureOffset = panGestureOffset,
-
-            // TODO(Merge) Implement after merging 036129a1461cd16477f81427faa9ae422b1780e6
             activeGesture = when (eventType) {
                 PanStart, PanMove, PanEnd -> PointerClassification.Pan
                 else -> PointerClassification.None
