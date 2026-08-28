@@ -32,7 +32,6 @@ import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
-import androidx.compose.ui.isWindows
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
@@ -382,9 +381,6 @@ class DialogWindowV2StateTest {
 
     @Test
     fun `set dialog preferred height`() = runApplicationTest(useDelay = isLinux) {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         assumeTrue(!isLinux)  // Flaky on our CI
 
         lateinit var dialog: ComposeDialog
@@ -418,9 +414,6 @@ class DialogWindowV2StateTest {
 
     @Test
     fun `set dialog preferred width`() = runApplicationTest {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         assumeTrue(!isLinux)  // Flaky on our CI
 
         lateinit var dialog: ComposeDialog
@@ -453,9 +446,6 @@ class DialogWindowV2StateTest {
 
     @Test
     fun `set unconstrained dialog size by its content`() = runApplicationTest {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
         assumeTrue(!isLinux) // Flaky on our CI
 
         lateinit var dialog: ComposeDialog
@@ -811,56 +801,41 @@ class DialogWindowV2StateTest {
     }
 
     @Test
-    fun dialogPreferredWidth() {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
-        runDialogSizeTest(
-            testName = "dialogPreferredWidth",
-            sizeProvider = WindowSizeProvider.PreferredWidth(height = 500.dp),
-            content = {
-                BoxWithGivenSize(
-                    width = { 400.dp.roundToPx() }
-                )
-            },
-            expectedDialogSizeSansInsets = DpSize(400.dp, 500.dp)
-        )
-    }
+    fun dialogPreferredWidth() = runDialogSizeTest(
+        testName = "dialogPreferredWidth",
+        sizeProvider = WindowSizeProvider.PreferredWidth(height = 500.dp),
+        content = {
+            BoxWithGivenSize(
+                width = { 400.dp.roundToPx() }
+            )
+        },
+        expectedDialogSizeSansInsets = DpSize(400.dp, 500.dp)
+    )
 
     @Test
-    fun dialogPreferredHeight() {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
-        runDialogSizeTest(
-            testName = "dialogPreferredHeight",
-            sizeProvider = WindowSizeProvider.PreferredHeight(width = 500.dp),
-            content = {
-                BoxWithGivenSize(
-                    height = { 400.dp.roundToPx() }
-                )
-            },
-            expectedDialogSizeSansInsets = DpSize(500.dp, 400.dp)
-        )
-    }
+    fun dialogPreferredHeight() = runDialogSizeTest(
+        testName = "dialogPreferredHeight",
+        sizeProvider = WindowSizeProvider.PreferredHeight(width = 500.dp),
+        content = {
+            BoxWithGivenSize(
+                height = { 400.dp.roundToPx() }
+            )
+        },
+        expectedDialogSizeSansInsets = DpSize(500.dp, 400.dp)
+    )
 
     @Test
-    fun `preferred size is rounded up`() {
-        // TODO Fix failing
-        assumeTrue(!isWindows)
-
-        runDialogSizeTest(
-            testName = "preferred size is rounded up",
-            sizeProvider = WindowSizeProvider.Unconstrained,
-            content = {
-                Layout { _, _ ->
-                    val size = (density * 100 + 1).toInt()
-                    layout(size, size) { }
-                }
-            },
-            expectedDialogSizeSansInsets = DpSize(101.dp, 101.dp)
-        )
-    }
+    fun `preferred size is rounded up`() = runDialogSizeTest(
+        testName = "preferred size is rounded up",
+        sizeProvider = WindowSizeProvider.Unconstrained,
+        content = {
+            Layout { _, _ ->
+                val size = (density * 100 + 1).toInt()
+                layout(size, size) { }
+            }
+        },
+        expectedDialogSizeSansInsets = DpSize(101.dp, 101.dp)
+    )
 
     private fun runBoundsOverwriteTest(
         name: String,
