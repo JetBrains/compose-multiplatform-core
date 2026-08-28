@@ -532,6 +532,23 @@ public final class androidx/compose/ui/graphics/MatrixKt {
 	public static final fun isIdentity-58bKbWc ([F)Z
 }
 
+public final class androidx/compose/ui/graphics/MeshGradientPainter : androidx/compose/ui/graphics/painter/Painter {
+	public static final field $stable I
+	public fun <init> (IIZLkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (IIZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getIntrinsicSize-NH-jbRc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class androidx/compose/ui/graphics/MeshGradientScope {
+	public abstract fun getColumns ()I
+	public abstract fun getRows ()I
+	public abstract fun setVertex-6uS4IUQ (IIJJJJJJ)V
+	public static synthetic fun setVertex-6uS4IUQ$default (Landroidx/compose/ui/graphics/MeshGradientScope;IIJJJJJJILjava/lang/Object;)V
+}
+
 public final class androidx/compose/ui/graphics/OffsetEffect : androidx/compose/ui/graphics/RenderEffect {
 	public static final field $stable I
 	public synthetic fun <init> (Landroidx/compose/ui/graphics/RenderEffect;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -844,6 +861,7 @@ public final class androidx/compose/ui/graphics/PathOperationKt {
 
 public final class androidx/compose/ui/graphics/PathSegment {
 	public static final field $stable I
+	public fun <init> (Landroidx/compose/ui/graphics/PathSegment$Type;[FF)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getPoints ()[F
 	public final fun getType ()Landroidx/compose/ui/graphics/PathSegment$Type;

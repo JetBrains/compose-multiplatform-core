@@ -185,6 +185,7 @@ sealed interface androidx.compose.foundation.layout/FlexBoxConfigScope : android
     abstract fun gap(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/FlexBoxConfigScope.gap|gap(androidx.compose.ui.unit.Dp){}[0]
     abstract fun gap(androidx.compose.ui.unit/Dp, androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/FlexBoxConfigScope.gap|gap(androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.Dp){}[0]
     abstract fun justifyContent(androidx.compose.foundation.layout/FlexJustifyContent) // androidx.compose.foundation.layout/FlexBoxConfigScope.justifyContent|justifyContent(androidx.compose.foundation.layout.FlexJustifyContent){}[0]
+    abstract fun maxItemsInEachLine(kotlin/Int) // androidx.compose.foundation.layout/FlexBoxConfigScope.maxItemsInEachLine|maxItemsInEachLine(kotlin.Int){}[0]
     abstract fun rowGap(androidx.compose.ui.unit/Dp) // androidx.compose.foundation.layout/FlexBoxConfigScope.rowGap|rowGap(androidx.compose.ui.unit.Dp){}[0]
     abstract fun wrap(androidx.compose.foundation.layout/FlexWrap) // androidx.compose.foundation.layout/FlexBoxConfigScope.wrap|wrap(androidx.compose.foundation.layout.FlexWrap){}[0]
 }
