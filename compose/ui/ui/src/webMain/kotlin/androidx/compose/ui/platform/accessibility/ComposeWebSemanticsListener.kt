@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.platform.accessibility
 
-import androidx.collection.MutableIntSet
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
@@ -39,6 +38,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 
@@ -163,17 +163,17 @@ internal class ComposeWebSemanticsListener(
         invalidationChannel.trySend(Unit)
     }
 
-    private val dfsDeque = ArrayDeque<SemanticsNode>()
+    // Two array deques for dfs traversal / tree sync:
+    private val dfsSemanticsNodes = ArrayDeque<SemanticsNode>()
+    private val dfsA11YParents = ArrayDeque<HTMLElement>()
 
-    private val nodes = MutableScatterMap<Int, SemanticsNode>()
-    private val nodeToParent = MutableScatterMap<Int, Int>()
-    private val webNodes = MutableScatterMap<Int, HTMLElement>()
-    private val elementToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
+    // Lookup maps between semantics nodes and corresponding A11Y DOM elements:
+    private val idToA11YNode = MutableScatterMap<Int, HTMLElement>()
+    private val a11yNodeToSemanticsNode = MutableScatterMap<HTMLElement, SemanticsNode>()
 
-    // Reusable collections for sync purposes.
-    private val allNodesIds = MutableIntSet()
-    private val expectedChildren = mutableMapOf<HTMLElement, MutableList<HTMLElement>>()
-    private val expectedParents = mutableMapOf<HTMLElement, HTMLElement>()
+    // An intermediate tree representation which is applied to the actual DOM after every sync:
+    private val targetParentToChildren = MutableScatterMap<HTMLElement, MutableList<HTMLElement>>()
+    private val targetChildToParent = MutableScatterMap<HTMLElement, HTMLElement>()
 
     /**
      * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
@@ -181,7 +181,7 @@ internal class ComposeWebSemanticsListener(
      */
     private val onClick: (Event) -> Unit = onClick@ { event ->
         val semanticsNode = (event.target as? HTMLElement)
-            ?.let { elementToSemanticsNode[it] }
+            ?.let { a11yNodeToSemanticsNode[it] }
             ?: return@onClick
 
         val config = semanticsNode.config
@@ -194,38 +194,42 @@ internal class ComposeWebSemanticsListener(
     }
 
 
+    /**
+     * Updates the A11Y DOM to mirror all current semantics owners using only necessary structural
+     * changes. The tree is updated incrementally instead of being rebuilt from scratch on every sync.
+     * Elements whose semantics node and parent remain unchanged must not be detached, because
+     * assistive technologies may lose their current accessibility node when it is reattached.
+     * HTML elements are reused by semantics node ID and moved only when their parent or sibling
+     * position changes.
+     */
     private fun syncSemanticsWithWebA11Y() {
-        allNodesIds.clear()
-        nodeToParent.clear()
-        expectedChildren.clear()
-        expectedParents.clear()
+        targetParentToChildren.clear()
+        targetChildToParent.clear()
 
         semanticsOwners.fastForEach {
             syncSemanticsWithWebA11Y(it)
         }
 
-        // Place new, reordered, and reparented nodes before removing obsolete nodes. A surviving
-        // node can still be attached below an obsolete ancestor and must be moved out first.
-        expectedChildren.forEach { (parent, children) ->
-            reconcileChildren(parent, children)
+        // Move surviving nodes to their target parents before removing obsolete elements.
+        // Otherwise, removing an obsolete parent would also temporarily detach surviving descendants.
+        targetParentToChildren.forEach { parent, targetChildren ->
+            placeA11YChildrenInOrder(parent, targetChildren)
         }
 
         val removedIds = mutableSetOf<Int>()
 
-        webNodes.forEachKey {
-            if (it !in allNodesIds) {
-                webNodes[it]?.remove()
-                removedIds.add(it)
+        idToA11YNode.forEach { id, htmlNode ->
+            if (!targetChildToParent.containsKey(htmlNode)) {
+                htmlNode.remove()
+                removedIds.add(id)
             }
         }
 
         removedIds.forEach {
-            val htmlNode = webNodes.remove(it)
+            val htmlNode = idToA11YNode.remove(it)
             if (htmlNode != null) {
-                elementToSemanticsNode.remove(htmlNode)
+                a11yNodeToSemanticsNode.remove(htmlNode)
             }
-            nodes.remove(it)
-            nodeToParent.remove(it)
         }
 
         updateInertRoots()
@@ -249,7 +253,7 @@ internal class ComposeWebSemanticsListener(
     }
 
     /**
-     * Sync the tree corresponding to the [semanticsOwner] and populate [allNodesIds] - a set of node ids.
+     * Syncs the tree corresponding to [semanticsOwner] and records its target DOM structure.
      */
     private fun syncSemanticsWithWebA11Y(semanticsOwner: SemanticsOwner) {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
@@ -257,22 +261,22 @@ internal class ComposeWebSemanticsListener(
         val root = semanticsOwner.rootSemanticsNode
         if (!root.isValid()) return
 
-        dfsDeque.clear()
-        dfsDeque.addLast(root)
+        dfsSemanticsNodes.clear()
+        dfsA11YParents.clear()
+        dfsSemanticsNodes.addLast(root)
+        dfsA11YParents.addLast(webSemanticsRoot)
 
         val rootPosition = webSemanticsRoot.getBoundingClientRect().let {
             Offset(it.left.toFloat(), it.top.toFloat())
         }
 
-        while (!dfsDeque.isEmpty()) {
-            val node = dfsDeque.removeLast()
+        while (!dfsSemanticsNodes.isEmpty()) {
+            val node = dfsSemanticsNodes.removeLast()
+            val htmlParent = dfsA11YParents.removeLast()
 
             // `config` recreates the merged subtree on every call, so read it once
             val config = node.config
             val children = node.replacedChildren
-
-            // The parent is known here: it was recorded when this node was pushed to the deque.
-            val htmlParent = nodeToParent[node.id]?.let { webNodes[it] } ?: webSemanticsRoot
 
             val htmlNode = if (config.contains(SemanticsProperties.Text)) {
                 // Usually, the order of SemanticsNode children matches the mirroring a11y HTML.
@@ -283,21 +287,24 @@ internal class ComposeWebSemanticsListener(
                 syncTextNode(node, config, children, rootPosition)
             } else {
                 syncNode(node, config, rootPosition)
-                    .also { pushChildren(children, node.id) }
+                    .also { pushNodesForTraversal(children, it) }
             }
-            expectedChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
-            expectedParents[htmlNode] = htmlParent
+            check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
+            targetParentToChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
+            targetChildToParent[htmlNode] = htmlParent
         }
     }
 
     /**
-     * Pushes the [children] of the node [parentId] to the traversal deque, keeping the order of the
-     * semantics tree: the deque is LIFO, so the children are added in the reversed order.
+     * @param children - the nodes to be added for traversal during the sync
+     * @param htmlParent - the a11y (dom) parent element to contain the children a11y elements
      */
-    private fun pushChildren(children: List<SemanticsNode>, parentId: Int) {
+    private fun pushNodesForTraversal(children: List<SemanticsNode>, htmlParent: HTMLElement) {
         val reversedChildren = children.asReversed()
-        dfsDeque.addAll(reversedChildren)
-        reversedChildren.fastForEach { nodeToParent[it.id] = parentId }
+        dfsSemanticsNodes.addAll(reversedChildren)
+        repeat(reversedChildren.size) {
+            dfsA11YParents.addLast(htmlParent)
+        }
     }
 
     /**
@@ -311,32 +318,26 @@ internal class ComposeWebSemanticsListener(
         text: String? = null,
     ): HTMLElement {
         val currentId = semanticsNode.id
-        allNodesIds.add(currentId)
 
-        val htmlNode = if (nodes[currentId] != null) {
-            nodes[currentId] = semanticsNode
-            val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
-
+        var htmlNode = idToA11YNode[currentId]
+        if (htmlNode != null) {
             syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text)
-            htmlNode
         } else {
-            nodes[currentId] = semanticsNode
-            val htmlNode = document.createElement("div") as HTMLElement
+            htmlNode = document.createElement("div") as HTMLElement
             htmlNode.style.apply {
                 position = "fixed"
                 whiteSpace = "pre"
             }
 
-            webNodes[currentId] = htmlNode
+            idToA11YNode[currentId] = htmlNode
             syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text, justCreated = true)
-            htmlNode
         }
 
-        elementToSemanticsNode[htmlNode] = semanticsNode
+        a11yNodeToSemanticsNode[htmlNode] = semanticsNode
         return htmlNode
     }
 
-    private fun reconcileChildren(
+    private fun placeA11YChildrenInOrder(
         parent: HTMLElement,
         children: List<HTMLElement>,
     ) {
@@ -350,15 +351,12 @@ internal class ComposeWebSemanticsListener(
         }
     }
 
-    /** Skips obsolete elements and elements that are moving to another parent. */
-    private fun org.w3c.dom.Element.nextExpectedSibling(parent: HTMLElement): HTMLElement? {
-        var element: org.w3c.dom.Element? = this
+    /** Skips removed elements and elements that are moving to another parent. */
+    private fun Element.nextExpectedSibling(parent: HTMLElement): HTMLElement? {
+        var element: Element? = this
         while (element != null) {
             val htmlElement = element as HTMLElement
-            val semanticsNode = checkNotNull(elementToSemanticsNode[htmlElement]) {
-                "A11Y element is not associated with a semantics node"
-            }
-            if (semanticsNode.id in allNodesIds && expectedParents[htmlElement] === parent) {
+            if (targetChildToParent[htmlElement] === parent) {
                 return htmlElement
             }
             element = element.nextElementSibling
@@ -477,9 +475,9 @@ internal class ComposeWebSemanticsListener(
             config = config,
             rootPosition = rootPosition,
         )
-        val mixedContent = mutableListOf<Any>()
+        val targetTextAndLinks = mutableListOf<Any>()
         if (textParts == null) {
-            mixedContent.add(text)
+            targetTextAndLinks.add(text)
         }
 
         var linkIndex = 0
@@ -497,7 +495,7 @@ internal class ComposeWebSemanticsListener(
             }
 
             if (textParts != null) {
-                mixedContent.add(textParts[linkIndex])
+                targetTextAndLinks.add(textParts[linkIndex])
             }
 
             val linkChildren = child.replacedChildren
@@ -507,29 +505,29 @@ internal class ComposeWebSemanticsListener(
                 rootPosition = rootPosition,
                 text = split?.linkTexts?.getOrNull(linkIndex),
             )
-            mixedContent.add(linkHtmlNode)
-            expectedChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
-            expectedParents[linkHtmlNode] = htmlNode
+            targetTextAndLinks.add(linkHtmlNode)
+            targetParentToChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
+            targetChildToParent[linkHtmlNode] = htmlNode
             // A link node is expected to be a leaf, but don't rely on it.
-            pushChildren(linkChildren, child.id)
+            pushNodesForTraversal(linkChildren, linkHtmlNode)
 
             linkIndex++
         }
 
         if (textParts != null) {
-            mixedContent.add(textParts.last())
+            targetTextAndLinks.add(textParts.last())
         }
 
-        reconcileMixedContent(htmlNode, mixedContent)
-        deferredChildren?.let { pushChildren(it, node.id) }
+        updateTextAndLinks(htmlNode, targetTextAndLinks)
+        deferredChildren?.let { pushNodesForTraversal(it, htmlNode) }
         return htmlNode
     }
 
-    /** Reconciles the text fragments and semantic link elements at the start of a text node. */
-    private fun reconcileMixedContent(parent: HTMLElement, content: List<Any>) {
+    /** Updates the text fragments and semantic link elements at the start of a text node. */
+    private fun updateTextAndLinks(parent: HTMLElement, targetContent: List<Any>) {
         var current = parent.firstChild
 
-        content.fastForEach { item ->
+        targetContent.fastForEach { item ->
             when (item) {
                 is String -> {
                     if (item.isEmpty()) return@fastForEach
@@ -549,15 +547,15 @@ internal class ComposeWebSemanticsListener(
                     }
                     current = item.nextSibling
                 }
-                else -> error("Unsupported mixed content type: ${item::class}")
+                else -> error("Unsupported text-and-link content type: ${item::class}")
             }
         }
 
-        // Regular semantics children follow the mixed text/link prefix and are reconciled later.
+        // Regular semantics children follow the text/link prefix and are placed later.
         while (current != null) {
             val currentElement = current as? HTMLElement
             val isRegularSemanticsChild = currentElement
-                ?.let { elementToSemanticsNode[it] }
+                ?.let { a11yNodeToSemanticsNode[it] }
                 ?.config
                 ?.contains(SemanticsProperties.LinkTestMarker) == false
             if (isRegularSemanticsChild) break
@@ -573,14 +571,12 @@ internal class ComposeWebSemanticsListener(
 
         webSemanticsRoot.removeEventListener("click", onClick)
 
-        dfsDeque.clear()
-        nodes.clear()
-        nodeToParent.clear()
-        webNodes.clear()
-        elementToSemanticsNode.clear()
-        allNodesIds.clear()
-        expectedChildren.clear()
-        expectedParents.clear()
+        dfsSemanticsNodes.clear()
+        dfsA11YParents.clear()
+        idToA11YNode.clear()
+        a11yNodeToSemanticsNode.clear()
+        targetParentToChildren.clear()
+        targetChildToParent.clear()
 
         invalidationChannel.close()
         syncTriggerChannel.close()
