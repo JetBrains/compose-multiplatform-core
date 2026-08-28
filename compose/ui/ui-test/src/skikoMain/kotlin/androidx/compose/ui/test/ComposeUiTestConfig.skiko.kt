@@ -29,7 +29,6 @@ actual constructor(
     actual val runTestContext: CoroutineContext,
     actual val testTimeout: Duration,
     actual val inputMode: InputMode,
-    // TODO(Merge) Implement after merging 5e6b0b08
     actual val failurePolicy: TestFailurePolicy,
 ) {
     @Deprecated("Kept for binary compatibility", level = DeprecationLevel.HIDDEN)
