@@ -173,6 +173,7 @@ internal class ComposeWebSemanticsListener(
     // Reusable collections for sync purposes.
     private val allNodesIds = MutableIntSet()
     private val expectedChildren = mutableMapOf<HTMLElement, MutableList<HTMLElement>>()
+    private val expectedParents = mutableMapOf<HTMLElement, HTMLElement>()
 
     /**
      * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
@@ -197,6 +198,7 @@ internal class ComposeWebSemanticsListener(
         allNodesIds.clear()
         nodeToParent.clear()
         expectedChildren.clear()
+        expectedParents.clear()
 
         semanticsOwners.fastForEach {
             syncSemanticsWithWebA11Y(it)
@@ -284,6 +286,7 @@ internal class ComposeWebSemanticsListener(
                     .also { pushChildren(children, node.id) }
             }
             expectedChildren.getOrPut(htmlParent) { mutableListOf() }.add(htmlNode)
+            expectedParents[htmlNode] = htmlParent
         }
     }
 
@@ -337,25 +340,25 @@ internal class ComposeWebSemanticsListener(
         parent: HTMLElement,
         children: List<HTMLElement>,
     ) {
-        var current = parent.firstElementChild?.nextSurvivingSibling()
+        var current = parent.firstElementChild?.nextExpectedSibling(parent)
 
         children.fastForEach { child ->
             if (child.parentElement !== parent || child !== current) {
                 parent.insertBefore(child, current)
             }
-            current = child.nextElementSibling?.nextSurvivingSibling()
+            current = child.nextElementSibling?.nextExpectedSibling(parent)
         }
     }
 
-    /** Skips obsolete semantics elements, which are removed after surviving nodes are placed. */
-    private fun org.w3c.dom.Element.nextSurvivingSibling(): HTMLElement? {
+    /** Skips obsolete elements and elements that are moving to another parent. */
+    private fun org.w3c.dom.Element.nextExpectedSibling(parent: HTMLElement): HTMLElement? {
         var element: org.w3c.dom.Element? = this
         while (element != null) {
             val htmlElement = element as HTMLElement
             val semanticsNode = checkNotNull(elementToSemanticsNode[htmlElement]) {
                 "A11Y element is not associated with a semantics node"
             }
-            if (semanticsNode.id in allNodesIds) {
+            if (semanticsNode.id in allNodesIds && expectedParents[htmlElement] === parent) {
                 return htmlElement
             }
             element = element.nextElementSibling
@@ -506,6 +509,7 @@ internal class ComposeWebSemanticsListener(
             )
             mixedContent.add(linkHtmlNode)
             expectedChildren.getOrPut(htmlNode) { mutableListOf() }.add(linkHtmlNode)
+            expectedParents[linkHtmlNode] = htmlNode
             // A link node is expected to be a leaf, but don't rely on it.
             pushChildren(linkChildren, child.id)
 
@@ -576,6 +580,7 @@ internal class ComposeWebSemanticsListener(
         elementToSemanticsNode.clear()
         allNodesIds.clear()
         expectedChildren.clear()
+        expectedParents.clear()
 
         invalidationChannel.close()
         syncTriggerChannel.close()

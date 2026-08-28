@@ -319,22 +319,28 @@ class CfWA11YTest : OnCanvasTests {
         }
     }
 
-    @Test
+    @Test // [A, C, B], and C moves to another parent, leaving [A, B].
     fun reparentedNodeRetainsItsElement() = runApplicationTest {
         var moveToSecondParent by mutableStateOf(false)
-        val movableButton = movableContentOf {
+        val buttonInMovableContent = movableContentOf {
             Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
-                Text("Button")
+                Text("Movable")
             }
         }
 
         createComposeWindow {
             Column {
                 Box(modifier = Modifier.testTag("parent1")) {
-                    if (!moveToSecondParent) movableButton()
+                    Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                        Text("Button1")
+                    }
+                    if (!moveToSecondParent) buttonInMovableContent()
+                    Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                        Text("Button2")
+                    }
                 }
                 Box(modifier = Modifier.testTag("parent2")) {
-                    if (moveToSecondParent) movableButton()
+                    if (moveToSecondParent) buttonInMovableContent()
                 }
             }
         }
@@ -342,15 +348,19 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
         val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
-        val button =
-            assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
-        var parentWasRemoved = false
+
+        val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
+        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+        var unaffectedNodeWasRemoved = false
         val observer = createMutationObserver { removedNode ->
             if (removedNode === parent1 || removedNode === parent2 ||
-                (removedNode as? HTMLElement)?.contains(parent1) == true ||
-                (removedNode as? HTMLElement)?.contains(parent2) == true
+                removedNode === button1 || removedNode === button2 ||
+                (removedNode as? HTMLElement)?.contains(button1) == true ||
+                (removedNode as? HTMLElement)?.contains(button2) == true
             ) {
-                parentWasRemoved = true
+                unaffectedNodeWasRemoved = true
             }
         }
         observeChildListMutations(observer, assertNotNull(getA11YContainer()))
@@ -360,12 +370,18 @@ class CfWA11YTest : OnCanvasTests {
             awaitA11YChanges()
             awaitAnimationFrame()
 
-            assertSame(button, getShadowRoot().getElementById("movableButton"))
-            assertSame(parent2, button.parentElement)
-            assertTrue(button.isConnected)
+            assertSame(movableButton, getShadowRoot().getElementById("movableButton"))
+            assertSame(parent2, movableButton.parentElement)
+            assertTrue(movableButton.isConnected)
             assertSame(parent1, getShadowRoot().getElementById("parent1"))
             assertSame(parent2, getShadowRoot().getElementById("parent2"))
-            assertFalse(parentWasRemoved, "Unaffected parents must not be removed")
+            assertSame(button1, getShadowRoot().getElementById("button1"))
+            assertSame(button2, getShadowRoot().getElementById("button2"))
+            assertEquals(
+                listOf("button1", "button2"),
+                (0 until parent1.children.length).map { parent1.children[it]?.id },
+            )
+            assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
         } finally {
             disconnectMutationObserver(observer)
         }
