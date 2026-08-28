@@ -34,7 +34,6 @@ import kotlin.time.Duration
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
-import kotlinx.coroutines.test.runTest
 
 /**
  * Sets up the test environment, runs the given [test][block] and then tears down the test
@@ -112,7 +111,7 @@ actual fun runComposeUiTest(
     config: ComposeUiTestConfig,
     block: suspend ComposeUiTest.() -> Unit,
 ): TestResult {
-    // TODO(Merge) Implement after merging 0221de5bb907a9b49017d40a2c8507bac7ad3a0b
+    config.checkSupported()
     return runSkikoComposeUiTest(
         effectContext = config.effectContext,
         runTestContext = config.runTestContext,
@@ -121,7 +120,6 @@ actual fun runComposeUiTest(
     )
 }
 
-// TODO(Merge) Implement after merging fa744c811da8923e6651f861f5b86b5709acc108
 @OptIn(ExperimentalTestApi::class)
 @Suppress("DEPRECATION", "KotlinRunTestResultUnused")
 actual fun runComposeUiTest(block: suspend ComposeUiTest.() -> Unit): TestResult =
@@ -198,4 +196,22 @@ fun runInternalSkikoComposeUiTest(
         windowInsets = windowInsets,
         useStandardTestDispatcherForComposition = true,
     ).runTest(block)
+}
+
+private val defaultComposeUiTestConfig = ComposeUiTestConfig()
+
+private fun ComposeUiTestConfig.checkFieldIsNotSet(
+    name: String,
+    getFieldValue: ComposeUiTestConfig.() -> Any
+) {
+    if (getFieldValue() != defaultComposeUiTestConfig.getFieldValue()) {
+        println("ComposeUiTestConfig: setting $name is not supported in Compose Multiplatform")
+    }
+}
+
+private fun ComposeUiTestConfig.checkSupported() {
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10712/Support-ComposeUiTestConfiginputMode
+    checkFieldIsNotSet("inputMode", ComposeUiTestConfig::inputMode)
+    // TODO https://youtrack.jetbrains.com/issue/CMP-10711/Support-ComposeUiTestConfigfailurePolicy
+    checkFieldIsNotSet("failurePolicy", ComposeUiTestConfig::failurePolicy)
 }
