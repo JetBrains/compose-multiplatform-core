@@ -19,13 +19,15 @@ package androidx.compose.ui.text.input
 import androidx.compose.runtime.Stable
 
 /**
- * Options to request software keyboard to capitalize the text. Applies to languages which has
- * upper-case and lower-case letters.
+ * The capitalization style to be used in `KeyboardOptions`.
+ *
+ * Only applicable to text-based [KeyboardType]s such as [KeyboardType.Text] or
+ * [KeyboardType.Ascii]. IMEs may ignore this option.
  */
 @kotlin.jvm.JvmInline
-value class KeyboardCapitalization private constructor(private val value: Int) {
+public value class KeyboardCapitalization private constructor(private val value: Int) {
 
-    override fun toString(): String {
+    public override fun toString(): String {
         return when (this) {
             Unspecified -> "Unspecified"
             None -> "None"
@@ -36,20 +38,46 @@ value class KeyboardCapitalization private constructor(private val value: Int) {
         }
     }
 
-    companion object {
-        /** Capitalization behavior is not specified. */
-        @Stable val Unspecified = KeyboardCapitalization(-1)
+    public companion object {
+        /** The capitalization behavior is not specified. */
+        @Stable
+        public val Unspecified: KeyboardCapitalization
+            get() = KeyboardCapitalization(-1)
 
-        /** Do not auto-capitalize text. */
-        @Stable val None = KeyboardCapitalization(0)
+        /**
+         * Disables auto-capitalization.
+         *
+         * **When to use it**: Ideal for passwords, email addresses, URLs, or search filters.
+         */
+        @Stable
+        public val None: KeyboardCapitalization
+            get() = KeyboardCapitalization(0)
 
-        /** Capitalize all characters. */
-        @Stable val Characters = KeyboardCapitalization(1)
+        /**
+         * Capitalizes all characters.
+         *
+         * **When to use it**: Ideal for coupon codes, state abbreviations, or license plates.
+         */
+        @Stable
+        public val Characters: KeyboardCapitalization
+            get() = KeyboardCapitalization(1)
 
-        /** Capitalize the first character of every word. */
-        @Stable val Words = KeyboardCapitalization(2)
+        /**
+         * Capitalizes the first character of every word.
+         *
+         * **When to use it**: Ideal for mailing addresses or contact names.
+         */
+        @Stable
+        public val Words: KeyboardCapitalization
+            get() = KeyboardCapitalization(2)
 
-        /** Capitalize the first character of each sentence. */
-        @Stable val Sentences = KeyboardCapitalization(3)
+        /**
+         * Capitalizes the first character of every sentence.
+         *
+         * **When to use it**: Ideal for chat messages, email bodies, or other free-form text.
+         */
+        @Stable
+        public val Sentences: KeyboardCapitalization
+            get() = KeyboardCapitalization(3)
     }
 }

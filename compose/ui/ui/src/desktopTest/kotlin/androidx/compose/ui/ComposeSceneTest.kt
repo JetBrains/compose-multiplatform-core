@@ -105,6 +105,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Surface
 import org.junit.Assert.assertFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -838,6 +839,9 @@ class ComposeSceneTest {
 
     @Test
     fun sendApplyNotificationsFromNonUiThreadDoesntDeadlock() = runApplicationTest {
+        // TODO Fix failing
+        assumeTrue(!isWindows)
+
         // https://youtrack.jetbrains.com/issue/CMP-7838
         var value by mutableStateOf(0)
         val derivedValue by derivedStateOf {

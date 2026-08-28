@@ -69,6 +69,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
  * appropriate for entering secure content. Additionally, some context menu actions like cut, copy,
  * and drag are disabled for added security.
  *
+ * @sample androidx.compose.foundation.samples.PinCodeEntryRowSample
  * @param state [TextFieldState] object that holds the internal state of a [BasicSecureTextField].
  * @param modifier optional [Modifier] for this text field.
  * @param enabled controls the enabled state of the [BasicSecureTextField]. When `false`, the text
@@ -120,7 +121,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+public fun BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -391,7 +392,7 @@ internal expect fun rememberPlatformPasswordVisibilitySettingsState(): SplitVisi
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+public fun BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -432,7 +433,7 @@ fun BasicSecureTextField(
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
-fun BasicSecureTextField(
+public fun BasicSecureTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,

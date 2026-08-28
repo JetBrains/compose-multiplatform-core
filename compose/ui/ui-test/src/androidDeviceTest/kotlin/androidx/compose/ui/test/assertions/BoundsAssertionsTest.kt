@@ -78,7 +78,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,7 +89,7 @@ class BoundsAssertionsTest {
         private const val tag = "box"
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private fun composeBox() {
         rule.setContent {
@@ -144,6 +143,28 @@ class BoundsAssertionsTest {
     }
 
     @Test
+    fun assertWidthIsEqualTo_withCustomTolerance() {
+        composeBox()
+
+        rule.onNodeWithTag(tag).assertWidthIsEqualTo(81.dp, tolerance = 1.1.dp)
+
+        expectError<AssertionError> {
+            rule.onNodeWithTag(tag).assertWidthIsEqualTo(81.dp, tolerance = 0.9.dp)
+        }
+    }
+
+    @Test
+    fun assertHeightIsEqualTo_withCustomTolerance() {
+        composeBox()
+
+        rule.onNodeWithTag(tag).assertHeightIsEqualTo(101.dp, tolerance = 1.1.dp)
+
+        expectError<AssertionError> {
+            rule.onNodeWithTag(tag).assertHeightIsEqualTo(102.dp, tolerance = 0.9.dp)
+        }
+    }
+
+    @Test
     fun assertSizeAtLeast_fail() {
         composeBox()
 
@@ -173,6 +194,32 @@ class BoundsAssertionsTest {
     }
 
     @Test
+    fun assertTouchWidthIsEqualTo_withCustomTolerance() {
+        rule.setContent {
+            WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) { SmallBox(Modifier.clickable {}) }
+        }
+
+        rule.onNodeWithTag(tag).assertTouchWidthIsEqualTo(21.dp, tolerance = 1.1.dp)
+
+        expectError<AssertionError> {
+            rule.onNodeWithTag(tag).assertTouchWidthIsEqualTo(21.dp, tolerance = 0.9.dp)
+        }
+    }
+
+    @Test
+    fun assertTouchHeightIsEqualTo_withCustomTolerance() {
+        rule.setContent {
+            WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) { SmallBox(Modifier.clickable {}) }
+        }
+
+        rule.onNodeWithTag(tag).assertTouchHeightIsEqualTo(21.dp, tolerance = 1.1.dp)
+
+        expectError<AssertionError> {
+            rule.onNodeWithTag(tag).assertTouchHeightIsEqualTo(21.dp, tolerance = 0.9.dp)
+        }
+    }
+
+    @Test
     fun assertPosition() {
         composeBox()
 
@@ -197,6 +244,51 @@ class BoundsAssertionsTest {
             rule
                 .onNodeWithTag(tag)
                 .assertPositionInRootIsEqualTo(expectedLeft = 49.dp, expectedTop = 99.dp)
+        }
+    }
+
+    @Test
+    fun assertPositionInRootIsEqualTo_withCustomTolerance() {
+        composeBox()
+
+        rule
+            .onNodeWithTag(tag)
+            .assertPositionInRootIsEqualTo(
+                expectedLeft = 51.dp,
+                expectedTop = 101.dp,
+                tolerance = 1.1.dp,
+            )
+
+        expectError<AssertionError> {
+            rule
+                .onNodeWithTag(tag)
+                .assertPositionInRootIsEqualTo(
+                    expectedLeft = 51.dp,
+                    expectedTop = 101.dp,
+                    tolerance = 0.9.dp,
+                )
+        }
+    }
+
+    @Test
+    fun assertLeftPositionInRootIsEqualTo_withCustomTolerance() {
+        composeBox()
+
+        rule.onNodeWithTag(tag).assertLeftPositionInRootIsEqualTo(51.dp, tolerance = 1.1.dp)
+
+        expectError<AssertionError> {
+            rule.onNodeWithTag(tag).assertLeftPositionInRootIsEqualTo(51.dp, tolerance = 0.9.dp)
+        }
+    }
+
+    @Test
+    fun assertTopPositionInRootIsEqualTo_withCustomTolerance() {
+        composeBox()
+
+        rule.onNodeWithTag(tag).assertTopPositionInRootIsEqualTo(101.dp, tolerance = 1.1.dp)
+
+        expectError<AssertionError> {
+            rule.onNodeWithTag(tag).assertTopPositionInRootIsEqualTo(102.dp, tolerance = 0.9.dp)
         }
     }
 

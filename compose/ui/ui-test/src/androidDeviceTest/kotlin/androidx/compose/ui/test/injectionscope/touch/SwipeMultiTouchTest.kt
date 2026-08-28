@@ -30,11 +30,12 @@ import androidx.compose.ui.test.multiTouchSwipe
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.util.ClickableTestBox
-import androidx.compose.ui.test.util.SinglePointerInputRecorder
+import androidx.compose.ui.test.util.MultiPointerInputRecorder
+import androidx.compose.ui.test.util.assertTimestampsAreIncreasing
 import androidx.compose.ui.test.util.verify
-import androidx.compose.ui.test.util.verifyEvents
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 @MediumTest
@@ -46,7 +47,7 @@ class SwipeMultiTouchTest {
         private const val DURATION = 64L
     }
 
-    private val recorder = SinglePointerInputRecorder()
+    private val recorder = MultiPointerInputRecorder()
 
     @Test
     fun test() = runComposeUiTest {
@@ -71,43 +72,113 @@ class SwipeMultiTouchTest {
         val pointer3 = PointerId(2)
 
         runOnIdle {
-            recorder.apply {
-                verifyEvents(
-                    // pointer1 down
-                    { verify(0L, pointer1, true, Offset(10f, 20f), Touch, Press) },
-                    // pointer2 down
-                    { verify(0L, pointer1, true, Offset(10f, 20f), Touch, Press) },
-                    { verify(0L, pointer2, true, Offset(10f, 50f), Touch, Press) },
-                    // pointer3 down
-                    { verify(0L, pointer1, true, Offset(10f, 20f), Touch, Press) },
-                    { verify(0L, pointer2, true, Offset(10f, 50f), Touch, Press) },
-                    { verify(0L, pointer3, true, Offset(10f, 80f), Touch, Press) },
-                    // first move
-                    { verify(16L, pointer1, true, Offset(30f, 20f), Touch, Move) },
-                    { verify(16L, pointer2, true, Offset(30f, 50f), Touch, Move) },
-                    { verify(16L, pointer3, true, Offset(30f, 80f), Touch, Move) },
-                    // second move
-                    { verify(32L, pointer1, true, Offset(50f, 20f), Touch, Move) },
-                    { verify(32L, pointer2, true, Offset(50f, 50f), Touch, Move) },
-                    { verify(32L, pointer3, true, Offset(50f, 80f), Touch, Move) },
-                    // third move
-                    { verify(48L, pointer1, true, Offset(70f, 20f), Touch, Move) },
-                    { verify(48L, pointer2, true, Offset(70f, 50f), Touch, Move) },
-                    { verify(48L, pointer3, true, Offset(70f, 80f), Touch, Move) },
-                    // last move
-                    { verify(64L, pointer1, true, Offset(90f, 20f), Touch, Move) },
-                    { verify(64L, pointer2, true, Offset(90f, 50f), Touch, Move) },
-                    { verify(64L, pointer3, true, Offset(90f, 80f), Touch, Move) },
-                    // pointer1 up
-                    { verify(64L, pointer1, false, Offset(90f, 20f), Touch, Release) },
-                    { verify(64L, pointer2, true, Offset(90f, 50f), Touch, Release) },
-                    { verify(64L, pointer3, true, Offset(90f, 80f), Touch, Release) },
-                    // pointer2 up
-                    { verify(64L, pointer2, false, Offset(90f, 50f), Touch, Release) },
-                    { verify(64L, pointer3, true, Offset(90f, 80f), Touch, Release) },
-                    // pointer3 up
-                    { verify(64L, pointer3, false, Offset(90f, 80f), Touch, Release) },
-                )
+            recorder.run {
+                assertTimestampsAreIncreasing()
+                assertThat(events).hasSize(10)
+
+                val t0 = events[0].getPointer(0).timestamp
+
+                // Event 0: pointer 1 down
+                assertThat(events[0].pointerCount).isEqualTo(1)
+                events[0]
+                    .getPointer(0)
+                    .verify(t0 + 0L, pointer1, true, Offset(10f, 20f), Touch, Press)
+
+                // Event 1: pointer 1 down, pointer 2 down
+                assertThat(events[1].pointerCount).isEqualTo(2)
+                events[1]
+                    .getPointer(0)
+                    .verify(t0 + 0L, pointer1, true, Offset(10f, 20f), Touch, Press)
+                events[1]
+                    .getPointer(1)
+                    .verify(t0 + 0L, pointer2, true, Offset(10f, 50f), Touch, Press)
+
+                // Event 2: pointer 1 down, pointer 2 down, pointer 3 down
+                assertThat(events[2].pointerCount).isEqualTo(3)
+                events[2]
+                    .getPointer(0)
+                    .verify(t0 + 0L, pointer1, true, Offset(10f, 20f), Touch, Press)
+                events[2]
+                    .getPointer(1)
+                    .verify(t0 + 0L, pointer2, true, Offset(10f, 50f), Touch, Press)
+                events[2]
+                    .getPointer(2)
+                    .verify(t0 + 0L, pointer3, true, Offset(10f, 80f), Touch, Press)
+
+                // Event 3: first move
+                assertThat(events[3].pointerCount).isEqualTo(3)
+                events[3]
+                    .getPointer(0)
+                    .verify(t0 + 16L, pointer1, true, Offset(30f, 20f), Touch, Move)
+                events[3]
+                    .getPointer(1)
+                    .verify(t0 + 16L, pointer2, true, Offset(30f, 50f), Touch, Move)
+                events[3]
+                    .getPointer(2)
+                    .verify(t0 + 16L, pointer3, true, Offset(30f, 80f), Touch, Move)
+
+                // Event 4: second move
+                assertThat(events[4].pointerCount).isEqualTo(3)
+                events[4]
+                    .getPointer(0)
+                    .verify(t0 + 32L, pointer1, true, Offset(50f, 20f), Touch, Move)
+                events[4]
+                    .getPointer(1)
+                    .verify(t0 + 32L, pointer2, true, Offset(50f, 50f), Touch, Move)
+                events[4]
+                    .getPointer(2)
+                    .verify(t0 + 32L, pointer3, true, Offset(50f, 80f), Touch, Move)
+
+                // Event 5: third move
+                assertThat(events[5].pointerCount).isEqualTo(3)
+                events[5]
+                    .getPointer(0)
+                    .verify(t0 + 48L, pointer1, true, Offset(70f, 20f), Touch, Move)
+                events[5]
+                    .getPointer(1)
+                    .verify(t0 + 48L, pointer2, true, Offset(70f, 50f), Touch, Move)
+                events[5]
+                    .getPointer(2)
+                    .verify(t0 + 48L, pointer3, true, Offset(70f, 80f), Touch, Move)
+
+                // Event 6: last move
+                assertThat(events[6].pointerCount).isEqualTo(3)
+                events[6]
+                    .getPointer(0)
+                    .verify(t0 + 64L, pointer1, true, Offset(90f, 20f), Touch, Move)
+                events[6]
+                    .getPointer(1)
+                    .verify(t0 + 64L, pointer2, true, Offset(90f, 50f), Touch, Move)
+                events[6]
+                    .getPointer(2)
+                    .verify(t0 + 64L, pointer3, true, Offset(90f, 80f), Touch, Move)
+
+                // Event 7: pointer 1 up, pointer 2 down, pointer 3 down
+                assertThat(events[7].pointerCount).isEqualTo(3)
+                events[7]
+                    .getPointer(0)
+                    .verify(t0 + 64L, pointer1, false, Offset(90f, 20f), Touch, Release)
+                events[7]
+                    .getPointer(1)
+                    .verify(t0 + 64L, pointer2, true, Offset(90f, 50f), Touch, Release)
+                events[7]
+                    .getPointer(2)
+                    .verify(t0 + 64L, pointer3, true, Offset(90f, 80f), Touch, Release)
+
+                // Event 8: pointer 2 up, pointer 3 down
+                assertThat(events[8].pointerCount).isEqualTo(2)
+                events[8]
+                    .getPointer(0)
+                    .verify(t0 + 64L, pointer2, false, Offset(90f, 50f), Touch, Release)
+                events[8]
+                    .getPointer(1)
+                    .verify(t0 + 64L, pointer3, true, Offset(90f, 80f), Touch, Release)
+
+                // Event 9: pointer 3 up
+                assertThat(events[9].pointerCount).isEqualTo(1)
+                events[9]
+                    .getPointer(0)
+                    .verify(t0 + 64L, pointer3, false, Offset(90f, 80f), Touch, Release)
             }
         }
     }
