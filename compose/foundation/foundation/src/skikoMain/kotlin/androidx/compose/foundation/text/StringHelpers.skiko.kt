@@ -255,12 +255,16 @@ internal fun String.isWhitespaceOrPunctuation(offset: Int): Boolean {
 /**
  * Returns whether iOS cursor placement should remain at the character boundary instead of
  * applying Cupertino's Latin word adjustment. This helper lives in `skikoMain` alongside the
- * shared Cupertino cursor adjustment, but its production callers are iOS-only.
+ * shared Cupertino cursor adjustment, but its production callers are iOS-only. Whitespace is
+ * excluded so that Cupertino's existing whitespace placement remains unchanged.
  */
 internal fun String.requiresCharacterLevelCursorPlacement(index: Int): Boolean {
     if (index !in indices) return false
 
-    return when (codePointAt(index)) {
+    val codePoint = codePointAt(index)
+    if (codePoint.isWhitespace()) return false
+
+    return when (codePoint) {
         in 0x2E80..0x312F, // CJK radicals, punctuation, Hiragana, Katakana, and Bopomofo.
         in 0x3130..0x318F, // Hangul compatibility jamo.
         in 0x31A0..0x31FF, // Bopomofo extended and Katakana phonetic extensions.

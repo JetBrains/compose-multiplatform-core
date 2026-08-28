@@ -41,6 +41,11 @@ class CharacterLevelCursorPlacementTest {
     }
 
     @Test
+    fun ideographicSpace_doesNotRequireCharacterLevelCursorPlacement() {
+        assertFalse("\u3000".requiresCharacterLevelCursorPlacement(0))
+    }
+
+    @Test
     fun latinAsciiPunctuationAndEmoji_keepCupertinoWordPlacement() {
         assertFalse("a".requiresCharacterLevelCursorPlacement(0))
         assertFalse(",".requiresCharacterLevelCursorPlacement(0))

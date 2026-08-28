@@ -96,6 +96,21 @@ class CupertinoTextFieldDelegateTest : SkikoComposeTestBase() {
     }
 
     @Test
+    fun determineCursorDesiredOffset_tap_on_ideographic_spaces() {
+        val text = "tap\u3000\u3000next"
+        val spaceOffset = text.indexOf('\u3000')
+
+        val actual =
+            determineCursorDesiredOffset(
+                offset = spaceOffset,
+                textLayoutResult = createSimpleTextLayoutResult(text),
+                currentText = text,
+            )
+
+        assertEquals(text.indexOf("next"), actual)
+    }
+
+    @Test
     fun determineCursorDesiredOffset_tap_in_the_first_half_of_word() {
         val givenOffset = 23
         val desiredOffset = 19
