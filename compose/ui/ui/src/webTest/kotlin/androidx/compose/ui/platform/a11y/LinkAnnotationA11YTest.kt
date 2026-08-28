@@ -17,6 +17,9 @@
 package androidx.compose.ui.platform.a11y
 
 import androidx.compose.material.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
@@ -24,6 +27,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.get
 
@@ -73,6 +79,65 @@ class LinkAnnotationA11YTest : OnCanvasTests {
             expected = "Text before the [link:link] and text after it",
             actual = textNode.describeA11YContent()
         )
+    }
+
+    @Test
+    fun survivingLinkIsNotDetachedWhenTextChanges() = runApplicationTest {
+        var prefix by mutableStateOf("Before ")
+        var linkText by mutableStateOf("link")
+        var suffix by mutableStateOf(" after")
+
+        createComposeWindow {
+            Text(
+                buildAnnotatedString {
+                    append(prefix)
+                    withLink(LinkAnnotation.Url("https://www.example.com")) {
+                        append(linkText)
+                    }
+                    append(suffix)
+                }
+            )
+        }
+
+        awaitA11YChanges()
+        val a11yContainer = getA11YContainer()!!
+        val textNode = a11yContainer.children[0]!!.children[0] as HTMLElement
+        val linkBefore = textNode.children[0] as HTMLElement
+        var linkWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === linkBefore) {
+                linkWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            prefix = "Updated before "
+            suffix = " updated after"
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(linkBefore, textNode.children[0])
+            assertEquals(
+                "Updated before [link:link] updated after",
+                textNode.describeA11YContent(),
+            )
+
+            linkText = "renamed link"
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            val linkAfter = textNode.children[0] as HTMLElement
+            assertSame(linkBefore, linkAfter)
+            assertTrue(linkAfter.isConnected)
+            assertFalse(linkWasRemoved, "A surviving link must remain continuously connected")
+            assertEquals(
+                "Updated before [link:renamed link] updated after",
+                textNode.describeA11YContent(),
+            )
+        } finally {
+            disconnectMutationObserver(observer)
+        }
     }
 
     @Test
