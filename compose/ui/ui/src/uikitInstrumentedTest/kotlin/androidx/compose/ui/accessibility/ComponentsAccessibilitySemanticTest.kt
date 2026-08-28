@@ -59,7 +59,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertAccessibilityTree
 import androidx.compose.ui.test.findNodeWithTag
@@ -117,13 +116,13 @@ class ComponentsAccessibilitySemanticTest {
         UITraitEnvironmentLayoutDirectionRightToLeft
     )
 
-    private fun runInBothLayoutDirections(
+    private fun runUIKitInstrumentedTestInBothLayoutDirections(
         testBlock: UIKitInstrumentedTest.(UITraitEnvironmentLayoutDirection) -> Unit
     ) = runUIKitInstrumentedTest(params = layoutDirections, testBlock = testBlock)
 
     @OptIn(ExperimentalMaterialApi::class)
     @Test
-    fun testProgressNodesSemantic() = runInBothLayoutDirections { layoutDirection ->
+    fun testProgressNodesSemantic() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         var sliderValue = 0.4f
         setContent(layoutDirection = layoutDirection) {
             Column {
@@ -576,7 +575,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testVisibleNodeContainers() = runInBothLayoutDirections { layoutDirection ->
+    fun testVisibleNodeContainers() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         var alpha by mutableStateOf(0f)
 
         setContent(layoutDirection = layoutDirection) {
@@ -744,7 +743,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testChildrenOfCollapsedNode() = runInBothLayoutDirections { layoutDirection ->
+    fun testChildrenOfCollapsedNode() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {
             Column {
                 Row(modifier = Modifier.testTag("row").clickable {}) {
@@ -828,7 +827,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testNodeHierarchyInsideAccessibilityElementShouldNotFlatten() = runInBothLayoutDirections { layoutDirection ->
+    fun testNodeHierarchyInsideAccessibilityElementShouldNotFlatten() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {
             Column(modifier = Modifier.clickable {}) {
                 Text("Title 1")
@@ -862,7 +861,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testNodeHierarchyInsideTraversalGroupShouldFlatten() = runInBothLayoutDirections { layoutDirection ->
+    fun testNodeHierarchyInsideTraversalGroupShouldFlatten() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {
             Column {
                 Column(modifier = Modifier.semantics { isTraversalGroup = true }) {
@@ -1256,7 +1255,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testTextLinks() = runInBothLayoutDirections { layoutDirection ->
+    fun testTextLinks() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {
             Text(text = buildAnnotatedString {
                 append("Text ")
@@ -1294,7 +1293,19 @@ class ComponentsAccessibilitySemanticTest {
                 label = "Text annotation clickable link."
                 traits = listOf(UIAccessibilityTraitStaticText)
             }
-            linkNodesInTraversalOrder(layoutDirection)
+            node(layoutDirection = layoutDirection) {
+                node {
+                    isAccessibilityElement = true
+                    label = "clickable"
+                    identifier = "clickable tag"
+                    traits = listOf(UIAccessibilityTraitButton)
+                }
+                node {
+                    isAccessibilityElement = true
+                    label = "link"
+                    traits = listOf(UIAccessibilityTraitButton)
+                }
+            }
         }
     }
 
@@ -1406,7 +1417,7 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testSemanticsMergingWithProgressIndicators() = runInBothLayoutDirections { layoutDirection ->
+    fun testSemanticsMergingWithProgressIndicators() = runUIKitInstrumentedTestInBothLayoutDirections { layoutDirection ->
         setContent(layoutDirection = layoutDirection) {
             Column(modifier = Modifier.semantics(mergeDescendants = true) {}) {
                 Row {
@@ -1553,27 +1564,6 @@ class ComponentsAccessibilitySemanticTest {
             label.attributeForSubstring(UIAccessibilitySpeechAttributeLanguage!!, "Hello"),
             "Plain text should not carry the language attribute"
         )
-    }
-}
-
-private fun AccessibilityTestNode.linkNodesInTraversalOrder(
-    layoutDirection: UITraitEnvironmentLayoutDirection
-) {
-    // Geometry sorting traverses inline links from right to left in RTL.
-    val linkLabels = if (layoutDirection == UITraitEnvironmentLayoutDirectionRightToLeft) {
-        listOf("link", "clickable")
-    } else {
-        listOf("clickable", "link")
-    }
-    linkLabels.forEach { label ->
-        node {
-            isAccessibilityElement = true
-            this.label = label
-            if (label == "clickable") {
-                identifier = "clickable tag"
-            }
-            traits = listOf(UIAccessibilityTraitButton)
-        }
     }
 }
 
