@@ -99,7 +99,10 @@ fun Project.getSupportRootFolder(): File {
  * This method assumes that the canonical root project directory is {@code frameworks/support}.
  */
 fun Project.getCheckoutRoot(): File {
-    return project.getSupportRootFolder()
+    if (!ProjectLayoutType.isPlayground(project)) {
+        throw IllegalStateException("repo checkout root is not available in playground project layout")
+    }
+    return project.getSupportRootFolder().parentFile.parentFile
 }
 
 /** Returns the path to the konan prebuilts folder (e.g. <root>/prebuilts/androidx/konan). */
