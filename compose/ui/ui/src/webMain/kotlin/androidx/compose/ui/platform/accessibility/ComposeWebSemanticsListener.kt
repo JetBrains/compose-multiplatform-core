@@ -479,8 +479,12 @@ internal class ComposeWebSemanticsListener(
 
         if (isCollection) {
             // Prevent VoiceOver from announcing every child added as a lazy collection scrolls.
-            htmlNode.setAttribute("aria-live", "off")
-        } else {
+            // Avoid rewriting the attribute during every sync because that can itself invalidate
+            // the focused accessibility object.
+            if (htmlNode.getAttribute("aria-live") != "off") {
+                htmlNode.setAttribute("aria-live", "off")
+            }
+        } else if (htmlNode.hasAttribute("aria-live")) {
             htmlNode.removeAttribute("aria-live")
         }
 
@@ -511,7 +515,9 @@ internal class ComposeWebSemanticsListener(
             )
         } else {
             htmlNode.style.position = "absolute"
-            val parentScroll = scrollOffsetForGeometry(parentSemanticsNode.id, htmlParent)
+            val parentScroll = pendingScrollOffsets[parentSemanticsNode.id]
+                ?: appliedScrollOffsets[parentSemanticsNode.id]
+                ?: Offset.Zero
             setSizeAndPosition(
                 htmlNode,
                 (positionInRoot.x - parentSemanticsNode.positionInRoot.x) / density + parentScroll.x,
@@ -522,19 +528,6 @@ internal class ComposeWebSemanticsListener(
         }
     }
 
-
-    private fun scrollOffsetForGeometry(nodeId: Int, element: HTMLElement): Offset {
-        val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
-        val lastApplied = appliedScrollOffsets[nodeId]
-
-        return if (lastApplied != null && !actual.isCloseTo(lastApplied)) {
-            // The browser changed the offset and its asynchronous scroll event may still be pending.
-            actual
-        } else {
-            // The DOM still has our previous offset; use the new Compose offset during this sync.
-            pendingScrollOffsets[nodeId] ?: actual
-        }
-    }
 
     /** Makes scroll semantics visible to the browser as a real CSS scroll container. */
     private fun syncScrollability(
@@ -587,6 +580,8 @@ internal class ComposeWebSemanticsListener(
         val sizer = scrollSizers.getOrPut(nodeId) { createScrollSizer() }
         setSizeAndPosition(sizer, 0f, 0f, contentWidth, contentHeight)
 
+        // Lazy layouts expose estimated accessibility offsets rather than physical pixels.
+        // Preserve their current DOM offset instead of interpreting the estimate as scrollTop/Left.
         val isLazyLayout = config.contains(SemanticsActions.ScrollToIndex)
         val scrollLeft = if (isLazyLayout) {
             htmlNode.scrollLeft.toFloat()

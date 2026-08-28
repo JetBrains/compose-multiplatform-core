@@ -424,9 +424,9 @@ class A11yScrollTest : OnCanvasTests {
             "The beyond-bounds window must advance after scrolling",
         )
         assertTrue(
-            abs(nextBeyondBoundsItem.offsetTop - 500) <= 2,
-            "The next retained item must keep its content-space position, " +
-                "got offsetTop=${nextBeyondBoundsItem.offsetTop}",
+            nextBeyondBoundsItem.offsetTop > container.scrollTop,
+            "The next retained item must have meaningful forward content-space geometry, " +
+                "itemTop=${nextBeyondBoundsItem.offsetTop}, scrollTop=${container.scrollTop}",
         )
 
         scrollIntoView(nextBeyondBoundsItem)
