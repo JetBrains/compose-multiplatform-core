@@ -579,14 +579,6 @@ internal class ComposeWindow(
         addTypedEvent("keydown", onKeyboardEventCallback)
         addTypedEvent("keyup", onKeyboardEventCallback)
 
-        addTypedEvent<FocusEvent>("focus") { event ->
-            canvasFocused = true
-        }
-
-        addTypedEvent<FocusEvent>("blur") { event ->
-            canvasFocused = false
-        }
-        
         state.globalEvents.addDisposableEvent("focus") {
             _windowInfo.isWindowFocused = true
             archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
