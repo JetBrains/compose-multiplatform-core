@@ -48,7 +48,7 @@ kotlin {
         browser {
             // https://youtrack.jetbrains.com/issue/KT-68614
             val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
+            val projectDirPath = project.projectDir.resolve("src").path
             commonWebpackConfig {
                 outputFileName = "demo.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -59,7 +59,7 @@ kotlin {
                     )
                     static = (static ?: mutableListOf()).apply {
                         // Serve sources to debug inside browser
-                        add(rootDirPath)
+                        //add(rootDirPath)
                         add(projectDirPath)
                     }
                 }

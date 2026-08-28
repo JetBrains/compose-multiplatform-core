@@ -24,6 +24,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
+@Suppress("DEPRECATION")
 internal fun Project.getTestSourceSetsForAndroid(variant: Variant?): List<FileCollection> {
     val testSourceFileCollections = mutableListOf<FileCollection>()
     when (variant) {
