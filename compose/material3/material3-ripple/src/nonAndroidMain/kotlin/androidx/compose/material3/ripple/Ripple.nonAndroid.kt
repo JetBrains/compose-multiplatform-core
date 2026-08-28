@@ -23,6 +23,5 @@ internal actual fun createPlatformRippleNode(
     interactionSource: InteractionSource,
     rippleNodeConfiguration: () -> RippleNodeConfiguration,
 ): DelegatableNode {
-    // TODO(Merge) Implement after merging 693100af1ef688ddc632a4bb88c382e9c8a966b5
     return CommonRippleNode(interactionSource, rippleNodeConfiguration)
 }
