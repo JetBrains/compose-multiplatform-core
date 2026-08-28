@@ -302,89 +302,89 @@ public abstract interface annotation class androidx/compose/ui/UiComposable : ja
 public abstract interface class androidx/compose/ui/UiMediaScope {
 	public abstract fun getHasCamera ()Z
 	public abstract fun getHasMicrophone ()Z
-	public abstract fun getKeyboardKind-J9_QTjY ()Ljava/lang/String;
-	public abstract fun getPointerPrecision-fpxItnM ()Ljava/lang/String;
-	public abstract fun getViewingDistance-tKro-MQ ()Ljava/lang/String;
+	public abstract fun getKeyboardKind-J9_QTjY ()I
+	public abstract fun getPointerPrecision-fpxItnM ()I
+	public abstract fun getViewingDistance-tKro-MQ ()I
 	public abstract fun getWindowHeight-D9Ej5fM ()F
-	public abstract fun getWindowPosture-m18o9QQ ()Ljava/lang/String;
+	public abstract fun getWindowPosture-m18o9QQ ()I
 	public abstract fun getWindowWidth-D9Ej5fM ()F
 }
 
 public final class androidx/compose/ui/UiMediaScope$KeyboardKind {
 	public static final field Companion Landroidx/compose/ui/UiMediaScope$KeyboardKind$Companion;
-	public static final synthetic fun box-impl (Ljava/lang/String;)Landroidx/compose/ui/UiMediaScope$KeyboardKind;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$KeyboardKind;
 	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
 	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static fun hashCode-impl (I)I
 	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$KeyboardKind$Companion {
-	public final fun getNone-J9_QTjY ()Ljava/lang/String;
-	public final fun getPhysical-J9_QTjY ()Ljava/lang/String;
-	public final fun getVirtual-J9_QTjY ()Ljava/lang/String;
+	public final fun getNone-J9_QTjY ()I
+	public final fun getPhysical-J9_QTjY ()I
+	public final fun getVirtual-J9_QTjY ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$PointerPrecision {
 	public static final field Companion Landroidx/compose/ui/UiMediaScope$PointerPrecision$Companion;
-	public static final synthetic fun box-impl (Ljava/lang/String;)Landroidx/compose/ui/UiMediaScope$PointerPrecision;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$PointerPrecision;
 	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
 	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static fun hashCode-impl (I)I
 	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$PointerPrecision$Companion {
-	public final fun getBlunt-fpxItnM ()Ljava/lang/String;
-	public final fun getCoarse-fpxItnM ()Ljava/lang/String;
-	public final fun getFine-fpxItnM ()Ljava/lang/String;
-	public final fun getNone-fpxItnM ()Ljava/lang/String;
+	public final fun getBlunt-fpxItnM ()I
+	public final fun getCoarse-fpxItnM ()I
+	public final fun getFine-fpxItnM ()I
+	public final fun getNone-fpxItnM ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$Posture {
 	public static final field Companion Landroidx/compose/ui/UiMediaScope$Posture$Companion;
-	public static final synthetic fun box-impl (Ljava/lang/String;)Landroidx/compose/ui/UiMediaScope$Posture;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$Posture;
 	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
 	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static fun hashCode-impl (I)I
 	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$Posture$Companion {
-	public final fun getBook-m18o9QQ ()Ljava/lang/String;
-	public final fun getFlat-m18o9QQ ()Ljava/lang/String;
-	public final fun getTabletop-m18o9QQ ()Ljava/lang/String;
+	public final fun getBook-m18o9QQ ()I
+	public final fun getFlat-m18o9QQ ()I
+	public final fun getTabletop-m18o9QQ ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$ViewingDistance {
 	public static final field Companion Landroidx/compose/ui/UiMediaScope$ViewingDistance$Companion;
-	public static final synthetic fun box-impl (Ljava/lang/String;)Landroidx/compose/ui/UiMediaScope$ViewingDistance;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/UiMediaScope$ViewingDistance;
 	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
 	public fun hashCode ()I
-	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static fun hashCode-impl (I)I
 	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
 }
 
 public final class androidx/compose/ui/UiMediaScope$ViewingDistance$Companion {
-	public final fun getFar-tKro-MQ ()Ljava/lang/String;
-	public final fun getMedium-tKro-MQ ()Ljava/lang/String;
-	public final fun getNear-tKro-MQ ()Ljava/lang/String;
+	public final fun getFar-tKro-MQ ()I
+	public final fun getMedium-tKro-MQ ()I
+	public final fun getNear-tKro-MQ ()I
 }
 
 public final class androidx/compose/ui/ZIndexModifierKt {
@@ -1320,23 +1320,6 @@ public final class androidx/compose/ui/graphics/GraphicsLayerScopeKt {
 	public static final fun rememberGraphicsLayer (Landroidx/compose/runtime/Composer;I)Landroidx/compose/ui/graphics/layer/GraphicsLayer;
 }
 
-public final class androidx/compose/ui/graphics/MeshGradientPainter : androidx/compose/ui/graphics/painter/Painter {
-	public static final field $stable I
-	public fun <init> (IIZLkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (IIZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getIntrinsicSize-NH-jbRc ()J
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class androidx/compose/ui/graphics/MeshGradientScope {
-	public abstract fun getColumns ()I
-	public abstract fun getRows ()I
-	public abstract fun setVertex-6uS4IUQ (IIJJJJJJ)V
-	public static synthetic fun setVertex-6uS4IUQ$default (Landroidx/compose/ui/graphics/MeshGradientScope;IIJJJJJJILjava/lang/Object;)V
-}
-
 public final class androidx/compose/ui/graphics/TransformOrigin {
 	public static final field Companion Landroidx/compose/ui/graphics/TransformOrigin$Companion;
 	public static final synthetic fun box-impl (J)Landroidx/compose/ui/graphics/TransformOrigin;
@@ -1712,6 +1695,9 @@ public final class androidx/compose/ui/input/indirect/IndirectPointerInputChange
 	public static final field $stable I
 	public synthetic fun <init> (JJJZFJJZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun consume ()V
+	public final fun copy-oRTnPKo (JJJZFJJZLjava/util/List;)Landroidx/compose/ui/input/indirect/IndirectPointerInputChange;
+	public static synthetic fun copy-oRTnPKo$default (Landroidx/compose/ui/input/indirect/IndirectPointerInputChange;JJJZFJJZLjava/util/List;ILjava/lang/Object;)Landroidx/compose/ui/input/indirect/IndirectPointerInputChange;
+	public final fun getHistorical ()Ljava/util/List;
 	public final fun getId-J3iCeTQ ()J
 	public final fun getPosition-F1C5BW0 ()J
 	public final fun getPressed ()Z
@@ -2622,9 +2608,6 @@ public abstract interface class androidx/compose/ui/input/pointer/SuspendingPoin
 	public abstract fun resetPointerInputHandler ()V
 	public fun setPointerInputEventHandler (Landroidx/compose/ui/input/pointer/PointerInputEventHandler;)V
 	public abstract fun setPointerInputHandler (Lkotlin/jvm/functions/Function2;)V
-}
-
-public abstract interface annotation class androidx/compose/ui/input/pointer/util/ExperimentalVelocityTrackerApi : java/lang/annotation/Annotation {
 }
 
 public final class androidx/compose/ui/input/pointer/util/VelocityTracker {
@@ -3652,10 +3635,12 @@ public abstract interface class androidx/compose/ui/node/RootForTest {
 	public abstract fun getSemanticsOwner ()Landroidx/compose/ui/semantics/SemanticsOwner;
 	public abstract fun getTextInputService ()Landroidx/compose/ui/text/input/TextInputService;
 	public fun measureAndLayoutForTest ()V
+	public fun runAndClearPendingCallbacks ()V
 	public fun sendIndirectPointerEvent (Landroidx/compose/ui/input/indirect/IndirectPointerEvent;)Z
 	public abstract fun sendKeyEvent-ZmokQxo (Ljava/lang/Object;)Z
 	public fun setAccessibilityEventBatchIntervalMillis (J)V
 	public fun setUncaughtExceptionHandler (Landroidx/compose/ui/node/RootForTest$UncaughtExceptionHandler;)V
+	public fun updateSemanticsForTest ()V
 }
 
 public abstract interface class androidx/compose/ui/node/RootForTest$UncaughtExceptionHandler {
@@ -4263,6 +4248,7 @@ public final class androidx/compose/ui/semantics/SemanticsModifierKt {
 
 public final class androidx/compose/ui/semantics/SemanticsNode {
 	public static final field $stable I
+	public final fun computeEffectiveAlpha ()F
 	public final fun getAlignmentLinePosition (Landroidx/compose/ui/layout/AlignmentLine;)I
 	public final fun getBoundsInRoot ()Landroidx/compose/ui/geometry/Rect;
 	public final fun getBoundsInWindow ()Landroidx/compose/ui/geometry/Rect;
@@ -4308,6 +4294,7 @@ public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public final fun getFocused ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getHeading ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getHideFromAccessibility ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getHintText ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getHorizontalScrollAxisRange ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getImeAction ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getIndexForKey ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4368,6 +4355,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun getEditableText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/text/AnnotatedString;
 	public static final fun getFillableData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/autofill/FillableData;
 	public static final fun getFocused (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
+	public static final fun getHintText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Ljava/lang/String;
 	public static final fun getHorizontalScrollAxisRange (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/semantics/ScrollAxisRange;
 	public static final fun getImeAction (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)I
 	public static final fun getInputText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/text/AnnotatedString;
@@ -4446,6 +4434,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun setEditableText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/text/AnnotatedString;)V
 	public static final fun setFillableData (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/autofill/FillableData;)V
 	public static final fun setFocused (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
+	public static final fun setHintText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;)V
 	public static final fun setHorizontalScrollAxisRange (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/semantics/ScrollAxisRange;)V
 	public static final fun setImeAction-4L7nppU (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;I)V
 	public static final fun setInputText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/text/AnnotatedString;)V
