@@ -23,8 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.density
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import org.jetbrains.skiko.SystemTheme
 import androidx.compose.ui.uikit.utils.CMPKeyValueObserver
@@ -66,8 +64,6 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : UiMediaScope, Keyb
         InterfaceOrientation.Portrait
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.UNKNOWN)
-
-    private val systemDensityState: MutableState<Density> = mutableStateOf(window?.density ?: Density(1f))
 
     private val isImeShowing = mutableStateOf(KeyboardVisibilityListener.keyboardFrame.useContents { size.height > 0 })
     private val pointerPrecisionState: MutableState<UiMediaScope.PointerPrecision> = mutableStateOf(
@@ -118,15 +114,12 @@ internal class MediaEnvironment(val windowInfo: WindowInfo) : UiMediaScope, Keyb
         interfaceOrientationObserver.windowScene = window?.windowScene
         window ?: return
 
-        systemDensityState.value = window.density
         updateInterfaceOrientationState()
 
     }
 
     val systemTheme: SystemTheme
         get() = systemThemeState.value
-    val systemDensity: Density
-        get() = systemDensityState.value
 
     fun startObserving() {
         interfaceOrientationObserver.isObservingEnabled = true
