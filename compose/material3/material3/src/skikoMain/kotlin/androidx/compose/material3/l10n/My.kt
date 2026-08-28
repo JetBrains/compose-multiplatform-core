@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.my() = mapOf(
     Strings.TimePickerMinuteTextField to "မိနစ်ကြာ",
     Strings.TimePickerHourTextField to "နာရီကြာ",
     Strings.TimePickerToggleKeyboard to "စာရိုက်နည်းသို့ ပြောင်းရန်",
+    Strings.TimePickerToggleScroll to "လှိမ့်မုဒ်သို့ ပြောင်းရန်",
     Strings.TimePickerToggleTouch to "နာရီမုဒ်သို့ ပြောင်းရန်",
     Strings.TimePickerDialogTitle to "အချိန်ရွေးပါ",
+    Strings.TimeScrollDialogTitle to "အချိန်ရွေးရန်",
     Strings.TimeInputDialogTitle to "အချိန်ထည့်ပါ",
     Strings.TimePickerMinuteError to "မိနစ်သည် ၀–၅၉ ဖြစ်ရမည်",
     Strings.TimePickerHourError to "နာရီသည် ၁–၁၂ ဖြစ်ရမည်",

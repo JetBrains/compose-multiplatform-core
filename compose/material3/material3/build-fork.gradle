@@ -61,6 +61,7 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-util"))
             api(project(":compose:foundation:foundation-layout"))
             api(project(":compose:material:material-ripple"))
+            implementation(project(":compose:material3:material3-ripple"))
             api(project(":compose:runtime:runtime"))
             api(project(":compose:ui:ui"))
             api(project(":compose:foundation:foundation"))
@@ -236,6 +237,9 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "m3c_date_range_picker_day_in_range": "DateRangePickerDayInRange",
             "m3c_date_range_input_title": "DateRangeInputTitle",
             "m3c_date_range_input_invalid_range_input": "DateRangeInputInvalidRangeInput",
+            "m3c_floating_toolbar_collapse": "FloatingToolbarCollapse",
+            "m3c_floating_toolbar_expand": "FloatingToolbarExpand",
+            "m3c_floating_toolbar_more_options": "FloatingToolbarMoreOptions",
             "m3c_bottom_sheet_pane_title": "BottomSheetPaneTitle",
             "m3c_bottom_sheet_drag_handle_description": "BottomSheetDragHandleDescription",
             "m3c_bottom_sheet_collapse_description": "BottomSheetPartialExpandDescription",
@@ -254,17 +258,16 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "m3c_time_picker_minute": "TimePickerMinute",
             "m3c_time_picker_hour_text_field": "TimePickerHourTextField",
             "m3c_time_picker_minute_text_field": "TimePickerMinuteTextField",
-            "m3c_tooltip_pane_description": "TooltipPaneDescription",
             "m3c_time_picker_dialog_title": "TimePickerDialogTitle",
+            "m3c_time_scroll_dialog_title": "TimeScrollDialogTitle",
             "m3c_time_input_dialog_title": "TimeInputDialogTitle",
             "m3c_time_picker_toggle_keyboard": "TimePickerToggleKeyboard",
+            "m3c_time_picker_toggle_scroll": "TimePickerToggleScroll",
             "m3c_time_picker_toggle_touch": "TimePickerToggleTouch",
             "m3c_time_picker_minute_error": "TimePickerMinuteError",
             "m3c_time_picker_hour_error": "TimePickerHourError",
             "m3c_time_picker_hour_error_24h": "TimePicker24HourError",
-            "m3c_floating_toolbar_collapse": "FloatingToolbarCollapse",
-            "m3c_floating_toolbar_expand": "FloatingToolbarExpand",
-            "m3c_floating_toolbar_more_options": "FloatingToolbarMoreOptions",
+            "m3c_tooltip_pane_description": "TooltipPaneDescription",
             "m3c_wide_navigation_rail_close_rail": "CloseRail",
             "m3c_wide_navigation_rail_pane_title": "WideNavigationRailPaneTitle",
             "m3c_button_group_more_options": "ButtonGroupMoreOptions",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.eu() = mapOf(
     Strings.TimePickerMinuteTextField to "minutuetarako",
     Strings.TimePickerHourTextField to "ordurako",
     Strings.TimePickerToggleKeyboard to "Aldatu testua idazteko modura",
+    Strings.TimePickerToggleScroll to "Aldatu gora/behera egiteko modura",
     Strings.TimePickerToggleTouch to "Aldatu erloju modura",
     Strings.TimePickerDialogTitle to "Hautatu ordua",
+    Strings.TimeScrollDialogTitle to "Hautatu ordua",
     Strings.TimeInputDialogTitle to "Idatzi ordua",
     Strings.TimePickerMinuteError to "0-59 izan behar du",
     Strings.TimePickerHourError to "1-12 izan behar du",

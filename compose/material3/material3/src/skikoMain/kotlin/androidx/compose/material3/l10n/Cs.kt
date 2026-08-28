@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.cs() = mapOf(
     Strings.TimePickerMinuteTextField to "pro minuty",
     Strings.TimePickerHourTextField to "pro hodinu",
     Strings.TimePickerToggleKeyboard to "Přepnout na režim zadávání textu",
+    Strings.TimePickerToggleScroll to "Přepnout na režim posouvání",
     Strings.TimePickerToggleTouch to "Přepnout na režim hodin",
     Strings.TimePickerDialogTitle to "Vyberte čas",
+    Strings.TimeScrollDialogTitle to "Vyberte čas",
     Strings.TimeInputDialogTitle to "Zadejte čas",
     Strings.TimePickerMinuteError to "Minuta musí být 0–59",
     Strings.TimePickerHourError to "Hodina musí být 1–12",

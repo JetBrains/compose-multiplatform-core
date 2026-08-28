@@ -16,6 +16,7 @@
 
 package androidx.compose.material3
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
@@ -37,6 +38,7 @@ import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -55,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +65,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ToggleButtonTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val ToggleButtonTag = "ToggleButtonTag"
     private val TextTag = "TextTag"
@@ -215,7 +216,7 @@ class ToggleButtonTest {
     fun elevatedToggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    ToggleButtonDefaults.elevatedToggleButtonColors(
+                    ElevatedToggleButtonDefaults.elevatedToggleButtonColors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -248,7 +249,7 @@ class ToggleButtonTest {
     fun tonalToggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    ToggleButtonDefaults.tonalToggleButtonColors(
+                    FilledTonalToggleButtonDefaults.filledTonalToggleButtonColors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -280,7 +281,7 @@ class ToggleButtonTest {
     fun outlinedToggleButton_defaultColors() {
         rule.setMaterialContent(lightColorScheme()) {
             assertThat(
-                    ToggleButtonDefaults.outlinedToggleButtonColors(
+                    OutlinedToggleButtonDefaults.outlinedToggleButtonColors(
                         containerColor = Color.Unspecified,
                         contentColor = Color.Unspecified,
                         disabledContainerColor = Color.Unspecified,
@@ -487,5 +488,38 @@ class ToggleButtonTest {
         (iconBounds.left - toggleButtonBounds.left).assertIsEqualTo(64.dp)
         (textBounds.left - iconBounds.right).assertIsEqualTo(16.dp)
         (toggleButtonBounds.right - textBounds.right).assertIsEqualTo(64.dp)
+    }
+
+    @Test
+    fun toggleButton_customStatefulBorder_widthUpdatedWhenChecked() {
+        var evaluatedBorder: BorderStroke? = null
+        rule.setMaterialContent(lightColorScheme()) {
+            var checked by remember { mutableStateOf(false) }
+            val border =
+                if (checked) BorderStroke(2.dp, Color.Red) else BorderStroke(1.dp, Color.Blue)
+            ToggleButton(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                border = border,
+                modifier = Modifier.testTag(ToggleButtonTag),
+            ) {
+                Text("test")
+            }
+            evaluatedBorder = border
+        }
+
+        // Before click (checked == false)
+        assertThat(evaluatedBorder).isNotNull()
+        assertThat(evaluatedBorder!!.width).isEqualTo(1.dp)
+        assertThat((evaluatedBorder!!.brush as SolidColor).value).isEqualTo(Color.Blue)
+
+        // Click to toggle (checked == true)
+        rule.onNodeWithTag(ToggleButtonTag).performClick()
+        rule.onNodeWithTag(ToggleButtonTag).assertIsOn()
+
+        // After click (checked == true)
+        assertThat(evaluatedBorder).isNotNull()
+        assertThat(evaluatedBorder!!.width).isEqualTo(2.dp)
+        assertThat((evaluatedBorder!!.brush as SolidColor).value).isEqualTo(Color.Red)
     }
 }

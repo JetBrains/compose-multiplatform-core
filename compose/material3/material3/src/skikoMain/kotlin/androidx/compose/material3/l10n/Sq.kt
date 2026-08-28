@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.sq() = mapOf(
     Strings.TimePickerMinuteTextField to "për minuta",
     Strings.TimePickerHourTextField to "për orë",
     Strings.TimePickerToggleKeyboard to "Kalo te modaliteti i hyrjes së tekstit",
+    Strings.TimePickerToggleScroll to "Kalo në modalitetin e lëvizjes",
     Strings.TimePickerToggleTouch to "Kalo te modaliteti i orës",
     Strings.TimePickerDialogTitle to "Zgjidh orën",
+    Strings.TimeScrollDialogTitle to "Zgjidh orën",
     Strings.TimeInputDialogTitle to "Fut orën",
     Strings.TimePickerMinuteError to "Min. duhet të jetë 0-59",
     Strings.TimePickerHourError to "Ora duhet të jetë 1-12",

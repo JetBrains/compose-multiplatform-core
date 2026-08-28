@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.lt() = mapOf(
     Strings.TimePickerMinuteTextField to "minutės",
     Strings.TimePickerHourTextField to "valandos",
     Strings.TimePickerToggleKeyboard to "Perjungti į teksto įvesties režimą",
+    Strings.TimePickerToggleScroll to "Perjungti į slinkimo režimą",
     Strings.TimePickerToggleTouch to "Perjungti į laikrodžio režimą",
     Strings.TimePickerDialogTitle to "Pasirinkite laiką",
+    Strings.TimeScrollDialogTitle to "Pasirinkite laiką",
     Strings.TimeInputDialogTitle to "Įveskite laiką",
     Strings.TimePickerMinuteError to "Minutė turi būti 0–59",
     Strings.TimePickerHourError to "Valanda turi būti 1–12",

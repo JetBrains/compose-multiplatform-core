@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,8 +91,10 @@ internal fun Translations.`in`() = mapOf(
     Strings.TimePickerMinuteTextField to "untuk menit",
     Strings.TimePickerHourTextField to "untuk jam",
     Strings.TimePickerToggleKeyboard to "Beralih ke mode input teks",
+    Strings.TimePickerToggleScroll to "Beralih ke mode scroll",
     Strings.TimePickerToggleTouch to "Beralih ke mode jam",
     Strings.TimePickerDialogTitle to "Pilih Waktu",
+    Strings.TimeScrollDialogTitle to "Pilih Waktu",
     Strings.TimeInputDialogTitle to "Masukkan Waktu",
     Strings.TimePickerMinuteError to "Menit harus antara 0—59",
     Strings.TimePickerHourError to "Jam harus antara 1—12",
