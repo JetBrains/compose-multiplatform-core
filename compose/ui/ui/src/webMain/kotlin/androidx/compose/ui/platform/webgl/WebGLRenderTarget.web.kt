@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.window.LocalComposeWindow
 import org.jetbrains.skia.DirectContext
-import org.jetbrains.skia.Image
 import org.khronos.webgl.WebGLFramebuffer
 import org.khronos.webgl.WebGLRenderbuffer
 import org.khronos.webgl.WebGLRenderingContext
@@ -137,18 +136,26 @@ class WebGLRenderTarget internal constructor(
         webGLContext.createFramebuffer() ?: error("gl.createFramebuffer() returned null")
     }
 
+    private var currentTexture: WebGLTexture? = null
+
     /**
      * The WebGL texture backing this render target.
      *
-     * Its storage is allocated lazily and resized when necessary in [render].
-     *
-     * Callers may register or attach this texture to another framebuffer, but must not delete it,
-     * reallocate its storage, or change its texture parameters. Callers must stop using it when
-     * [onTextureWillBeInvalidated] is invoked.
+     * The current texture is allocated lazily and replaced when the target changes size. Callers
+     * may register or attach it to another framebuffer, but must not delete it, reallocate its
+     * storage, or change its texture parameters. Callers must stop using it when
+     * [onTextureWillBeInvalidated] is invoked. Access this property after the callback returns to
+     * obtain the replacement.
      */
-    val webGlTexture: WebGLTexture by lazy {
-        webGLContext.createTexture() ?: error("gl.createTexture() returned null")
-    }
+    val webGlTexture: WebGLTexture
+        get() {
+            val current = currentTexture
+            if (current != null) return current
+
+            val created = webGLContext.createTexture() ?: error("gl.createTexture() returned null")
+            currentTexture = created
+            return created
+        }
 
     /** The depth/stencil attachment of [framebuffer]; like it, created once and only resized. */
     private val depthStencil: WebGLRenderbuffer by lazy {
@@ -181,7 +188,7 @@ class WebGLRenderTarget internal constructor(
 
     /**
      * Called before the current texture-backed render resource becomes unavailable.
-     * It happens when the texture is about to be reconfigured for a new size or the
+     * It happens when the texture is about to be replaced for a new size or the
      * [WebGLRenderTarget] is being disposed.
      */
     var onTextureWillBeInvalidated: (() -> Unit)? = null
@@ -265,14 +272,17 @@ class WebGLRenderTarget internal constructor(
         if (current != null && current.size == size) return
 
         if (current != null) {
-            onTextureWillBeInvalidated?.invoke()
-            current.dispose()
+            releaseTexture()
         }
 
-        adoptedTexture = null
-
-        webGLContext.configureWebGLTexture(webGlTexture, size)
-        val adopted = webGLContext.adoptNewTexture(context, size, webGlTexture)
+        val newTexture = webGlTexture
+        webGLContext.configureWebGLTexture(newTexture, size)
+        val adopted = try {
+            webGLContext.adoptNewTexture(context, size, newTexture)
+        } catch (error: Throwable) {
+            currentTexture = null
+            throw error
+        }
         this.adoptedTexture = adopted
 
         webGLContext.bindRenderbuffer(RENDERBUFFER, depthStencil)
@@ -284,7 +294,7 @@ class WebGLRenderTarget internal constructor(
             FRAMEBUFFER,
             COLOR_ATTACHMENT0,
             TEXTURE_2D,
-            adopted.texture,
+            newTexture,
             0,
         )
         webGLContext.framebufferRenderbuffer(
@@ -303,6 +313,22 @@ class WebGLRenderTarget internal constructor(
         generation++
     }
 
+    private fun releaseTexture() {
+        val current = currentTexture ?: return
+        try {
+            onTextureWillBeInvalidated?.invoke()
+        } finally {
+            val adopted = adoptedTexture
+            adoptedTexture = null
+            currentTexture = null
+            if (adopted == null) {
+                webGLContext.deleteTexture(current)
+            } else {
+                adopted.dispose()
+            }
+        }
+    }
+
     /**
      * Disposes the target's GPU resources.
      *
@@ -312,16 +338,15 @@ class WebGLRenderTarget internal constructor(
     internal fun dispose() {
         if (isDisposed) return
         isDisposed = true
-        if (adoptedTexture != null) {
-            onTextureWillBeInvalidated?.invoke()
-            adoptedTexture?.dispose()
-            adoptedTexture = null
+        try {
+            releaseTexture()
+        } finally {
+            size = IntSize.Zero
+            webGLContext.deleteFramebuffer(framebuffer)
+            webGLContext.deleteRenderbuffer(depthStencil)
+            webGLContext.bindFramebuffer(FRAMEBUFFER, null)
+            directContext()?.resetAll()
         }
-        size = IntSize.Zero
-        webGLContext.deleteFramebuffer(framebuffer)
-        webGLContext.deleteRenderbuffer(depthStencil)
-        webGLContext.bindFramebuffer(FRAMEBUFFER, null)
-        directContext()?.resetAll()
     }
 }
 

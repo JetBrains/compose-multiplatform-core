@@ -38,9 +38,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.khronos.webgl.WebGLRenderingContext
@@ -52,13 +54,18 @@ import org.khronos.webgl.WebGLRenderingContext.Companion.NO_ERROR
 
 /** Opaque red as `0xRRGGBBAA`, chosen because every channel is exact in RGBA8. */
 private const val OPAQUE_RED = (255 shl 24) or 255
+private const val OPAQUE_GREEN = (255 shl 16) or 255
 
-/** The whole "renderer": clear the target to opaque red, like the ColorPulse demo. */
-private fun clearToRed(target: WebGLRenderTarget): Boolean = target.render {
-    target.webGLContext.viewport(0, 0, target.size.width, target.size.height)
-    target.webGLContext.clearColor(1f, 0f, 0f, 1f)
-    target.webGLContext.clear(COLOR_BUFFER_BIT)
-}
+private fun clearTo(target: WebGLRenderTarget, red: Float, green: Float, blue: Float): Boolean =
+    target.render {
+        target.webGLContext.viewport(0, 0, target.size.width, target.size.height)
+        target.webGLContext.clearColor(red, green, blue, 1f)
+        target.webGLContext.clear(COLOR_BUFFER_BIT)
+    }
+
+private fun clearToRed(target: WebGLRenderTarget): Boolean = clearTo(target, 1f, 0f, 0f)
+
+private fun clearToGreen(target: WebGLRenderTarget): Boolean = clearTo(target, 0f, 1f, 0f)
 
 class WebGLRenderTargetTests : OnCanvasTests {
 
@@ -173,17 +180,23 @@ class WebGLRenderTargetTests : OnCanvasTests {
         }
 
         val target = renderTarget ?: return@runApplicationTest skipWithoutWebGL2()
-        var invalidationCount = 0
-        target.onTextureWillBeInvalidated = { invalidationCount++ }
-
         awaitAnimationFrame()
         awaitIdle()
 
         assertTrue(clearToRed(target), "the first render() did not run")
-        assertEquals(0, invalidationCount, "the first render unexpectedly invalidated the texture")
         assertEquals(IntSize(32, 32), target.size, "unexpected initial size")
         val generationBefore = target.generation
         val framebufferBefore = target.framebuffer
+        val textureBefore = target.webGlTexture
+        var invalidationCount = 0
+        target.onTextureWillBeInvalidated = {
+            invalidationCount++
+            assertSame(textureBefore, target.webGlTexture, "the old texture was replaced too early")
+            assertTrue(
+                target.webGLContext.isTexture(textureBefore),
+                "the old texture was deleted before the invalidation callback",
+            )
+        }
 
         requestedSize.value = IntSize(48, 24)
         awaitAnimationFrame()
@@ -202,7 +215,28 @@ class WebGLRenderTargetTests : OnCanvasTests {
             target.framebuffer,
             "the framebuffer itself was replaced by the size change"
         )
+        assertNotSame(
+            textureBefore,
+            target.webGlTexture,
+            "the texture adopted and deleted by Skia was reused after the size change",
+        )
         assertEquals(NO_ERROR, target.webGLContext.getError(), "reallocation reported a GL error")
+
+        val textureAfterResize = target.webGlTexture
+        target.onTextureWillBeInvalidated = { error("expected invalidation failure") }
+        requestedSize.value = IntSize(24, 48)
+        awaitAnimationFrame()
+        awaitIdle()
+        assertFailsWith<IllegalStateException> { clearToRed(target) }
+        assertEquals(null, target.adoptedTexture, "a failing callback kept the adopted image")
+        assertNotSame(
+            textureAfterResize,
+            target.webGlTexture,
+            "a failing callback kept the old texture as the current texture",
+        )
+        target.onTextureWillBeInvalidated = null
+        assertTrue(clearToGreen(target), "render() did not recover after the callback failed")
+        assertEquals(IntSize(24, 48), target.size, "the size was not applied after recovery")
     }
 
     /**
@@ -213,13 +247,15 @@ class WebGLRenderTargetTests : OnCanvasTests {
      * once the browser has composited it.
      */
     @Test
-    fun theRenderedFrameReachesTheComposeCanvas() = runApplicationTest {
+    fun theRenderedFrameReachesTheComposeCanvasBeforeAndAfterResize() = runApplicationTest {
         assertTrue(forcePreserveDrawingBuffer(), "could not force preserveDrawingBuffer")
         try {
             var renderTarget: WebGLRenderTarget? = null
+            val requestedSize = mutableStateOf(IntSize(64, 64))
 
             createComposeWindow {
-                val target = rememberWebGLRenderTarget(IntSize(64, 64))
+                val size by requestedSize
+                val target = rememberWebGLRenderTarget(size)
                 renderTarget = target
                 if (target != null) {
                     LaunchedEffect(target) {
@@ -260,6 +296,17 @@ class WebGLRenderTargetTests : OnCanvasTests {
                 OPAQUE_RED.toHexString(),
                 readCanvasPixelRgba8(gl, 600, outsideY).toHexString(),
                 "the texture was drawn outside the composable"
+            )
+
+            requestedSize.value = IntSize(48, 24)
+            awaitAnimationFrame()
+            awaitIdle()
+            assertTrue(clearToGreen(target), "render() did not run after the size change")
+            val resized = awaitCanvasPixel(gl, x = 100, y = insideY, expected = OPAQUE_GREEN)
+            assertEquals(
+                OPAQUE_GREEN.toHexString(),
+                resized.toHexString(),
+                "the resized texture did not reach the canvas inside the composable",
             )
         } finally {
             restorePreserveDrawingBuffer()
