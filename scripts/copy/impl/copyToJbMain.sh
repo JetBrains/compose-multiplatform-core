@@ -29,10 +29,9 @@ git checkout --quiet $(git merge-base $CURRENT_COMMIT $JB_MAIN_BRANCH) -B $TO_JB
 )
 echo "Created $TO_JB_MAIN_BRANCH"
 
-TO_INTEGRATION_BRANCH=integration-copy/$FIRST_FOLDER/$CURRENT_COMMIT/to-integration
-git checkout --quiet $CURRENT_COMMIT -B $TO_INTEGRATION_BRANCH
+git checkout --quiet integration
 $DIR/mergeEmpty.sh $TO_JB_MAIN_BRANCH
-echo "Created $TO_INTEGRATION_BRANCH"
+echo "Merged $TO_JB_MAIN_BRANCH into integration"
 
 
 git checkout --quiet $BRANCH_TO_RESTORE_IN_THE_END
