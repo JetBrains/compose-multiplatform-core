@@ -16,8 +16,7 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.uikit.toNanoSeconds
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
@@ -48,21 +47,21 @@ internal sealed interface MetalViewHolder {
 }
 
 internal fun MetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
+    retrieveInteropTransaction: () -> InteropSyncTransaction,
     useSeparateRenderThreadWhenPossible: Boolean,
-    render: (Canvas, nanoTime: Long) -> Unit,
+    draw: (Canvas) -> Unit,
 ): MetalViewHolder = if (useSeparateRenderThreadWhenPossible) {
-    SurfaceMetalView(retrieveInteropTransaction, render).holder
+    SurfaceMetalView(retrieveInteropTransaction, draw).holder
 } else {
-    LegacyMetalView(retrieveInteropTransaction, render).holder
+    LegacyMetalView(retrieveInteropTransaction, draw).holder
 }
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
 // Copy of the class SurfaceMetalView with a different layer.
 // All changes made here must also be implemented in the `SurfaceMetalView`.
 private class LegacyMetalView(
-    retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    render: (Canvas, nanoTime: Long) -> Unit,
+    retrieveInteropTransaction: () -> InteropSyncTransaction,
+    draw: (Canvas) -> Unit,
 ) : UIView(frame = CGRectZero.readValue()) {
     companion object : UIViewMeta() {
         @BetaInteropApi
@@ -80,10 +79,10 @@ private class LegacyMetalView(
 
     val redrawer = LegacyMetalRedrawer(
         metalLayer,
-        retrieveInteropTransaction
-    ) { canvas, targetTimestamp ->
+        retrieveInteropTransaction,
+    ) { canvas ->
         canvas.clear(canvasBackground)
-        render(canvas, targetTimestamp.toNanoSeconds())
+        draw(canvas)
     }
 
     var canBeOpaque: Boolean
@@ -135,8 +134,6 @@ private class LegacyMetalView(
 
         val screen = window?.screen ?: return
         contentScaleFactor = screen.scale
-        redrawer.maximumFramesPerSecond = screen.maximumFramesPerSecond
-        redrawer.preferredFramesPerSecond = screen.maximumFramesPerSecond
     }
 
     override fun layoutSubviews() {

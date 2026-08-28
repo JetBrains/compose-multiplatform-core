@@ -55,7 +55,6 @@ import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.window.getDialogScrimBlendMode
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
-import kotlinx.coroutines.Dispatchers
 
 /**
  * Constructs a multi-layer [ComposeScene] using the specified parameters. Unlike
@@ -119,8 +118,9 @@ private class CanvasLayersComposeSceneImpl(
         size = size,
         coroutineContext = frameRecomposer.compositionContext.effectCoroutineContext,
         platformContext = composeSceneContext.platformContext,
-        snapshotInvalidationTracker = snapshotInvalidationTracker,
         inputHandler = inputHandler,
+        invalidate = ::invokeInvalidationCallbacks,
+        onChangedExecutor = frameRecomposer::runOnComposeThread,
     )
 
     override val composeSceneContext: ComposeSceneContext
@@ -225,6 +225,14 @@ private class CanvasLayersComposeSceneImpl(
         check(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
         mainOwner.invalidatePositionOnScreen()
     }
+
+    override val hasPendingMeasureOrLayout: Boolean
+        get() = hasForcedLayout || mainOwner.hasPendingMeasureOrLayout
+            || layers.fastAny { it.owner.hasPendingMeasureOrLayout }
+
+    override val hasPendingDraw: Boolean
+        get() = hasForcedDraw || mainOwner.hasPendingDraw
+            || layers.fastAny { it.owner.hasPendingDraw }
 
     override fun createComposition(
         parentCompositionContext: CompositionContext,
@@ -509,7 +517,7 @@ private class CanvasLayersComposeSceneImpl(
         onOwnerAppended(layer.owner)
 
         inputHandler.onPointerUpdate()
-        updateInvalidations()
+        invokeInvalidationCallbacks(forceLayout = true, forceDraw = true)
     }
 
     private fun detachLayer(layer: AttachedComposeSceneLayer) {
@@ -520,7 +528,9 @@ private class CanvasLayersComposeSceneImpl(
         onOwnerRemoved(layer.owner)
 
         inputHandler.onPointerUpdate()
-        updateInvalidations()
+        // A detached layer was composited onto this scene's canvas, so its removal changes
+        // the scene's output even though no remaining owner is dirty.
+        invokeInvalidationCallbacks(forceLayout = true, forceDraw = true)
     }
 
     private fun requestFocus(layer: AttachedComposeSceneLayer) {
@@ -562,8 +572,9 @@ private class CanvasLayersComposeSceneImpl(
                 // TODO: Figure out why real requestFocus is required
                 //  even with empty parentFocusManager
             },
-            snapshotInvalidationTracker = snapshotInvalidationTracker,
             inputHandler = inputHandler,
+            invalidate = ::invokeInvalidationCallbacks,
+            onChangedExecutor = frameRecomposer::runOnComposeThread,
         )
         private var composition: Composition? = null
         private var outsidePointerCallback: ((
@@ -598,7 +609,7 @@ private class CanvasLayersComposeSceneImpl(
                     releaseFocus(this)
                 }
                 inputHandler.onPointerUpdate()
-                updateInvalidations()
+                invokeInvalidationCallbacks()
             }
 
         private val background: Modifier

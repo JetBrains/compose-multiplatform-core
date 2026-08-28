@@ -38,7 +38,8 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class CoreTextFieldSoftWrapTest {
-    
+
+    @Suppress("DEPRECATION")
     @Test
     fun textField_softWrapFalse_returnsSizeForMaxIntrinsicWidth() = runSkikoComposeUiTest {
         val density = Density(density = 1f, fontScale = 1f)
@@ -79,6 +80,7 @@ class CoreTextFieldSoftWrapTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_softWrapTrue_respectsTheGivenMaxWidth() = runSkikoComposeUiTest {
         val density = Density(density = 1f, fontScale = 1f)

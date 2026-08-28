@@ -18,6 +18,7 @@ package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.Modifier
 import platform.UIKit.UIView
 
@@ -39,7 +40,7 @@ import platform.UIKit.UIView
  * some blank state. This is a function that will be executed instead of [factory] if the node
  * containing [T] was reused. If null, [T] will not be reused, a new instance of [T] will be created
  * using [factory] every time this function enters the composition.
- * @property properties The properties configuring the behavior of [T]. Default value is
+ * @param properties The properties configuring the behavior of [T]. Default value is
  * [UIKitInteropProperties.Default]
  *
  * @see UIKitInteropProperties
@@ -56,13 +57,15 @@ fun <T : UIView> UIKitView(
     val interopContainer = LocalInteropContainer.current
 
     key(properties) {
+        val compositionContext = rememberCompositionContext()
         InteropView(
             factory = { compositeKeyHash ->
-                UIKitInteropViewHolder(
+                IosInteropViewHolder(
                     factory,
                     interopContainer,
                     properties,
                     compositeKeyHash,
+                    compositionContext,
                 )
             },
             modifier = modifier,
@@ -71,7 +74,7 @@ fun <T : UIView> UIKitView(
             update = {
                 update(it)
 
-                val holder = interopContainer.holderOfView(it) as? UIKitInteropViewHolder<*>
+                val holder = interopContainer.holderOfView(it) as? IosInteropViewHolder<*>
                 holder?.properties = properties
             }
         )

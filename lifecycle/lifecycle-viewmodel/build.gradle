@@ -33,10 +33,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.lifecycle.viewmodel"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
         androidResources.enable = true
     }
     desktop()
@@ -96,12 +92,6 @@ androidXMultiplatform {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
-
-        unixMain { dependsOn(nativeMain) }
-        unixTest { dependsOn(nativeTest) }
-
-        linuxMain { dependsOn(unixMain) }
-        linuxTest { dependsOn(unixTest) }
     }
 }
 

@@ -16,30 +16,15 @@
 
 package androidx.compose.ui.input
 
-import androidx.compose.ui.events.beforeInput
+import androidx.compose.ui.events.beforeInputWithTargetRange
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.input.specs.TextFieldTestSpec
 import androidx.compose.ui.text.TextRange
-import org.jetbrains.skiko.hostOs
-import kotlin.test.Ignore
 import kotlin.test.Test
 
-
 class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
-
-    fun sendPhysicalDeleteWordBackward() {
-        sendToHtmlInput(
-            keyEvent(
-                key = "Backspace",
-                code = "Backspace",
-                type = "keydown",
-                altKey = hostOs.isMacOS,
-                ctrlKey = !hostOs.isMacOS
-            )
-        )
-    }
-
-    fun sendVirtualDeleteWordBackward() {
+    
+    private fun sendDeleteWordBackward(startOffset: Int, endOffset: Int) {
         sendToHtmlInput(
             keyEvent(
                 key = "Backspace",
@@ -47,148 +32,71 @@ class DeleteWordBackwardTests : TextFieldTestSpec, BasicTextFieldWithValue {
                 type = "keydown",
                 repeat = true,
             ),
-            beforeInput("deleteWordBackward", null)
+            beforeInputWithTargetRange(
+                inputType = "deleteWordBackward",
+                data = null,
+                startOffset = startOffset,
+                endOffset = endOffset
+            )
         )
     }
 
-
     @Test
-    fun deletePrevWordVirtualMiddle() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder("here   we     go again!!!", initialSelection = TextRange(14, 14))
+    fun deletePrevWordMiddle() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder("here 🐩 we go again", initialSelection = TextRange(14, 14))
 
         awaitAnimationFrame()
 
-        sendVirtualDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("here  go again!!!", "deleteWordBackward is not processed")
+        sendDeleteWordBackward(11, 14)
+        textFieldValue.awaitAndAssertTextEquals("here 🐩 we again")
+
+        sendDeleteWordBackward(8, 11)
+        textFieldValue.awaitAndAssertTextEquals("here 🐩 again")
     }
 
-    @Test
-    fun deletePrevWordPhysicalMiddle() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder(
-            "here 🐩  we     go again!!!",
-            initialSelection = TextRange(15, 15)
-        )
-
-        sendPhysicalDeleteWordBackward()
-
-        // standard KeyCommand.DELETE_PREV_WORD processing triggered
-        textFieldValue.awaitAndAssertTextEquals("here 🐩   go again!!!")
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("here  go again!!!")
-
-        sendToHtmlInput(
-            beforeInput("deleteWordBackward", null)
-        )
-
-        textFieldValue.awaitAndAssertTextEquals(
-            "here  go again!!!",
-            "text unexpectedly changed on deleteWordBackward"
-        )
-    }
 
     @Test
-    fun deletePrevWordVirtualEmpty() = runApplicationTest {
+    fun deletePrevWordEmpty() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder(
             ""
         )
 
-        sendVirtualDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("")
-    }
-
-
-    @Test
-    fun deletePrevWordPhysicalEmpty() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder(
-            ""
-        )
-
-        sendPhysicalDeleteWordBackward()
+        sendDeleteWordBackward(0, 0)
         textFieldValue.awaitAndAssertTextEquals("")
     }
 
     @Test
-    @Ignore
-    fun deletePrevWordVirtualCompoundEmoji() = runApplicationTest {
-        // TODO: this seems to be failing for test-related reasons, on a device it behaves as expected and need to be investigated to be unignored
+    fun deletePrevWordCompoundEmoji() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder(
             "compound emoji: 🧑‍🧑‍🧒‍🧒"
         )
 
-        sendVirtualDeleteWordBackward()
+        sendDeleteWordBackward(16, 27)
         textFieldValue.awaitAndAssertTextEquals("compound emoji: ")
     }
 
     @Test
-    fun deletePrevWordPhysicalCompoundEmoji() = runApplicationTest {
+    fun deletePrevWordSplitFamilyEmoji() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder(
-            "compound emoji: 🧑‍🧑‍🧒‍🧒"
+            "compound emoji: 🧑🧑👧👶"
         )
 
-        sendPhysicalDeleteWordBackward()
+        sendDeleteWordBackward(16, 24)
         textFieldValue.awaitAndAssertTextEquals("compound emoji: ")
     }
 
     @Test
-    fun deletePrevWordVirtualSplitFamilyEmoji() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder(
-            "compound emoji: 🧑🧑👧👶"
-        )
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("compound emoji: 🧑🧑👧")
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("compound emoji: 🧑🧑")
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("compound emoji: 🧑")
-    }
-
-    @Test
-    fun deletePrevWordPhysicalSplitFamilyEmoji() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder(
-            "compound emoji: 🧑🧑👧👶"
-        )
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("compound emoji: 🧑🧑👧")
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("compound emoji: 🧑🧑")
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("compound emoji: 🧑")
-    }
-
-    @Test
-    fun deletePrevWordVirtualUnicode() = runApplicationTest {
+    fun deletePrevWordUnicode() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder(
             "천천히 말해 주세요"
         )
 
         awaitIdle()
 
-        sendVirtualDeleteWordBackward()
+        sendDeleteWordBackward(6, 10)
         textFieldValue.awaitAndAssertTextEquals("천천히 말해")
 
-        sendVirtualDeleteWordBackward()
+        sendDeleteWordBackward(3, 6)
         textFieldValue.awaitAndAssertTextEquals("천천히")
     }
-
-
-    @Test
-    fun deletePrevWordPhysicalUnicode() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder(
-            "천천히 말해 주세요"
-        )
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("천천히 말해 ")
-
-        sendPhysicalDeleteWordBackward()
-        textFieldValue.awaitAndAssertTextEquals("천천히 ")
-    }
-
 }

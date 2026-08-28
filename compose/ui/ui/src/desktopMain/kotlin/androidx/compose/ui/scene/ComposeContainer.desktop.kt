@@ -27,6 +27,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Constraints
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.awt.UNSPECIFIED_DIMENSION_VALUE
+import androidx.compose.ui.unit.union
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastRoundToInt
@@ -58,6 +60,7 @@ import java.awt.event.MouseEvent as AwtMouseEvent
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import java.awt.event.WindowListener
+import java.awt.image.BufferedImage
 import javax.swing.JLayeredPane
 import javax.swing.SwingUtilities
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -65,7 +68,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.ceil
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.Job
 import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.MainUIDispatcher
@@ -102,6 +104,12 @@ internal class ComposeContainer(
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
 ) : WindowFocusListener,
     WindowListener {
+    // Register before any property initializer below (e.g. [mediator]) touches the Skiko backend,
+    // so every desktop entry point (windows, panels, dialogs) is covered.
+    init {
+        registerSkikoComposeImplementation()
+    }
+
     val windowContext = PlatformWindowContext()
     var window: Window? = null
         private set
@@ -137,6 +145,9 @@ internal class ComposeContainer(
     @VisibleForTesting
     val architectureComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
 
+    val coroutineContext: CoroutineContext =
+        coroutineContext + MainUIDispatcher + DesktopCoroutineExceptionHandler()
+
     private val mediator = ComposeSceneMediator(
         container = container,
         isWindowLevel = isWindowLevel,
@@ -149,7 +160,7 @@ internal class ComposeContainer(
             BlockingInputLayerEventFilter()
         ),
         architectureComponentsOwner = architectureComponentsOwner,
-        coroutineContext = coroutineContext + MainUIDispatcher + DesktopCoroutineExceptionHandler(),
+        coroutineContext = this.coroutineContext,
         skiaLayerComponentFactory = ::createSkiaLayerComponent,
         composeSceneFactory = ::createComposeScene,
     )
@@ -441,7 +452,8 @@ internal class ComposeContainer(
             windowContext = windowContext,
             renderDelegate = renderDelegate,
             skiaLayerAnalytics = skiaLayerAnalytics,
-            renderSettings = renderSettings
+            renderSettings = renderSettings,
+            fillsWindow = isWindowLevel
         )
     }
 
@@ -492,7 +504,6 @@ internal class ComposeContainer(
                 skiaLayerAnalytics = skiaLayerAnalytics,
                 renderSettings = renderSettings,
                 transparent = true, // TODO: Consider allowing opaque window layers
-                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
@@ -500,7 +511,6 @@ internal class ComposeContainer(
             LayerType.OnComponent -> SwingComposeSceneLayer(
                 composeContainer = this,
                 skiaLayerAnalytics = skiaLayerAnalytics,
-                compositionContext = mediator.frameRecomposer.compositionContext,
                 density = density,
                 layoutDirection = layoutDirection,
                 focusable = focusable,
@@ -619,6 +629,42 @@ internal class ComposeContainer(
 
         override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noBlockingInputLayers
         override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noBlockingInputLayers
+    }
+
+    /**
+     * Captures the content of this container into an image.
+     *
+     * Returns `null` if the window has not been made visible yet.
+     *
+     * This may be called only on the event dispatch thread.
+     */
+    fun captureContentToImage(): BufferedImage? {
+        val mainLayerBounds = mediator.boundsOnScreenPx() ?: return null
+        val layersAndBounds = layers.map {
+            it to it.boundsOnScreenPx()
+        }
+
+        var resultBounds = mainLayerBounds
+        for ((_, bounds) in layersAndBounds) {
+            if (bounds != null) {
+                resultBounds = resultBounds.union(bounds)
+            }
+        }
+
+        val x = resultBounds.left
+        val y = resultBounds.top
+        val width = resultBounds.width
+        val height = resultBounds.height
+
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        mediator.drawContentInto(image, mainLayerBounds.left - x, mainLayerBounds.top - y)
+        for ((layer, bounds) in layersAndBounds) {
+            if (bounds == null) continue
+            // The offset is from mainLayerBounds because layers draw themselves relative to it
+            layer.drawContentInto(image, mainLayerBounds.left - x, mainLayerBounds.top - y)
+        }
+
+        return image
     }
 }
 

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scene
 
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.awt.JLayeredPaneWithTransparencyHack
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.awt.hasMacOsShadow
@@ -38,9 +37,10 @@ import androidx.compose.ui.window.getDialogScrimBlendMode
 import androidx.compose.ui.window.layoutDirectionFor
 import androidx.compose.ui.window.sizeInPx
 import java.awt.Point
+import java.awt.Window
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
-import javax.swing.JDialog
+import javax.swing.JWindow
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.DelicateSkikoApi
 import org.jetbrains.skiko.SkiaLayerAnalytics
@@ -51,7 +51,6 @@ internal class WindowComposeSceneLayer(
     private val skiaLayerAnalytics: SkiaLayerAnalytics,
     private val renderSettings: RenderSettings,
     private val transparent: Boolean,
-    compositionContext: CompositionContext,
     density: Density,
     layoutDirection: LayoutDirection,
     focusable: Boolean,
@@ -61,13 +60,13 @@ internal class WindowComposeSceneLayer(
 
     private val windowContext = PlatformWindowContext().also {
         it.isWindowTransparent = true
+        it.setWindowContainer(windowContainer)
         it.setContainerSizeFromComponent(windowContainer)
     }
 
-    private val layerWindow = JDialog(parentWindow).also {
-        it.isAlwaysOnTop = true
+    private val layerWindow = JWindow(parentWindow).also {
         it.focusableWindowState = focusable
-        it.isUndecorated = true
+        it.type = Window.Type.POPUP
 
         @OptIn(DelicateSkikoApi::class)
         it.background =
@@ -131,7 +130,7 @@ internal class WindowComposeSceneLayer(
             eventListener = eventListener,
             measureDrawLayerBounds = true,
             architectureComponentsOwner = composeContainer.architectureComponentsOwner,
-            coroutineContext = compositionContext.effectCoroutineContext,
+            coroutineContext = composeContainer.coroutineContext,
             skiaLayerComponentFactory = ::createSkiaLayerComponent,
             composeSceneFactory = ::createComposeScene,
         ).also {
@@ -217,6 +216,7 @@ internal class WindowComposeSceneLayer(
             renderDelegate = renderDelegate,
             skiaLayerAnalytics = skiaLayerAnalytics,
             renderSettings = renderSettings,
+            fillsWindow = false
         )
     }
 

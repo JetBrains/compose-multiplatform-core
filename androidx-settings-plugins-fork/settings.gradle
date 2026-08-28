@@ -1,0 +1,8 @@
+apply from: "../buildSrc-fork/settingsScripts/out-setup.groovy"
+
+getGradle().beforeProject { project ->
+    def checkoutRoot = new File("${buildscript.sourceFile.parent}/../../..")
+    init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
+}
+
+include ":hostTestFailureHandlerPlugin"

@@ -28,7 +28,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("androidx.inspection")
 }
 
@@ -81,10 +80,10 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     defaultConfig {
         // layout inspection supported starting on Android Q
-        minSdk = 29
+        minSdk { version = release(29) }
     }
 
     externalNativeBuild {
@@ -108,11 +107,3 @@ inspection {
             "org.jetbrains.kotlin:kotlin-metadata-jvm"
     )
 }
-
-// TODO(b/407640608): Fix :compose:ui:ui-inspection:connectedCheck to work without this block
-tasks.withType(KotlinCompile).configureEach { task ->
-    task.compilerOptions {
-        it.freeCompilerArgs.add("-Xlambdas=class")
-    }
-}
-

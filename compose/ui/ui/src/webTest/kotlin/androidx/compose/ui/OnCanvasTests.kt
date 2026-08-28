@@ -108,6 +108,21 @@ internal interface OnCanvasTests {
             storeComposeWindow(getContainer(), jsReference)
         }
 
+    /**
+     * Test-only accessor for the currently stored [ComposeWindow], if any.
+     * Returns `null` if the compose window has not been created yet or has already been cleared.
+     */
+    fun getComposeWindowOrNull(): ComposeWindow? = composeWindow
+
+    /**
+     * Clears the stored reference to the [ComposeWindow] without calling `dispose()`.
+     * Use this in tests that intentionally trigger disposal via DOM removal to prevent
+     * [afterTest] from disposing an already-disposed window.
+     */
+    fun clearComposeWindowReference() {
+        composeWindow = null
+    }
+
     /*
     <container>
       <positioning_container>
@@ -164,7 +179,7 @@ internal interface OnCanvasTests {
 
         fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
             val currentTime = currentTimeMillis()
-            assertTrue(currentTime - startTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout")
+            assertTrue(currentTime - startTime < timeout.inWholeMilliseconds, "awaitA11YChanges timed out after $timeout.\ninnerHtml = ${a11yContainer.innerHTML}")
             window.requestAnimationFrame {
                 if (!condition()) {
                     skipFramesUntil(condition, onTrue)
@@ -288,6 +303,8 @@ private suspend fun awaitWithYield() {
 internal external class ExtendedShadowRoot : ShadowRoot {
 
     fun elementFromPoint(x: Double, y: Double): Element
+
+    val activeElement: Element?
 }
 
 // OnCanvasTests is an interface, so it can't have a backing field for composeWindow.

@@ -51,16 +51,14 @@ internal class FrameRateTest {
             }
         }
 
-        val redrawer = rootRedrawer
-        assertNotNull(redrawer, "redrawer is null")
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
 
         for (frameRate in frameRates) {
             val expectedFrameDuration = 1.0 / frameRate
             findNodeWithTag("${frameRate}fps").tap()
             waitUntil {
-                val frameDuration = redrawer.currentTargetFrameDuration
-                assertNotNull(frameDuration)
-                checkEqual(expectedFrameDuration, frameDuration, 1e-5)
+                checkEqual(expectedFrameDuration, choreographer.currentTargetFrameDuration, 1e-5)
             }
         }
     }
@@ -77,13 +75,13 @@ internal class FrameRateTest {
             }
         }
 
-        val redrawer = rootRedrawer
-        assertNotNull(redrawer, "redrawer is null")
+        val choreographer = frameChoreographer
+        assertNotNull(choreographer, "frameChoreographer is null")
 
         for (frameRate in frameRates) {
             findNodeWithTag("${frameRate}fps").tap()
             waitUntil {
-                redrawer.preferredFramesPerSecond == frameRate.toLong()
+                choreographer.preferredFramesPerSecond == frameRate.toLong()
             }
         }
     }

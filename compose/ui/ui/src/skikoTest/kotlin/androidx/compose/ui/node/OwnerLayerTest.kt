@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.SkikoComposeTestBase
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isFinite
@@ -56,7 +57,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.skia.Surface
 
-class OwnerLayerTest {
+class OwnerLayerTest : SkikoComposeTestBase() {
 
     private val layer = TestRenderNodeLayer()
     private val cos45 = cos(PI / 4).toFloat()
@@ -517,6 +518,7 @@ class OwnerLayerTest {
     // it is currently hard to isolate Snapshot changes
     // because SnapshotStateObserver/sendApplyNotifications are coupled with global state
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun invalidate_on_state_change() = runComposeUiTest {
         runOnUiThread {

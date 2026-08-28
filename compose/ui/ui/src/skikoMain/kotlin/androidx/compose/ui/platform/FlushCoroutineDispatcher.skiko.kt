@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import kotlin.concurrent.Volatile
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineDispatcher
@@ -48,7 +49,12 @@ internal class FlushCoroutineDispatcher(
     @Volatile
     private var isPerformingRun = false
     private val runLock = makeSynchronizedObject()
-    
+
+    override fun isDispatchNeeded(context: CoroutineContext): Boolean {
+        val dispatcher = scope.coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher
+        return dispatcher?.isDispatchNeeded(context) ?: true
+    }
+
     override fun dispatch(context: CoroutineContext, block: Runnable) {
         synchronized(immediateTasksLock) {
             immediateTasks.add(block)

@@ -53,7 +53,7 @@ internal fun setupBackingTextAreaDebugHints() {
         }
 """.trimIndent()
 
-    val container = document.getElementById("composeApplication") as HTMLDivElement
+    val container = document.body ?: error("No body found")
     val shadowRoot = (container.firstChild?.firstChild as HTMLDivElement).shadowRoot!!
 
     shadowRoot.prepend(shadowRootStyle)

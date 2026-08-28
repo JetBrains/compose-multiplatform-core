@@ -25,11 +25,11 @@ import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.TextRange
 import kotlinx.coroutines.yield
-import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.events.Event
 
 internal interface TextFieldTestSpec : OnCanvasTests {
-    fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
+    fun currentHtmlInput() = getShadowRoot().querySelector("div.compose-backing-field") as HTMLDivElement
 
     suspend fun createTestInputState(
         initialText: String = "",
@@ -61,10 +61,10 @@ internal interface TextFieldTestSpec : OnCanvasTests {
 
     fun EventsSequence.sendToHtmlInput() = sendToHtmlInput(*toList().toTypedArray())
 
-    suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
+    suspend fun WebApplicationScope.waitForHtmlInput(): HTMLDivElement {
         while (true) {
-            val element = getShadowRoot().querySelector("textarea")
-            if (element is HTMLTextAreaElement) {
+            val element = getShadowRoot().querySelector("div.compose-backing-field")
+            if (element is HTMLDivElement) {
                 return element
             }
             yield()
