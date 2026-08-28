@@ -93,25 +93,6 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material3:adaptive:adaptive-navigation"),
             ComposeComponent(":compose:material3:adaptive:adaptive-navigation3"),
         ),
-        "LIFECYCLE" to listOf(
-            ComposeComponent(
-                path = ":lifecycle:lifecycle-common",
-                // No android target here - jvm artefact will be used for android apps as well
-                supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID
-            ),
-            ComposeComponent(
-                path = ":lifecycle:lifecycle-runtime",
-                supportedPlatforms = ComposePlatforms.ALL
-            ),
-            ComposeComponent(
-                path = ":lifecycle:lifecycle-viewmodel",
-                supportedPlatforms = ComposePlatforms.ALL
-            ),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-compose", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3", supportedPlatforms = ComposePlatforms.ALL),
-        ),
         "NAVIGATION" to listOf(
             ComposeComponent(":navigation:navigation-compose"),
             ComposeComponent(":navigation:navigation-common", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
@@ -119,13 +100,6 @@ object JetBrainsPublication {
         ),
         "NAVIGATION_3" to listOf(
             ComposeComponent(":navigation3:navigation3-ui"),
-        ),
-        "NAVIGATION_EVENT" to listOf(
-            ComposeComponent(":navigationevent:navigationevent-compose", supportedPlatforms = ComposePlatforms.ALL),
-        ),
-        "SAVEDSTATE" to listOf(
-            ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
         ),
     )
 
