@@ -63,7 +63,7 @@ internal class StyleAnimations {
                     }
                     try {
                         val velocity = animation.velocity
-                        animation = Animatable(0f)
+                        animation.snapTo(0f)
                         animation.animateTo(1f, animationSpec = spec, initialVelocity = velocity)
                     } finally {
                         cleanupAnimations()
@@ -108,7 +108,11 @@ internal class StyleAnimations {
             var inFlight = 0L
 
             entries.forEach { id, entry ->
-                if (entry.state == EntryState.Interrupted || entry.animation.isRunning) {
+                if (
+                    entry.state == EntryState.Interrupted ||
+                        entry.state == EntryState.Inserted ||
+                        entry.animation.isRunning
+                ) {
                     inFlight = inFlight or (1L shl id)
                 }
             }

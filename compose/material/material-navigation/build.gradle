@@ -26,8 +26,8 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
+        compileSdk { version = release(35) }
         namespace = "androidx.compose.material.navigation"
-        compileSdk { version = release(37) }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -65,6 +65,5 @@ androidx {
     mavenVersion = LibraryVersions.COMPOSE
     inceptionYear = "2024"
     description = "Compose Material integration with Navigation"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material:material-navigation-samples"))
 }

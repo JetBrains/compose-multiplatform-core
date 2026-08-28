@@ -17,7 +17,12 @@
 package androidx.compose.ui.test.injectionscope.touch
 
 import androidx.compose.testutils.expectError
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.injectionscope.touch.Common.performTouchInput
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -26,9 +31,9 @@ import androidx.compose.ui.test.util.ClickableTestBox
 import androidx.compose.ui.test.util.MultiPointerInputRecorder
 import androidx.compose.ui.test.util.assertNoTouchGestureInProgress
 import androidx.compose.ui.test.util.assertTimestampsAreIncreasing
+import androidx.compose.ui.unit.IntSize
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,14 +46,45 @@ class CancelTest {
         private val downPosition2 = Offset(20f, 20f)
     }
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val recorder = MultiPointerInputRecorder()
+    private var isCancelled = false
+
+    private val cancelInterceptor =
+        object : ModifierNodeElement<CancelInterceptorNode>() {
+            override fun create(): CancelInterceptorNode = CancelInterceptorNode {
+                isCancelled = true
+            }
+
+            override fun update(node: CancelInterceptorNode) {
+                node.onCancel = { isCancelled = true }
+            }
+
+            override fun equals(other: Any?): Boolean = other === this
+
+            override fun hashCode(): Int = System.identityHashCode(this)
+        }
+
+    private class CancelInterceptorNode(var onCancel: () -> Unit) :
+        Modifier.Node(), PointerInputModifierNode {
+        override fun onPointerEvent(
+            pointerEvent: PointerEvent,
+            pass: PointerEventPass,
+            bounds: IntSize,
+        ) {
+            // Do nothing
+        }
+
+        override fun onCancelPointerInput() {
+            onCancel()
+        }
+    }
 
     @Before
     fun setUp() {
         // Given some content
-        rule.setContent { ClickableTestBox(recorder) }
+        rule.setContent { ClickableTestBox(recorder.then(cancelInterceptor)) }
     }
 
     @Test
@@ -63,6 +99,7 @@ class CancelTest {
                 assertTimestampsAreIncreasing()
                 assertThat(events).hasSize(1)
             }
+            assertThat(isCancelled).isTrue()
         }
 
         // And no gesture is in progress
@@ -82,6 +119,7 @@ class CancelTest {
                 assertTimestampsAreIncreasing()
                 assertThat(events).hasSize(2)
             }
+            assertThat(isCancelled).isTrue()
         }
 
         // And no gesture is in progress

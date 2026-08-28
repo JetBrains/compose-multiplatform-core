@@ -15,6 +15,9 @@
  */
 package androidx.compose.ui.window
 
+import android.content.Context
+import android.os.Binder
+import android.os.IBinder
 import android.view.KeyEvent
 import android.view.View
 import android.view.View.MEASURED_STATE_TOO_SMALL
@@ -30,6 +33,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -74,6 +78,7 @@ import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
 import androidx.window.layout.WindowMetricsCalculator
@@ -81,7 +86,6 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeMatcher
@@ -93,7 +97,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PopupTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private val testTag = "testedPopup"
     private val offset = IntOffset(10, 10)
@@ -495,6 +499,50 @@ class PopupTest {
         val capturedFlags = popupMatcher.lastSeenWindowParams!!.flags
 
         assertThat(capturedFlags and flags).isEqualTo(flags)
+    }
+
+    @SdkSuppress(minSdkVersion = android.os.Build.VERSION_CODES.S)
+    @Test
+    fun popupTest_blurProperties() {
+        rule.setContent {
+            PopupTestTag(testTag) {
+                Popup(properties = PopupProperties(blurBehindRadius = 40.dp)) {
+                    Box(Modifier.size(50.dp))
+                }
+            }
+        }
+
+        rule.runOnIdle {}
+        val popupMatcher = PopupLayoutMatcher(testTag)
+        Espresso.onView(instanceOf(Owner::class.java))
+            .inRoot(popupMatcher)
+            .check(matches(isDisplayed()))
+        val capturedFlags = popupMatcher.lastSeenWindowParams!!.flags
+        val capturedBlurBehindRadius = popupMatcher.lastSeenWindowParams!!.blurBehindRadius
+
+        assertThat(capturedFlags and WindowManager.LayoutParams.FLAG_BLUR_BEHIND).isNotEqualTo(0)
+        val expectedBlurBehindRadius = with(rule.density) { 40.dp.roundToPx() }
+        assertThat(capturedBlurBehindRadius).isEqualTo(expectedBlurBehindRadius)
+    }
+
+    @Test
+    fun popupTest_scrimAlphaProperties() {
+        rule.setContent {
+            PopupTestTag(testTag) {
+                Popup(properties = PopupProperties(scrimAlpha = 0.8f)) { Box(Modifier.size(50.dp)) }
+            }
+        }
+
+        rule.runOnIdle {}
+        val popupMatcher = PopupLayoutMatcher(testTag)
+        Espresso.onView(instanceOf(Owner::class.java))
+            .inRoot(popupMatcher)
+            .check(matches(isDisplayed()))
+        val capturedFlags = popupMatcher.lastSeenWindowParams!!.flags
+        val capturedDimAmount = popupMatcher.lastSeenWindowParams!!.dimAmount
+
+        assertThat(capturedFlags and WindowManager.LayoutParams.FLAG_DIM_BEHIND).isNotEqualTo(0)
+        assertThat(capturedDimAmount).isEqualTo(0.8f)
     }
 
     @Test
@@ -1078,6 +1126,81 @@ class PopupTest {
         assertThat(popupMatcher.lastSeenWindowParams!!.type).isEqualTo(customType)
     }
 
+    @Test // Regression test for b/521173005
+    fun popup_inheritsTokenFromRootViewLayoutParams() {
+        // Simulates a ComposeView hosted inside an overlay sub-window (e.g.,
+        // TYPE_APPLICATION_SUB_PANEL from an external service). When hosted in a sub-window,
+        // calling getApplicationWindowToken() returns the sub-window token, which
+        // WindowManagerService rejects when adding another popup ("Attempted to add window with
+        // token that is a sub-window").
+        // This test verifies that when the root layout params indicate a sub-window, PopupLayout
+        // extracts and uses the valid parent window token directly from rootView.layoutParams.
+        class TestFrameLayout(val fakeSubWindowToken: IBinder, context: Context) :
+            FrameLayout(context) {
+            override fun getApplicationWindowToken(): IBinder = fakeSubWindowToken
+
+            override fun onAttachedToWindow() {
+                super.onAttachedToWindow()
+                addView(
+                    ComposeView(context).apply {
+                        setContent {
+                            CompositionLocalProvider(LocalView provides this@TestFrameLayout) {
+                                PopupTestTag(testTag) { Popup { Box(Modifier.size(50.dp)) } }
+                            }
+                        }
+                    }
+                )
+            }
+        }
+
+        val fakeSubWindowToken = Binder()
+        var activityToken: IBinder? = null
+        var originalLayoutParams: ViewGroup.LayoutParams? = null
+        var rootView: View? = null
+
+        try {
+            rule.setContent {
+                val defaultView = LocalView.current
+                SideEffect {
+                    if (originalLayoutParams == null) {
+                        activityToken = defaultView.windowToken
+                        val currentRootView = defaultView.rootView
+                        rootView = currentRootView
+                        originalLayoutParams = currentRootView.layoutParams
+                        currentRootView.layoutParams =
+                            WindowManager.LayoutParams().apply {
+                                (originalLayoutParams as? WindowManager.LayoutParams)?.let {
+                                    copyFrom(it)
+                                }
+                                // Mark the root view as a sub-window (1000..1999) to trigger the
+                                // sub-window token resolution path in
+                                // PopupLayout.createLayoutParams().
+                                type = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL
+                                token = activityToken
+                            }
+                    }
+                }
+
+                AndroidView(factory = { context -> TestFrameLayout(fakeSubWindowToken, context) })
+            }
+
+            rule.waitForIdle()
+            val popupMatcher = PopupLayoutMatcher(testTag)
+            Espresso.onView(instanceOf(Owner::class.java))
+                .inRoot(popupMatcher)
+                .check(matches(isDisplayed()))
+
+            // Verify the popup window params inherited activityToken from rootView.layoutParams
+            // instead of the fakeSubWindowToken returned by getApplicationWindowToken()
+            val lastSeenToken = popupMatcher.lastSeenWindowParams?.token
+            assertThat(lastSeenToken).isEqualTo(activityToken)
+        } finally {
+            rootView?.let { rv ->
+                originalLayoutParams?.let { orig -> rule.runOnUiThread { rv.layoutParams = orig } }
+            }
+        }
+    }
+
     private fun matchesSize(width: Int, height: Int): BoundedMatcher<View, View> {
         return object : BoundedMatcher<View, View>(View::class.java) {
             override fun matchesSafely(item: View?): Boolean {
@@ -1088,5 +1211,40 @@ class PopupTest {
                 description?.appendText("with width = $width height = $height")
             }
         }
+    }
+
+    @Test
+    fun reactsToConfigurationChanges() {
+        var currentDensity: androidx.compose.ui.unit.Density? = null
+
+        rule.setContent {
+            Popup { currentDensity = androidx.compose.ui.platform.LocalDensity.current }
+        }
+
+        rule.runOnIdle { assertThat(currentDensity).isNotNull() }
+
+        val newConfig = android.content.res.Configuration(rule.activity.resources.configuration)
+        newConfig.fontScale = 2.5f
+        newConfig.densityDpi = newConfig.densityDpi + 120
+
+        val activityRoot =
+            rule.activity.findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0)
+        val popupNode = rule.onNode(androidx.compose.ui.test.isPopup()).fetchSemanticsNode()
+
+        rule.runOnUiThread {
+            // Update the underlying context resources to simulate the OS framework update
+            rule.activity.resources.configuration.updateFrom(newConfig)
+
+            // Dispatch to the activity's root compose view
+            activityRoot.dispatchConfigurationChanged(newConfig)
+
+            // Dispatch to the popup's window root
+            val popupRoot =
+                (popupNode.root as? android.view.View)
+                    ?: (popupNode.root as androidx.compose.ui.platform.AndroidComposeView)
+            popupRoot.dispatchConfigurationChanged(newConfig)
+        }
+
+        rule.runOnIdle { assertThat(currentDensity!!.fontScale).isEqualTo(2.5f) }
     }
 }

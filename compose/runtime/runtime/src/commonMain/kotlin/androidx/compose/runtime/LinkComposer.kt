@@ -327,6 +327,7 @@ internal class LinkComposer(
         get() = reader.table
 
     private var childrenComposing: Int = 0
+    private var parentComposing = false
     private var compositionToken: Int = 0
 
     override var sourceMarkersEnabled =
@@ -837,16 +838,18 @@ internal class LinkComposer(
     override fun insertMovableContentReferences(
         references: List<Pair<MovableContentStateReference, MovableContentStateReference?>>
     ) {
-        var completed = false
-        try {
-            insertMovableContentGuarded(references)
-            completed = true
-        } finally {
-            if (completed) {
-                cleanUpCompose()
-            } else {
-                // if we finished with error, cleanup more aggressively
-                abortRoot()
+        trace("Compose:insertMovableContent") {
+            var completed = false
+            try {
+                insertMovableContentGuarded(references)
+                completed = true
+            } finally {
+                if (completed) {
+                    cleanUpCompose()
+                } else {
+                    // if we finished with error, cleanup more aggressively
+                    abortRoot()
+                }
             }
         }
     }
@@ -1351,6 +1354,10 @@ internal class LinkComposer(
     /** Discard a pending composition because an error was encountered during composition */
     @OptIn(InternalComposeApi::class)
     private fun abortRoot() {
+        if (parentComposing) {
+            parentComposing = false
+            parentContext.doneComposing()
+        }
         cleanUpCompose()
         pendingStack.clear()
         parentStateStack.clear()
@@ -1681,6 +1688,7 @@ internal class LinkComposer(
     @OptIn(InternalComposeApi::class)
     private fun endRoot() {
         endGroup()
+        parentComposing = false
         parentContext.doneComposing()
         endGroup()
         finalizeCompose()
@@ -2595,6 +2603,7 @@ internal class LinkComposer(
 
         // parent reference management
         parentContext.startComposing()
+        parentComposing = true
         val parentProvider = parentContext.getCompositionLocalScope()
         providersInvalidStack.push(providersInvalid.asInt())
         providersInvalid = changed(parentProvider)

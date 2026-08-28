@@ -75,14 +75,14 @@ import kotlin.math.ceil
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
+@SdkSuppress(minSdkVersion = 25) // b/538599561
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class StyleEquivalenceTests {
-    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun background() {

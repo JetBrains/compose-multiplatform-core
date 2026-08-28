@@ -30,29 +30,32 @@ import kotlin.jvm.JvmInline
  * @see Never
  */
 @JvmInline
-value class Focusability private constructor(private val value: Int) {
-    companion object {
+public value class Focusability private constructor(private val value: Int) {
+    public companion object {
         /**
          * This focus target can always gain focus. This should be used for components that can be
          * focused regardless of input device / system state, such as text fields.
          */
-        val Always = Focusability(1)
+        public val Always: Focusability
+            get() = Focusability(1)
 
         /**
          * Focusability of this focus target will be defined by the system. This should be used for
          * clickable components such as buttons and checkboxes: these components should only gain
          * focus when they are used with certain types of input devices, such as keyboard / d-pad.
          */
-        val SystemDefined = Focusability(0)
+        public val SystemDefined: Focusability
+            get() = Focusability(0)
 
         /**
          * This focus target can not gain focus. This should be used for disabled components /
          * components that are currently not interactive.
          */
-        val Never = Focusability(2)
+        public val Never: Focusability
+            get() = Focusability(2)
     }
 
-    override fun toString() =
+    public override fun toString(): String =
         when (this) {
             Always -> "Always"
             SystemDefined -> "SystemDefined"
