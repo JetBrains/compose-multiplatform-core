@@ -73,6 +73,7 @@ import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
+import androidx.compose.ui.platform.createPlatformUriHandler
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -539,6 +540,8 @@ internal class RootNodeOwner(
         override val pointerIconService by lazy(LazyThreadSafetyMode.NONE) {
             PointerIconServiceImpl()
         }
+
+        override val uriHandler by lazy(LazyThreadSafetyMode.NONE) { createPlatformUriHandler() }
 
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo

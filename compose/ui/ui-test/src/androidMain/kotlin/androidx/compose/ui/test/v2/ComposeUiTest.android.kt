@@ -18,7 +18,9 @@ package androidx.compose.ui.test.v2
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.AndroidComposeUiTest
+import androidx.compose.ui.test.AndroidComposeUiTestFlags
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MainTestClock
 import androidx.compose.ui.test.getActivity
@@ -70,9 +72,24 @@ import kotlinx.coroutines.test.runTest
  *   platform specific timeout exception will be thrown.
  * @param block The suspendable test body.
  */
-@Suppress("RedundantUnitReturnType")
-@ExperimentalTestApi
-actual fun runComposeUiTest(
+@Suppress("RedundantUnitReturnType", "DEPRECATION")
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use runComposeUiTest(config: ComposeUiTestConfig, block) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "runComposeUiTest(effectContext, runTestContext, testTimeout) { ... }\n" +
+            "After:\n" +
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout)) { ... }",
+    replaceWith =
+        ReplaceWith(
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), block)"
+        ),
+)
+public actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
     testTimeout: Duration,
@@ -86,6 +103,82 @@ actual fun runComposeUiTest(
         block,
     )
 }
+
+/**
+ * Sets up the test environment, runs the given [test][block] and then tears down the test
+ * environment. Use the methods on [ComposeUiTest] in the test to find Compose content and make
+ * assertions on it. If you need access to platform specific elements (such as the Activity on
+ * Android), use one of the platform specific variants of this method, e.g.
+ * [runAndroidComposeUiTest] on Android.
+ *
+ * Implementations of this method will launch a Compose host (such as an Activity on Android) for
+ * you. If your test needs to launch its own host, use a platform specific variant that doesn't
+ * launch anything for you (if available), e.g. [runEmptyComposeUiTest] on Android. Always make sure
+ * that the Compose content is set during execution of the [test lambda][block] so the test
+ * framework is aware of the content. Whether you need to launch the host from within the test
+ * lambda as well depends on the platform.
+ *
+ * Keeping a reference to the [ComposeUiTest] outside of this function is an error. Also avoid using
+ * [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
+ * [runComposeUiTest][block] or any of their respective variants. Since these APIs independently
+ * manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * @sample androidx.compose.ui.test.samples.RunComposeUiTestConfigSample
+ * @param config The [ComposeUiTestConfig] used to set up the test environment, providing control
+ *   over the [CoroutineContext] used for composition, the test timeout, and other
+ *   environment-specific settings.
+ * @param block The suspendable test body.
+ */
+@Suppress("RedundantUnitReturnType")
+public actual fun runComposeUiTest(
+    config: ComposeUiTestConfig,
+    block: suspend ComposeUiTest.() -> Unit,
+): TestResult {
+    return runAndroidComposeUiTest(ComponentActivity::class.java, config, block)
+}
+
+/**
+ * Sets up the test environment, runs the given [test][block] and then tears down the test
+ * environment. Use the methods on [ComposeUiTest] in the test to find Compose content and make
+ * assertions on it. If you need access to platform specific elements (such as the Activity on
+ * Android), use one of the platform specific variants of this method, e.g.
+ * [runAndroidComposeUiTest] on Android.
+ *
+ * Implementations of this method will launch a Compose host (such as an Activity on Android) for
+ * you. If your test needs to launch its own host, use a platform specific variant that doesn't
+ * launch anything for you (if available), e.g. [runEmptyComposeUiTest] on Android. Always make sure
+ * that the Compose content is set during execution of the [test lambda][block] so the test
+ * framework is aware of the content. Whether you need to launch the host from within the test
+ * lambda as well depends on the platform.
+ *
+ * Keeping a reference to the [ComposeUiTest] outside of this function is an error. Also avoid using
+ * [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
+ * [runComposeUiTest][block] or any of their respective variants. Since these APIs independently
+ * manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * The default [ComposeUiTestConfig] sets the [InputMode][androidx.compose.ui.input.InputMode] to
+ * [Touch][androidx.compose.ui.input.InputMode.Companion.Touch] for each test. To configure the test
+ * to run with a different input mode (such as
+ * [Keyboard][androidx.compose.ui.input.InputMode.Companion.Keyboard]) or customize other
+ * environment settings, use the overload that accepts a [ComposeUiTestConfig].
+ *
+ * @param block The suspendable test body.
+ * @sample androidx.compose.ui.test.samples.RunComposeUiTestConfigSample
+ * @see AndroidComposeUiTestFlags.isInputModeSetForDeviceTests
+ */
+@OptIn(ExperimentalTestApi::class)
+@Suppress("DEPRECATION", "KotlinRunTestResultUnused")
+public actual fun runComposeUiTest(block: suspend ComposeUiTest.() -> Unit): TestResult =
+    if (AndroidComposeUiTestFlags.isInputModeSetForDeviceTests) {
+        runComposeUiTest(ComposeUiTestConfig(), block)
+    } else {
+        runComposeUiTest(
+            effectContext = EmptyCoroutineContext,
+            runTestContext = EmptyCoroutineContext,
+            testTimeout = 60.seconds,
+            block,
+        )
+    }
 
 /**
  * Variant of [runComposeUiTest] that allows you to specify which Activity should be launched. Be
@@ -117,16 +210,81 @@ actual fun runComposeUiTest(
  *   platform specific timeout exception will be thrown.
  * @param block The test function.
  */
-@Suppress("RedundantUnitReturnType")
-@ExperimentalTestApi
-inline fun <reified A : ComponentActivity> runAndroidComposeUiTest(
-    effectContext: CoroutineContext = EmptyCoroutineContext,
-    runTestContext: CoroutineContext = EmptyCoroutineContext,
-    testTimeout: Duration = 60.seconds,
+@Suppress("RedundantUnitReturnType", "DEPRECATION")
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use runAndroidComposeUiTest(config: ComposeUiTestConfig, block) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "runAndroidComposeUiTest<Activity>(effectContext, runTestContext, testTimeout) { ... }\n" +
+            "After:\n" +
+            "runAndroidComposeUiTest<Activity>(ComposeUiTestConfig(effectContext, runTestContext, testTimeout)) { ... }",
+    replaceWith =
+        ReplaceWith(
+            "runAndroidComposeUiTest<A>(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), block)"
+        ),
+)
+public inline fun <reified A : ComponentActivity> runAndroidComposeUiTest(
+    effectContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext,
+    runTestContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext,
+    testTimeout: Duration = kotlin.time.Duration.parse("60s"),
     noinline block: suspend AndroidComposeUiTest<A>.() -> Unit,
 ): TestResult {
     return runAndroidComposeUiTest(A::class.java, effectContext, runTestContext, testTimeout, block)
 }
+
+/**
+ * Variant of [runComposeUiTest] that allows you to specify which Activity should be launched. Be
+ * aware that if the Activity [sets content][androidx.activity.compose.setContent] during its
+ * launch, you cannot use [setContent][ComposeUiTest.setContent] on the ComposeUiTest anymore as
+ * this would override the content and can lead to subtle bugs.
+ *
+ * Avoid using [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
+ * [runAndroidComposeUiTest][block] or any of their respective variants. Since these APIs
+ * independently manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * @param A The Activity type to be launched, which typically (but not necessarily) hosts the
+ *   Compose content.
+ * @param config The [ComposeUiTestConfig] used to set up the test environment, providing control
+ *   over the [CoroutineContext] used for composition, the test timeout, and other
+ *   environment-specific settings.
+ * @param block The test function.
+ */
+@Suppress("RedundantUnitReturnType")
+public inline fun <reified A : ComponentActivity> runAndroidComposeUiTest(
+    config: ComposeUiTestConfig,
+    noinline block: suspend AndroidComposeUiTest<A>.() -> Unit,
+): TestResult {
+    return runAndroidComposeUiTest(A::class.java, config, block)
+}
+
+/**
+ * Variant of [runComposeUiTest] that allows you to specify which Activity should be launched. Be
+ * aware that if the Activity [sets content][androidx.activity.compose.setContent] during its
+ * launch, you cannot use [setContent][ComposeUiTest.setContent] on the ComposeUiTest anymore as
+ * this would override the content and can lead to subtle bugs.
+ *
+ * Avoid using [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
+ * [runAndroidComposeUiTest][block] or any of their respective variants. Since these APIs
+ * independently manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * The default [ComposeUiTestConfig] sets the [InputMode][androidx.compose.ui.input.InputMode] to
+ * [Touch][androidx.compose.ui.input.InputMode.Companion.Touch] for each test. To configure the test
+ * to run with a different input mode (such as
+ * [Keyboard][androidx.compose.ui.input.InputMode.Companion.Keyboard]) or customize other
+ * environment settings, use the overload that accepts a [ComposeUiTestConfig].
+ *
+ * @param A The Activity type to be launched, which typically (but not necessarily) hosts the
+ *   Compose content.
+ * @param block The test function.
+ * @see AndroidComposeUiTestFlags.isInputModeSetForDeviceTests
+ */
+public inline fun <reified A : ComponentActivity> runAndroidComposeUiTest(
+    noinline block: suspend AndroidComposeUiTest<A>.() -> Unit
+): TestResult = runAndroidComposeUiTest(A::class.java, block)
 
 /**
  * Variant of [runComposeUiTest] that allows you to specify which Activity should be launched. Be
@@ -160,30 +318,147 @@ inline fun <reified A : ComponentActivity> runAndroidComposeUiTest(
  * @param block The test function.
  */
 @Suppress("RedundantUnitReturnType")
-@ExperimentalTestApi
-fun <A : ComponentActivity> runAndroidComposeUiTest(
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use runAndroidComposeUiTest(activityClass, config: ComposeUiTestConfig, block) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "runAndroidComposeUiTest(activityClass, effectContext, runTestContext, testTimeout) { ... }\n" +
+            "After:\n" +
+            "runAndroidComposeUiTest(activityClass, ComposeUiTestConfig(effectContext, runTestContext, testTimeout)) { ... }",
+)
+public fun <A : ComponentActivity> runAndroidComposeUiTest(
     activityClass: Class<A>,
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = 60.seconds,
     block: suspend AndroidComposeUiTest<A>.() -> Unit,
 ): TestResult {
+    return runAndroidComposeUiTest(
+        config =
+            ComposeUiTestConfig(
+                effectContext = effectContext,
+                runTestContext = runTestContext,
+                testTimeout = testTimeout,
+            ),
+        enforceInputModeFromConfig = false,
+        activityClass = activityClass,
+        block = block,
+    )
+}
+
+/**
+ * Variant of [runComposeUiTest] that allows you to specify which Activity should be launched. Be
+ * aware that if the Activity [sets content][androidx.activity.compose.setContent] during its
+ * launch, you cannot use [setContent][ComposeUiTest.setContent] on the ComposeUiTest anymore as
+ * this would override the content and can lead to subtle bugs.
+ *
+ * Avoid using [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
+ * [runAndroidComposeUiTest][block] or any of their respective variants. Since these APIs
+ * independently manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * @param A The Activity type to be launched, which typically (but not necessarily) hosts the
+ *   Compose content.
+ * @param activityClass The [Class] of the Activity type to be launched, corresponding to [A].
+ * @param config The [ComposeUiTestConfig] used to set up the test environment, providing control
+ *   over the [CoroutineContext] used for composition, the test timeout, and other
+ *   environment-specific settings.
+ * @param block The test function.
+ */
+@Suppress("RedundantUnitReturnType")
+public fun <A : ComponentActivity> runAndroidComposeUiTest(
+    activityClass: Class<A>,
+    config: ComposeUiTestConfig,
+    block: suspend AndroidComposeUiTest<A>.() -> Unit,
+): TestResult {
+    return runAndroidComposeUiTest(
+        config = config,
+        enforceInputModeFromConfig = true,
+        activityClass = activityClass,
+        block = block,
+    )
+}
+
+/**
+ * Variant of [runComposeUiTest] that allows you to specify which Activity should be launched. Be
+ * aware that if the Activity [sets content][androidx.activity.compose.setContent] during its
+ * launch, you cannot use [setContent][ComposeUiTest.setContent] on the ComposeUiTest anymore as
+ * this would override the content and can lead to subtle bugs.
+ *
+ * Avoid using [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
+ * [runAndroidComposeUiTest][block] or any of their respective variants. Since these APIs
+ * independently manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * The default [ComposeUiTestConfig] sets the [InputMode][androidx.compose.ui.input.InputMode] to
+ * [Touch][androidx.compose.ui.input.InputMode.Companion.Touch] for each test. To configure the test
+ * * to run with a different input mode (such as
+ *   [Keyboard][androidx.compose.ui.input.InputMode.Companion.Keyboard])
+ * * or customize other environment settings, use the overload that accepts a [ComposeUiTestConfig].
+ *
+ * @param A The Activity type to be launched, which typically (but not necessarily) hosts the
+ *   Compose content.
+ * @param activityClass The [Class] of the Activity type to be launched, corresponding to [A].
+ * @param block The test function.
+ * @see AndroidComposeUiTestFlags.isInputModeSetForDeviceTests
+ */
+@OptIn(ExperimentalTestApi::class)
+@Suppress("RedundantUnitReturnType", "DEPRECATION", "KotlinRunTestResultUnused")
+public fun <A : ComponentActivity> runAndroidComposeUiTest(
+    activityClass: Class<A>,
+    block: suspend AndroidComposeUiTest<A>.() -> Unit,
+): TestResult {
+    return if (AndroidComposeUiTestFlags.isInputModeSetForDeviceTests) {
+        runAndroidComposeUiTest(
+            activityClass = activityClass,
+            config = ComposeUiTestConfig(),
+            block = block,
+        )
+    } else {
+        runAndroidComposeUiTest(
+            activityClass = activityClass,
+            effectContext = EmptyCoroutineContext,
+            runTestContext = EmptyCoroutineContext,
+            testTimeout = 60.seconds,
+            block = block,
+        )
+    }
+}
+
+@Suppress("RedundantUnitReturnType", "DEPRECATION")
+private fun <A : ComponentActivity> runAndroidComposeUiTest(
+    config: ComposeUiTestConfig,
+    enforceInputModeFromConfig: Boolean = false,
+    activityClass: Class<A>,
+    block: suspend AndroidComposeUiTest<A>.() -> Unit,
+): TestResult {
     // Don't start the scenario now, wait until we're inside runTest { },
     // in case the Activity's onCreate/Start/Resume calls setContent
     var scenario: ActivityScenario<A>? = null
+
+    val activityProvider = {
+        requireNotNull(scenario) {
+                "ActivityScenario has not yet been launched, or has already finished. Make sure that " +
+                    "any call to ComposeUiTest.setContent() and AndroidComposeUiTest.getActivity() " +
+                    "is made within the lambda passed to AndroidComposeUiTestEnvironment.runTest()"
+            }
+            .getActivity()
+    }
+
     val environment =
-        AndroidComposeUiTestEnvironment(
-            effectContext = effectContext,
-            runTestContext = runTestContext,
-            testTimeout = testTimeout,
-        ) {
-            requireNotNull(scenario) {
-                    "ActivityScenario has not yet been launched, or has already finished. Make sure that " +
-                        "any call to ComposeUiTest.setContent() and AndroidComposeUiTest.getActivity() " +
-                        "is made within the lambda passed to AndroidComposeUiTestEnvironment.runTest()"
-                }
-                .getActivity()
+        if (enforceInputModeFromConfig) {
+            AndroidComposeUiTestEnvironment(config, activityProvider)
+        } else {
+            AndroidComposeUiTestEnvironment(
+                effectContext = config.effectContext,
+                runTestContext = config.runTestContext,
+                testTimeout = config.testTimeout,
+                activityProvider = activityProvider,
+            )
         }
+
     try {
         return environment.runTest {
             scenario = ActivityScenario.launch(activityClass)
@@ -232,10 +507,11 @@ fun <A : ComponentActivity> runAndroidComposeUiTest(
  * Avoid using [androidx.compose.ui.test.junit4.ComposeTestRule] (e.g., createComposeRule) inside
  * [runEmptyComposeUiTest][block] or any of their respective variants. Since these APIs
  * independently manage the test environment, mixing them may lead to unexpected behavior.
+ *
+ * @param block The test function.
  */
 @Suppress("RedundantUnitReturnType")
-@ExperimentalTestApi
-fun runEmptyComposeUiTest(block: ComposeUiTest.() -> Unit): TestResult {
+public fun runEmptyComposeUiTest(block: ComposeUiTest.() -> Unit): TestResult {
     return AndroidComposeUiTestEnvironment {
             error(
                 "runEmptyComposeUiTest {} does not provide an Activity to set Compose content in. " +
@@ -271,10 +547,6 @@ fun runEmptyComposeUiTest(block: ComposeUiTest.() -> Unit): TestResult {
  * [ActivityScenario] (that the caller launches _within_ the lambda passed to [runTest]), but one is
  * not limited to this pattern.
  *
- * @param activityProvider A lambda that should return the current Activity instance of type [A], if
- *   it is available. If it is not available, it should return `null`.
- * @param A The Activity type to be interacted with, which typically (but not necessarily) is the
- *   activity that was launched and hosts the Compose content.
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
  *   `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context. If this
  *   context contains a [TestDispatcher], it is used for composition and the [MainTestClock].
@@ -285,12 +557,31 @@ fun runEmptyComposeUiTest(block: ComposeUiTest.() -> Unit): TestResult {
  *   and [effectContext] must not share [TestCoroutineScheduler].
  * @param testTimeout The [Duration] within which the test is expected to complete, otherwise a
  *   platform specific timeout exception will be thrown.
+ * @param activityProvider A lambda that should return the current Activity instance of type [A], if
+ *   it is available. If it is not available, it should return `null`.
+ * @param A The Activity type to be interacted with, which typically (but not necessarily) is the
+ *   activity that was launched and hosts the Compose content.
  */
-@ExperimentalTestApi
-inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
-    effectContext: CoroutineContext = EmptyCoroutineContext,
-    runTestContext: CoroutineContext = EmptyCoroutineContext,
-    testTimeout: Duration = 60.seconds,
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use AndroidComposeUiTestEnvironment(config, activityProvider) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "AndroidComposeUiTestEnvironment(effectContext, runTestContext, testTimeout, activityProvider)\n" +
+            "After:\n" +
+            "AndroidComposeUiTestEnvironment(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), activityProvider)",
+    replaceWith =
+        ReplaceWith(
+            "AndroidComposeUiTestEnvironment(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), activityProvider)"
+        ),
+)
+public inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
+    effectContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext,
+    runTestContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext,
+    testTimeout: Duration = kotlin.time.Duration.parse("60s"),
     crossinline activityProvider: () -> A?,
 ): androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> {
     return object :
@@ -301,5 +592,96 @@ inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
         ) {
         override val activity: A?
             get() = activityProvider.invoke()
+    }
+}
+
+/**
+ * Creates an [AndroidComposeUiTestEnvironment] that retrieves the
+ * [host Activity][AndroidComposeUiTest.activity] by delegating to the given [activityProvider]. Use
+ * this if you need to launch an Activity in a way that is not compatible with any of the existing
+ * [runComposeUiTest], [runAndroidComposeUiTest], or [runEmptyComposeUiTest] methods.
+ *
+ * Valid use cases include, but are not limited to, creating your own JUnit test rule that
+ * implements [AndroidComposeUiTest] by delegating to
+ * [androidx.compose.ui.test.AndroidComposeUiTestEnvironment.test]. See
+ * [AndroidComposeTestRule][androidx.compose.ui.test.junit4.AndroidComposeTestRule] for a reference
+ * implementation.
+ *
+ * The [activityProvider] is called every time [activity][AndroidComposeUiTest.activity] is called,
+ * which in turn is called when [setContent][ComposeUiTest.setContent] is called.
+ *
+ * The most common implementation of an [activityProvider] retrieves the activity from a backing
+ * [ActivityScenario] (that the caller launches _within_ the lambda passed to [runTest]), but one is
+ * not limited to this pattern.
+ *
+ * @param A The Activity type to be interacted with, which typically (but not necessarily) is the
+ *   activity that was launched and hosts the Compose content.
+ * @param config The [ComposeUiTestConfig] used to set up the test environment, providing control
+ *   over the [CoroutineContext] used for composition, the test timeout, and other
+ *   environment-specific settings.
+ * @param activityProvider A lambda that should return the current Activity instance of type [A], if
+ *   it is available. If it is not available, it should return `null`.
+ */
+public inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
+    config: ComposeUiTestConfig,
+    crossinline activityProvider: () -> A?,
+): androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> {
+    return object : androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A>(config) {
+        override val activity: A?
+            get() = activityProvider.invoke()
+    }
+}
+
+/**
+ * Creates an [AndroidComposeUiTestEnvironment] that retrieves the
+ * [host Activity][AndroidComposeUiTest.activity] by delegating to the given [activityProvider]. Use
+ * this if you need to launch an Activity in a way that is not compatible with any of the existing
+ * [runComposeUiTest], [runAndroidComposeUiTest], or [runEmptyComposeUiTest] methods.
+ *
+ * Valid use cases include, but are not limited to, creating your own JUnit test rule that
+ * implements [AndroidComposeUiTest] by delegating to
+ * [androidx.compose.ui.test.AndroidComposeUiTestEnvironment.test]. See
+ * [AndroidComposeTestRule][androidx.compose.ui.test.junit4.AndroidComposeTestRule] for a reference
+ * implementation.
+ *
+ * The [activityProvider] is called every time [activity][AndroidComposeUiTest.activity] is called,
+ * which in turn is called when [setContent][ComposeUiTest.setContent] is called.
+ *
+ * The most common implementation of an [activityProvider] retrieves the activity from a backing
+ * [ActivityScenario] (that the caller launches _within_ the lambda passed to [runTest]), but one is
+ * not limited to this pattern.
+ *
+ * The default [ComposeUiTestConfig] sets the [InputMode][androidx.compose.ui.input.InputMode] to
+ * [Touch][androidx.compose.ui.input.InputMode.Companion.Touch] for each test. To configure the test
+ * to run with a different input mode (such as
+ * [Keyboard][androidx.compose.ui.input.InputMode.Companion.Keyboard]) or customize other
+ * environment settings, use the overload that accepts a [ComposeUiTestConfig].
+ *
+ * @param activityProvider A lambda that should return the current Activity instance of type [A], if
+ *   it is available. If it is not available, it should return `null`.
+ * @param A The Activity type to be interacted with, which typically (but not necessarily) is the
+ *   activity that was launched and hosts the Compose content.
+ * @see AndroidComposeUiTestFlags.isInputModeSetForDeviceTests
+ */
+@OptIn(ExperimentalTestApi::class)
+public fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
+    activityProvider: () -> A?
+): androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A> {
+    return if (AndroidComposeUiTestFlags.isInputModeSetForDeviceTests) {
+        object :
+            androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A>(ComposeUiTestConfig()) {
+            override val activity: A?
+                get() = activityProvider.invoke()
+        }
+    } else {
+        object :
+            androidx.compose.ui.test.AndroidComposeUiTestEnvironment<A>(
+                effectContext = EmptyCoroutineContext,
+                runTestContext = EmptyCoroutineContext,
+                testTimeout = 60.seconds,
+            ) {
+            override val activity: A?
+                get() = activityProvider.invoke()
+        }
     }
 }

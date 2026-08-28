@@ -20,6 +20,9 @@ import android.os.Build
 import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedText
+import android.view.inputmethod.ExtractedTextRequest
+import android.view.inputmethod.InputConnection
 import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -50,7 +53,6 @@ import com.google.common.truth.Truth
 import kotlin.test.assertFalse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +62,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidTextInputSessionTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var hostView: View
@@ -203,6 +205,79 @@ class AndroidTextInputSessionTest {
     }
 
     @Test
+    fun getExtractedText_enablesExtractedTextUpdates() {
+        val state = TextFieldState("hello")
+        val composeImm =
+            object : FakeInputMethodManager() {
+                var lastToken: Int = -1
+                var lastExtractedText: ExtractedText? = null
+
+                override fun updateExtractedText(token: Int, extractedText: ExtractedText) {
+                    super.updateExtractedText(token, extractedText)
+                    lastToken = token
+                    lastExtractedText = extractedText
+                }
+            }
+        launchInputSessionWithDefaultsForTest(state, composeImm = composeImm)
+
+        rule.runOnIdle {
+            val ic = hostView.onCreateInputConnection(EditorInfo())
+
+            // Calling getExtractedText without MONITOR flag should NOT trigger updateExtractedText
+            // on text change
+            val request1 = ExtractedTextRequest().apply { token = 11 }
+            val extractedText1 = ic.getExtractedText(request1, 0)
+
+            Truth.assertThat(extractedText1.text.toString()).isEqualTo("hello")
+        }
+
+        // Change the text, updateExtractedText should NOT be called
+        state.editAsUser(inputTransformation = null) { replace(0, length, "world") }
+
+        rule.runOnIdle {
+            composeImm.expectNoCall("updateExtractedText")
+            composeImm.resetCalls()
+        }
+
+        // Now request with MONITOR flag
+        rule.runOnIdle {
+            val ic = hostView.onCreateInputConnection(EditorInfo())
+            val request2 = ExtractedTextRequest().apply { token = 22 }
+            val extractedText2 =
+                ic.getExtractedText(request2, InputConnection.GET_EXTRACTED_TEXT_MONITOR)
+
+            Truth.assertThat(extractedText2.text.toString()).isEqualTo("world")
+        }
+
+        // Change the text again
+        state.editAsUser(inputTransformation = null) { replace(0, length, "hello again") }
+
+        rule.runOnIdle {
+            composeImm.expectCall("updateExtractedText")
+            Truth.assertThat(composeImm.lastToken).isEqualTo(22)
+            Truth.assertThat(composeImm.lastExtractedText?.text.toString()).isEqualTo("hello again")
+        }
+
+        // Restart the InputConnection (simulate IME recreation)
+        rule.runOnIdle {
+            // Recreating the input connection should reset the monitor mode
+            hostView.onCreateInputConnection(EditorInfo())
+        }
+
+        rule.runOnIdle { composeImm.resetCalls() }
+
+        // Change the text again
+        state.editAsUser(inputTransformation = null) { replace(0, length, "world") }
+
+        rule.runOnIdle {
+            // Update extracted text should NOT be called because monitor mode is reset on new
+            // connection
+            composeImm.expectCall("updateSelection(5, 5, -1, -1)")
+            composeImm.expectNoCall("updateExtractedText")
+        }
+    }
+
+    @Test
     fun debugMode_isDisabled() {
         // run this in presubmit to check that we are not accidentally enabling logs on prod
         assertFalse(
@@ -256,7 +331,7 @@ class AndroidTextInputSessionTest {
             updateSelectionState = null,
             stylusHandwritingTrigger = null,
             viewConfiguration = null,
-            updateTouchMode = {},
+            updateDirectTouchInteraction = {},
         )
 
     private inner class TestTextElement : ModifierNodeElement<TestTextNode>() {
