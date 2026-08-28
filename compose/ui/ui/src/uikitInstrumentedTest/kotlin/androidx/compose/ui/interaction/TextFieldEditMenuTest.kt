@@ -21,8 +21,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
@@ -44,20 +48,29 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.tapContextMenuButton
 import androidx.compose.ui.test.utils.findFirstDescendant
+import androidx.compose.ui.test.utils.horizontalDistanceTo
 import androidx.compose.ui.test.utils.isLoupeView
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.test.utils.verticalDistanceTo
 import androidx.compose.ui.test.waitForContextMenu
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -245,6 +258,94 @@ class TextFieldEditMenuTest {
         // A tap again brings the context menu back.
         longPressNodeWithTagAndAwaitContextMenu("TextField")
         findNodeWithLabel("Paste").assertVisibleInContainer()
+    }
+
+    @Test
+    @Ignore // CMP-10315: Context menu is positioned far from the caret for BTF1.
+    fun testBasicTextFieldContextMenuIsPositionedNearCaret() =
+        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField)
+
+    @Test
+    fun testBasicTextField2ContextMenuIsPositionedNearCaret() =
+        runTextFieldContextMenuPositionTest(EditableTextFieldKind.BasicTextField2)
+
+    private fun runTextFieldContextMenuPositionTest(textFieldKind: EditableTextFieldKind) {
+        for (newContextMenuEnabled in arrayOf(false, true)) {
+            runContextMenuTest(newContextMenuEnabled) {
+                UIPasteboard.generalPasteboard().string = "Paste text"
+                val layoutInfo = setOffsetTextFieldContent(textFieldKind)
+
+                waitUntil("Text field should be laid out") {
+                    layoutInfo.textFieldFrame != null && layoutInfo.textLayoutResult != null
+                }
+
+                longPressNodeWithTagAndAwaitContextMenu("TextField")
+
+                assertContextMenuNearCaret(
+                    caretFrame = layoutInfo.caretFrameInWindow(density),
+                    textFieldKind = textFieldKind,
+                    newContextMenuEnabled = newContextMenuEnabled
+                )
+            }
+        }
+    }
+
+    private fun UIKitInstrumentedTest.setOffsetTextFieldContent(
+        textFieldKind: EditableTextFieldKind,
+    ): TextFieldLayoutInfo {
+        val text = "I am a TextField"
+        val focusRequester = FocusRequester()
+
+        fun offsetTextFieldModifier(layoutInfo: TextFieldLayoutInfo): Modifier =
+            Modifier
+                .width(160.dp)
+                .height(24.dp)
+                .onGloballyPositioned { coordinates ->
+                    layoutInfo.textFieldFrame = coordinates.boundsInWindow().toDpRect(density)
+                }
+                .then(textFieldModifier(focusRequester))
+
+        val initialSelection = TextRange(text.length, text.length)
+        val textFieldValue = mutableStateOf(TextFieldValue(text, initialSelection))
+        val textFieldState = TextFieldState(text, initialSelection)
+
+        val layoutInfo = when (textFieldKind) {
+            EditableTextFieldKind.BasicTextField -> TextFieldLayoutInfo(
+                selectionOffset = { textFieldValue.value.selection.start }
+            )
+            EditableTextFieldKind.BasicTextField2 -> TextFieldLayoutInfo(
+                selectionOffset = { textFieldState.selection.start }
+            )
+        }
+
+        setContent {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(start = 80.dp, top = 48.dp)
+            ) {
+                when (textFieldKind) {
+                    EditableTextFieldKind.BasicTextField -> BasicTextField(
+                        value = textFieldValue.value,
+                        onValueChange = { textFieldValue.value = it },
+                        modifier = offsetTextFieldModifier(layoutInfo),
+                        onTextLayout = { layoutInfo.textLayoutResult = it }
+                    )
+                    EditableTextFieldKind.BasicTextField2 -> BasicTextField(
+                        state = textFieldState,
+                        modifier = offsetTextFieldModifier(layoutInfo),
+                        onTextLayout = { getResult ->
+                            layoutInfo.textLayoutResult = getResult()
+                        }
+                    )
+                }
+            }
+        }
+
+        focusRequester.requestFocus()
+        waitForIdle()
+        return layoutInfo
     }
 
     @Test
@@ -757,6 +858,68 @@ class TextFieldEditMenuTest {
         waitForContextMenu()
     }
 
+    private fun UIKitInstrumentedTest.assertContextMenuNearCaret(
+        caretFrame: DpRect,
+        textFieldKind: EditableTextFieldKind,
+        newContextMenuEnabled: Boolean,
+    ) {
+        val menuFrame = findContextMenuFrame()
+        val horizontalDistance = menuFrame.horizontalDistanceTo(caretFrame)
+        val verticalDistance = menuFrame.verticalDistanceTo(caretFrame)
+        val contextMenu = if (newContextMenuEnabled) "new menu" else "old menu"
+
+        assertTrue(
+            horizontalDistance <= CARET_N_CONTEXT_MENU_MAX_DIST,
+            "Context menu is horizontally more than $CARET_N_CONTEXT_MENU_MAX_DIST from caret. " +
+                "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
+                "horizontal distance: $horizontalDistance."
+        )
+        assertTrue(
+            verticalDistance <= CARET_N_CONTEXT_MENU_MAX_DIST,
+            "Context menu is vertically more than $CARET_N_CONTEXT_MENU_MAX_DIST from caret. " +
+                "textFieldKind: $textFieldKind, contextMenu: $contextMenu, " +
+                "vertical distance: $verticalDistance."
+        )
+    }
+
+    private fun UIKitInstrumentedTest.findContextMenuFrame(): DpRect {
+        val contextMenu = firstNodeOrNull { node ->
+            node.element?.let { it::class.simpleName } == "_UIEditMenuContainerView"
+        } ?: error("Context menu is not found")
+
+        // _UIEditMenuContainerView is a full-screen host; its list child is the visible menu.
+        val contextMenuFrameNode = contextMenu.children?.firstOrNull { node ->
+            node.element?.let { it::class.simpleName } == "_UIEditMenuListView"
+        } ?: error("Context menu content is not found")
+
+        contextMenuFrameNode.assertVisibleInContainer()
+        return contextMenuFrameNode.frame ?: error("Context menu frame is null")
+    }
+
+    private fun TextLayoutResult.cursorFrameInWindow(
+        textFieldFrame: DpRect,
+        offset: Int,
+        density: Density,
+    ): DpRect {
+        val cursorFrame = getCursorRect(offset).toDpRect(density)
+        return DpRect(
+            left = textFieldFrame.left + cursorFrame.left,
+            top = textFieldFrame.top + cursorFrame.top,
+            right = textFieldFrame.left + cursorFrame.right,
+            bottom = textFieldFrame.top + cursorFrame.bottom
+        )
+    }
+
+    private fun TextFieldLayoutInfo.caretFrameInWindow(density: Density): DpRect {
+        val textFieldFrame = textFieldFrame ?: error("TextField frame is null")
+        val textLayoutResult = textLayoutResult ?: error("TextLayoutResult is null")
+        return textLayoutResult.cursorFrameInWindow(
+            textFieldFrame = textFieldFrame,
+            offset = selectionOffset(),
+            density = density
+        )
+    }
+
     private fun UIKitInstrumentedTest.setTextFieldContent(
         textFieldKind: EditableTextFieldKind,
         initialValue: TextFieldValue,
@@ -800,8 +963,17 @@ class TextFieldEditMenuTest {
         BasicTextField2
     }
 
+    private class TextFieldLayoutInfo(
+        val selectionOffset: () -> Int,
+    ) {
+        var textFieldFrame: DpRect? = null
+        var textLayoutResult: TextLayoutResult? = null
+    }
+
     private companion object {
         private const val PARTIAL_SELECTION_TEXT = "accomplishment extraordinary magnificent establishment"
+
+        private val CARET_N_CONTEXT_MENU_MAX_DIST = 16.dp
     }
 
     @OptIn(ExperimentalFoundationApi::class)

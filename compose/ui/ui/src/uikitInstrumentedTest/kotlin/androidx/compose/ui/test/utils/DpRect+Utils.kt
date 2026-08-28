@@ -66,6 +66,41 @@ internal fun DpRect.intersect(other: DpRect): DpRect {
     )
 }
 
+/**
+ * Returns the smallest rectangle containing this rectangle and all of [others].
+ */
+internal fun DpRect.union(others: Iterable<DpRect>): DpRect =
+    others.fold(this) { bounds, other ->
+        DpRect(
+            left = min(bounds.left, other.left),
+            top = min(bounds.top, other.top),
+            right = max(bounds.right, other.right),
+            bottom = max(bounds.bottom, other.bottom)
+        )
+    }
+
+/**
+ * Returns the horizontal gap between this rectangle and [other],
+ * or `0.dp` if their horizontal ranges overlap.
+ */
+internal fun DpRect.horizontalDistanceTo(other: DpRect): Dp =
+    when {
+        right < other.left -> other.left - right
+        left > other.right -> left - other.right
+        else -> 0.dp
+    }
+
+/**
+ * Returns the vertical gap between this rectangle and [other],
+ * or `0.dp` if their vertical ranges overlap.
+ */
+internal fun DpRect.verticalDistanceTo(other: DpRect): Dp =
+    when {
+        bottom < other.top -> other.top - bottom
+        top > other.bottom -> top - other.bottom
+        else -> 0.dp
+    }
+
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIView.dpRectInWindow() = convertRect(bounds, toView = null).toDpRect()
 internal fun<T> List<T>.forEachWithPrevious(block: (T, T) -> Unit) {
