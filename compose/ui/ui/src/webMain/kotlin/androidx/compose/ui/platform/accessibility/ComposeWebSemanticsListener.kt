@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform.accessibility
 
+import androidx.collection.MutableIntSet
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
@@ -25,8 +26,11 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
+import kotlin.js.js
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
@@ -175,6 +179,13 @@ internal class ComposeWebSemanticsListener(
     private val targetParentToChildren = MutableScatterMap<HTMLElement, MutableList<HTMLElement>>()
     private val targetChildToParent = MutableScatterMap<HTMLElement, HTMLElement>()
 
+    // Scroll offsets are in CSS pixels. Pending values come from the current Compose state;
+    // applied values distinguish our own DOM writes from browser- or AT-initiated scrolling.
+    private val appliedScrollOffsets = MutableScatterMap<Int, Offset>()
+    private val pendingScrollOffsets = MutableScatterMap<Int, Offset>()
+    private val scrollSizers = MutableScatterMap<Int, HTMLElement>()
+    private val scrollListenersAttached = MutableIntSet()
+
     /**
      * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
      * It's expected to be triggered by A11Y tools and tests (element.click()), not by pointer input.
@@ -191,6 +202,40 @@ internal class ComposeWebSemanticsListener(
         ) {
             config[SemanticsActions.OnClick].action?.invoke()
         }
+    }
+
+    /**
+     * Translates browser scroll offset changes into Compose semantics scroll actions. Scroll events
+     * do not bubble, so this listener is attached to every A11Y DOM scroll container.
+     */
+    private val onScroll: (Event) -> Unit = onScroll@ { event ->
+        val element = event.target as? HTMLElement ?: return@onScroll
+        val semanticsNode = a11yNodeToSemanticsNode[element] ?: return@onScroll
+        val applied = appliedScrollOffsets[semanticsNode.id] ?: return@onScroll
+        val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
+        val deltaCssPx = actual - applied
+        if (deltaCssPx.isCloseTo(Offset.Zero)) return@onScroll
+
+        // Subsequent events before the next semantics sync must use the latest DOM offset.
+        appliedScrollOffsets[semanticsNode.id] = actual
+
+        val config = semanticsNode.config
+        if (config.contains(SemanticsProperties.Disabled)) return@onScroll
+
+        val density = semanticsNode.layoutNode.density.density
+        val horizontalDirection =
+            if (config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+                    ?.reverseScrolling == true
+            ) -1f else 1f
+        val verticalDirection =
+            if (config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+                    ?.reverseScrolling == true
+            ) -1f else 1f
+
+        config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(
+            deltaCssPx.x * density * horizontalDirection,
+            deltaCssPx.y * density * verticalDirection,
+        )
     }
 
 
@@ -225,13 +270,19 @@ internal class ComposeWebSemanticsListener(
             }
         }
 
-        removedIds.forEach {
-            val htmlNode = idToA11YNode.remove(it)
+        removedIds.forEach { id ->
+            val htmlNode = idToA11YNode.remove(id)
             if (htmlNode != null) {
+                htmlNode.removeEventListener("scroll", onScroll)
                 a11yNodeToSemanticsNode.remove(htmlNode)
             }
+            appliedScrollOffsets.remove(id)
+            pendingScrollOffsets.remove(id)
+            scrollSizers.remove(id)
+            scrollListenersAttached.remove(id)
         }
 
+        applyScrollOffsets()
         updateInertRoots()
     }
 
@@ -284,9 +335,9 @@ internal class ComposeWebSemanticsListener(
                 // We split text into parts: plain text fragments and links.
                 // That's why a text node doesn't push its children to the traversal queue.
                 // It handles its link children itself:
-                syncTextNode(node, config, children, rootPosition)
+                syncTextNode(node, config, children, htmlParent, rootPosition)
             } else {
-                syncNode(node, config, rootPosition)
+                syncNode(node, config, htmlParent, rootPosition)
                     .also { pushNodesForTraversal(children, it) }
             }
             check(htmlNode !== htmlParent) { "A11Y node ${node.id} cannot be its own parent" }
@@ -314,6 +365,7 @@ internal class ComposeWebSemanticsListener(
     private fun syncNode(
         semanticsNode: SemanticsNode,
         config: SemanticsConfiguration,
+        htmlParent: HTMLElement,
         rootPosition: Offset,
         text: String? = null,
     ): HTMLElement {
@@ -321,7 +373,7 @@ internal class ComposeWebSemanticsListener(
 
         var htmlNode = idToA11YNode[currentId]
         if (htmlNode != null) {
-            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text)
+            syncNodeProperties(semanticsNode, config, htmlNode, htmlParent, rootPosition, text)
         } else {
             htmlNode = document.createElement("div") as HTMLElement
             htmlNode.style.apply {
@@ -330,7 +382,15 @@ internal class ComposeWebSemanticsListener(
             }
 
             idToA11YNode[currentId] = htmlNode
-            syncNodeProperties(semanticsNode, config, htmlNode, rootPosition, text, justCreated = true)
+            syncNodeProperties(
+                semanticsNode,
+                config,
+                htmlNode,
+                htmlParent,
+                rootPosition,
+                text,
+                justCreated = true,
+            )
         }
 
         a11yNodeToSemanticsNode[htmlNode] = semanticsNode
@@ -372,6 +432,7 @@ internal class ComposeWebSemanticsListener(
         semanticsNode: SemanticsNode,
         config: SemanticsConfiguration,
         htmlNode: HTMLElement,
+        htmlParent: HTMLElement,
         rootOffset: Offset,
         text: String?,
         justCreated: Boolean = false,
@@ -418,16 +479,135 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-modal")
         }
 
-        val density = semanticsNode.layoutNode.density
-        semanticsNode.boundsInRoot.let { rect ->
-            val newPosition = rootOffset + rect.topLeft.div(density.density)
-            val width = rect.width.div(density.density)
-            val height = rect.height.div(density.density)
+        syncScrollability(semanticsNode, config, htmlNode)
 
-            setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, width, height)
+        val density = semanticsNode.layoutNode.density.density
+        // Use unclipped geometry so descendants retain their content-space positions outside a
+        // scroll viewport. The browser needs those positions to scroll them into view for AT.
+        val positionInRoot = semanticsNode.positionInRoot
+        val width = semanticsNode.size.width / density
+        val height = semanticsNode.size.height / density
+        val parentSemanticsNode = a11yNodeToSemanticsNode[htmlParent]
+
+        if (parentSemanticsNode == null) {
+            htmlNode.style.position = "fixed"
+            setSizeAndPosition(
+                htmlNode,
+                rootOffset.x + positionInRoot.x / density,
+                rootOffset.y + positionInRoot.y / density,
+                width,
+                height,
+            )
+        } else {
+            htmlNode.style.position = "absolute"
+            val parentScroll = pendingScrollOffsets[parentSemanticsNode.id]
+                ?: appliedScrollOffsets[parentSemanticsNode.id]
+                ?: Offset.Zero
+            setSizeAndPosition(
+                htmlNode,
+                (positionInRoot.x - parentSemanticsNode.positionInRoot.x) / density + parentScroll.x,
+                (positionInRoot.y - parentSemanticsNode.positionInRoot.y) / density + parentScroll.y,
+                width,
+                height,
+            )
         }
     }
 
+
+    /** Makes scroll semantics visible to the browser as a real CSS scroll container. */
+    private fun syncScrollability(
+        semanticsNode: SemanticsNode,
+        config: SemanticsConfiguration,
+        htmlNode: HTMLElement,
+    ) {
+        val nodeId = semanticsNode.id
+        val verticalRange = config.getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+        val horizontalRange = config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+        val canScroll = (verticalRange != null || horizontalRange != null) &&
+            config.getOrNull(SemanticsActions.ScrollBy)?.action != null
+
+        if (!canScroll) {
+            if (scrollListenersAttached.remove(nodeId)) {
+                htmlNode.removeEventListener("scroll", onScroll)
+                resetScrollContainerStyle(htmlNode)
+                htmlNode.removeAttribute("aria-orientation")
+                scrollSizers.remove(nodeId)?.remove()
+                appliedScrollOffsets.remove(nodeId)
+                pendingScrollOffsets.remove(nodeId)
+            }
+            return
+        }
+
+        setScrollContainerStyle(
+            htmlNode,
+            horizontal = horizontalRange != null,
+            vertical = verticalRange != null,
+        )
+        if ((verticalRange != null) xor (horizontalRange != null)) {
+            htmlNode.setAttribute(
+                "aria-orientation",
+                if (verticalRange != null) "vertical" else "horizontal",
+            )
+        } else {
+            htmlNode.removeAttribute("aria-orientation")
+        }
+
+        val density = semanticsNode.layoutNode.density.density
+        val maxHorizontal = horizontalRange?.maxValue?.invoke()?.coerceAtLeast(0f) ?: 0f
+        val maxVertical = verticalRange?.maxValue?.invoke()?.coerceAtLeast(0f) ?: 0f
+        val viewportWidth = semanticsNode.size.width / density
+        val viewportHeight = semanticsNode.size.height / density
+        val contentWidth =
+            (viewportWidth + maxHorizontal / density).coerceAtMost(MAX_SCROLL_EXTENT_CSS_PX)
+        val contentHeight =
+            (viewportHeight + maxVertical / density).coerceAtMost(MAX_SCROLL_EXTENT_CSS_PX)
+
+        val sizer = scrollSizers.getOrPut(nodeId) { createScrollSizer() }
+        setSizeAndPosition(sizer, 0f, 0f, contentWidth, contentHeight)
+
+        val scrollLeft = horizontalRange?.let { range ->
+            val value = range.value().coerceIn(0f, maxHorizontal)
+            ((if (range.reverseScrolling) maxHorizontal - value else value) / density)
+                .coerceIn(0f, (contentWidth - viewportWidth).coerceAtLeast(0f))
+        } ?: 0f
+        val scrollTop = verticalRange?.let { range ->
+            val value = range.value().coerceIn(0f, maxVertical)
+            ((if (range.reverseScrolling) maxVertical - value else value) / density)
+                .coerceIn(0f, (contentHeight - viewportHeight).coerceAtLeast(0f))
+        } ?: 0f
+        pendingScrollOffsets[nodeId] = Offset(scrollLeft, scrollTop)
+
+        if (scrollListenersAttached.add(nodeId)) {
+            htmlNode.addEventListener("scroll", onScroll)
+        }
+    }
+
+    /** Applies Compose scroll offsets after DOM structure and scroll extents have been updated. */
+    private fun applyScrollOffsets() {
+        pendingScrollOffsets.forEach { id, offset ->
+            val element = idToA11YNode[id] ?: return@forEach
+            val sizer = scrollSizers[id] ?: return@forEach
+            if (sizer.parentElement !== element || element.firstElementChild !== sizer) {
+                element.insertBefore(sizer, element.firstChild)
+            }
+
+            val actual = Offset(element.scrollLeft.toFloat(), element.scrollTop.toFloat())
+            val lastApplied = appliedScrollOffsets[id]
+            if (lastApplied != null && offset.isCloseTo(lastApplied) && !actual.isCloseTo(lastApplied)) {
+                // Preserve a browser/AT offset until its asynchronous scroll event is handled.
+                return@forEach
+            }
+
+            appliedScrollOffsets[id] = offset
+            if (abs(actual.x - offset.x) >= SCROLL_EPSILON_CSS_PX) {
+                element.scrollLeft = offset.x.toDouble()
+            }
+            if (abs(actual.y - offset.y) >= SCROLL_EPSILON_CSS_PX) {
+                element.scrollTop = offset.y.toDouble()
+            }
+        }
+        pendingScrollOffsets.clear()
+    }
 
     /**
      * Syncs a node with [SemanticsProperties.Text], attaching its link children right away instead
@@ -460,6 +640,7 @@ internal class ComposeWebSemanticsListener(
         node: SemanticsNode,
         config: SemanticsConfiguration,
         children: List<SemanticsNode>,
+        htmlParent: HTMLElement,
         rootPosition: Offset,
     ): HTMLElement {
         val texts = config[SemanticsProperties.Text]
@@ -473,6 +654,7 @@ internal class ComposeWebSemanticsListener(
         val htmlNode = syncNode(
             semanticsNode = node,
             config = config,
+            htmlParent = htmlParent,
             rootPosition = rootPosition,
         )
         val targetTextAndLinks = mutableListOf<Any>()
@@ -502,6 +684,7 @@ internal class ComposeWebSemanticsListener(
             val linkHtmlNode = syncNode(
                 semanticsNode = child,
                 config = childConfig,
+                htmlParent = htmlNode,
                 rootPosition = rootPosition,
                 text = split?.linkTexts?.getOrNull(linkIndex),
             )
@@ -518,14 +701,21 @@ internal class ComposeWebSemanticsListener(
             targetTextAndLinks.add(textParts.last())
         }
 
-        updateTextAndLinks(htmlNode, targetTextAndLinks)
+        updateTextAndLinks(htmlNode, targetTextAndLinks, scrollSizers[node.id])
         deferredChildren?.let { pushNodesForTraversal(it, htmlNode) }
         return htmlNode
     }
 
-    /** Updates the text fragments and semantic link elements at the start of a text node. */
-    private fun updateTextAndLinks(parent: HTMLElement, targetContent: List<Any>) {
+    /** Updates the text fragments and semantic link elements after the optional scroll sizer. */
+    private fun updateTextAndLinks(
+        parent: HTMLElement,
+        targetContent: List<Any>,
+        scrollSizer: HTMLElement?,
+    ) {
         var current = parent.firstChild
+        if (current === scrollSizer) {
+            current = current?.nextSibling
+        }
 
         targetContent.fastForEach { item ->
             when (item) {
@@ -570,6 +760,9 @@ internal class ComposeWebSemanticsListener(
         if (!hasStarted || hasStopped) return
 
         webSemanticsRoot.removeEventListener("click", onClick)
+        scrollListenersAttached.forEach { id ->
+            idToA11YNode[id]?.removeEventListener("scroll", onScroll)
+        }
 
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
@@ -577,6 +770,10 @@ internal class ComposeWebSemanticsListener(
         a11yNodeToSemanticsNode.clear()
         targetParentToChildren.clear()
         targetChildToParent.clear()
+        appliedScrollOffsets.clear()
+        pendingScrollOffsets.clear()
+        scrollSizers.clear()
+        scrollListenersAttached.clear()
 
         invalidationChannel.close()
         syncTriggerChannel.close()
@@ -585,4 +782,43 @@ internal class ComposeWebSemanticsListener(
         removeAllChildrenOf(webSemanticsRoot)
         hasStopped = true
     }
+}
+
+private const val MAX_SCROLL_EXTENT_CSS_PX = 4_000_000f
+private const val SCROLL_EPSILON_CSS_PX = 0.5f
+
+private fun Offset.isCloseTo(other: Offset): Boolean =
+    abs(x - other.x) < SCROLL_EPSILON_CSS_PX && abs(y - other.y) < SCROLL_EPSILON_CSS_PX
+
+private fun createScrollSizer(): HTMLElement {
+    val sizer = document.createElement("div") as HTMLElement
+    sizer.setAttribute("aria-hidden", "true")
+    sizer.style.position = "absolute"
+    return sizer
+}
+
+private fun setScrollContainerStyle(
+    element: HTMLElement,
+    horizontal: Boolean,
+    vertical: Boolean,
+) {
+    // language=javascript
+    js(
+        """
+        element.style.overflowX = horizontal ? "scroll" : "hidden";
+        element.style.overflowY = vertical ? "scroll" : "hidden";
+        element.style.scrollbarWidth = "none";
+        """
+    )
+}
+
+private fun resetScrollContainerStyle(element: HTMLElement) {
+    // language=javascript
+    js(
+        """
+        element.style.overflowX = "";
+        element.style.overflowY = "";
+        element.style.scrollbarWidth = "";
+        """
+    )
 }
