@@ -68,11 +68,6 @@ androidXMultiplatform {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
-
-        jvmMain.dependsOn(commonMain)
-        jvmTest.dependsOn(commonTest)
-        desktopMain.dependsOn(jvmMain)
-        desktopTest.dependsOn(jvmTest)
     }
 }
 

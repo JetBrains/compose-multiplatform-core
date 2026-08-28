@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalTestApi::class)
 class TestBasicsTest : AbstractTestBasicsTest(
     runUiTest = { runComposeUiTest(block = it) }
@@ -69,12 +70,15 @@ abstract class AbstractTestBasicsTest(
     @Test
     fun recompositionCompletesBeforeSetContentReturns() = repeat(100) {
         runUiTest {
-            var globalValue by atomic(0)
+            val globalValue = object {
+                var value by atomic(0)
+            }
+
             setContent {
                 var localValue by remember { mutableStateOf(0) }
 
                 remember(localValue) {
-                    globalValue = localValue
+                    globalValue.value = localValue
                 }
 
                 Layout(
@@ -87,7 +91,7 @@ abstract class AbstractTestBasicsTest(
                 )
             }
 
-            assertEquals(100, globalValue)
+            assertEquals(100, globalValue.value)
         }
     }
 

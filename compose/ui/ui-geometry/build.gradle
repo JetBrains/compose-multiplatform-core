@@ -27,18 +27,14 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.geometry"
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -59,16 +55,6 @@ androidXMultiplatform {
         androidDeviceTest.dependencies {
             implementation(libs.testRunner)
         }
-
-        skikoTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":kruth:kruth"))
-            }
-        }
-
-        nonJvmTest.dependsOn(skikoTest)
-        desktopTest.dependsOn(skikoTest)
     }
 }
 

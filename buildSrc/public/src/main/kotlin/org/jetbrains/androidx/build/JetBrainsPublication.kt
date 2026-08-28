@@ -25,17 +25,12 @@ import org.gradle.api.Project
  * building the JetBrains fork of AOSP.
  */
 object JetBrainsPublication {
-    private const val COMPATIBILITY_STUB_PROJECT_SUFFIX = "-compatibility-stub"
     private const val ANDROIDX_GROUP_PREFIX = "androidx."
     private const val JETBRAINS_COMPOSE_GROUP_PREFIX = "org.jetbrains.compose."
     private const val JETBRAINS_FORK_GROUP_PREFIX = "org.jetbrains.androidx."
 
     val libraryToComponents = mapOf(
         "COMPOSE" to listOf(
-            // publish for compatibility
-            ComposeComponent(":annotation:annotation", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
-            ComposeComponent(":collection:collection", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.ANDROID),
-
             ComposeComponent(":compose:animation:animation"),
             ComposeComponent(":compose:animation:animation-core"),
             ComposeComponent(":compose:animation:animation-graphics"),
@@ -113,8 +108,8 @@ object JetBrainsPublication {
             ),
             ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-compose"),
-            ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3"),
+            ComposeComponent(":lifecycle:lifecycle-viewmodel-compose", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":lifecycle:lifecycle-viewmodel-navigation3", supportedPlatforms = ComposePlatforms.ALL),
         ),
         "NAVIGATION" to listOf(
             ComposeComponent(":navigation:navigation-compose"),
@@ -125,14 +120,11 @@ object JetBrainsPublication {
             ComposeComponent(":navigation3:navigation3-ui"),
         ),
         "NAVIGATION_EVENT" to listOf(
-            ComposeComponent(":navigationevent:navigationevent-compose"),
+            ComposeComponent(":navigationevent:navigationevent-compose", supportedPlatforms = ComposePlatforms.ALL),
         ),
         "SAVEDSTATE" to listOf(
             ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
-        ),
-        "WINDOW" to listOf(
-            ComposeComponent(":window:window-core", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
         ),
     )
 
@@ -149,10 +141,6 @@ object JetBrainsPublication {
     }
 
     fun mavenGroupFor(projectPath: String): String = when {
-        projectPath == ":annotation:annotation" ->
-            "org.jetbrains.compose.annotation-internal"
-        projectPath == ":collection:collection" ->
-            "org.jetbrains.compose.collection-internal"
         projectPath.startsWith(":compose:") ->
             JETBRAINS_COMPOSE_GROUP_PREFIX + projectPath
                 .removePrefix(":compose:")
@@ -169,10 +157,6 @@ object JetBrainsPublication {
     fun projectPathForCoordinates(group: String, name: String): String? = when {
         isAndroidXGroup(group) ->
             ":${group.removePrefix(ANDROIDX_GROUP_PREFIX).replace(".", ":")}:$name"
-        group == "org.jetbrains.compose.annotation-internal" ->
-            ":annotation:annotation"
-        group == "org.jetbrains.compose.collection-internal" ->
-            ":collection:collection"
         group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX) ->
             ":compose:${group.removePrefix(JETBRAINS_COMPOSE_GROUP_PREFIX).replace(".", ":")}:$name"
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) ->
@@ -184,9 +168,6 @@ object JetBrainsPublication {
 
     fun isJetBrainsForkGroup(group: String): Boolean =
         group.startsWith(JETBRAINS_FORK_GROUP_PREFIX) || group.startsWith(JETBRAINS_COMPOSE_GROUP_PREFIX)
-
-    fun isCompatibilityStubProject(project: Project): Boolean =
-        project.projectDir.name.endsWith(COMPATIBILITY_STUB_PROJECT_SUFFIX)
 
     val projectPathToComponent: Map<String, ComposeComponent> = libraryToComponents.values
         .flatten().associateBy { it.path }

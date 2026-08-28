@@ -38,6 +38,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
+import platform.Foundation.NSAttributedString
 import platform.UIKit.UIAccessibilityScrollDirection
 import platform.UIKit.UIAccessibilityScrollDirectionDown
 import platform.UIKit.UIAccessibilityScrollDirectionLeft
@@ -242,10 +243,12 @@ internal fun SemanticsNode.isScreenReaderFocusable(): Boolean {
     return !isTransparent && canBeAccessibilityElement()
 }
 
-internal fun SemanticsNode.linkText(): String? {
+internal fun SemanticsNode.linkAttributedString(): NSAttributedString? {
     val (text, annotation) = this.findCorrespondingLinkAnnotations() ?: return null
 
-    return text.substring(annotation.start, annotation.end).takeIf { it.isNotBlank() }
+    return text.subSequence(annotation.start, annotation.end)
+        .takeIf { it.isNotBlank() }
+        ?.toAccessibilityNSAttributedString()
 }
 
 internal fun SemanticsNode.linkTag(): String? {
@@ -290,16 +293,20 @@ private fun LinkAnnotation.getTag(): String? =
     }
 
 internal fun SemanticsNode.canBeAccessibilityElement(): Boolean {
-    return !isHiddenFromAccessibility &&
-        (unmergedConfig.isMergingSemanticsOfDescendants || isUnmergedSpeakingNode)
-}
-
-internal val SemanticsNode.isUnmergedSpeakingNode: Boolean get() {
-    if (isFake) return false
-    if (!unmergedConfig.isSpeakingNode) return false
-    if (unmergedConfig.isActionableNode) return true
+    if (isHiddenFromAccessibility || isFake) return false
+    if (unmergedConfig.isMergingSemanticsOfDescendants) return true
 
     val hasReplacedChildren = replacedChildren.isNotEmpty()
+
+    if (unmergedConfig.isActionableNode) {
+        return if (unmergedConfig.isSpeakingNode) {
+            true
+        } else {
+            hasReplacedChildren && isInsideMergingContext
+        }
+    }
+
+    if (!unmergedConfig.isSpeakingNode) return false
 
     var currentNode = layoutNode.parent
     while (currentNode != null) {
@@ -312,13 +319,16 @@ internal val SemanticsNode.isUnmergedSpeakingNode: Boolean get() {
         if (currentNode.semanticsConfiguration?.getOrNull(SemanticsProperties.IsTraversalGroup) == true) {
             return true
         }
+        if (currentNode.semanticsConfiguration?.isActionableNode == true) {
+            return !SemanticsNode(currentNode, mergingEnabled = false).canBeAccessibilityElement()
+        }
         currentNode = currentNode.parent
     }
 
     return replacedChildren.isEmpty()
 }
 
-internal val SemanticsConfiguration.isActionableNode: Boolean
+private val SemanticsConfiguration.isActionableNode: Boolean
     get() = (contains(SemanticsActions.RequestFocus) ||
         contains(SemanticsActions.OnClick) ||
         contains(SemanticsActions.OnLongClick) ||
@@ -335,7 +345,7 @@ internal val SemanticsConfiguration.isActionableNode: Boolean
         contains(SemanticsActions.Dismiss) ||
         contains(SemanticsActions.CustomActions))
 
-internal val SemanticsConfiguration.isSpeakingNode: Boolean get() {
+private val SemanticsConfiguration.isSpeakingNode: Boolean get() {
     return contains(SemanticsProperties.ContentDescription) ||
         contains(SemanticsProperties.EditableText) ||
         contains(SemanticsProperties.Text) ||
@@ -343,6 +353,20 @@ internal val SemanticsConfiguration.isSpeakingNode: Boolean get() {
         contains(SemanticsProperties.ToggleableState) ||
         contains(SemanticsProperties.Selected) ||
         contains(SemanticsProperties.ProgressBarRangeInfo)
+}
+
+private val SemanticsNode.isInsideMergingContext: Boolean get() {
+    var currentNode = parent
+    while (currentNode != null) {
+        if (currentNode.unmergedConfig.isMergingSemanticsOfDescendants) {
+            return true
+        }
+        if (currentNode.unmergedConfig.getOrNull(SemanticsProperties.IsTraversalGroup) == true) {
+            return false
+        }
+        currentNode = currentNode.parent
+    }
+    return false
 }
 
 @Suppress("DEPRECATION")
@@ -371,15 +395,25 @@ internal val SemanticsNode.allScrollableParentNodeIds: IntSet get() {
     return result
 }
 
-internal val SemanticsNode.contentDescription: String? get() {
+internal val SemanticsNode.attributedContentDescription: List<NSAttributedString> get() {
     val contentDescription = config.getOrNull(SemanticsProperties.ContentDescription)
         ?.joinToString(", ")
         ?.takeIf { it.isNotBlank() }
 
-    return contentDescription ?: if (config.contains(SemanticsProperties.EditableText)) {
-        null
+    if (contentDescription != null) {
+        return listOf(contentDescription.toAccessibilityNSAttributedString())
+    }
+
+    return if (config.contains(SemanticsProperties.EditableText)) {
+        emptyList()
     } else {
-        config.getOrNull(SemanticsProperties.Text)?.joinToString(", ") { it.text }
+        config.getOrNull(SemanticsProperties.Text)?.mapNotNull {
+            if (it.isNotBlank()) {
+                it.toAccessibilityNSAttributedString()
+            } else {
+                null
+            }
+        } ?: emptyList()
     }
 }
 
@@ -396,7 +430,7 @@ internal fun SemanticsNode.sortFlattenChildren(children: List<SemanticsNode>): L
         if (!first.unmergedConfig.contains(SemanticsProperties.TraversalIndex) &&
             !second.unmergedConfig.contains(SemanticsProperties.TraversalIndex) &&
             first.layoutNode.parent != second.layoutNode.parent &&
-            first.layoutNode.findClosestParentNode({ it == second.layoutNode }) != null
+            first.layoutNode.findClosestParentNode { it == second.layoutNode } != null
         ) {
             sortedChildren[index] = second
             sortedChildren[index + 1] = first

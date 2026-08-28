@@ -30,8 +30,6 @@ internal interface ComposeCommandCommunicator {
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
 
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
-
-    fun currentTextLayoutResult(): TextLayoutResult?
 }
 
 private fun setBackingInputBox(container: HTMLElement, left: Float, top: Float, width: Float, height: Float) { js("""
@@ -71,6 +69,7 @@ internal class BackingDomInput(
         window.requestAnimationFrame {
             backingElement.focus()
         }
+
     }
 
     fun blur() {

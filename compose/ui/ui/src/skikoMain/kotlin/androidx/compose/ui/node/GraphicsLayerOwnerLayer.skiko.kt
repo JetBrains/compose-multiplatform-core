@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.isIdentity
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.layer.setOutline
-import androidx.compose.ui.graphics.prepareTransformationMatrix
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.platform.invertTo
@@ -104,6 +103,17 @@ internal class GraphicsLayerOwnerLayer(
         val maybeChangedFields = scope.mutatedFields or mutatedFields
         this.layoutDirection = scope.layoutDirection
         this.density = scope.graphicsDensity
+        if (maybeChangedFields and Fields.Outsets != 0) {
+            with(density) {
+                graphicsLayer.setOutsets(
+                    left = scope.outsets.left.roundToPx(),
+                    top = scope.outsets.top.roundToPx(),
+                    right = scope.outsets.right.roundToPx(),
+                    bottom = scope.outsets.bottom.roundToPx(),
+                )
+                invalidate()
+            }
+        }
         if (maybeChangedFields and Fields.TransformOrigin != 0) {
             this.transformOrigin = scope.transformOrigin
         }

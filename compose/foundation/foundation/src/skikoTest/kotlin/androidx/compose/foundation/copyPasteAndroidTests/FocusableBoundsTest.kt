@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.copyPasteAndroidTests
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.containsAtLeast
 import androidx.compose.foundation.containsExactlyInOrder
@@ -31,7 +30,6 @@ import androidx.compose.foundation.onFocusedBoundsChanged
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
@@ -49,7 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import kotlin.test.Ignore
 import kotlin.test.Test
 
-@OptIn(ExperimentalTestApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalTestApi::class)
 class FocusableBoundsTest {
 
     private lateinit var parentCoordinates: LayoutCoordinates
@@ -57,6 +55,7 @@ class FocusableBoundsTest {
     private val size = 10f
     private val sizeDp = with(Density(1f)) { 10f.toDp() }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenChildGainsFocus() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -85,6 +84,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenFocusMovesBetweenChildren() = runSkikoComposeUiTest {
         val (focusRequester1, focusRequester2) = FocusRequester.createRefs()
@@ -131,6 +131,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenFocusedBoundsMoves() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -176,6 +177,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedChildPositioned_notNotified_whenFocusableChildEntersComposition() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -208,6 +210,7 @@ class FocusableBoundsTest {
     }
 
     @Ignore // b/278258427
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenFocusedBoundsLeavesComposition() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -243,6 +246,7 @@ class FocusableBoundsTest {
     }
 
     @Ignore // b/278258427
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenFocusedBoundsIsDisabled() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -278,6 +282,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenFocusCleared() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -313,6 +318,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenFocusMovesOutsideObserver() = runSkikoComposeUiTest {
         val (focusRequester1, focusRequester2) = FocusRequester.createRefs()
@@ -355,6 +361,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun onFocusedBoundsPositioned_notified_whenMultipleObservers() = runSkikoComposeUiTest {
         val focusRequester = FocusRequester()
@@ -395,6 +402,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Ignore
     // TODO(shish) does not work with StrongSkippingMode enabled
     @Test
@@ -439,6 +447,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Ignore
     // TODO(shish) does not work with StrongSkippingMode enabled
     @Test
@@ -495,6 +504,7 @@ class FocusableBoundsTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Ignore
     // TODO(shish) does not work with StrongSkippingMode enabled
     @Test

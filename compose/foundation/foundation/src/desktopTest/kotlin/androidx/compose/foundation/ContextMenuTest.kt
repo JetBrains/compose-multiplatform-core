@@ -379,6 +379,7 @@ class ContextMenuTest {
         assertEquals("Item 1", clickedItem)
     }
 
+    @Suppress("DEPRECATION")
     private fun runContextMenuTest(block: ComposeUiTest.() -> Unit) = androidx.compose.ui.test.runComposeUiTest {
         DesktopPlatform.withOverriddenCurrent(DesktopPlatform.Unknown) {
             block()

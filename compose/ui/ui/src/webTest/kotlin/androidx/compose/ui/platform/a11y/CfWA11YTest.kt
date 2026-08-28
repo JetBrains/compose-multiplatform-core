@@ -20,12 +20,18 @@
 
 package androidx.compose.ui.platform.a11y
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -34,12 +40,20 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -154,6 +168,223 @@ class CfWA11YTest : OnCanvasTests {
 
         assertEquals(1, buttonsContainer.children.length)
         assertFalse(button2.isConnected)
+    }
+
+    @Test
+    fun survivingNodeIsNotDetachedWhenSiblingIsInserted() = runApplicationTest {
+        var showButton2 by mutableStateOf(false)
+
+        createComposeWindow {
+            Button(
+                modifier = Modifier.testTag("button1"),
+                onClick = {},
+            ) {
+                Text("Button1")
+            }
+
+            if (showButton2) {
+                Button(
+                    modifier = Modifier.testTag("button2"),
+                    onClick = {},
+                ) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = assertNotNull(getA11YContainer())
+        val buttonBefore =
+            assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        var buttonWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === buttonBefore ||
+                (removedNode as? HTMLElement)?.contains(buttonBefore) == true
+            ) {
+                buttonWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            showButton2 = true
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            val buttonAfter =
+                assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+            assertSame(buttonBefore, buttonAfter)
+            assertTrue(buttonAfter.isConnected)
+            assertFalse(
+                buttonWasRemoved,
+                "A surviving A11Y node must remain continuously connected",
+            )
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun survivingNodeIsNotDetachedWhenSiblingIsRemoved() = runApplicationTest {
+        var showButton2 by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                Text("Button1")
+            }
+            if (showButton2) {
+                Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val a11yContainer = assertNotNull(getA11YContainer())
+        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+        var button1WasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === button1 ||
+                (removedNode as? HTMLElement)?.contains(button1) == true
+            ) {
+                button1WasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, a11yContainer)
+
+        try {
+            showButton2 = false
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(button1, getShadowRoot().getElementById("button1"))
+            assertTrue(button1.isConnected)
+            assertFalse(button2.isConnected)
+            assertFalse(button1WasRemoved, "A surviving sibling must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test
+    fun reorderedNodesRetainTheirElements() = runApplicationTest {
+        var order by mutableStateOf(listOf(1, 2, 3))
+
+        createComposeWindow {
+            Column(modifier = Modifier.testTag("parent")) {
+                order.forEach { item ->
+                    key(item) {
+                        Button(modifier = Modifier.testTag("button$item"), onClick = {}) {
+                            Text("Button$item")
+                        }
+                    }
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val parent = assertNotNull(getShadowRoot().getElementById("parent") as? HTMLElement)
+        val buttons = (1..3).associateWith { item ->
+            assertNotNull(getShadowRoot().getElementById("button$item") as? HTMLElement)
+        }
+        var parentWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === parent ||
+                (removedNode as? HTMLElement)?.contains(parent) == true
+            ) {
+                parentWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+        try {
+            order = listOf(3, 1, 2)
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(parent, getShadowRoot().getElementById("parent"))
+            assertEquals(
+                listOf("button3", "button1", "button2"),
+                (0 until parent.children.length).map { parent.children[it]?.id },
+            )
+            buttons.forEach { (item, element) ->
+                assertSame(element, getShadowRoot().getElementById("button$item"))
+                assertTrue(element.isConnected)
+            }
+            assertFalse(parentWasRemoved, "The reordered children's parent must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
+    }
+
+    @Test // [A, C, B], and C moves to another parent, leaving [A, B].
+    fun reparentedNodeRetainsItsElement() = runApplicationTest {
+        var moveToSecondParent by mutableStateOf(false)
+        val buttonInMovableContent = movableContentOf {
+            Button(modifier = Modifier.testTag("movableButton"), onClick = {}) {
+                Text("Movable")
+            }
+        }
+
+        createComposeWindow {
+            Column {
+                Box(modifier = Modifier.testTag("parent1")) {
+                    Button(modifier = Modifier.testTag("button1"), onClick = {}) {
+                        Text("Button1")
+                    }
+                    if (!moveToSecondParent) buttonInMovableContent()
+                    Button(modifier = Modifier.testTag("button2"), onClick = {}) {
+                        Text("Button2")
+                    }
+                }
+                Box(modifier = Modifier.testTag("parent2")) {
+                    if (moveToSecondParent) buttonInMovableContent()
+                }
+            }
+        }
+
+        awaitA11YChanges()
+        val parent1 = assertNotNull(getShadowRoot().getElementById("parent1") as? HTMLElement)
+        val parent2 = assertNotNull(getShadowRoot().getElementById("parent2") as? HTMLElement)
+
+        val movableButton = assertNotNull(getShadowRoot().getElementById("movableButton") as? HTMLElement)
+        val button1 = assertNotNull(getShadowRoot().getElementById("button1") as? HTMLElement)
+        val button2 = assertNotNull(getShadowRoot().getElementById("button2") as? HTMLElement)
+
+        var unaffectedNodeWasRemoved = false
+        val observer = createMutationObserver { removedNode ->
+            if (removedNode === parent1 || removedNode === parent2 ||
+                removedNode === button1 || removedNode === button2 ||
+                (removedNode as? HTMLElement)?.contains(button1) == true ||
+                (removedNode as? HTMLElement)?.contains(button2) == true
+            ) {
+                unaffectedNodeWasRemoved = true
+            }
+        }
+        observeChildListMutations(observer, assertNotNull(getA11YContainer()))
+
+        try {
+            moveToSecondParent = true
+            awaitA11YChanges()
+            awaitAnimationFrame()
+
+            assertSame(movableButton, getShadowRoot().getElementById("movableButton"))
+            assertSame(parent2, movableButton.parentElement)
+            assertTrue(movableButton.isConnected)
+            assertSame(parent1, getShadowRoot().getElementById("parent1"))
+            assertSame(parent2, getShadowRoot().getElementById("parent2"))
+            assertSame(button1, getShadowRoot().getElementById("button1"))
+            assertSame(button2, getShadowRoot().getElementById("button2"))
+            assertEquals(
+                listOf("button1", "button2"),
+                (0 until parent1.children.length).map { parent1.children[it]?.id },
+            )
+            assertFalse(unaffectedNodeWasRemoved, "Unaffected nodes must not be removed")
+        } finally {
+            disconnectMutationObserver(observer)
+        }
     }
 
     @Test
@@ -493,6 +724,35 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Hello, World!", textField.innerText)
     }
 
+    @Test
+    fun clickableNodeKeepsItsExplicitRole() = runApplicationTest {
+        createComposeWindow {
+            Column {
+                Box(
+                    Modifier.testTag("checkbox").size(24.dp)
+                        .semantics { role = Role.Checkbox }
+                        .clickable { }
+                )
+                Box(
+                    Modifier.testTag("tab").size(24.dp)
+                        .semantics { role = Role.Tab }
+                        .clickable { }
+                )
+                Box(Modifier.testTag("clickable").size(24.dp).clickable { })
+            }
+        }
+
+        awaitA11YChanges()
+
+        fun role(testTag: String) =
+            assertNotNull(getShadowRoot().getElementById(testTag) as? HTMLElement, testTag)
+                .getAttribute("role")
+
+        assertEquals("checkbox", role("checkbox"))
+        assertEquals("tab", role("tab"))
+        assertEquals("button", role("clickable"))
+    }
+
     @Test // A reproducer for https://youtrack.jetbrains.com/issue/CMP-10226
     fun nodeReappearsAfterSemanticsModifierToggle() = runApplicationTest {
         // A LayoutNode that gains/loses a semantic modifier alternates between
@@ -525,6 +785,192 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertNotNull(getShadowRoot().getElementById("myColumn"))
         assertTrue(a11yContainer.innerHTML.contains("ChildText"))
+    }
+
+    @Test // https://youtrack.jetbrains.com/issue/CMP-8614
+    fun clickableRemovalStopsFiringClick() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var clickable by mutableStateOf(true)
+
+        createComposeWindow {
+            Text(
+                "Tap me",
+                modifier = Modifier
+                    .testTag("clickableText")
+                    .then(if (clickable) Modifier.clickable { clickCounter++ } else Modifier)
+            )
+        }
+
+        awaitA11YChanges()
+
+        val text = getShadowRoot().getElementById("clickableText") as? HTMLElement
+        assertNotNull(text)
+
+        text.click()
+        assertEquals(1, clickCounter, "Clickable text must fire click action")
+
+        // Remove clickable
+        clickable = false
+        awaitA11YChanges()
+
+        text.click()
+        assertEquals(1, clickCounter, "Text without clickable must not fire click action")
+
+        // Re-add clickable
+        clickable = true
+        awaitA11YChanges()
+
+        text.click()
+        assertEquals(2, clickCounter, "Re-added clickable text must fire click action")
+    }
+
+    @Test
+    fun clickOnNestedClickableBox() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var outerClickCounter = 0
+        var innerClickCounter = 0
+
+        createComposeWindow {
+            // A clickable Box is a "merging" semantics node (shouldMergeDescendantSemantics == true),
+            // so it survives the outer clickable's descendant-merge and stays as a separate
+            // nested a11y node (the same way a Button stays separate inside a clickable Row).
+            Box(
+                modifier = Modifier
+                    .testTag("outerBox")
+                    .clickable { outerClickCounter++ }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(40.dp)
+                        .testTag("innerBox")
+                        .clickable { innerClickCounter++ }
+                ) {
+                    Text("Nested text")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = getA11YContainer()!!
+        val outerBox = getShadowRoot().getElementById("outerBox") as? HTMLElement
+        assertTrue(a11yContainer.contains(outerBox))
+        assertNotNull(outerBox, "Outer clickable box must be present in the a11y tree")
+        assertEquals("button", outerBox.getAttribute("role"))
+
+        val innerBox = getShadowRoot().getElementById("innerBox") as? HTMLElement
+        assertTrue(a11yContainer.contains(innerBox))
+        assertNotNull(innerBox, "Nested clickable box must be present in the a11y tree")
+        assertEquals("button", innerBox.getAttribute("role"))
+        assertTrue(outerBox.contains(innerBox), "Nested box must be nested inside the outer box a11y node")
+
+        // A click where event.target is the nested clickable element must fire
+        // the INNER click action (the innermost clickable wins), not the outer one
+        innerBox.click()
+        assertEquals(1, innerClickCounter, "Clicking the nested box must fire its own click action")
+        assertEquals(0, outerClickCounter, "Clicking the nested box must not fire the outer click action")
+
+        // A click where event.target is the outer element fires the outer click action
+        outerBox.click()
+        assertEquals(1, outerClickCounter, "Clicking the outer box must fire its own click action")
+        assertEquals(1, innerClickCounter, "Clicking the outer box must not fire the nested click action")
+    }
+
+    @Test
+    fun stopRemovesClickListenerAndStopsA11YUpdates() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var showButton2 by mutableStateOf(false)
+
+        createComposeWindow {
+            Button(onClick = { clickCounter++ }) {
+                Text("Button1")
+            }
+            if (showButton2) {
+                Button(onClick = {}) {
+                    Text("Button2")
+                }
+            }
+        }
+
+        awaitA11YChanges()
+
+        val a11yContainer = getA11YContainer()!!
+        val button1 = a11yContainer.children[0]!!.children[0] as HTMLElement
+        assertEquals("button", button1.getAttribute("role"))
+
+        button1.click()
+        assertEquals(1, clickCounter, "Click must fire before stop()")
+
+        val listener = getComposeWindowOrNull()!!.webSemanticsListener
+        assertNotNull(listener, "A11Y semantics listener must be present")
+
+        listener.stop()
+        // stop() must be idempotent
+        listener.stop()
+        assertTrue(a11yContainer.innerHTML.isEmpty(), "A11Y tree must cleared after stop()")
+
+        // A stopped listener must not be restartable
+        assertFailsWith<IllegalStateException> {
+            // The scope doesn't matter: start() must throw before using it
+            listener.start(CoroutineScope(EmptyCoroutineContext))
+        }
+
+        assertEquals(0, a11yContainer.childElementCount, "A11Y tree must be cleared from the DOM after stop()")
+
+        button1.click()
+        assertEquals(1, clickCounter, "Click listener must be removed after stop()")
+
+        // The A11Y tree must not be updated after stop() even though the semantics still change
+        showButton2 = true
+        awaitIdle()
+        // Wait longer than the 100ms debounce: a running listener would have synced the tree by now
+        realDelay(300)
+        assertTrue(a11yContainer.innerHTML.isEmpty(), "A11Y tree must not be synced after stop()")
+    }
+
+    @Test // https://youtrack.jetbrains.com/issue/CMP-8614
+    fun disabledButtonAriaDisabledAndClickBehavior() = runApplicationTest {
+        assertEquals(0, getContainer().childElementCount, "No content expected before a composition")
+        var clickCounter = 0
+        var buttonEnabled by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(
+                onClick = { clickCounter++ },
+                enabled = buttonEnabled,
+                modifier = Modifier.testTag("disabledButtonTestTag")
+            ) {
+                Text("Button")
+            }
+        }
+
+        awaitA11YChanges()
+
+        val button = getShadowRoot().getElementById("disabledButtonTestTag") as? HTMLElement
+        assertNotNull(button)
+        assertEquals("button", button.getAttribute("role"))
+        assertNull(button.getAttribute("aria-disabled"), "Button should not have aria-disabled when enabled")
+
+        button.click()
+        assertEquals(1, clickCounter, "Enabled button must fire click action")
+
+        // Disable the button
+        buttonEnabled = false
+        awaitA11YChanges()
+
+        assertEquals("true", button.getAttribute("aria-disabled"), "Button must have aria-disabled=\"true\" when disabled")
+        button.click()
+        assertEquals(1, clickCounter, "Disabled button must not fire click action")
+
+        // Re-enable the button
+        buttonEnabled = true
+        awaitA11YChanges()
+
+        assertNull(button.getAttribute("aria-disabled"), "Button must not have aria-disabled when re-enabled")
+        button.click()
+        assertEquals(2, clickCounter, "Re-enabled button must fire click action")
     }
 
     @Test // Reproduces the user-reported scenario from CMP-10226
@@ -560,4 +1006,27 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
         assertTrue(a11yContainer.innerHTML.contains("Sibling"))
     }
+}
+
+internal external interface TestMutationObserver : JsAny
+
+internal fun createMutationObserver(onRemoved: (JsAny) -> Unit): TestMutationObserver =
+    js(
+        """
+        new MutationObserver(records => {
+            for (const record of records) {
+                for (const removedNode of record.removedNodes) {
+                    onRemoved(removedNode);
+                }
+            }
+        })
+        """
+    )
+
+internal fun observeChildListMutations(observer: TestMutationObserver, element: HTMLElement) {
+    js("observer.observe(element, { childList: true, subtree: true })")
+}
+
+internal fun disconnectMutationObserver(observer: TestMutationObserver) {
+    js("observer.disconnect()")
 }

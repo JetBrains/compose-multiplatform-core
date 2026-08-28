@@ -50,10 +50,9 @@ internal fun TextFieldDelegate.Companion.cupertinoSetCursorOffsetFocused(
     val previousOffset = currentValue.selection.start
 
     val cursorDesiredOffset = determineCursorDesiredOffset(
-        offset,
-        previousOffset,
-        textLayoutResult.value,
-        currentText
+        offset = offset,
+        textLayoutResult = textLayoutResult.value,
+        currentText = currentText
     )
 
     showContextMenu(cursorDesiredOffset == offset && cursorDesiredOffset == previousOffset)
@@ -74,19 +73,16 @@ internal fun TextFieldDelegate.Companion.cupertinoSetCursorOffsetFocused(
  * - If you tap on the left edge of the TextField, the caret is placed before the first word on this line. The same is for the right edge.
  * - If you tap at the caret placed in the middle of the word, it will jump to the end of the word.
  * @param offset The current offset position.
- * @param previousOffset The previous offset position (where caret was before incoming tap).
  * @param textLayoutResult The TextLayoutResult representing the layout of the text.
  * @param currentText The current text in the TextField.
  * @return The desired cursor position after evaluating the given parameters.
  */
 internal fun determineCursorDesiredOffset(
     offset: Int,
-    previousOffset: Int,
     textLayoutResult: TextLayoutResult,
     currentText: String
 ): Int {
     val caretOffsetPosition = when {
-        offset == previousOffset -> offset
         isLeftEdgeTapped(textLayoutResult, offset) -> {
             val lineNumber = textLayoutResult.getLineForOffset(offset)
             textLayoutResult.getLineStart(lineNumber)

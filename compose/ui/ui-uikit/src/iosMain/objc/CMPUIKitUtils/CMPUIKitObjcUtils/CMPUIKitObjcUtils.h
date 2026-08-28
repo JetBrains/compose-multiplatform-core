@@ -1,0 +1,47 @@
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#import <Foundation/Foundation.h>
+
+//! Project version number for CMPUIKitObjcUtils.
+FOUNDATION_EXPORT double CMPUIKitObjcUtilsVersionNumber;
+
+//! Project version string for CMPUIKitObjcUtils.
+FOUNDATION_EXPORT const unsigned char CMPUIKitObjcUtilsVersionString[];
+
+#import "CMPAccessibilityElement.h"
+#import "CMPComposeContainerLifecycleDelegate.h"
+#import "CMPFrameRateRange.h"
+#import "CMPDragInteractionProxy.h"
+#import "CMPDrawable.h"
+#import "CMPDropInteractionProxy.h"
+#import "CMPEditMenuCustomAction.h"
+#import "CMPEditMenuView.h"
+#import "CMPGestureRecognizer.h"
+#import "CMPHoverGestureRecognizer.h"
+#import "CMPLayoutRegion.h"
+#import "CMPMetalDrawablesHandler.h"
+#import "CMPMetalLayer.h"
+#import "CMPOSLogger.h"
+#import "CMPPanGestureRecognizer.h"
+#import "CMPScreenEdgePanGestureRecognizer.h"
+#import "CMPScrollView.h"
+#import "CMPTextInputStringTokenizer.h"
+#import "CMPTextLoupeSession.h"
+#import "CMPView.h"
+#import "CMPUIWindowSceneExtensions.h"
+#import "CMPViewController.h"
+#import "CMPContainerView.h"

@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.events
 
+import kotlin.js.ExperimentalWasmJsInterop
+import kotlin.js.js
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.CompositionEventInit
 import org.w3c.dom.events.Event
@@ -86,6 +88,25 @@ internal fun compositionEnd(data: String) =
 internal fun createMouseEvent(type: String): MouseEvent {
     return MouseEvent(type)
 }
+
+/**
+ * Creates a synthetic TouchEvent ("touchstart"/"touchmove"/"touchend"/"touchcancel").
+ *
+ * The Touch lists are left empty: the ComposeWindow touch handlers read only [Event.cancelable].
+ * [cancelable] defaults to true; pass false to emulate an event dispatched while the browser is
+ * already performing a default action (e.g. touchmove/touchend during an ongoing pan).
+ *
+ * Desktop Firefox exposes the TouchEvent constructor only when dom.w3c_touch_events.enabled
+ * is set - the test browser is launched with that pref, see
+ * mpp/karma.config.d/web/commonKarmaConfig.js (FirefoxForComposeTests).
+ */
+internal fun touchEvent(type: String, cancelable: Boolean = true): Event =
+    createTouchEvent(type, cancelable)
+
+@OptIn(ExperimentalWasmJsInterop::class)
+// language=js
+private fun createTouchEvent(type: String, cancelable: Boolean): Event =
+    js("new TouchEvent(type, { cancelable: cancelable, bubbles: true })")
 
 
 internal interface EventsSequence {

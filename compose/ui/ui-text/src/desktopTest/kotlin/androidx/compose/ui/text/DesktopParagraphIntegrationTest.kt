@@ -47,7 +47,8 @@ import kotlin.test.assertFailsWith
 // TODO: move to commonTest once sample_font will be available outside of JVM
 
 // Adopted tests from androidInstrumentedTest/kotlin/androidx/compose/ui/text/ParagraphIntegrationTest.kt
-class DesktopParagraphIntegrationTest {
+class DesktopParagraphIntegrationTest : SkikoComposeTestBase() {
+
     private val fontFamilyResolver = createFontFamilyResolver()
     private val fontFamilyMeasureFont =
         FontFamily(
@@ -314,7 +315,6 @@ class DesktopParagraphIntegrationTest {
     }
 
     @Test
-    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8594
     fun getOffsetForPosition_rtl_multiline() {
         with(defaultDensity) {
             val firstLine = "\u05D0\u05D1\u05D2"
@@ -369,7 +369,6 @@ class DesktopParagraphIntegrationTest {
     }
 
     @Test
-    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8594
     fun getOffsetForPosition_ltr_height_outOfBounds() {
         with(defaultDensity) {
             val text = "abc"
@@ -2516,7 +2515,6 @@ class DesktopParagraphIntegrationTest {
     }
 
     @Test
-    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8594
     fun textDirection_whenDefault_withFirstStrongCharLTR_directionIsLTR() {
         with(defaultDensity) {
             val text = "a\u05D0."

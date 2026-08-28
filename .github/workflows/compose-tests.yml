@@ -1,10 +1,11 @@
-name: Compose Tests
+name: Tests
 on:
   workflow_dispatch:
   pull_request:
   push:
     branches:
       - jb-main
+      - integration
 
 env:
   # TODO: https://youtrack.jetbrains.com/issue/CMP-9497/Investgate-CfW-tests-flakiness-with-enabled-gradle-configuration-cache-on-CI
@@ -18,7 +19,7 @@ env:
 jobs:
   compose-desktop-tests:
     runs-on: ubuntu-24.04
-    name: Compose Desktop Tests
+    name: Desktop
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -26,12 +27,19 @@ jobs:
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
 
+      - name: Setup Window Manager
+        run: sudo apt-get update && sudo apt-get install -y xvfb openbox x11-utils
+
       - name: Start X Server
         run: |
           sudo Xvfb :1 -screen 0 1920x1080x24 -extension RANDR +extension GLX &
+          export DISPLAY=:1
+          until xdpyinfo >/dev/null 2>&1; do sleep 0.1; done
+          openbox &
+          until xprop -root _NET_SUPPORTING_WM_CHECK >/dev/null 2>&1; do sleep 0.1; done
           echo "DISPLAY=:1.0" >> $GITHUB_ENV
 
-      - name: Run Desktop Tests
+      - name: Run Desktop
         run: |
           ./gradlew testDesktop \
             --no-daemon --stacktrace
@@ -52,8 +60,8 @@ jobs:
         if: always()
 
   compose-ios-tests:
-    runs-on: macos-15-xlarge
-    name: Compose iOS Tests
+    runs-on: macos-26-xlarge
+    name: iOS
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -66,7 +74,7 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Run iOS Tests
+      - name: Run iOS
         timeout-minutes: 15
         run: |
           ./gradlew testIos \
@@ -79,8 +87,8 @@ jobs:
         if: always()
 
   compose-ios-utils-tests:
-    runs-on: macos-15-xlarge
-    name: Compose iOS Utils Tests
+    runs-on: macos-26-xlarge
+    name: iOS Utils
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -93,7 +101,7 @@ jobs:
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
 
-      - name: Run iOS Utils Tests
+      - name: Run iOS Utils
         timeout-minutes: 15
         shell: bash
         working-directory: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils
@@ -102,7 +110,7 @@ jobs:
             -resultBundlePath TestResults.xcresult \
             -scheme CMPUIKitUtilsTests \
             -project CMPUIKitUtils.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 16'
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -112,88 +120,74 @@ jobs:
           path: compose/ui/ui-uikit/src/iosMain/objc/CMPUIKitUtils/TestResults.xcresult
 
   compose-ios-instrumented-tests:
-    runs-on: macos-15-xlarge
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        device: [ 'iPhone 16', 'iPad Pro 11-inch (M4)' ]
-    name: Compose iOS Instrumented Tests ${{ matrix.device }}
+        runtime: [ 'ios18', 'ios26' ]
+        device_type: [ 'phone', 'tablet' ]
+        include:
+          # Resolve runtime-specific Xcode and runner configuration.
+          - runtime: 'ios18'
+            runtime_name: 'iOS 18.6'
+            runner: macos-15-xlarge
+            simulator_os: '18.6'
+            xcode_path: '/Applications/Xcode_26.3.app'
+            xcode_cache_key_suffix: '26.3'
+          - runtime: 'ios26'
+            runtime_name: 'iOS 26.5'
+            runner: macos-26-xlarge
+            simulator_os: '26.5'
+            xcode_path: '/Applications/Xcode_26.5.app'
+            xcode_cache_key_suffix: '26.5'
+          # Resolve runtime/device_type combinations to concrete simulator devices.
+          - runtime: 'ios18'
+            device_type: 'phone'
+            device: 'iPhone 16'
+          - runtime: 'ios18'
+            device_type: 'tablet'
+            device: 'iPad Pro 11-inch (M4)'
+          - runtime: 'ios26'
+            device_type: 'phone'
+            device: 'iPhone 17'
+          - runtime: 'ios26'
+            device_type: 'tablet'
+            device: 'iPad Pro 11-inch (M5)'
+    name: iOS Instrumented ${{ matrix.runtime_name }} / ${{ matrix.device }}
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
 
-      - name: Setup Prerequisites
-        uses: ./.github/actions/setup-prerequisites
+      - name: Setup iOS Instrumented Test Environment
+        id: setup-ios-instrumented-test-environment
+        uses: ./.github/actions/setup-ios-instrumented-test-environment
+        with:
+          xcode-path: ${{ matrix.xcode_path }}
+          xcode-cache-key-suffix: ${{ matrix.xcode_cache_key_suffix }}
+          simulator-device: ${{ matrix.device }}
+          simulator-os: ${{ matrix.simulator_os }}
 
-      - name: Setup Xcode
-        uses: ./.github/actions/setup-xcode
-
-      - name: Get iOS Simulator UDID
-        id: get-simulator-udid
-        shell: bash
-        run: |
-          DEVICE_NAME="${{ matrix.device }}"
-          DEVICE_VERSION="18.6"
-          
-          DEVICE_DASH="${DEVICE_VERSION//./-}"   # 16.0 -> 16-0
-          
-          echo "Looking for device: '$DEVICE_NAME' ($DEVICE_VERSION)"
-          
-          SIMULATOR_ID=$(xcrun simctl list devices available -j \
-          | jq -r --arg device "$DEVICE_NAME" --arg vdot "$DEVICE_VERSION" --arg vdash "$DEVICE_DASH" '
-          .devices
-          | to_entries[]
-          | select(.key | (contains($vdot) or contains($vdash)))
-          | .value[]
-          | select(.name == $device)
-          | .udid
-          ' | head -n 1)
-          
-          if [ -z "$SIMULATOR_ID" ]; then
-          echo "Simulator not found for $DEVICE_NAME ($DEVICE_VERSION)"
-          echo "Available runtimes and matching devices:"
-          xcrun simctl list devices available -j | jq -r '
-          .devices | to_entries[] | "\(.key):\n  " + ( [.value[] | "\(.name) \(.udid) \(.state)"] | join("\n  ") )
-          '
-          exit 1
-          fi
-          
-          echo "Found simulator ID: $SIMULATOR_ID"
-
-          # make available to later steps
-          echo "simulator-id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
-
-      - name: Configure Simulator
-        run: |
-          xcrun simctl boot "${{ steps.get-simulator-udid.outputs.simulator-id }}"
-
-          # Write the accessibility flags inside the Simulator:
-          xcrun simctl spawn booted defaults write com.apple.Accessibility AccessibilityEnabled -bool true
-          xcrun simctl spawn booted defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true
-          xcrun simctl spawn booted defaults write com.apple.Accessibility AutomationEnabled -bool true
-
-          # Restart SpringBoard (so system services pick up the change)
-          xcrun simctl spawn booted launchctl stop com.apple.SpringBoard
-          xcrun simctl shutdown all
-
-      - name: Run iOS Instrumented Tests
-        timeout-minutes: 30
+      - name: Run iOS Instrumented
+        timeout-minutes: 40
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
+        env:
+          # Keep xcodebuild's stdout unbuffered so its log lines stay in order.
+          NSUnbufferedIO: "YES"
         run: |
           xcodebuild test \
             -resultBundlePath TestResults.xcresult \
             -scheme Launcher \
             -project Launcher.xcodeproj \
-            -destination 'platform=iOS Simulator,id=${{ steps.get-simulator-udid.outputs.simulator-id }}'
+            -destination 'platform=iOS Simulator,id=${{ steps.setup-ios-instrumented-test-environment.outputs.simulator-id }}'
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: TestResults-${{ github.run_number }}.xcresult
+          name: TestResults-${{ github.run_number }}-${{ matrix.runtime }}-${{ matrix.device_type }}.xcresult
           path: compose/ui/ui/src/uikitInstrumentedTest/launcher/TestResults.xcresult
 
       - name: Test Summary
@@ -204,7 +198,7 @@ jobs:
 
   compose-web-chrome-tests:
     runs-on: ubuntu-24.04
-    name: Compose Web Chrome Tests
+    name: Web Chrome
     strategy:
       fail-fast: false
       matrix:
@@ -260,7 +254,7 @@ jobs:
         run: |
           ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
 
-      - name: Run Web Chrome Tests
+      - name: Run Web Chrome
         run: |
           set -euo pipefail
           (while true; do
@@ -296,7 +290,7 @@ jobs:
 
   compose-web-firefox-tests:
     runs-on: ubuntu-24.04
-    name: Compose Web Firefox Tests
+    name: Web Firefox
     strategy:
       fail-fast: false
       matrix:
@@ -355,7 +349,7 @@ jobs:
         run: |
           ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 15
 
-      - name: Run Web Firefox Tests
+      - name: Run Web Firefox
         run: |
           set -euo pipefail
           (while true; do

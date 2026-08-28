@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.assertCoordinatesApproximatelyEqual
+import androidx.compose.ui.window.assertSizesApproximatelyEqual
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpOffset
@@ -257,7 +259,7 @@ class DialogWindowV2StateTest {
         val state = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.CenteredOnScreen
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds
             )
         )
         lateinit var dialog: ComposeDialog
@@ -281,7 +283,7 @@ class DialogWindowV2StateTest {
         val windowState = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(400.dp, 400.dp),
-                positionProvider = WindowPositionProvider.CenteredOnScreen
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds
             )
         )
         lateinit var window: ComposeWindow
@@ -770,7 +772,7 @@ class DialogWindowV2StateTest {
         testName: String,
         sizeProvider: WindowSizeProvider,
         content: @Composable () -> Unit,
-        expectedWindowSizeSansInsets: DpSize,
+        expectedDialogSizeSansInsets: DpSize,
     ) = runApplicationTest {
         val dialogState = DialogState(
             initialBoundsProvider = WindowBoundsProvider(sizeProvider)
@@ -780,16 +782,21 @@ class DialogWindowV2StateTest {
             DialogWindow(
                 state = dialogState,
                 onCloseRequest = {},
+                // On Linux, insets are not known until the dialog is visible, but we set the
+                // bounds taking them into account before that
+                decoration =
+                    if (isLinux) WindowDecoration.Undecorated() else WindowDecoration.SystemDefault,
                 title = testName
             ) {
                 dialog = this.window
                 content()
             }
         }
+
         awaitIdle()
         assertEquals(
-            expectedWindowSizeSansInsets + dialog.insets.toDpInsets(),
-            dialogState.bounds.size
+            expected = expectedDialogSizeSansInsets + dialog.insets.toDpInsets(),
+            actual = dialogState.bounds.size
         )
     }
 
@@ -802,7 +809,7 @@ class DialogWindowV2StateTest {
                 width = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
+        expectedDialogSizeSansInsets = DpSize(400.dp, 500.dp)
     )
 
     @Test
@@ -814,7 +821,7 @@ class DialogWindowV2StateTest {
                 height = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
+        expectedDialogSizeSansInsets = DpSize(500.dp, 400.dp)
     )
 
     @Test
@@ -827,7 +834,7 @@ class DialogWindowV2StateTest {
                 layout(size, size) { }
             }
         },
-        expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
+        expectedDialogSizeSansInsets = DpSize(101.dp, 101.dp)
     )
 
     private fun runBoundsOverwriteTest(
@@ -856,8 +863,8 @@ class DialogWindowV2StateTest {
         }
         awaitIdle()
 
-        assertEquals(expectedSize, dialogState.bounds.size)
-        assertEquals(expectedPosition, dialogState.bounds.topLeft)
+        assertSizesApproximatelyEqual(expectedSize, dialogState.bounds.size)
+        assertCoordinatesApproximatelyEqual(expectedPosition, dialogState.bounds.topLeft)
     }
 
     @Test

@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.platform.registerSkikoComposeImplementation
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.unit.dp
@@ -90,6 +91,7 @@ class GraphicLayerBugDesktopTest {
                 coroutineException = throwable
             }
         ) {
+            registerSkikoComposeImplementation()
             val frameRecomposer = FrameRecomposer(coroutineContext)
             val scene = CanvasLayersComposeScene(
                 frameRecomposer = frameRecomposer,
