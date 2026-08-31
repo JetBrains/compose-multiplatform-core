@@ -16,10 +16,10 @@
 
 @file:Suppress(
     "RestrictedApiAndroidX"
-) // Referring to CUBIC_DECELERATE, FitBox, RemoteComposeCreationState, RemoteMatrix3x3,
+) // Referring to CUBIC_DECELERATE, RemoteComposeCreationState,
 
-// RemoteShader, RemoteText, asRemoteDp, background, clamp, interpolateRemoteFloat, remote-core,
-// remote-creation
+// RemoteMatrix3x3, RemoteShader, RemoteText, asRemoteDp, background, clamp,
+// interpolateRemoteFloat, remote-core, remote-creation
 
 package androidx.compose.remote.integration.view.demos.examples
 
@@ -28,13 +28,13 @@ import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.RemoteComposeShader
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.compose.layout.FitBox
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.RemoteFitBox
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.alpha
@@ -49,7 +49,6 @@ import androidx.compose.remote.creation.compose.shaders.RemoteShader
 import androidx.compose.remote.creation.compose.shapes.RemoteRoundedCornerShape
 import androidx.compose.remote.creation.compose.state.CUBIC_DECELERATE
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.remote.creation.compose.state.RemoteMatrix3x3
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.asRemoteDp
 import androidx.compose.remote.creation.compose.state.clamp
@@ -73,8 +72,6 @@ class AgslRemoteShader(val remoteComposeShader: RemoteComposeShader) : RemoteSha
         val shaderId = remoteComposeShader.commit()
         paintBundle.setShader(shaderId)
     }
-
-    override var remoteMatrix3x3: RemoteMatrix3x3? = null
 }
 
 data class ChatMessage(val text: String, val isAi: Boolean, val timestamp: Float)
@@ -154,7 +151,7 @@ fun AiAgent(currentTimeSeconds: Float = 1000f, animate: Boolean = true) {
                 modifier = RemoteModifier.fillMaxWidth().padding(horizontal = 8.rdp),
                 contentAlignment = RemoteAlignment.CenterEnd,
             ) {
-                FitBox(modifier = RemoteModifier.fillMaxWidth(0.95f)) {
+                RemoteFitBox(modifier = RemoteModifier.fillMaxWidth(0.95f)) {
                     arrayOf(16.rsp, 14.rsp, 12.rsp, 10.rsp, 8.rsp).forEach { size ->
                         RemoteText(
                             text = "edsger-saga-6-7, v0.42.0-nightly.git.487fb21".rs,
@@ -190,7 +187,7 @@ private fun ChatBubble(message: ChatMessage, alpha: RemoteFloat, animate: Boolea
             AiPillGlow(isAi = message.isAi, isRim = true, alpha = alpha, animate = animate)
 
             // Text inside the bubble
-            FitBox(modifier = RemoteModifier.fillMaxSize().padding(horizontal = 16.rdp)) {
+            RemoteFitBox(modifier = RemoteModifier.fillMaxSize().padding(horizontal = 16.rdp)) {
                 arrayOf(16.rsp, 14.rsp, 12.rsp, 10.rsp, 8.rsp).forEach { size ->
                     RemoteText(
                         text = message.text.rs,
