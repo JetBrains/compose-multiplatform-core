@@ -74,12 +74,6 @@ androidXMultiplatform {
         create("nonAndroidMain").dependsOn(commonMain)
         create("nonAndroidTest").dependsOn(commonTest)
 
-        nonAndroidMain.dependencies {
-            // TODO: Remove the dependency - https://youtrack.jetbrains.com/issue/CMP-9922
-            // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
-            implementation("org.jetbrains.compose.ui:ui-backhandler:1.12.0")
-        }
-
         nonAndroidTest {
             dependsOn(commonTest)
             dependencies {
@@ -114,6 +108,10 @@ androidXMultiplatform {
                 // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
                 implementation("org.jetbrains.androidx.savedstate:savedstate:1.4.0")
                 implementation("org.jetbrains.androidx.savedstate:savedstate-compose:1.4.0")
+
+                // TODO: Remove the dependency - https://youtrack.jetbrains.com/issue/CMP-9922
+                // To comply with Klib resolver until https://youtrack.jetbrains.com/issue/KT-61096 is fixed
+                implementation("org.jetbrains.compose.ui:ui-backhandler:1.12.0")
             }
         }
 
