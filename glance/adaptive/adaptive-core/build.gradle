@@ -25,10 +25,19 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
-    // Add dependencies here
+    api(libs.androidx.annotation)
+    api("androidx.compose.runtime:runtime:1.6.0")
+    implementation(libs.kotlinCoroutinesCore)
+
+    testImplementation(libs.testCore)
+    testImplementation(libs.testRules)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinCoroutinesTest)
 }
 
 android {
@@ -42,4 +51,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2026"
     description = "Enable adaptive glanceable widgets across various form factors"
+    enableRobolectric()
 }
