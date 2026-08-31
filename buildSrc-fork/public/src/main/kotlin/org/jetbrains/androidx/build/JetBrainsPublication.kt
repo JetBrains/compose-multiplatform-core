@@ -86,6 +86,7 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material3:material3"),
             ComposeComponent(":compose:material3:material3-window-size-class"),
             ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
+            ComposeComponent(":compose:material3:material3-ripple"),
         ),
         "COMPOSE_MATERIAL3_ADAPTIVE" to listOf(
             ComposeComponent(":compose:material3:adaptive:adaptive"),
