@@ -112,7 +112,7 @@ actual interface PlatformTextInputMethodRequest {
     val editText: (block: TextEditingScope.() -> Unit) -> Unit
 
     /**
-     * Custom token that uniquely identifies the text editor.
+     * Opaque token that uniquely identifies the text editor.
      */
     @ExperimentalComposeUiApi
     val editorToken: Any?
