@@ -17,7 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.navigationevent.UIKitBackGestureRecognizer
+import androidx.compose.ui.navigationevent.BackGestureRecognizer
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPHoverGestureRecognizer
@@ -47,6 +47,7 @@ import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSSelectorFromString
+import platform.Foundation.NSStringFromClass
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventTypeTouches
 import platform.UIKit.UIGestureRecognizer
@@ -68,6 +69,7 @@ import platform.UIKit.UIView
 import platform.UIKit.endEditing
 import platform.UIKit.setAccessibilityElements
 import platform.UIKit.setState
+import platform.darwin.NSObject
 
 /**
  * A reason for why touches are sent to Compose
@@ -108,12 +110,18 @@ private class TouchesGestureRecognizer(
     private var onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
     private var onCancelAllTouches: (touches: Set<*>) -> Unit,
     private var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean,
-    private var ignoreTouchesChanges: () -> Boolean
+    private var isHigherPriorityGestureTrackingTouches: () -> Boolean
 ) : CMPGestureRecognizer(target = null, action = null) {
     /**
      * Touches that are currently tracked by the gesture recognizer.
      */
     private val trackedTouches: MutableMap<UITouch, UIView?> = mutableMapOf()
+
+    /**
+     * [trackedTouches] whose move callbacks were suppressed while a higher-priority
+     * gesture recognizer was still deciding whether to take over the sequence.
+     */
+    private val trackedTouchesWithSuppressedMoves: MutableSet<UITouch> = mutableSetOf()
 
     val hasTrackedTouches: Boolean get() = trackedTouches.isNotEmpty()
 
@@ -136,11 +144,7 @@ private class TouchesGestureRecognizer(
     override fun touchesBegan(touches: Set<*>, withEvent: UIEvent) {
         super.touchesBegan(touches, withEvent)
 
-        if (ignoreTouchesChanges()) {
-            return
-        }
-
-        val touchesToInteractionMode = touches.associate { touch ->
+        val touchesToHitTestResult = touches.associate { touch ->
             touch as UITouch
             val point = touch.locationInView(view)
             val hitTestResult = view?.hitTest(point, withEvent)?.takeIf { it != view }
@@ -149,7 +153,7 @@ private class TouchesGestureRecognizer(
 
         fun startTouchesEvent() {
             val isInitialTouches = trackedTouches.isEmpty()
-            trackedTouches.putAll(touchesToInteractionMode)
+            trackedTouches.putAll(touchesToHitTestResult)
             onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.BEGAN)
             if (isInitialTouches) {
                 setState(UIGestureRecognizerStatePossible)
@@ -158,7 +162,7 @@ private class TouchesGestureRecognizer(
             }
         }
 
-        val interactionMode = touchesToInteractionMode.map {
+        val interactionMode = touchesToHitTestResult.map {
             it.value?.findAncestorInteractionMode(it.key)
         }.findMostRestrictedInteractionMode()
         when (interactionMode) {
@@ -180,7 +184,8 @@ private class TouchesGestureRecognizer(
     override fun touchesMoved(touches: Set<*>, withEvent: UIEvent) {
         super.touchesMoved(touches, withEvent)
 
-        if (ignoreTouchesChanges()) {
+        if (isHigherPriorityGestureTrackingTouches()) {
+            markTrackedTouchesAsSuppressedMoves(touches)
             return
         }
 
@@ -213,16 +218,21 @@ private class TouchesGestureRecognizer(
     override fun touchesEnded(touches: Set<*>, withEvent: UIEvent) {
         super.touchesEnded(touches, withEvent)
 
-        if (ignoreTouchesChanges()) {
-            cancelAllTrackedTouches()
-            return
-        }
-
         fun endTouchesEvent() {
             onTouchesEvent(trackedTouches.keys, withEvent, TouchesEventKind.ENDED)
             stopTrackingTouches(touches)
             if (trackedTouches.isEmpty()) {
                 setState(UIGestureRecognizerStateEnded)
+            }
+        }
+
+        if (isHigherPriorityGestureTrackingTouches()) {
+            val touchesWereNotTracked = !touches.containsAnyTrackedTouches()
+            val moveTouchesWereSuppressed = touches.containsAnyTrackedTouchesWithSuppressedMoves()
+
+            if (touchesWereNotTracked || moveTouchesWereSuppressed) {
+                cancelAllTrackedTouches()
+                return
             }
         }
 
@@ -250,6 +260,7 @@ private class TouchesGestureRecognizer(
             onCancelAllTouches(trackedTouches.keys)
         }
         trackedTouches.clear()
+        trackedTouchesWithSuppressedMoves.clear()
         cancelTouchesFailure()
     }
 
@@ -265,7 +276,7 @@ private class TouchesGestureRecognizer(
     override fun canBePreventedByGestureRecognizer(
         preventingGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return if (preventingGestureRecognizer is UIKitBackGestureRecognizer) {
+        return if (preventingGestureRecognizer is BackGestureRecognizer) {
             cancelAllTrackedTouches()
             true
         } else if (canIgnoreDragGesture(preventingGestureRecognizer)) {
@@ -299,7 +310,7 @@ private class TouchesGestureRecognizer(
         return if (isInChildHierarchy(preventedGestureRecognizer.view)) {
             super.canPreventGestureRecognizer(preventedGestureRecognizer)
         } else if (preventedGestureRecognizer is UIScreenEdgePanGestureRecognizer) {
-            false
+            preventedGestureRecognizer.isUINavigationControllerContentSwipeGestureRecognizer()
         } else {
             state == UIGestureRecognizerStatePossible || state.isOngoing
         }
@@ -313,7 +324,7 @@ private class TouchesGestureRecognizer(
     override fun shouldRequireFailureOfGestureRecognizer(
         otherGestureRecognizer: UIGestureRecognizer
     ): Boolean {
-        return (otherGestureRecognizer is UIKitBackGestureRecognizer &&
+        return (otherGestureRecognizer is BackGestureRecognizer &&
             otherGestureRecognizer.state in activeGestureStates) ||
             super.shouldRequireFailureOfGestureRecognizer(otherGestureRecognizer)
     }
@@ -372,8 +383,9 @@ private class TouchesGestureRecognizer(
         onTouchesEvent = { _, _, _ -> PointerEventResult(anyMovementConsumed = false) }
         onCancelAllTouches = {}
         canIgnoreDragGesture = { false }
-        ignoreTouchesChanges = { false }
+        isHigherPriorityGestureTrackingTouches = { false }
         trackedTouches.clear()
+        trackedTouchesWithSuppressedMoves.clear()
     }
 
     /**
@@ -413,8 +425,39 @@ private class TouchesGestureRecognizer(
      */
     private fun stopTrackingTouches(touches: Set<*>) {
         for (touch in touches) {
-            trackedTouches.remove(touch as UITouch)
+            touch as UITouch
+            trackedTouches.remove(touch)
+            trackedTouchesWithSuppressedMoves.remove(touch)
         }
+    }
+
+    private fun markTrackedTouchesAsSuppressedMoves(touches: Set<*>) {
+        for (touch in touches) {
+            touch as UITouch
+            if (touch in trackedTouches) {
+                trackedTouchesWithSuppressedMoves.add(touch)
+            }
+        }
+    }
+
+    private fun Set<*>.containsAnyTrackedTouches(): Boolean {
+        for (touch in this) {
+            touch as UITouch
+            if (touch in trackedTouches) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun Set<*>.containsAnyTrackedTouchesWithSuppressedMoves(): Boolean {
+        for (touch in this) {
+            touch as UITouch
+            if (touch in trackedTouchesWithSuppressedMoves) {
+                return true
+            }
+        }
+        return false
     }
 }
 
@@ -603,7 +646,9 @@ internal class OverlayInputView(
     onCancelPinch: () -> Unit,
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
-    ignoreTouchChanges: () -> Boolean,
+    isHigherPriorityGestureTrackingTouches: () -> Boolean,
+    private var onRemoveSubview: () -> Unit,
+    private var onHasWindowChanged: (Boolean) -> Unit,
 ) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
@@ -616,18 +661,14 @@ internal class OverlayInputView(
         onTouchesEvent = ::handleTouchesEvent,
         onCancelAllTouches = ::handleCancelAllTouches,
         canIgnoreDragGesture = { canIgnoreDragGesture(it) },
-        ignoreTouchesChanges = ignoreTouchChanges
+        isHigherPriorityGestureTrackingTouches = isHigherPriorityGestureTrackingTouches
     )
 
     private val scrollGestureRecognizer by lazy {
-        if (available(OS.Ios to OSVersion(major = 13, minor = 4))) {
-            ScrollGestureRecognizer(
-                onScrollEvent = onScrollEvent,
-                onCancelScroll = onCancelScroll
-            )
-        } else {
-            null
-        }
+        ScrollGestureRecognizer(
+            onScrollEvent = onScrollEvent,
+            onCancelScroll = onCancelScroll
+        )
     }
 
     private val customPinchGestureRecognizer by lazy {
@@ -650,7 +691,7 @@ internal class OverlayInputView(
     }
 
     /**
-     * See [androidx.compose.ui.draganddrop.UIKitDragAndDropManager] for more context
+     * See [androidx.compose.ui.draganddrop.IosDragAndDropManager] for more context
      */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
@@ -680,6 +721,21 @@ internal class OverlayInputView(
         scrollsToTop = false
     }
 
+    override fun willRemoveSubview(subview: UIView) {
+        super.willRemoveSubview(subview)
+
+        // `willRemoveSubview` is called during the deinit operation of UIView.
+        // Employ safe calls to prevent access to `this` reference that has already been invalidated.
+        @Suppress("UNNECESSARY_SAFE_CALL")
+        this?.onRemoveSubview?.invoke()
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+
+        onHasWindowChanged(window != null)
+    }
+
     override fun canBecomeFirstResponder() = true
 
     override fun canBecomeFocused(): Boolean = false
@@ -692,6 +748,11 @@ internal class OverlayInputView(
     override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
         onKeyboardPresses(presses)
         super.pressesEnded(presses, withEvent)
+    }
+
+    override fun pressesCancelled(presses: Set<*>, withEvent: UIPressesEvent?) {
+        onKeyboardPresses(presses)
+        super.pressesCancelled(presses, withEvent)
     }
 
     private val trackedTouchesOutside: MutableSet<UITouch> = mutableSetOf()
@@ -824,6 +885,8 @@ internal class OverlayInputView(
         onOutsidePointerEvent = {}
         onTouchesEvent = { _, _, _ -> PointerEventResult() }
         onCancelAllTouches = {}
+        onRemoveSubview = {}
+        onHasWindowChanged = {}
         trackedTouchesOutside.clear()
     }
 }
@@ -839,7 +902,7 @@ internal class BackgroundInputView(
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
     onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
     onCancelAllTouches: (touches: Set<*>) -> Unit,
-    ignoreTouchChanges: () -> Boolean,
+    isHigherPriorityGestureTrackingTouches: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
 
     private var onAppeared: (() -> Unit)? = null
@@ -878,7 +941,7 @@ internal class BackgroundInputView(
         onTouchesEvent = onTouchesEvent,
         onCancelAllTouches = onCancelAllTouches,
         canIgnoreDragGesture = { false },
-        ignoreTouchesChanges = ignoreTouchChanges
+        isHigherPriorityGestureTrackingTouches = isHigherPriorityGestureTrackingTouches
     )
 
     init {
@@ -959,3 +1022,21 @@ private fun UIView?.hasTrackingUIScrollView(): Boolean {
     }
     return false
 }
+
+/**
+ * Detects the private UIKit recognizer that drives iOS 26 full-width `UINavigationController`
+ * swipe-back interaction. It is a subclass of `UIScreenEdgePanGestureRecognizer` which can start
+ * anywhere across the horizontal axis of the screen.
+ *
+ * Compose needs to be able to prevent this recognizer after Compose content consumes horizontal
+ * movement, for example when a `HorizontalPager` handles the drag. Without that, UIKit can start
+ * the navigation pop transition first and cancel Compose's touch stream.
+ */
+private fun UIGestureRecognizer.isUINavigationControllerContentSwipeGestureRecognizer(): Boolean =
+    available(OS.Ios to OSVersion(major = 26)) &&
+        this is UIScreenEdgePanGestureRecognizer &&
+        className() == "_UIParallaxTransitionPanGestureRecognizer" &&
+        name == "UINavigationController.contentSwipe"
+
+@OptIn(BetaInteropApi::class)
+private fun NSObject.className() = this.`class`()?.let { NSStringFromClass(it) }

@@ -17,6 +17,7 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +37,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ProvideTextStyle
@@ -44,8 +46,13 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -154,10 +161,20 @@ private fun ExampleTopBar(
     back: () -> Unit,
 ) {
     TopAppBar(
+        backgroundColor = topAppBarBackgroundColor(),
+        contentColor = topAppBarContentColor(),
         title = { Text(title) },
         navigationIcon = { ArrowBackIcon(back) }
     )
 }
+
+@Composable
+private fun topAppBarBackgroundColor(): Color =
+    if (isSystemInDarkTheme()) Color(0xFF3F1D6E) else MaterialTheme.colors.primary
+
+@Composable
+private fun topAppBarContentColor(): Color =
+    if (isSystemInDarkTheme()) Color.White else MaterialTheme.colors.onPrimary
 
 @Composable
 private fun SelectionScaffold(
@@ -165,8 +182,19 @@ private fun SelectionScaffold(
     back: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
+    var buildInfoVisible by remember { mutableStateOf(false) }
     Scaffold(
-        topBar = { SelectionTopBar(title, back) },
+        topBar = {
+            SelectionTopBar(
+                title = title,
+                back = back,
+                actions = {
+                    IconButton(onClick = { buildInfoVisible = true }) {
+                        Icon(Icons.Filled.Info, contentDescription = "Build info")
+                    }
+                }
+            )
+        },
     ) { innerPadding ->
         /*
          * In case of applying WindowInsets as content padding, it is strongly recommended to wrap
@@ -177,12 +205,16 @@ private fun SelectionScaffold(
             content()
         }
     }
+    if (buildInfoVisible) {
+        BuildInfoDialog(onDismiss = { buildInfoVisible = false })
+    }
 }
 
 @Composable
 private fun SelectionTopBar(
     title: String,
     back: (() -> Unit)? = null,
+    actions: @Composable () -> Unit = {},
 ) {
     /*
      * This is recommended approach of applying multiplatform window insets to Material2 Scaffold
@@ -191,6 +223,8 @@ private fun SelectionTopBar(
      * out of box in android development or with Material3 Scaffold
      */
     TopAppBar(
+        backgroundColor = topAppBarBackgroundColor(),
+        contentColor = topAppBarContentColor(),
         contentPadding = WindowInsets.systemBars
             .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
             .union(WindowInsets(left = 20.dp))
@@ -209,6 +243,7 @@ private fun SelectionTopBar(
                         Text(text = title, modifier = Modifier.semantics { heading() })
                     }
                 }
+                actions()
             }
         }
     )

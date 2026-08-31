@@ -17,13 +17,11 @@
 package androidx.compose.ui.window
 
 import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 
 /**
  * Configuration of [ComposeViewport] behavior.
  */
-@ExperimentalComposeUiApi
 class ComposeViewportConfiguration internal constructor() {
 
     /**
@@ -32,16 +30,38 @@ class ComposeViewportConfiguration internal constructor() {
      * That DOM tree is visibly hidden, but reachable by the accessibility tools.
      * It can be disabled to avoid the overhead of maintaining the DOM tree.
      * By default, it is set to `true`.
-     *
-     * Note: This API is experimental and subject to change in the future.
      */
-    @ExperimentalComposeUiApi
     var isA11YEnabled: Boolean = true
 
     /**
      * Controls whether a mouse clicks on an unfocused element clears focus.
      * It's clearing focus on mouse down by default.
      */
-    @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+
+    /**
+     * Controls whether the Compose scene handles system window insets (status bar, navigation bar,
+     * IME keyboard) and exposes them via [androidx.compose.foundation.layout.WindowInsets] APIs
+     * such as `WindowInsets.safeDrawing`, `WindowInsets.ime`, etc.
+     *
+     * When set to `true`, the scene reads safe area insets from the browser using CSS
+     * `env(safe-area-inset-*)` environment variables, and tracks IME (virtual keyboard) geometry.
+     *
+     * **Prerequisite**: the page must opt in to edge-to-edge rendering by including
+     * `viewport-fit=cover` in the viewport meta tag:
+     * ```html
+     * <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+     * ```
+     * Without `viewport-fit=cover`, the browser applies safe area padding automatically and all
+     * `env(safe-area-inset-*)` variables return `0px`, so insets will always be zero.
+     *
+     * By default, this is `false` and the scene reports zero insets.
+     *
+     * **Scrollable containers:** insets are re-read on `window resize` and keyboard geometry events,
+     * but not on page scroll. If the [composeScene] is inside a scrollable page, its viewport position
+     * changes as the user scrolls, so the insets may become invalid. In that case
+     * it is recommended to disable inset handling entirely (`enableBrowserWindowInsets = false`) and
+     * manage padding manually.
+     */
+    var enableBrowserWindowInsets: Boolean = false
 }

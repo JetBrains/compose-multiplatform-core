@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
+import androidx.collection.IntList
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimation.Companion.NotInitialized
@@ -39,7 +40,6 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastJoinToString
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastRoundToInt
@@ -88,7 +88,7 @@ private inline fun debugLog(message: () -> String) {
 @OptIn(ExperimentalFoundationApi::class)
 internal fun LazyLayoutMeasureScope.measureStaggeredGrid(
     state: LazyStaggeredGridState,
-    pinnedItems: List<Int>,
+    pinnedItems: IntList,
     itemProvider: LazyStaggeredGridItemProvider,
     resolvedSlots: LazyStaggeredGridSlots,
     constraints: Constraints,
@@ -194,7 +194,7 @@ internal fun LazyLayoutMeasureScope.measureStaggeredGrid(
 @OptIn(ExperimentalFoundationApi::class)
 internal class LazyStaggeredGridMeasureContext(
     val state: LazyStaggeredGridState,
-    val pinnedItems: List<Int>,
+    val pinnedItems: IntList,
     val itemProvider: LazyStaggeredGridItemProvider,
     val resolvedSlots: LazyStaggeredGridSlots,
     val constraints: Constraints,
@@ -324,6 +324,7 @@ private fun LazyStaggeredGridMeasureContext.measure(
                 density = this,
                 scrollBackAmount = 0f,
                 coroutineScope = coroutineScope,
+                reverseLayout = reverseLayout,
             )
         }
 
@@ -520,7 +521,16 @@ private fun LazyStaggeredGridMeasureContext.measure(
 
             laneInfo.setLane(itemIndex, spanRange.laneInfo)
             val offset = currentItemOffsets.maxInRange(spanRange)
+            val gaps =
+                if (spanRange.isFullSpan) {
+                    laneInfo.getGaps(itemIndex) ?: IntArray(laneCount)
+                } else {
+                    null
+                }
             spanRange.forEach { lane ->
+                if (gaps != null) {
+                    gaps[lane] = offset - currentItemOffsets[lane]
+                }
                 currentItemOffsets[lane] = offset + measuredItem.mainAxisSizeWithSpacings
                 currentItemIndices[lane] = itemIndex
                 measuredItems[lane].addLast(measuredItem)
@@ -538,6 +548,7 @@ private fun LazyStaggeredGridMeasureContext.measure(
             }
 
             if (spanRange.isFullSpan) {
+                laneInfo.setGaps(itemIndex, gaps)
                 // full span items overwrite other slots if we measure it here, so skip measuring
                 // the rest of the slots
                 initialItemsMeasured = laneCount
@@ -608,6 +619,7 @@ private fun LazyStaggeredGridMeasureContext.measure(
             while (laneItems.size > 1 && !laneItems.first().isVisible) {
                 val item = laneItems.removeFirst()
                 val gaps = if (item.span != 1) laneInfo.getGaps(item.index) else null
+                debugLog { "removing item ${item.index}, gaps = ${gaps?.toList()}" }
                 firstItemOffsets[laneIndex] -=
                     item.mainAxisSizeWithSpacings + if (gaps == null) 0 else gaps[laneIndex]
             }
@@ -997,6 +1009,7 @@ private fun LazyStaggeredGridMeasureContext.measure(
             spanProvider = itemProvider.spanProvider,
             density = this,
             coroutineScope = coroutineScope,
+            reverseLayout = reverseLayout,
         )
     }
 }
@@ -1103,7 +1116,7 @@ private inline fun LazyStaggeredGridMeasureContext.calculateExtraItems(
 ): List<LazyStaggeredGridMeasuredItem> {
     var result: MutableList<LazyStaggeredGridMeasuredItem>? = null
 
-    pinnedItems.fastForEach(beforeVisibleBounds) { index ->
+    pinnedItems.forEach(beforeVisibleBounds) { index ->
         if (filter(index)) {
             val spanRange = itemProvider.getSpanRange(index, 0)
             if (result == null) {
@@ -1118,8 +1131,8 @@ private inline fun LazyStaggeredGridMeasureContext.calculateExtraItems(
     return result ?: emptyList()
 }
 
-private inline fun <T> List<T>.fastForEach(reverse: Boolean = false, action: (T) -> Unit) {
-    if (reverse) fastForEachReversed(action) else fastForEach(action)
+private inline fun IntList.forEach(reverse: Boolean = false, action: (Int) -> Unit) {
+    if (reverse) forEachReversed(action) else forEach(action)
 }
 
 @JvmInline

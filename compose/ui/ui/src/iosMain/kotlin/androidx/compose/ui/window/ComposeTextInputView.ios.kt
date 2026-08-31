@@ -16,12 +16,11 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.TextInputPosition
 import androidx.compose.ui.platform.TextInputRange
 import androidx.compose.ui.platform.TextInputStringTokenizer
-import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
+import androidx.compose.ui.platform.selectTextNearCursor
 import androidx.compose.ui.platform.toTextRange
 import androidx.compose.ui.platform.toUITextRange
 import androidx.compose.ui.text.TextRange
@@ -47,10 +46,10 @@ import platform.Foundation.NSRange
 import platform.Foundation.dictionary
 import platform.UIKit.NSWritingDirection
 import platform.UIKit.NSWritingDirectionNatural
+import platform.UIKit.UIEvent
 import platform.UIKit.UIKeyInputProtocol
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardType
-import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIReturnKeyType
 import platform.UIKit.UITextAutocapitalizationType
 import platform.UIKit.UITextAutocorrectionType
@@ -66,6 +65,7 @@ import platform.UIKit.UITextLayoutDirectionUp
 import platform.UIKit.UITextPosition
 import platform.UIKit.UITextRange
 import platform.UIKit.UITextSelectionRect
+import platform.UIKit.UITextSpellCheckingType
 import platform.UIKit.UITextStorageDirection
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
@@ -76,51 +76,73 @@ import platform.darwin.NSInteger
  */
 internal class ComposeTextInputView(
     private val doubleTapTimeoutMillis: Long,
+    input: TextEditingDelegate,
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
-    var input: TextEditingDelegate? = null
+    var input: TextEditingDelegate = input
         set(value) {
             field = value
-            if (value == null) {
+            if (!value.isInteractive) {
                 hideTextMenu()
             }
         }
 
-    private val inputTraits: SkikoUITextInputTraits
-        get() = input?.inputTraits ?: EmptyInputTraits
-
-    override fun inputView(): UIView? = inputTraits.inputView()
-    override fun inputAccessoryView(): UIView? = inputTraits.inputAccessoryView()
-
     override fun canBecomeFirstResponder() = true
 
+    override fun isUserInteractionEnabled(): Boolean {
+        return false
+    }
+
     override fun resignFirstResponder(): Boolean {
-        input?.onResignFocus()
+        input.onResignFocus()
         hideTextMenu()
         return super.resignFirstResponder()
     }
 
     override fun beginFloatingCursorAtPoint(point: CValue<CGPoint>) {
-        input?.beginFloatingCursor(point.useContents { DpOffset(x.dp, y.dp) })
+        input.beginFloatingCursor(point.useContents { DpOffset(x.dp, y.dp) })
     }
 
     override fun updateFloatingCursorAtPoint(point: CValue<CGPoint>) {
-        input?.updateFloatingCursor(point.useContents { DpOffset(x.dp, y.dp) })
+        input.updateFloatingCursor(point.useContents { DpOffset(x.dp, y.dp) })
     }
 
     override fun endFloatingCursor() {
-        input?.endFloatingCursor()
+        input.endFloatingCursor()
     }
 
-    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-        input?.onKeyboardPresses(presses)
-        super.pressesBegan(presses, withEvent)
+    override fun showEditMenuAtRect(
+        targetRect: CValue<CGRect>,
+        copy: (() -> Unit)?,
+        cut: (() -> Unit)?,
+        paste: (() -> Unit)?,
+        select: (() -> Unit)?,
+        selectAll: (() -> Unit)?,
+        customActions: List<*>?
+    ) {
+        val patchedSelect = select ?: {
+            this.select()
+        }.takeIf { selectAll != null && showSelectMenu }
+
+        super.showEditMenuAtRect(
+            targetRect = targetRect,
+            copy = copy,
+            cut = cut,
+            paste = paste,
+            select = patchedSelect,
+            selectAll = selectAll,
+            customActions = customActions,
+        )
     }
 
-    override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
-        input?.onKeyboardPresses(presses)
-        super.pressesEnded(presses, withEvent)
+    private val showSelectMenu: Boolean
+        get() = input.getSelectedTextRange()?.length == 0 && input.hasText()
+
+    private fun select() {
+        selectionWillChange()
+        input.selectTextNearCursor()
+        selectionDidChange()
     }
 
     /**
@@ -128,7 +150,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uikeyinput/1614457-hastext
      */
     override fun hasText(): Boolean {
-        return input?.hasText() ?: false
+        return input.hasText()
     }
 
     /**
@@ -138,7 +160,7 @@ internal class ComposeTextInputView(
      * @param text A string object representing the character typed on the system keyboard.
      */
     override fun insertText(text: String) {
-        input?.insertText(text)
+        input.insertText(text)
     }
 
     /**
@@ -147,7 +169,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uikeyinput/1614572-deletebackward
      */
     override fun deleteBackward() {
-        input?.deleteBackward()
+        input.deleteBackward()
     }
 
     override fun inputDelegate(): UITextInputDelegateProtocol? {
@@ -166,7 +188,7 @@ internal class ComposeTextInputView(
      */
     override fun textInRange(range: UITextRange): String? {
         val textRange = range.toTextRange() ?: return null
-        return input?.textInRange(textRange)
+        return input.textInRange(textRange)
     }
 
     /**
@@ -177,12 +199,12 @@ internal class ComposeTextInputView(
      */
     override fun replaceRange(range: UITextRange, withText: String) {
         val textRange = range.toTextRange() ?: return
-        input?.replaceRange(textRange, withText)
+        input.replaceRange(textRange, withText)
     }
 
     override fun setSelectedTextRange(selectedTextRange: UITextRange?) {
         val range = selectedTextRange?.toTextRange()
-        input?.setSelectedTextRange(range)
+        input.setSelectedTextRange(range)
     }
 
     /**
@@ -193,7 +215,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uitextinput/1614541-selectedtextrange
      */
     override fun selectedTextRange(): UITextRange? {
-        return input?.getSelectedTextRange()?.toUITextRange()
+        return input.getSelectedTextRange()?.toUITextRange()
     }
 
     /**
@@ -205,7 +227,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uitextinput/1614489-markedtextrange
      */
     override fun markedTextRange(): UITextRange? {
-        return input?.markedTextRange()?.toUITextRange()
+        return input.markedTextRange()?.toUITextRange()
     }
 
     override fun setMarkedTextStyle(markedTextStyle: Map<Any?, *>?) {
@@ -226,12 +248,12 @@ internal class ComposeTextInputView(
      * This range is always relative to markedText.
      */
     override fun setMarkedText(markedText: String?, selectedRange: CValue<NSRange>) {
-        val (locationRelative, lengthRelative) = selectedRange.useContents {
-            location.toInt() to length.toInt()
+        val relativeTextRange = selectedRange.useContents {
+            val loc = location.toInt()
+            TextRange(loc, loc + length.toInt())
         }
-        val relativeTextRange = TextRange(locationRelative, locationRelative + lengthRelative)
 
-        input?.setMarkedText(markedText, relativeTextRange)
+        input.setMarkedText(markedText, relativeTextRange)
     }
 
     /**
@@ -240,7 +262,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uitextinput/1614512-unmarktext
      */
     override fun unmarkText() {
-        input?.unmarkText()
+        input.unmarkText()
     }
 
     override fun beginningOfDocument(): UITextPosition {
@@ -252,7 +274,7 @@ internal class ComposeTextInputView(
      * https://developer.apple.com/documentation/uikit/uitextinput/1614555-endofdocument
      */
     override fun endOfDocument(): UITextPosition {
-        return TextInputPosition(input?.endOfDocument() ?: 0)
+        return TextInputPosition(input.endOfDocument())
     }
 
     /**
@@ -281,7 +303,6 @@ internal class ComposeTextInputView(
         offset: NSInteger
     ): UITextPosition? {
         val p = (position as? TextInputPosition)?.position ?: return null
-        val input = input ?: return null
         return input.positionFromPosition(position = p, offset = offset.toInt())?.let {
             TextInputPosition(it)
         }
@@ -292,7 +313,6 @@ internal class ComposeTextInputView(
         offset: NSInteger
     ): UITextPosition? {
         val p = (position as? TextInputPosition)?.position ?: return null
-        val input = input ?: return null
         return input.verticalPositionFromPosition(position = p, verticalOffset = offset.toInt())
             ?.let { TextInputPosition(it) }
     }
@@ -408,15 +428,27 @@ internal class ComposeTextInputView(
         return this
     }
 
-    override fun keyboardType(): UIKeyboardType = inputTraits.keyboardType()
-    override fun keyboardAppearance(): UIKeyboardAppearance = inputTraits.keyboardAppearance()
-    override fun returnKeyType(): UIReturnKeyType = inputTraits.returnKeyType()
-    override fun textContentType(): UITextContentType = inputTraits.textContentType()
-    override fun isSecureTextEntry(): Boolean = inputTraits.isSecureTextEntry()
-    override fun enablesReturnKeyAutomatically(): Boolean = inputTraits.enablesReturnKeyAutomatically()
-    override fun autocapitalizationType(): UITextAutocapitalizationType = inputTraits.autocapitalizationType()
-    override fun autocorrectionType(): UITextAutocorrectionType = inputTraits.autocorrectionType()
-    override fun writingToolsBehavior(): UIWritingToolsBehavior = inputTraits.writingToolsBehavior()
+    override fun inputView(): UIView? = input.inputTraits.inputView()
+    override fun inputAccessoryView(): UIView? = input.inputTraits.inputAccessoryView()
+    override fun keyboardType(): UIKeyboardType = input.inputTraits.keyboardType()
+    override fun keyboardAppearance(): UIKeyboardAppearance = input.inputTraits.keyboardAppearance()
+    override fun returnKeyType(): UIReturnKeyType = input.inputTraits.returnKeyType()
+    override fun textContentType(): UITextContentType = input.inputTraits.textContentType()
+    override fun isSecureTextEntry(): Boolean = input.inputTraits.isSecureTextEntry()
+    override fun enablesReturnKeyAutomatically(): Boolean =
+        input.inputTraits.enablesReturnKeyAutomatically()
+
+    override fun autocapitalizationType(): UITextAutocapitalizationType =
+        input.inputTraits.autocapitalizationType()
+
+    override fun autocorrectionType(): UITextAutocorrectionType =
+        input.inputTraits.autocorrectionType()
+
+    override fun spellCheckingType(): UITextSpellCheckingType =
+        input.inputTraits.spellCheckingType()
+
+    override fun writingToolsBehavior(): UIWritingToolsBehavior =
+        input.inputTraits.writingToolsBehavior()
 
     /**
      * Call when something changes in text data
@@ -446,7 +478,9 @@ internal class ComposeTextInputView(
         _inputDelegate?.selectionDidChange(this)
     }
 
-    override fun isUserInteractionEnabled(): Boolean = false
+    override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
+        return null
+    }
 
     override fun editMenuDelay(): Double =
         doubleTapTimeoutMillis.milliseconds.toDouble(DurationUnit.SECONDS)
@@ -456,7 +490,7 @@ internal class ComposeTextInputView(
     fun isTextMenuShown() = isEditMenuShown
 
     private val _tokenizer = TextInputStringTokenizer(textInput = this) {
-        input?.let { it.textInRange(TextRange(0, it.endOfDocument())) }
+        input.textInRange(TextRange(0, input.endOfDocument()))
     }
     override fun tokenizer(): UITextInputTokenizerProtocol = _tokenizer
 }

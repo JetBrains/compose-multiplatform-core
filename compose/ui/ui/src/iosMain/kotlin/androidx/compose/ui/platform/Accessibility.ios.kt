@@ -24,17 +24,17 @@ import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.accessibility.AccessibilityScrollEventResult
+import androidx.compose.ui.platform.accessibility.accessibilityAttributedValue
 import androidx.compose.ui.platform.accessibility.accessibilityCustomActions
 import androidx.compose.ui.platform.accessibility.accessibilityTraits
-import androidx.compose.ui.platform.accessibility.accessibilityValue
 import androidx.compose.ui.platform.accessibility.allScrollableParentNodeIds
+import androidx.compose.ui.platform.accessibility.attributedContentDescription
 import androidx.compose.ui.platform.accessibility.canBeAccessibilityElement
 import androidx.compose.ui.platform.accessibility.canScroll
-import androidx.compose.ui.platform.accessibility.contentDescription
 import androidx.compose.ui.platform.accessibility.isRTL
 import androidx.compose.ui.platform.accessibility.isScreenReaderFocusable
 import androidx.compose.ui.platform.accessibility.linkTag
-import androidx.compose.ui.platform.accessibility.linkText
+import androidx.compose.ui.platform.accessibility.linkAttributedString
 import androidx.compose.ui.platform.accessibility.scrollIfPossible
 import androidx.compose.ui.platform.accessibility.scrollToCenterRectIfNeeded
 import androidx.compose.ui.platform.accessibility.sortFlattenChildren
@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.toDpOffset
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import androidx.compose.ui.window.DisplayLinkListener
@@ -63,6 +65,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.native.ref.WeakReference
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -100,9 +105,14 @@ import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSize
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreGraphics.CGSizeZero
+import platform.Foundation.NSAttributedString
+import platform.Foundation.NSMutableAttributedString
+import platform.Foundation.create
 import platform.Foundation.NSNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSSelectorFromString
+import platform.Foundation.appendAttributedString
+import platform.Foundation.length
 import platform.QuartzCore.CACurrentMediaTime
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIAccessibilityAnnouncementNotification
@@ -162,10 +172,10 @@ private sealed interface AccessibilityNode {
     val isAccessibilityElement: Boolean
     val semanticsNode: SemanticsNode
 
-    val contentDescription: String? get() = null
+    val attributedContentDescription: List<NSAttributedString> get() = emptyList()
     val shouldMergeDescription: Boolean get() = false
     val accessibilityHint: String? get() = null
-    val accessibilityValue: String? get() = null
+    val accessibilityAttributedValue: NSAttributedString? get() = null
     val accessibilityTraits: UIAccessibilityTraits get() = UIAccessibilityTraitNone
     val accessibilityContainerType: UIAccessibilityContainerType
         get() = UIAccessibilityContainerTypeNone
@@ -228,12 +238,11 @@ private sealed interface AccessibilityNode {
                 it.isAccessibilityFocusable = ::isBeyondBoundsOrFocusable
             }
 
-        override val contentDescription: String?
-            get() = semanticsNode.contentDescription
+        override val attributedContentDescription: List<NSAttributedString>
+            get() = semanticsNode.attributedContentDescription
 
         override val shouldMergeDescription: Boolean
-            get() = semanticsNode.unmergedConfig.isMergingSemanticsOfDescendants &&
-                semanticsNode.canBeAccessibilityElement()
+            get() = semanticsNode.canBeAccessibilityElement()
 
         override val accessibilityIdentifier: String?
             get() = cachedConfig.getOrNull(SemanticsProperties.TestTag)
@@ -248,8 +257,8 @@ private sealed interface AccessibilityNode {
         override val accessibilityTraits: UIAccessibilityTraits
             get() = cachedConfig.accessibilityTraits()
 
-        override val accessibilityValue: String?
-            get() = cachedConfig.accessibilityValue()
+        override val accessibilityAttributedValue: NSAttributedString?
+            get() = cachedConfig.accessibilityAttributedValue()
 
         override fun accessibilityActivate(): Boolean {
             if (!semanticsNode.isValid) {
@@ -302,7 +311,7 @@ private sealed interface AccessibilityNode {
             }
 
             val frame = semanticsNode.boundsInWindow
-            val approximateScrollAnimationDuration = 350L
+            val approximateScrollAnimationDuration = 350.milliseconds
 
             val result = semanticsNode.scrollIfPossible(direction)
             return if (result != null) {
@@ -427,12 +436,12 @@ private sealed interface AccessibilityNode {
 private class CachedAccessibilityPropertyKey<V>
 
 private object CachedAccessibilityPropertyKeys {
-    val accessibilityLabel = CachedAccessibilityPropertyKey<String?>()
+    val accessibilityAttributedLabel = CachedAccessibilityPropertyKey<NSAttributedString?>()
     val accessibilityIdentifier = CachedAccessibilityPropertyKey<String?>()
     val accessibilityHint = CachedAccessibilityPropertyKey<String?>()
     val accessibilityCustomActions = CachedAccessibilityPropertyKey<List<UIAccessibilityCustomAction>>()
     val accessibilityTraits = CachedAccessibilityPropertyKey<UIAccessibilityTraits>()
-    val accessibilityValue = CachedAccessibilityPropertyKey<String?>()
+    val accessibilityAttributedValue = CachedAccessibilityPropertyKey<NSAttributedString?>()
     val accessibilityElements = CachedAccessibilityPropertyKey<List<Any>>()
 }
 
@@ -554,7 +563,7 @@ private class AccessibilityElement(
     private val scrollableProtocol = objc_getProtocol("UIFocusItemScrollableContainer")!!
     override fun conformsToProtocol(aProtocol: Protocol?): Boolean {
         if (protocol_isEqual(proto = aProtocol, other = scrollableProtocol)) {
-            return node.canScroll
+            return getIfAlive { node.canScroll } ?: false
         }
         return super.conformsToProtocol(aProtocol)
     }
@@ -570,14 +579,14 @@ private class AccessibilityElement(
 
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
-        children.forEach { it.setAccessibilityContainer(this) }
+        children.fastForEach { it.setAccessibilityContainer(this) }
         if (available(OS.Ios to OSVersion(major = 17))) {
             setAutomationElements(children + nodeSemanticsElements())
         }
     }
 
     private fun nodeSemanticsElements(): List<Any> =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityElements) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityElements, emptyList()) {
             listOfNotNull(node.accessibilityInteropView?.also {
                 it.actualAccessibilityContainer = this
             })
@@ -596,7 +605,7 @@ private class AccessibilityElement(
         if (available(OS.Ios to OSVersion(major = 17))) {
             setAutomationElements(children + nodeSemanticsElements())
         }
-        children.forEach { it.setAccessibilityContainer(this) }
+        children.fastForEach { it.setAccessibilityContainer(this) }
         this.cachedProperties.clear()
     }
 
@@ -614,17 +623,23 @@ private class AccessibilityElement(
         cachedProperties.clear()
     }
 
-    /**
-     * Returns the value for the given [key] from the cache if it's present, otherwise computes the
-     * value using the given [block] and caches it.
-     */
-    @Suppress("UNCHECKED_CAST") // cast is safe because the set value is constrained by the key T
-    private inline fun <T> getOrElse(
+    private inline fun <T> getCachedIfAlive(
         key: CachedAccessibilityPropertyKey<T>,
-        crossinline block: () -> T
-    ): T {
+        defaultValue: T,
+        crossinline getValue: () -> T
+    ): T = getCachedIfAlive(key, getValue) ?: defaultValue
+
+    @Suppress("UNCHECKED_CAST") // cast is safe because the set value is constrained by the key T
+    private inline fun <T> getCachedIfAlive(
+        key: CachedAccessibilityPropertyKey<T>,
+        crossinline getValue: () -> T
+    ): T? {
+        if (!isAlive) {
+            return null
+        }
+
         val value = cachedProperties.getOrElse(key) {
-            val newValue = block()
+            val newValue = getValue()
             cachedProperties[key] = newValue
             newValue
         }
@@ -632,100 +647,97 @@ private class AccessibilityElement(
         return value as T
     }
 
-    override fun accessibilityLabel(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityLabel) {
-            makeAccessibilityLabel()
+    private inline fun <T> getIfAlive(crossinline block: () -> T?): T? {
+        if (!isAlive) {
+            return null
         }
+        return block()
+    }
 
-    override fun accessibilityElementDidBecomeFocused() {
+    private inline fun runIfAlive(crossinline block: () -> Unit) {
         if (!isAlive) {
             return
         }
+        return block()
+    }
 
+    override fun accessibilityLabel(): String? = accessibilityAttributedLabel()?.string
+
+    override fun accessibilityAttributedLabel(): NSAttributedString? =
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityAttributedLabel) {
+            makeAccessibilityAttributedLabel()
+        }
+
+    override fun accessibilityValue(): String? = accessibilityAttributedValue()?.string
+
+    override fun accessibilityAttributedValue(): NSAttributedString? =
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityAttributedValue) {
+            node.accessibilityAttributedValue
+        }
+
+    override fun accessibilityElementDidBecomeFocused() = runIfAlive {
         node.accessibilityElementDidBecomeFocused()
     }
 
-    override fun accessibilityElementDidLoseFocus() {
+    override fun accessibilityElementDidLoseFocus() = runIfAlive {
         node.accessibilityElementDidLoseFocus()
     }
 
-    override fun accessibilityActivate(): Boolean {
-        if (!isAlive) {
-            return false
-        }
+    override fun accessibilityActivate(): Boolean = getIfAlive {
+        node.accessibilityActivate()
+    } ?: false
 
-        return node.accessibilityActivate()
-    }
-
-    override fun accessibilityIncrement() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityIncrement() = runIfAlive {
         node.accessibilityIncrement()
     }
 
-    override fun accessibilityDecrement() {
-        if (!isAlive) {
-            return
-        }
-
+    override fun accessibilityDecrement() = runIfAlive {
         node.accessibilityDecrement()
     }
 
-    override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean {
-        if (!isAlive) {
-            return false
-        }
+    override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean =
+        getIfAlive {
+            node.accessibilityScroll(direction)
+        } ?: false
 
-        return node.accessibilityScroll(direction)
-    }
-
-    override fun isAccessibilityElement(): Boolean {
+    override fun isAccessibilityElement(): Boolean = getIfAlive {
         // Node visibility changes don't trigger accessibility semantic recalculation.
         // This value should not be cached. See [SemanticsNode.isScreenReaderFocusable()]
-        return isAlive && node.isAccessibilityElement
-    }
+        node.isAccessibilityElement
+    } ?: false
 
     override fun accessibilityIdentifier(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityIdentifier) {
             node.accessibilityIdentifier
         }
 
     override fun accessibilityHint(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityHint) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityHint) {
             node.accessibilityHint
         }
 
     override fun accessibilityCustomActions(): List<UIAccessibilityCustomAction> =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityCustomActions) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityCustomActions, emptyList()) {
             node.accessibilityCustomActions
         }
 
     override fun accessibilityTraits(): UIAccessibilityTraits =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityTraits) {
+        getCachedIfAlive(CachedAccessibilityPropertyKeys.accessibilityTraits, UIAccessibilityTraitNone) {
             node.accessibilityTraits
         }
 
-    override fun accessibilityValue(): String? =
-        getOrElse(CachedAccessibilityPropertyKeys.accessibilityValue) {
-            node.accessibilityValue
-        }
-
-    override fun accessibilityPerformEscape(): Boolean {
-        if (!isAlive) {
-            return false
-        }
-
-        return if (node.accessibilityPerformEscape()) {
+    override fun accessibilityPerformEscape(): Boolean = getIfAlive {
+        if (node.accessibilityPerformEscape()) {
             true
         } else {
             super.accessibilityPerformEscape()
         }
-    }
+    } ?: false
 
     override fun accessibilityContainerType(): UIAccessibilityContainerType =
-        node.accessibilityContainerType
+        getIfAlive {
+            node.accessibilityContainerType
+        } ?: UIAccessibilityContainerTypeNone
 
     private fun debugContainmentChain() = debugContainmentChain(this)
 
@@ -746,16 +758,12 @@ private class AccessibilityElement(
 
     // UIFocusItemProtocol & UIFocusItemContainerProtocol
 
-    override fun canBecomeFocused(): Boolean = isAlive && node.canBecomeFocused
+    override fun canBecomeFocused(): Boolean = getIfAlive { node.canBecomeFocused } ?: false
 
     override fun didUpdateFocusInContext(
         context: UIFocusUpdateContext,
         withAnimationCoordinator: UIFocusAnimationCoordinator
-    ) {
-        if (!isAlive) {
-            return
-        }
-
+    ) = runIfAlive {
         if (context.previouslyFocusedItem === this) {
             node.didResignFocused()
         }
@@ -789,7 +797,7 @@ private class AccessibilityElement(
         accessibilityContainer as? UIFocusEnvironmentProtocol
 
     override fun preferredFocusEnvironments(): List<*> =
-        accessibilityElements?.mapNotNull { it as? UIFocusEnvironmentProtocol } ?: emptyList<Any>()
+        accessibilityElements?.filterIsInstance<UIFocusEnvironmentProtocol>() ?: emptyList<Any>()
 
     private var updateFocusScheduled = false
     override fun setNeedsFocusUpdate() {
@@ -822,17 +830,21 @@ private class AccessibilityElement(
 
     override fun isTransparentFocusItem(): Boolean = true
 
-    override fun drawsFocusRingWhenChildrenFocused(): Boolean = node.canScroll
+    override fun drawsFocusRingWhenChildrenFocused(): Boolean =
+        getIfAlive { node.canScroll } ?: false
 
     // Scrolling
 
-    override fun visibleSize(): CValue<CGSize> = node.scrollVisibleSize
+    override fun visibleSize(): CValue<CGSize> =
+        getIfAlive { node.scrollVisibleSize } ?: CGSizeZero.readValue()
 
-    override fun contentSize(): CValue<CGSize> = node.scrollContentSize
+    override fun contentSize(): CValue<CGSize> =
+        getIfAlive { node.scrollContentSize } ?: CGSizeZero.readValue()
 
-    override fun contentOffset(): CValue<CGPoint> = node.scrollContentOffset
+    override fun contentOffset(): CValue<CGPoint> =
+        getIfAlive { node.scrollContentOffset } ?: CGPointZero.readValue()
 
-    override fun setContentOffset(contentOffset: CValue<CGPoint>) {
+    override fun setContentOffset(contentOffset: CValue<CGPoint>) = runIfAlive {
         val currentContentOffset = contentOffset()
         val delta = CGPointMake(
             x = contentOffset.useContents { x } - currentContentOffset.useContents { x },
@@ -849,7 +861,7 @@ private class AccessibilityElement(
             val timerJob = launch {
                 while (true) {
                     frameClock.sendFrame(CACurrentMediaTime().toNanoSeconds())
-                    delay(1)
+                    delay(1.milliseconds)
                 }
             }
             node.scrollBy(delta)
@@ -1273,7 +1285,7 @@ internal class AccessibilityMediator(
                     // Estimated delay between the iOS Accessibility Engine sync intervals.
                     // There is no reason to post change notifications more frequently because the
                     // iOS Accessibility Engine will ignore them.
-                    delay(100)
+                    delay(100.milliseconds)
                 }
             }
         }
@@ -1298,7 +1310,7 @@ internal class AccessibilityMediator(
             // Allow some time for the iOS Accessibility Engine to read the updated accessibility
             // elements tree. If no new reads occur during this time, it is assumed that iOS
             // Accessibility has been disabled and resources can be cleaned up.
-            delay(2000)
+            delay(2.seconds)
 
             cleanUp()
         }
@@ -1333,7 +1345,7 @@ internal class AccessibilityMediator(
 
     fun notifyScrollCompleted(
         scrollResult: AccessibilityScrollEventResult,
-        delay: Long,
+        delay: Duration,
         focusedNode: SemanticsNode,
         focusedRectInWindow: Rect
     ) {
@@ -1407,7 +1419,7 @@ internal class AccessibilityMediator(
         focusedScrollableParentsIdsUpdateJob = coroutineScope.launch {
             // Throttle the recalculation of scrollable parent node IDs to avoid unnecessary
             // reloading of the accessibility tree when the focusMode changes quickly.
-            delay(10)
+            delay(10.milliseconds)
             val scrollableElementsIds = mutableSetOf<Int>()
             val isInHierarchy = iterateAccessibilityElementHierarchy(focusedElement) {
                 if (it.node.semanticsNode.canScroll) {
@@ -1544,11 +1556,12 @@ internal class AccessibilityMediator(
 
             fun makeSemanticsNode(children: List<AccessibilityElement>): AccessibilityElement {
                 val isLiveRegion = node.unmergedConfig.contains(SemanticsProperties.LiveRegion)
-                val (oldLabel, oldValue) = if (isLiveRegion) {
+                var oldLabel: String?  = null
+                var oldValue: String? = null
+                if (isLiveRegion) {
                     val element = accessibilityElementsMap[node.semanticsKey]
-                    element?.accessibilityLabel() to element?.accessibilityValue()
-                } else {
-                    Pair(null, null)
+                    oldLabel = element?.accessibilityLabel()
+                    oldValue = element?.accessibilityValue()
                 }
 
                 val element = createOrUpdateAccessibilityElement(
@@ -1569,7 +1582,7 @@ internal class AccessibilityMediator(
                     if ((newLabel != null || newValue != null) &&
                         (oldLabel != newLabel || oldValue != newValue)
                     ) {
-                        val announcement = listOfNotNull(newLabel, newValue).joinToString(", ")
+                        val announcement = listOfNotNull(newLabel, newValue).fastJoinToString(", ")
                         lastLiveRegionAnnouncement = AccessibilityNotification(
                             UIAccessibilityAnnouncementNotification,
                             message = announcement
@@ -1597,13 +1610,13 @@ internal class AccessibilityMediator(
                 beforeChildren.sortWith(BeyondBoundsComparator(node.isRTL))
                 afterChildren.sortWith(BeyondBoundsComparator(node.isRTL))
 
-                val visibleElements = sortedChildren.map {
+                val visibleElements = sortedChildren.fastMap {
                     traverseChildren(it, isBeyondBounds = isBeyondBounds, flatten = flattenChildren, container = node)
                 }
-                val beforeElements = beforeChildren.map {
+                val beforeElements = beforeChildren.fastMap {
                     traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
-                val afterElements = afterChildren.map {
+                val afterElements = afterChildren.fastMap {
                     traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
 
@@ -1825,7 +1838,7 @@ internal class AccessibilityMediator(
             ?.let { findChildAccessibilityElement(it) }
             ?.let { return it }
 
-        semanticsNode.children.forEach { child ->
+        semanticsNode.children.fastForEach { child ->
             findAccessibilityElementInSemanticsHierarchy(semanticsNode = child)?.let { return it }
         }
 
@@ -2023,16 +2036,22 @@ private class AccessibilityFocusedElementObserver(
     }
 }
 
-private fun AccessibilityElement.makeAccessibilityLabel(): String? {
+private fun AccessibilityElement.makeAccessibilityAttributedLabel(): NSAttributedString? {
     val contentDescription = if (node.shouldMergeDescription) {
         val collector = NodeDescriptionCollector()
         collectContentDescription(collector)
-        collector.getText().takeIf { it.isNotBlank() }
+        collector.getAttributedString()
     } else {
         null
     }
 
-    return contentDescription ?: node.contentDescription ?: node.semanticsNode.linkText()
+    if (contentDescription != null) {
+        return contentDescription
+    }
+
+    return contentDescription
+        ?: NodeDescriptionCollector.collectInPlace(node.attributedContentDescription)
+        ?: node.semanticsNode.linkAttributedString()
 }
 
 /**
@@ -2043,29 +2062,55 @@ private fun AccessibilityElement.makeAccessibilityLabel(): String? {
 private class NodeDescriptionCollector {
     companion object {
         private const val MAX_TEXT_COLLECT_NODES = 5
+        @OptIn(BetaInteropApi::class)
+        private val separator = NSAttributedString.create(string = ", ")
+
+        fun append(nodes: List<NSAttributedString>, intoString: NSMutableAttributedString) {
+            nodes.forEach {
+                if (it.length > 0UL) {
+                    if (intoString.length > 0UL) {
+                        intoString.appendAttributedString(separator)
+                    }
+                    intoString.appendAttributedString(it)
+                }
+            }
+        }
+
+        fun collectInPlace(nodes: List<NSAttributedString>): NSMutableAttributedString? {
+            if (nodes.isEmpty()) {
+                return null
+            }
+            val string = NSMutableAttributedString()
+            append(nodes, string)
+            return string.takeIf { it.length > 0UL }
+        }
     }
-    private val text = StringBuilder()
+    private val string = NSMutableAttributedString()
+
     private var numNodes = 0
+    private var collected = false
 
     fun collect(node: AccessibilityElement): Boolean {
+        assert(!collected) { "NodeDescriptionCollector must not be mutated after collecting" }
         if (numNodes >= MAX_TEXT_COLLECT_NODES) {
             return false
         }
-        node.node.contentDescription
-            ?.takeIf { it.isNotBlank() }
-            ?.let {
+        node.node.attributedContentDescription.let {
+            if (it.isNotEmpty()) {
                 numNodes++
-                if (text.isNotEmpty()) {
-                    text.append(", ")
-                }
-                text.append(it)
+                append(it, string)
             }
+        }
 
         return true
     }
 
-    fun getText(): String {
-        return text.toString()
+    fun getAttributedString(): NSAttributedString? {
+        collected = true
+        if (numNodes == 0) {
+            return null
+        }
+        return string
     }
 }
 

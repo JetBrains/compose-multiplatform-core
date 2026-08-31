@@ -23,17 +23,15 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk = 36
+        compileSdk { version = release(37) }
         namespace = "androidx.lifecycle.viewmodel.navigation3"
     }
     desktop()
@@ -96,9 +94,12 @@ androidXMultiplatform {
 }
 
 dependencies.constraints {
-    // TODO(mgalhardo): Add constraints to properly migrate from the JetBrains fork.
-    //  We need to prevent symbol duplication with old versions of the fork.
-    //  Once the fork publishes a version that redirects to this artifact.
+    // Prevents symbols duplication with old versions of JetBrains' fork.
+    // Starting with Compose Multiplatform 1.11.0, this module is published as empty
+    // artifact with dependency to this androidx module.
+    commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0-beta01") {
+        because "prevents symbols duplication"
+    }
 }
 
 androidx {

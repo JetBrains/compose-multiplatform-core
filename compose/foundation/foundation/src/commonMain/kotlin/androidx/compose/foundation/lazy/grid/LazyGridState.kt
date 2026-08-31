@@ -38,7 +38,6 @@ import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollDeltaBetweenPasses
 import androidx.compose.foundation.lazy.layout.ObservableScopeInvalidator
 import androidx.compose.foundation.lazy.layout.animateScrollToItem
-import androidx.compose.foundation.lazy.singleAxisViewportSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.annotation.FrequentlyChangingValue
@@ -231,7 +230,7 @@ constructor(
         @FrequentlyChangingValue get() = scrollPosition.scrollOffset
 
     /** Backing state for [layoutInfo] */
-    private val layoutInfoState = mutableStateOf(EmptyLazyGridLayoutInfo, neverEqualPolicy())
+    internal val layoutInfoState = mutableStateOf(EmptyLazyGridLayoutInfo, neverEqualPolicy())
 
     /**
      * The object of [LazyGridLayoutInfo] calculated during the last layout pass. For example, you
@@ -395,7 +394,14 @@ constructor(
     private val _scrollIndicatorState =
         object : ScrollIndicatorState {
             override val scrollOffset: Int
-                get() = calculateScrollOffset()
+                get() =
+                    if (layoutInfo.reverseLayout) {
+                        layoutInfo.calculateContentSize() -
+                            layoutInfo.singleAxisViewportSize -
+                            calculateScrollOffset()
+                    } else {
+                        calculateScrollOffset()
+                    }
 
             override val contentSize: Int
                 get() = layoutInfo.calculateContentSize()
@@ -790,4 +796,5 @@ private val EmptyLazyGridLayoutInfo =
         coroutineScope = CoroutineScope(EmptyCoroutineContext),
         prefetchInfoRetriever = { emptyList() },
         lineIndexProvider = { -1 },
+        stickingItemsCombinedSize = 0,
     )

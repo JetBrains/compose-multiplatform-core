@@ -52,6 +52,7 @@ import org.junit.Test
 
 class TextSelectionTests {
 
+    @Suppress("DEPRECATION")
     @get:Rule
     val rule = createComposeRule()
 
@@ -70,7 +71,6 @@ class TextSelectionTests {
         return this
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.textFieldSemanticInteraction(
         initialValue: String = "",
         semanticNodeContext: SemanticsNodeInteraction.(state: MutableState<TextFieldValue>) -> SemanticsNodeInteraction
@@ -98,7 +98,6 @@ class TextSelectionTests {
     }
 
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectLineStart(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -115,7 +114,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectTextStart(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -129,7 +127,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectTextEnd(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -145,7 +142,6 @@ class TextSelectionTests {
                 }
         }
     }
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectLineEnd(keyboardInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("line 1\nline 2\nline 3\nline 4\nline 5") { state ->
             performKeyInput {
@@ -242,7 +238,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.deleteAllFromKeyBoard(
         initialText: String, deleteAllInteraction: KeyInjectionScope.() -> Unit
     ) {
@@ -268,7 +263,6 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     private fun DesktopPlatform.selectAllTest(selectAllInteraction: KeyInjectionScope.() -> Unit) {
         textFieldSemanticInteraction("Select this text") { state ->
             performKeyInput(selectAllInteraction)
@@ -301,19 +295,17 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInSelectionContainerSelectsWord() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
 
         val text = "word1 word2"
-        var selection by mutableStateOf<Selection?>(null)
+        val selectionState = SelectionState()
         lateinit var textLayout: TextLayoutResult
         rule.setContent {
             SelectionContainer(
+                state = selectionState,
                 modifier = Modifier.fillMaxSize(),
-                selection = selection,
-                onSelectionChange = { selection = it }
             ) {
                 BasicText(
                     text = text,
@@ -333,7 +325,7 @@ class TextSelectionTests {
                 rightClick(firstCharBounds.center)
             }
 
-            assertEquals(expected = "word1", actual = selection.selectedText(text))
+            assertEquals(expected = "word1", actual = selectionState.selection.selectedText(text))
 
             // Left-click to close the context menu
             performMouseInput {
@@ -345,11 +337,10 @@ class TextSelectionTests {
                 val firstCharInSecondWordBounds = textLayout.getBoundingBox(6)
                 rightClick(firstCharInSecondWordBounds.center)
             }
-            assertEquals(expected = "word2", actual = selection.selectedText(text))
+            assertEquals(expected = "word2", actual = selectionState.selection.selectedText(text))
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInTextFieldSelectsWord() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
@@ -396,16 +387,14 @@ class TextSelectionTests {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsWithoutTextDoesNotCrash() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
 
-        var selection by mutableStateOf<Selection?>(null)
+        val selectionState = SelectionState()
         rule.setContent {
             SelectionContainer(
-                selection = selection,
-                onSelectionChange = { selection = it }
+                state = selectionState
             ) {
                 Box(
                     modifier = Modifier
@@ -418,20 +407,18 @@ class TextSelectionTests {
         rule.onNodeWithTag("selectable").performMouseInput {
             rightClick(center)
         }
-        assertNull(selection)
+        assertNull(selectionState.selection)
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsAtEmptySpaceDoesNotCrash() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
 
-        var selection by mutableStateOf<Selection?>(null)
+        val selectionState = SelectionState()
         val text = "Hello, Compose"
         rule.setContent {
             SelectionContainer(
-                selection = selection,
-                onSelectionChange = { selection = it }
+                state = selectionState
             ) {
                 Box(
                     modifier = Modifier
@@ -462,24 +449,22 @@ class TextSelectionTests {
                         )
                     )
                 }
-                assertTrue(selection.selectedText(text).isNullOrEmpty())
+                assertTrue(selectionState.selection.selectedText(text).isNullOrEmpty())
             }
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInSelectionDoesNotCancelExistingSelection() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)
 
         val text = "word1 word2"
-        var selection by mutableStateOf<Selection?>(null)
+        val selectionState = SelectionState()
         lateinit var textLayout: TextLayoutResult
         rule.setContent {
             SelectionContainer(
+                state = selectionState,
                 modifier = Modifier.fillMaxSize(),
-                selection = selection,
-                onSelectionChange = { selection = it }
             ) {
                 BasicText(
                     text = text,
@@ -496,18 +481,17 @@ class TextSelectionTests {
             performMouseInput {
                 tripleClick(center)
             }
-            assertEquals(expected = text, actual = selection.selectedText(text))
+            assertEquals(expected = text, actual = selectionState.selection.selectedText(text))
 
             // Right-click first word; selection should not change
             performMouseInput {
                 val firstCharBounds = textLayout.getBoundingBox(0)
                 rightClick(firstCharBounds.center)
             }
-            assertEquals(expected = text, actual = selection.selectedText(text))
+            assertEquals(expected = text, actual = selectionState.selection.selectedText(text))
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun rightClickOnMacOsInTextFieldSelectionDoesNotCancelExistingSelection() {
         assumeTrue(DesktopPlatform.Current == DesktopPlatform.MacOS)

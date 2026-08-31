@@ -32,6 +32,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import androidx.testutils.CpuFrequencyChangeMetric
 import androidx.testutils.createCompilationParams
 import androidx.testutils.defaultComposeScrollingMetrics
 import org.junit.Test
@@ -89,13 +90,15 @@ class PokedexTransitionBenchmark(
         enableSharedTransitionScope: Boolean = this.enableSharedTransitionScope,
         enableSharedElementTransitions: Boolean = this.enableSharedElementTransitions,
         iterations: Int = HeroMacrobenchmarkDefaults.ITERATIONS,
-    ) =
+    ) {
+
         benchmarkRule.measureRepeated(
             packageName = POKEDEX_TARGET_PACKAGE_NAME,
             metrics =
                 defaultComposeScrollingMetrics() +
                     FrameTimingGfxInfoMetric() +
-                    transitionDurationMetrics,
+                    transitionDurationMetrics +
+                    CpuFrequencyChangeMetric(),
             compilationMode = compilationMode,
             iterations = iterations,
             setupBlock = {
@@ -126,6 +129,7 @@ class PokedexTransitionBenchmark(
                 waitForProgressBarAnimation = waitForProgressBarAnimation,
             )
         }
+    }
 
     private fun MacrobenchmarkScope.homeToDetailsAndBackAction(
         pokemonName: String,

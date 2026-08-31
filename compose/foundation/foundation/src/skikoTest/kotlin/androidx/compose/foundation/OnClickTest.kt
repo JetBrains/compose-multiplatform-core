@@ -30,6 +30,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isAltPressed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.FrameRecomposer
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -45,7 +46,7 @@ import kotlinx.coroutines.test.runTest
 
 @ExperimentalCoroutinesApi
 @OptIn(ExperimentalFoundationApi::class, InternalComposeUiApi::class)
-class OnClickTest {
+class OnClickTest : SkikoComposeTestBase() {
 
     private fun testClick(
         pointerMatcher: PointerMatcher,
@@ -82,7 +83,10 @@ class OnClickTest {
     @OptIn(ExperimentalFoundationApi::class, ExperimentalCoroutinesApi::class)
     @Test
     fun simpleClickWithoutMove() = runTest {
-        val scene = CanvasLayersComposeScene(coroutineContext = coroutineContext)
+        val frameRecomposer = FrameRecomposer(coroutineContext)
+        val scene = CanvasLayersComposeScene(
+            frameRecomposer = frameRecomposer,
+        )
         try {
             scene.size = IntSize(100, 100)
             scene.setContent {
@@ -105,6 +109,7 @@ class OnClickTest {
             )
         } finally {
             scene.close()
+            frameRecomposer.close()
         }
     }
 
@@ -166,6 +171,7 @@ class OnClickTest {
         assertThat(clicksCount).isEqualTo(2)
     }
 
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalTestApi::class)
     private fun testDoubleClick(
         pointerMatcher: PointerMatcher,
@@ -231,6 +237,7 @@ class OnClickTest {
     )
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     private fun testLongClick(
         pointerMatcher: PointerMatcher,
         button: PointerButton

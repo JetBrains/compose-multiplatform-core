@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.InternalComposeApi
@@ -25,6 +26,7 @@ import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -52,7 +54,6 @@ import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.exclude
-import androidx.compose.ui.platform.excludeWindowInsets
 import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
@@ -220,20 +221,22 @@ private fun DialogLayout(
     val layer = rememberComposeSceneLayer(focusable = true)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     val currentContent by rememberUpdatedState(content)
+    val parentCompositionContext = rememberCompositionContext()
     val graphicsContext = LocalGraphicsContext.current
 
     val animator = remember {
         DialogAppearanceController(
             layer = layer,
+            parentCompositionContext = parentCompositionContext,
             graphicsContext = graphicsContext,
-            properties = properties
+            properties = properties,
         )
     }
 
     animator.properties = properties
     var layerScope: CoroutineScope? = null
 
-    layer.Content {
+    layer.Content(parentCompositionContext) {
         layerScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {
             animator.onDialogShown()
@@ -246,16 +249,13 @@ private fun DialogLayout(
             containerSize = containerSize
         )
 
-        // TODO: remove exclude in favor of excludeWindowInsets https://youtrack.jetbrains.com/issue/CMP-9379
         LocalPlatformWindowInsets.current.exclude(
             safeInsets = properties.usePlatformInsets,
             ime = properties.useSoftwareKeyboardInset
         ) {
             Layout(
                 content = currentContent,
-                modifier = animator.modifier
-                    .then(modifier)
-                    .excludeWindowInsets(properties.usePlatformInsets, properties.useSoftwareKeyboardInset),
+                modifier = animator.modifier.then(modifier),
                 measurePolicy = measurePolicy
             )
         }
@@ -272,6 +272,7 @@ private fun DialogLayout(
 
 private class DialogAppearanceController(
     private val layer: ComposeSceneLayer,
+    private val parentCompositionContext: CompositionContext,
     private val graphicsContext: GraphicsContext,
     properties: DialogProperties,
 ) {
@@ -309,7 +310,7 @@ private class DialogAppearanceController(
     }
 
     fun hideDialogWithAnimation() {
-        layer.setContent {
+        layer.setContent(parentCompositionContext) {
             val containerSize = LocalWindowInfo.current.containerSize
             val measurePolicy = rememberDialogMeasurePolicy(
                 layer = layer,
@@ -394,7 +395,7 @@ private fun rememberDialogMeasurePolicy(
 ): MeasurePolicy {
     val platformInsets = properties.platformInsets
     return remember(layer, properties, containerSize, platformInsets) {
-        RootMeasurePolicy(
+        ComposeSceneLayerMeasurePolicy(
             platformInsets = platformInsets,
             usePlatformDefaultWidth = properties.usePlatformDefaultWidth
         ) { contentSize ->

@@ -28,14 +28,13 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     implementation("androidx.compose.runtime:runtime:1.2.1")
     implementation(project(":compose:ui:ui-text"))
     implementation(project(":compose:ui:ui-util"))
-    implementation("androidx.core:core:1.19.0-alpha01")
+    implementation("androidx.core:core:1.19.0-rc01")
 
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(libs.testCore)
@@ -56,6 +55,6 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk { version = release(37) }
     namespace = "androidx.compose.ui.text.googlefonts"
 }

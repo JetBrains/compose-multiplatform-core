@@ -46,13 +46,9 @@ import platform.UIKit.UITextStorageDirectionForward
 import platform.UIKit.UITextWritingDirection
 
 internal interface TextEditingDelegate {
-    var inputTraits: SkikoUITextInputTraits
-    
-    /**
-     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
-     * Erasure happens due to K/N not supporting Obj-C lightweight generics.
-     */
-    var onKeyboardPresses: (Set<*>) -> Unit
+    val isInteractive: Boolean
+
+    val inputTraits: SkikoUITextInputTraits
 
     fun onResignFocus()
 
@@ -220,8 +216,136 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
      * @param farthestInDirection A direction constant (left, right, up, or down).
      * @return The farthest position within the range in the given direction, or `null` if none.
      */
-    fun positionWithinRange(range: TextRange, farthestInDirection: PlatformTextLayoutDirection): Int?
+    fun positionWithinRange(range: TextRange, farthestInDirection: TextLayoutDirection): Int?
 }
+
+internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
+    override val isInteractive: Boolean = false
+
+    override val inputTraits: SkikoUITextInputTraits = EmptyInputTraits
+
+    override fun onResignFocus() = Unit
+
+    override fun beginFloatingCursor(offset: DpOffset) = Unit
+
+    override fun updateFloatingCursor(offset: DpOffset) = Unit
+
+    override fun endFloatingCursor() = Unit
+
+    override fun hasText(): Boolean = false
+
+    override fun insertText(text: String) = Unit
+
+    override fun deleteBackward() = Unit
+
+    override fun endOfDocument(): Int = 0
+
+    override fun getSelectedTextRange(): TextRange? = null
+
+    override fun setSelectedTextRange(range: TextRange?) = Unit
+
+    override fun selectAll() = Unit
+
+    override fun textInRange(range: TextRange): String? = null
+
+    override fun replaceRange(range: TextRange, text: String) = Unit
+
+    override fun setMarkedText(markedText: String?, selectedRange: TextRange) = Unit
+
+    override fun markedTextRange(): TextRange? = null
+
+    override fun unmarkText() = Unit
+
+    override fun positionFromPosition(position: Int, offset: Int): Int? = null
+
+    override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? = null
+
+    override fun caretDpRectForPosition(position: Int): DpRect? = null
+
+    override fun selectionDpRectsForRange(range: TextRange): List<TextInputSelectionRect> =
+        emptyList()
+
+    override fun firstSelectionRectForRange(range: TextRange): DpRect? = null
+
+    override fun closestPositionToPoint(point: DpOffset): Int? = null
+
+    override fun closestPositionToPoint(point: DpOffset, withinRange: TextRange): Int? = null
+
+    override fun characterRangeAtPoint(point: DpOffset): TextRange? = null
+
+    override fun positionWithinRange(
+        range: TextRange,
+        farthestInDirection: TextLayoutDirection
+    ): Int? = null
+}
+
+internal fun TextEditingDelegate.selectTextNearCursor() {
+    val selection = getSelectedTextRange() ?: return
+    val text = textInRange(TextRange(0, endOfDocument())) ?: return
+
+    val range = wordSelectionRangeForCursor(text, selection.start) ?: return
+    if (range == selection) return
+
+    setSelectedTextRange(range)
+}
+
+/**
+ * Computes the range that the "Select" edit action should select for a collapsed caret at
+ * [cursor]: The behavior must mimic iOS Select text field action:
+ *
+ * 1. If a visible (non-whitespace) character immediately follows the caret, the word that
+ *    character belongs to is selected.
+ * 2. Otherwise, if a word precedes the caret, that word is selected together with any space
+ *    characters between the word's end and the caret (newlines excluded).
+ * 3. Otherwise (no word precedes the caret), the run of space characters following the caret,
+ *    up to the first visible character, is selected (newlines excluded).
+ *
+ * Returns `null` if there is nothing to select.
+ */
+private fun wordSelectionRangeForCursor(text: String, cursor: Int): TextRange? {
+    // Condition 1
+    if (cursor < text.length && text[cursor].isVisibleForSelection()) {
+        return wordRangeContaining(text, cursor)
+    }
+
+    // Condition 2
+    var wordEnd = cursor
+    while (wordEnd > 0 && text[wordEnd - 1].isSelectableSpace()) {
+        wordEnd--
+    }
+    if (wordEnd > 0 && text[wordEnd - 1].isVisibleForSelection()) {
+        val wordStart = wordStartPreceding(text, wordEnd)
+        return TextRange(wordStart, cursor)
+    }
+
+    // Condition 3
+    var spacesEnd = cursor
+    while (spacesEnd < text.length && text[spacesEnd].isSelectableSpace()) {
+        spacesEnd++
+    }
+    return if (spacesEnd > cursor) TextRange(cursor, spacesEnd) else null
+}
+
+/** Returns the boundaries of the word containing the visible character at [offset]. */
+private fun wordRangeContaining(text: String, offset: Int): TextRange {
+    val iterator = BreakIterator.makeWordInstance()
+    iterator.setText(text)
+    val end = iterator.following(offset).takeIf { it != BreakIterator.DONE } ?: text.length
+    val start = iterator.preceding(end).takeIf { it != BreakIterator.DONE } ?: 0
+    return TextRange(start, end)
+}
+
+/** Returns the start boundary of the word that ends at [wordEnd]. */
+private fun wordStartPreceding(text: String, wordEnd: Int): Int {
+    val iterator = BreakIterator.makeWordInstance()
+    iterator.setText(text)
+    return iterator.preceding(wordEnd).takeIf { it != BreakIterator.DONE } ?: 0
+}
+
+private fun Char.isNewlineForSelection(): Boolean =
+    NSCharacterSet.newlineCharacterSet.characterIsMember(code.toUShort())
+private fun Char.isSelectableSpace(): Boolean = isWhitespace() && !isNewlineForSelection()
+private fun Char.isVisibleForSelection(): Boolean = !isWhitespace()
 
 internal class TextInputPosition(val position: Int = 0) : UITextPosition() {
     override fun description(): String {
@@ -384,8 +508,7 @@ internal class TextInputStringTokenizer(
             }
         } else {
             while (location > 0) {
-                if (string[location].isNewLineCharacter()) {
-                    location++
+                if (string[location - 1].isNewLineCharacter()) {
                     break
                 }
                 location--
@@ -401,15 +524,15 @@ internal class TextInputStringTokenizer(
 }
 
 // Kotlin wrapper for UITextLayoutDirection
-internal enum class PlatformTextLayoutDirection(val platform: UITextLayoutDirection) {
+internal enum class TextLayoutDirection(val platform: UITextLayoutDirection) {
     Left(UITextLayoutDirectionLeft),
     Right(UITextLayoutDirectionRight),
     Up(UITextLayoutDirectionUp),
     Down(UITextLayoutDirectionDown);
 
     companion object {
-        operator fun invoke(platform: UITextLayoutDirection): PlatformTextLayoutDirection? {
-            return entries.find { it.platform == platform }
+        operator fun invoke(uiTextLayoutDirection: UITextLayoutDirection): TextLayoutDirection? {
+            return entries.find { it.platform == uiTextLayoutDirection }
         }
     }
 }

@@ -27,12 +27,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.isLinux
 import androidx.compose.ui.isMacOs
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.topLeft
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.window.assertCoordinatesApproximatelyEqual
+import androidx.compose.ui.window.assertSizesApproximatelyEqual
 import androidx.compose.ui.window.runApplicationTest
 import androidx.compose.ui.window.toDpInsets
 import androidx.compose.ui.window.toDpOffset
@@ -257,7 +259,7 @@ class DialogWindowV2StateTest {
         val state = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.AlignedToScreen(Alignment.Center)
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds
             )
         )
         lateinit var dialog: ComposeDialog
@@ -281,7 +283,7 @@ class DialogWindowV2StateTest {
         val windowState = WindowState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(400.dp, 400.dp),
-                positionProvider = WindowPositionProvider.AlignedToScreen(Alignment.Center)
+                positionProvider = WindowPositionProvider.CenteredInScreenBounds
             )
         )
         lateinit var window: ComposeWindow
@@ -289,7 +291,7 @@ class DialogWindowV2StateTest {
         val dialogState = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
                 sizeProvider = WindowSizeProvider.Fixed(200.dp, 200.dp),
-                positionProvider = WindowPositionProvider.AlignedToParentWindow(Alignment.Center)
+                positionProvider = WindowPositionProvider.CenteredInParentWindow
             )
         )
         lateinit var dialog: ComposeDialog
@@ -378,13 +380,13 @@ class DialogWindowV2StateTest {
     }
 
     @Test
-    fun `set dialog min intrinsic height`() = runApplicationTest(useDelay = isLinux) {
+    fun `set dialog preferred height`() = runApplicationTest(useDelay = isLinux) {
         assumeTrue(!isLinux)  // Flaky on our CI
 
         lateinit var dialog: ComposeDialog
         val state = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
-                sizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 300.dp)
+                sizeProvider = WindowSizeProvider.PreferredHeight(width = 300.dp)
             )
         )
 
@@ -392,7 +394,7 @@ class DialogWindowV2StateTest {
             DialogWindow(
                 onCloseRequest = ::exitApplication,
                 state = state,
-                title = "set dialog min intrinsic height"
+                title = "set dialog preferred height"
             ) {
                 dialog = this.window
 
@@ -411,20 +413,20 @@ class DialogWindowV2StateTest {
     }
 
     @Test
-    fun `set dialog min intrinsic width`() = runApplicationTest {
+    fun `set dialog preferred width`() = runApplicationTest {
         assumeTrue(!isLinux)  // Flaky on our CI
 
         lateinit var dialog: ComposeDialog
         val state = DialogState(
             initialBoundsProvider = WindowBoundsProvider(
-                sizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 300.dp)
+                sizeProvider = WindowSizeProvider.PreferredWidth(height = 300.dp)
             )
         )
         launchTestApplication {
             DialogWindow(
                 onCloseRequest = ::exitApplication,
                 state = state,
-                title = "set dialog min intrinsic width"
+                title = "set dialog preferred width"
             ) {
                 dialog = this.window
 
@@ -770,7 +772,7 @@ class DialogWindowV2StateTest {
         testName: String,
         sizeProvider: WindowSizeProvider,
         content: @Composable () -> Unit,
-        expectedWindowSizeSansInsets: DpSize,
+        expectedDialogSizeSansInsets: DpSize,
     ) = runApplicationTest {
         val dialogState = DialogState(
             initialBoundsProvider = WindowBoundsProvider(sizeProvider)
@@ -780,113 +782,59 @@ class DialogWindowV2StateTest {
             DialogWindow(
                 state = dialogState,
                 onCloseRequest = {},
+                // On Linux, insets are not known until the dialog is visible, but we set the
+                // bounds taking them into account before that
+                decoration =
+                    if (isLinux) WindowDecoration.Undecorated() else WindowDecoration.SystemDefault,
                 title = testName
             ) {
                 dialog = this.window
                 content()
             }
         }
+
         awaitIdle()
         assertEquals(
-            expectedWindowSizeSansInsets + dialog.insets.toDpInsets(),
-            dialogState.bounds.size
+            expected = expectedDialogSizeSansInsets + dialog.insets.toDpInsets(),
+            actual = dialogState.bounds.size
         )
     }
 
     @Test
-    fun dialogMinIntrinsicWidth() = runDialogSizeTest(
-        testName = "windowMinIntrinsicWidth",
-        sizeProvider = WindowSizeProvider.MinIntrinsicWidth(height = 500.dp),
+    fun dialogPreferredWidth() = runDialogSizeTest(
+        testName = "dialogPreferredWidth",
+        sizeProvider = WindowSizeProvider.PreferredWidth(height = 500.dp),
         content = {
-            BoxWithIntrinsicSize(
-                minWidth = { 400.dp.roundToPx() }
+            BoxWithGivenSize(
+                width = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
+        expectedDialogSizeSansInsets = DpSize(400.dp, 500.dp)
     )
 
     @Test
-    fun windowMaxIntrinsicWidth() = runDialogSizeTest(
-        testName = "windowMaxIntrinsicWidth",
-        sizeProvider = WindowSizeProvider.MaxIntrinsicWidth(height = 500.dp),
+    fun dialogPreferredHeight() = runDialogSizeTest(
+        testName = "dialogPreferredHeight",
+        sizeProvider = WindowSizeProvider.PreferredHeight(width = 500.dp),
         content = {
-            BoxWithIntrinsicSize(
-                maxWidth = { 400.dp.roundToPx() }
+            BoxWithGivenSize(
+                height = { 400.dp.roundToPx() }
             )
         },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 500.dp)
+        expectedDialogSizeSansInsets = DpSize(500.dp, 400.dp)
     )
 
     @Test
-    fun windowMinIntrinsicHeight() = runDialogSizeTest(
-        testName = "windowMinIntrinsicHeight",
-        sizeProvider = WindowSizeProvider.MinIntrinsicHeight(width = 500.dp),
+    fun `preferred size is rounded up`() = runDialogSizeTest(
+        testName = "preferred size is rounded up",
+        sizeProvider = WindowSizeProvider.Unconstrained,
         content = {
-            BoxWithIntrinsicSize(
-                minHeight = { 400.dp.roundToPx() }
-            )
+            Layout { _, _ ->
+                val size = (density * 100 + 1).toInt()
+                layout(size, size) { }
+            }
         },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMaxIntrinsicHeight() = runDialogSizeTest(
-        testName = "windowMaxIntrinsicHeight",
-        sizeProvider = WindowSizeProvider.MaxIntrinsicHeight(width = 500.dp),
-        content = {
-            BoxWithIntrinsicSize(
-                maxHeight = { 400.dp.roundToPx() }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(500.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMinWidthWithMatchingMinHeight() = runDialogSizeTest(
-        testName = "windowMinWidthWithMatchingMinHeight",
-        sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                minWidth = { 400.dp.roundToPx() },
-                minHeight = { it }  // Return width to make it a square
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
-    )
-
-    @Test
-    fun windowMaxHeightWithMatchingMaxWidth() = runDialogSizeTest(
-        testName = "windowMaxHeightWithMatchingMaxWidth",
-        sizeProvider = WindowSizeProvider.IntrinsicHeightWithMatchingIntrinsicWidth(
-            intrinsicWidth = WindowIntrinsicSize.Max,
-            intrinsicHeight = WindowIntrinsicSize.Max,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                maxHeight = { 400.dp.roundToPx() },
-                maxWidth = { it }  // Return height to make it a square
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(400.dp, 400.dp)
-    )
-
-    @Test
-    fun `requested size is rounded up`() = runDialogSizeTest(
-        testName = "requested size is rounded up",
-        sizeProvider = WindowSizeProvider.IntrinsicWidthWithMatchingIntrinsicHeight(
-            intrinsicWidth = WindowIntrinsicSize.Min,
-            intrinsicHeight = WindowIntrinsicSize.Min,
-        ),
-        content = {
-            BoxWithIntrinsicSize(
-                minWidth = { (density * 100 + 1).toInt() },
-                minHeight = { it }
-            )
-        },
-        expectedWindowSizeSansInsets = DpSize(101.dp, 101.dp)
+        expectedDialogSizeSansInsets = DpSize(101.dp, 101.dp)
     )
 
     private fun runBoundsOverwriteTest(
@@ -915,8 +863,8 @@ class DialogWindowV2StateTest {
         }
         awaitIdle()
 
-        assertEquals(expectedSize, dialogState.bounds.size)
-        assertEquals(expectedPosition, dialogState.bounds.topLeft)
+        assertSizesApproximatelyEqual(expectedSize, dialogState.bounds.size)
+        assertCoordinatesApproximatelyEqual(expectedPosition, dialogState.bounds.topLeft)
     }
 
     @Test

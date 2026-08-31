@@ -1,0 +1,270 @@
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.compose.ui.scene
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
+import androidx.compose.ui.platform.FrameChoreographer
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.uikit.ComposeContainerConfiguration
+import androidx.compose.ui.uikit.InterfaceOrientation
+import androidx.compose.ui.uikit.LocalUIViewController
+import androidx.compose.ui.uikit.density
+import androidx.compose.ui.uikit.embedSubview
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.toRect
+import androidx.compose.ui.window.FocusedViewsList
+import androidx.navigationevent.NavigationEventDispatcher
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.Job
+import platform.UIKit.UIView
+import platform.UIKit.UIWindow
+
+internal class IosComposeSceneLayer(
+    private val frameChoreographer: FrameChoreographer,
+    private val onClosed: (IosComposeSceneLayer) -> Unit,
+    private val createComposeSceneContext: (PlatformContext) -> ComposeSceneContext,
+    private val layersViewController: ComposeLayersViewController,
+    private val initialDensity: Density,
+    private val initialLayoutDirection: LayoutDirection,
+    private val onFocusConditionsChanged: () -> Unit,
+    configuration: ComposeContainerConfiguration,
+    private var focusedViewsList: FocusedViewsList?,
+    consumePointerInputOutside: Boolean = focusedViewsList != null,
+    parentCoroutineContext: CoroutineContext,
+    private val ownerProvider: PlatformArchitectureComponentsOwner,
+    private val interfaceOrientationState: State<InterfaceOrientation>,
+    private var invalidateLayout: () -> Unit,
+    private var invalidateDraw: () -> Unit,
+) : ComposeSceneLayer {
+    private val layerJob = Job()
+    private val layerCoroutineContext = parentCoroutineContext + layerJob
+
+    override var focusable: Boolean = focusedViewsList != null
+        set(value) {
+            if (field != value) {
+                field = value
+                onFocusConditionsChanged()
+            }
+        }
+
+    override var consumePointerInputOutside: Boolean = consumePointerInputOutside
+        set(value) {
+            if (field != value) {
+                field = value
+                mediator.isInterceptingOutsideEvents = value
+                onFocusConditionsChanged()
+            }
+        }
+
+    val interactionView = ComposeSceneLayerView(
+        ::onDidMoveToWindow,
+    )
+
+    val overlayView: UIView get() = mediator.overlayView
+
+    private val navigationEventDispatcher: NavigationEventDispatcher
+        get() = ownerProvider.navigationEventDispatcherOwner.navigationEventDispatcher
+
+    private val navigationEventInput = IosBackNavigationEventInput(
+        density = interactionView.density,
+        initialLayoutDirection = initialLayoutDirection,
+        getTopLeftOffsetInWindow = { boundsInWindow.topLeft },
+        endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
+    ).also {
+        navigationEventDispatcher.addInput(it)
+    }
+
+    private val windowContext get() = layersViewController.windowContext
+
+    private val mediator = ComposeSceneMediator(
+        frameChoreographer = frameChoreographer,
+        onFocusBehavior = configuration.onFocusBehavior,
+        isClearFocusOnMouseDownEnabled = configuration.isClearFocusOnMouseDownEnabled,
+        focusedViewsList = focusedViewsList,
+        windowContext = windowContext,
+        architectureComponentsOwner = ownerProvider,
+        coroutineContext = layerCoroutineContext,
+        composeSceneFactory = ::createComposeScene,
+        navigationEventInput = navigationEventInput,
+        interfaceOrientationState = interfaceOrientationState,
+        schedulePendingInteropViewUpdates = layersViewController::invalidateDraw,
+    ).also {
+        interactionView.embedSubview(it.backgroundView)
+        it.isInterceptingOutsideEvents = consumePointerInputOutside
+    }
+
+    var rootForTestListener: PlatformContext.RootForTestListener?
+        get() = mediator.rootForTestListener
+        set(value) {
+            mediator.rootForTestListener = value
+        }
+
+    private fun createComposeScene(platformContext: PlatformContext): ComposeScene =
+        PlatformLayersComposeScene(
+            frameRecomposer = frameChoreographer.frameRecomposer,
+            density = initialDensity,
+            layoutDirection = initialLayoutDirection,
+            composeSceneContext = createComposeSceneContext(platformContext),
+            invalidateLayout = invalidateLayout,
+            invalidateDraw = invalidateDraw,
+        )
+
+    val hasInvalidations by mediator::hasInvalidations
+
+    var isFocusEnabled by mediator::isFocusEnabled
+
+    override var density: Density
+        get() = mediator.composeSceneDensity
+        set(_) {
+            // density of the layer cannot be customized
+        }
+
+    override var layoutDirection: LayoutDirection
+        get() = mediator.layoutDirection
+        set(value) {
+            mediator.layoutDirection = value
+            navigationEventInput.layoutDirection = value
+        }
+
+    override var boundsInWindow: IntRect by mediator::interactionBounds
+
+    override var compositionLocalContext by mediator::compositionLocalContext
+
+    override var scrimColor: Color? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                value?.let {
+                    scrimPaint.color = value
+                }
+            }
+        }
+
+    private val scrimPaint = Paint()
+
+    private fun onDidMoveToWindow(window: UIWindow?) {
+        if (window != null) {
+            focusedViewsList?.addAndFocus(mediator.overlayView)
+        }
+        navigationEventInput.onDidMoveToWindow(window, interactionView)
+    }
+
+    fun doMeasureAndLayout() = mediator.measureAndLayout()
+
+    fun draw(canvas: Canvas) {
+        if (scrimColor != null) {
+            val density = windowContext.screenDensity
+            val rect = layersViewController.metalView.view.bounds.toDpRect().toRect(density)
+
+            canvas.drawRect(rect, scrimPaint)
+        }
+
+        mediator.draw(canvas)
+    }
+
+    fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
+
+    fun retrievePendingViewUpdatesInteropTransaction() = mediator.retrievePendingViewUpdatesInteropTransaction()
+
+    val needsComposeSceneDraw: Boolean get() = mediator.needsComposeSceneDraw
+
+    val hasInteropViews: Boolean get() = mediator.hasInteropViews
+
+    fun prepareAndGetSizeTransitionAnimation(withProgress: suspend ((Float) -> Unit) -> Unit) =
+        mediator.prepareAndGetSizeTransitionAnimation(withProgress)
+
+    override fun close() {
+        onClosed(this)
+
+        dispose()
+    }
+
+    internal fun dispose() {
+        navigationEventDispatcher.removeInput(navigationEventInput)
+        focusedViewsList?.disposeChild()
+        focusedViewsList = null
+        interactionView.removeFromSuperview()
+        interactionView.dispose()
+        layerJob.cancel()
+        invalidateLayout = {}
+        invalidateDraw = {}
+    }
+
+    @Composable
+    private fun ProvideComposeSceneLayerCompositionLocals(
+        content: @Composable () -> Unit
+    ) = CompositionLocalProvider(
+        LocalUIViewController provides layersViewController,
+        content = content
+    )
+
+    override fun setContent(
+        parentCompositionContext: CompositionContext,
+        content: @Composable () -> Unit,
+    ) {
+        mediator.setContent(parentCompositionContext) {
+            ProvideComposeSceneLayerCompositionLocals(content)
+        }
+    }
+
+    override fun setKeyEventListener(
+        onPreviewKeyEvent: ((KeyEvent) -> Boolean)?,
+        onKeyEvent: ((KeyEvent) -> Boolean)?
+    ) {
+        mediator.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
+    }
+
+    override fun setOutsidePointerEventListener(
+        onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)?
+    ) {
+        mediator.onOutsidePointerEvent = {
+            onOutsidePointerEvent?.invoke(it, null)
+        }
+    }
+
+    /**
+     * Since layer is assumed to be the same size as the window it is attached to, just return the same position.
+     */
+    override fun calculateLocalPosition(positionInWindow: IntOffset): IntOffset = positionInWindow
+
+    fun sceneDidAppear() {
+        mediator.sceneDidAppear()
+    }
+
+    fun sceneWillDisappear() {
+        mediator.sceneWillDisappear()
+    }
+
+    fun setComposeSceneFontScale(fontScale: Float) {
+        mediator.setComposeSceneFontScale(fontScale)
+    }
+}

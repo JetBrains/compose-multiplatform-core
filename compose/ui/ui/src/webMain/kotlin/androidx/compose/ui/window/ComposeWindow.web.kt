@@ -17,9 +17,8 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
+import kotlin.js.js
 import kotlinx.browser.document
-import kotlinx.dom.clear
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
@@ -29,8 +28,6 @@ import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainerId] id.
  * This size of canvas is adjusted with the size of the container
  *
@@ -40,7 +37,6 @@ import org.w3c.dom.ShadowRootMode
  * See [ComposeViewportConfiguration] for available options.
  * @param content - The Composable content to be rendered on the `<canvas>` element.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainerId: String? = null,
     configure: ComposeViewportConfiguration.() -> Unit = {},
@@ -58,8 +54,6 @@ fun ComposeViewport(
 }
 
 /**
- * EXPERIMENTAL! Might be deleted or changed in the future!
- *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainer] Element.
  * This size of canvas is adjusted with the size of the container
  *
@@ -78,18 +72,25 @@ fun ComposeViewport(
  *
  * Note: The viewportContainer will be cleared on composition creation.
  */
-@ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainer: Element,
     configure: ComposeViewportConfiguration.() -> Unit = {},
     content: @Composable () -> Unit = { }
 ) = onSkikoReady {
-    viewportContainer.clear()
+
+    clearNodeChildren(viewportContainer)
+    if (!isWebGL2Supported()) {
+        // We can't do anything meaningful in this case, except showing a meaningful message.
+        // Otherwise, the app will crash with an obscure error (e.g. TypeError) like in
+        // https://youtrack.jetbrains.com/issue/CMP-10270
+        viewportContainer.appendChild(document.createTextNode(WEBGL2_NOT_SUPPORTED_MSG))
+        return@onSkikoReady
+    }
 
     // Create a common positioning container (parent html element) for shadow and the interop containers
     // to position at the same place - the interop container is position at 0,0 relative to the shadow.
     // It simplifies the positioning of the interop views in the container.
-    val positioningContainer = document.createElement("div") as HTMLDivElement
+    val positioningContainer = ComposeWindow.createComposeComponent()
     positioningContainer.style.apply {
         position = "relative"
     }
@@ -105,6 +106,8 @@ fun ComposeViewport(
     //shadow
     val shadowRoot = shadowContainer.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
     val shadowRootStyle = document.createElement("style")
+
+    // don't style backing .compose-backing-field with opacity, see https://youtrack.jetbrains.com/projects/CMP/issues/CMP-8611
     shadowRootStyle.textContent = """
         :host {
             -webkit-touch-callout: none; 
@@ -112,7 +115,38 @@ fun ComposeViewport(
             user-select: none;
             
             position: relative;
+            padding: 0;
         }
+        
+        canvas {
+               display: block;
+               width: 100%;
+               height: 100%;
+        }
+        
+       .compose-backing-field {
+            position: absolute;
+            height: calc(var(--compose-internal-web-backing-input-height) * 1px);
+            width: calc(var(--compose-internal-web-backing-input-width) * 1px);
+            left: min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px);
+            top: min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px);
+            
+            overflow: hidden;
+            align-content: center;
+            background: transparent;
+            border: none;
+            caret-color: transparent;
+            color: transparent;
+            font-size: 20px;
+            forced-color-adjust: none;
+            outline: none;
+            padding: 0;
+            resize: none;
+            text-shadow: none;
+            user-select: none;
+            white-space: pre;
+            z-index: -1;
+       }
     """.trimIndent()
     shadowRoot.appendChild(shadowRootStyle)
 
@@ -127,8 +161,9 @@ fun ComposeViewport(
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
     canvas.setAttribute("role", "generic")
+    canvas.setAttribute("draggable", "true")
     canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
-    canvas.style.setProperty("touch-action", "none") //blocks default browser touch handling
+    canvas.style.setProperty("touch-action", "pan-x pan-y") // allow the browser to scroll when compose is not scrolling
     appContainer.appendChild(canvas)
 
     //a11y container
@@ -139,6 +174,8 @@ fun ComposeViewport(
                 position = "absolute"
                 top = "0"
                 left = "0"
+                width = "100%"
+                height = "100%"
             }
             appContainer.appendChild(a11yContainer)
         }
@@ -155,9 +192,13 @@ fun ComposeViewport(
     }
     positioningContainer.appendChild(interopContainerElement)
 
-    ComposeWindow(
+    // To keep DOM focus on the canvas after Tabbing out of the interop container:
+    positioningContainer.appendChild(createHtmlFocusDecoy(canvas))
+
+    val composeWindow = ComposeWindow(
         canvas = canvas,
         rootNode = shadowRoot,
+        viewportContainer = viewportContainer,
         layerRoot = appContainer,
         interopContainerElement = interopContainerElement,
         a11yContainerElement = a11yContainerElement,
@@ -165,4 +206,46 @@ fun ComposeViewport(
         configuration = configuration,
         state = DefaultWindowState(viewportContainer)
     )
+
+    ComposeWindow.registerDisposableFor(positioningContainer) {
+        composeWindow.dispose()
+    }
 }
+
+private fun clearNodeChildren(node: Element): Unit =
+    //language=JavaScript
+    js(
+        """
+        {
+            if (node.hasChildNodes()) node.replaceChildren();
+        }
+    """
+    )
+private const val WEBGL2_NOT_SUPPORTED_MSG = "This application requires WebGL2. " +
+    "Please ensure your browser is updated and hardware acceleration is enabled in the browser settings."
+private fun isWebGL2Supported(): Boolean =
+    js("!!document.createElement('canvas').getContext('webgl2')")
+
+/**
+ * Creates a hidden focusable decoy element to be placed after the interop container in DOM order.
+ *
+ * When Tab is pressed on the last HTML interop element, the browser would normally
+ * move focus to the address bar since no further focusable elements exist.
+ * This decoy intercepts that focus and immediately redirects it to the canvas,
+ * allowing Compose's focus manager to continue navigation to the next Compose element.
+ */
+private fun createHtmlFocusDecoy(canvas: HTMLCanvasElement): HTMLDivElement =
+    (document.createElement("div") as HTMLDivElement).apply {
+        tabIndex = 0
+        setAttribute("aria-hidden", "true") // Usually it's an antipattern for a focusable element, but it's okay for a decoy element.
+        style.apply {
+            position = "absolute" // to remove the decoy completely out of the document layout tree
+            width = "0"
+            height = "0"
+            outline = "none"
+            setProperty("pointer-events", "none")
+        }
+        addEventListener("focus") {
+            canvas.focus()
+        }
+    }

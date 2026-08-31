@@ -50,49 +50,35 @@ internal fun Modifier.cupertinoTextFieldPointer(
     this
         .updateSelectionTouchMode { state.isInTouchMode = it }
         .tapPressTextFieldModifier(interactionSource, enabled) { offset ->
-            if (state.hasFocus) {
-                // To show keyboard if it was hidden. Even in selection mode (like native)
-                requestFocusAndShowKeyboardIfNeeded(
-                    state,
-                    focusRequester,
-                    !readOnly
-                )
-                if (state.handleState != HandleState.Selection) {
-                    state.layoutResult?.let { layoutResult ->
-                        TextFieldDelegate.cupertinoSetCursorOffsetFocused(
-                            position = offset,
-                            textLayoutResult = layoutResult,
-                            editProcessor = state.processor,
-                            offsetMapping = offsetMapping,
-                            showContextMenu = { show ->
-                                // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
-                                if (show) {
-                                    manager.enterSelectionMode()
-                                } else {
-                                    manager.exitSelectionMode()
-                                }
-                            },
-                            onValueChange = state.onValueChange
-                        )
-                    }
-                } else {
-                    manager.deselect(offset)
-                }
-            } else {
-                requestFocusAndShowKeyboardIfNeeded(
-                    state,
-                    focusRequester,
-                    !readOnly
-                )
+            val wasFocused = state.hasFocus
+
+            // To show keyboard if it was hidden. Even in selection mode (like native)
+            requestFocusAndShowKeyboardIfNeeded(
+                state,
+                focusRequester,
+                !readOnly
+            )
+
+            if (state.handleState != HandleState.Selection) {
                 state.layoutResult?.let { layoutResult ->
-                    TextFieldDelegate.setCursorOffset(
-                        offset,
-                        layoutResult,
-                        state.processor,
-                        offsetMapping,
-                        state.onValueChange
+                    TextFieldDelegate.cupertinoSetCursorOffsetFocused(
+                        position = offset,
+                        textLayoutResult = layoutResult,
+                        editProcessor = state.processor,
+                        offsetMapping = offsetMapping,
+                        showContextMenu = { show ->
+                            // it shouldn't be selection, but this is a way to call a context menu in BasicTextField
+                            if (show && wasFocused) {
+                                manager.enterSelectionMode()
+                            } else {
+                                manager.exitSelectionMode()
+                            }
+                        },
+                        onValueChange = state.onValueChange
                     )
                 }
+            } else {
+                manager.deselect(offset)
             }
             if (state.textDelegate.text.isNotEmpty()) {
                 state.handleState = HandleState.Cursor
@@ -129,12 +115,12 @@ private class CupertinoSelectionGesturesModifierNode(
     private val longPressDragObserver = object : TextDragObserver {
         var dragTotalDistance = Offset.Zero
         var dragBeginOffset = Offset.Zero
-        var shouldUpdateMagnifierPosition = false
+        var isSingleLongPressWithMagnifier = false
+        var selectionAtLongPressStart = TextRange.Zero
 
         override fun onStart(startPoint: Offset, selectionAdjustment: SelectionAdjustment) {
-            val isSingleLongPress = selectionAdjustment == SelectionAdjustment.None
-            shouldUpdateMagnifierPosition = isSingleLongPress
-            if (isSingleLongPress) {
+            isSingleLongPressWithMagnifier = selectionAdjustment == SelectionAdjustment.None
+            if (isSingleLongPressWithMagnifier) {
                 manager.draggingHandle = Handle.SelectionEnd
                 manager.currentDragPosition = startPoint
                 manager.hapticFeedBack?.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -157,13 +143,14 @@ private class CupertinoSelectionGesturesModifierNode(
                 dragBeginOffset = startPoint
             }
             dragTotalDistance = Offset.Zero
+            selectionAtLongPressStart = manager.value.selection
         }
 
         override fun onDrag(delta: Offset) {
             dragTotalDistance += delta
             state.layoutResult?.let { layoutResult ->
                 val currentDragPosition = dragBeginOffset + dragTotalDistance
-                if (shouldUpdateMagnifierPosition) {
+                if (isSingleLongPressWithMagnifier) {
                     manager.currentDragPosition = currentDragPosition
                 }
                 TextFieldDelegate.setCursorOffset(
@@ -182,13 +169,18 @@ private class CupertinoSelectionGesturesModifierNode(
         override fun onUp() {}
 
         override fun onStop() {
-            shouldUpdateMagnifierPosition = false
             manager.draggingHandle = null
             manager.currentDragPosition = null
+
+            val selectionChanged = manager.value.selection != selectionAtLongPressStart
+            if (isSingleLongPressWithMagnifier && !selectionChanged) {
+                manager.enterSelectionMode()
+            }
+            isSingleLongPressWithMagnifier = false
         }
 
         override fun onCancel() {
-            shouldUpdateMagnifierPosition = false
+            isSingleLongPressWithMagnifier = false
             manager.draggingHandle = null
             manager.currentDragPosition = null
         }

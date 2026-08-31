@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextEditingDelegate
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.getUITextInputTraits
 import androidx.compose.ui.scene.ComposeSceneFocusManager
 import androidx.compose.ui.text.TextRange
@@ -39,6 +40,7 @@ import androidx.compose.ui.window.NativeTextInputView
 import androidx.compose.ui.window.OverlayInputView
 import kotlin.math.absoluteValue
 import kotlin.math.min
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -51,7 +53,6 @@ internal abstract class TextInputConnection(
     protected val view: UIView,
     protected val coroutineScope: CoroutineScope,
     protected val focusedViewsList: FocusedViewsList?,
-    override var onKeyboardPresses: (Set<*>) -> Unit,
     private var focusManager: () -> ComposeSceneFocusManager?,
 ): TextEditingDelegate {
 
@@ -99,12 +100,12 @@ internal abstract class TextInputConnection(
 
     protected abstract fun detachView()
 
-    fun showKeyboard() {
+    open fun showKeyboard() {
         focusedViewsList?.addAndFocus(textInputView)
     }
 
-    fun dismissKeyboard() {
-        focusedViewsList?.remove(textInputView, delayMillis = CLEAR_FOCUS_DELAY)
+    open fun dismissKeyboard() {
+        focusedViewsList?.remove(textInputView, delay = CLEAR_FOCUS_DELAY)
     }
 
     open fun onTextFieldValueUpdated(newValue: TextFieldValue) {
@@ -124,6 +125,16 @@ internal abstract class TextInputConnection(
     protected abstract fun stateWillChange(textChanged: Boolean, selectionChanged: Boolean)
     protected abstract fun stateDidChange(textChanged: Boolean, selectionChanged: Boolean)
 
+    /**
+     * Refreshes [currentTextFieldValue] from the latest request snapshot. The snapshot flow can lag
+     * behind, so call this where the most up-to-date state matters — e.g. when building the context
+     * menu contents.
+     */
+    protected fun syncTextFieldValueFromRequestSnapshot() {
+        if (postponeSelectionUpdate) return
+        currentTextFieldValue = currentRequest?.stateSnapshot() ?: return
+    }
+
     abstract fun onViewGeometryUpdated()
 
     fun onPreviewKeyEvent(event: KeyEvent): Boolean {
@@ -135,10 +146,18 @@ internal abstract class TextInputConnection(
         }
     }
 
+    abstract fun setAvailableEditMenuActions(
+        copy: (() -> Unit)?,
+        paste: (() -> Unit)?,
+        cut: (() -> Unit)?,
+        selectAll: (() -> Unit)?,
+        customActions: List<NativeTextInputContextMenuCustomAction>?
+    )
+
     /**
      * Workaround to prevent IME action from being called multiple times with hardware keyboards.
      * When the hardware return key is held down, iOS sends multiple newline characters to the application,
-     * which makes UIKitTextInputService call the current IME action multiple times without an additional
+     * which makes TextInputService call the current IME action multiple times without an additional
      * debouncing logic.
      *
      * @see _tempHardwareReturnKeyPressed is set to true when the return key is pressed with a
@@ -240,21 +259,27 @@ internal abstract class TextInputConnection(
     }
 
     /**
-     * Returns true if there is a focused view in the window hierarchy that is an external
-     * text input — i.e. a native UITextField or UITextView inserted via interop, not one of
-     * Compose's own input views.
+     * Returns true if there is a focused view in the window hierarchy that is an external text
+     * input — i.e. a native UITextField or UITextView inserted via interop, or a Compose text input
+     * view owned by another independent scene.
      *
      * Used to distinguish the case where the user tapped a native interop text field (in which
-     * case Compose focus should be released) from the case where focus simply moved to another
-     * Compose text field (in which case Compose handles focus internally and no action is needed).
+     * case Compose focus should be released) or another Compose scene's text field from the case
+     * where focus simply moved inside the same focused views hierarchy (in which case Compose
+     * handles focus internally and no action is needed).
      */
     private fun hasFocusedExternalInputViewInWindowHierarchy(): Boolean {
         fun hasFocusedExternalInputView(view: UIView): Boolean {
             if (view.isFirstResponder) {
-                return view !is NativeTextInputView &&
-                    view !is ComposeTextInputView &&
-                    view !is OverlayInputView &&
-                    view !is BackgroundInputView
+                return if (view is NativeTextInputView ||
+                    view is ComposeTextInputView ||
+                    view is OverlayInputView ||
+                    view is BackgroundInputView
+                ) {
+                    focusedViewsList?.contains(view) == false
+                } else {
+                    true
+                }
             }
             return view.subviews.any { it is UIView && hasFocusedExternalInputView(it) }
         }
@@ -275,11 +300,34 @@ internal abstract class TextInputConnection(
 
     override fun updateFloatingCursor(offset: DpOffset) {
         val translation = floatingCursorTranslation ?: return
-        val offsetPx = offset.toOffset(view.density)
-        val pos = textLayoutResult?.getOffsetForPosition(offsetPx + translation) ?: return
+        val layout = textLayoutResult ?: return
+
+        val fingerPx = offset.toOffset(view.density)
+        val virtualCursorPx = fingerPx + translation
+        val cursorOffset = layout.getOffsetForPosition(virtualCursorPx)
+
+        // Re-anchor translation to the text edge, not the touch position — otherwise a fast
+        // swipe past the text makes the user drag that whole distance back (and cursor looks frozen)
+        val line = layout.getLineForOffset(cursorOffset)
+        val lineLeft = layout.getLineLeft(line)
+        val lineRight = layout.getLineRight(line)
+        val textTop = layout.getLineTop(0)
+        val textBottom = layout.getLineBottom(layout.lineCount - 1)
+
+        val boundedX = virtualCursorPx.x.coerceIn(lineLeft, lineRight)
+        val boundedY = virtualCursorPx.y.coerceIn(textTop, textBottom)
+        val outOfBoundsX = virtualCursorPx.x != boundedX
+        val outOfBoundsY = virtualCursorPx.y != boundedY
+
+        if (outOfBoundsX || outOfBoundsY) {
+            floatingCursorTranslation = Offset(
+                x = if (outOfBoundsX) boundedX - fingerPx.x else translation.x,
+                y = if (outOfBoundsY) boundedY - fingerPx.y else translation.y,
+            )
+        }
 
         edit(requireUpdateView = false) {
-            setSelection(pos, pos)
+            setSelection(cursorOffset, cursorOffset)
         }
     }
 
@@ -441,7 +489,7 @@ internal abstract class TextInputConnection(
         // Due to unexpected delays between the commands to show/hide the keyboard,
         // it may jump when switching between text fields.
         // Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
-        internal const val CLEAR_FOCUS_DELAY: Long = 10L
+        internal val CLEAR_FOCUS_DELAY: Duration = 10.milliseconds
     }
 }
 

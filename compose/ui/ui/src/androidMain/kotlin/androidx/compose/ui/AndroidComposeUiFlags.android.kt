@@ -50,16 +50,6 @@ package androidx.compose.ui
  */
 @ExperimentalComposeUiApi
 object AndroidComposeUiFlags {
-    /**
-     * This flag enables support for walking up nested scrolling in response to
-     * android.R.id.accessibilityActionShowOnScreen from Accessibility.
-     *
-     * Enabled is correct nested scrolling behavior and it should be enabled in all apps.
-     */
-    // TODO: b/474650559
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isAccessibilityShowOnScreenNestedScrollingEnabled: Boolean = true
 
     /**
      * This flag enables using the View's handler for semantics processing instead of the Main
@@ -75,4 +65,42 @@ object AndroidComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isFrameworkVelocityTrackerEnabled: Boolean = false
+
+    /**
+     * This flag forces scroll capture to center the content being rendered even if it's already
+     * visible.
+     */
+    // TODO: remove and close b/509934021
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isAlwaysScrollDuringScrollCaptureEnabled: Boolean = true
+
+    /**
+     * If enabled, interactions (like clicks) will automatically trigger interaction sound effects
+     * on Android.
+     */
+    // TODO: Remove this flag once it has soaked (b/495886959)
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isInteractionSoundEffectsEnabled: Boolean = true
+
+    /** Enables using out of frame scheduler instead of Choreographer for text input events. */
+    // TODO(b/513525072): Cleanup once proven stable.
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isOutOfFrameSchedulerForTextInputEventsEnabled: Boolean = true
+
+    /**
+     * Return true for AndroidComposeView.dispatchHoverEvent when handleded by explore by touch.
+     *
+     * This fixes behavior where the event would be bubbled to a container view, causing explore by
+     * touch to flicker focus to Compose buttons.
+     *
+     * After this change compose buttons will correctly report they handled the hover event, and
+     * retain accessibility focus.
+     */
+    @field:Suppress("MutableBareField")
+    @JvmField
+    // TODO(b/507533865) cleanup feature flag after 1.12
+    var isExploreByTouchHoverHandled: Boolean = true
 }

@@ -61,6 +61,7 @@ import java.awt.Window
 import java.awt.event.KeyEvent
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -650,7 +651,7 @@ class DialogWindowV2Test {
         awaitIdle()
         delay(1.seconds)
 
-        var nonBlackPixelDetected: java.awt.Color? = null
+        val nonBlackPixelDetected = AtomicReference<java.awt.Color?>(null)
         val testLocation = dialog.bounds.let {
             Point(it.x + it.width / 2, it.y + it.height / 2)
         }
@@ -660,7 +661,7 @@ class DialogWindowV2Test {
             while (!stopThread.get()) {
                 val pixel = robot.getPixelColor(testLocation.x, testLocation.y)
                 if (pixel != java.awt.Color.BLACK) {
-                    nonBlackPixelDetected = pixel
+                    nonBlackPixelDetected.set(pixel)
                     return@thread
                 }
             }
@@ -673,7 +674,7 @@ class DialogWindowV2Test {
         stopThread.getAndSet(true)
         t.join()
 
-        assertThat(nonBlackPixelDetected).isNull()
+        assertThat(nonBlackPixelDetected.get()).isNull()
     }
 
     @Test

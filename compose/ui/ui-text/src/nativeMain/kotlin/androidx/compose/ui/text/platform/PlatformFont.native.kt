@@ -15,12 +15,14 @@
  */
 package androidx.compose.ui.text.platform
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontVariation
 
 actual sealed class PlatformFont : Font {
     actual abstract val identity: String
     actual abstract val variationSettings: FontVariation.Settings
-    internal actual val cacheKey: String
+    @InternalComposeUiApi
+    actual val cacheKey: String
         get() = "${this::class.qualifiedName}|$identity|weight=${weight.weight}|style=$style|variationSettings=${variationSettings.settings}"
 }

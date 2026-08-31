@@ -21,17 +21,19 @@ import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.test.utils.DpRectZero
 import androidx.compose.ui.test.utils.intersect
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.width
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
+import platform.Foundation.NSAttributedString
 import platform.UIKit.UIAccessibilityContainerType
 import platform.UIKit.UIAccessibilityContainerTypeDataTable
 import platform.UIKit.UIAccessibilityContainerTypeLandmark
@@ -63,6 +65,8 @@ import platform.UIKit.UIAccessibilityTraits
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
+import platform.UIKit.accessibilityAttributedLabel
+import platform.UIKit.accessibilityAttributedValue
 import platform.UIKit.accessibilityContainerType
 import platform.UIKit.accessibilityCustomActions
 import platform.UIKit.accessibilityElementAtIndex
@@ -147,7 +151,9 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
             isAccessibilityElement = element.isAccessibilityElement,
             identifier = (element as? UIAccessibilityElement)?.accessibilityIdentifier,
             label = element.accessibilityLabel,
+            accessibilityLabel = element.accessibilityAttributedLabel,
             value = element.accessibilityValue,
+            accessibilityValue = element.accessibilityAttributedValue,
             frame = element.accessibilityFrame.toDpRect(),
             containerType = element.accessibilityContainerType,
             children = children,
@@ -205,11 +211,13 @@ private val allContainerTypes = mapOf(
  * within a UI hierarchy. This class captures various accessibility properties of UI components
  * and structures them into a tree.
  */
-internal data class AccessibilityTestNode(
+internal class AccessibilityTestNode(
     var isAccessibilityElement: Boolean? = null,
     var identifier: String? = null,
     var label: String? = null,
+    var accessibilityLabel: NSAttributedString? = null,
     var value: String? = null,
+    var accessibilityValue: NSAttributedString? = null,
     var frame: DpRect? = null,
     var containerType: UIAccessibilityContainerType? = null,
     var children: List<AccessibilityTestNode>? = null,
@@ -217,6 +225,20 @@ internal data class AccessibilityTestNode(
     var element: NSObject? = null,
     var parent: AccessibilityTestNode? = null,
 ) {
+    fun copyWith(children: List<AccessibilityTestNode>?) = AccessibilityTestNode(
+        isAccessibilityElement = isAccessibilityElement,
+        identifier = identifier,
+        label = label,
+        accessibilityLabel = accessibilityLabel,
+        value = value,
+        accessibilityValue = accessibilityValue,
+        frame = frame,
+        containerType = containerType,
+        children = children,
+        traits = traits,
+        element = element,
+    ).also { copy -> children?.forEach { it.parent = copy } }
+
     fun node(builder: AccessibilityTestNode.() -> Unit) {
         children = (children ?: emptyList()) + AccessibilityTestNode().apply(builder)
     }
@@ -235,8 +257,16 @@ internal data class AccessibilityTestNode(
         label?.let {
             assertEquals(it, actualNode?.label)
         }
+        accessibilityLabel?.let {
+            assertNotNull(actualNode?.accessibilityLabel, "Accessibility label should not be null")
+            assertTrue(it.isEqual(actualNode.accessibilityLabel), "Accessibility label should be equal")
+        }
         value?.let {
             assertEquals(it, actualNode?.value)
+        }
+        accessibilityValue?.let {
+            assertNotNull(actualNode?.accessibilityValue, "Accessibility value should not be null")
+            assertTrue(it.isEqual(actualNode.accessibilityValue), "Accessibility value should be equal")
         }
         frame?.let {
             assertEquals(it, actualNode?.frame)
@@ -303,6 +333,25 @@ internal data class AccessibilityTestNode(
 
         return builder.toString()
     }
+
+    override fun toString(): String =
+        "AccessibilityTestNode(" +
+            "isAccessibilityElement=$isAccessibilityElement, " +
+            "identifier=$identifier, " +
+            "label=$label, " +
+            "accessibilityLabel=$accessibilityLabel, " +
+            "value=$value, " +
+            "accessibilityValue=$accessibilityValue, " +
+            "frame=$frame, " +
+            "containerType=$containerType, " +
+            "traits=$traits, " +
+            "element=$element, " +
+            "children=$children, " +
+            "parent=${parent?.shallowToString()}" +
+            ")"
+
+    private fun shallowToString(): String =
+        "AccessibilityTestNode(identifier=$identifier, label=$label, frame=$frame)"
 }
 
 /**
@@ -321,7 +370,7 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
     } ?: emptyList()
 
     return if (hasAccessibilityComponents || normalizedChildren.count() > 1) {
-        this.copy(children = normalizedChildren)
+        this.copyWith(children = normalizedChildren)
     } else if (normalizedChildren.count() == 1) {
         normalizedChildren.single()
     } else {
@@ -329,7 +378,7 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
     }
 }
 
-internal fun AccessibilityTestNode.assertVisibleInContainer() {
+internal val AccessibilityTestNode.isVisibleInContainer: Boolean get() {
     var frame = this.frame ?: DpRectZero()
     var iterator = parent
     while (iterator != null && iterator.element !is UIWindow) {
@@ -337,8 +386,12 @@ internal fun AccessibilityTestNode.assertVisibleInContainer() {
         iterator = iterator.parent
     }
 
+    return frame.width >= 1.dp && frame.height >= 1.dp
+}
+
+internal fun AccessibilityTestNode.assertVisibleInContainer() {
     assertTrue(
-        frame.width >= 1.dp && frame.height >= 1.dp,
+        isVisibleInContainer,
         "Element with frame ${this.frame} ($frame) is not visible or has very small size"
     )
 }

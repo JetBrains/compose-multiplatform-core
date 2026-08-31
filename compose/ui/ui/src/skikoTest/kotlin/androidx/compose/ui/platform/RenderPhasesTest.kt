@@ -17,18 +17,13 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
@@ -36,38 +31,34 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.key.InternalKeyEvent
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.scene.BaseComposeScene
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateMeasurement
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.test.v2.runInternalSkikoComposeUiTest
-import androidx.compose.ui.touch
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.launch
 
 /**
- * Tests the ordering of the phases of the [BaseComposeScene.render] loop.
+ * Tests the ordering of the split frame, measure/layout, and draw phases.
  */
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 class RenderPhasesTest {
@@ -305,9 +296,11 @@ class RenderPhasesTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
-    fun measureAndLayoutRunsAgainBeforeDraw() = runInternalSkikoComposeUiTest {
-        // Android runs measureAndLayout again right before drawing; validate this behavior.
+    fun stateWriteDuringLayoutDoesNotRemeasureBeforeDraw() = runSkikoComposeUiTest {
+        // A write made during layout updates this draw, but its measure invalidation is handled by
+        // a subsequent frame.
         val state = mutableStateOf(0)
         val events = mutableListOf<String>()
         setContent {
@@ -329,237 +322,63 @@ class RenderPhasesTest {
         }
 
         assertContentEquals(
-            expected = listOf("measure.0", "layout.0", "measure.1", "layout.1", "draw.1"),
-            actual = events
+            expected = listOf("measure.0", "layout.0", "draw.1", "measure.1", "layout.1"),
+            actual = events,
         )
     }
 
+    @Suppress("DEPRECATION")
     @Test
-    fun dragPointerEventHandlesScrollUpdatesSynchronously() = runInternalSkikoComposeUiTest {
-        val scrollState = ScrollState(0)
+    fun measurementInvalidatedSettlesBeforeDraw() = runSkikoComposeUiTest {
+        val events = mutableListOf<String>()
+
         setContent {
-            Box(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
-                Box(Modifier.size(200.dp))
-            }
-        }
-
-        assertFalse(scene.hasInvalidations())
-        assertEquals(0, scrollState.value)
-
-        scene.sendPointerEvent(
-            eventType = PointerEventType.Press,
-            pointers = listOf(
-                touch(50f, 50f, pressed = true)
-            )
-        )
-        scene.sendPointerEvent(
-            eventType = PointerEventType.Move,
-            pointers = listOf(
-                touch(50f, 10f, pressed = true)
-            )
-        )
-        assertTrue(scene.hasInvalidations())
-        assertNotEquals(0, scrollState.value)
-    }
-
-    @Test
-    fun scrollPointerEventHandlesScrollUpdatesSynchronously() = runInternalSkikoComposeUiTest {
-        val scrollState = ScrollState(0)
-        setContent {
-            Box(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
-                Box(Modifier.size(200.dp))
-            }
-        }
-
-        assertFalse(scene.hasInvalidations())
-        assertEquals(0, scrollState.value)
-
-        scene.sendPointerEvent(
-            eventType = PointerEventType.Scroll,
-            position = Offset(50f, 50f),
-            scrollDelta = Offset(0f, 40f)
-        )
-
-        assertTrue(scene.hasInvalidations())
-        assertNotEquals(0, scrollState.value)
-    }
-
-    @Test
-    fun panPointerEventHandlesScrollUpdatesSynchronously() = runInternalSkikoComposeUiTest {
-        val scrollState = ScrollState(0)
-        setContent {
-            Box(modifier = Modifier.size(100.dp).verticalScroll(scrollState)) {
-                Box(Modifier.size(200.dp))
-            }
-        }
-
-        assertFalse(scene.hasInvalidations())
-        assertEquals(0, scrollState.value)
-
-        scene.sendPointerEvent(
-            eventType = PointerEventType.PanMove,
-            position = Offset(50f, 50f),
-            panGestureOffset = Offset(0f, 40f)
-        )
-
-        assertTrue(scene.hasInvalidations())
-        assertNotEquals(0, scrollState.value)
-    }
-
-    @Test
-    fun scalePointerEventHandlesScrollUpdatesSynchronously() = runInternalSkikoComposeUiTest {
-        var scale = 1f
-        setContent {
-            Box(modifier = Modifier.size(100.dp).onPointerEvent(PointerEventType.ScaleChange) {
-                it.changes.forEach { change ->
-                    scale *= change.scaleFactor
-                }
-            }) {
-                Box(Modifier.size(200.dp))
-            }
-        }
-
-        assertFalse(scene.hasInvalidations())
-        assertEquals(1f, scale)
-
-        scene.sendPointerEvent(
-            eventType = PointerEventType.ScaleChange,
-            position = Offset(50f, 50f),
-            scaleGestureFactor = 2.0f
-        )
-
-        assertTrue(scene.hasInvalidations())
-        assertNotEquals(1f, scale)
-    }
-
-    @Test
-    fun pointerPressEventProcessesScheduledCoroutines() = runInternalSkikoComposeUiTest {
-        var pointerHandledAfterDelay by mutableStateOf(false)
-        setContent {
-            val coroutineScope = rememberCoroutineScope()
-            Box(
+            Layout(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            awaitPointerEvent()
-                            coroutineScope.launch {
-                                pointerHandledAfterDelay = true
-                            }
-                        }
+                    .then(InvalidateMeasurementOnPositionedElement)
+                    .drawBehind { events += "draw" },
+                measurePolicy = { _, _ ->
+                    events += "measure"
+                    layout(100, 100) {
+                        events += "layout"
                     }
+                },
             )
         }
 
-        assertFalse(pointerHandledAfterDelay)
-
-        scene.sendPointerEvent(
-            eventType = PointerEventType.Press,
-            pointers = listOf(
-                touch(50f, 50f, pressed = true)
-            )
+        // Positioning is dispatched after the layout pass, and this
+        // node's direct measurement invalidation must be settled before draw.
+        assertContentEquals(
+            expected = listOf("measure", "layout", "measure", "layout", "draw"),
+            actual = events,
         )
+    }
+}
 
-        assertTrue(pointerHandledAfterDelay)
+private data object InvalidateMeasurementOnPositionedElement :
+    ModifierNodeElement<InvalidateMeasurementOnPositionedNode>() {
+    override fun create() = InvalidateMeasurementOnPositionedNode()
+    override fun update(node: InvalidateMeasurementOnPositionedNode) = Unit
+}
+
+private class InvalidateMeasurementOnPositionedNode :
+    Modifier.Node(), GlobalPositionAwareModifierNode, LayoutModifierNode {
+    private var shouldInvalidateMeasurement = true
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) {
+            placeable.place(0, 0)
+        }
     }
 
-    @Test
-    fun pointerScrollEventProcessesScheduledCoroutines() = runInternalSkikoComposeUiTest {
-        var pointerHandledAfterDelay by mutableStateOf(false)
-        setContent {
-            val coroutineScope = rememberCoroutineScope()
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            awaitPointerEvent()
-                            coroutineScope.launch {
-                                pointerHandledAfterDelay = true
-                            }
-                        }
-                    }
-            )
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        if (shouldInvalidateMeasurement) {
+            shouldInvalidateMeasurement = false
+            invalidateMeasurement()
         }
-
-        assertFalse(pointerHandledAfterDelay)
-
-        scene.sendPointerEvent(
-            eventType = PointerEventType.Scroll,
-            position = Offset(50f, 50f),
-            scrollDelta = Offset(0f, 40f)
-        )
-
-        assertTrue(pointerHandledAfterDelay)
-    }
-
-    @Test
-    fun keyEventsProcessesScheduledCoroutines() = runInternalSkikoComposeUiTest {
-        var keyHandledAfterDelay by mutableStateOf(false)
-        setContent {
-            val coroutineScope = rememberCoroutineScope()
-            val focusRequester = remember { FocusRequester() }
-            val interactionSource = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .focusable(interactionSource = interactionSource)
-                    .onKeyEvent {
-                        coroutineScope.launch {
-                            keyHandledAfterDelay = true
-                        }
-                        true
-                    }
-            )
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
-            }
-        }
-
-        assertFalse(keyHandledAfterDelay)
-
-        scene.sendKeyEvent(
-            KeyEvent(
-                nativeKeyEvent = InternalKeyEvent(
-                    key = Key.A,
-                    type = KeyEventType.KeyDown,
-                    codePoint = 0,
-                    modifiers = EmptyPointerKeyboardModifiers(),
-                    nativeEvent = null
-                )
-            )
-        )
-
-        assertTrue(keyHandledAfterDelay)
-    }
-
-    @Test
-    fun rotaryEventsProcessesScheduledCoroutines() = runInternalSkikoComposeUiTest {
-        var eventHandledAfterDelay by mutableStateOf(false)
-        setContent {
-            val coroutineScope = rememberCoroutineScope()
-            val focusRequester = remember { FocusRequester() }
-            val interactionSource = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        coroutineScope.launch {
-                            eventHandledAfterDelay = true
-                        }
-                        true
-                    }
-                    .focusRequester(focusRequester)
-                    .focusable(interactionSource = interactionSource)
-            )
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
-            }
-        }
-
-        assertFalse(eventHandledAfterDelay)
-
-        scene.sendRotaryScrollEvent(1f, 1f)
-
-        assertTrue(eventHandledAfterDelay)
     }
 }

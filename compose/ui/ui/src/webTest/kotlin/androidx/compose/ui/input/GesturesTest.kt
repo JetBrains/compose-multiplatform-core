@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +26,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import kotlin.test.Test
@@ -61,9 +63,10 @@ class GesturesTest : OnCanvasTests {
         )
 
         val actualPan = 10f * currentDensity.density
-        assertEquals(2, pans.size)
-        assertEquals(Offset(0f, actualPan), pans[0])
-        assertEquals(Offset(actualPan, 0f), pans[1])
+        assertEquals(3, pans.size)
+        assertEquals(Offset(actualPan, actualPan), pans[0])
+        assertEquals(Offset(0f, actualPan), pans[1])
+        assertEquals(Offset(actualPan, 0f), pans[2])
     }
 
     @Test
@@ -102,10 +105,10 @@ class GesturesTest : OnCanvasTests {
         )
 
         // Verify that at least one zoom value greater than 1.0 was recorded.
-        assertEquals(7, zooms.size)
+        assertEquals(9, zooms.size)
         println(zooms.joinToString(","))
-        assertTrue(zooms[0] > 1 && zooms[0] < zooms[2]) // according to the Offset change
-        assertTrue(zooms[3] < 1 && zooms[3] < zooms[5]) // according to the Offset change
+        assertTrue(zooms[2] > 1 && zooms[2] < zooms[4]) // according to the Offset change
+        assertTrue(zooms[5] < 1 && zooms[5] < zooms[7]) // according to the Offset change
     }
 
     @Test
@@ -207,6 +210,63 @@ class GesturesTest : OnCanvasTests {
         assertEquals(expected, actual)
     }
 
+    @Test // Regression: https://youtrack.jetbrains.com/issue/CMP-10249
+    fun pointerCancelDoesNotTriggerClick() = runApplicationTest {
+        var clicksCount = 0
+
+        createComposeWindow {
+            Box(modifier = Modifier.fillMaxSize().clickable { clicksCount++ })
+        }
+
+        // Normal click should fire
+        dispatchEvents(
+            WebPointerEvent("pointerdown", touch(0, 50, 50)),
+            WebPointerEvent("pointerup", touch(0, 50, 50))
+        )
+        awaitIdle()
+        assertEquals(1, clicksCount)
+
+        // pointercancel should NOT fire click (browser took over the gesture)
+        dispatchEvents(
+            WebPointerEvent("pointerdown", touch(1, 50, 50)),
+            WebPointerEvent("pointercancel", touch(1, 50, 50))
+        )
+        awaitIdle()
+        assertEquals(1, clicksCount) // still 1 — click was cancelled
+    }
+
+    @Test
+    fun subPixelMovesAreNotQuantizedToWholeCssPixels() = runApplicationTest {
+        val moveDeltas = mutableListOf<Offset>()
+
+        createComposeWindow {
+            Box(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (coroutineContext.isActive) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Move) {
+                            moveDeltas.add(event.changes[0].positionChange())
+                        }
+                    }
+                }
+            })
+        }
+
+        dispatchEvents(
+            fractionalTouchEvent("pointerdown", 0, 10.0, 10.0),
+            fractionalTouchEvent("pointermove", 0, 10.25, 10.0),
+            fractionalTouchEvent("pointermove", 0, 10.5, 10.0)
+        )
+
+        awaitIdle()
+
+        assertEquals(2, moveDeltas.size, "sub-pixel moves were dropped: $moveDeltas")
+        assertTrue(
+            moveDeltas.all { it.x > 0f },
+            "sub-pixel moves must report a non-zero delta: $moveDeltas"
+        )
+    }
+
     private fun touch(id: Int, x: Int, y: Int) = PointerEventInit(
         pointerId = id,
         clientX = x,
@@ -214,3 +274,15 @@ class GesturesTest : OnCanvasTests {
         pointerType = "touch"
     )
 }
+
+/**
+ * [PointerEventInit] types `clientX`/`clientY` as `Int`, so it cannot express the fractional CSS
+ * pixel coordinates a real browser reports. Build the event in JS instead.
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+// language=js
+private fun fractionalTouchEvent(type: String, id: Int, x: Double, y: Double): WebPointerEvent =
+    js(
+        "new PointerEvent(type, { pointerId: id, clientX: x, clientY: y, " +
+            "pointerType: 'touch', isPrimary: true, cancelable: true })"
+    )

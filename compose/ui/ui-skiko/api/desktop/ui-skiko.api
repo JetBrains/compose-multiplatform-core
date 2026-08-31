@@ -1,0 +1,137 @@
+public final class androidx/compose/ui/graphics/DesktopColorFilter_desktopKt {
+	public static final synthetic fun asDesktopColorFilter (Landroidx/compose/ui/graphics/ColorFilter;)Lorg/jetbrains/skia/ColorFilter;
+	public static final synthetic fun toComposeColorFilter (Lorg/jetbrains/skia/ColorFilter;)Landroidx/compose/ui/graphics/ColorFilter;
+}
+
+public final class androidx/compose/ui/graphics/DesktopImageAsset_desktopKt {
+	public static final synthetic fun asDesktopBitmap (Landroidx/compose/ui/graphics/ImageBitmap;)Lorg/jetbrains/skia/Bitmap;
+	public static final synthetic fun asImageBitmap (Lorg/jetbrains/skia/Bitmap;)Landroidx/compose/ui/graphics/ImageBitmap;
+	public static final synthetic fun asImageBitmap (Lorg/jetbrains/skia/Image;)Landroidx/compose/ui/graphics/ImageBitmap;
+}
+
+public final class androidx/compose/ui/graphics/DesktopImageConverters_desktopKt {
+	public static final synthetic fun asAwtImage (Landroidx/compose/ui/graphics/ImageBitmap;)Ljava/awt/image/BufferedImage;
+	public static final synthetic fun asAwtImage-Ug5Nnss (Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;J)Ljava/awt/Image;
+	public static synthetic fun asAwtImage-Ug5Nnss$default (Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;JILjava/lang/Object;)Ljava/awt/Image;
+	public static final synthetic fun asPainter (Ljava/awt/image/BufferedImage;)Landroidx/compose/ui/graphics/painter/Painter;
+	public static final fun toAwtImage (Landroidx/compose/ui/graphics/ImageBitmap;)Ljava/awt/image/BufferedImage;
+	public static final fun toAwtImage-Ug5Nnss (Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;J)Ljava/awt/Image;
+	public static synthetic fun toAwtImage-Ug5Nnss$default (Landroidx/compose/ui/graphics/painter/Painter;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/unit/LayoutDirection;JILjava/lang/Object;)Ljava/awt/Image;
+	public static final fun toComposeBitmap (Ljava/awt/image/BufferedImage;)Landroidx/compose/ui/graphics/ImageBitmap;
+	public static final fun toComposeImageBitmap (Ljava/awt/image/BufferedImage;)Landroidx/compose/ui/graphics/ImageBitmap;
+	public static final fun toPainter (Ljava/awt/image/BufferedImage;)Landroidx/compose/ui/graphics/painter/Painter;
+}
+
+public final class androidx/compose/ui/graphics/DesktopPathEffect_desktopKt {
+	public static final synthetic fun asDesktopPathEffect (Landroidx/compose/ui/graphics/PathEffect;)Lorg/jetbrains/skia/PathEffect;
+}
+
+public final class androidx/compose/ui/graphics/DesktopPath_desktopKt {
+	public static final synthetic fun asDesktopPath (Landroidx/compose/ui/graphics/Path;)Lorg/jetbrains/skia/Path;
+}
+
+public final class androidx/compose/ui/graphics/Rects_skikoKt {
+	public static final fun toComposeRect (Lorg/jetbrains/skia/Rect;)Landroidx/compose/ui/geometry/Rect;
+	public static final fun toSkiaRRect (Landroidx/compose/ui/geometry/RoundRect;)Lorg/jetbrains/skia/RRect;
+	public static final fun toSkiaRect (Landroidx/compose/ui/geometry/Rect;)Lorg/jetbrains/skia/Rect;
+}
+
+public final class androidx/compose/ui/graphics/SkiaBackedCanvas_skikoKt {
+	public static final fun asComposeCanvas (Lorg/jetbrains/skia/Canvas;)Landroidx/compose/ui/graphics/Canvas;
+	public static final fun getNativeCanvas (Landroidx/compose/ui/graphics/Canvas;)Lorg/jetbrains/skia/Canvas;
+	public static final fun getSkiaCanvas (Landroidx/compose/ui/graphics/Canvas;)Lorg/jetbrains/skia/Canvas;
+}
+
+public final class androidx/compose/ui/graphics/SkiaBackedPaint_skikoKt {
+	public static final synthetic fun Paint ()Landroidx/compose/ui/graphics/Paint;
+	public static final fun asComposePaint (Lorg/jetbrains/skia/Paint;)Landroidx/compose/ui/graphics/Paint;
+	public static final fun getSkiaPaint (Landroidx/compose/ui/graphics/Paint;)Lorg/jetbrains/skia/Paint;
+	public static final synthetic fun isSupported-s9anfk8 (I)Z
+}
+
+public final class androidx/compose/ui/graphics/SkiaBackedPathEffect_skikoKt {
+	public static final fun asComposePathEffect (Lorg/jetbrains/skia/PathEffect;)Landroidx/compose/ui/graphics/PathEffect;
+	public static final fun asSkiaPathEffect (Landroidx/compose/ui/graphics/PathEffect;)Lorg/jetbrains/skia/PathEffect;
+}
+
+public final class androidx/compose/ui/graphics/SkiaBackedPathMeasure_skikoKt {
+	public static final synthetic fun PathMeasure ()Landroidx/compose/ui/graphics/PathMeasure;
+	public static final fun asComposePathEffect (Lorg/jetbrains/skia/PathMeasure;)Landroidx/compose/ui/graphics/PathMeasure;
+	public static final fun asSkiaPathMeasure (Landroidx/compose/ui/graphics/PathMeasure;)Lorg/jetbrains/skia/PathMeasure;
+}
+
+public final class androidx/compose/ui/graphics/SkiaBackedPath_skikoKt {
+	public static final synthetic fun Path ()Landroidx/compose/ui/graphics/Path;
+	public static final fun asComposePath (Lorg/jetbrains/skia/Path;)Landroidx/compose/ui/graphics/Path;
+	public static final fun asSkiaPath (Landroidx/compose/ui/graphics/Path;)Lorg/jetbrains/skia/Path;
+}
+
+public final class androidx/compose/ui/graphics/SkiaBackedRenderEffect_skikoKt {
+	public static final fun asComposeRenderEffect (Lorg/jetbrains/skia/ImageFilter;)Landroidx/compose/ui/graphics/RenderEffect;
+	public static final fun getSkiaImageFilter (Landroidx/compose/ui/graphics/RenderEffect;)Lorg/jetbrains/skia/ImageFilter;
+}
+
+public final class androidx/compose/ui/graphics/SkiaColorFilter_skikoKt {
+	public static final fun asComposeColorFilter (Lorg/jetbrains/skia/ColorFilter;)Landroidx/compose/ui/graphics/ColorFilter;
+	public static final fun asSkiaColorFilter (Landroidx/compose/ui/graphics/ColorFilter;)Lorg/jetbrains/skia/ColorFilter;
+}
+
+public final class androidx/compose/ui/graphics/SkiaImageAsset_skikoKt {
+	public static final fun asComposeImageBitmap (Lorg/jetbrains/skia/Bitmap;)Landroidx/compose/ui/graphics/ImageBitmap;
+	public static final fun asSkiaBitmap (Landroidx/compose/ui/graphics/ImageBitmap;)Lorg/jetbrains/skia/Bitmap;
+	public static final fun toComposeImageBitmap (Lorg/jetbrains/skia/Image;)Landroidx/compose/ui/graphics/ImageBitmap;
+}
+
+public final class androidx/compose/ui/graphics/SkiaPathIterator_skikoKt {
+	public static final synthetic fun PathIterator (Landroidx/compose/ui/graphics/Path;Landroidx/compose/ui/graphics/PathIterator$ConicEvaluation;F)Landroidx/compose/ui/graphics/PathIterator;
+	public static synthetic fun PathIterator$default (Landroidx/compose/ui/graphics/Path;Landroidx/compose/ui/graphics/PathIterator$ConicEvaluation;FILjava/lang/Object;)Landroidx/compose/ui/graphics/PathIterator;
+}
+
+public final class androidx/compose/ui/graphics/SkiaShader_skikoKt {
+	public static final fun asComposeShader (Lorg/jetbrains/skia/Shader;)Landroidx/compose/ui/graphics/Shader;
+	public static final fun getSkiaShader (Landroidx/compose/ui/graphics/Shader;)Lorg/jetbrains/skia/Shader;
+}
+
+public final class androidx/compose/ui/graphics/SkiaTileMode_skikoKt {
+	public static final synthetic fun isSupported-0vamqd0 (I)Z
+}
+
+public final class androidx/compose/ui/text/platform/DesktopFont_desktopKt {
+	public static final fun Font-Ej4NQ78 (Ljava/io/File;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/Font;
+	public static final fun Font-Ej4NQ78 (Ljava/lang/String;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-Ej4NQ78$default (Ljava/io/File;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;ILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-Ej4NQ78$default (Ljava/lang/String;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;ILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static final fun Font-RetOiIg (Ljava/io/File;Landroidx/compose/ui/text/font/FontWeight;I)Landroidx/compose/ui/text/font/Font;
+	public static final fun Font-RetOiIg (Ljava/lang/String;Landroidx/compose/ui/text/font/FontWeight;I)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-RetOiIg$default (Ljava/io/File;Landroidx/compose/ui/text/font/FontWeight;IILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-RetOiIg$default (Ljava/lang/String;Landroidx/compose/ui/text/font/FontWeight;IILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+}
+
+public final class androidx/compose/ui/text/platform/FontLoadResult {
+	public static final field $stable I
+	public fun <init> (Lorg/jetbrains/skia/Typeface;Ljava/util/List;)V
+	public final fun getAliases ()Ljava/util/List;
+	public final fun getTypeface ()Lorg/jetbrains/skia/Typeface;
+}
+
+public final class androidx/compose/ui/text/platform/FontLoader : androidx/compose/ui/text/font/Font$ResourceLoader, androidx/compose/ui/text/font/FontResourceLoaderWithResolver {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun getFontFamilyResolver ()Landroidx/compose/ui/text/font/FontFamily$Resolver;
+	public synthetic fun load (Landroidx/compose/ui/text/font/Font;)Ljava/lang/Object;
+	public fun load (Landroidx/compose/ui/text/font/Font;)Lorg/jetbrains/skia/Typeface;
+}
+
+public final class androidx/compose/ui/text/platform/PlatformFont_skikoKt {
+	public static final fun Font-MuC2MFs (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/Font;
+	public static final fun Font-MuC2MFs (Ljava/lang/String;[BLandroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-MuC2MFs$default (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;ILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-MuC2MFs$default (Ljava/lang/String;[BLandroidx/compose/ui/text/font/FontWeight;ILandroidx/compose/ui/text/font/FontVariation$Settings;ILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static final fun Font-wCLgNak (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/text/font/FontWeight;I)Landroidx/compose/ui/text/font/Font;
+	public static final fun Font-wCLgNak (Ljava/lang/String;[BLandroidx/compose/ui/text/font/FontWeight;I)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-wCLgNak$default (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/text/font/FontWeight;IILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static synthetic fun Font-wCLgNak$default (Ljava/lang/String;[BLandroidx/compose/ui/text/font/FontWeight;IILjava/lang/Object;)Landroidx/compose/ui/text/font/Font;
+	public static final fun Typeface (Lorg/jetbrains/skia/Typeface;Ljava/lang/String;)Landroidx/compose/ui/text/font/Typeface;
+	public static synthetic fun Typeface$default (Lorg/jetbrains/skia/Typeface;Ljava/lang/String;ILjava/lang/Object;)Landroidx/compose/ui/text/font/Typeface;
+}
+

@@ -722,23 +722,25 @@ class TextFieldBufferTest {
         val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
         // Act
         val style = SpanStyle(fontSize = 12.sp)
-        buffer.addStyle(style, 0, 2)
+        buffer.addStyle(style, TextRange(0, 2), ExpandPolicy.AtEnd)
 
         val paragraphStyle = ParagraphStyle(textAlign = TextAlign.Left)
-        buffer.addStyle(paragraphStyle, 3, 5)
+        buffer.addStyle(paragraphStyle, TextRange(3, 5), ExpandPolicy.AtEnd)
 
         // Assert
-        val spanStyles = buffer.getSpanStyles(0, buffer.length)
-        assertThat(spanStyles).hasSize(1)
-        assertThat(spanStyles[0].item).isEqualTo(style)
-        assertThat(spanStyles[0].start).isEqualTo(0)
-        assertThat(spanStyles[0].end).isEqualTo(2)
+        with(buffer) {
+            val spanStyles = buffer.getSpanStyles(TextRange(0, buffer.length))
+            assertThat(spanStyles).hasSize(1)
+            assertThat(spanStyles[0].spanStyle).isEqualTo(style)
+            assertThat(spanStyles[0].textRange.start).isEqualTo(0)
+            assertThat(spanStyles[0].textRange.end).isEqualTo(2)
 
-        val paragraphStyles = buffer.getParagraphStyles(0, buffer.length)
-        assertThat(paragraphStyles).hasSize(1)
-        assertThat(paragraphStyles[0].item).isEqualTo(paragraphStyle)
-        assertThat(paragraphStyles[0].start).isEqualTo(3)
-        assertThat(paragraphStyles[0].end).isEqualTo(5)
+            val paragraphStyles = buffer.getParagraphStyles(TextRange(0, buffer.length))
+            assertThat(paragraphStyles).hasSize(1)
+            assertThat(paragraphStyles[0].paragraphStyle).isEqualTo(paragraphStyle)
+            assertThat(paragraphStyles[0].textRange.start).isEqualTo(3)
+            assertThat(paragraphStyles[0].textRange.end).isEqualTo(5)
+        }
 
         // adding style is treat as replacing the plain text in the range with the styled text
         assertThat(buffer.changes.changeCount).isEqualTo(2)
@@ -750,16 +752,140 @@ class TextFieldBufferTest {
     }
 
     @Test
+    fun addStyle_throws_whenInvalidRange() {
+        assumeTrue(ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled)
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        val style = SpanStyle(fontSize = 12.sp)
+
+        // Invalid ranges
+        assertFailsWith<IllegalArgumentException> {
+            buffer.addStyle(style, TextRange(2, 6), ExpandPolicy.AtEnd)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            buffer.addStyle(style, TextRange(3, 2), ExpandPolicy.AtEnd)
+        }
+    }
+
+    @Test
+    fun addStyleWithExpandPolicy_throws_whenInvalidRange() {
+        assumeTrue(ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled)
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        val style = SpanStyle(fontSize = 12.sp)
+
+        // Invalid ranges
+        assertFailsWith<IllegalArgumentException> {
+            buffer.addStyle(style, TextRange(-1, 2), ExpandPolicy.AtEnd)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            buffer.addStyle(style, TextRange(2, 6), ExpandPolicy.AtEnd)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            buffer.addStyle(style, TextRange(3, 2), ExpandPolicy.AtEnd)
+        }
+    }
+
+    @Test
+    fun getStyles_coerces_whenInvalidRange() {
+        assumeTrue(ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled)
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        val style = SpanStyle(fontSize = 12.sp)
+        buffer.addStyle(style, TextRange(0, 5), ExpandPolicy.AtEnd)
+
+        val outOfBoundsEnd = 10
+        val outOfBoundsRange = TextRange(2, outOfBoundsEnd)
+
+        // It will coerce [2, 10] into [2, 5] and find the intersection with [0, 5]
+        assertThat(buffer.getSpanStyles(outOfBoundsRange)).hasSize(1)
+    }
+
+    @Test
+    fun getStyles_supportsReversedRange() {
+        assumeTrue(ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled)
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        val style = SpanStyle(fontSize = 12.sp)
+        buffer.addStyle(style, TextRange(0, 5), ExpandPolicy.AtEnd)
+
+        val reversedRange = TextRange(4, 1)
+
+        assertThat(buffer.getSpanStyles(reversedRange)).hasSize(1)
+    }
+
+    @Test
+    fun trackedRange_textRangeSetter_throws_whenInvalidRange() {
+        assumeTrue(ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled)
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        val style = SpanStyle(fontSize = 12.sp)
+
+        val trackedRange = buffer.addStyle(style, TextRange(0, 2), ExpandPolicy.AtEnd)
+
+        // Invalid ranges
+        with(buffer) {
+            assertFailsWith<IllegalArgumentException> { trackedRange.textRange = TextRange(2, 6) }
+            assertFailsWith<IllegalArgumentException> { trackedRange.textRange = TextRange(3, 2) }
+            assertFailsWith<IllegalArgumentException> { trackedRange.textRange = TextRange(1, 1) }
+        }
+    }
+
+    @Test
     fun addStyle_rangeTracked() {
         assumeTrue(ComposeFoundationFlags.isBasicTextFieldStyledTextEnabled)
         val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
         val style = SpanStyle(fontSize = 12.sp)
 
-        buffer.addStyle(style, 0, buffer.length)
+        buffer.addStyle(style, TextRange(0, buffer.length), ExpandPolicy.AtEnd)
         buffer.insert(2, "world") // expand where style is applied
 
-        assertThat(buffer.getSpanStyles(0, buffer.length)[0].start).isEqualTo(0)
-        assertThat(buffer.getSpanStyles(0, buffer.length)[0].end).isEqualTo(10)
+        with(buffer) {
+            assertThat(buffer.getSpanStyles(TextRange(0, buffer.length))[0].textRange.start)
+                .isEqualTo(0)
+            assertThat(buffer.getSpanStyles(TextRange(0, buffer.length))[0].textRange.end)
+                .isEqualTo(10)
+        }
+    }
+
+    @Test
+    fun textFieldBuffer_replace_defaultsToSoftwareSource() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        buffer.replace(0, 5, "world")
+
+        assertThat(buffer.changeTracker.changeCount).isEqualTo(1)
+        assertThat(buffer.changeTracker.isFromHardwareSource(0)).isFalse()
+    }
+
+    @Test
+    fun textFieldBuffer_replace_canSetHardwareSource() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        buffer.replace(0, 5, "world", isFromHardwareSource = true)
+
+        assertThat(buffer.changeTracker.changeCount).isEqualTo(1)
+        assertThat(buffer.changeTracker.isFromHardwareSource(0)).isTrue()
+    }
+
+    @Test
+    fun textFieldBuffer_append_defaultsToSoftwareSource() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        buffer.append("world")
+
+        assertThat(buffer.changeTracker.changeCount).isEqualTo(1)
+        assertThat(buffer.changeTracker.isFromHardwareSource(0)).isFalse()
+    }
+
+    @Test
+    fun textFieldBuffer_append_subSequence_defaultsToSoftwareSource() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        buffer.append("world", 0, 3)
+
+        assertThat(buffer.changeTracker.changeCount).isEqualTo(1)
+        assertThat(buffer.changeTracker.isFromHardwareSource(0)).isFalse()
+    }
+
+    @Test
+    fun textFieldBuffer_append_char_defaultsToSoftwareSource() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        buffer.append('!')
+
+        assertThat(buffer.changeTracker.changeCount).isEqualTo(1)
+        assertThat(buffer.changeTracker.isFromHardwareSource(0)).isFalse()
     }
 
     private fun testSelectionAdjustment(

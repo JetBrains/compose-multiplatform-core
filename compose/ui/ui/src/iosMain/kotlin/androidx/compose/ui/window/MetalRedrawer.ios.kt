@@ -16,34 +16,37 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.FrameRateCategory
+import androidx.collection.IntIntPair
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.UIKitInteropAction
-import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
-import platform.Foundation.NSRunLoop
-import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSThread
 import platform.QuartzCore.*
 import platform.darwin.*
-import platform.Foundation.NSRunLoopCommonModes
-import platform.Foundation.NSTimeInterval
 import platform.Metal.MTLCommandQueueProtocol
 import platform.Metal.MTLDeviceProtocol
 
 internal sealed interface MetalRedrawer {
-    var isActive: Boolean
-    fun draw(waitUntilCompletion: Boolean)
-    fun setNeedsRedraw()
-    var ongoingInteractionEventsCount: Int
-    var preferredFramesPerSecond: NSInteger
+    fun render(waitUntilCompletion: Boolean)
+    fun performTransaction(transaction: InteropSyncTransaction)
     var isForcedToPresentWithTransactionEveryFrame: Boolean
-    val currentTargetFrameDuration: NSTimeInterval?
-    fun voteFrameRate(frameRate: Float, frameRateCategory: Float)
+    fun awaitRenderingCompletion()
     fun dispose()
+}
+
+internal inline fun MetalRedrawer.onDraw(
+    needsSynchronousDraw: Boolean,
+    needsComposeSceneDraw: Boolean,
+    retrievePendingViewUpdatesInteropTransaction: () -> InteropSyncTransaction,
+) {
+    if (needsComposeSceneDraw || needsSynchronousDraw) {
+        render(waitUntilCompletion = needsSynchronousDraw)
+    } else {
+        performTransaction(retrievePendingViewUpdatesInteropTransaction())
+    }
 }
 
 // https://youtrack.jetbrains.com/issue/CMP-9722
@@ -51,8 +54,8 @@ internal sealed interface MetalRedrawer {
 // All changes made here must also be implemented in the `SurfaceMetalRedrawer`.
 internal class LegacyMetalRedrawer(
     private val metalLayer: CAMetalLayer,
-    private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
-    private var render: (Canvas, targetTimestamp: NSTimeInterval) -> Unit,
+    private var retrieveInteropTransaction: () -> InteropSyncTransaction,
+    private var draw: (Canvas) -> Unit,
 ): MetalRedrawer {
     /**
      * A wrapper around CAMetalLayer that allows to perform operations on its drawables without
@@ -68,46 +71,12 @@ internal class LegacyMetalRedrawer(
         ?: throw IllegalStateException("CAMetalLayer.device can not be null")
     private val queue = getCachedCommandQueue(device)
     private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
-    private var lastRenderTimestamp: NSTimeInterval = CACurrentMediaTime()
     private val pictureRecorder = PictureRecorder()
-
     private val inflightCommandBuffersGroup = dispatch_group_create()
-    private val drawCanvasSemaphore = dispatch_semaphore_create(1)
     // A guard flag to have proper assertion when draw() method is called recursively.
     private var isDrawRecursiveCall = false
 
     override var isForcedToPresentWithTransactionEveryFrame = false
-
-    var maximumFramesPerSecond: NSInteger = 0
-
-    override var preferredFramesPerSecond: NSInteger
-        get() = caDisplayLink?.preferredFramesPerSecond ?: 0
-        set(value) {
-            if (caDisplayLink?.preferredFramesPerSecond == value) return
-            caDisplayLink?.preferredFramesPerSecond = value
-        }
-
-    override val currentTargetFrameDuration: NSTimeInterval?
-        get() {
-            val currentTargetTimestamp = currentTargetTimestamp ?: return null
-            val currentTimestamp = caDisplayLink?.timestamp ?: return null
-            return currentTargetTimestamp - currentTimestamp
-        }
-
-    private val displayLinkConditions = DisplayLinkConditions { paused ->
-        caDisplayLink?.paused = paused
-    }
-
-    /**
-     * Runs invalidation-independent displayLink for forcing UITouch events to come at the fastest
-     * possible cadence. Otherwise, touch events can come at rate lower than actual display refresh
-     * rate.
-     */
-    override var ongoingInteractionEventsCount: Int = 0
-        set(value) {
-            field = value
-            displayLinkConditions.needsToBeProactive = value > 0
-        }
 
     /**
      * True if Metal layer can be opaque. In this case if no interop views are present, Metal
@@ -141,108 +110,34 @@ internal class LegacyMetalRedrawer(
         metalLayer.setOpaque(!isInteropActive && canBeOpaque)
     }
 
-    /**
-     * Display link for driving the rendering loop.
-     * null after [dispose] call
-     */
-    private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
-        target = LegacyDisplayLinkProxy {
-            val targetTimestamp = currentTargetTimestamp ?: return@LegacyDisplayLinkProxy
-
-            displayLinkConditions.onDisplayLinkTick {
-                draw(waitUntilCompletion = false, targetTimestamp)
-            }
-        },
-        selector = NSSelectorFromString(LegacyDisplayLinkProxy::handleDisplayLinkTick.name)
-    )
-
-    private val currentTargetTimestamp: NSTimeInterval?
-        get() = caDisplayLink?.targetTimestamp
-
     init {
-        val caDisplayLink = caDisplayLink
-            ?: throw IllegalStateException("caDisplayLink is null during redrawer init")
-
-        caDisplayLink.addToRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
-
         updateLayerOpacity()
     }
 
-    override var isActive: Boolean = true
-        set(newValue) {
-            if (field != newValue) {
-                field = newValue
-                setNeedsRedraw()
+    private var isDisposed = false
 
-                displayLinkConditions.isActive = newValue
-                if (!newValue) {
-                    // If an application enters the background, synchronously wait for inflightCommandBuffersGroup, as per
-                    // https://developer.apple.com/documentation/metal/gpu_devices_and_work_submission/preparing_your_metal_app_to_run_in_the_background?language=objc
-                    // Set the expiration time to 1 second to ensure that the main thread does not get stuck when the app is suspended.
-                    dispatch_group_wait(inflightCommandBuffersGroup, dispatch_time(DISPATCH_TIME_NOW, 1L * NSEC_PER_SEC.toLong()))
-                }
-            }
-        }
+    override fun awaitRenderingCompletion() {
+        // If an application enters the background, synchronously wait for inflightCommandBuffersGroup, as per
+        // https://developer.apple.com/documentation/metal/gpu_devices_and_work_submission/preparing_your_metal_app_to_run_in_the_background?language=objc
+        // Set the expiration time to 1 second to ensure that the main thread does not get stuck when the app is suspended.
+        dispatch_group_wait(
+            inflightCommandBuffersGroup,
+            dispatch_time(DISPATCH_TIME_NOW, 1L * NSEC_PER_SEC.toLong())
+        )
+    }
 
     override fun dispose() {
-        check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
+        check(!isDisposed) { "MetalRedrawer.dispose() was called more than once" }
+        isDisposed = true
 
-        retrieveInteropTransaction = {
-            object : UIKitInteropTransaction {
-                override val isInteropActive: Boolean = false
-                override val actions = emptyList<UIKitInteropAction>()
-            }
-        }
+        retrieveInteropTransaction = { InteropSyncTransaction.Empty }
 
-        render = { _, _ -> }
+        draw = { _ -> }
 
         releaseCachedCommandQueue(queue)
 
-        caDisplayLink?.invalidate()
-        caDisplayLink = null
-
         pictureRecorder.close()
         context.close()
-    }
-
-    /**
-     * Marks current state as dirty and unpauses display link if needed and enables draw dispatch operation on
-     * next vsync
-     */
-    override fun setNeedsRedraw() {
-        displayLinkConditions.setNeedsRedraw()
-    }
-
-    /**
-     * Immediately dispatch draw and block the thread until it's finished and presented on the screen.
-     */
-    override fun draw(waitUntilCompletion: Boolean) {
-        if (caDisplayLink == null) {
-            return
-        }
-        draw(waitUntilCompletion, CACurrentMediaTime())
-    }
-
-    private var currentFrameRate: Float = Float.NaN
-
-    override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-        val frameRateCategoryValue = when (frameRateCategory) {
-            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
-            FrameRateCategory.Normal.value -> 60f
-            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
-            else -> Float.NaN
-        }
-
-        val resolvedFrameRate = when {
-            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
-            !frameRate.isNaN() -> frameRate
-            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
-            else -> return
-        }
-
-        if (currentFrameRate.isNaN() || resolvedFrameRate > currentFrameRate) {
-            currentFrameRate = resolvedFrameRate
-        }
     }
 
     /**
@@ -250,10 +145,9 @@ internal class LegacyMetalRedrawer(
      *
      * @param waitUntilCompletion if `true`, the method will block the thread until the frame is
      * presented on the screen. If false, the method will just dispatch GPU workload and return.
-     * @param targetTimestamp the target timestamp for the frame to drive vsync-dependant time clock.
      */
     @OptIn(BetaInteropApi::class)
-    private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
+    override fun render(waitUntilCompletion: Boolean) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
         check(!isDrawRecursiveCall) {
             "Attempt to call MetalRedrawer.draw() recursively which may lead to the PictureRecorder corruption."
@@ -261,11 +155,9 @@ internal class LegacyMetalRedrawer(
         isDrawRecursiveCall = true
 
         try {
-            lastRenderTimestamp = maxOf(targetTimestamp, lastRenderTimestamp)
-
             autoreleasepool {
                 val (width, height) = metalLayer.drawableSize.useContents {
-                    width.roundToInt() to height.roundToInt()
+                    IntIntPair(width.roundToInt(), height.roundToInt())
                 }
 
                 if (width <= 0 || height <= 0) {
@@ -280,15 +172,10 @@ internal class LegacyMetalRedrawer(
                         width.toFloat(),
                         height.toFloat()
                     ).also { canvas ->
-                        render(canvas, lastRenderTimestamp)
+                        draw(canvas)
                     }
 
                     pictureRecorder.finishRecordingAsPicture()
-                }
-
-                if (!currentFrameRate.isNaN()) {
-                    preferredFramesPerSecond = currentFrameRate.toLong()
-                    currentFrameRate = Float.NaN
                 }
 
                 val metalDrawable = trace("MetalRedrawer:draw:nextDrawable") {
@@ -330,7 +217,7 @@ internal class LegacyMetalRedrawer(
 
                 val presentsWithTransaction =
                     isForcedToPresentWithTransactionEveryFrame
-                        || interopTransaction.actions.isNotEmpty()
+                        || interopTransaction.hasPendingActions
                         || isInteropActive != interopTransaction.isInteropActive
                 metalLayer.presentsWithTransaction = presentsWithTransaction
 
@@ -394,6 +281,11 @@ internal class LegacyMetalRedrawer(
         }
     }
 
+    override fun performTransaction(transaction: InteropSyncTransaction) {
+        check(NSThread.isMainThread)
+        transaction.performTransaction()
+    }
+
     companion object {
         private class CachedCommandQueue(
             val queue: MTLCommandQueueProtocol,
@@ -434,15 +326,5 @@ internal class LegacyMetalRedrawer(
                 }
             }
         }
-    }
-}
-
-private class LegacyDisplayLinkProxy(
-    private val callback: () -> Unit
-) : NSObject() {
-    @OptIn(BetaInteropApi::class)
-    @ObjCAction
-    fun handleDisplayLinkTick() {
-        callback()
     }
 }

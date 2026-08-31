@@ -53,9 +53,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.platform.UIKitNativeTextInputContextMenuCustomAction
+import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.UIKitNativeTextInputContext
+import androidx.compose.ui.platform.NativeTextInputContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.uikit.LocalNativeTextInputContext
@@ -252,7 +252,7 @@ private class ContextMenuItemsState(
     val paste: (() -> Unit)?,
     val cut: (() -> Unit)?,
     val selectAll: (() -> Unit)?,
-    val customActions: List<UIKitNativeTextInputContextMenuCustomAction>,
+    val customActions: List<NativeTextInputContextMenuCustomAction>,
     val rect: Rect? = null
 )
 
@@ -292,6 +292,7 @@ private class ContextMenuToolbarProvider(
                             copy = it.copy,
                             cut = it.cut,
                             paste = it.paste,
+                            select = null,
                             selectAll = it.selectAll,
                             customActions = it.customActions.map { action ->
                                 CMPEditMenuCustomAction(action.title, action.action)
@@ -360,7 +361,7 @@ private fun buildContextMenuItemsState(
     var paste: (() -> Unit)? = null
     var cut: (() -> Unit)? = null
     var selectAll: (() -> Unit)? = null
-    val customActions = mutableListOf<UIKitNativeTextInputContextMenuCustomAction>()
+    val customActions = mutableListOf<NativeTextInputContextMenuCustomAction>()
 
     fun actionItem(component: TextContextMenuComponent): (() -> Unit)? {
         val item = component as? TextContextMenuItemWithComposableLeadingIcon
@@ -387,7 +388,7 @@ private fun buildContextMenuItemsState(
                     val actionItem = actionItem(component)
                     if (actionItem != null) {
                         customActions.add(
-                            UIKitNativeTextInputContextMenuCustomAction(
+                            NativeTextInputContextMenuCustomAction(
                                 title = component.label,
                                 action = actionItem
                             )
@@ -410,7 +411,7 @@ private fun buildContextMenuItemsState(
 
 @OptIn(InternalComposeUiApi::class)
 private data class NativeTextInputContextMenuUpdaterElement(
-    val context: UIKitNativeTextInputContext,
+    val context: NativeTextInputContext,
     val selectionProvider: () -> TextRange,
     val onSelectionChanged: (TextContextMenuData) -> Unit
 ): ModifierNodeElement<NativeTextInputContextMenuUpdaterNode>() {
@@ -433,7 +434,7 @@ private data class NativeTextInputContextMenuUpdaterElement(
 
 @OptIn(InternalComposeUiApi::class)
 private class NativeTextInputContextMenuUpdaterNode(
-    var context: UIKitNativeTextInputContext,
+    var context: NativeTextInputContext,
     var selectionProvider: () -> TextRange,
     var onSelectionChanged: (TextContextMenuData) -> Unit
 ): DelegatingNode() {
@@ -479,7 +480,7 @@ private class NativeTextInputContextMenuUpdaterNode(
  */
 @OptIn(InternalComposeUiApi::class)
 private fun notifyAboutContextMenuItems(
-    nativeTextInputContext: UIKitNativeTextInputContext,
+    nativeTextInputContext: NativeTextInputContext,
     contextMenuData: TextContextMenuData
 ) {
     // Native text input shouldn't require TextContextMenuSessionImpl,
@@ -495,16 +496,19 @@ private fun notifyAboutContextMenuItems(
 @OptIn(InternalComposeUiApi::class)
 @Composable
 private fun startObservingSelectionChanges(
-    context: UIKitNativeTextInputContext,
-    selectionProvider: () -> TextRange,
-    onSelectionChanged: () -> Unit
+    context: NativeTextInputContext,
+    itemsStateProvider: () -> ContextMenuItemsState,
 ) {
-    LaunchedEffect(selectionProvider) {
-        snapshotFlow { if (context.usingNativeTextInput()) selectionProvider() else null }
-            .filterNotNull()
-            .collect {
-                onSelectionChanged()
-            }
+    LaunchedEffect(itemsStateProvider) {
+        snapshotFlow { itemsStateProvider() }.collect {
+            context.updateNativeTextInputEditMenuState(
+                copy = it.copy,
+                paste = it.paste,
+                cut = it.cut,
+                selectAll = it.selectAll,
+                customActions = it.customActions
+            )
+        }
     }
 }
 
@@ -519,57 +523,78 @@ private fun startObservingSelectionChanges(
 @Composable
 private fun startNotifyingAboutContextMenuItems(
     manager: TextFieldSelectionManager,
-    nativeTextInputContext: UIKitNativeTextInputContext,
+    nativeTextInputContext: NativeTextInputContext,
 ) {
+    LaunchedEffect(manager) {
+        manager.updateClipboardEntry()
+    }
+    val scope = rememberCoroutineScope()
     startObservingSelectionChanges(
         nativeTextInputContext,
-        selectionProvider = { manager.value.selection },
-        onSelectionChanged = {
-            nativeTextInputContext.updateNativeTextInputEditMenuState(
-                copy = if (manager.isCopyAllowed()) ({ manager.copy(cancelSelection = false) }) else null,
-                paste = if (manager.canShowPasteMenuItem()) ({ manager.paste() }) else null,
-                cut = if (manager.canShowCutMenuItem()) ({ manager.cut() }) else null,
-                selectAll = if (manager.canShowSelectAllMenuItem()) ({ manager.selectAll() }) else null,
+        itemsStateProvider = {
+            fun editBlock(isEnabled: Boolean, action: () -> Unit): (() -> Unit)? {
+                return if (isEnabled) {
+                    {
+                        action()
+                        scope.launch {
+                            manager.updateClipboardEntry()
+                        }
+                    }
+                } else {
+                    null
+                }
+            }
+            ContextMenuItemsState(
+                copy = editBlock(manager.isCopyAllowed()) { manager.copy(cancelSelection = false) },
+                paste = editBlock(manager.canShowPasteMenuItem()) { manager.paste() },
+                cut = editBlock(manager.canShowCutMenuItem()) { manager.cut() },
+                selectAll = editBlock(manager.canShowSelectAllMenuItem()) { manager.selectAll() },
                 customActions = emptyList()
             )
-        })
+        }
+    )
 }
 
 /**
  * Starts notifying the native iOS input system about the available context menu items (isNewContextMenu = false) in [BasicTextField] (with [TextFieldState] argument)
  *
- * @param selectionState The current state of the text field selection, including selection bounds
+ * @param state The current state of the text field selection, including selection bounds
  * and related actions.
- * @param nativeTextInputContext The UIKitNativeTextInputContext instance used to update the edit menu state
+ * @param nativeTextInputContext The NativeTextInputContext instance used to update the edit menu state
  * with actions.
  */
 @OptIn(InternalComposeUiApi::class)
 @Composable
 private fun startNotifyingAboutContextMenuItems(
-    selectionState: TextFieldSelectionState,
-    nativeTextInputContext: UIKitNativeTextInputContext,
+    state: TextFieldSelectionState,
+    nativeTextInputContext: NativeTextInputContext,
 ) {
+    LaunchedEffect(state) {
+        state.updateClipboardEntry()
+    }
     // this should be the same scope as at the root of BasicTextField
     val coroutineScope = rememberCoroutineScope()
     startObservingSelectionChanges(
         nativeTextInputContext,
-        selectionProvider = { selectionState.textFieldState.visualText.selection },
-        onSelectionChanged = {
-            val copyBlock: () -> Unit =
-                { coroutineScope.launch { selectionState.copy(cancelSelection = false) } }
-            val pasteBlock: () -> Unit = { coroutineScope.launch { selectionState.paste() } }
-            val cutBlock: () -> Unit = { coroutineScope.launch { selectionState.cut() } }
-            val selectAllBlock: () -> Unit = {
-                coroutineScope.launch {
-                    selectionState.selectAll()
+        itemsStateProvider = {
+            fun editBlock(isEnabled: Boolean, action: suspend () -> Unit): (() -> Unit)? {
+                return if (isEnabled) {
+                    {
+                        coroutineScope.launch {
+                            action()
+                            state.updateClipboardEntry()
+                        }
+                    }
+                } else {
+                    null
                 }
             }
 
-            nativeTextInputContext.updateNativeTextInputEditMenuState(
-                copy = if (selectionState.canShowCopyMenuItem()) (copyBlock) else null,
-                paste = if (selectionState.canShowPasteMenuItem()) (pasteBlock) else null,
-                cut = if (selectionState.canShowCutMenuItem()) (cutBlock) else null,
-                selectAll = if (selectionState.canShowSelectAllMenuItem()) (selectAllBlock) else null,
+            ContextMenuItemsState(
+                copy = editBlock(state.canShowCopyMenuItem()) { state.copy(cancelSelection = false) },
+                paste = editBlock(state.canShowPasteMenuItem()) { state.paste() },
+                cut = editBlock(state.canShowCutMenuItem()) { state.cut() },
+                selectAll = editBlock(state.canShowSelectAllMenuItem()) { state.selectAll() },
                 customActions = emptyList()
             )
         }
@@ -578,7 +603,7 @@ private fun startNotifyingAboutContextMenuItems(
 
 
 @OptIn(InternalComposeUiApi::class)
-private fun UIKitNativeTextInputContext.updateEditMenuState(state: ContextMenuItemsState) =
+private fun NativeTextInputContext.updateEditMenuState(state: ContextMenuItemsState) =
     updateNativeTextInputEditMenuState(
         copy = state.copy,
         paste = state.paste,
