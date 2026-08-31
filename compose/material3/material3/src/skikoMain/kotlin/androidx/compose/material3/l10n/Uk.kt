@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.uk() = mapOf(
     Strings.TimePickerMinuteTextField to "для хвилин",
     Strings.TimePickerHourTextField to "для годин",
     Strings.TimePickerToggleKeyboard to "Перейти в режим введення тексту",
-    Strings.TimePickerToggleScroll to "Перейти в режим прокручування",
     Strings.TimePickerToggleTouch to "Перейти в режим годинника",
     Strings.TimePickerDialogTitle to "Виберіть час",
-    Strings.TimeScrollDialogTitle to "Виберіть час",
     Strings.TimeInputDialogTitle to "Введіть час",
     Strings.TimePickerMinuteError to "Укажіть від 0 до 59 хв",
     Strings.TimePickerHourError to "Укажіть від 1 до 12 год",

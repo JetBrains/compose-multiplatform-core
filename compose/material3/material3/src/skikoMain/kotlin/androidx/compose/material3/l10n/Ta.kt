@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.ta() = mapOf(
     Strings.TimePickerMinuteTextField to "நிமிடங்களுக்கு",
     Strings.TimePickerHourTextField to "மணிநேரத்திற்கு",
     Strings.TimePickerToggleKeyboard to "எழுத்து உள்ளீட்டு முறைக்கு மாற்றும்",
-    Strings.TimePickerToggleScroll to "ஸ்க்ரோல் மோடுக்கு மாறும்",
     Strings.TimePickerToggleTouch to "கடிகாரப் பயன்முறைக்கு மாற்றும்",
     Strings.TimePickerDialogTitle to "நேரத்தைத் தேர்ந்தெடுங்கள்",
-    Strings.TimeScrollDialogTitle to "நேரத்தைத் தேர்ந்தெடுங்கள்",
     Strings.TimeInputDialogTitle to "நேரத்தை டைப் செய்யுங்கள்",
     Strings.TimePickerMinuteError to "0–59 நிமிடங்கள்",
     Strings.TimePickerHourError to "1–12 மணிநேரம்",

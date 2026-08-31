@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.ne() = mapOf(
     Strings.TimePickerMinuteTextField to "मिनेटका लागि",
     Strings.TimePickerHourTextField to "घण्टाका लागि",
     Strings.TimePickerToggleKeyboard to "टेक्स्ट इन्पुट मोड प्रयोग गर्नुहोस्",
-    Strings.TimePickerToggleScroll to "स्क्रोल मोड प्रयोग गर्नुहोस्",
     Strings.TimePickerToggleTouch to "घडी मोड प्रयोग गर्नुहोस्",
     Strings.TimePickerDialogTitle to "समय चयन गर्नुहोस्",
-    Strings.TimeScrollDialogTitle to "समय चयन गर्नुहोस्",
     Strings.TimeInputDialogTitle to "समय हाल्नुहोस्",
     Strings.TimePickerMinuteError to "मिनेट ० र ५९ का बिचमा हुनु पर्छ",
     Strings.TimePickerHourError to "घण्टा १ र १२ का बिचमा हुनु पर्छ",

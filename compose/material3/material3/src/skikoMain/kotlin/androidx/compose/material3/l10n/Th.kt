@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.th() = mapOf(
     Strings.TimePickerMinuteTextField to "สำหรับนาที",
     Strings.TimePickerHourTextField to "สำหรับชั่วโมง",
     Strings.TimePickerToggleKeyboard to "เปลี่ยนเป็นโหมดการป้อนข้อความ",
-    Strings.TimePickerToggleScroll to "เปลี่ยนเป็นโหมดเลื่อน",
     Strings.TimePickerToggleTouch to "เปลี่ยนเป็นโหมดนาฬิกา",
     Strings.TimePickerDialogTitle to "เลือกเวลา",
-    Strings.TimeScrollDialogTitle to "เลือกเวลา",
     Strings.TimeInputDialogTitle to "ป้อนเวลา",
     Strings.TimePickerMinuteError to "นาทีต้องเป็น 0-59",
     Strings.TimePickerHourError to "ชั่วโมงต้องเป็น 1-12",

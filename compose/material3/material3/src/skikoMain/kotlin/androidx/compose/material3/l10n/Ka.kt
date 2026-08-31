@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.ka() = mapOf(
     Strings.TimePickerMinuteTextField to "რამდენიმე წუთით",
     Strings.TimePickerHourTextField to "ერთი საათით",
     Strings.TimePickerToggleKeyboard to "ტექსტის შეყვანის რეჟიმზე გადართვა",
-    Strings.TimePickerToggleScroll to "გადაადგილების რეჟიმზე გადართვა",
     Strings.TimePickerToggleTouch to "საათის რეჟიმზე გადართვა",
     Strings.TimePickerDialogTitle to "აირჩიეთ დრო",
-    Strings.TimeScrollDialogTitle to "აირჩიეთ დრო",
     Strings.TimeInputDialogTitle to "შეიყვანეთ დრო",
     Strings.TimePickerMinuteError to "წუთი უნდა იყოს 0-59",
     Strings.TimePickerHourError to "საათი უნდა იყოს 1-12",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.fa() = mapOf(
     Strings.TimePickerMinuteTextField to "برای دقیقه",
     Strings.TimePickerHourTextField to "برای ساعت",
     Strings.TimePickerToggleKeyboard to "رفتن به حالت ورودی نوشتاری",
-    Strings.TimePickerToggleScroll to "رفتن به حالت پیمایش",
     Strings.TimePickerToggleTouch to "رفتن به حالت ساعت",
     Strings.TimePickerDialogTitle to "انتخاب زمان",
-    Strings.TimeScrollDialogTitle to "انتخاب کردن زمان",
     Strings.TimeInputDialogTitle to "وارد کردن زمان",
     Strings.TimePickerMinuteError to "‏مقدار مجاز دقیقه: ۰‎–۵۹",
     Strings.TimePickerHourError to "‏مقدار مجاز ساعت: ۱‎–۱۲",

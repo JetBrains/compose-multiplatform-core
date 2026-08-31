@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.gl() = mapOf(
     Strings.TimePickerMinuteTextField to "por minuto",
     Strings.TimePickerHourTextField to "por hora",
     Strings.TimePickerToggleKeyboard to "Cambiar ao modo de introdución de texto",
-    Strings.TimePickerToggleScroll to "Cambiar ao modo de desprazamento",
     Strings.TimePickerToggleTouch to "Cambiar ao modo de reloxo",
     Strings.TimePickerDialogTitle to "Seleccionar a hora",
-    Strings.TimeScrollDialogTitle to "Selecciona unha hora",
     Strings.TimeInputDialogTitle to "Indicar a hora",
     Strings.TimePickerMinuteError to "Valor dos minutos: 0-59",
     Strings.TimePickerHourError to "Valor da hora: 1-12",

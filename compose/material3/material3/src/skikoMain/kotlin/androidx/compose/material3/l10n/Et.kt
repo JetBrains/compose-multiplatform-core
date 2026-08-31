@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.et() = mapOf(
     Strings.TimePickerMinuteTextField to "minutite jaoks",
     Strings.TimePickerHourTextField to "tundide jaoks",
     Strings.TimePickerToggleKeyboard to "Lülitu tekstisisestusrežiimile",
-    Strings.TimePickerToggleScroll to "Lülitumine kerimisrežiimile",
     Strings.TimePickerToggleTouch to "Lülita kellarežiimile",
     Strings.TimePickerDialogTitle to "Valige aeg",
-    Strings.TimeScrollDialogTitle to "Valige aeg",
     Strings.TimeInputDialogTitle to "Sisestage aeg",
     Strings.TimePickerMinuteError to "Minutite vahemik on 0–59",
     Strings.TimePickerHourError to "Tundide vahemik on 1–12",

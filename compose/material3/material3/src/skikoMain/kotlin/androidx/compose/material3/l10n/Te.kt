@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.te() = mapOf(
     Strings.TimePickerMinuteTextField to "నిమిషాలను ఎంచుకోవడం కోసం",
     Strings.TimePickerHourTextField to "గంటలను ఎంచుకోవడం కోసం",
     Strings.TimePickerToggleKeyboard to "టెక్స్ట్ ఇన్‌పుట్ మోడ్‌కు మారండి",
-    Strings.TimePickerToggleScroll to "స్క్రోల్ మోడ్‌కు మారండి",
     Strings.TimePickerToggleTouch to "గడియారం మోడ్‌కు మారండి",
     Strings.TimePickerDialogTitle to "సమయాన్ని ఎంచుకోండి",
-    Strings.TimeScrollDialogTitle to "టైమ్‌ను సెలెక్ట్ చేయండి",
     Strings.TimeInputDialogTitle to "సమయాన్ని ఎంటర్ చేయండి",
     Strings.TimePickerMinuteError to "నిమి. 0–59 మధ్య ఉండాలి",
     Strings.TimePickerHourError to "గంటలు 1–12 మధ్య ఉండాలి",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.el() = mapOf(
     Strings.TimePickerMinuteTextField to "για λεπτά",
     Strings.TimePickerHourTextField to "για ώρα",
     Strings.TimePickerToggleKeyboard to "Εναλλαγή στη λειτουργία εισαγωγής κειμένου",
-    Strings.TimePickerToggleScroll to "Εναλλαγή σε λειτουργία κύλισης",
     Strings.TimePickerToggleTouch to "Εναλλαγή στη λειτουργία ρολογιού",
     Strings.TimePickerDialogTitle to "Επιλογή ώρας",
-    Strings.TimeScrollDialogTitle to "Επιλογή ώρας",
     Strings.TimeInputDialogTitle to "Εισαγωγή ώρας",
     Strings.TimePickerMinuteError to "Τα λεπτά πρέπει να είναι μεταξύ 0–59",
     Strings.TimePickerHourError to "Η ώρα πρέπει να είναι μεταξύ 1–12",

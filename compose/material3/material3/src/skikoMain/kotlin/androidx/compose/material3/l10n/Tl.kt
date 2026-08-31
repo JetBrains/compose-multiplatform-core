@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.tl() = mapOf(
     Strings.TimePickerMinuteTextField to "nang ilang minuto",
     Strings.TimePickerHourTextField to "nang ilang oras",
     Strings.TimePickerToggleKeyboard to "Lumipat sa pamamaraan ng pag-input ng text",
-    Strings.TimePickerToggleScroll to "Lumipat sa scroll mode",
     Strings.TimePickerToggleTouch to "Lumipat sa clock mode",
     Strings.TimePickerDialogTitle to "Pumili ng Oras",
-    Strings.TimeScrollDialogTitle to "Pumili ng Oras",
     Strings.TimeInputDialogTitle to "Maglagay ng Oras",
     Strings.TimePickerMinuteError to "Dapat 0–59 ang minuto",
     Strings.TimePickerHourError to "Dapat 1–12 ang oras",

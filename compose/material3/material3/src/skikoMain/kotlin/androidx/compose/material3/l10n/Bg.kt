@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.bg() = mapOf(
     Strings.TimePickerMinuteTextField to "за минутите",
     Strings.TimePickerHourTextField to "за часа",
     Strings.TimePickerToggleKeyboard to "Превключване към режим за въвеждане на текст",
-    Strings.TimePickerToggleScroll to "Превключване към режима за превъртане",
     Strings.TimePickerToggleTouch to "Превключване към режима за часовник",
     Strings.TimePickerDialogTitle to "Избиране на час",
-    Strings.TimeScrollDialogTitle to "Избиране на час",
     Strings.TimeInputDialogTitle to "Въвеждане на час",
     Strings.TimePickerMinuteError to "Минута: От 0 до 59",
     Strings.TimePickerHourError to "Час: От 1 до 12",
