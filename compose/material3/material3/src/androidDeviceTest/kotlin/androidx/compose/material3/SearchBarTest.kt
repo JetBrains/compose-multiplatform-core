@@ -103,7 +103,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
@@ -113,7 +112,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SearchBarTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val SearchBarTestTag = "SearchBar"
     private val ScrollableContentTestTag = "Scrollable"
@@ -124,6 +123,7 @@ class SearchBarTest {
     private val ContentTestTag = "Content"
     private val BoxTestTag = "BoxTestTag"
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_becomesExpandedAndFocusedOnClick_andNotExpandedAndUnfocusedOnBack() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -169,6 +169,7 @@ class SearchBarTest {
         rule.onNodeWithText("Query").assertIsNotFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_doesNotOverwriteFocusOfOtherComponents() {
         val focusRequester = FocusRequester()
@@ -204,6 +205,7 @@ class SearchBarTest {
         rule.onNodeWithText("Query").assertIsFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_onImeAction_executesSearchCallback() {
         var capturedSearchQuery = ""
@@ -232,6 +234,7 @@ class SearchBarTest {
         assertThat(capturedSearchQuery).isEqualTo("Query")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_notExpandedSize() {
         rule
@@ -255,6 +258,7 @@ class SearchBarTest {
             .assertHeightIsEqualTo(SearchBarDefaults.InputFieldHeight + SearchBarVerticalPadding)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_expandedSize() {
         val totalHeight = 500.dp
@@ -287,6 +291,7 @@ class SearchBarTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_usesAndConsumesWindowInsets() {
         val parentTopInset = 10
@@ -324,6 +329,7 @@ class SearchBarTest {
         assertThat(childConsumedInsets.getTop(density)).isEqualTo(searchBarTopInset)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun searchBar_clickingIconButton_doesNotExpandSearchBarItself() {
         var iconClicked = false
@@ -370,6 +376,7 @@ class SearchBarTest {
         rule.onNodeWithText("Content").assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_becomesExpandedAndFocusedOnClick_andNotExpandedAndUnfocusedOnBack() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -415,6 +422,7 @@ class SearchBarTest {
         rule.onNodeWithText("Query").assertIsNotFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_doesNotOverwriteFocusOfOtherComponents() {
         val focusRequester = FocusRequester()
@@ -450,6 +458,7 @@ class SearchBarTest {
         rule.onNodeWithText("Query").assertIsFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_onImeAction_executesSearchCallback() {
         var capturedSearchQuery = ""
@@ -478,6 +487,7 @@ class SearchBarTest {
         assertThat(capturedSearchQuery).isEqualTo("Query")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_notExpandedSize() {
         rule
@@ -501,6 +511,7 @@ class SearchBarTest {
             .assertHeightIsEqualTo(SearchBarDefaults.InputFieldHeight)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_expandedSize() {
         rule
@@ -526,6 +537,7 @@ class SearchBarTest {
             )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun dockedSearchBar_clickingIconButton_doesNotExpandSearchBarItself() {
         var iconClicked = false
@@ -575,6 +587,7 @@ class SearchBarTest {
     // Tests for new search bar APIs below this section
 
     @SdkSuppress(maxSdkVersion = 35) // b/441508123
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_becomesExpandedAndFocusedOnClick_andCollapsedAndUnfocusedOnBack() {
         var softwareKeyboardController: SoftwareKeyboardController? = null
@@ -633,6 +646,7 @@ class SearchBarTest {
         // Dismiss search bar
         Espresso.pressBack()
         rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(200L)
 
         rule.onNodeWithTag(ContentTestTag).assertDoesNotExist()
         rule.onNodeWithTag(ExpandedInputFieldTestTag).assertDoesNotExist()
@@ -640,6 +654,7 @@ class SearchBarTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_expansionBehavior_inNonTouchMode() {
         val focusRequester = FocusRequester()
@@ -723,6 +738,7 @@ class SearchBarTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_expanded_isReachableViaDownKey() {
         val focusRequester = FocusRequester()
@@ -763,6 +779,7 @@ class SearchBarTest {
         rule.runOnIdle { assertThat(focused).isTrue() }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_doesNotOverwriteFocusOfOtherComponents() {
         val focusRequester = FocusRequester()
@@ -809,6 +826,7 @@ class SearchBarTest {
         rule.onNodeWithTag(ExpandedInputFieldTestTag).assertIsFocused()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_onImeAction_executesSearchCallback() {
         var capturedSearchQuery = ""
@@ -853,6 +871,7 @@ class SearchBarTest {
         assertThat(capturedSearchQuery).isEqualTo("Query")
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_collapsedSize() {
         rule
@@ -875,6 +894,7 @@ class SearchBarTest {
             .assertHeightIsEqualTo(SearchBarDefaults.InputFieldHeight)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun newSearchBar_clickingIconButton_doesNotExpandSearchBarItself() {
         var iconClicked = false
@@ -925,6 +945,7 @@ class SearchBarTest {
         rule.onNodeWithTag(ContentTestTag).assertDoesNotExist()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_usesAndConsumesWindowInsets() {
         val parentTopInset = 10
@@ -970,6 +991,7 @@ class SearchBarTest {
         assertThat(childConsumedInsets.getTop(density)).isEqualTo(searchBarTopInset)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_scrollBehavior_showsAndHidesWithVerticalScroll() {
         rule.setMaterialContent(lightColorScheme()) { SearchBarWithScrollableContent() }
@@ -987,6 +1009,7 @@ class SearchBarTest {
         rule.onNodeWithTag(SearchBarTestTag).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_scrollBehavior_showsAndHidesWithVerticalScroll_reverseLayout() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -1017,6 +1040,7 @@ class SearchBarTest {
         rule.onNodeWithTag(SearchBarTestTag).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_scrollBehavior_scrollDisabled() {
         var canScroll by mutableStateOf(true)
@@ -1058,6 +1082,7 @@ class SearchBarTest {
         rule.onNodeWithTag(SearchBarTestTag).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_scrollBehavior_restoresOffsetState() {
         val restorationTester = StateRestorationTester(rule)
@@ -1067,8 +1092,8 @@ class SearchBarTest {
         }
 
         rule.runOnIdle {
-            scrollBehavior!!.scrollOffsetLimit = -350f
-            scrollBehavior!!.scrollOffset = -300f
+            scrollBehavior!!.scrollState.scrollOffsetLimit = -350f
+            scrollBehavior!!.scrollState.scrollOffset = -300f
         }
 
         scrollBehavior = null
@@ -1076,11 +1101,12 @@ class SearchBarTest {
         restorationTester.emulateSavedInstanceStateRestore()
 
         rule.runOnIdle {
-            assertThat(scrollBehavior!!.scrollOffsetLimit).isEqualTo(-350f)
-            assertThat(scrollBehavior!!.scrollOffset).isEqualTo(-300f)
+            assertThat(scrollBehavior!!.scrollState.scrollOffsetLimit).isEqualTo(-350f)
+            assertThat(scrollBehavior!!.scrollState.scrollOffset).isEqualTo(-300f)
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_correctlyPadsWhenParentHandlesInsetsAndContentPaddingIsUsed() {
         val appBarHeightDp = SearchBarTokens.ContainerHeight + AppBarWithSearchVerticalPadding * 2
@@ -1142,6 +1168,7 @@ class SearchBarTest {
             )
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_minWidth() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -1167,6 +1194,7 @@ class SearchBarTest {
         rule.onNodeWithTag(CollapsedInputFieldTestTag).assertWidthIsAtLeast(SearchBarMinWidth)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun appBarWithSearch_maxWidth() {
         rule.setMaterialContent(lightColorScheme()) {

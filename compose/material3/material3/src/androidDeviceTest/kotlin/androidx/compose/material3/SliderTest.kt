@@ -21,6 +21,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -62,6 +63,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -83,7 +85,6 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -95,7 +96,7 @@ class SliderTest {
     private val tag = "slider"
     private val SliderTolerance = 0.003f
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun sliderPosition_valueCoercion() {
@@ -105,6 +106,14 @@ class SliderTest {
         rule.onNodeWithTag(tag).assertRangeInfoEquals(ProgressBarRangeInfo(1f, 0f..1f, 0))
         rule.runOnIdle { state.value = -123145f }
         rule.onNodeWithTag(tag).assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..1f, 0))
+    }
+
+    @Test
+    fun sliderState_isVertical_getter() {
+        val state = SliderState(0f)
+        Truth.assertThat(state.isVertical).isFalse()
+        state.orientation = Orientation.Vertical
+        Truth.assertThat(state.isVertical).isTrue()
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -243,7 +252,6 @@ class SliderTest {
         rule.runOnIdle { Truth.assertThat(state.value).isWithin(SliderTolerance).of(expected) }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun vertical_slider_tap() {
         val state = SliderState(0f)
@@ -542,12 +550,47 @@ class SliderTest {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun slider_label_staysVisible_whenHoverExitsWhileStillPressedOrDragging() {
+        val labelTag = "label"
+        val interactionSource = MutableInteractionSource()
+        lateinit var scope: CoroutineScope
+        rule.setMaterialContent(lightColorScheme()) {
+            scope = rememberCoroutineScope()
+            Label(
+                label = { Text(text = "label", modifier = Modifier.testTag(labelTag)) },
+                interactionSource = interactionSource,
+            ) {
+                Box(Modifier.requiredSize(48.dp).testTag(tag))
+            }
+        }
+
+        // The label is hidden until the anchor is interacted with.
+        rule.onNodeWithTag(labelTag).assertDoesNotExist()
+
+        // Emit the interaction sequence produced when dragging the slider by its thumb: hover the
+        // thumb, press, start dragging, then exit the hover while the drag is still ongoing.
+        val hoverEnter = HoverInteraction.Enter()
+        scope.launch {
+            interactionSource.emit(hoverEnter)
+            interactionSource.emit(PressInteraction.Press(Offset.Zero))
+            interactionSource.emit(DragInteraction.Start())
+            interactionSource.emit(HoverInteraction.Exit(hoverEnter))
+        }
+        rule.waitForIdle()
+
+        // A press and a drag are still active, so the label must remain visible.
+        rule.onNodeWithTag(labelTag).assertIsDisplayed()
+    }
+
     @Test
     fun slider_onValueChangedFinish_afterTap() {
         var changedFlag = false
         rule.setContent {
             Slider(
-                state = SliderState(0f, onValueChangeFinished = { changedFlag = true }),
+                state =
+                    remember { SliderState(0f, onValueChangeFinished = { changedFlag = true }) },
                 modifier = Modifier.testTag(tag),
             )
         }
@@ -561,7 +604,7 @@ class SliderTest {
     fun slider_zero_width() {
         rule
             .setMaterialContentForSizeAssertions(parentMaxHeight = 0.dp, parentMaxWidth = 0.dp) {
-                Slider(SliderState(1f))
+                Slider(remember { SliderState(1f) })
             }
             .assertHeightIsEqualTo(0.dp)
             .assertWidthIsEqualTo(0.dp)
@@ -631,7 +674,7 @@ class SliderTest {
     fun slider_rowWithInfiniteWidth() {
         rule.setContent {
             Row(modifier = Modifier.requiredWidth(Int.MAX_VALUE.dp)) {
-                Slider(state = SliderState(0f), modifier = Modifier.weight(1f))
+                Slider(state = remember { SliderState(0f) }, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -748,8 +791,8 @@ class SliderTest {
             RangeSlider(
                 state = state,
                 modifier = Modifier.testTag(tag),
-                startThumb = { SliderDefaults.Thumb(MutableInteractionSource()) },
-                endThumb = { SliderDefaults.Thumb(MutableInteractionSource()) },
+                startThumb = { SliderDefaults.Thumb(remember { MutableInteractionSource() }) },
+                endThumb = { SliderDefaults.Thumb(remember { MutableInteractionSource() }) },
             )
         }
 
@@ -1100,13 +1143,13 @@ class SliderTest {
                 state = state,
                 startThumb = {
                     SliderDefaults.Thumb(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource = remember { MutableInteractionSource() },
                         modifier = Modifier.testTag(startThumbTag),
                     )
                 },
                 endThumb = {
                     SliderDefaults.Thumb(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource = remember { MutableInteractionSource() },
                         modifier = Modifier.testTag(endThumbTag),
                     )
                 },
@@ -1139,13 +1182,13 @@ class SliderTest {
                 state = state,
                 startThumb = {
                     SliderDefaults.Thumb(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource = remember { MutableInteractionSource() },
                         modifier = Modifier.testTag(startThumbTag),
                     )
                 },
                 endThumb = {
                     SliderDefaults.Thumb(
-                        interactionSource = MutableInteractionSource(),
+                        interactionSource = remember { MutableInteractionSource() },
                         modifier = Modifier.testTag(endThumbTag),
                     )
                 },
@@ -1433,7 +1476,7 @@ class SliderTest {
         rule.setMaterialContent(lightColorScheme()) {
             CompositionLocalProvider(
                 LocalRippleThemeConfiguration provides
-                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+                    RippleDefaults.InsetFocusRingThemeConfiguration
             ) {
                 Column {
                     Box(Modifier.testTag("other").requiredSize(10.dp).focusable())
@@ -1487,7 +1530,6 @@ class SliderTest {
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun verticalSlider_thumbPosition_staysSameWhenFocused_insetRing() {
         var thumbPositionY = 0f
@@ -1498,7 +1540,7 @@ class SliderTest {
         rule.setMaterialContent(lightColorScheme()) {
             CompositionLocalProvider(
                 LocalRippleThemeConfiguration provides
-                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+                    RippleDefaults.InsetFocusRingThemeConfiguration
             ) {
                 Column {
                     Box(Modifier.testTag("other").requiredSize(10.dp).focusable())
@@ -1552,7 +1594,6 @@ class SliderTest {
         }
     }
 
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
     fun verticalSlider_reversed_thumbPosition_staysSameWhenFocused_insetRing() {
         var thumbPositionY = 0f
@@ -1563,7 +1604,7 @@ class SliderTest {
         rule.setMaterialContent(lightColorScheme()) {
             CompositionLocalProvider(
                 LocalRippleThemeConfiguration provides
-                    RippleDefaults.InsetFocusRingRippleThemeConfiguration
+                    RippleDefaults.InsetFocusRingThemeConfiguration
             ) {
                 Column {
                     Box(Modifier.testTag("other").requiredSize(10.dp).focusable())
@@ -1572,7 +1613,7 @@ class SliderTest {
                             state = state,
                             interactionSource = interactionSource,
                             modifier = Modifier.testTag(tag),
-                            reverseDirection = true,
+                            topToBottom = false,
                             track = { sliderState ->
                                 SliderDefaults.Track(
                                     sliderState = sliderState,

@@ -98,7 +98,7 @@ import kotlin.math.min
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Snackbar(
+public fun Snackbar(
     modifier: Modifier = Modifier,
     action: @Composable (() -> Unit)? = null,
     dismissAction: @Composable (() -> Unit)? = null,
@@ -219,7 +219,7 @@ fun Snackbar(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Snackbar(
+public fun Snackbar(
     snackbarData: SnackbarData,
     modifier: Modifier = Modifier,
     actionOnNewLine: Boolean = false,
@@ -574,39 +574,49 @@ private fun OneRowSnackbar(
 }
 
 /** Contains the default values used for [Snackbar]. */
-object SnackbarDefaults {
+public object SnackbarDefaults {
     /** Default shape of a snackbar. */
-    val shape: Shape
+    public val shape: Shape
         @Composable get() = SnackbarTokens.ContainerShape.value
 
     /** Default color of a snackbar. */
-    val color: Color
+    public val color: Color
         @Composable get() = SnackbarTokens.ContainerColor.value
 
     /** Default content color of a snackbar. */
-    val contentColor: Color
+    public val contentColor: Color
         @Composable get() = SnackbarTokens.SupportingTextColor.value
 
     /** Default action color of a snackbar. */
-    val actionColor: Color
+    public val actionColor: Color
         @Composable get() = SnackbarTokens.ActionLabelTextColor.value
 
     /** Default action content color of a snackbar. */
-    val actionContentColor: Color
+    public val actionContentColor: Color
         @Composable get() = SnackbarTokens.ActionLabelTextColor.value
 
     /** Default dismiss action content color of a snackbar. */
-    val dismissActionContentColor: Color
+    public val dismissActionContentColor: Color
         @Composable get() = SnackbarTokens.IconColor.value
 }
 
-private val ContainerMaxWidth = 600.dp
-private val HeightToFirstLine = 30.dp
-private val HorizontalSpacing = 16.dp
-private val HorizontalSpacingButtonSide = 8.dp
-private val SeparateButtonExtraY = 2.dp
-private val LegacySnackbarVerticalPadding = 6.dp
-private val TextEndExtraSpacing = 8.dp
-private val LongButtonVerticalOffset = 12.dp
-private val SnackbarVerticalPadding = 14.dp
-private val ActionButtonBottomPadding = 4.dp
+private val ContainerMaxWidth
+    get() = 600.dp
+private val HeightToFirstLine
+    get() = 30.dp
+private val HorizontalSpacing
+    get() = 16.dp
+private val HorizontalSpacingButtonSide
+    get() = 8.dp
+private val SeparateButtonExtraY
+    get() = 2.dp
+private val LegacySnackbarVerticalPadding
+    get() = 6.dp
+private val TextEndExtraSpacing
+    get() = 8.dp
+private val LongButtonVerticalOffset
+    get() = 12.dp
+private val SnackbarVerticalPadding
+    get() = 14.dp
+private val ActionButtonBottomPadding
+    get() = 4.dp

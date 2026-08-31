@@ -55,7 +55,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,7 +62,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ButtonGroupTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val wrapperTestTag = "WrapperTestTag"
     private val aButton = "A"
@@ -1388,7 +1387,7 @@ class ButtonGroupTest {
                             Button(
                                 onClick = {},
                                 modifier =
-                                    Modifier.weight(1f).animateWidth(aInteractionSource, padding),
+                                    Modifier.weight(1f).animateWidth(aInteractionSource, 10.dp),
                                 interactionSource = aInteractionSource,
                                 contentPadding = padding,
                             ) {
@@ -1407,7 +1406,7 @@ class ButtonGroupTest {
                             Button(
                                 onClick = {},
                                 modifier =
-                                    Modifier.weight(1f).animateWidth(bInteractionSource, padding),
+                                    Modifier.weight(1f).animateWidth(bInteractionSource, 10.dp),
                                 interactionSource = bInteractionSource,
                                 contentPadding = padding,
                             ) {
@@ -1458,7 +1457,7 @@ class ButtonGroupTest {
                             Button(
                                 onClick = {},
                                 modifier =
-                                    Modifier.weight(1f).animateWidth(aInteractionSource, padding),
+                                    Modifier.weight(1f).animateWidth(aInteractionSource, 10.dp),
                                 interactionSource = aInteractionSource,
                                 contentPadding = padding,
                             ) {
@@ -1477,7 +1476,7 @@ class ButtonGroupTest {
                             Button(
                                 onClick = {},
                                 modifier =
-                                    Modifier.weight(1f).animateWidth(bInteractionSource, padding),
+                                    Modifier.weight(1f).animateWidth(bInteractionSource, 10.dp),
                                 interactionSource = bInteractionSource,
                                 contentPadding = padding,
                             ) {
@@ -1534,7 +1533,7 @@ class ButtonGroupTest {
                                 onClick = {},
                                 modifier =
                                     Modifier.width(width)
-                                        .animateWidth(interactionSources[0], paddingA)
+                                        .animateWidth(interactionSources[0], 10.dp)
                                         .testTag(aButton),
                                 interactionSource = interactionSources[0],
                                 contentPadding = paddingA,
@@ -1565,7 +1564,7 @@ class ButtonGroupTest {
                                 onClick = {},
                                 modifier =
                                     Modifier.width(width)
-                                        .animateWidth(interactionSources[2], paddingC)
+                                        .animateWidth(interactionSources[2], 10.dp)
                                         .testTag(cButton),
                                 interactionSource = interactionSources[2],
                                 contentPadding = paddingC,
@@ -1629,7 +1628,7 @@ class ButtonGroupTest {
                                     onClick = {},
                                     modifier =
                                         Modifier.width(width)
-                                            .animateWidth(interactionSources[0], paddingA)
+                                            .animateWidth(interactionSources[0], 10.dp)
                                             .testTag(aButton),
                                     interactionSource = interactionSources[0],
                                     contentPadding = paddingA,
@@ -1660,7 +1659,7 @@ class ButtonGroupTest {
                                     onClick = {},
                                     modifier =
                                         Modifier.width(width)
-                                            .animateWidth(interactionSources[2], paddingC)
+                                            .animateWidth(interactionSources[2], 10.dp)
                                             .testTag(cButton),
                                     interactionSource = interactionSources[2],
                                     contentPadding = paddingC,

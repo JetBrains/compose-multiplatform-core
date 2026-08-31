@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
@@ -210,7 +212,7 @@ fun GroupedMenuSample() {
                     shapes = MenuDefaults.groupShape(groupIndex, groupCount),
                     interactionSource = groupInteractionSource,
                 ) {
-                    MenuDefaults.Label { Text(label) }
+                    MenuDefaults.DropdownMenuGroupLabel { Text(label) }
                     HorizontalDivider(
                         modifier = Modifier.padding(MenuDefaults.HorizontalDividerPadding)
                     )
@@ -241,7 +243,7 @@ fun GroupedMenuSample() {
                                     contentDescription = null,
                                 )
                             },
-                            trailingIcon =
+                            trailingContent =
                                 if (checked[groupIndex][itemIndex]) {
                                     groupItemCheckedTrailingIcons[groupIndex][itemIndex]?.let {
                                         iconData ->
@@ -353,7 +355,7 @@ fun MenuWithCascadingMenusSample() {
                                     contentDescription = null,
                                 )
                             },
-                            trailingIcon = {
+                            trailingContent = {
                                 Icon(
                                     Icons.AutoMirrored.Filled.ArrowRight,
                                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -448,7 +450,7 @@ private fun TextSubmenu(interactionSource: MutableInteractionSource) {
             onCheckedChange = { boldChecked = it },
             text = { Text("Bold") },
             shapes = MenuDefaults.itemShape(0, 3),
-            trailingIcon = {
+            trailingContent = {
                 if (boldChecked) {
                     Icon(
                         Icons.Filled.FormatBold,
@@ -469,7 +471,7 @@ private fun TextSubmenu(interactionSource: MutableInteractionSource) {
             onCheckedChange = { italicChecked = it },
             text = { Text("Italic") },
             shapes = MenuDefaults.itemShape(1, 3),
-            trailingIcon = {
+            trailingContent = {
                 if (italicChecked) {
                     Icon(
                         Icons.Filled.FormatItalic,
@@ -490,7 +492,7 @@ private fun TextSubmenu(interactionSource: MutableInteractionSource) {
             onCheckedChange = { underlineChecked = it },
             text = { Text("Underline") },
             shapes = MenuDefaults.itemShape(2, 3),
-            trailingIcon = {
+            trailingContent = {
                 if (underlineChecked) {
                     Icon(
                         Icons.Filled.FormatUnderlined,
@@ -529,7 +531,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.AutoMirrored.Filled.FormatAlignLeft,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -549,7 +551,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.Filled.FormatAlignCenter,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -569,7 +571,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.AutoMirrored.Filled.FormatAlignRight,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
@@ -589,7 +591,7 @@ private fun AlignSubmenu(interactionSource: MutableInteractionSource) {
                     contentDescription = null,
                 )
             },
-            trailingIcon = {
+            trailingContent = {
                 Icon(
                     Icons.Filled.FormatAlignJustify,
                     modifier = Modifier.size(MenuDefaults.TrailingIconSize),
