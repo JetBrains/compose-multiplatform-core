@@ -25,19 +25,18 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalWindowInfo
 
-internal actual val defaultTimePickerLayoutType
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    @ReadOnlyComposable
-    get(): TimePickerLayoutType {
-        return with(LocalWindowInfo.current) {
-            if (containerSize.height < containerSize.width) {
-                TimePickerLayoutType.Horizontal
-            } else {
-                TimePickerLayoutType.Vertical
-            }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+@ReadOnlyComposable
+internal actual fun defaultTimePickerLayoutType(): TimePickerLayoutType {
+    return with(LocalWindowInfo.current) {
+        if (containerSize.height < containerSize.width) {
+            TimePickerLayoutType.Horizontal
+        } else {
+            TimePickerLayoutType.Vertical
         }
     }
+}
 
 @Composable
 internal actual fun rememberTimeInputErrorHandler(
