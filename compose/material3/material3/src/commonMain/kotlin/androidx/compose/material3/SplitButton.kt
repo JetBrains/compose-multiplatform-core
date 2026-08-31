@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.internal.rememberAnimatedShape
+import androidx.compose.material3.internal.subtractConstraintSafely
 import androidx.compose.material3.tokens.ButtonSmallTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.SplitButtonLargeTokens
@@ -66,12 +67,10 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirst
-import androidx.compose.ui.util.fastMaxOfOrNull
-import androidx.compose.ui.util.fastSumBy
 
 /**
- * A [SplitButtonLayout] lets users define a button group consisting of 2 buttons. The leading
- * button performs a primary action, and the trailing button performs a secondary action that is
+ * A [SplitButton] lets users define a button group consisting of 2 buttons. The leading button
+ * performs a primary action, and the trailing button performs a secondary action that is
  * contextually related to the primary action.
  *
  * @sample androidx.compose.material3.samples.FilledSplitButtonSample
@@ -116,7 +115,7 @@ import androidx.compose.ui.util.fastSumBy
  * @param spacing The spacing between the [leadingButton] and [trailingButton]
  */
 @Composable
-fun SplitButtonLayout(
+public fun SplitButton(
     leadingButton: @Composable () -> Unit,
     trailingButton: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -130,67 +129,116 @@ fun SplitButtonLayout(
                 Box(
                     modifier = Modifier.layoutId(LeadingButtonLayoutId),
                     contentAlignment = Alignment.Center,
+                    propagateMinConstraints = true,
                     content = { leadingButton() },
                 )
                 Box(
                     modifier = Modifier.layoutId(TrailingButtonLayoutId),
                     contentAlignment = Alignment.Center,
+                    propagateMinConstraints = true,
                     content = { trailingButton() },
                 )
             }
         },
         modifier.minimumInteractiveComponentSize(),
         measurePolicy = { measurables, constraints ->
-            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val leadingMeasurable = measurables.fastFirst { it.layoutId == LeadingButtonLayoutId }
+            val trailingMeasurable = measurables.fastFirst { it.layoutId == TrailingButtonLayoutId }
+            val spacingPx = spacing.roundToPx()
 
-            val leadingButtonPlaceable =
-                measurables
-                    .fastFirst { it.layoutId == LeadingButtonLayoutId }
-                    .measure(looseConstraints)
+            // 1. Find out how wide the trailing button wants to be to estimate available space.
+            val trailingIntrinsicWidth = trailingMeasurable.maxIntrinsicWidth(constraints.maxHeight)
+            val availableLeadingWidth =
+                constraints.maxWidth.subtractConstraintSafely(trailingIntrinsicWidth + spacingPx)
 
+            // 2. Determine the height both buttons want at their expected widths.
+            val leadingHeight = leadingMeasurable.maxIntrinsicHeight(availableLeadingWidth)
+            val trailingHeight = trailingMeasurable.maxIntrinsicHeight(trailingIntrinsicWidth)
+            val maxHeight = constraints.constrainHeight(maxOf(leadingHeight, trailingHeight))
+
+            // 3. Measure the trailing button first to give it priority for width.
             val trailingButtonPlaceable =
-                measurables
-                    .fastFirst { it.layoutId == TrailingButtonLayoutId }
-                    .measure(
-                        looseConstraints
-                            .offset(
-                                horizontal = -(leadingButtonPlaceable.width + spacing.roundToPx())
-                            )
-                            .copy(
-                                minHeight = leadingButtonPlaceable.height,
-                                maxHeight = leadingButtonPlaceable.height,
-                            )
+                trailingMeasurable.measure(
+                    constraints.copy(
+                        minWidth = 0,
+                        // Force minHeight = maxHeight to ensure both buttons have the same visual
+                        // height.
+                        minHeight = maxHeight,
+                        maxHeight = maxHeight,
                     )
+                )
 
-            val placeables = listOf(leadingButtonPlaceable, trailingButtonPlaceable)
+            // 4. Measure the leading button with the remaining width.
+            val leadingButtonPlaceable =
+                leadingMeasurable.measure(
+                    constraints
+                        .offset(horizontal = -(trailingButtonPlaceable.width + spacingPx))
+                        .copy(minWidth = 0, minHeight = maxHeight, maxHeight = maxHeight)
+                )
 
-            val contentWidth = placeables.fastSumBy { it.width } + spacing.roundToPx()
-            val contentHeight = placeables.fastMaxOfOrNull { it.height } ?: 0
+            val contentWidth =
+                leadingButtonPlaceable.width + trailingButtonPlaceable.width + spacingPx
+            val contentHeight = maxOf(leadingButtonPlaceable.height, trailingButtonPlaceable.height)
 
             val width = constraints.constrainWidth(contentWidth)
             val height = constraints.constrainHeight(contentHeight)
 
             layout(width, height) {
-                leadingButtonPlaceable.placeRelative(0, 0)
+                // Center both buttons vertically within the layout height.
+                leadingButtonPlaceable.placeRelative(
+                    x = 0,
+                    y = (height - leadingButtonPlaceable.height) / 2,
+                )
                 trailingButtonPlaceable.placeRelative(
-                    x = leadingButtonPlaceable.width + spacing.roundToPx(),
-                    y = 0,
+                    x = leadingButtonPlaceable.width + spacingPx,
+                    y = (height - trailingButtonPlaceable.height) / 2,
                 )
             }
         },
     )
 }
 
-/** Contains default values used by [SplitButtonLayout] and its style variants. */
-object SplitButtonDefaults {
+/**
+ * A [SplitButtonLayout] lets users define a button group consisting of 2 buttons. The leading
+ * button performs a primary action, and the trailing button performs a secondary action that is
+ * contextually related to the primary action.
+ *
+ * @param leadingButton the leading button. You can specify your own composable or construct a
+ *   [SplitButtonDefaults.LeadingButton]
+ * @param trailingButton the trailing button. You can specify your own composable or construct a
+ *   [SplitButtonDefaults.TrailingButton]
+ * @param modifier the [Modifier] to be applied to this split button.
+ * @param spacing The spacing between the [leadingButton] and [trailingButton]
+ */
+@Deprecated(
+    message = "Renamed to SplitButton",
+    replaceWith = ReplaceWith("SplitButton(leadingButton, trailingButton, modifier, spacing)"),
+)
+@Composable
+public fun SplitButtonLayout(
+    leadingButton: @Composable () -> Unit,
+    trailingButton: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    spacing: Dp = SplitButtonDefaults.Spacing,
+) {
+    SplitButton(
+        leadingButton = leadingButton,
+        trailingButton = trailingButton,
+        modifier = modifier,
+        spacing = spacing,
+    )
+}
+
+/** Contains default values used by [SplitButton] and its style variants. */
+public object SplitButtonDefaults {
     /** Default icon size for the leading button */
-    val LeadingIconSize = ButtonSmallTokens.IconSize
+    public val LeadingIconSize: Dp = ButtonSmallTokens.IconSize
 
     /** Default icon size for the trailing button */
-    val TrailingIconSize = SplitButtonSmallTokens.TrailingIconSize
+    public val TrailingIconSize: Dp = SplitButtonSmallTokens.TrailingIconSize
 
     /** Default spacing between the `leading` and `trailing` button */
-    val Spacing = SplitButtonSmallTokens.BetweenSpace
+    public val Spacing: Dp = SplitButtonSmallTokens.BetweenSpace
 
     /** Default size for the leading button end corners and trailing button start corners */
     @Deprecated(
@@ -198,61 +246,66 @@ object SplitButtonDefaults {
         replaceWith = ReplaceWith("SmallInnerCornerSize"),
         level = DeprecationLevel.HIDDEN,
     )
-    val InnerCornerSize = SplitButtonSmallTokens.InnerCornerCornerSize
+    public val InnerCornerSize: CornerSize = SplitButtonSmallTokens.InnerCornerCornerSize
 
     /**
      * Default extra small size for the leading button end corners and trailing button start corners
      */
-    val ExtraSmallInnerCornerSize = SplitButtonXSmallTokens.InnerCornerCornerSize
+    public val ExtraSmallInnerCornerSize: CornerSize = SplitButtonXSmallTokens.InnerCornerCornerSize
 
     /** Default small size for the leading button end corners and trailing button start corners */
-    val SmallInnerCornerSize = SplitButtonSmallTokens.InnerCornerCornerSize
+    public val SmallInnerCornerSize: CornerSize = SplitButtonSmallTokens.InnerCornerCornerSize
 
     /** Default medium size for the leading button end corners and trailing button start corners */
-    val MediumInnerCornerSize = SplitButtonMediumTokens.InnerCornerCornerSize
+    public val MediumInnerCornerSize: CornerSize = SplitButtonMediumTokens.InnerCornerCornerSize
 
     /** Default large size for the leading button end corners and trailing button start corners */
-    val LargeInnerCornerSize = SplitButtonLargeTokens.InnerCornerCornerSize
+    public val LargeInnerCornerSize: CornerSize = SplitButtonLargeTokens.InnerCornerCornerSize
 
     /**
      * Default extra large size for the leading button end corners and trailing button start corners
      */
-    val ExtraLargeInnerCornerSize = SplitButtonXLargeTokens.InnerCornerCornerSize
+    public val ExtraLargeInnerCornerSize: CornerSize = SplitButtonXLargeTokens.InnerCornerCornerSize
 
     /**
      * Default extra small size for the leading button end corners and trailing button start corners
      * when pressed
      */
-    val ExtraSmallInnerCornerSizePressed = SplitButtonXSmallTokens.InnerPressedCornerCornerSize
+    public val ExtraSmallInnerCornerSizePressed: CornerSize =
+        SplitButtonXSmallTokens.InnerPressedCornerCornerSize
 
     /**
      * Default small size for the leading button end corners and trailing button start corners when
      * pressed
      */
-    val SmallInnerCornerSizePressed = SplitButtonSmallTokens.InnerPressedCornerCornerSize
+    public val SmallInnerCornerSizePressed: CornerSize =
+        SplitButtonSmallTokens.InnerPressedCornerCornerSize
 
     /**
      * Default medium size for the leading button end corners and trailing button start corners when
      * pressed
      */
-    val MediumInnerCornerSizePressed = SplitButtonMediumTokens.InnerPressedCornerCornerSize
+    public val MediumInnerCornerSizePressed: CornerSize =
+        SplitButtonMediumTokens.InnerPressedCornerCornerSize
 
     /**
      * Default large size for the leading button end corners and trailing button start corners when
      * pressed
      */
-    val LargeInnerCornerSizePressed = SplitButtonLargeTokens.InnerPressedCornerCornerSize
+    public val LargeInnerCornerSizePressed: CornerSize =
+        SplitButtonLargeTokens.InnerPressedCornerCornerSize
 
     /**
      * Default extra large size for the leading button end corners and trailing button start corners
      * when pressed
      */
-    val ExtraLargeInnerCornerSizePressed = SplitButtonXLargeTokens.InnerPressedCornerCornerSize
+    public val ExtraLargeInnerCornerSizePressed: CornerSize =
+        SplitButtonXLargeTokens.InnerPressedCornerCornerSize
 
     /**
      * Default percentage size for the leading button start corners and trailing button end corners
      */
-    val OuterCornerSize = ShapeDefaults.CornerFull
+    public val OuterCornerSize: CornerSize = ShapeDefaults.CornerFull
 
     /** Default content padding of the leading button */
     @Deprecated(
@@ -260,77 +313,77 @@ object SplitButtonDefaults {
         replaceWith = ReplaceWith("leadingButtonContentPaddingFor(buttonHeight)"),
         level = DeprecationLevel.HIDDEN,
     )
-    val LeadingButtonContentPadding =
+    public val LeadingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonSmallTokens.LeadingButtonLeadingSpace,
             end = SplitButtonSmallTokens.LeadingButtonTrailingSpace,
         )
 
     /** Default content padding of the extra small leading button */
-    val ExtraSmallLeadingButtonContentPadding =
+    public val ExtraSmallLeadingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonXSmallTokens.LeadingButtonLeadingSpace,
             end = SplitButtonXSmallTokens.LeadingButtonTrailingSpace,
         )
 
     /** Default content padding of the small leading button */
-    val SmallLeadingButtonContentPadding =
+    public val SmallLeadingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonSmallTokens.LeadingButtonLeadingSpace,
             end = SplitButtonSmallTokens.LeadingButtonTrailingSpace,
         )
 
     /** Default content padding of the medium leading button */
-    val MediumLeadingButtonContentPadding =
+    public val MediumLeadingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonMediumTokens.LeadingButtonLeadingSpace,
             end = SplitButtonMediumTokens.LeadingButtonTrailingSpace,
         )
 
     /** Default content padding of the large leading button */
-    val LargeLeadingButtonContentPadding =
+    public val LargeLeadingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonLargeTokens.LeadingButtonLeadingSpace,
             end = SplitButtonLargeTokens.LeadingButtonTrailingSpace,
         )
 
     /** Default content padding of the extra large leading button */
-    val ExtraLargeLeadingButtonContentPadding =
+    public val ExtraLargeLeadingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonXLargeTokens.LeadingButtonLeadingSpace,
             end = SplitButtonXLargeTokens.LeadingButtonTrailingSpace,
         )
 
     /** Default content padding of the extra small trailing button */
-    val ExtraSmallTrailingButtonContentPadding =
+    public val ExtraSmallTrailingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonXSmallTokens.TrailingButtonLeadingSpace,
             end = SplitButtonXSmallTokens.TrailingButtonTrailingSpace,
         )
 
     /** Default content padding of the small trailing button */
-    val SmallTrailingButtonContentPadding =
+    public val SmallTrailingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonSmallTokens.TrailingButtonLeadingSpace,
             end = SplitButtonSmallTokens.TrailingButtonTrailingSpace,
         )
 
     /** Default content padding of the medium trailing button */
-    val MediumTrailingButtonContentPadding =
+    public val MediumTrailingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonMediumTokens.TrailingButtonLeadingSpace,
             end = SplitButtonMediumTokens.TrailingButtonTrailingSpace,
         )
 
     /** Default content padding of the large trailing button */
-    val LargeTrailingButtonContentPadding =
+    public val LargeTrailingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonLargeTokens.TrailingButtonLeadingSpace,
             end = SplitButtonLargeTokens.TrailingButtonTrailingSpace,
         )
 
     /** Default content padding of the extra large trailing button */
-    val ExtraLargeTrailingButtonContentPadding =
+    public val ExtraLargeTrailingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonXLargeTokens.TrailingButtonLeadingSpace,
             end = SplitButtonXLargeTokens.TrailingButtonTrailingSpace,
@@ -339,21 +392,21 @@ object SplitButtonDefaults {
     /**
      * The default size of the icon used inside of an extra small trailing button of a split button.
      */
-    val ExtraSmallTrailingButtonIconSize = SplitButtonXSmallTokens.TrailingIconSize
+    public val ExtraSmallTrailingButtonIconSize: Dp = SplitButtonXSmallTokens.TrailingIconSize
 
     /** The default size of the icon used inside of a small trailing button of a split button. */
-    val SmallTrailingButtonIconSize = SplitButtonSmallTokens.TrailingIconSize
+    public val SmallTrailingButtonIconSize: Dp = SplitButtonSmallTokens.TrailingIconSize
 
     /** The default size of the icon used inside of a medium trailing button of a split button. */
-    val MediumTrailingButtonIconSize = SplitButtonMediumTokens.TrailingIconSize
+    public val MediumTrailingButtonIconSize: Dp = SplitButtonMediumTokens.TrailingIconSize
 
     /** The default size of the icon used inside of a large trailing button of a split button. */
-    val LargeTrailingButtonIconSize = SplitButtonLargeTokens.TrailingIconSize
+    public val LargeTrailingButtonIconSize: Dp = SplitButtonLargeTokens.TrailingIconSize
 
     /**
      * The default size of the icon used inside of an extra large trailing button of a split button.
      */
-    val ExtraLargeTrailingButtonIconSize = SplitButtonXLargeTokens.TrailingIconSize
+    public val ExtraLargeTrailingButtonIconSize: Dp = SplitButtonXLargeTokens.TrailingIconSize
 
     /** Default content padding of the small trailing button */
     @Deprecated(
@@ -361,7 +414,7 @@ object SplitButtonDefaults {
         replaceWith = ReplaceWith("SmallTrailingButtonContentPadding"),
         level = DeprecationLevel.HIDDEN,
     )
-    val TrailingButtonContentPadding =
+    public val TrailingButtonContentPadding: PaddingValues =
         PaddingValues(
             start = SplitButtonSmallTokens.TrailingButtonLeadingSpace,
             end = SplitButtonSmallTokens.TrailingButtonTrailingSpace,
@@ -376,19 +429,19 @@ object SplitButtonDefaults {
      * Default minimum height of the split button. This applies to both [LeadingButton] and
      * [TrailingButton]. Applies to all 4 variants of the split button
      */
-    val SmallContainerHeight = SplitButtonSmallTokens.ContainerHeight
+    public val SmallContainerHeight: Dp = SplitButtonSmallTokens.ContainerHeight
 
     /** The default height for an extra small button container. */
-    val ExtraSmallContainerHeight = SplitButtonXSmallTokens.ContainerHeight
+    public val ExtraSmallContainerHeight: Dp = SplitButtonXSmallTokens.ContainerHeight
 
     /** The default height for a medium button container. */
-    val MediumContainerHeight = SplitButtonMediumTokens.ContainerHeight
+    public val MediumContainerHeight: Dp = SplitButtonMediumTokens.ContainerHeight
 
     /** The default height for a large button container. */
-    val LargeContainerHeight = SplitButtonLargeTokens.ContainerHeight
+    public val LargeContainerHeight: Dp = SplitButtonLargeTokens.ContainerHeight
 
     /** The default height for an extra large button container. */
-    val ExtraLargeContainerHeight = SplitButtonXLargeTokens.ContainerHeight
+    public val ExtraLargeContainerHeight: Dp = SplitButtonXLargeTokens.ContainerHeight
 
     /** Default minimum width of the [TrailingButton]. */
     private val TrailingButtonMinWidth = LeadingButtonMinWidth
@@ -413,7 +466,9 @@ object SplitButtonDefaults {
         replaceWith = ReplaceWith("leadingButtonShapesFor(buttonHeight)"),
         level = DeprecationLevel.HIDDEN,
     )
-    fun leadingButtonShapes(endCornerSize: CornerSize = SmallInnerCornerSize) =
+    public fun leadingButtonShapes(
+        endCornerSize: CornerSize = SmallInnerCornerSize
+    ): SplitButtonShapes =
         SplitButtonShapes(
             shape = leadingButtonShape(endCornerSize),
             pressedShape =
@@ -450,7 +505,9 @@ object SplitButtonDefaults {
         replaceWith = ReplaceWith("trailingButtonShapesFor(buttonHeight)"),
         level = DeprecationLevel.HIDDEN,
     )
-    fun trailingButtonShapes(startCornerSize: CornerSize = SmallInnerCornerSize) =
+    public fun trailingButtonShapes(
+        startCornerSize: CornerSize = SmallInnerCornerSize
+    ): SplitButtonShapes =
         SplitButtonShapes(
             shape = trailingButtonShape(startCornerSize),
             pressedShape =
@@ -479,7 +536,7 @@ object SplitButtonDefaults {
      * @param buttonHeight The height of the button
      */
     @Composable
-    fun leadingButtonShapesFor(buttonHeight: Dp): SplitButtonShapes {
+    public fun leadingButtonShapesFor(buttonHeight: Dp): SplitButtonShapes {
         val xSmallHeight = ButtonDefaults.ExtraSmallContainerHeight
         val smallHeight = ButtonDefaults.MinHeight
         val mediumHeight = ButtonDefaults.MediumContainerHeight
@@ -520,7 +577,7 @@ object SplitButtonDefaults {
      * @param buttonHeight The height of the button
      */
     @Composable
-    fun trailingButtonShapesFor(buttonHeight: Dp): SplitButtonShapes {
+    public fun trailingButtonShapesFor(buttonHeight: Dp): SplitButtonShapes {
         val xSmallHeight = ButtonDefaults.ExtraSmallContainerHeight
         val smallHeight = ButtonDefaults.MinHeight
         val mediumHeight = ButtonDefaults.MediumContainerHeight
@@ -560,7 +617,7 @@ object SplitButtonDefaults {
      *
      * @param buttonHeight The height of the button
      */
-    fun leadingButtonContentPaddingFor(buttonHeight: Dp): PaddingValues {
+    public fun leadingButtonContentPaddingFor(buttonHeight: Dp): PaddingValues {
         val smallHeight = SmallContainerHeight
         val mediumHeight = MediumContainerHeight
         val largeHeight = LargeContainerHeight
@@ -579,7 +636,7 @@ object SplitButtonDefaults {
      *
      * @param buttonHeight The height of the button
      */
-    fun trailingButtonContentPaddingFor(buttonHeight: Dp): PaddingValues {
+    public fun trailingButtonContentPaddingFor(buttonHeight: Dp): PaddingValues {
         val smallHeight = SmallContainerHeight
         val mediumHeight = MediumContainerHeight
         val largeHeight = LargeContainerHeight
@@ -598,7 +655,7 @@ object SplitButtonDefaults {
      *
      * @param buttonHeight The height of the button
      */
-    fun leadingButtonIconSizeFor(buttonHeight: Dp): Dp {
+    public fun leadingButtonIconSizeFor(buttonHeight: Dp): Dp {
         return ButtonDefaults.iconSizeFor(buttonHeight)
     }
 
@@ -607,7 +664,7 @@ object SplitButtonDefaults {
      *
      * @param buttonHeight The height of the button
      */
-    fun trailingButtonIconSizeFor(buttonHeight: Dp): Dp {
+    public fun trailingButtonIconSizeFor(buttonHeight: Dp): Dp {
         val smallHeight = ButtonDefaults.MinHeight
         val mediumHeight = ButtonDefaults.MediumContainerHeight
         val largeHeight = ButtonDefaults.LargeContainerHeight
@@ -650,7 +707,7 @@ object SplitButtonDefaults {
      * @param content the content for the button.
      */
     @Composable
-    fun LeadingButton(
+    public fun LeadingButton(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -730,7 +787,7 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    fun TrailingButton(
+    public fun TrailingButton(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -841,7 +898,7 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    fun TrailingButton(
+    public fun TrailingButton(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier = Modifier,
@@ -962,7 +1019,7 @@ object SplitButtonDefaults {
      * @param content the content for the button.
      */
     @Composable
-    fun TonalLeadingButton(
+    public fun TonalLeadingButton(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -1022,7 +1079,7 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    fun TonalTrailingButton(
+    public fun TonalTrailingButton(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier = Modifier,
@@ -1079,7 +1136,7 @@ object SplitButtonDefaults {
      * @param content the content for the button.
      */
     @Composable
-    fun OutlinedLeadingButton(
+    public fun OutlinedLeadingButton(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -1139,7 +1196,7 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    fun OutlinedTrailingButton(
+    public fun OutlinedTrailingButton(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier = Modifier,
@@ -1196,7 +1253,7 @@ object SplitButtonDefaults {
      * @param content the content for the button.
      */
     @Composable
-    fun ElevatedLeadingButton(
+    public fun ElevatedLeadingButton(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -1256,7 +1313,7 @@ object SplitButtonDefaults {
      * @param content the content to be placed in the button
      */
     @Composable
-    fun ElevatedTrailingButton(
+    public fun ElevatedTrailingButton(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier = Modifier,
@@ -1308,14 +1365,18 @@ private fun shapeByInteraction(
 }
 
 /**
- * The shapes that will be used in [SplitButtonLayout]. Split button will morph between these shapes
+ * The shapes that will be used in [SplitButton]. Split button will morph between these shapes
  * depending on the interaction of the buttons, assuming all of the shapes are [CornerBasedShape]s.
  *
  * @property shape is the default shape.
  * @property pressedShape is the pressed shape.
  * @property checkedShape is the checked shape.
  */
-class SplitButtonShapes(val shape: Shape, val pressedShape: Shape?, val checkedShape: Shape?) {
+public class SplitButtonShapes(
+    public val shape: Shape,
+    public val pressedShape: Shape?,
+    public val checkedShape: Shape?,
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is SplitButtonShapes) return false
