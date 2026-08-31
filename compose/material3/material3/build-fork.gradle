@@ -179,7 +179,6 @@ androidx {
 // It obtains them from Android's base repository.
 tasks.register("updateTranslations", UpdateTranslationsTask.class) {
     group = "localization"
-    gitRepo = "https://github.com/androidx/androidx"
     repoResDirectories = [
             "compose/ui/ui/src/androidMain/res",
             "compose/material3/material3/src/androidMain/res"
