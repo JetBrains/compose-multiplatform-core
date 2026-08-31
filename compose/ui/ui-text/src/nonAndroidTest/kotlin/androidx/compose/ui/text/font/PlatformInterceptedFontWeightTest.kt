@@ -24,13 +24,20 @@ import kotlin.test.assertEquals
 class PlatformInterceptedFontWeightTest {
 
     /**
-     * Desktop has no accessibility interceptor, so the weight stored in the Skia text style must
-     * stay exactly as requested. Only iOS adjusts it, for the "Bold Text" setting.
+     * The weight stored in the Skia text style has to match the one the resolver used, so the seam
+     * must report exactly what the platform interceptor does.
      */
     @Test
-    fun weightIsUnchangedOnAPlatformWithoutAnInterceptor() {
-        assertEquals(FontWeight.Normal, platformInterceptedFontWeight(FontWeight.Normal))
-        assertEquals(FontWeight.Bold, platformInterceptedFontWeight(FontWeight.Bold))
-        assertEquals(FontWeight.W100, platformInterceptedFontWeight(FontWeight.W100))
+    fun weightMatchesThePlatformInterceptor() {
+        val interceptor = createPlatformResolveInterceptor()
+
+        assertEquals(
+            interceptor.interceptFontWeight(FontWeight.Normal),
+            platformInterceptedFontWeight(FontWeight.Normal)
+        )
+        assertEquals(
+            interceptor.interceptFontWeight(FontWeight.Bold),
+            platformInterceptedFontWeight(FontWeight.Bold)
+        )
     }
 }
