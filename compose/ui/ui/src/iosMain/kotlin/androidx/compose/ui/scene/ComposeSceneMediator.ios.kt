@@ -72,7 +72,7 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.LocalNativeTextInputContext
+import androidx.compose.ui.uikit.LocalTextInputContainer
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
@@ -446,7 +446,7 @@ internal class ComposeSceneMediator(
         )
     }
 
-    private val textInputService: TextInputService by lazy {
+    private val textInputService =
         TextInputService(
             updateView = {
                 frameChoreographer.performFrameIfNeeded()
@@ -470,7 +470,6 @@ internal class ComposeSceneMediator(
             focusManager = { scene.focusManager },
             coroutineContext = coroutineContext,
         )
-    }
 
     private val textInputServiceAdapter by lazy {
         TextInputServiceAdapter(
@@ -714,7 +713,7 @@ internal class ComposeSceneMediator(
         CompositionLocalProvider(
             LocalInteropContainer provides interopContainer,
             LocalUIView provides _overlayView,
-            LocalNativeTextInputContext provides textInputService.nativeTextInputContext,
+            LocalTextInputContainer provides textInputService.textInputContainer,
             content = content
         )
 
@@ -758,6 +757,8 @@ internal class ComposeSceneMediator(
         scene.close()
         interopContainer.dispose()
         semanticsOwnerListener.dispose()
+
+        textInputService.dispose()
     }
 
     /**

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.toCGRect
+import kotlin.math.absoluteValue
 import kotlinx.cinterop.CValue
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRect
@@ -219,10 +220,12 @@ internal interface NativeTextEditingDelegate : TextEditingDelegate {
     fun positionWithinRange(range: TextRange, farthestInDirection: TextLayoutDirection): Int?
 }
 
-internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
+internal class DetachedTextEditingDelegate(
+    private val text: String = "",
+    private val selection: TextRange? = null,
+    override val inputTraits: SkikoUITextInputTraits = EmptyInputTraits,
+) : NativeTextEditingDelegate {
     override val isInteractive: Boolean = false
-
-    override val inputTraits: SkikoUITextInputTraits = EmptyInputTraits
 
     override fun onResignFocus() = Unit
 
@@ -232,21 +235,22 @@ internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
 
     override fun endFloatingCursor() = Unit
 
-    override fun hasText(): Boolean = false
+    override fun hasText(): Boolean = text.isNotEmpty()
 
     override fun insertText(text: String) = Unit
 
     override fun deleteBackward() = Unit
 
-    override fun endOfDocument(): Int = 0
+    override fun endOfDocument(): Int = text.length
 
-    override fun getSelectedTextRange(): TextRange? = null
+    override fun getSelectedTextRange(): TextRange? = selection
 
     override fun setSelectedTextRange(range: TextRange?) = Unit
 
     override fun selectAll() = Unit
 
-    override fun textInRange(range: TextRange): String? = null
+    override fun textInRange(range: TextRange): String? =
+        text.takeIf { range.isValidIn(it.length) }?.substring(range.start, range.end)
 
     override fun replaceRange(range: TextRange, text: String) = Unit
 
@@ -256,7 +260,8 @@ internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
 
     override fun unmarkText() = Unit
 
-    override fun positionFromPosition(position: Int, offset: Int): Int? = null
+    override fun positionFromPosition(position: Int, offset: Int): Int? =
+        text.movePositionByGraphemes(position, offset)
 
     override fun verticalPositionFromPosition(position: Int, verticalOffset: Int): Int? = null
 
@@ -277,6 +282,44 @@ internal object EmptyTextEditingDelegate : NativeTextEditingDelegate {
         range: TextRange,
         farthestInDirection: TextLayoutDirection
     ): Int? = null
+}
+
+internal fun NativeTextEditingDelegate.detachedCopy() = DetachedTextEditingDelegate(
+    text = textInRange(TextRange(0, endOfDocument())).orEmpty(),
+    selection = getSelectedTextRange(),
+    inputTraits = inputTraits,
+)
+
+internal fun TextRange.isValidIn(length: Int): Boolean =
+    start >= 0 && start <= end && end <= length
+
+internal fun String.movePositionByGraphemes(position: Int, offset: Int): Int? {
+    val newPosition = position + offset
+    if (newPosition == length || newPosition == 0) {
+        return newPosition
+    }
+    if (newPosition < 0 || newPosition > length) {
+        return null
+    }
+    var resultPosition = position
+    val iterator = BreakIterator.makeCharacterInstance()
+    iterator.setText(this)
+
+    repeat(offset.absoluteValue) {
+        val iteratorResult = if (offset > 0) {
+            iterator.following(resultPosition)
+        } else {
+            iterator.preceding(resultPosition)
+        }
+
+        if (iteratorResult == BreakIterator.DONE) {
+            return resultPosition
+        } else {
+            resultPosition = iteratorResult
+        }
+    }
+
+    return resultPosition
 }
 
 internal fun TextEditingDelegate.selectTextNearCursor() {

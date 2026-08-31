@@ -18,9 +18,8 @@ package androidx.compose.ui.uikit
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.NativeTextInputContextMenuCustomAction
-import androidx.compose.ui.platform.NativeTextInputContext
+import androidx.compose.ui.platform.EmptyTextInputContainer
+import androidx.compose.ui.platform.TextInputContainer
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
@@ -44,19 +43,12 @@ val LocalUIView = staticCompositionLocalOf<UIView> {
     error("CompositionLocal UIView not provided")
 }
 
+/**
+ * CompositionLocal providing the current [TextInputContainer] instance.
+ *
+ * This is used internally within the Compose UI system to manage text input behavior,
+ * including creating and interacting with native or custom text input implementations.
+ */
 @InternalComposeUiApi
-val LocalNativeTextInputContext = staticCompositionLocalOf<NativeTextInputContext> {
-    object : NativeTextInputContext {
-        override fun usingNativeTextInput(): Boolean = false
-
-        override fun updateNativeTextInputEditMenuState(
-            copy: (() -> Unit)?,
-            paste: (() -> Unit)?,
-            cut: (() -> Unit)?,
-            selectAll: (() -> Unit)?,
-            customActions: List<NativeTextInputContextMenuCustomAction>?
-        ) {}
-
-        override fun updateNativeTextInputTintColor(color: Color?) {}
-    }
-}
+val LocalTextInputContainer =
+    staticCompositionLocalOf<TextInputContainer> { EmptyTextInputContainer }

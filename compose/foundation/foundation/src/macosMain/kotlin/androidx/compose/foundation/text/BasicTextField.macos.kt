@@ -23,7 +23,5 @@ import androidx.compose.ui.Modifier
 internal actual fun Modifier.textFieldOverlay(
     transformedState: TransformedTextFieldState,
     keyboardOptions: KeyboardOptions,
-    interactionSource: InteractionSource,
-): Modifier {
-    return this
-}
+    interactionSource: InteractionSource
+): Modifier = this

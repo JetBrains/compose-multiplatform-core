@@ -86,9 +86,15 @@
 
 @property (readwrite) UIEditMenuInteraction* editInteraction API_AVAILABLE(ios(16.0));
 
+/// Donor text field backing the `UITextField` masquerade below, or `nil` when secure text entry is off.
+- (nullable UITextField *)cmp_proxyTextField;
+
 @end
 
-@implementation CMPEditMenuView
+@implementation CMPEditMenuView {
+    UITextField *_textField;
+    BOOL _isDeallocating;
+}
 
 id _editInteraction;
 
@@ -150,6 +156,65 @@ id _editInteraction;
     self.systemPasteBlock = pasteBlock;
     self.systemSelectBlock = selectBlock;
     self.systemSelectAllBlock = selectAllBlock;
+}
+
+- (BOOL)isSecureTextEntry {
+    CMP_ABSTRACT_FUNCTION_CALLED
+}
+
+- (UITextField *)cmp_proxyTextField {
+    if (![self isSecureTextEntry]) {
+        return nil;
+    }
+    if (!_textField) {
+        _textField = [[UITextField alloc] init];
+    }
+    return _textField;
+}
+
+/// `-[UIView dealloc]` still queries the view while tearing it down (`-isKindOfClass:` from
+/// `-_removeAllGestureRecognizers`, for example). The Kotlin subclass releases its state in its own
+/// `-dealloc` before `super` runs, so from here on the subclass can no longer be asked anything.
+- (void)dealloc {
+    _isDeallocating = YES;
+}
+
+- (BOOL)isKindOfClass:(Class)aClass {
+    if ([super isKindOfClass:aClass]) {
+        return YES;
+    }
+    if (_isDeallocating) {
+        return NO;
+    }
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    return proxyTextField != nil && [proxyTextField isKindOfClass:aClass];
+}
+
+- (NSMethodSignature*)methodSignatureForSelector:(SEL)aSelector {
+    NSMethodSignature* signature = [super methodSignatureForSelector:aSelector];
+    if (!signature) {
+        signature = [[self cmp_proxyTextField] methodSignatureForSelector:aSelector];
+    }
+    return signature;
+}
+
+- (void)forwardInvocation:(NSInvocation*)anInvocation {
+    UITextField *proxyTextField = [self cmp_proxyTextField];
+    if (proxyTextField != nil) {
+        [anInvocation invokeWithTarget:proxyTextField];
+    } else {
+        [super forwardInvocation:anInvocation];
+    }
+}
+
+- (nullable NSString *)text {
+    NSAssert([self conformsToProtocol:@protocol(UITextInput)],
+             @"-text requires a subclass conforming to UITextInput");
+
+    id<UITextInput> textInput = (id<UITextInput>)self;
+    UITextRange *range = [textInput textRangeFromPosition:textInput.beginningOfDocument
+                                               toPosition:textInput.endOfDocument];
+    return range != nil ? [textInput textInRange:range] : nil;
 }
 
 - (void)didMoveToWindow {

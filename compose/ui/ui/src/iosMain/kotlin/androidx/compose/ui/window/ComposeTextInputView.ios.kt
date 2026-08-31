@@ -76,11 +76,12 @@ import platform.darwin.NSInteger
  */
 internal class ComposeTextInputView(
     private val doubleTapTimeoutMillis: Long,
-    input: TextEditingDelegate,
+    // Do not rename to `input`: shadowing the property below makes this view outlive its scene.
+    initialInput: TextEditingDelegate,
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
-    var input: TextEditingDelegate = input
+    var input: TextEditingDelegate = initialInput
         set(value) {
             field = value
             if (!value.isInteractive) {
@@ -88,11 +89,14 @@ internal class ComposeTextInputView(
             }
         }
 
-    override fun canBecomeFirstResponder() = true
+    override fun canBecomeFirstResponder() = input.isInteractive
 
-    override fun isUserInteractionEnabled(): Boolean {
-        return false
-    }
+    override fun becomeFirstResponder(): Boolean =
+        if (input.isInteractive) {
+            super.becomeFirstResponder()
+        } else {
+            false
+        }
 
     override fun resignFirstResponder(): Boolean {
         input.onResignFocus()
