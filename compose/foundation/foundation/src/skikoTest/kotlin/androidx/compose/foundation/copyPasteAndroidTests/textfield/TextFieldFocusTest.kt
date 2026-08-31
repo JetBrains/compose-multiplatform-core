@@ -73,6 +73,7 @@ class TextFieldFocusTest {
 
     data class FocusTestData(val focusRequester: FocusRequester, var focused: Boolean = false)
 
+    @Suppress("DEPRECATION")
     @Test
     @IgnoreWasmTarget
     fun requestFocus() = runSkikoComposeUiTest {
@@ -111,8 +112,9 @@ class TextFieldFocusTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
-    fun noCrushWhenSwitchingBetweenEnabledFocusedAndDisabledTextField() = runSkikoComposeUiTest {
+    fun noCrashWhenSwitchingBetweenEnabledFocusedAndDisabledTextField() = runSkikoComposeUiTest {
         val enabled = mutableStateOf(true)
         var focused = false
         val tag = "textField"
@@ -146,6 +148,7 @@ class TextFieldFocusTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     @IgnoreWasmTarget
     fun wholeDecorationBox_isBroughtIntoView_whenFocused() = runSkikoComposeUiTest {

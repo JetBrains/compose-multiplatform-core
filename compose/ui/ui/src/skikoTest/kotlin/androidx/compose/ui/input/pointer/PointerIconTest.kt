@@ -322,6 +322,7 @@ class PointerIconTest : SkikoComposeTestBase() {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     @Test
     fun resetsToDefault() = runSkikoComposeUiTest(Size(width = 100f, height = 100f)) {
         var show by mutableStateOf(true)

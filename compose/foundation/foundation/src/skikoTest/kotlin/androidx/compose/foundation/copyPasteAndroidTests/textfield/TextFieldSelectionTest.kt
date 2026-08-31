@@ -48,6 +48,7 @@ import kotlin.test.Test
 @Ignore // TODO: enable these tests for targets supporting touch
 class TextFieldSelectionTest {
 
+    @Suppress("DEPRECATION")
     @Test
     fun readOnlyTextField_showsSelectionHandles() = runSkikoComposeUiTest {
         val testTag = "text field"
@@ -72,6 +73,7 @@ class TextFieldSelectionTest {
         onNode(isSelectionHandle(Handle.SelectionEnd)).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_showsSelectionHandles_whenVisualTransformationIsApplied() = runSkikoComposeUiTest {
         val testTag = "text field"
@@ -96,6 +98,7 @@ class TextFieldSelectionTest {
         onNode(isSelectionHandle(Handle.SelectionEnd)).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_showsCursorHandle() = runSkikoComposeUiTest {
         val testTag = "text field"
@@ -118,6 +121,7 @@ class TextFieldSelectionTest {
         onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_dragsCursorHandle() = runSkikoComposeUiTest {
         val testTag = "text field"
@@ -159,6 +163,7 @@ class TextFieldSelectionTest {
         assertThat(cursorPositions).isEqualTo((0..14).toList())
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun textField_dragsCursorHandle_withVisualTransformation() = runSkikoComposeUiTest {
         val testTag = "text field"

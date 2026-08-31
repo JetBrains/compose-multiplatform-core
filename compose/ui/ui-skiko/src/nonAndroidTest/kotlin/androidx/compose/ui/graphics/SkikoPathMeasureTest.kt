@@ -25,6 +25,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SkikoPathMeasureTest {
+    @Suppress("DEPRECATION")
     @Test
     @OptIn(ExperimentalTestApi::class)
     fun getSegment_reusedDestinationUpdatesRetainedSkiaPath() = runSkikoComposeUiTest {

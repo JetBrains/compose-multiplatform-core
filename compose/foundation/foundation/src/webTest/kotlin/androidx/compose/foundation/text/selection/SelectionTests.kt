@@ -50,6 +50,7 @@ class WebSelectionTests {
     private val keyboardActions = ResolvedKeyboardActions
 
     @OptIn(ExperimentalTestApi::class)
+    @Suppress("DEPRECATION")
     private fun textFieldSemanticInteraction(
         initialValue: String = "",
         runAction: (node: SemanticsNodeInteraction, state: MutableState<TextFieldValue>) -> Unit
