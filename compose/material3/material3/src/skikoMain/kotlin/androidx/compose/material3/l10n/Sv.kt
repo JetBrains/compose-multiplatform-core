@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.sv() = mapOf(
     Strings.TimePickerMinuteTextField to "för minuter",
     Strings.TimePickerHourTextField to "för timme",
     Strings.TimePickerToggleKeyboard to "Byt till textinmatningsläge",
-    Strings.TimePickerToggleScroll to "Byt till scrollningsläget",
     Strings.TimePickerToggleTouch to "Byt till klockläge",
     Strings.TimePickerDialogTitle to "Välj tid",
-    Strings.TimeScrollDialogTitle to "Välj tid",
     Strings.TimeInputDialogTitle to "Ange tid",
     Strings.TimePickerMinuteError to "Minuten måste vara 0–59",
     Strings.TimePickerHourError to "Timmen måste vara 1–12",

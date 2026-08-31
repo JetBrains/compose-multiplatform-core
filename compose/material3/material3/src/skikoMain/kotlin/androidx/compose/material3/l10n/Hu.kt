@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.hu() = mapOf(
     Strings.TimePickerMinuteTextField to "perc megadása",
     Strings.TimePickerHourTextField to "óra megadása",
     Strings.TimePickerToggleKeyboard to "Váltás szövegbeviteli módra",
-    Strings.TimePickerToggleScroll to "Váltás görgetési módra",
     Strings.TimePickerToggleTouch to "Váltás óra módra",
     Strings.TimePickerDialogTitle to "Időpont kiválasztása",
-    Strings.TimeScrollDialogTitle to "Időpont kiválasztása",
     Strings.TimeInputDialogTitle to "Időpont megadása",
     Strings.TimePickerMinuteError to "A perc 0–59 lehet",
     Strings.TimePickerHourError to "Az óra 1–12 lehet",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.fr() = mapOf(
     Strings.TimePickerMinuteTextField to "en minutes",
     Strings.TimePickerHourTextField to "en heures",
     Strings.TimePickerToggleKeyboard to "Passer au mode de saisie de texte",
-    Strings.TimePickerToggleScroll to "Passer en mode défilement",
     Strings.TimePickerToggleTouch to "Passer en mode horloge",
     Strings.TimePickerDialogTitle to "Sélectionner l\'heure",
-    Strings.TimeScrollDialogTitle to "Sélectionner une heure",
     Strings.TimeInputDialogTitle to "Saisir l\'heure",
     Strings.TimePickerMinuteError to "Minute : entre 0 et 59",
     Strings.TimePickerHourError to "Heure : entre 1 et 12",
@@ -175,10 +173,8 @@ internal fun Translations.frCA() = mapOf(
     Strings.TimePickerMinuteTextField to "pour les minutes",
     Strings.TimePickerHourTextField to "pour l\'heure",
     Strings.TimePickerToggleKeyboard to "Passer au mode d\'entrée de texte",
-    Strings.TimePickerToggleScroll to "Passer en mode de défilement",
     Strings.TimePickerToggleTouch to "Passer en mode Horloge",
     Strings.TimePickerDialogTitle to "Sélectionner l\'heure",
-    Strings.TimeScrollDialogTitle to "Sélectionner l\'heure",
     Strings.TimeInputDialogTitle to "Saisir l\'heure",
     Strings.TimePickerMinuteError to "Minute entre 0 et 59",
     Strings.TimePickerHourError to "Heure entre 1 et 12",

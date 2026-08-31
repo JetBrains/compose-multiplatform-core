@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.da() = mapOf(
     Strings.TimePickerMinuteTextField to "til minutter",
     Strings.TimePickerHourTextField to "til timer",
     Strings.TimePickerToggleKeyboard to "Skift til input-tilstand for tekst",
-    Strings.TimePickerToggleScroll to "Skift til rulletilstand",
     Strings.TimePickerToggleTouch to "Skift til urtilstand",
     Strings.TimePickerDialogTitle to "Vælg tidspunkt",
-    Strings.TimeScrollDialogTitle to "Vælg tidspunkt",
     Strings.TimeInputDialogTitle to "Angiv tidspunkt",
     Strings.TimePickerMinuteError to "Minuttal skal være 0-59",
     Strings.TimePickerHourError to "Timetal skal være 1-12",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.sk() = mapOf(
     Strings.TimePickerMinuteTextField to "minúty",
     Strings.TimePickerHourTextField to "hodiny",
     Strings.TimePickerToggleKeyboard to "Prepnúť na režim zadávania textu",
-    Strings.TimePickerToggleScroll to "Prepnúť na režim posúvania",
     Strings.TimePickerToggleTouch to "Prepnúť na režim hodín",
     Strings.TimePickerDialogTitle to "Vyberte čas",
-    Strings.TimeScrollDialogTitle to "Výber času",
     Strings.TimeInputDialogTitle to "Zadajte čas",
     Strings.TimePickerMinuteError to "Povinný rozsah min: 0–59",
     Strings.TimePickerHourError to "Povinný rozsah h: 1 – 12",

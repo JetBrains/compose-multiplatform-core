@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.af() = mapOf(
     Strings.TimePickerMinuteTextField to "vir minute",
     Strings.TimePickerHourTextField to "vir uur",
     Strings.TimePickerToggleKeyboard to "Skakel oor na teksinvoermodus",
-    Strings.TimePickerToggleScroll to "Skakel oor na rolleesmodus",
     Strings.TimePickerToggleTouch to "Skakel oor na horlosiemodus",
     Strings.TimePickerDialogTitle to "Kies tyd",
-    Strings.TimeScrollDialogTitle to "Kies tyd",
     Strings.TimeInputDialogTitle to "Voer tyd in",
     Strings.TimePickerMinuteError to "Minuut moet 0-59 wees",
     Strings.TimePickerHourError to "Uur moet 1-12 wees",

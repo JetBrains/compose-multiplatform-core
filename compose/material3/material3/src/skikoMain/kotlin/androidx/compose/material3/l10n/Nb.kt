@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.nb() = mapOf(
     Strings.TimePickerMinuteTextField to "for minutter",
     Strings.TimePickerHourTextField to "for timer",
     Strings.TimePickerToggleKeyboard to "Bytt til inndatamodus for tekst",
-    Strings.TimePickerToggleScroll to "Bytt til rullemodus",
     Strings.TimePickerToggleTouch to "Bytt til klokkemodus",
     Strings.TimePickerDialogTitle to "Velg et klokkeslett",
-    Strings.TimeScrollDialogTitle to "Velg et klokkeslett",
     Strings.TimeInputDialogTitle to "Angi et klokkeslett",
     Strings.TimePickerMinuteError to "Minuttet må være 0–59",
     Strings.TimePickerHourError to "Timen må være 1–12",

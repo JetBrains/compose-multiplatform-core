@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.iw() = mapOf(
     Strings.TimePickerMinuteTextField to "דקות",
     Strings.TimePickerHourTextField to "שעות",
     Strings.TimePickerToggleKeyboard to "לעבור לשיטת קלט טקסט?",
-    Strings.TimePickerToggleScroll to "החלפה למצב גלילה",
     Strings.TimePickerToggleTouch to "לעבור למצב שעון?",
     Strings.TimePickerDialogTitle to "בחירת שעה",
-    Strings.TimeScrollDialogTitle to "בחירת שעה",
     Strings.TimeInputDialogTitle to "הזנת שעה",
     Strings.TimePickerMinuteError to "הדקה חייבת להיות 0 עד 59",
     Strings.TimePickerHourError to "השעה חייבת להיות 1 עד 12",

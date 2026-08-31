@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.nl() = mapOf(
     Strings.TimePickerMinuteTextField to "voor minuten",
     Strings.TimePickerHourTextField to "voor uur",
     Strings.TimePickerToggleKeyboard to "Overschakelen naar tekstinvoermodus",
-    Strings.TimePickerToggleScroll to "Wisselen naar scrollmodus",
     Strings.TimePickerToggleTouch to "Overschakelen naar klokmodus",
     Strings.TimePickerDialogTitle to "Tijd selecteren",
-    Strings.TimeScrollDialogTitle to "Tijd selecteren",
     Strings.TimeInputDialogTitle to "Tijd invoeren",
     Strings.TimePickerMinuteError to "Minuut moet 0 - 59 zijn",
     Strings.TimePickerHourError to "Uur moet 1 - 12 zijn",

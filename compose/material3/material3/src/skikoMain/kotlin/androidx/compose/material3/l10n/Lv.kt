@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.lv() = mapOf(
     Strings.TimePickerMinuteTextField to "minūtēm",
     Strings.TimePickerHourTextField to "stundām",
     Strings.TimePickerToggleKeyboard to "Pārslēgties uz teksta ievades režīmu",
-    Strings.TimePickerToggleScroll to "Pārslēgties uz ritināšanas režīmu",
     Strings.TimePickerToggleTouch to "Pārslēgties uz pulksteņa režīmu",
     Strings.TimePickerDialogTitle to "Laika atlase",
-    Strings.TimeScrollDialogTitle to "Laika atlase",
     Strings.TimeInputDialogTitle to "Laika ievade",
     Strings.TimePickerMinuteError to "Minūtes vērtība: 0–59",
     Strings.TimePickerHourError to "Stundas vērtība: 1–12",

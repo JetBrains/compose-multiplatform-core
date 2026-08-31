@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.kn() = mapOf(
     Strings.TimePickerMinuteTextField to "ನಿಮಿಷಗಳವರೆಗೆ",
     Strings.TimePickerHourTextField to "ಗಂಟೆಯವರೆಗೆ",
     Strings.TimePickerToggleKeyboard to "ಪಠ್ಯ ಇನ್‌ಪುಟ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ",
-    Strings.TimePickerToggleScroll to "ಸ್ಕ್ರಾಲ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ",
     Strings.TimePickerToggleTouch to "ಗಡಿಯಾರ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ",
     Strings.TimePickerDialogTitle to "ಸಮಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ",
-    Strings.TimeScrollDialogTitle to "ಸಮಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ",
     Strings.TimeInputDialogTitle to "ಸಮಯವನ್ನು ನಮೂದಿಸಿ",
     Strings.TimePickerMinuteError to "ನಿಮಿಷವು 0–59 ಆಗಿರಬೇಕು",
     Strings.TimePickerHourError to "ಗಂಟೆಯು 1–12 ಆಗಿರಬೇಕು",

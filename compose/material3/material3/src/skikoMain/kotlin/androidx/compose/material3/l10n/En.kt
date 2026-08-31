@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.en() = mapOf(
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
     Strings.TimePickerToggleKeyboard to "Switch to text input mode",
-    Strings.TimePickerToggleScroll to "Switch to scroll mode",
     Strings.TimePickerToggleTouch to "Switch to clock mode",
     Strings.TimePickerDialogTitle to "Select Time",
-    Strings.TimeScrollDialogTitle to "Select Time",
     Strings.TimeInputDialogTitle to "Enter Time",
     Strings.TimePickerMinuteError to "Minute must be 0–59",
     Strings.TimePickerHourError to "Hour must be 1–12",
@@ -175,10 +173,8 @@ internal fun Translations.enAU() = mapOf(
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
     Strings.TimePickerToggleKeyboard to "Switch to text input mode",
-    Strings.TimePickerToggleScroll to "Switch to scroll mode",
     Strings.TimePickerToggleTouch to "Switch to clock mode",
     Strings.TimePickerDialogTitle to "Select time",
-    Strings.TimeScrollDialogTitle to "Select time",
     Strings.TimeInputDialogTitle to "Enter time",
     Strings.TimePickerMinuteError to "Minute must be 0–59",
     Strings.TimePickerHourError to "Hour must be 1–12",
@@ -259,10 +255,8 @@ internal fun Translations.enCA() = mapOf(
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
     Strings.TimePickerToggleKeyboard to "Switch to text input mode",
-    Strings.TimePickerToggleScroll to "Switch to scroll mode",
     Strings.TimePickerToggleTouch to "Switch to clock mode",
     Strings.TimePickerDialogTitle to "Select Time",
-    Strings.TimeScrollDialogTitle to "Select Time",
     Strings.TimeInputDialogTitle to "Enter Time",
     Strings.TimePickerMinuteError to "Minute must be 0–59",
     Strings.TimePickerHourError to "Hour must be 1–12",
@@ -343,10 +337,8 @@ internal fun Translations.enGB() = mapOf(
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
     Strings.TimePickerToggleKeyboard to "Switch to text input mode",
-    Strings.TimePickerToggleScroll to "Switch to scroll mode",
     Strings.TimePickerToggleTouch to "Switch to clock mode",
     Strings.TimePickerDialogTitle to "Select time",
-    Strings.TimeScrollDialogTitle to "Select time",
     Strings.TimeInputDialogTitle to "Enter time",
     Strings.TimePickerMinuteError to "Minute must be 0–59",
     Strings.TimePickerHourError to "Hour must be 1–12",
@@ -427,10 +419,8 @@ internal fun Translations.enIN() = mapOf(
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
     Strings.TimePickerToggleKeyboard to "Switch to text input mode",
-    Strings.TimePickerToggleScroll to "Switch to scroll mode",
     Strings.TimePickerToggleTouch to "Switch to clock mode",
     Strings.TimePickerDialogTitle to "Select time",
-    Strings.TimeScrollDialogTitle to "Select time",
     Strings.TimeInputDialogTitle to "Enter time",
     Strings.TimePickerMinuteError to "Minute must be 0–59",
     Strings.TimePickerHourError to "Hour must be 1–12",

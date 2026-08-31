@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.`is`() = mapOf(
     Strings.TimePickerMinuteTextField to "fyrir mínútur",
     Strings.TimePickerHourTextField to "fyrir klukkustund",
     Strings.TimePickerToggleKeyboard to "Skipta yfir í textainnslátt",
-    Strings.TimePickerToggleScroll to "Skipta yfir í flettistillingu",
     Strings.TimePickerToggleTouch to "Skipta yfir í klukkustillingu",
     Strings.TimePickerDialogTitle to "Veldu tíma",
-    Strings.TimeScrollDialogTitle to "Veldu tíma",
     Strings.TimeInputDialogTitle to "Sláðu inn tíma",
     Strings.TimePickerMinuteError to "Mínúta þarf að vera 0–59",
     Strings.TimePickerHourError to "Klst. þarf að vera 1–12",

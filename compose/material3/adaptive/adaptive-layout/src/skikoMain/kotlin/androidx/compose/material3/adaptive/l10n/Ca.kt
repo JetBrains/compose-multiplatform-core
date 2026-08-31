@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ internal fun Translations.ca() = mapOf(
     Strings.defaultPaneTitlePrimary to "Subfinestra principal",
     Strings.defaultPaneTitleSecondary to "Subfinestra secundària",
     Strings.defaultPaneTitleTertiary to "Subfinestra terciària",
-    Strings.defaultPaneExpansionDragHandleContentDescription to "Ansa de posicionament l\'expansió de la subfinestra",
+    Strings.defaultPaneExpansionDragHandleContentDescription to "Ansa per arrossegar l\'expansió de la subfinestra",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Divisió de la subfinestra actual, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Canvia la divisió de la subfinestra a %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "percentatge de %d",

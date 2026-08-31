@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,8 @@ internal fun Translations.sl() = mapOf(
     Strings.TimePickerMinuteTextField to "za minute",
     Strings.TimePickerHourTextField to "za uro",
     Strings.TimePickerToggleKeyboard to "Preklop na način vnosa besedila",
-    Strings.TimePickerToggleScroll to "Preklop na način pomikanja",
     Strings.TimePickerToggleTouch to "Preklop na način ure",
     Strings.TimePickerDialogTitle to "Izberite uro",
-    Strings.TimeScrollDialogTitle to "Izbira ure",
     Strings.TimeInputDialogTitle to "Vnesite uro",
     Strings.TimePickerMinuteError to "Minuta mora biti 0–59",
     Strings.TimePickerHourError to "Ura mora biti 1–12",
