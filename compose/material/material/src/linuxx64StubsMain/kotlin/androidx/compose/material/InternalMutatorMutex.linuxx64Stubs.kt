@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3.internal
+package androidx.compose.material
 
-import androidx.compose.material3.implementedInJetBrainsFork
-
-internal actual class AtomicReference<V> actual constructor(value: V) {
+internal actual class InternalAtomicReference<V> actual constructor(value: V) {
     actual fun get(): V = implementedInJetBrainsFork()
 
     actual fun set(value: V) {
