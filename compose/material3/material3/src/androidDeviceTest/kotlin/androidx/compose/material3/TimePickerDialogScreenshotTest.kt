@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +45,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -119,6 +118,41 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
             )
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun rich_time_picker_dialog() {
+        rule.setMaterialContent(scheme.colorScheme) { RichDialog(TimePickerDisplayMode.Picker) }
+
+        rule
+            .onNode(isDialog())
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "rich_time_picker_dialog_${scheme.name}")
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun rich_time_picker_scroll_dialog() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            RichScrollDialog(TimePickerDisplayMode.Scroll)
+        }
+
+        rule
+            .onNode(isDialog())
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "rich_time_picker_scroll_dialog_${scheme.name}")
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun rich_time_input_dialog() {
+        rule.setMaterialContent(scheme.colorScheme) { RichDialog(TimePickerDisplayMode.Input) }
+
+        rule
+            .onNode(isDialog())
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "rich_time_input_dialog_${scheme.name}")
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun Dialog(containerColor: Color = TimePickerDialogDefaults.containerColor) {
@@ -137,6 +171,51 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
             containerColor = containerColor,
         ) {
             TimePicker(state = rememberTimePickerState())
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun RichDialog(displayMode: TimePickerDisplayMode = TimePickerDisplayMode.Picker) {
+        RichTimePickerDialog(
+            modifier = Modifier,
+            onDismissRequest = {},
+            confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
+            dismissButton = { TextButton(onClick = {}) { Text("Cancel") } },
+        ) {
+            when (displayMode) {
+                TimePickerDisplayMode.Picker ->
+                    TimePicker(
+                        state = rememberTimePickerState(),
+                        shapes = TimePickerDefaults.shapes(),
+                    )
+                TimePickerDisplayMode.Input ->
+                    TimeInput(
+                        state = rememberTimePickerState(),
+                        shapes = TimePickerDefaults.shapes(),
+                    )
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun RichScrollDialog(
+        displayMode: TimePickerDisplayMode = TimePickerDisplayMode.Scroll
+    ) {
+        RichTimePickerDialog(
+            modifier = Modifier,
+            onDismissRequest = {},
+            confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
+            dismissButton = { TextButton(onClick = {}) { Text("Cancel") } },
+        ) {
+            when (displayMode) {
+                TimePickerDisplayMode.Scroll ->
+                    TimeScroll(
+                        state = rememberTimePickerState(),
+                        shapes = TimePickerDefaults.shapes(),
+                    )
+            }
         }
     }
 
