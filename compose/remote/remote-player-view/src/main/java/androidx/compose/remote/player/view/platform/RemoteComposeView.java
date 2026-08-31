@@ -20,6 +20,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Build;
@@ -36,6 +37,7 @@ import android.widget.FrameLayout;
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.LayoutCallback;
+import androidx.compose.remote.core.Limiter;
 import androidx.compose.remote.core.Limits;
 import androidx.compose.remote.core.RemoteClock;
 import androidx.compose.remote.core.RemoteContext;
@@ -49,6 +51,7 @@ import androidx.compose.remote.core.operations.loom.PatternCallback;
 import androidx.compose.remote.player.core.RemoteDocument;
 import androidx.compose.remote.player.core.platform.AndroidCustomContext;
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext;
+import androidx.compose.remote.player.core.platform.FloatsToPath;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -95,6 +98,7 @@ public class RemoteComposeView extends FrameLayout
     float mDensity = Float.NaN;
     long mStart;
 
+    private final Limiter mLimiter = new Limiter();
     long mLastFrameDelay = 1;
     float mMaxFrameRate = Limits.DEFAULT_MAX_FPS; // frames per seconds
     long mMaxFrameDelay = (long) (1000 / mMaxFrameRate);
@@ -180,7 +184,7 @@ public class RemoteComposeView extends FrameLayout
      * Constructor for RemoteComposeView.
      *
      * @param context The Context the view is running in.
-     * @param attrs The attributes of the XML tag that is inflating the view.
+     * @param attrs   The attributes of the XML tag that is inflating the view.
      */
     public RemoteComposeView(@NonNull Context context, @NonNull AttributeSet attrs) {
         super(context, attrs);
@@ -190,10 +194,10 @@ public class RemoteComposeView extends FrameLayout
     /**
      * Constructor for RemoteComposeView.
      *
-     * @param context The Context the view is running in.
-     * @param attrs The attributes of the XML tag that is inflating the view.
+     * @param context      The Context the view is running in.
+     * @param attrs        The attributes of the XML tag that is inflating the view.
      * @param defStyleAttr An attribute in the current theme that contains a reference to a style
-     *     resource that supplies default values for the view.
+     *                     resource that supplies default values for the view.
      */
     public RemoteComposeView(
             @NonNull Context context, @NonNull AttributeSet attrs, int defStyleAttr) {
@@ -205,11 +209,11 @@ public class RemoteComposeView extends FrameLayout
     /**
      * Constructor for RemoteComposeView.
      *
-     * @param context The Context the view is running in.
-     * @param attrs The attributes of the XML tag that is inflating the view.
+     * @param context      The Context the view is running in.
+     * @param attrs        The attributes of the XML tag that is inflating the view.
      * @param defStyleAttr An attribute in the current theme that contains a reference to a style
-     *     resource that supplies default values for the view.
-     * @param clock The {@link Clock} to use for timing.
+     *                     resource that supplies default values for the view.
+     * @param clock        The {@link Clock} to use for timing.
      */
     public RemoteComposeView(
             @NonNull Context context,
@@ -274,7 +278,11 @@ public class RemoteComposeView extends FrameLayout
         if (mPatternCallback != null) {
             mDocument.getDocument().setMacroCallback(mPatternCallback);
         }
+        mLimiter.setMaxFps(Limits.DEFAULT_MAX_FPS);
+        mLimiter.setMaxAvgFps(Limits.DEFAULT_MAX_AVG_FPS);
+        mLimiter.setWindow(Limits.DEFAULT_WINDOW_SEC);
         mMaxFrameRate = Limits.DEFAULT_MAX_FPS;
+        mMaxFrameDelay = (long) (1000 / mMaxFrameRate);
         mDocument.initializeContext(mARContext, mResolvedData);
         mDisable = false;
         if (mDocument.getDocument().bitmapMemory() > Limits.MAX_BITMAP_MEMORY) {
@@ -317,14 +325,15 @@ public class RemoteComposeView extends FrameLayout
         }
         Integer fps = (Integer) mDocument.getDocument().getProperty(Header.DOC_DESIRED_FPS);
         if (fps != null && fps > 0) {
-            mMaxFrameRate = Math.min(fps, Limits.MAX_FPS);
-            mMaxFrameDelay = (long) (1000 / mMaxFrameRate);
+            setMaxFps(Math.min(fps, Limits.MAX_FPS));
         }
+        mLimiter.reset();
     }
 
     @Override
     public void onViewAttachedToWindow(@NonNull View view) {
         mIsAttached = true;
+        mLimiter.reset();
         if (mChoreographer == null) {
             mChoreographer = Choreographer.getInstance();
             mChoreographer.postFrameCallback(mFrameCallback);
@@ -395,6 +404,7 @@ public class RemoteComposeView extends FrameLayout
     @Override
     public void onViewDetachedFromWindow(@NonNull View view) {
         mIsAttached = false;
+        mLimiter.reset();
         updateGlobalLayoutListener();
         if (mChoreographer != null) {
             mChoreographer.removeFrameCallback(mFrameCallback);
@@ -434,7 +444,7 @@ public class RemoteComposeView extends FrameLayout
     /**
      * set the color associated with this name.
      *
-     * @param colorName Name of color typically "android.xxx"
+     * @param colorName  Name of color typically "android.xxx"
      * @param colorValue "the argb value"
      */
     public void setColor(@NonNull String colorName, int colorValue) {
@@ -444,7 +454,7 @@ public class RemoteComposeView extends FrameLayout
     /**
      * set the value of a long associated with this name.
      *
-     * @param name Name of color typically "android.xxx"
+     * @param name  Name of color typically "android.xxx"
      * @param value the long value
      */
     public void setLong(@NonNull String name, long value) {
@@ -463,7 +473,7 @@ public class RemoteComposeView extends FrameLayout
     /**
      * Set a local named string
      *
-     * @param name name of the string
+     * @param name    name of the string
      * @param content value of the string
      */
     public void setLocalString(@NonNull String name, @NonNull String content) {
@@ -488,7 +498,7 @@ public class RemoteComposeView extends FrameLayout
     /**
      * Set a local named int
      *
-     * @param name name of the int
+     * @param name    name of the int
      * @param content value of the int
      */
     public void setLocalInt(@NonNull String name, int content) {
@@ -538,7 +548,7 @@ public class RemoteComposeView extends FrameLayout
     /**
      * Set a local named float
      *
-     * @param name name of the float
+     * @param name    name of the float
      * @param content value of the float
      */
     public void setLocalFloat(@NonNull String name, @NonNull Float content) {
@@ -563,7 +573,7 @@ public class RemoteComposeView extends FrameLayout
     /**
      * Set a local named bitmap
      *
-     * @param name name of the bitmap
+     * @param name    name of the bitmap
      * @param content value of the bitmap
      */
     public void setLocalBitmap(@NonNull String name, @NonNull Bitmap content) {
@@ -626,9 +636,97 @@ public class RemoteComposeView extends FrameLayout
         mARContext.setUseChoreographer(value);
     }
 
+    /** Set the instantaneous maximum frame rate (e.g. 60 or 120 fps). */
+    public void setMaxFps(int maxFps) {
+        mLimiter.setMaxFps(maxFps);
+        mMaxFrameRate = mLimiter.getMaxFps();
+        mMaxFrameDelay = (long) (1000 / mMaxFrameRate);
+    }
+
+    /** Returns the instantaneous maximum frame rate. */
+    public int getMaxFps() {
+        return mLimiter.getMaxFps();
+    }
+
+    /** Set the sustained average frame rate limit over the sliding window (e.g. 10 fps). */
+    public void setMaxAvgFps(int maxAvgFps) {
+        mLimiter.setMaxAvgFps(maxAvgFps);
+    }
+
+    /** Returns the sustained average frame rate limit. */
+    public int getMaxAvgFps() {
+        return mLimiter.getMaxAvgFps();
+    }
+
+    /** Set the duration of the rolling average window in seconds. */
+    public void setFpsWindow(int windowSeconds) {
+        mLimiter.setWindow(windowSeconds);
+    }
+
+    /** Returns the duration of the rolling average window in seconds. */
+    public int getFpsWindow() {
+        return mLimiter.getWindow();
+    }
+
+    /** Temporarily boost the frame rate back to maxFps (clears window throttling). */
+    public void touchBoost() {
+        mLimiter.touchBoost();
+    }
+
     /** Returns the current RemoteContext */
     public @NonNull RemoteContext getRemoteContext() {
         return mARContext;
+    }
+
+    /**
+     * Get a named float value.
+     *
+     * @param name name of the float
+     * @return the value
+     */
+    public float getNamedFloat(@NonNull String name) {
+        int id = mARContext.getVariableId(name);
+        if (id == -1) {
+            return Float.NaN;
+        }
+        return mARContext.getFloat(id);
+    }
+
+    /**
+     * Get a named string value.
+     *
+     * @param name name of the string
+     * @return the value
+     */
+    public @Nullable String getNamedString(@NonNull String name) {
+        int id = mARContext.getVariableId(name);
+        if (id == -1) {
+            return null;
+        }
+        return mARContext.getText(id);
+    }
+
+    /**
+     * Get a named path value.
+     *
+     * @param name name of the path
+     * @param path path to set
+     * @return true if the path was set
+     */
+    public boolean getNamedPath(@NonNull String name, @NonNull Path path) {
+        int id = mARContext.getVariableId(name);
+        if (id == -1) {
+            return false;
+        }
+        Path preComputed = (Path) mARContext.mRemoteComposeState.getPath(id);
+        if (preComputed != null) {
+            path.set(preComputed);
+            return true;
+        }
+        float[] pathData = mARContext.mRemoteComposeState.getPathData(id);
+        FloatsToPath.genPath(path, pathData, 0, 1);
+
+        return true;
     }
 
     /**
@@ -667,7 +765,7 @@ public class RemoteComposeView extends FrameLayout
         /**
          * Called to notify the document that something has been clicked on.
          *
-         * @param id The id for component clicked on.
+         * @param id       The id for component clicked on.
          * @param metadata Optional metadata for the event.
          */
         void click(int id, @NonNull String metadata);
@@ -713,6 +811,7 @@ public class RemoteComposeView extends FrameLayout
 
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    mLimiter.touchBoost();
                     mDownTime = time;
                     mDownX = x;
                     mDownY = y;
@@ -766,6 +865,7 @@ public class RemoteComposeView extends FrameLayout
                     return false;
 
                 case MotionEvent.ACTION_UP:
+                    mLimiter.touchBoost();
                     mInActionDown = false;
                     mActionCurrentPoint.x = (int) x;
                     mActionCurrentPoint.y = (int) y;
@@ -803,6 +903,7 @@ public class RemoteComposeView extends FrameLayout
                     return handled;
 
                 case MotionEvent.ACTION_MOVE:
+                    mLimiter.touchBoost();
                     if (!mHasMoved) {
                         float dx = x - mDownX;
                         float dy = y - mDownY;
@@ -1017,6 +1118,7 @@ public class RemoteComposeView extends FrameLayout
         } // REMOVE IN PLATFORM
         try {
             long nanoStart = mClock.nanoTime();
+            mLimiter.recordDrawStart(nanoStart);
             long start = mEvalTime ? nanoStart : 0; // measure execution of commands
             float animationTime = (nanoStart - mStart) * 1E-9f;
             mARContext.setAnimationTime(animationTime);
@@ -1062,10 +1164,14 @@ public class RemoteComposeView extends FrameLayout
             }
 
             if (nextFrame > 0) {
-                if (mMaxFrameRate >= POST_TO_NEXT_FRAME_THRESHOLD) {
+
+                long actualDelayNs = mLimiter.computeDelay(nextFrame, nanoStart);
+                // if it is faster than we want just use the next frame
+                if (actualDelayNs <= mLimiter.getMinIntervalNs()
+                        && mLimiter.getMaxFps() >= POST_TO_NEXT_FRAME_THRESHOLD) {
                     mLastFrameDelay = nextFrame;
-                } else {
-                    mLastFrameDelay = Math.max(mMaxFrameDelay, nextFrame);
+                } else { // otherwise use the actual delay
+                    mLastFrameDelay = (actualDelayNs + 999_999L) / 1_000_000L;
                 }
                 if (mChoreographer != null) {
                     if (mDebug == 1) {
@@ -1079,12 +1185,18 @@ public class RemoteComposeView extends FrameLayout
                                         + ", "
                                         + " max framerate is "
                                         + mMaxFrameRate
+                                        + ", avg limit "
+                                        + mLimiter.getMaxAvgFps()
                                         + ")");
                     }
                     mChoreographer.postFrameCallbackDelayed(mFrameCallback, mLastFrameDelay);
                 }
                 if (!mARContext.getUseChoreographer()) {
-                    invalidate();
+                    if (mLastFrameDelay > 1) {
+                        postInvalidateDelayed(mLastFrameDelay);
+                    } else {
+                        invalidate();
+                    }
                 }
             } else {
                 if (mChoreographer != null) {
