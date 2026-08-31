@@ -31,6 +31,11 @@ public final class androidx/compose/ui/text/AnnotatedString : java/lang/CharSequ
 }
 
 public abstract interface class androidx/compose/ui/text/AnnotatedString$Annotation {
+	public static final field Companion Landroidx/compose/ui/text/AnnotatedString$Annotation$Companion;
+}
+
+public final class androidx/compose/ui/text/AnnotatedString$Annotation$Companion {
+	public final fun getSaver ()Landroidx/compose/runtime/saveable/Saver;
 }
 
 public final class androidx/compose/ui/text/AnnotatedString$Builder : java/lang/Appendable {
@@ -828,6 +833,7 @@ public abstract interface class androidx/compose/ui/text/font/Font {
 	public static final field MaximumAsyncTimeoutMillis J
 	public fun getLoadingStrategy-PKNRLFQ ()I
 	public abstract fun getStyle-_-LCdwA ()I
+	public fun getVariationSettings ()Landroidx/compose/ui/text/font/FontVariation$Settings;
 	public abstract fun getWeight ()Landroidx/compose/ui/text/font/FontWeight;
 }
 
@@ -990,6 +996,7 @@ public final class androidx/compose/ui/text/font/FontVariation {
 	public static final field INSTANCE Landroidx/compose/ui/text/font/FontVariation;
 	public final fun Setting (Ljava/lang/String;F)Landroidx/compose/ui/text/font/FontVariation$Setting;
 	public final fun Settings-6EWAqTQ (Landroidx/compose/ui/text/font/FontWeight;I[Landroidx/compose/ui/text/font/FontVariation$Setting;)Landroidx/compose/ui/text/font/FontVariation$Settings;
+	public final fun getEmpty ()Landroidx/compose/ui/text/font/FontVariation$Settings;
 	public final fun grade (I)Landroidx/compose/ui/text/font/FontVariation$Setting;
 	public final fun italic (F)Landroidx/compose/ui/text/font/FontVariation$Setting;
 	public final fun opticalSizing--R2X_6o (J)Landroidx/compose/ui/text/font/FontVariation$Setting;
@@ -1010,6 +1017,8 @@ public final class androidx/compose/ui/text/font/FontVariation$Settings {
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getSettings ()Ljava/util/List;
 	public fun hashCode ()I
+	public final fun merge (Landroidx/compose/ui/text/font/FontVariation$Settings;)Landroidx/compose/ui/text/font/FontVariation$Settings;
+	public final fun merge ([Landroidx/compose/ui/text/font/FontVariation$Setting;)Landroidx/compose/ui/text/font/FontVariation$Settings;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -1075,7 +1084,7 @@ public final class androidx/compose/ui/text/font/ResourceFont : androidx/compose
 	public fun getLoadingStrategy-PKNRLFQ ()I
 	public final fun getResId ()I
 	public fun getStyle-_-LCdwA ()I
-	public final fun getVariationSettings ()Landroidx/compose/ui/text/font/FontVariation$Settings;
+	public fun getVariationSettings ()Landroidx/compose/ui/text/font/FontVariation$Settings;
 	public fun getWeight ()Landroidx/compose/ui/text/font/FontWeight;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -1653,6 +1662,7 @@ public final class androidx/compose/ui/text/style/LineHeightStyle$Alignment {
 	public fun equals (Ljava/lang/Object;)Z
 	public static fun equals-impl (FLjava/lang/Object;)Z
 	public static final fun equals-impl0 (FF)Z
+	public final fun getTopRatio ()F
 	public fun hashCode ()I
 	public static fun hashCode-impl (F)I
 	public fun toString ()Ljava/lang/String;
@@ -1698,6 +1708,8 @@ public final class androidx/compose/ui/text/style/LineHeightStyle$Trim {
 	public static final fun equals-impl0 (II)Z
 	public fun hashCode ()I
 	public static fun hashCode-impl (I)I
+	public static final fun isTrimFirstLineTop-impl (I)Z
+	public static final fun isTrimLastLineBottom-impl (I)Z
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (I)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()I

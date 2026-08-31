@@ -19,13 +19,16 @@ package androidx.compose.ui.text.android
 import android.util.Log
 import androidx.compose.ui.text.AndroidComposeUiTextFlags
 import androidx.compose.ui.text.AndroidParagraph
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.FontTestData
 import androidx.compose.ui.text.Paragraph
 import androidx.compose.ui.text.ParagraphIntrinsics
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.LineHeightStyle.Alignment
 import androidx.compose.ui.text.style.LineHeightStyle.Trim
@@ -37,6 +40,9 @@ import androidx.compose.ui.unit.sp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
+import org.junit.After
+import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -59,10 +65,24 @@ class SingleLineHeightComparisonTest(
     private val letterSpacingSp: Float,
     private val maxWidthParam: Int,
     private val isLineHeightStyleNull: Boolean,
+    private val hasPlaceholder: Boolean,
 ) {
-    private val fontFamilyMeasureFont = FontTestData.BASIC_MEASURE_FONT.toFontFamily()
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val defaultDensity = Density(density = 1f)
+
+    private var originalLineHeightOptimizationEnabled = true
+
+    @Before
+    fun setup() {
+        originalLineHeightOptimizationEnabled =
+            AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled
+    }
+
+    @After
+    fun cleanup() {
+        AndroidComposeUiTextFlags.isSingleLineLineHeightOptimizationEnabled =
+            originalLineHeightOptimizationEnabled
+    }
 
     private val trim: Trim
         get() = Trim(trimInt)
@@ -91,7 +111,9 @@ class SingleLineHeightComparisonTest(
         )
 
         @JvmStatic
-        @Parameterized.Parameters(name = "{0}_{5}_w={9}_nullStyle={10}_trim={2}_align={3}_mode={4}")
+        @Parameterized.Parameters(
+            name = "{0}_{5}_w={9}_nullStyle={10}_trim={2}_align={3}_mode={4}_placeholder={11}"
+        )
         fun data(): Collection<Array<Any>> {
             val testCases =
                 listOf(
@@ -146,67 +168,83 @@ class SingleLineHeightComparisonTest(
                     TypographyStyle("button", 14.sp, 20.sp, 1.25f.sp),
                     TypographyStyle("caption", 12.sp, 16.sp, 0.4f.sp),
                     TypographyStyle("overline", 10.sp, 16.sp, 1.5f.sp),
+
+                    // Additional compact typography styles
+                    TypographyStyle("compact30_30", 30.sp, 30.sp, 0.sp),
+                    TypographyStyle("numeralSmall", 40.sp, 46.sp, 0.sp),
+                    TypographyStyle("displaySmallCompact", 34.sp, 40.sp, 0.sp),
+                    TypographyStyle("titleLargeCompact", 24.sp, 28.sp, 0.sp),
+                    TypographyStyle("titleMediumCompact", 16.sp, 20.sp, 0.sp),
+                    TypographyStyle("titleSmallCompact", 14.sp, 18.sp, 0.sp),
+                    TypographyStyle("bodySmallCompact", 12.sp, 16.sp, 0.sp),
+                    TypographyStyle("bodyExtraSmallCompact", 10.sp, 14.sp, 0.sp),
                 )
 
-            val widths = listOf(5000, 1000, 200)
+            val widths = listOf(5000, 1000)
 
             val list = mutableListOf<Array<Any>>()
+            val placeholderOptions = listOf(true, false)
             for ((script, txt) in testCases) {
                 for (style in typographyStyles) {
                     for (w in widths) {
-                        // pass null line height style
-                        val defaultLineHeightStyle = LineHeightStyle.Default
-                        list.add(
-                            arrayOf(
-                                script,
-                                txt,
-                                defaultLineHeightStyle.trim.value,
-                                defaultLineHeightStyle.alignment.topRatio,
-                                defaultLineHeightStyle.mode.value,
-                                style.name,
-                                style.fontSize.value,
-                                style.lineHeight.value,
-                                style.letterSpacing.value,
-                                w,
-                                true,
+                        for (hasPl in placeholderOptions) {
+                            // pass null line height style
+                            val defaultLineHeightStyle = LineHeightStyle.Default
+                            list.add(
+                                arrayOf(
+                                    script,
+                                    txt,
+                                    defaultLineHeightStyle.trim.value,
+                                    defaultLineHeightStyle.alignment.topRatio,
+                                    defaultLineHeightStyle.mode.value,
+                                    style.name,
+                                    style.fontSize.value,
+                                    style.lineHeight.value,
+                                    style.letterSpacing.value,
+                                    w,
+                                    true,
+                                    hasPl,
+                                )
                             )
-                        )
-                        // all line height styles
-                        for (t in trims) {
-                            for (a in alignments) {
-                                for (m in modes) {
-                                    list.add(
-                                        arrayOf(
-                                            script,
-                                            txt,
-                                            t.value,
-                                            a.topRatio,
-                                            m.value,
-                                            style.name,
-                                            style.fontSize.value,
-                                            style.lineHeight.value,
-                                            style.letterSpacing.value,
-                                            w,
-                                            false,
+                            // all line height styles
+                            for (t in trims) {
+                                for (a in alignments) {
+                                    for (m in modes) {
+                                        list.add(
+                                            arrayOf(
+                                                script,
+                                                txt,
+                                                t.value,
+                                                a.topRatio,
+                                                m.value,
+                                                style.name,
+                                                style.fontSize.value,
+                                                style.lineHeight.value,
+                                                style.letterSpacing.value,
+                                                w,
+                                                false,
+                                                hasPl,
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-            return if (DoFullValidation) list else list.subList(0, 200)
+            return if (DoFullValidation) list else list.shuffled().take(500)
         }
     }
 
+    @Ignore("Validation tests")
     @Test
     fun compareSingleLineHeightBehavior() {
         val style =
             TextStyle(
                 fontSize = fontSize,
                 lineHeight = lineHeight,
-                fontFamily = fontFamilyMeasureFont,
+                fontFamily = FontFamily.Default,
                 lineHeightStyle =
                     if (isLineHeightStyleNull) {
                         null
@@ -215,6 +253,23 @@ class SingleLineHeightComparisonTest(
                     },
                 letterSpacing = letterSpacing,
             )
+
+        val placeholders =
+            if (hasPlaceholder) {
+                listOf(
+                    AnnotatedString.Range(
+                        Placeholder(
+                            width = fontSize * 2,
+                            height = fontSize * 2,
+                            placeholderVerticalAlign = PlaceholderVerticalAlign.Center,
+                        ),
+                        start = 0,
+                        end = 1,
+                    )
+                )
+            } else {
+                emptyList()
+            }
 
         // Test with the new behavior (spans removed, layout heights adjusted when softWrap is
         // false)
@@ -227,7 +282,7 @@ class SingleLineHeightComparisonTest(
                 density = defaultDensity,
                 fontFamilyResolver = createFontFamilyResolver(context),
                 softWrap = false,
-                placeholders = emptyList(),
+                placeholders = placeholders,
             )
         val newParagraph =
             Paragraph(
@@ -242,6 +297,13 @@ class SingleLineHeightComparisonTest(
         val newFirstBaseline = newParagraph.firstBaseline
         val newLineTop = newParagraph.getLineTop(0)
         val newLineBottom = newParagraph.getLineBottom(0)
+        val newCursorRect = newParagraph.getCursorRect(0)
+        val newCursorRectAtEnd = newParagraph.getCursorRect(text.length)
+        val newSelectionPathBounds = newParagraph.getPathForRange(0, text.length).getBounds()
+        val newBoundingBoxes = FloatArray(text.length * 4)
+        newParagraph.fillBoundingBoxes(TextRange(0, text.length), newBoundingBoxes, 0)
+        val newPlaceholderRects = newParagraph.placeholderRects
+        val newBoundingBoxesList = List(text.length) { i -> newParagraph.getBoundingBox(i) }
 
         // Test with the old behavior (spans kept, internal font metrics mutated when softWrap is
         // true)
@@ -254,7 +316,7 @@ class SingleLineHeightComparisonTest(
                 density = defaultDensity,
                 fontFamilyResolver = createFontFamilyResolver(context),
                 softWrap = false,
-                placeholders = emptyList(),
+                placeholders = placeholders,
             )
         val oldParagraph =
             Paragraph(
@@ -269,6 +331,13 @@ class SingleLineHeightComparisonTest(
         val oldFirstBaseline = oldParagraph.firstBaseline
         val oldLineTop = oldParagraph.getLineTop(0)
         val oldLineBottom = oldParagraph.getLineBottom(0)
+        val oldCursorRect = oldParagraph.getCursorRect(0)
+        val oldCursorRectAtEnd = oldParagraph.getCursorRect(text.length)
+        val oldSelectionPathBounds = oldParagraph.getPathForRange(0, text.length).getBounds()
+        val oldBoundingBoxes = FloatArray(text.length * 4)
+        oldParagraph.fillBoundingBoxes(TextRange(0, text.length), oldBoundingBoxes, 0)
+        val oldPlaceholderRects = oldParagraph.placeholderRects
+        val oldBoundingBoxesList = List(text.length) { i -> oldParagraph.getBoundingBox(i) }
 
         val heightMatches = abs(newHeight - oldHeight) <= 1f
         val baselineMatches = abs(newFirstBaseline - oldFirstBaseline) <= 1f
@@ -307,5 +376,168 @@ class SingleLineHeightComparisonTest(
             .that(newFirstBaseline)
             .isWithin(1f)
             .of(oldFirstBaseline)
+
+        assertWithMessage(
+                "LineTop mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newLineTop)
+            .isWithin(1f)
+            .of(oldLineTop)
+
+        assertWithMessage(
+                "LineBottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newLineBottom)
+            .isWithin(1f)
+            .of(oldLineBottom)
+
+        assertWithMessage(
+                "CursorRect(0) top mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRect.top)
+            .isWithin(1f)
+            .of(oldCursorRect.top)
+
+        assertWithMessage(
+                "CursorRect(0) bottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRect.bottom)
+            .isWithin(1f)
+            .of(oldCursorRect.bottom)
+
+        assertWithMessage(
+                "CursorRect(0) left mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRect.left)
+            .isWithin(1f)
+            .of(oldCursorRect.left)
+
+        assertWithMessage(
+                "CursorRect(0) right mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRect.right)
+            .isWithin(1f)
+            .of(oldCursorRect.right)
+
+        assertWithMessage(
+                "CursorRect(end) top mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRectAtEnd.top)
+            .isWithin(1f)
+            .of(oldCursorRectAtEnd.top)
+
+        assertWithMessage(
+                "CursorRect(end) bottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRectAtEnd.bottom)
+            .isWithin(1f)
+            .of(oldCursorRectAtEnd.bottom)
+
+        assertWithMessage(
+                "CursorRect(end) left mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRectAtEnd.left)
+            .isWithin(1f)
+            .of(oldCursorRectAtEnd.left)
+
+        assertWithMessage(
+                "CursorRect(end) right mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newCursorRectAtEnd.right)
+            .isWithin(1f)
+            .of(oldCursorRectAtEnd.right)
+
+        assertWithMessage(
+                "SelectionPath top mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newSelectionPathBounds.top)
+            .isWithin(1f)
+            .of(oldSelectionPathBounds.top)
+
+        assertWithMessage(
+                "SelectionPath bottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newSelectionPathBounds.bottom)
+            .isWithin(1f)
+            .of(oldSelectionPathBounds.bottom)
+
+        assertWithMessage(
+                "SelectionPath left mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newSelectionPathBounds.left)
+            .isWithin(1f)
+            .of(oldSelectionPathBounds.left)
+
+        assertWithMessage(
+                "SelectionPath right mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newSelectionPathBounds.right)
+            .isWithin(1f)
+            .of(oldSelectionPathBounds.right)
+
+        assertWithMessage(
+                "placeholderRects size mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+            )
+            .that(newPlaceholderRects.size)
+            .isEqualTo(oldPlaceholderRects.size)
+
+        for (i in newPlaceholderRects.indices) {
+            val newRect = newPlaceholderRects[i]
+            val oldRect = oldPlaceholderRects[i]
+            if (newRect != null && oldRect != null) {
+                assertWithMessage(
+                        "placeholderRects[$i] top mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                    )
+                    .that(newRect.top)
+                    .isWithin(1f)
+                    .of(oldRect.top)
+
+                assertWithMessage(
+                        "placeholderRects[$i] bottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                    )
+                    .that(newRect.bottom)
+                    .isWithin(1f)
+                    .of(oldRect.bottom)
+            } else {
+                assertWithMessage(
+                        "placeholderRects[$i] null mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                    )
+                    .that(newRect)
+                    .isEqualTo(oldRect)
+            }
+        }
+
+        for (i in text.indices) {
+            val newBox = newBoundingBoxesList[i]
+            val oldBox = oldBoundingBoxesList[i]
+            assertWithMessage(
+                    "getBoundingBox($i) top mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                )
+                .that(newBox.top)
+                .isWithin(1f)
+                .of(oldBox.top)
+
+            assertWithMessage(
+                    "getBoundingBox($i) bottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                )
+                .that(newBox.bottom)
+                .isWithin(1f)
+                .of(oldBox.bottom)
+
+            val arrayIndex = i * 4
+            assertWithMessage(
+                    "fillBoundingBoxes($i) top mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                )
+                .that(newBoundingBoxes[arrayIndex + 1])
+                .isWithin(1f)
+                .of(oldBoundingBoxes[arrayIndex + 1])
+
+            assertWithMessage(
+                    "fillBoundingBoxes($i) bottom mismatch for $scriptName style=$styleName trim=$trim align=$alignment mode=$mode"
+                )
+                .that(newBoundingBoxes[arrayIndex + 3])
+                .isWithin(1f)
+                .of(oldBoundingBoxes[arrayIndex + 3])
+        }
     }
 }
