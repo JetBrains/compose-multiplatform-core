@@ -521,8 +521,8 @@ internal class ComposeSceneMediator(
                 PointerEventType.PanMove
             }
             TouchesEventKind.ENDED -> {
-                redrawer.ongoingInteractionEventsCount -= 1
                 activitiesHandler.onActivitiesEnded()
+                PointerEventType.PanEnd
             }
         }
 
@@ -551,14 +551,14 @@ internal class ComposeSceneMediator(
     ) {
         val eventType = when (eventKind) {
             TouchesEventKind.BEGAN -> {
-                redrawer.ongoingInteractionEventsCount += 1
+                activitiesHandler.onActivitiesStarted()
                 PointerEventType.ScaleStart
             }
             TouchesEventKind.MOVED -> {
                 PointerEventType.ScaleChange
             }
             TouchesEventKind.ENDED -> {
-                redrawer.ongoingInteractionEventsCount -= 1
+                activitiesHandler.onActivitiesEnded()
                 PointerEventType.ScaleEnd
             }
         }
@@ -613,7 +613,7 @@ internal class ComposeSceneMediator(
     }
 
     private fun onCancelPinch() {
-        redrawer.ongoingInteractionEventsCount -= 1
+        activitiesHandler.onActivitiesEnded()
         scene.cancelPointerInput()
     }
 

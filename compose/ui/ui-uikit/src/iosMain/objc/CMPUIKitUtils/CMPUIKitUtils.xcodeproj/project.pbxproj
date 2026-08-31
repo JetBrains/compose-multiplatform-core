@@ -31,8 +31,6 @@
 		996392252F9A515D006EC6CE /* CMPInteropWrappingView.m in Sources */ = {isa = PBXBuildFile; fileRef = EABD912A2BC02B5F00455279 /* CMPInteropWrappingView.m */; };
 		996392262F9A515D006EC6CE /* CMPPanGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9968C35A2D76FE16005E8DE4 /* CMPPanGestureRecognizer.m */; };
 		996392272F9A515D006EC6CE /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
-		9963922A2F9A517A006EC6CE /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 996392292F9A517A006EC6CE /* IOKit.framework */; };
-		996392742F9A5470006EC6CE /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 996392732F9A5470006EC6CE /* IOKit.framework */; };
 		9967254830010FBC0013BF47 /* CMPContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967254730010FBC0013BF47 /* CMPContainerView.m */; };
 		9967254930010FBC0013BF47 /* CMPContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967254730010FBC0013BF47 /* CMPContainerView.m */; };
 		9967254A30010FBC0013BF47 /* CMPContainerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9967254730010FBC0013BF47 /* CMPContainerView.m */; };
@@ -53,11 +51,11 @@
 		99CC4B2F2ECE0838007C5C44 /* CMPView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99CC4B2D2ECE0838007C5C44 /* CMPView.m */; };
 		99CC4B302ECE0838007C5C44 /* CMPView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99CC4B2D2ECE0838007C5C44 /* CMPView.m */; };
 		99CC4B322ECE16C8007C5C44 /* CMPViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99CC4B312ECE16C8007C5C44 /* CMPViewTests.swift */; };
+		99D71BAB304604D90012EEB8 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 99D71BAA304604D90012EEB8 /* IOKit.framework */; };
 		99D97A882BF73A9B0035552B /* CMPEditMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 99D97A872BF73A9B0035552B /* CMPEditMenuView.m */; };
 		99DCAB0E2BD00F5C002E6AC7 /* CMPTextLoupeSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 99DCAB0D2BD00F5C002E6AC7 /* CMPTextLoupeSession.m */; };
 		A01609822EB42A3300FB9790 /* CMPLayoutRegion.m in Sources */ = {isa = PBXBuildFile; fileRef = A01609812EB42A3300FB9790 /* CMPLayoutRegion.m */; };
 		A0CEE0303006417800F0D942 /* CMPUIKitSwiftUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CEE02E3006417800F0D942 /* CMPUIKitSwiftUtils.swift */; };
-		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 		AABB11112F5A0000000000A3 /* CMPUIWindowSceneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = AABB11112F5A0000000000A2 /* CMPUIWindowSceneExtensions.m */; };
 		C4C07E892F57037300A9DC94 /* CMPTextInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E882F57037300A9DC94 /* CMPTextInputView.m */; };
 		C4C07E8A2F57037300A9DC94 /* CMPEditMenuCustomAction.m in Sources */ = {isa = PBXBuildFile; fileRef = C4C07E842F57037300A9DC94 /* CMPEditMenuCustomAction.m */; };
@@ -127,8 +125,6 @@
 		9967254730010FBC0013BF47 /* CMPContainerView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPContainerView.m; sourceTree = "<group>"; };
 		9967259D3006775B0013BF47 /* CMPFrameRateRange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPFrameRateRange.h; sourceTree = "<group>"; };
 		9967259E3006775B0013BF47 /* CMPFrameRateRange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPFrameRateRange.m; sourceTree = "<group>"; };
-		996392292F9A517A006EC6CE /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
-		996392732F9A5470006EC6CE /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
 		9968C3592D76FE16005E8DE4 /* CMPPanGestureRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPPanGestureRecognizer.h; sourceTree = "<group>"; };
 		9968C35A2D76FE16005E8DE4 /* CMPPanGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPPanGestureRecognizer.m; sourceTree = "<group>"; };
 		9968C35F2D7746BD005E8DE4 /* CMPHoverGestureRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPHoverGestureRecognizer.h; sourceTree = "<group>"; };
@@ -137,8 +133,6 @@
 		9968C3712D76FE17005E8DE4 /* CMPPinchGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPPinchGestureRecognizer.m; sourceTree = "<group>"; };
 		9968C3892D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPScreenEdgePanGestureRecognizer.h; sourceTree = "<group>"; };
 		9968C38A2D7892DF005E8DE4 /* CMPScreenEdgePanGestureRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPScreenEdgePanGestureRecognizer.m; sourceTree = "<group>"; };
-		996EFEEA2B02CE5D0000FE0F /* libCMPUIKitUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		996EFEF52B02CE8A0000FE0F /* CMPUIKitUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIKitUtils.h; sourceTree = "<group>"; };
 		996EFEEA2B02CE5D0000FE0F /* libCMPUIKitObjcUtils.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCMPUIKitObjcUtils.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		996EFEF52B02CE8A0000FE0F /* CMPUIKitObjcUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPUIKitObjcUtils.h; sourceTree = "<group>"; };
 		997DFCDC2B18D135000B56B5 /* CMPViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPViewController.h; sourceTree = "<group>"; };
@@ -157,6 +151,7 @@
 		99CC4B2C2ECE0838007C5C44 /* CMPView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPView.h; sourceTree = "<group>"; };
 		99CC4B2D2ECE0838007C5C44 /* CMPView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPView.m; sourceTree = "<group>"; };
 		99CC4B312ECE16C8007C5C44 /* CMPViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMPViewTests.swift; sourceTree = "<group>"; };
+		99D71BAA304604D90012EEB8 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
 		99D97A862BF73A9B0035552B /* CMPEditMenuView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPEditMenuView.h; sourceTree = "<group>"; };
 		99D97A872BF73A9B0035552B /* CMPEditMenuView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CMPEditMenuView.m; sourceTree = "<group>"; };
 		99DCAB0C2BD00F5C002E6AC7 /* CMPTextLoupeSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CMPTextLoupeSession.h; sourceTree = "<group>"; };
@@ -206,8 +201,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				997DFCE72B18D99E000B56B5 /* libCMPUIKitObjcUtils.a in Frameworks */,
-				997DFCE72B18D99E000B56B5 /* libCMPUIKitUtils.a in Frameworks */,
-				996392742F9A5470006EC6CE /* IOKit.framework in Frameworks */,
+				997DFCE72B18D99E000B56B5 /* libCMPUIKitObjcUtils.a in Frameworks */,
+				99D71BAB304604D90012EEB8 /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -222,7 +217,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9963922A2F9A517A006EC6CE /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,13 +226,11 @@
 		996392282F9A517A006EC6CE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				996392732F9A5470006EC6CE /* IOKit.framework */,
-				996392292F9A517A006EC6CE /* IOKit.framework */,
+				99D71BAA304604D90012EEB8 /* IOKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		996EFEEB2B02CE5D0000FE0F /* CMPUIKitUtils */ = {
 		996EFEEB2B02CE5D0000FE0F /* CMPUIKitObjcUtils */ = {
 			isa = PBXGroup;
 			children = (
@@ -489,6 +481,23 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		997DFCE12B18D99E000B56B5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		997DFCF82B18E5D3000B56B5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXShellScriptBuildPhase section */
 		A0CEE03130064B0000F0D942 /* Copy Swift ObjC Header */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -513,23 +522,6 @@
 			shellScript = "set -euo pipefail\nHEADER_NAME=\"${PRODUCT_MODULE_NAME}-Swift.h\"\nSOURCE_HEADER=\"${DERIVED_SOURCES_DIR}/${HEADER_NAME}\"\nif [ ! -f \"${SOURCE_HEADER}\" ]; then\n  echo \"error: ${HEADER_NAME} was not generated at ${SOURCE_HEADER}\" >&2\n  exit 1\nfi\ncopy_header() {\n  mkdir -p \"$1\"\n  cp \"${SOURCE_HEADER}\" \"$1/${HEADER_NAME}\"\n}\ncopy_header \"${BUILT_PRODUCTS_DIR}/include/${PRODUCT_MODULE_NAME}\"\nif [ \"${ACTION:-}\" = \"install\" ] && [ -n \"${DSTROOT:-}\" ]; then\n  copy_header \"${DSTROOT}${PUBLIC_HEADERS_FOLDER_PATH}/${PRODUCT_MODULE_NAME}\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
-
-/* Begin PBXResourcesBuildPhase section */
-		997DFCE12B18D99E000B56B5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		997DFCF82B18E5D3000B56B5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		996EFEE62B02CE5D0000FE0F /* Sources */ = {
