@@ -17,20 +17,17 @@
 package androidx.a2ui.engine.schema
 
 import androidx.a2ui.engine.catalog.A2uiCoreCatalog
+import androidx.a2ui.model.catalog.toSchema
 import androidx.a2ui.model.protocol.A2uiException
-import androidx.a2ui.model.schema.A2uiAllOfSchema
-import androidx.a2ui.model.schema.A2uiAnyOfSchema
 import androidx.a2ui.model.schema.A2uiAnySchema
 import androidx.a2ui.model.schema.A2uiArraySchema
 import androidx.a2ui.model.schema.A2uiBooleanSchema
 import androidx.a2ui.model.schema.A2uiCompositeSchema
-import androidx.a2ui.model.schema.A2uiConstSchema
-import androidx.a2ui.model.schema.A2uiEnumSchema
 import androidx.a2ui.model.schema.A2uiNumberSchema
 import androidx.a2ui.model.schema.A2uiObjectSchema
-import androidx.a2ui.model.schema.A2uiOneOfSchema
 import androidx.a2ui.model.schema.A2uiRefSchema
 import androidx.a2ui.model.schema.A2uiSchema
+import androidx.a2ui.model.schema.A2uiSchemaKeyword
 import androidx.a2ui.model.schema.A2uiStringSchema
 import androidx.annotation.RestrictTo
 
@@ -40,25 +37,15 @@ import androidx.annotation.RestrictTo
  * schemas *before* they are allowed into the reactive data models.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
+public class A2uiCoreSchemaValidator(private val catalog: A2uiCoreCatalog? = null) {
 
-    // TODO(nimrodp): remove this once functions expose their own schema
+    private val functionSchemas: Map<String, A2uiSchema> =
+        catalog?.functions?.associate { func -> func.definition.name to func.definition.toSchema() }
+            ?: emptyMap()
+
     private val anyFunctionSchema: A2uiSchema =
-        A2uiOneOfSchema(
-            schemas =
-                (catalog?.functions ?: emptyList()).map { function ->
-                    A2uiObjectSchema(
-                        properties =
-                            mapOf(
-                                "call" to A2uiConstSchema(function.definition.name),
-                                "args" to function.definition.argumentSchema,
-                                "returnType" to
-                                    A2uiConstSchema(function.definition.returnType.value),
-                            ),
-                        required = setOf("call"),
-                        isAdditionalPropertiesAllowed = true,
-                    )
-                }
+        A2uiAnySchema(
+            keywords = listOf(A2uiSchemaKeyword.OneOf(schemas = functionSchemas.values.toList()))
         )
 
     /**
@@ -79,18 +66,26 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
      * location of the subschema within the root schema for accurate errors.
      */
     private fun validateSchemaInternal(payload: Any?, schema: A2uiSchema, path: String = "/") {
+        for (keyword in schema.keywords) {
+            when (keyword) {
+                is A2uiSchemaKeyword.OneOf -> validateOneOf(payload, keyword.schemas, path)
+                is A2uiSchemaKeyword.AllOf -> validateAllOf(payload, keyword.schemas, path)
+                is A2uiSchemaKeyword.AnyOf -> validateAnyOf(payload, keyword.schemas, path)
+                is A2uiSchemaKeyword.Not -> validateNot(payload, keyword.schema, path)
+                is A2uiSchemaKeyword.Enum -> validateEnum(payload, keyword.values, path)
+                is A2uiSchemaKeyword.Const -> validateConst(payload, keyword.value, path)
+                is A2uiSchemaKeyword.Default -> {
+                    /* default is an annotation keyword */
+                }
+            }
+        }
         when (schema) {
             is A2uiObjectSchema -> validateObject(payload, schema, path)
             is A2uiStringSchema -> validateString(payload, path)
             is A2uiNumberSchema -> validateNumber(payload, path)
             is A2uiBooleanSchema -> validateBoolean(payload, path)
             is A2uiArraySchema -> validateArray(payload, schema, path)
-            is A2uiEnumSchema -> validateEnum(payload, schema, path)
             is A2uiAnySchema -> validateAny()
-            is A2uiOneOfSchema -> validateOneOf(payload, schema, path)
-            is A2uiAllOfSchema -> validateAllOf(payload, schema, path)
-            is A2uiAnyOfSchema -> validateAnyOf(payload, schema, path)
-            is A2uiConstSchema -> validateConst(payload, schema, path)
             is A2uiRefSchema -> validateRef(payload, schema, path)
             is A2uiCompositeSchema -> validateSchemaInternal(payload, schema.getDefinition(), path)
         }
@@ -161,22 +156,35 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
     }
 
     private fun validateArray(payload: Any?, schema: A2uiArraySchema, path: String) {
-        if (payload !is Iterable<*>) {
+        val itemsList = toList(payload)
+        if (itemsList == null) {
             throw A2uiException.A2uiValidationException(
                 "Expected an array, but instead got: $payload",
                 path,
             )
         }
+        if (schema.minItems >= 0 && itemsList.size < schema.minItems) {
+            throw A2uiException.A2uiValidationException(
+                "Array has ${itemsList.size} items, but minimum required is ${schema.minItems}",
+                path,
+            )
+        }
+        if (schema.maxItems >= 0 && itemsList.size > schema.maxItems) {
+            throw A2uiException.A2uiValidationException(
+                "Array has ${itemsList.size} items, but maximum allowed is ${schema.maxItems}",
+                path,
+            )
+        }
         val itemsSchema = schema.items
         if (itemsSchema != null) {
-            payload.forEachIndexed { index, item ->
+            itemsList.forEachIndexed { index, item ->
                 validateSchemaInternal(item, itemsSchema, concatPath(path, index.toString()))
             }
         }
     }
 
-    private fun validateEnum(payload: Any?, schema: A2uiEnumSchema, path: String) {
-        if (!schema.enumValues.any { areEqual(payload, it) }) {
+    private fun validateEnum(payload: Any?, enumValues: List<Any>, path: String) {
+        if (!enumValues.any { areEqual(payload, it) }) {
             throw A2uiException.A2uiValidationException(
                 "Value '${payload}' is not a valid enum value",
                 path,
@@ -191,9 +199,9 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
         // Any valid JSON element is allowed.
     }
 
-    private fun validateOneOf(payload: Any?, schema: A2uiOneOfSchema, path: String) {
+    private fun validateOneOf(payload: Any?, subSchemas: List<A2uiSchema>, path: String) {
         var matchCount = 0
-        for (subSchema in schema.schemas) {
+        for (subSchema in subSchemas) {
             try {
                 validateSchemaInternal(payload, subSchema, path)
                 matchCount++
@@ -209,15 +217,15 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
         }
     }
 
-    private fun validateAllOf(payload: Any?, schema: A2uiAllOfSchema, path: String) {
-        for (subSchema in schema.schemas) {
+    private fun validateAllOf(payload: Any?, subSchemas: List<A2uiSchema>, path: String) {
+        for (subSchema in subSchemas) {
             validateSchemaInternal(payload, subSchema, path)
         }
     }
 
-    private fun validateAnyOf(payload: Any?, schema: A2uiAnyOfSchema, path: String) {
+    private fun validateAnyOf(payload: Any?, subSchemas: List<A2uiSchema>, path: String) {
         var matched = false
-        for (subSchema in schema.schemas) {
+        for (subSchema in subSchemas) {
             try {
                 validateSchemaInternal(payload, subSchema, path)
                 matched = true
@@ -234,30 +242,92 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
         }
     }
 
-    private fun validateConst(payload: Any?, schema: A2uiConstSchema, path: String) {
-        if (!areEqual(payload, schema.value)) {
+    private fun validateNot(payload: Any?, subSchema: A2uiSchema, path: String) {
+        var matched = false
+        try {
+            validateSchemaInternal(payload, subSchema, path)
+            matched = true
+        } catch (_: A2uiException.A2uiValidationException) {
+            // Failure means NOT constraint satisfied
+        }
+        if (matched) {
             throw A2uiException.A2uiValidationException(
-                "Expected a const value '${schema.value}', but instead got: $payload",
+                "Payload must NOT match subschema, but it matched",
                 path,
             )
         }
     }
 
-    private fun validateRef(payload: Any?, schema: A2uiRefSchema, path: String) {
-        if (schema.ref == "catalog.json#/\$defs/anyFunction") {
-            validateAnyFunctionRef(payload, path)
-            return
+    private fun validateConst(payload: Any?, expectedValue: Any?, path: String) {
+        if (!areEqual(payload, expectedValue)) {
+            throw A2uiException.A2uiValidationException(
+                "Expected a const value '${expectedValue}', but instead got: $payload",
+                path,
+            )
         }
+    }
 
-        throw A2uiException.A2uiValidationException(
-            "Ref validation is not supported besides specific cases. " +
-                "Use A2uiCompositeSchema to handle references gracefully.",
-            path,
-        )
+    private fun isValidCatalogRef(ref: String): Boolean {
+        val beforeFragment = ref.substringBefore('#', "")
+        return beforeFragment.isEmpty() || beforeFragment == CATALOG_JSON
+    }
+
+    private fun validateRef(payload: Any?, schema: A2uiRefSchema, path: String) {
+        val ref = schema.ref
+        if (!isValidCatalogRef(ref)) {
+            throw A2uiException.A2uiValidationException(
+                "Unsupported reference '$ref'. References must belong to the $CATALOG_JSON namespace or be relative within it.",
+                path,
+            )
+        }
+        val fragment = ref.substringAfter('#').removePrefix("/")
+        when {
+            fragment == ANY_FUNCTION_FRAGMENT || fragment.endsWith("/$ANY_FUNCTION_FRAGMENT") -> {
+                validateAnyFunctionRef(payload, path)
+            }
+            fragment.startsWith(COMPONENTS_PREFIX) -> {
+                validateComponentRef(payload, ref, fragment, path)
+            }
+            fragment.startsWith(FUNCTIONS_PREFIX) -> {
+                validateFunctionRef(payload, ref, fragment, path)
+            }
+            else -> {
+                throw A2uiException.A2uiValidationException(
+                    "Unsupported reference fragment '$fragment' in reference '$ref'",
+                    path,
+                )
+            }
+        }
     }
 
     private fun validateAnyFunctionRef(payload: Any?, path: String) {
         validateSchemaInternal(payload, anyFunctionSchema, path)
+    }
+
+    private fun validateComponentRef(payload: Any?, ref: String, fragment: String, path: String) {
+        val compName = fragment.substringAfter(COMPONENTS_PREFIX)
+        val compDef = catalog?.componentDefinitions?.get(compName)
+        if (compDef != null) {
+            validateSchemaInternal(payload, compDef.propertySchema, path)
+        } else {
+            throw A2uiException.A2uiValidationException(
+                "Component '$compName' not found in catalog for reference '$ref'",
+                path,
+            )
+        }
+    }
+
+    private fun validateFunctionRef(payload: Any?, ref: String, fragment: String, path: String) {
+        val funcName = fragment.substringAfter(FUNCTIONS_PREFIX)
+        val funcSchema = functionSchemas[funcName]
+        if (funcSchema != null) {
+            validateSchemaInternal(payload, funcSchema, path)
+        } else {
+            throw A2uiException.A2uiValidationException(
+                "Function '$funcName' not found in catalog for reference '$ref'",
+                path,
+            )
+        }
     }
 
     /**
@@ -328,6 +398,7 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
 
     private fun toList(obj: Any?): List<*>? {
         return when (obj) {
+            is List<*> -> obj
             is Array<*> -> obj.toList()
             is BooleanArray -> obj.toList()
             is ByteArray -> obj.toList()
@@ -340,5 +411,12 @@ public class A2uiCoreSchemaValidator(catalog: A2uiCoreCatalog? = null) {
             is Iterable<*> -> obj.toList()
             else -> null
         }
+    }
+
+    private companion object {
+        private const val CATALOG_JSON = "catalog.json"
+        private const val ANY_FUNCTION_FRAGMENT = "\$defs/anyFunction"
+        private const val COMPONENTS_PREFIX = "components/"
+        private const val FUNCTIONS_PREFIX = "functions/"
     }
 }

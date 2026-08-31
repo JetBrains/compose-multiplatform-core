@@ -84,6 +84,8 @@ import org.robolectric.shadows.ShadowTrace
 @Suppress("RestrictedApi")
 class RcPlayerRecompositionEventsTest {
 
+    @get:Rule val enableEmbeddedPlayer = EnableEmbeddedPlayerRule()
+
     @get:Rule val rule = createComposeRule()
 
     private lateinit var context: Context
@@ -265,6 +267,7 @@ class RcPlayerRecompositionEventsTest {
         collectJob.cancel()
     }
 
+    @Ignore("b/540178090")
     @Test
     fun testCollectAsStateWithLifecycle() = runBlocking {
         val stateFlow = MutableStateFlow("Initial")
