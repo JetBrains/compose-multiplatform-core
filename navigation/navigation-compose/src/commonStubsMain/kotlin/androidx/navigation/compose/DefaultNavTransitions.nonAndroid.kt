@@ -23,36 +23,50 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.compose.internal.implementedInJetBrainsFork
+import kotlin.jvm.JvmName
 
+/** Default nav transitions to be used by [NavHost]. */
 public actual object DefaultNavTransitions {
+
+    /** Default [enterTransition] for forward navigation to be used by [NavHost]. */
     public actual val enterTransition:
-        AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-        { EnterTransition.None }
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
+        get() = implementedInJetBrainsFork()
 
+    /** Default [exitTransition] for forward navigation to be used by [NavHost]. */
     public actual val exitTransition:
-        AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
-        { ExitTransition.None }
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
+        get() = implementedInJetBrainsFork()
 
-    public actual val predictivePopEnterTransition:
-        AnimatedContentTransitionScope<NavBackStackEntry>.(Int) -> EnterTransition =
-        { EnterTransition.None }
-
-    public actual val predictivePopExitTransition:
-        AnimatedContentTransitionScope<NavBackStackEntry>.(Int) -> ExitTransition =
-        { ExitTransition.None }
-
-
-    public actual val sizeTransform:
-        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        null
-
+    /** Default [popEnterTransition] for pop navigation to be used by [NavHost]. */
     public actual fun popEnterTransition(
         enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
     ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-        enterTransition
+        implementedInJetBrainsFork()
 
+    /** Default [popExitTransition] for pop navigation to be used by [NavHost]. */
     public actual fun popExitTransition(
         exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
     ): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
-        exitTransition
+        implementedInJetBrainsFork()
+
+    /**
+     * Default [predictivePopEnterTransition] for predictive pop navigation to be used by [NavHost].
+     */
+    public actual val predictivePopEnterTransition:
+        AnimatedContentTransitionScope<NavBackStackEntry>.(swipeEdge: Int) -> EnterTransition
+        get() = implementedInJetBrainsFork()
+
+    /**
+     * Default [predictivePopExitTransition] for predictive pop navigation to be used by [NavHost].
+     */
+    public actual val predictivePopExitTransition:
+        AnimatedContentTransitionScope<NavBackStackEntry>.(swipeEdge: Int) -> ExitTransition
+        get() = implementedInJetBrainsFork()
+
+    /** Default [sizeTransform] to be used by [NavHost]. */
+    public actual val sizeTransform:
+        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?
+        get() = implementedInJetBrainsFork()
 }
