@@ -232,7 +232,7 @@ interface PlatformContext {
      * implementation.
      */
     @OptIn(ExperimentalMediaQueryApi::class)
-    val mediaEnvironment: UiMediaScope get() = EmptyMediaEnvironment
+    val mediaScope: UiMediaScope get() = EmptyMediaScope
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -412,7 +412,7 @@ private object NoOpHapticFeedback : HapticFeedback {
 }
 
 @OptIn(ExperimentalMediaQueryApi::class)
-private object EmptyMediaEnvironment : UiMediaScope {
+private object EmptyMediaScope : UiMediaScope {
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat
     override val windowWidth: Dp
