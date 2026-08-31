@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package androidx.build.clang
+package androidx.xr.scenecore.openxr
 
-import java.io.Serializable
+import androidx.xr.runtime.interfaces.Feature
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
-/** Serializable wrapper for [NativeTarget] to be used as Gradle task input/output. */
-data class SerializableNativeTarget(val name: String) : Serializable {
+/** Unit tests for [OpenXrSceneRuntimeFactory]. */
+@RunWith(JUnit4::class)
+class OpenXrSceneRuntimeFactoryTest {
 
-    constructor(target: NativeTarget) : this(target.name)
-
-    init {
-        // Check name is valid
-        NativeTarget.fromName(name)
-    }
-
-    val asNativeTarget: NativeTarget
-        get() = NativeTarget.fromName(name)
-
-    override fun toString() = name
-
-    companion object {
-        private const val serialVersionUID: Long = 119394285023L
+    @Test
+    fun create_succeeds() {
+        val factory = OpenXrSceneRuntimeFactory()
+        assertThat(factory.requirements).containsExactly(Feature.FULLSTACK)
     }
 }

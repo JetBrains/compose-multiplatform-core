@@ -129,7 +129,7 @@ public object ComposeUiFlags {
     // TODO: Remove this flag once it has soaked (b/501080937)
     @field:Suppress("MutableBareField")
     @JvmField
-    public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = false
+    public var isTriggerMoveEventsWhenLocationHasNotChangedEnabled: Boolean = true
 
     /** Fixes trackpad pan gestures (CLASSIFICATION_TWO_FINGER_SWIPE). */
     // TODO: b/535296682 - Cleanup feature flag
@@ -169,4 +169,19 @@ public object ComposeUiFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     public var isVelocityTrackerMinSampleSizeFixEnabled: Boolean = true
+
+    /**
+     * If enabled, [androidx.compose.ui.graphics.vector.VectorPainter] will use a shared cache to
+     * reuse [androidx.compose.ui.graphics.vector.DrawCache] instances across different painters
+     * using the same [androidx.compose.ui.graphics.vector.ImageVector].
+     *
+     * This reduces redundant texture uploads and improves performance when the same vector is used
+     * multiple times within a composition tree, such as in a LazyColumn.
+     *
+     * Note: This flag currently no-ops; the feature will be added in a future change.
+     */
+    // TODO: b/493138866 - Clean feature flag
+    @field:Suppress("MutableBareField")
+    @JvmField
+    public var isVectorDrawCacheSharingEnabled: Boolean = true
 }

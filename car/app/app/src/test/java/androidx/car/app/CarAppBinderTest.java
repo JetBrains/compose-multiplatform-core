@@ -32,6 +32,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.Binder;
 import android.os.RemoteException;
 
 import androidx.car.app.model.ItemList;
@@ -42,7 +43,6 @@ import androidx.car.app.serialization.Bundleable;
 import androidx.car.app.serialization.BundlerException;
 import androidx.car.app.testing.SessionController;
 import androidx.car.app.testing.TestCarContext;
-import androidx.car.app.theme.CarAppTheme;
 import androidx.car.app.validation.HostValidator;
 import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.lifecycle.DefaultLifecycleObserver;
@@ -66,6 +66,10 @@ import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
+import org.robolectric.Shadows;
+import org.robolectric.shadows.ShadowPackageManager;
+import org.robolectric.shadows.ShadowBinder;
+import org.robolectric.shadows.ShadowLooper;
 
 import java.util.Deque;
 import java.util.Locale;
@@ -98,6 +102,10 @@ public class CarAppBinderTest {
 
     @Before
     public void setUp() {
+        // 1. Set calling UID first, so that subsequent calls to Binder.getCallingUid()
+        // return this UID.
+        int testUid = 12345;
+        ShadowBinder.setCallingUid(testUid);
         mCarAppService = new TestCarAppService();
 
         AppInfo appInfo = new AppInfo(CarAppApiLevels.getOldest(), CarAppApiLevels.getLatest(),
@@ -113,7 +121,13 @@ public class CarAppBinderTest {
         HostInfo hostInfo = new HostInfo(hostPackageName, 1);
         mCarAppService.setHostInfo(hostInfo);
 
+        // 2. This will capture the testUid (12345) as mAuthenticatedUid.
         mCarAppBinder.setHandshakeInfo(handshakeInfo);
+
+        // 3. Configure shadow PackageManager for the test UID.
+        ShadowPackageManager shadowPackageManager = Shadows.shadowOf(mContext.getPackageManager());
+        shadowPackageManager.setPackagesForUid(testUid,
+                hostPackageName, "different.package.name", "bar");
     }
 
     private Session createTestSession() {
@@ -278,7 +292,7 @@ public class CarAppBinderTest {
 
         verify(mMockOnDoneCallback).onSuccess(mBundleableArgumentCaptor.capture());
         int receivedThemeStyle = (Integer) mBundleableArgumentCaptor.getValue().get();
-        assertThat(receivedThemeStyle).isEqualTo(CarAppTheme.SYSTEM_THEME);
+        assertThat(receivedThemeStyle).isEqualTo(CarAppService.THEME_SOURCE_SYSTEM);
     }
 
     @Test
@@ -610,6 +624,87 @@ public class CarAppBinderTest {
         inOrder.verify(sessionObserver).onDestroy(any());
     }
 
+    @Test
+    public void onAppCreate_beforeHandshake_fails() throws RemoteException {
+        CarAppBinder freshBinder = new CarAppBinder(mCarAppService, DEFAULT_SESSION_INFO);
+        freshBinder.onAppCreate(
+                mMockCarHost, null, new Configuration(), mMockOnDoneCallback);
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+        verify(mMockOnDoneCallback).onFailure(any());
+    }
+
+    @Test
+    public void onAppCreate_differentCallingUid_fails() throws BundlerException, RemoteException {
+        int originalUid = Binder.getCallingUid();
+        try {
+            String hostPackageName = "com.google.projection.gearhead";
+            HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName,
+                    CarAppApiLevels.LEVEL_1);
+            mCarAppBinder.onHandshakeCompleted(Bundleable.create(handshakeInfo),
+                    mMockOnDoneCallback);
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+
+            // Simulate a different calling UID
+            ShadowBinder.setCallingUid(originalUid + 1);
+
+            mCarAppBinder.onAppCreate(
+                    mMockCarHost, null, new Configuration(), mMockOnDoneCallback);
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+            verify(mMockOnDoneCallback).onFailure(any());
+        } finally {
+            ShadowBinder.setCallingUid(originalUid);
+        }
+    }
+
+    @Test
+    public void onAppCreate_afterDestroy_fails() throws BundlerException, RemoteException {
+        String hostPackageName = "com.google.projection.gearhead";
+        HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName, CarAppApiLevels.LEVEL_1);
+        mCarAppBinder.onHandshakeCompleted(Bundleable.create(handshakeInfo), mMockOnDoneCallback);
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+
+        mCarAppBinder.destroy();
+
+        mCarAppBinder.onAppCreate(
+                mMockCarHost, null, new Configuration(), mMockOnDoneCallback);
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+        verify(mMockOnDoneCallback).onFailure(any());
+    }
+
+    @Test
+    public void onHandshakeCompleted_alreadyCompleted_differentUid_fails()
+            throws BundlerException, RemoteException {
+        int originalUid = Binder.getCallingUid();
+        try {
+            String hostPackageName = "com.google.projection.gearhead";
+            HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName,
+                    CarAppApiLevels.LEVEL_1);
+            mCarAppBinder.onHandshakeCompleted(Bundleable.create(handshakeInfo),
+                    mMockOnDoneCallback);
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+
+            // Simulate a different calling UID
+            ShadowBinder.setCallingUid(originalUid + 1);
+            mCarAppBinder.onHandshakeCompleted(
+                    Bundleable.create(handshakeInfo), mMockOnDoneCallback);
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+            verify(mMockOnDoneCallback).onFailure(any());
+        } finally {
+            ShadowBinder.setCallingUid(originalUid);
+        }
+    }
+
+    @Test
+    public void onHandshakeCompleted_alreadyCompleted_sameUid_succeeds()
+            throws BundlerException, RemoteException {
+        String hostPackageName = "com.google.projection.gearhead";
+        HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName, CarAppApiLevels.LEVEL_1);
+        mCarAppBinder.onHandshakeCompleted(Bundleable.create(handshakeInfo), mMockOnDoneCallback);
+        mCarAppBinder.onHandshakeCompleted(Bundleable.create(handshakeInfo), mMockOnDoneCallback);
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+        verify(mMockOnDoneCallback, times(2)).onSuccess(any());
+    }
+
     /** An implementation of {@link CarAppService} for testing. */
     private class TestCarAppService extends CarAppService {
         public @Nullable SessionController mSessionController;
@@ -620,6 +715,11 @@ public class CarAppBinderTest {
         @Override
         public @NonNull HostValidator createHostValidator() {
             return HostValidator.ALLOW_ALL_HOSTS_VALIDATOR;
+        }
+
+        @Override
+        public android.content.pm.PackageManager getPackageManager() {
+            return mContext.getPackageManager();
         }
 
         @Override

@@ -25,7 +25,7 @@ import androidx.a2ui.model.protocol.A2uiUpdateDataModelMessage
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import org.junit.Assert.assertThrows
+import kotlin.test.assertFailsWith
 import org.junit.Test
 
 class A2uiJsonMessageParserTest {
@@ -82,15 +82,7 @@ class A2uiJsonMessageParserTest {
                                         JsonObject().apply {
                                             addProperty(FIELD_ID, TEST_COMPONENT_ID)
                                             addProperty(FIELD_COMPONENT, TEST_COMPONENT_TYPE)
-                                            add(
-                                                FIELD_PROPERTIES,
-                                                JsonObject().apply {
-                                                    addProperty(
-                                                        TEST_PROPERTY_KEY,
-                                                        TEST_PROPERTY_VALUE,
-                                                    )
-                                                },
-                                            )
+                                            addProperty(TEST_PROPERTY_KEY, TEST_PROPERTY_VALUE)
                                         }
                                     )
                                 },
@@ -186,8 +178,7 @@ class A2uiJsonMessageParserTest {
             )
 
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context).containsEntry(FIELD_PATH, "/")
     }
 
@@ -201,7 +192,7 @@ class A2uiJsonMessageParserTest {
             }
 
         val parser = A2uiJsonMessageParser { reader }
-        assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
     }
 
     @Test
@@ -264,8 +255,7 @@ class A2uiJsonMessageParserTest {
     fun parse_emptyEnvelope_throwsValidationException() {
         val reader = FakeA2uiJsonReader(JsonObject())
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context).containsEntry(FIELD_PATH, "/")
     }
 
@@ -273,8 +263,7 @@ class A2uiJsonMessageParserTest {
     fun parse_invalidEnvelope_throwsValidationException() {
         val reader = FakeA2uiJsonReader(JsonObject().apply { addProperty("unknownField", 123) })
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context).containsEntry(FIELD_PATH, "/")
     }
 
@@ -290,8 +279,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_CREATE_SURFACE/$FIELD_SURFACE_ID")
     }
@@ -308,8 +296,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_CREATE_SURFACE/$FIELD_CATALOG_ID")
     }
@@ -326,8 +313,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_COMPONENTS/$FIELD_SURFACE_ID")
     }
@@ -356,8 +342,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_COMPONENTS/$FIELD_COMPONENTS/0/$FIELD_ID")
     }
@@ -386,8 +371,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(
                 FIELD_PATH,
@@ -410,8 +394,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_DATA_MODEL/$FIELD_SURFACE_ID")
     }
@@ -423,8 +406,7 @@ class A2uiJsonMessageParserTest {
                 JsonObject().apply { add(FIELD_DELETE_SURFACE, JsonObject().apply {}) }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_DELETE_SURFACE/$FIELD_SURFACE_ID")
     }
@@ -444,8 +426,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_CREATE_SURFACE/$FIELD_SURFACE_ID")
     }
@@ -465,8 +446,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_CREATE_SURFACE/$FIELD_CATALOG_ID")
     }
@@ -487,8 +467,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_CREATE_SURFACE/$FIELD_THEME")
     }
@@ -512,8 +491,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_CREATE_SURFACE/$FIELD_SEND_DATA_MODEL")
     }
@@ -533,8 +511,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_COMPONENTS/$FIELD_SURFACE_ID")
     }
@@ -564,8 +541,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_COMPONENTS/$FIELD_COMPONENTS/0/$FIELD_ID")
     }
@@ -598,50 +574,11 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(
                 FIELD_PATH,
                 "/$FIELD_UPDATE_COMPONENTS/$FIELD_COMPONENTS/0/$FIELD_COMPONENT",
-            )
-    }
-
-    @Test
-    fun parse_updateComponents_invalidPropertiesType_throwsValidationException() {
-        val reader =
-            FakeA2uiJsonReader(
-                JsonObject().apply {
-                    add(
-                        FIELD_UPDATE_COMPONENTS,
-                        JsonObject().apply {
-                            addProperty(FIELD_SURFACE_ID, TEST_SURFACE_ID)
-                            add(
-                                FIELD_COMPONENTS,
-                                JsonArray().apply {
-                                    add(
-                                        JsonObject().apply {
-                                            addProperty(FIELD_ID, TEST_COMPONENT_ID)
-                                            addProperty(FIELD_COMPONENT, TEST_COMPONENT_TYPE)
-                                            addProperty(
-                                                FIELD_PROPERTIES,
-                                                "not-a-map",
-                                            ) // String is not an object
-                                        }
-                                    )
-                                },
-                            )
-                        },
-                    )
-                }
-            )
-        val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
-        assertThat(exception.context)
-            .containsEntry(
-                FIELD_PATH,
-                "/$FIELD_UPDATE_COMPONENTS/$FIELD_COMPONENTS/0/$FIELD_PROPERTIES",
             )
     }
 
@@ -661,8 +598,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_DATA_MODEL/$FIELD_SURFACE_ID")
     }
@@ -683,8 +619,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_UPDATE_DATA_MODEL/$FIELD_PATH")
     }
@@ -703,8 +638,7 @@ class A2uiJsonMessageParserTest {
                 }
             )
         val parser = A2uiJsonMessageParser { reader }
-        val exception =
-            assertThrows(A2uiException.A2uiValidationException::class.java) { parser.parse("") }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
         assertThat(exception.context)
             .containsEntry(FIELD_PATH, "/$FIELD_DELETE_SURFACE/$FIELD_SURFACE_ID")
     }
@@ -818,7 +752,86 @@ class A2uiJsonMessageParserTest {
         assertThat(message.value).isEqualTo(mapOf("nestedKey" to "nestedValue"))
     }
 
+    @Test
+    fun parse_withValidVersionField_parsesCorrectly() {
+        val reader =
+            FakeA2uiJsonReader(
+                JsonObject().apply {
+                    addProperty(FIELD_VERSION, "v0.9")
+                    add(
+                        FIELD_DELETE_SURFACE,
+                        JsonObject().apply { addProperty(FIELD_SURFACE_ID, TEST_SURFACE_ID) },
+                    )
+                }
+            )
+        val parser = A2uiJsonMessageParser { reader }
+        val message = parser.parse("")
+        assertThat(message).isEqualTo(A2uiDeleteSurfaceMessage(surfaceId = TEST_SURFACE_ID))
+    }
+
+    @Test
+    fun parse_withValidVersionFieldAfterEnvelope_parsesCorrectly() {
+        val reader =
+            FakeA2uiJsonReader(
+                JsonObject().apply {
+                    add(
+                        FIELD_DELETE_SURFACE,
+                        JsonObject().apply { addProperty(FIELD_SURFACE_ID, TEST_SURFACE_ID) },
+                    )
+                    addProperty(FIELD_VERSION, "v0.9")
+                }
+            )
+        val parser = A2uiJsonMessageParser { reader }
+        val message = parser.parse("")
+        assertThat(message).isEqualTo(A2uiDeleteSurfaceMessage(surfaceId = TEST_SURFACE_ID))
+    }
+
+    @Test
+    fun parse_withInvalidVersionField_throwsValidationException() {
+        val reader =
+            FakeA2uiJsonReader(
+                JsonObject().apply {
+                    addProperty(FIELD_VERSION, "v1.0")
+                    add(
+                        FIELD_DELETE_SURFACE,
+                        JsonObject().apply { addProperty(FIELD_SURFACE_ID, TEST_SURFACE_ID) },
+                    )
+                }
+            )
+        val parser = A2uiJsonMessageParser { reader }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
+        assertThat(exception.context).containsEntry(FIELD_PATH, "/$FIELD_VERSION")
+    }
+
+    @Test
+    fun parse_withInvalidVersionFieldAfterEnvelope_throwsValidationExceptionBeforeParsing() {
+        val json =
+            JsonObject().apply {
+                add(
+                    FIELD_CREATE_SURFACE,
+                    JsonObject().apply {
+                        // Empty createSurface object (normally throws surfaceId validation
+                        // exception)
+                    },
+                )
+                addProperty(FIELD_VERSION, "v1.0")
+            }
+        val parser = A2uiJsonMessageParser { FakeA2uiJsonReader(json) }
+        val exception =
+            assertFailsWith<A2uiException.A2uiValidationException> { parser.parse(json.toString()) }
+        assertThat(exception.context).containsEntry(FIELD_PATH, "/$FIELD_VERSION")
+    }
+
+    @Test
+    fun parse_missingVersionField_throwsValidationException() {
+        val reader = FakeA2uiJsonReader("{ \"createSurface\": {} }")
+        val parser = A2uiJsonMessageParser { reader }
+        val exception = assertFailsWith<A2uiException.A2uiValidationException> { parser.parse("") }
+        assertThat(exception.context).containsEntry(FIELD_PATH, "/$FIELD_VERSION")
+    }
+
     companion object {
+        private const val FIELD_VERSION = "version"
         private const val FIELD_CREATE_SURFACE = "createSurface"
         private const val FIELD_SURFACE_ID = "surfaceId"
         private const val FIELD_CATALOG_ID = "catalogId"
@@ -829,7 +842,6 @@ class A2uiJsonMessageParserTest {
         private const val FIELD_COMPONENTS = "components"
         private const val FIELD_ID = "id"
         private const val FIELD_COMPONENT = "component"
-        private const val FIELD_PROPERTIES = "properties"
         private const val FIELD_UPDATE_DATA_MODEL = "updateDataModel"
         private const val FIELD_PATH = "path"
         private const val FIELD_VALUE = "value"
