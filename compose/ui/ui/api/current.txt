@@ -172,6 +172,7 @@ package androidx.compose.ui {
     property public boolean isTrackpadPanHoverFixEnabled;
     property public boolean isTrackpadPinchReinterpretationEnabled;
     property public boolean isTriggerMoveEventsWhenLocationHasNotChangedEnabled;
+    property public boolean isVectorDrawCacheSharingEnabled;
     property public boolean isVelocityTrackerMinSampleSizeFixEnabled;
     property public boolean isViewFocusFixEnabled;
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
@@ -185,6 +186,7 @@ package androidx.compose.ui {
     field public static boolean isTrackpadPanHoverFixEnabled;
     field public static boolean isTrackpadPinchReinterpretationEnabled;
     field public static boolean isTriggerMoveEventsWhenLocationHasNotChangedEnabled;
+    field public static boolean isVectorDrawCacheSharingEnabled;
     field public static boolean isVelocityTrackerMinSampleSizeFixEnabled;
     field public static boolean isViewFocusFixEnabled;
   }
@@ -1099,6 +1101,7 @@ package androidx.compose.ui.focus {
   }
 
   public final class RequestChildFocusKt {
+    method public static boolean requestFocusForChildInLocalBounds(androidx.compose.ui.node.DelegatableNode, int left, int top, int right, int bottom);
     method public static boolean requestFocusForChildInRootBounds(androidx.compose.ui.node.DelegatableNode, int left, int top, int right, int bottom);
   }
 
@@ -4155,6 +4158,7 @@ package androidx.compose.ui.platform {
     method @InaccessibleFromKotlin public static androidx.compose.runtime.CompositionLocal<java.lang.Boolean> getLocalScrollCaptureInProgress();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.SoftwareKeyboardController?> getLocalSoftwareKeyboardController();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.SoundEffect> getLocalSoundEffect();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.TaskDispatchers> getLocalTaskDispatchers();
     method @InaccessibleFromKotlin @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.input.TextInputService?> getLocalTextInputService();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.TextToolbar> getLocalTextToolbar();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.UriHandler> getLocalUriHandler();
@@ -4179,6 +4183,7 @@ package androidx.compose.ui.platform {
     property public static androidx.compose.runtime.CompositionLocal<java.lang.Boolean> LocalScrollCaptureInProgress;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.SoftwareKeyboardController?> LocalSoftwareKeyboardController;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.SoundEffect> LocalSoundEffect;
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.TaskDispatchers> LocalTaskDispatchers;
     property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.input.TextInputService?> LocalTextInputService;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.TextToolbar> LocalTextToolbar;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.platform.UriHandler> LocalUriHandler;
@@ -4292,6 +4297,13 @@ package androidx.compose.ui.platform {
   public final class SoundEffectOnInteraction_androidKt {
     method @KotlinOnly @androidx.compose.runtime.Composable public static void SoundEffectOnInteraction(boolean enabled, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void SoundEffectOnInteraction(boolean, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+  }
+
+  @androidx.compose.runtime.Stable public interface TaskDispatchers {
+    method @InaccessibleFromKotlin public kotlinx.coroutines.CoroutineDispatcher getDefault();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.CoroutineDispatcher getIO();
+    property public abstract kotlinx.coroutines.CoroutineDispatcher Default;
+    property public abstract kotlinx.coroutines.CoroutineDispatcher IO;
   }
 
   public final class TestTagKt {
@@ -4797,6 +4809,7 @@ package androidx.compose.ui.semantics {
   }
 
   public final class SemanticsProperties {
+    method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.graphics.ColorProducer> getBackgroundColor();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.CollectionInfo> getCollectionInfo();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.CollectionItemInfo> getCollectionItemInfo();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.autofill.ContentDataType> getContentDataType();
@@ -4819,6 +4832,7 @@ package androidx.compose.ui.semantics {
     method @InaccessibleFromKotlin @Deprecated public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsContainer();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> getIsDialog();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsEditable();
+    method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsPasswordObfuscated();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> getIsPopup();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsSensitiveData();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> getIsShowingTextSubstitution();
@@ -4843,6 +4857,7 @@ package androidx.compose.ui.semantics {
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.state.ToggleableState> getToggleableState();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Float> getTraversalIndex();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.ScrollAxisRange> getVerticalScrollAxisRange();
+    property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.graphics.ColorProducer> BackgroundColor;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.CollectionInfo> CollectionInfo;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.semantics.CollectionItemInfo> CollectionItemInfo;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.compose.ui.autofill.ContentDataType> ContentDataType;
@@ -4865,6 +4880,7 @@ package androidx.compose.ui.semantics {
     property @Deprecated public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsContainer;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> IsDialog;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsEditable;
+    property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsPasswordObfuscated;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<kotlin.Unit> IsPopup;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsSensitiveData;
     property public androidx.compose.ui.semantics.SemanticsPropertyKey<java.lang.Boolean> IsShowingTextSubstitution;
@@ -4918,6 +4934,7 @@ package androidx.compose.ui.semantics {
     method public static void error(androidx.compose.ui.semantics.SemanticsPropertyReceiver, String description);
     method public static void expand(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function0<java.lang.Boolean>? action);
     method @BytecodeOnly public static void expand$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function0!, int, Object!);
+    method @InaccessibleFromKotlin public static androidx.compose.ui.graphics.ColorProducer getBackgroundColor(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method @InaccessibleFromKotlin public static androidx.compose.ui.semantics.CollectionInfo getCollectionInfo(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method @InaccessibleFromKotlin public static androidx.compose.ui.semantics.CollectionItemInfo getCollectionItemInfo(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method @InaccessibleFromKotlin public static androidx.compose.ui.autofill.ContentDataType getContentDataType(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
@@ -4982,7 +4999,9 @@ package androidx.compose.ui.semantics {
     method @BytecodeOnly public static void pageRight$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function0!, int, Object!);
     method public static void pageUp(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function0<java.lang.Boolean>? action);
     method @BytecodeOnly public static void pageUp$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function0!, int, Object!);
-    method public static void password(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    method @BytecodeOnly @Deprecated public static void password(androidx.compose.ui.semantics.SemanticsPropertyReceiver!);
+    method public static void password(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional boolean isPasswordObfuscated);
+    method @BytecodeOnly public static void password$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, boolean, int, Object!);
     method public static void pasteText(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function0<java.lang.Boolean>? action);
     method @BytecodeOnly public static void pasteText$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function0!, int, Object!);
     method @Deprecated public static void performImeAction(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function0<java.lang.Boolean>? action);
@@ -4996,6 +5015,7 @@ package androidx.compose.ui.semantics {
     method public static void scrollToIndex(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Boolean> action);
     method @BytecodeOnly public static void scrollToIndex$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function1!, int, Object!);
     method public static void selectableGroup(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    method @InaccessibleFromKotlin public static void setBackgroundColor(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.compose.ui.graphics.ColorProducer);
     method @InaccessibleFromKotlin public static void setCollectionInfo(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.compose.ui.semantics.CollectionInfo);
     method @InaccessibleFromKotlin public static void setCollectionItemInfo(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.compose.ui.semantics.CollectionItemInfo);
     method @InaccessibleFromKotlin @Deprecated public static void setContainer(androidx.compose.ui.semantics.SemanticsPropertyReceiver, boolean);
@@ -5042,6 +5062,7 @@ package androidx.compose.ui.semantics {
     method public static void showTextSubstitution(androidx.compose.ui.semantics.SemanticsPropertyReceiver, optional String? label, kotlin.jvm.functions.Function1<? super java.lang.Boolean,java.lang.Boolean>? action);
     method @BytecodeOnly public static void showTextSubstitution$default(androidx.compose.ui.semantics.SemanticsPropertyReceiver!, String!, kotlin.jvm.functions.Function1!, int, Object!);
     method public static void textEntryKey(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    property public static androidx.compose.ui.graphics.ColorProducer androidx.compose.ui.semantics.SemanticsPropertyReceiver.backgroundColor;
     property public static androidx.compose.ui.semantics.CollectionInfo androidx.compose.ui.semantics.SemanticsPropertyReceiver.collectionInfo;
     property public static androidx.compose.ui.semantics.CollectionItemInfo androidx.compose.ui.semantics.SemanticsPropertyReceiver.collectionItemInfo;
     property public static androidx.compose.ui.autofill.ContentDataType androidx.compose.ui.semantics.SemanticsPropertyReceiver.contentDataType;

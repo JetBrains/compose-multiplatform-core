@@ -73,6 +73,7 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
 import androidx.compose.ui.platform.createPlatformUriHandler
@@ -547,6 +548,7 @@ internal class RootNodeOwner(
 
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
+        override val taskDispatchers: TaskDispatchers get() = platformContext.taskDispatchers
 
         @ExperimentalMediaQueryApi
         override val uiMediaScope: UiMediaScope get() = platformContext.mediaScope
