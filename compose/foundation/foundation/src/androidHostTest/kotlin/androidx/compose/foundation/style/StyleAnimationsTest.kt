@@ -124,8 +124,8 @@ class StyleAnimationsTest {
 
     @Test
     fun can_animate_borderWidth() = runTest {
-        animateDp({ borderWidth(it) }, { borderWidth })
-        animateDpFromDefault({ borderWidth(it) }, { borderWidth })
+        animate({ borderWidth(it) }, { borderWidth }, start = 10.dp, end = 100.dp)
+        animateFromDefault({ borderWidth(it) }, { borderWidth }, default = 0.dp, end = 100.dp)
     }
 
     @Test
@@ -445,6 +445,59 @@ class StyleAnimationsTest {
             assertTrue(values.size > 2)
         }
     }
+
+    @Test
+    fun can_animate_multiple_times() = runTest {
+        // This tests that a property can be set conditionally using an animation and will
+        // animate from the default value to the set value and back from the set value to
+        // the default value, even when a separate animation is still running.
+        var include by mutableStateOf(false)
+        val state = MutableStyleState(null)
+        animate(
+            style = {
+                if (include) {
+                    animate(tween(100)) { borderWidth(6.dp) }
+                }
+                disabled { animate(tween(100_000)) { contentPaddingStart(10.dp) } }
+            },
+            state = state,
+            frame = { time ->
+                val ms = time / 1_000_000L
+                if (ms == 0L) state.isEnabled = false
+                if (ms % 200L == 0L) {
+                    include = !include
+                }
+            },
+            collect = { if (hasId(BorderWidthId)) borderWidth else Dp.Unspecified },
+            duration = 1_000,
+            interval = 1,
+        ) { values ->
+            assertEquals(0.dp, values.first())
+            for (index in values.indices) {
+                if (values[index] == Dp.Unspecified) {
+                    // Animations to and from a property being set the unset value should be treated
+                    // as having the default value (0.dp for `borderWidth`).
+                    //
+                    // This is validated by checking when an animation starts and ends. When an
+                    // animation moves from Unspecified to a value the first frame prior to the
+                    // animation
+                    // starting should be the default value. When an animation to Unspecified
+                    // finishes
+                    // the last value prior to Unspecified should also be the default value.
+                    assertTrue(
+                        index == 0 ||
+                            values[index - 1] == Dp.Unspecified ||
+                            values[index - 1] == 0.dp
+                    )
+                    assertTrue(
+                        index >= (values.size) - 1 ||
+                            values[index + 1] == Dp.Unspecified ||
+                            values[index + 1] == 0.dp
+                    )
+                }
+            }
+        }
+    }
 }
 
 @ExperimentalFoundationStyleApi
@@ -557,8 +610,46 @@ private suspend fun TestScope.animateDp(
         assertEquals(end.value * 100f, pixels.last())
         assertTrue(pixels.size > 2)
     }
+}
 
-    // Animate from the default value
+@ExperimentalFoundationStyleApi
+private suspend fun <T : Comparable<T>> TestScope.animateFromDefault(
+    style: Style,
+    collect: StyleProperties.() -> T,
+    default: T,
+    end: T,
+) {
+    animate(
+        style = style,
+        collect = collect,
+        state = MutableStyleState(null).apply { isPressed = true },
+    ) { values ->
+        // Assert some animation occurs
+        assertTrue(values.size > 2)
+        if (default > end) {
+            assertNotNull(values.firstOrNull { it > end && it < default })
+        } else {
+            assertNotNull(values.firstOrNull { it > default && it < end })
+        }
+
+        // Assert we land where we were supposed to.
+        assertEquals(end, values.last())
+    }
+}
+
+@ExperimentalFoundationStyleApi
+private suspend fun <T : Comparable<T>> TestScope.animateFromDefault(
+    set: StyleScope.(value: T) -> Unit,
+    collect: StyleProperties.() -> T,
+    default: T,
+    end: T,
+) {
+    animateFromDefault(
+        style = { pressed { animate { set(end) } } },
+        collect = collect,
+        default = default,
+        end = end,
+    )
 }
 
 @ExperimentalFoundationStyleApi
@@ -567,18 +658,12 @@ private suspend fun TestScope.animateDpFromDefault(
     collect: StyleProperties.() -> Float,
     end: Dp = 100.dp,
 ) {
-    animate(
+    animateFromDefault(
         style = { pressed { animate { set(end) } } },
-        collect,
-        state = MutableStyleState(null).apply { isPressed = true },
-    ) { pixels ->
-        // Assert some animation occurs
-        assertTrue(pixels.size > 2)
-        assertNotNull(pixels.firstOrNull { it > 0f && it < end.value * 100f })
-
-        // Assert we land where we were supposed to.
-        assertEquals(end.value * 100f, pixels.last())
-    }
+        collect = collect,
+        default = 0f,
+        end = end.value * 100f,
+    )
 }
 
 @ExperimentalFoundationStyleApi
@@ -614,22 +699,7 @@ private suspend fun TestScope.animateFloatFromDefault(
     end: Float = 1f,
     assumeDefault: Float = 0f,
 ) {
-    animate(
-        style = { pressed { animate { set(end) } } },
-        collect,
-        state = MutableStyleState(null).apply { isPressed = true },
-    ) { pixels ->
-        // Assert some animation occurs
-        assertTrue(pixels.size > 2)
-        if (assumeDefault > end) {
-            assertNotNull(pixels.firstOrNull { it > end && it < assumeDefault })
-        } else {
-            assertNotNull(pixels.firstOrNull { it > assumeDefault && it < end })
-        }
-
-        // Assert we land where we were supposed to.
-        assertEquals(end, pixels.last())
-    }
+    animateFromDefault(set, collect, default = assumeDefault, end = end)
 }
 
 private val WhiteBrush = SolidColor(Color.White)

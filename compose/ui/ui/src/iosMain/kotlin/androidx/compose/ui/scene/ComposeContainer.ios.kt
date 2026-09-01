@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
@@ -44,13 +45,13 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.viewinterop.InteropSyncAction
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
+import androidx.compose.ui.window.onDraw
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.enableSavedStateHandles
@@ -70,6 +71,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SystemTheme
 import platform.Foundation.NSKeyValueObservingOptionNew
 import platform.Foundation.addObserver
@@ -111,6 +113,17 @@ internal class ComposeContainer(
         get() = view.window?.windowScene?.let { FrameChoreographer.choreographerForScene(it) }
 
     private var mediator: ComposeSceneMediator? = null
+
+    @OptIn(InternalComposeUiApi::class)
+    var rootForTestListener: PlatformContext.RootForTestListener? = null
+        set(value) {
+            field = value
+            mediator?.rootForTestListener = value
+            layersHolder?.layersViewController?.withLayers { layers ->
+                layers.forEach { it.rootForTestListener = value }
+            }
+        }
+
     private val sceneSizing = ComposeSceneSizing(
         view = view,
         measureSceneSize = { constraints -> mediator?.measureSceneSize(constraints) },
@@ -268,12 +281,7 @@ internal class ComposeContainer(
         this.layoutInvalidationHandler = layoutInvalidationHandler
 
         val metalView = MetalView(
-            retrieveInteropTransaction = {
-                mediator?.retrieveInteropTransaction() ?: object : InteropSyncTransaction {
-                    override val actions = emptyList<InteropSyncAction>()
-                    override val isInteropActive = false
-                }
-            },
+            retrieveInteropTransaction = { mediator?.retrieveInteropTransaction() ?: InteropSyncTransaction.Empty },
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             draw = { canvas ->
                 layoutInvalidationHandler.postponeLayoutInvalidationCalls {
@@ -326,13 +334,23 @@ internal class ComposeContainer(
             },
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
+            schedulePendingInteropViewUpdates = view::setNeedsDisplay,
         ).also { mediator ->
+            mediator.rootForTestListener = rootForTestListener
             view.embedSubview(mediator.backgroundView)
             view.updateMetalView(
                 metalView = metalView,
                 onDidMoveToWindow = ::onDidMoveToWindow,
                 onLayoutSubviews = ::onLayoutSubviews,
                 onTraitCollectionDidChange = ::onTraitCollectionDidChange,
+                onDraw = { needsSynchronousDraw ->
+                    metalView.redrawer.onDraw(
+                        needsSynchronousDraw = needsSynchronousDraw,
+                        needsComposeSceneDraw = mediator.needsComposeSceneDraw,
+                        retrievePendingViewUpdatesInteropTransaction =
+                            mediator::retrievePendingViewUpdatesInteropTransaction,
+                    )
+                },
             )
             view.embedSubview(mediator.overlayView)
 
@@ -425,6 +443,7 @@ internal class ComposeContainer(
                     invalidateDraw = { layersHolder.getLayersViewController().invalidateDraw() },
                 )
 
+                layer.rootForTestListener = rootForTestListener
                 layersHolder.getLayersViewController().attach(layer)
                 onFocusConditionsChanged()
 

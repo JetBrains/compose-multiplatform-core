@@ -96,7 +96,6 @@ import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -105,7 +104,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DialogTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity2>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<TestActivity2>()
 
     lateinit var activity: ComponentActivity
 
@@ -226,7 +225,7 @@ class DialogTest {
         textInteraction.assertIsDisplayed()
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @SdkSuppress(minSdkVersion = 25)
     @Test
     fun dialogTest_isNotDismissed_whenPressOutside_releaseInside() {
         setupDialogTest(dialogProperties = DialogProperties())
@@ -249,7 +248,7 @@ class DialogTest {
         textInteraction.assertIsDisplayed()
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @SdkSuppress(minSdkVersion = 25)
     @Test
     fun dialogTest_isNotDismissed_whenPressOutside_releaseInside_decorFitsFalse() {
         setupDialogTest(dialogProperties = DialogProperties(decorFitsSystemWindows = false))
@@ -1158,6 +1157,54 @@ class DialogTest {
         rule.runOnIdle {
             assertThat(window.attributes.type)
                 .isEqualTo(android.view.WindowManager.LayoutParams.TYPE_APPLICATION)
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    @Test
+    fun dialogTest_blurProperties() {
+        lateinit var window: Window
+        rule.setContent {
+            Dialog(onDismissRequest = {}, properties = DialogProperties(blurBehindRadius = 40.dp)) {
+                var parent = LocalView.current
+                while (parent !is DialogWindowProvider) {
+                    parent = parent.parent as View
+                }
+                window = (parent as DialogWindowProvider).window
+                Box(Modifier.size(10.dp))
+            }
+        }
+
+        rule.runOnIdle {
+            val attributes = window.attributes
+            assertThat(
+                    attributes.flags and android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+                )
+                .isNotEqualTo(0)
+            val expectedBlurBehindRadius = with(rule.density) { 40.dp.roundToPx() }
+            assertThat(attributes.blurBehindRadius).isEqualTo(expectedBlurBehindRadius)
+        }
+    }
+
+    @Test
+    fun dialogTest_scrimAlphaProperties() {
+        lateinit var window: Window
+        rule.setContent {
+            Dialog(onDismissRequest = {}, properties = DialogProperties(scrimAlpha = 0.75f)) {
+                var parent = LocalView.current
+                while (parent !is DialogWindowProvider) {
+                    parent = parent.parent as View
+                }
+                window = (parent as DialogWindowProvider).window
+                Box(Modifier.size(10.dp))
+            }
+        }
+
+        rule.runOnIdle {
+            val attributes = window.attributes
+            assertThat(attributes.flags and android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                .isNotEqualTo(0)
+            assertThat(attributes.dimAmount).isEqualTo(0.75f)
         }
     }
 

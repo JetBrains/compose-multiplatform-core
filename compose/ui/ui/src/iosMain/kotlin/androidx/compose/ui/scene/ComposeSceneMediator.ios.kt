@@ -58,6 +58,7 @@ import androidx.compose.ui.navigationevent.IosBackNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
+import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.FrameChoreographer
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -65,6 +66,7 @@ import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.WindowContext
 import androidx.compose.ui.platform.ApplicationIdleTimer
+import androidx.compose.ui.platform.TaskDispatchers
 import androidx.compose.ui.platform.TextInputService
 import androidx.compose.ui.platform.WindowInsetsManager
 import androidx.compose.ui.platform.ViewConfiguration
@@ -105,6 +107,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
@@ -199,6 +203,7 @@ internal class ComposeSceneMediator(
     private val navigationEventInput: IosBackNavigationEventInput,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (platformContext: PlatformContext) -> ComposeScene,
+    private val schedulePendingInteropViewUpdates: () -> Unit = {},
 ) {
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
@@ -227,9 +232,10 @@ internal class ComposeSceneMediator(
     )
 
     /**
-     * Indicates that a draw happened in the current display-link interval so the prefetch scheduler
-     * can tell whether the draw loop was idle when [FrameChoreographer.Listener.onOutOfFrame]
-     * runs.
+     * Indicates that a draw happened in the current display-link interval so
+     * [FrameChoreographer.Listener.onOutOfFrame] can determine whether pending interop view
+     * updates still need a host draw, and the prefetch scheduler can tell whether the draw loop
+     * was idle.
      */
     private var didDrawSinceDisplayLink = false
     private val frameChoreographerListener = object : FrameChoreographer.Listener {
@@ -241,6 +247,10 @@ internal class ComposeSceneMediator(
             lastFrameTimestamp: NSTimeInterval,
             targetTimestamp: NSTimeInterval
         ) {
+            if (!didDrawSinceDisplayLink && interopContainer.hasPendingViewUpdatesOnly) {
+                schedulePendingInteropViewUpdates()
+            }
+
             prefetchScheduler.execute(
                 lastFrameTimestamp = lastFrameTimestamp,
                 targetTimestamp = targetTimestamp,
@@ -373,7 +383,7 @@ internal class ComposeSceneMediator(
     private val interopContainer = IosInteropContainer(
         overlayContainer = _overlayView,
         backgroundContainer = _backgroundView,
-        requestRedraw = frameChoreographer::requestFrame
+        requestRedraw = frameChoreographer::requestFrame,
     )
 
     private val dragAndDropManager = IosDragAndDropManager(
@@ -396,6 +406,9 @@ internal class ComposeSceneMediator(
      */
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
         interactionBounds.contains(point.toDpOffset().toOffset(screenDensity).round())
+
+    @OptIn(InternalComposeUiApi::class)
+    var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
 
     private val semanticsOwnerListener by lazy {
         SemanticsOwnerListenerImpl(
@@ -689,8 +702,14 @@ internal class ComposeSceneMediator(
         scene.draw(canvas)
     }
 
+    val needsComposeSceneDraw: Boolean
+        get() = scene.hasPendingDraw
+
     fun retrieveInteropTransaction(): InteropSyncTransaction =
         interopContainer.retrieveTransaction()
+
+    fun retrievePendingViewUpdatesInteropTransaction(): InteropSyncTransaction =
+        interopContainer.retrievePendingViewUpdatesTransaction()
 
     @OptIn(InternalComposeUiApi::class)
     @Composable
@@ -888,6 +907,10 @@ internal class ComposeSceneMediator(
 
     private inner class IosPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        override val taskDispatchers: TaskDispatchers = object : TaskDispatchers {
+            override val Default = Dispatchers.Default
+            override val IO = Dispatchers.IO
+        }
         override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
@@ -916,6 +939,7 @@ internal class ComposeSceneMediator(
         override val textInputService get() = this@ComposeSceneMediator.textInputServiceAdapter
         override val textToolbar get() = this@ComposeSceneMediator.textInputService.textToolbar
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
+        override val rootForTestListener get() = this@ComposeSceneMediator.rootForTestListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
         override val windowInsets get() = this@ComposeSceneMediator.windowInsetsManager.windowInsets
         override val outOfFrameExecutor get() = this@ComposeSceneMediator.frameChoreographer.outOfFrameExecutor

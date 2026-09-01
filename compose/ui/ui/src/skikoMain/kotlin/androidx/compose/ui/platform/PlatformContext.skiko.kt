@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalMediaQueryApi::class)
 
 package androidx.compose.ui.platform
 
@@ -56,6 +55,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 
 /**
@@ -67,6 +67,11 @@ interface PlatformContext {
      * The value that will be provided to [LocalWindowInfo] by default.
      */
     val windowInfo: WindowInfo
+
+    /**
+     * Provide [TaskDispatchers] for coroutines running within a Compose hierarchy.
+     */
+    val taskDispatchers: TaskDispatchers
 
     /**
      * The value that will be provided to [LocalPlatformScreenReader] by default.
@@ -232,7 +237,8 @@ interface PlatformContext {
      * using media state remains safe on platforms that do not provide a richer
      * implementation.
      */
-    val mediaEnvironment: UiMediaScope get() = NoOpMediaEnvironment
+    @ExperimentalMediaQueryApi
+    val mediaScope: UiMediaScope get() = EmptyMediaScope
 
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
@@ -280,6 +286,8 @@ interface PlatformContext {
             // (hidden text field cursor, gray title bar, etc.)
             isWindowFocused = true
         }
+
+        override val taskDispatchers: TaskDispatchers = DefaultTaskDispatchers
 
         override val inputModeManager: InputModeManager by lazy(LazyThreadSafetyMode.NONE) {
             DefaultInputModeManager()
@@ -408,11 +416,11 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
 }
 
 private object NoOpHapticFeedback : HapticFeedback {
-    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
-    }
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }
 
-private object NoOpMediaEnvironment : UiMediaScope {
+@ExperimentalMediaQueryApi
+private object EmptyMediaScope : UiMediaScope {
     override val windowPosture: UiMediaScope.Posture
         get() = UiMediaScope.Posture.Flat
     override val windowWidth: Dp
@@ -429,4 +437,9 @@ private object NoOpMediaEnvironment : UiMediaScope {
         get() = false
     override val viewingDistance: UiMediaScope.ViewingDistance
         get() = UiMediaScope.ViewingDistance.Near
+}
+
+private object DefaultTaskDispatchers: TaskDispatchers {
+    override val Default = Dispatchers.Default
+    override val IO = Dispatchers.Default
 }

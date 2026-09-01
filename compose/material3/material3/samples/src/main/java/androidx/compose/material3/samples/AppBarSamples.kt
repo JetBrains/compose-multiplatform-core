@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
@@ -53,7 +55,6 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FlexibleBottomAppBar
@@ -314,7 +315,6 @@ fun SimpleTopAppBarWithAdaptiveActions() {
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -499,15 +499,14 @@ fun SimpleCenterAlignedTopAppBar() {
 }
 
 /**
- * A sample for a simple use of small [CenterAlignedTopAppBar] with a subtitle.
+ * A sample for a simple use of center-aligned [TopAppBar] with a subtitle.
  *
  * The top app bar here does not react to any scroll events in the content under it.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun SimpleCenterAlignedTopAppBarWithSubtitle() {
+fun SimpleTopAppBarWithSubtitleAndCenterAligned() {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -857,7 +856,6 @@ fun PinnedTopAppBarWithReversedLazyGrid() {
  * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
  * the content scrolled down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -951,7 +949,6 @@ fun EnterAlwaysTopAppBar() {
  * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
  * the content is scrolled down, using a [Column] with reverse scrolling.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1110,13 +1107,12 @@ fun ExitUntilCollapsedMediumTopAppBar() {
 
 /**
  * A sample for a [MediumFlexibleTopAppBar] that collapses when the content is scrolled up, and
- * appears when the content is completely scrolled back down, centered with subtitle.
+ * appears when the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
+fun ExitUntilCollapsedMediumFlexibleTopAppBar() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -1126,7 +1122,6 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     TooltipBox(
                         positionProvider =
@@ -1185,6 +1180,52 @@ fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
                     }
                 },
                 scrollBehavior = scrollBehavior,
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** A sample for a [MediumFlexibleTopAppBar] with a centered title and subtitle. */
+@Preview
+@Sampled
+@Composable
+fun MediumFlexibleTopAppBarWithSubtitleAndCenterAligned() {
+    Scaffold(
+        topBar = {
+            MediumFlexibleTopAppBar(
+                title = {
+                    Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Add to favorites",
+                        )
+                    }
+                },
             )
         },
         content = { innerPadding ->
@@ -1299,13 +1340,12 @@ fun ExitUntilCollapsedLargeTopAppBar() {
 
 /**
  * A sample for a [LargeFlexibleTopAppBar] that collapses when the content is scrolled up, and
- * appears when the content is completely scrolled back down, centered with subtitle.
+ * appears when the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
-fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
+fun ExitUntilCollapsedLargeFlexibleTopAppBar() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -1313,7 +1353,6 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
             LargeFlexibleTopAppBar(
                 title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     TooltipBox(
                         positionProvider =
@@ -1392,11 +1431,54 @@ fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
     )
 }
 
+/** A sample for a [LargeFlexibleTopAppBar] with a centered title and subtitle. */
+@Preview
+@Sampled
+@Composable
+fun LargeFlexibleTopAppBarWithSubtitleAndCenterAligned() {
+    Scaffold(
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Add to favorites",
+                        )
+                    }
+                },
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
 /**
  * A sample for a [TwoRowsTopAppBar] that collapses when the content is scrolled up, and appears
  * when the content is completely scrolled back down.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1471,7 +1553,6 @@ fun CustomTwoRowsTopAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -1506,7 +1587,6 @@ fun SimpleBottomAppBar() {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -1599,7 +1679,6 @@ fun BottomAppBarWithFAB() {
  * A sample for a [BottomAppBar] that collapses when the content is scrolled up, and appears when
  * the content scrolled down.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -1718,7 +1797,6 @@ fun ExitAlwaysBottomAppBar() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content is spaced around.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1804,7 +1882,6 @@ fun ExitAlwaysBottomAppBarSpacedAround() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content is spaced between.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1888,7 +1965,6 @@ fun ExitAlwaysBottomAppBarSpacedBetween() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content is spaced evenly.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -1973,7 +2049,6 @@ fun ExitAlwaysBottomAppBarSpacedEvenly() {
  * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
  * when the content scrolled down. The content arrangement is fixed.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -2057,7 +2132,6 @@ fun ExitAlwaysBottomAppBarFixed() {
  * A sample for a vibrant [FlexibleBottomAppBar] that collapses when the content is scrolled up, and
  * appears when the content scrolled down. The content arrangement is fixed.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -2140,7 +2214,6 @@ fun ExitAlwaysBottomAppBarFixedVibrant() {
 }
 
 /** A sample for a [FlexibleBottomAppBar] with an overflow behavior when the content doesn't fit. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable

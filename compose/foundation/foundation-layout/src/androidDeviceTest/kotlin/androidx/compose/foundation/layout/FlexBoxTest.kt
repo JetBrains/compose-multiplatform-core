@@ -17,10 +17,16 @@
 package androidx.compose.foundation.layout
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.FlexBoxScopeInstance.flex
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
@@ -30,6 +36,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
@@ -41,18 +48,16 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import kotlin.math.max
 import kotlin.math.min
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFlexBoxApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FlexBoxTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     // Baseline Tests
 
@@ -295,7 +300,7 @@ class FlexBoxTest {
 
     @Test
     fun rowReverse_rtl_start_doubleReversalFlowsLeftToRight() {
-        val xPositions = mutableListOf<Float>()
+        val xPositions = MutableList(3) { -1f }
 
         rule.setContent {
             CompositionLocalProvider(
@@ -313,7 +318,7 @@ class FlexBoxTest {
                         repeat(3) { index ->
                             Box(
                                 Modifier.size(20.dp).onPlaced {
-                                    xPositions.add(index, it.positionInParent().x)
+                                    xPositions[index] = it.positionInParent().x
                                 }
                             )
                         }
@@ -437,7 +442,42 @@ class FlexBoxTest {
         }
     }
 
-    @OptIn(ExperimentalFlexBoxApi::class)
+    @SuppressLint("Range")
+    @Test
+    fun invalidMaxItemsInEachLine_zero() {
+        assertThrows(IllegalArgumentException::class.java) {
+            rule.setContent { FlexBox(config = { maxItemsInEachLine(0) }) { Box(Modifier) } }
+        }
+    }
+
+    @Test
+    fun maxItemsInEachLine_maxIntrinsicWidth_reportsLargestCappedLine() {
+        var width = 0
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                Box(Modifier.width(IntrinsicSize.Max)) {
+                    FlexBox(
+                        modifier = Modifier.onSizeChanged { width = it.width },
+                        config = {
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.Wrap)
+                            maxItemsInEachLine(2)
+                        },
+                    ) {
+                        Box(Modifier.size(20.dp))
+                        Box(Modifier.size(30.dp))
+                        Box(Modifier.size(40.dp))
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        // Lines break after every 2 items: (20 + 30) and (40). The widest line is 50.
+        Truth.assertThat(width).isEqualTo(50)
+    }
+
     @Test
     fun testFlexBox_wrap_maxIntrinsicWidth_reportsSumOfChildren() {
         var width = 0
@@ -465,7 +505,6 @@ class FlexBoxTest {
         Truth.assertThat(width).isEqualTo(90)
     }
 
-    @OptIn(ExperimentalFlexBoxApi::class)
     @Test
     fun testFlexBox_wrap_minIntrinsicWidth_reportsMaxChildWidth() {
         var width = 0
@@ -491,6 +530,131 @@ class FlexBoxTest {
         rule.waitForIdle()
         // Min intrinsic width should be the width of the single widest child (40)
         Truth.assertThat(width).isEqualTo(40)
+    }
+
+    // Focus traversal tests. One-dimensional focus search visits children in placement order,
+    // which FlexBox keeps in sync with the visual order of the items.
+
+    @Test
+    fun focusTraversal_rowReverse_followsVisualOrder() {
+        // In RowReverse the first composed item is visually rightmost. Focus traversal is
+        // expected to follow the visual order (left to right), not the composition order.
+        val focusLog = mutableListOf<Int>()
+        lateinit var focusManager: FocusManager
+        val focusRequester = FocusRequester()
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                focusManager = LocalFocusManager.current
+                Box(Modifier.size(200.dp)) {
+                    FlexBox(config = { direction(FlexDirection.RowReverse) }) {
+                        repeat(3) { index ->
+                            Box(
+                                Modifier.size(50.dp)
+                                    .then(
+                                        if (index == 2) Modifier.focusRequester(focusRequester)
+                                        else Modifier
+                                    )
+                                    .onFocusChanged { if (it.isFocused) focusLog.add(index) }
+                                    .focusable()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Item 2 is composed last but is visually leftmost.
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.waitForIdle()
+        Truth.assertThat(focusLog).containsExactly(2, 1, 0).inOrder()
+    }
+
+    @Test
+    fun focusTraversal_wrapReverse_followsVisualOrder() {
+        // With WrapReverse the second-built line (items 2, 3) is displayed above the
+        // first-built line (items 0, 1). Focus traversal is expected to follow the visual
+        // order: top line left to right, then bottom line left to right.
+        val focusLog = mutableListOf<Int>()
+        lateinit var focusManager: FocusManager
+        val focusRequester = FocusRequester()
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                focusManager = LocalFocusManager.current
+                Box(Modifier.size(200.dp)) {
+                    FlexBox(
+                        config = {
+                            direction(FlexDirection.Row)
+                            wrap(FlexWrap.WrapReverse)
+                        }
+                    ) {
+                        repeat(4) { index ->
+                            Box(
+                                Modifier.size(100.dp)
+                                    .then(
+                                        if (index == 2) Modifier.focusRequester(focusRequester)
+                                        else Modifier
+                                    )
+                                    .onFocusChanged { if (it.isFocused) focusLog.add(index) }
+                                    .focusable()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Item 2 is visually the top-left item.
+        rule.runOnIdle { focusRequester.requestFocus() }
+        repeat(3) { rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) } }
+
+        rule.waitForIdle()
+        Truth.assertThat(focusLog).containsExactly(2, 3, 0, 1).inOrder()
+    }
+
+    @Test
+    fun focusTraversal_customOrder_followsVisualOrder() {
+        // order(1) moves item 0 visually after the default-ordered items 1 and 2, even though
+        // it is composed first. Focus traversal follows the visual order.
+        val focusLog = mutableListOf<Int>()
+        lateinit var focusManager: FocusManager
+        val focusRequester = FocusRequester()
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                focusManager = LocalFocusManager.current
+                Box(Modifier.size(200.dp)) {
+                    FlexBox {
+                        repeat(3) { index ->
+                            Box(
+                                Modifier.then(
+                                        if (index == 0) Modifier.flex { order(1) } else Modifier
+                                    )
+                                    .size(50.dp)
+                                    .then(
+                                        if (index == 1) Modifier.focusRequester(focusRequester)
+                                        else Modifier
+                                    )
+                                    .onFocusChanged { if (it.isFocused) focusLog.add(index) }
+                                    .focusable()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Item 1 is visually leftmost because item 0 was moved to the end via order(1).
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.waitForIdle()
+        Truth.assertThat(focusLog).containsExactly(1, 2, 0).inOrder()
     }
 
     companion object {

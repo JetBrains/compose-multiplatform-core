@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.viewinterop.InteropSyncAction
 import androidx.compose.ui.viewinterop.InteropSyncTransaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,15 +28,16 @@ class InteropTransactionQueueTest {
 
     // Non-empty transaction: recorded via its action, takes the normal scheduling path.
     private fun transaction(name: String) = object : InteropSyncTransaction {
-        override val actions: List<InteropSyncAction> = listOf { performed.add(name) }
+        override val hasPendingActions: Boolean = true
         override val isInteropActive: Boolean = false
+
+        override fun performTransaction() {
+            performed.add(name)
+        }
     }
 
     // Empty transaction: no actions, triggers the actions.isEmpty() fast-path in scheduleTransaction.
-    private fun emptyTransaction() = object : InteropSyncTransaction {
-        override val actions: List<InteropSyncAction> = emptyList()
-        override val isInteropActive: Boolean = false
-    }
+    private fun emptyTransaction() = InteropSyncTransaction.Empty
 
     @Test
     fun `single transaction is performed when its frame completion fires`() {

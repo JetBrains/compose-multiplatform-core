@@ -18,12 +18,14 @@
 
 import java.util.*
 import kotlin.collections.map
+import org.gradle.internal.classpath.Instrumented.systemProperty
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
 
 plugins {
     id("AndroidXComposePlugin")
@@ -129,11 +131,11 @@ kotlin {
                 implementation(project(":compose:ui:ui-text"))
                 implementation(project(":compose:ui:ui-backhandler"))
                 implementation(project(":compose:ui:ui-skiko"))
-                implementation(project(":lifecycle:lifecycle-common"))
-                implementation(project(":lifecycle:lifecycle-runtime"))
-                implementation(project(":lifecycle:lifecycle-runtime-compose"))
-                implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
-                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-common:2.11.0")
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.11.0")
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+                implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0")
                 implementation(project(":navigation:navigation-common"))
                 implementation(project(":navigation:navigation-compose"))
                 implementation(project(":navigation:navigation-runtime"))
@@ -172,12 +174,10 @@ kotlin {
 
             dependencies {
                 implementation(libs.kotlinSerializationJson)
-            }
-        }
+                implementation(libs.kotlinXw3c)
 
-        val wasmJsMain by getting {
-            dependencies {
-                api(libs.kotlinXw3c)
+                // https://github.com/mrdoob/three.js/ for WebGl demo
+                implementation(npm("three", "0.185.0"))
             }
         }
 

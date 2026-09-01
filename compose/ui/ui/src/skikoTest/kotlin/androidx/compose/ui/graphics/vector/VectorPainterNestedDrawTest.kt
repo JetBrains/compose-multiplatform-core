@@ -23,6 +23,7 @@ import kotlin.test.Test
 class VectorPainterNestedDrawTest {
 
     // Verify VectorPainter draws correctly when nested inside another Painter
+    @Suppress("DEPRECATION")
     @Test
     fun vectorPainterDrawsInsideCustomPainter() = runSkikoComposeUiTest(Size(100f, 100f)) {
         setContent {

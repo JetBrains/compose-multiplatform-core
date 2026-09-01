@@ -27,7 +27,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.scrollbar
+import androidx.compose.material3.nonInteractiveScrollbar
 import androidx.compose.runtime.Composable
 import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
@@ -112,8 +112,8 @@ internal class ScrollbarTestCase(
     @Composable
     override fun MeasuredContent() {
         val scrollbarModifier =
-            if (hasScrollbar) {
-                baseModifier.scrollbar(
+            if (hasScrollbar && scrollIndicatorState != null) {
+                baseModifier.nonInteractiveScrollbar(
                     state = scrollIndicatorState,
                     orientation = Orientation.Vertical,
                     isFadeEnabled = isFadeEnabled,
