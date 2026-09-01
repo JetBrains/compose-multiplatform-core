@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
-// TODO(demin): implement HapticFeedback
-internal object DefaultHapticFeedback : HapticFeedback {
-    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
-    }
+/** Android implementation of [TaskDispatchers] providing standard CPU and I/O thread contexts. */
+internal object AndroidTaskDispatchers : TaskDispatchers {
+    override val Default: CoroutineDispatcher
+        get() = Dispatchers.Default
+
+    @get:Suppress("AcronymName")
+    override val IO: CoroutineDispatcher
+        get() = Dispatchers.IO
 }
