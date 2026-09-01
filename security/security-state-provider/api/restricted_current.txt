@@ -1,6 +1,12 @@
 // Signature format: 4.0
 package androidx.security.state.provider {
 
+  public abstract class ListenableFutureUpdateInfoService extends androidx.security.state.provider.UpdateInfoService {
+    ctor public ListenableFutureUpdateInfoService();
+    method protected final suspend Object? fetchUpdates(kotlin.coroutines.Continuation<? super java.util.List<androidx.security.state.UpdateInfo>>);
+    method protected abstract com.google.common.util.concurrent.ListenableFuture<java.util.List<androidx.security.state.UpdateInfo>> fetchUpdatesAsync();
+  }
+
   public final class UpdateCheckTelemetry {
     ctor public UpdateCheckTelemetry(int outcome, long totalDurationMillis, long lockWaitDurationMillis, long processingDurationMillis, long fetchDurationMillis, int callerUid);
     method @InaccessibleFromKotlin public int getCallerUid();
@@ -49,8 +55,8 @@ package androidx.security.state.provider {
     method protected abstract suspend Object? fetchUpdates(kotlin.coroutines.Continuation<? super java.util.List<androidx.security.state.UpdateInfo>>);
     method protected int getCallerUid();
     method public final android.os.IBinder? onBind(android.content.Intent? intent);
-    method protected void onClientConnected(android.content.Intent intent);
-    method protected void onClientDisconnected(android.content.Intent? intent);
+    method protected void onClientConnected(String packageName, int callerUid);
+    method protected void onClientDisconnected(String packageName, int callerUid);
     method protected void onFetchFailed(Exception e);
     method protected void onRequestCompleted(androidx.security.state.provider.UpdateCheckTelemetry telemetry);
     method public final boolean onUnbind(android.content.Intent? intent);

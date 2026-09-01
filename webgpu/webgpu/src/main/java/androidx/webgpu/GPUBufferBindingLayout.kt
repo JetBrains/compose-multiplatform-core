@@ -30,7 +30,7 @@ constructor(
     /**
      * The type of the buffer binding. Defaults to @see [BufferBindingType.Uniform] if `undefined`.
      */
-    @BufferBindingType public var type: Int = BufferBindingType.Uniform,
+    @BufferBindingType.Type public var type: Int = BufferBindingType.Uniform,
     @get:JvmName("isHasDynamicOffset") public var hasDynamicOffset: Boolean = false,
     public var minBindingSize: Long = 0,
 )

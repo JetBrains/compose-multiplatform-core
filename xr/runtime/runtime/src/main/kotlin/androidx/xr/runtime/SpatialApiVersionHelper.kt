@@ -19,7 +19,7 @@ package androidx.xr.runtime
 import androidx.annotation.RestrictTo
 
 /**
- * Provides the Spatial API version that the device supports.
+ * Spatial API version supported by the device.
  *
  * This object queries the underlying XR platform to determine which Spatial API versions are
  * supported. It loads all available [SpatialApiVersionProvider] implementations and reports the
@@ -35,7 +35,7 @@ public object SpatialApiVersionHelper {
     private val PROVIDERS =
         listOf(
             "androidx.xr.scenecore.spatial.core.SpatialCoreApiVersionProvider",
-            "androidx.xr.runtime.testing.FakeSpatialApiVersionProvider",
+            "androidx.xr.runtime.testing.internal.FakeSpatialApiVersionProvider",
         )
 
     /** Lazily loads all available [SpatialApiVersionProvider]s from the [PROVIDERS] list. */
@@ -49,10 +49,11 @@ public object SpatialApiVersionHelper {
      * If the Spatial APIs are available, this value will be one of the constants declared in
      * [SpatialApiVersions].
      *
-     * @throws IllegalStateException if no [SpatialApiVersionProvider] service implementation is
-     *   found.
+     * @throws [IllegalStateException] if no [SpatialApiVersionProvider] service implementation is
+     *   found
      */
     @JvmStatic
+    @SpatialApiVersion
     public val spatialApiVersion: Int
         get() =
             providers.maxOfOrNull { it.spatialApiVersion }
@@ -67,10 +68,10 @@ public object SpatialApiVersionHelper {
      * This is intended for internal library use to handle preview features and should not be relied
      * upon by applications.
      *
-     * @throws IllegalStateException if no [SpatialApiVersionProvider] service implementation is
-     *   found.
+     * @throws [IllegalStateException] if no [SpatialApiVersionProvider] service implementation is
+     *   found
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     @JvmStatic
     public val previewSpatialApiVersion: Int
         get() =

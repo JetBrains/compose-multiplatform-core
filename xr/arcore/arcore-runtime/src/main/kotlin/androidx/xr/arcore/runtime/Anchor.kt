@@ -16,8 +16,8 @@
 
 package androidx.xr.arcore.runtime
 
+import android.os.IBinder
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
@@ -29,7 +29,7 @@ import java.util.UUID
  * @property persistenceState the [PersistenceState] for this anchor
  * @property uuid the [UUID] that identifies this Anchor if it is persisted
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Anchor {
 
     /** Describes the state of persistence for an [Anchor]. */
@@ -50,6 +50,10 @@ public interface Anchor {
     public val trackingState: TrackingState
     public val persistenceState: PersistenceState
     public val uuid: UUID?
+
+    /** An [IBinder] reference that represents this anchor, or null if not exportable. */
+    public val anchorToken: IBinder?
+        get() = null
 
     /**
      * Detaches this anchor from its [Trackable]. After detaching, the anchor will not be updated

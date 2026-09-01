@@ -1,11 +1,11 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.spatial.rendering
 
 import android.app.Activity
 import android.widget.FrameLayout
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.impl.impress.ExrImage
-import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
-import androidx.xr.scenecore.impl.impress.GltfModel
-import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.impl.impress.ImpressNode
-import androidx.xr.scenecore.impl.impress.Material
-import androidx.xr.scenecore.impl.impress.Texture
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.MaterialResource
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
@@ -34,23 +29,30 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.TextureResource
-import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
-import androidx.xr.scenecore.testing.FakeSceneRuntime
+import androidx.xr.scenecore.runtime.XrExtensionsHolder
+import androidx.xr.scenecore.spatial.core.SceneNodeRegistry
+import androidx.xr.scenecore.spatial.core.SpatialSceneRuntime
+import androidx.xr.scenecore.spatial.rendering.impress.ExrImage
+import androidx.xr.scenecore.spatial.rendering.impress.FakeImpressApiImpl
+import androidx.xr.scenecore.spatial.rendering.impress.GltfModel
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
+import androidx.xr.scenecore.spatial.rendering.impress.Material
+import androidx.xr.scenecore.spatial.rendering.impress.Texture
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
+import androidx.xr.scenecore.testing.FakeXrExtensionsHolderProvider
 import com.android.extensions.xr.ShadowXrExtensions
+import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
 import com.google.common.truth.Truth.assertThat
-import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
-import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -81,11 +83,19 @@ class SpatialRenderingRuntimeTest {
     @Mock private lateinit var splitEngineSubspaceManager: SplitEngineSubspaceManager
     @Mock private lateinit var splitEngineRenderer: ImpSplitEngineRenderer
 
-    private val xrExtensions = XrExtensionsProvider.getXrExtensions()!!
+    private var xrExtensions = initXrExtensions()
+
     private var modelImpressNode: ImpressNode? = null
 
     companion object {
         private const val OPEN_XR_REFERENCE_SPACE_TYPE = 1
+    }
+
+    fun initXrExtensions(): XrExtensions {
+        val ext = XrExtensions()
+        FakeXrExtensionsHolderProvider.fakeHolderLegacy =
+            XrExtensionsHolder(ext, XrExtensions::class.java)
+        return ext
     }
 
     @Before
@@ -94,10 +104,10 @@ class SpatialRenderingRuntimeTest {
         activity.setContentView(FrameLayout(activity))
         ShadowXrExtensions.extract(xrExtensions)
             .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE)
-        val fakeSceneRuntime = FakeSceneRuntime(fakeExecutor)
-        sceneRuntime = fakeSceneRuntime
+        sceneRuntime =
+            SpatialSceneRuntime.create(activity, fakeExecutor, xrExtensions, SceneNodeRegistry())
 
-        assertThat(fakeSceneRuntime).isNotNull()
+        assertThat(sceneRuntime).isNotNull()
 
         spatialRenderingRuntime =
             SpatialRenderingRuntime.create(
@@ -230,78 +240,6 @@ class SpatialRenderingRuntimeTest {
     }
 
     @Test
-    fun animateGltfEntity_gltfEntityIsAnimating() {
-        val mockImpressApi = mock(ImpressApi::class.java)
-
-        runBlocking {
-            Mockito.doAnswer { COROUTINE_SUSPENDED }
-                .`when`(mockImpressApi)
-                .animateGltfModel(
-                    any(ImpressNode::class.java) ?: fakeImpressApi.createImpressNode(),
-                    Mockito.anyString(),
-                    Mockito.eq(false),
-                )
-        }
-
-        val gltfEntity = createGltfEntity(impressApi = mockImpressApi)
-        gltfEntity.startAnimation(false, "animation_name")
-        fakeExecutor.runAll()
-        val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
-
-        // The fakeJniApi returns a future which immediately fires, which makes it seem like the
-        // animation is done immediately. This makes it look like the animation stopped right away.
-        assertThat(gltfEntity.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-        assertThat(loopingAnimatingNodes).isEqualTo(0)
-    }
-
-    @Test
-    fun animateLoopGltfEntity_gltfEntityIsAnimatingInLoop() {
-        val mockImpressApi = mock(ImpressApi::class.java)
-
-        runBlocking {
-            Mockito.doAnswer { COROUTINE_SUSPENDED }
-                .`when`(mockImpressApi)
-                .animateGltfModel(
-                    any(ImpressNode::class.java) ?: fakeImpressApi.createImpressNode(),
-                    Mockito.anyString(),
-                    Mockito.eq(true),
-                )
-        }
-
-        val gltfEntity = createGltfEntity(impressApi = mockImpressApi)
-        gltfEntity.startAnimation(true, "animation_name")
-        val animatingNodes = fakeImpressApi.impressNodeAnimatingSize()
-
-        assertThat(gltfEntity.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-        assertThat(animatingNodes).isEqualTo(0)
-    }
-
-    @Test
-    fun stopAnimateGltfEntity_gltfEntityStopsAnimating() {
-        val mockImpressApi = mock(ImpressApi::class.java)
-
-        runBlocking {
-            Mockito.doAnswer { COROUTINE_SUSPENDED }
-                .`when`(mockImpressApi)
-                .animateGltfModel(
-                    any(ImpressNode::class.java) ?: fakeImpressApi.createImpressNode(),
-                    Mockito.anyString(),
-                    Mockito.eq(false),
-                )
-        }
-
-        val gltfEntity = createGltfEntity(impressApi = mockImpressApi)
-        gltfEntity.startAnimation(true, "animation_name")
-        gltfEntity.stopAnimation()
-        val animatingNodes = fakeImpressApi.impressNodeAnimatingSize()
-        val loopingAnimatingNodes = fakeImpressApi.impressNodeLoopAnimatingSize()
-
-        assertThat(gltfEntity.animationState).isEqualTo(GltfEntity.AnimationState.STOPPED)
-        assertThat(animatingNodes).isEqualTo(0)
-        assertThat(loopingAnimatingNodes).isEqualTo(0)
-    }
-
-    @Test
     fun createSurfaceEntity_returnsStereoSurface() {
         val kTestWidth = 14.0f
         val kTestHeight = 28.0f
@@ -368,6 +306,122 @@ class SpatialRenderingRuntimeTest {
     @Test
     fun createWaterMaterial_returnsWaterMaterial() {
         assertThat(createWaterMaterial()).isNotNull()
+    }
+
+    @Test
+    fun createMeshBuffer_returnsMeshBuffer() {
+        val meshBuffer =
+            renderingRuntime.createMeshBuffer(
+                intArrayOf(1),
+                intArrayOf(1),
+                byteArrayOf(0),
+                intArrayOf(0),
+                intArrayOf(0),
+                10,
+                10,
+                null,
+                null,
+                null,
+                null,
+                0,
+                0,
+            )
+        assertThat(meshBuffer).isNotNull()
+        assertThat(meshBuffer)
+            .isInstanceOf(androidx.xr.scenecore.spatial.rendering.impress.MeshBuffer::class.java)
+    }
+
+    @Test
+    fun destroyMeshBuffer_removesMeshBuffer() {
+        val meshBuffer =
+            renderingRuntime.createMeshBuffer(
+                intArrayOf(1),
+                intArrayOf(1),
+                byteArrayOf(0),
+                intArrayOf(0),
+                intArrayOf(0),
+                10,
+                10,
+                null,
+                null,
+                null,
+                null,
+                0,
+                0,
+            )
+        renderingRuntime.destroyMeshBuffer(meshBuffer)
+        // No exception means success, as destroy() is final and calls impressApi.destroyMeshBuffer
+    }
+
+    @Test
+    fun createCustomMesh_returnsCustomMesh() {
+        val meshBuffer =
+            renderingRuntime.createMeshBuffer(
+                intArrayOf(1),
+                intArrayOf(1),
+                byteArrayOf(0),
+                intArrayOf(0),
+                intArrayOf(0),
+                10,
+                10,
+                null,
+                null,
+                null,
+                null,
+                0,
+                0,
+            )
+        val customMesh =
+            renderingRuntime.createCustomMesh(
+                meshBuffer,
+                intArrayOf(0),
+                intArrayOf(10),
+                intArrayOf(1),
+                0f,
+                0f,
+                0f,
+                1f,
+                1f,
+                1f,
+            )
+        assertThat(customMesh).isNotNull()
+        assertThat(customMesh)
+            .isInstanceOf(androidx.xr.scenecore.spatial.rendering.impress.CustomMesh::class.java)
+    }
+
+    @Test
+    fun destroyCustomMesh_removesCustomMesh() {
+        val meshBuffer =
+            renderingRuntime.createMeshBuffer(
+                intArrayOf(1),
+                intArrayOf(1),
+                byteArrayOf(0),
+                intArrayOf(0),
+                intArrayOf(0),
+                10,
+                10,
+                null,
+                null,
+                null,
+                null,
+                0,
+                0,
+            )
+        val customMesh =
+            renderingRuntime.createCustomMesh(
+                meshBuffer,
+                intArrayOf(0),
+                intArrayOf(10),
+                intArrayOf(1),
+                0f,
+                0f,
+                0f,
+                1f,
+                1f,
+                1f,
+            )
+        renderingRuntime.destroyCustomMesh(customMesh)
+        // No exception means success
     }
 
     @Test

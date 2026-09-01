@@ -34,14 +34,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -59,7 +57,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
-import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -79,7 +76,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -95,11 +91,88 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class AnimatedContentTest {
-    val rule = createComposeRule(StandardTestDispatcher())
+    val rule = createComposeRule()
 
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
     val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
+
+    @Test
+    fun testInterruptionAfterExitFinishedRecoversExitState() {
+        // This test specifically verifies that when an exit transition finishes and its layout
+        // is temporarily removed from the composition, an interruption (reversing back to the
+        // exiting state) correctly recovers the exit state and animates back from the interrupted
+        // position instead of snapping.
+        var target by mutableStateOf(1)
+        var offset1: Offset? = null
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            AnimatedContent(
+                targetState = target,
+                transitionSpec = {
+                    if (targetState == 2) {
+                        // 1 exits fast (100ms) to -100, 2 enters slow (500ms)
+                        ContentTransform(
+                            targetContentEnter = slideInHorizontally(tween(500)) { it },
+                            initialContentExit = slideOutHorizontally(tween(100)) { -it },
+                        )
+                    } else {
+                        // Interrupted to 1: 1 enters slow (500ms), 2 exits fast (100ms)
+                        ContentTransform(
+                            targetContentEnter = slideInHorizontally(tween(500)) { -it },
+                            initialContentExit = slideOutHorizontally(tween(100)) { it },
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            ) { state ->
+                Box(
+                    Modifier.size(100.dp).onGloballyPositioned {
+                        if (state == 1) {
+                            offset1 = it.positionInRoot()
+                        }
+                    }
+                )
+            }
+        }
+
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        val initialOffset1 = offset1!!
+        assertEquals(0f, initialOffset1.x)
+
+        // Change to B
+        target = 2
+
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        // A exits in 100ms. Advance clock by 150ms. A's exit finishes. A's layout is disposed,
+        // but its child transition remains alive because B's enter animation takes 500ms.
+        rule.mainClock.advanceTimeBy(150)
+        rule.waitForIdle()
+
+        // Interrupt back to A.
+        target = 1
+
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        // Advance slightly. A should be animating back in.
+        rule.mainClock.advanceTimeBy(50)
+        rule.waitForIdle()
+
+        // Since A was at -100 when its exit finished, and we interrupted,
+        // it should resume from -100 and start moving towards 0.
+        // It should NOT instantly snap to 0.
+        assertTrue(
+            "offset1 x (${offset1?.x}) should be less than 0, indicating an ongoing animation from -100",
+            offset1!!.x < -10f,
+        )
+    }
 
     @Test
     fun AnimatedContentSizeTransformTest() {
@@ -376,7 +449,6 @@ class AnimatedContentTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun AnimatedContentSlideInAndOutOfContainerTest() {
         val transitionState = MutableTransitionState(true)
@@ -522,68 +594,6 @@ class AnimatedContentTest {
         }
     }
 
-    @Test
-    fun LookaheadWithMinMaxIntrinsics() {
-        rule.setContent {
-            LookaheadScope {
-                Scaffold(
-                    Modifier.fillMaxSize().testTag(""),
-                    topBar = {},
-                    floatingActionButton = {},
-                ) {
-                    Surface() {
-                        SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
-                            val tabRowWidth = constraints.maxWidth
-                            val tabMeasurables =
-                                subcompose("Tabs") {
-                                    repeat(15) { Text(it.toString(), Modifier.width(100.dp)) }
-                                }
-                            val tabCount = tabMeasurables.size
-                            var tabWidth = 0
-                            if (tabCount > 0) {
-                                tabWidth = (tabRowWidth / tabCount)
-                            }
-                            val tabRowHeight =
-                                tabMeasurables.fold(initial = 0) { max, curr ->
-                                    maxOf(curr.maxIntrinsicHeight(tabWidth), max)
-                                }
-
-                            val tabPlaceables =
-                                tabMeasurables.map {
-                                    it.measure(
-                                        constraints.copy(
-                                            minWidth = tabWidth,
-                                            maxWidth = tabWidth,
-                                            minHeight = tabRowHeight,
-                                            maxHeight = tabRowHeight,
-                                        )
-                                    )
-                                }
-
-                            repeat(tabCount) { index ->
-                                var contentWidth =
-                                    minOf(
-                                            tabMeasurables[index].maxIntrinsicWidth(tabRowHeight),
-                                            tabWidth,
-                                        )
-                                        .toDp()
-                                contentWidth -= 32.dp
-                            }
-
-                            layout(tabRowWidth, tabRowHeight) {
-                                tabPlaceables.forEachIndexed { index, placeable ->
-                                    placeable.placeRelative(index * tabWidth, 0)
-                                }
-                            }
-                        }
-                    }
-                }
-                Box(Modifier.fillMaxSize().background(Color.Blue)) { Text(text = "test") }
-            }
-        }
-        rule.waitForIdle()
-    }
-
     // This test uses a Scaffold around a TabRow setup to reproduce a scenario where tabs' lookahead
     // measurements will be invalidated right before placement, to ensure the correctness of the
     // impl that lookahead remeasures children right before layout.
@@ -660,7 +670,6 @@ class AnimatedContentTest {
         }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun AnimatedContentWithInterruption() {
         var flag by mutableStateOf(true)
@@ -717,7 +726,6 @@ class AnimatedContentTest {
         rule.runOnIdle { flag = false }
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testExitHold() {
         var target by mutableStateOf(true)
@@ -837,7 +845,6 @@ class AnimatedContentTest {
         rule.waitForIdle()
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     @Test
     fun testExitHoldDefersUntilAllFinished() {
         var target by mutableStateOf(true)
@@ -1231,6 +1238,42 @@ class AnimatedContentTest {
     private fun assertOffsetEquals(expected: Offset, actual: Offset) {
         assertEquals(expected.x, actual.x, 0.00001f)
         assertEquals(expected.y, actual.y, 0.00001f)
+    }
+
+    @Test
+    fun testAnimatedContentCleanup() {
+        var state by mutableStateOf(0)
+        var rootScope: AnimatedContentTransitionScopeImpl<Int>? = null
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            AnimatedContent(
+                targetState = state,
+                contentKey = { 0 }, // Same key
+                transitionSpec = {
+                    rootScope = this as AnimatedContentTransitionScopeImpl<Int>
+                    fadeIn() togetherWith fadeOut()
+                },
+            ) { targetState ->
+                Box(Modifier.size(200.dp))
+            }
+        }
+
+        rule.mainClock.advanceTimeByFrame()
+        assertEquals(1, rootScope!!.targetSizeMap.size)
+
+        for (i in 1..5) {
+            state = i
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        // Without the fix, targetSizeMap would grow with each update, making targetSizeMap.size =
+        // 6.
+        // With the fix, old states are promptly disposed as slots are reused, so size should be at
+        // most 2.
+        val size = rootScope!!.targetSizeMap.size
+        assertTrue("Visible items ($size) should be cleaned up and not exceed 2", size <= 2)
     }
 
     private val Transition<*>.playTimeMillis

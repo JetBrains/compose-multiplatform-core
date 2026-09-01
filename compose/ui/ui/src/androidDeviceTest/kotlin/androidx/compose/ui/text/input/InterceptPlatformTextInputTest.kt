@@ -37,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.AtomicInt
@@ -75,17 +74,15 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import org.junit.Rule
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class InterceptPlatformTextInputTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var testNode: TestNode
     private lateinit var coroutineScope: CoroutineScope

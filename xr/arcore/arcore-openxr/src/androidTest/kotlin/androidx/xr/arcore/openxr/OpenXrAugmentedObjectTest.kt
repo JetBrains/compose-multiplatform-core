@@ -20,9 +20,9 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -48,7 +48,7 @@ class OpenXrAugmentedObjectTest {
 
     private val objectId = 1L
 
-    private lateinit var openXrManager: OpenXrManager
+    private lateinit var openXrRuntime: OpenXrRuntime
     private lateinit var xrResources: XrResources
     private lateinit var underTest: OpenXrAugmentedObject
     private lateinit var timeSource: OpenXrTimeSource
@@ -68,7 +68,7 @@ class OpenXrAugmentedObjectTest {
     }
 
     @Test
-    fun update_updatesTrackingState() = initOpenXrManagerAndRunTest {
+    fun update_updatesTrackingState() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.trackingState.equals(TrackingState.PAUSED))
 
@@ -78,7 +78,7 @@ class OpenXrAugmentedObjectTest {
     }
 
     @Test
-    fun update_updatesCenterPose() = initOpenXrManagerAndRunTest {
+    fun update_updatesCenterPose() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.centerPose == Pose())
 
@@ -92,7 +92,7 @@ class OpenXrAugmentedObjectTest {
     }
 
     @Test
-    fun update_updatesExtents() = initOpenXrManagerAndRunTest {
+    fun update_updatesExtents() = initOpenXrRuntimeAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
         check(underTest.extents == FloatSize3d())
 
@@ -104,13 +104,13 @@ class OpenXrAugmentedObjectTest {
         assertThat(underTest.extents).isEqualTo(FloatSize3d(1.0f, 2.0f, 3.0f))
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val perceptionManager = OpenXrPerceptionManager(timeSource)
-            openXrManager = OpenXrManager(it, perceptionManager, timeSource)
-            openXrManager.create()
-            openXrManager.resume()
-            openXrManager.configure(
+            openXrRuntime = OpenXrRuntime(it, perceptionManager, timeSource)
+            openXrRuntime.initialize()
+            openXrRuntime.resume()
+            openXrRuntime.configure(
                 Config(
                     augmentedObjectCategories =
                         setOf(
@@ -123,10 +123,10 @@ class OpenXrAugmentedObjectTest {
 
             testBody()
 
-            // Pause and stop the OpenXR manager here in lieu of an @After method to ensure that the
-            // calls to the OpenXR manager are coming from the same thread.
-            openXrManager.pause()
-            openXrManager.stop()
+            // Pause and stop the OpenXR runtime here in lieu of an @After method to ensure that the
+            // calls to the OpenXR runtime are coming from the same thread.
+            openXrRuntime.pause()
+            openXrRuntime.destroy()
         }
     }
 }

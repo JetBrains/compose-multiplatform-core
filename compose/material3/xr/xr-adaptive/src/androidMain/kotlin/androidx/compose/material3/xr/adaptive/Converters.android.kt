@@ -20,35 +20,147 @@ import androidx.compose.material3.xr.spatial.ContentEdge as ContentEdgeStub
 import androidx.compose.material3.xr.spatial.OrbiterOffsetType as OrbiterOffsetTypeStub
 import androidx.compose.material3.xr.subspace.layout.SpatialRoundedCornerShape as SpatialRoundedCornerShapeStub
 import androidx.compose.material3.xr.subspace.layout.SpatialShape as SpatialShapeStub
-import androidx.xr.compose.spatial.ContentEdge
-import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.compose.ui.AbsoluteAlignment
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.xr.compose.spatial.OrbiterPosition
+import androidx.xr.compose.spatial.OrbiterPosition.EdgeAlignment
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 
 @OptIn(ExperimentalMaterial3XrAdaptiveApi::class)
-internal fun ContentEdgeStub.Vertical.toXrPositionVertical(): ContentEdge.Vertical =
+internal fun OrbiterOffsetTypeStub.toXrOrbiterEdgeAlignment(): EdgeAlignment =
     when (this) {
-        ContentEdgeStub.Vertical.Start -> ContentEdge.Vertical.Start
-        ContentEdgeStub.Vertical.End -> ContentEdge.Vertical.End
-        else -> error("Unsupported ContentEdge.Vertical: $this")
-    }
-
-@OptIn(ExperimentalMaterial3XrAdaptiveApi::class)
-internal fun ContentEdgeStub.Horizontal.toXrPositionHorizontal(): ContentEdge.Horizontal =
-    when (this) {
-        ContentEdgeStub.Horizontal.Top -> ContentEdge.Horizontal.Top
-        ContentEdgeStub.Horizontal.Bottom -> ContentEdge.Horizontal.Bottom
-        else -> error("Unsupported ContentEdge.Horizontal: $this")
-    }
-
-@OptIn(ExperimentalMaterial3XrAdaptiveApi::class)
-internal fun OrbiterOffsetTypeStub.toXrOrbiterOffsetType(): OrbiterOffsetType =
-    when (this) {
-        OrbiterOffsetTypeStub.Overlap -> OrbiterOffsetType.Overlap
-        OrbiterOffsetTypeStub.InnerEdge -> OrbiterOffsetType.InnerEdge
-        OrbiterOffsetTypeStub.OuterEdge -> OrbiterOffsetType.OuterEdge
+        OrbiterOffsetTypeStub.Overlap -> EdgeAlignment.Center
+        OrbiterOffsetTypeStub.InnerEdge -> EdgeAlignment.Inside
+        OrbiterOffsetTypeStub.OuterEdge -> EdgeAlignment.Outside
         else -> error("Unsupported OrbiterOffsetType: $this")
     }
+
+@OptIn(ExperimentalMaterial3XrAdaptiveApi::class)
+internal fun ContentEdgeStub.Vertical.toXrOrbiterAlignment(
+    offset: Dp,
+    offsetType: OrbiterOffsetTypeStub,
+    alignment: Alignment.Vertical,
+    elevation: Dp,
+): OrbiterPosition {
+    val edgeOffsetType = offsetType.toXrOrbiterEdgeAlignment()
+    val volumeOffset = androidx.xr.compose.unit.DpVolumeOffset(x = offset, y = 0.dp, z = elevation)
+    return when (this) {
+        ContentEdgeStub.Vertical.Start ->
+            when (alignment) {
+                Alignment.Top ->
+                    OrbiterPosition.TopStart(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                Alignment.CenterVertically ->
+                    OrbiterPosition.CenterStart(edgeOffsetType, volumeOffset)
+                Alignment.Bottom ->
+                    OrbiterPosition.BottomStart(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+            }
+        ContentEdgeStub.Vertical.End ->
+            when (alignment) {
+                Alignment.Top ->
+                    OrbiterPosition.TopEnd(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                Alignment.CenterVertically ->
+                    OrbiterPosition.CenterEnd(edgeOffsetType, volumeOffset)
+                Alignment.Bottom ->
+                    OrbiterPosition.BottomEnd(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+            }
+        else -> error("Unsupported ContentEdge.Vertical: $this")
+    }
+}
+
+@OptIn(ExperimentalMaterial3XrAdaptiveApi::class)
+internal fun ContentEdgeStub.Horizontal.toXrOrbiterAlignment(
+    offset: Dp,
+    offsetType: OrbiterOffsetTypeStub,
+    alignment: Alignment.Horizontal,
+    elevation: Dp,
+): OrbiterPosition {
+    val edgeOffsetType = offsetType.toXrOrbiterEdgeAlignment()
+    val volumeOffset = androidx.xr.compose.unit.DpVolumeOffset(x = 0.dp, y = offset, z = elevation)
+    return when (this) {
+        ContentEdgeStub.Horizontal.Top ->
+            when (alignment) {
+                Alignment.Start ->
+                    OrbiterPosition.TopStart(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                Alignment.CenterHorizontally ->
+                    OrbiterPosition.TopCenter(edgeOffsetType, volumeOffset)
+                Alignment.End ->
+                    OrbiterPosition.TopEnd(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                AbsoluteAlignment.Left ->
+                    OrbiterPosition.TopLeft(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                AbsoluteAlignment.Right ->
+                    OrbiterPosition.TopRight(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+            }
+        ContentEdgeStub.Horizontal.Bottom ->
+            when (alignment) {
+                Alignment.Start ->
+                    OrbiterPosition.BottomStart(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                Alignment.CenterHorizontally ->
+                    OrbiterPosition.BottomCenter(edgeOffsetType, volumeOffset)
+                Alignment.End ->
+                    OrbiterPosition.BottomEnd(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                AbsoluteAlignment.Left ->
+                    OrbiterPosition.BottomLeft(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                AbsoluteAlignment.Right ->
+                    OrbiterPosition.BottomRight(
+                        horizontalEdgeAlignment = edgeOffsetType,
+                        verticalEdgeAlignment = edgeOffsetType,
+                        offset = volumeOffset,
+                    )
+                else -> throw IllegalArgumentException("Invalid alignment: $alignment")
+            }
+        else -> error("Unsupported ContentEdge.Horizontal: $this")
+    }
+}
 
 @OptIn(ExperimentalMaterial3XrAdaptiveApi::class)
 internal fun SpatialShapeStub.toXrSpatialShape(): SpatialShape =

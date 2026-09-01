@@ -44,4 +44,9 @@ internal class ProjectedSceneRuntimeFactory(
             Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "JXRRuntimeSession") },
         )
     }
+
+    override fun create(
+        activity: Activity,
+        unscaledGravityAlignedActivitySpace: Boolean,
+    ): SceneRuntime = create(activity)
 }

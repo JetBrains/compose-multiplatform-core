@@ -178,13 +178,13 @@ fun TestCornerRadius(
 }
 
 @Preview
-@PreviewWrapperProvider(wrapper = TestWrapper::class)
+@PreviewWrapper(wrapper = TestWrapper::class)
 @Composable
 fun TestWrapperPreview() {
     Text(text = "test")
 }
 
-class TestWrapper : PreviewWrapper {
+class TestWrapper : PreviewWrapperProvider {
     @Composable
     override fun Wrap(content: @Composable (() -> Unit)) {
         WrapperContainer { content() }
@@ -198,4 +198,26 @@ fun WrapperContainer(content: @Composable () -> Unit) {
         content()
         Text("Footer")
     }
+}
+
+val LocalTestString = androidx.compose.runtime.compositionLocalOf { "Default" }
+
+class TestCompositionLocalWrapper : PreviewWrapperProvider {
+    @Composable
+    override fun Wrap(content: @Composable () -> Unit) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalTestString provides "Injected") {
+            content()
+        }
+    }
+}
+
+@Preview
+@PreviewWrapper(wrapper = TestCompositionLocalWrapper::class)
+@Composable
+fun TestCompositionLocalWrapperPreview() {
+    val value = LocalTestString.current
+    if (value != "Injected") {
+        throw IllegalArgumentException("Expected 'Injected', but got '$value'")
+    }
+    Text(text = "Value is $value")
 }

@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.sp
  */
 public class RemoteTextUnit
 internal constructor(public val value: RemoteFloat, public val type: TextUnitType) :
-    BaseRemoteState<TextUnit>() {
+    BaseRemoteState<TextUnit>(RemoteStateInstanceKey()) {
     internal override val cacheKey: RemoteStateCacheKey
         get() = toPx().cacheKey
 
@@ -68,11 +68,30 @@ internal constructor(public val value: RemoteFloat, public val type: TextUnitTyp
     }
 
     /** Converts this [RemoteTextUnit] to pixels using the provided [density]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toPx(density: RemoteDensity): RemoteFloat {
         checkTextUnit()
-        val dp = RemoteFontScaleConverter.NonLinear.convertSpToDp(this, density.fontScale)
-        return dp * density.density
+        val constValue = value.constantValueOrNull
+        val constDensity = density.density.constantValueOrNull
+        val constFontScale = density.fontScale.constantValueOrNull
+
+        if (constValue != null && constDensity != null && constFontScale != null) {
+            val dp = RemoteFontScaleConverter.NonLinear.convertSpToDp(this, density.fontScale)
+            return dp * density.density
+        }
+
+        return RemoteFloatExpression(
+            constantValueOrNull = null,
+            cacheKey =
+                RemoteOperationCacheKey.create(
+                    OperationKey.ToPx,
+                    value,
+                    density.density,
+                    density.fontScale,
+                ),
+        ) { creationState ->
+            val dp = RemoteFontScaleConverter.NonLinear.convertSpToDp(this, density.fontScale)
+            (dp * density.density).arrayForCreationState(creationState)
+        }
     }
 
     /** Converts this [RemoteTextUnit] to pixels using the screen's density. */
@@ -97,11 +116,9 @@ public val Int.rsp: RemoteTextUnit
     get() = RemoteTextUnit(this.rf, TextUnitType.Sp)
 
 /** Extension function to convert a [TextUnit] to a [RemoteTextUnit]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun TextUnit.asRemoteTextUnit(): RemoteTextUnit = RemoteTextUnit(this.value.rf, this.type)
 
 /** Extension function to convert a [Dp] to a [RemoteTextUnit] in Sp. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun Dp.toRsp(): RemoteTextUnit {
     check(isSpecified) { "Dp conversion not possible for unspecified Dp" }
     return RemoteTextUnit(

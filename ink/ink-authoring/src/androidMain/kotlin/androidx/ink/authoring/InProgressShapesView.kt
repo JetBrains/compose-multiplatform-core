@@ -24,7 +24,6 @@ import android.graphics.Path
 import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
-import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -42,6 +41,8 @@ import androidx.ink.authoring.internal.FinishedStroke
 import androidx.ink.authoring.internal.InProgressStrokesManager
 import androidx.ink.authoring.internal.InProgressStrokesRenderHelper
 import androidx.ink.authoring.latency.LatencyDataCallback
+import androidx.ink.brush.ExperimentalInkAnimationApi
+import androidx.ink.rendering.android.view.StrokePaintAnimator
 import androidx.ink.strokes.ImmutableStrokeInputBatch
 import androidx.ink.strokes.StrokeInput
 import androidx.ink.strokes.StrokeInputBatch
@@ -60,8 +61,8 @@ private const val CM_PER_INCH = 2.54f
  * recommended. For a Jetpack Compose equivalent which also provides a default input handler, see
  * [androidx.ink.authoring.compose.InProgressShapes] instead.
  */
-@ExperimentalCustomShapeWorkflowApi
-@OptIn(ExperimentalLatencyDataApi::class)
+@ExperimentalInkCustomShapeWorkflowApi
+@OptIn(ExperimentalInkAnimationApi::class, ExperimentalInkLatencyDataApi::class)
 @UiThread
 public class InProgressShapesView<
     ShapeSpecT : Any,
@@ -71,15 +72,6 @@ public class InProgressShapesView<
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr: Int = 0) :
     FrameLayout(context, attrs, defStyleAttr) {
-
-    /**
-     * Force the HWUI-based high latency implementation to be used under the hood, even if the
-     * system supports low latency inking.
-     *
-     * This must be set to its desired value before the first call to [startShape] or [eagerInit].
-     */
-    @Deprecated("Prefer to allow the underlying implementation details to be chosen automatically.")
-    internal var useHighLatencyRenderHelper: Boolean = false
 
     /**
      * Set a minimum delay from when the user finishes a shape until rendering is handed off to the
@@ -99,6 +91,14 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
             // before initialization would be harder to set. Hold onto it and pass it down to the
             // InProgressStrokesManager when it gets initialized.
             initializedState?.inProgressStrokesManager?.setHandoffDebounceDurationMs(value)
+        }
+
+    internal var strokePaintAnimator: StrokePaintAnimator? = null
+        set(value) {
+            check(initializedState == null) {
+                "Cannot set strokePaintAnimator after initialization."
+            }
+            field = value
         }
 
     /**
@@ -182,7 +182,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
 
     // Note: public experimental properties are not allowed because the accessors will not appear
     // experimental to Java clients. There are public accessors for this property below.
-    @ExperimentalLatencyDataApi private var latencyDataCallback: LatencyDataCallback? = null
+    @ExperimentalInkLatencyDataApi private var latencyDataCallback: LatencyDataCallback? = null
 
     @get:VisibleForTesting
     @set:VisibleForTesting
@@ -200,6 +200,13 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
             ensureInit().inProgressStrokesManager.awaitAfterStartOfHandoffTestLatch = value
         }
 
+    // TODO(b/512471476): Simplify this function to a `public var` when it's no longer experimental.
+    @ExperimentalInkAnimationApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    public fun setPaintAnimator(strokePaintAnimator: StrokePaintAnimator) {
+        this.strokePaintAnimator = strokePaintAnimator
+    }
+
     internal fun canSynchronouslyWaitForFlush(): Boolean =
         ensureInit().inProgressStrokesManager.canSynchronouslyWaitForFlush()
 
@@ -208,14 +215,14 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * shapes. Clients may implement the [LatencyDataCallback] interface and set this field to
      * receive latency measurements.
      *
-     * Notes for clients: Do not hold references to the [LatencyData] passed into this callback.
-     * After this callback returns, the [LatencyData] instance will immediately become invalid: it
-     * will be deleted or recycled. Also, to avoid stalling the UI thread, implementers should
-     * minimize the amount of computation in this callback, and should also avoid allocations (since
-     * allocation may trigger the garbage collector).
+     * Notes for clients: Do not hold references to the [androidx.ink.authoring.latency.LatencyData]
+     * passed into this callback. After this callback returns, the `LatencyData` instance will
+     * immediately become invalid: it will be deleted or recycled. Also, to avoid stalling the UI
+     * thread, implementers should minimize the amount of computation in this callback, and should
+     * also avoid allocations (since allocation may trigger the garbage collector).
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-    @ExperimentalLatencyDataApi
+    @ExperimentalInkLatencyDataApi
     public fun getLatencyDataCallback(): LatencyDataCallback? {
         return latencyDataCallback
     }
@@ -227,7 +234,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * See [getLatencyDataCallback]
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-    @ExperimentalLatencyDataApi
+    @ExperimentalInkLatencyDataApi
     public fun setLatencyDataCallback(value: LatencyDataCallback?) {
         latencyDataCallback = value
     }
@@ -244,7 +251,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * publicly documented to only occur on [startShape] and [eagerInit], so don't add it anywhere
      * else in the non-test API.
      */
-    @OptIn(ExperimentalCustomShapeWorkflowApi::class)
+    @OptIn(ExperimentalInkCustomShapeWorkflowApi::class)
     private fun ensureInit(): InitializedState {
         return initializedState
             ?: InitializedState(
@@ -270,7 +277,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         shapeWorkflow: ShapeWorkflow<ShapeSpecT, InProgressShapeT, CompletedShapeT>
     ) {
 
-        val finishedStrokesView = FinishedShapesView(context, shapeWorkflow)
+        val finishedStrokesView = FinishedShapesView(context, shapeWorkflow, strokePaintAnimator)
 
         private val inProgressStrokesManagerListener =
             object : InProgressStrokesManager.Listener<CompletedShapeT> {
@@ -294,14 +301,22 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
                         "ObsoleteSdkInt",
                         "DEPRECATION",
                     ) // TODO(b/262911421): Should not need to suppress.
-                    if (useHighLatencyRenderHelper) {
-                        CanvasInProgressStrokesRenderHelperV21(this@InProgressShapesView, renderer)
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        CanvasInProgressStrokesRenderHelperV33(this@InProgressShapesView, renderer)
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        CanvasInProgressStrokesRenderHelperV29(this@InProgressShapesView, renderer)
-                    } else {
-                        CanvasInProgressStrokesRenderHelperV21(this@InProgressShapesView, renderer)
+                    when {
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                            CanvasInProgressStrokesRenderHelperV33(
+                                this@InProgressShapesView,
+                                renderer,
+                            )
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+                            CanvasInProgressStrokesRenderHelperV29(
+                                this@InProgressShapesView,
+                                renderer,
+                            )
+                        else ->
+                            CanvasInProgressStrokesRenderHelperV21(
+                                this@InProgressShapesView,
+                                renderer,
+                            )
                     }
                 }
                 .also { it.maskPath = maskPath }
@@ -748,6 +763,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * subsequent shapes.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkHandoffApi
     public fun requestHandoff() {
         initializedState?.inProgressStrokesManager?.requestImmediateHandoff()
     }
@@ -778,8 +794,9 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      *   to return `true`. Note that all strokes will be canceled or finished regardless of the
      *   return value.
      */
-    @JvmOverloads
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @JvmOverloads
+    @ExperimentalInkHandoffApi
     public fun flush(
         timeout: Long,
         timeoutUnit: TimeUnit,
@@ -801,6 +818,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * circumstances.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkHandoffApi
     @VisibleForTesting
     public fun sync(timeout: Long, timeoutUnit: TimeUnit) {
         // Nothing to sync if it's not initialized.
@@ -852,25 +870,14 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
  * Renders finished shapes until the client says they are ready to render the shapes themselves with
  * [InProgressShapesView.removeCompletedShapes].
  */
-@OptIn(ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkAnimationApi::class, ExperimentalInkCustomShapeWorkflowApi::class)
 @SuppressLint("ViewConstructor") // Not inflated through XML
 @UiThread
 private class FinishedShapesView<CompletedShapeT : Any>(
     context: Context,
     private val shapeWorkflow: ShapeWorkflow<*, *, CompletedShapeT>,
+    private val strokePaintAnimator: StrokePaintAnimator?,
 ) : View(context) {
-
-    /** The raw timestamp used for animation progress calculations. */
-    private var animationFrameElapsedTimeMillis = 0L
-
-    /** Registered just while the view is attached to update [animationFrameElapsedTimeMillis]. */
-    private val choreographerCallback: Choreographer.FrameCallback =
-        Choreographer.FrameCallback { frameTimeNanos ->
-            animationFrameElapsedTimeMillis = frameTimeNanos / 1_000_000
-            if (isAttachedToWindow) {
-                Choreographer.getInstance().postFrameCallback(choreographerCallback)
-            }
-        }
 
     /*
      * The finished shapes still being rendered by this view, with map iteration order in shape
@@ -897,15 +904,16 @@ private class FinishedShapesView<CompletedShapeT : Any>(
     }
 
     override fun onDraw(canvas: Canvas) {
+        val animatorClockStateMillis = strokePaintAnimator?.getClockStateMillis() ?: 0L
         val renderer = shapeWorkflow.completedShapeRenderer
         var scheduleNextFrameImmediately = false
         for ((_, finishedStroke) in finishedStrokes) {
             canvas.withMatrix(finishedStroke.strokeToViewTransform) {
                 renderer.draw(
-                    canvas,
-                    finishedStroke.stroke,
-                    finishedStroke.strokeToViewTransform,
-                    systemElapsedTimeMillis = animationFrameElapsedTimeMillis,
+                    canvas = canvas,
+                    shape = finishedStroke.stroke,
+                    strokeToScreenTransform = finishedStroke.strokeToViewTransform,
+                    animatorClockStateMillis = animatorClockStateMillis,
                 )
                 if (renderer.changesWithTime(finishedStroke.stroke)) {
                     scheduleNextFrameImmediately = true
@@ -915,15 +923,5 @@ private class FinishedShapesView<CompletedShapeT : Any>(
         if (scheduleNextFrameImmediately) {
             postInvalidate()
         }
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        Choreographer.getInstance().postFrameCallback(choreographerCallback)
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        Choreographer.getInstance().removeFrameCallback(choreographerCallback)
     }
 }

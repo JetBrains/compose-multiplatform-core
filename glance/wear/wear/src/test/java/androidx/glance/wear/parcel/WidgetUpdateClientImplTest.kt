@@ -41,7 +41,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -126,6 +125,19 @@ class WidgetUpdateClientImplTest {
     }
 
     @Test
+    fun requestUpdate_withInstanceId_sendsRequestWithId() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val id = 1234
+        val instanceId = WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, id)
+
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, instanceId)
+        waitAllScopesIdle()
+
+        assertThat(standardSysUiFakeReceiver.requestedComponents).contains(TEST_PROVIDER_COMPONENT)
+        assertThat(standardSysUiFakeReceiver.requestedIds).contains(id)
+    }
+
+    @Test
     fun requestUpdate_queuesUpdatesWhileBinding() = runTest {
         val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
 
@@ -205,30 +217,29 @@ class WidgetUpdateClientImplTest {
 
     @Test
     fun requestUpdate_failsWhenSysUiIsMissing() {
-        assertThrows(IllegalStateException::class.java) {
-            runTest {
-                val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
-                val shadowApp = shadowOf(appContext as Application?)
+        runTest {
+            val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+            val shadowApp = shadowOf(appContext as Application?)
 
-                Settings.Global.putString(
-                    appContext.contentResolver,
-                    SYSUI_SETTINGS_KEY,
-                    "com.does.not.exist",
-                )
+            Settings.Global.putString(
+                appContext.contentResolver,
+                SYSUI_SETTINGS_KEY,
+                "com.does.not.exist",
+            )
 
-                updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
-                waitAllScopesIdle()
+            updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
+            waitAllScopesIdle()
 
-                assertThat(shadowApp.boundServiceConnections).isEmpty()
-                assertThat(standardSysUiFakeReceiver.requestedComponents).isEmpty()
-            }
+            assertThat(shadowApp.boundServiceConnections).isEmpty()
+            assertThat(standardSysUiFakeReceiver.requestedComponents).isEmpty()
         }
     }
 
     @Test
     fun sendUpdateBroadcast_sendsBroadcast() = runTest {
         val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
-        updateClient.sendUpdateBroadcast(appContext, TEST_PROVIDER_COMPONENT)
+
+        updateClient.sendUpdateBroadcast(appContext, provider = TEST_PROVIDER_COMPONENT)
 
         val broadcasts = shadowOf(appContext as Application?).broadcastIntents
         assertThat(broadcasts).hasSize(1)
@@ -243,6 +254,31 @@ class WidgetUpdateClientImplTest {
                 )
             )
             .isEqualTo(TEST_PROVIDER_COMPONENT)
+        assertThat(intent.hasExtra(WidgetUpdateClientImpl.EXTRA_WIDGET_ID)).isFalse()
+    }
+
+    @Test
+    fun sendUpdateBroadcast_withInstanceId_sendsBroadcastWithId() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val id = 1234
+        val instanceId = WidgetInstanceId(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE, id)
+
+        updateClient.sendUpdateBroadcast(appContext, TEST_PROVIDER_COMPONENT, instanceId)
+
+        val broadcasts = shadowOf(appContext as Application?).broadcastIntents
+        assertThat(broadcasts).hasSize(1)
+        val intent = broadcasts.first()
+        assertThat(intent.action)
+            .isEqualTo(WidgetUpdateClientImpl.ACTION_REQUEST_TILE_UPDATE_BROADCAST_LEGACY)
+        assertThat(
+                IntentCompat.getParcelableExtra(
+                    intent,
+                    Intent.EXTRA_COMPONENT_NAME,
+                    ComponentName::class.java,
+                )
+            )
+            .isEqualTo(TEST_PROVIDER_COMPONENT)
+        assertThat(intent.getIntExtra(WidgetUpdateClientImpl.EXTRA_WIDGET_ID, -1)).isEqualTo(id)
     }
 
     @Test
@@ -371,12 +407,44 @@ class WidgetUpdateClientImplTest {
         assertThat(thrownException).isInstanceOf(RuntimeException::class.java)
     }
 
+    @Test
+    fun pushUpdate_withInvalidRequestErrorCallback_throwsIllegalArgumentException() = runTest {
+        val updateClient = WidgetUpdateClientImpl(newTestDispatcher())
+        val shadowApp = shadowOf(appContext as Application?)
+        shadowApp.registerForPushBindService(
+            STANDARD_SYSUI_RECEIVER_COMPONENT_NAME,
+            invalidRequestErrorPushUpdateService(),
+        )
+        val instanceId = WidgetInstanceId("ns", 1)
+        val request = WearWidgetUpdateRequest(instanceId)
+        val content = WearWidgetRawContent(byteArrayOf(), Bundle.EMPTY)
+
+        var thrownException: Throwable? = null
+        launch {
+            try {
+                updateClient.pushUpdate(appContext, request, content)
+            } catch (e: Exception) {
+                thrownException = e
+            }
+        }
+        waitAllScopesIdle()
+
+        assertThat(thrownException).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
     private fun standardPushUpdateService() = BaseTestUpdateRequester { callback ->
         callback.onSuccess()
     }
 
     private fun errorPushUpdateService() = BaseTestUpdateRequester { callback ->
         callback.onError(123, "Test error")
+    }
+
+    private fun invalidRequestErrorPushUpdateService() = BaseTestUpdateRequester { callback ->
+        callback.onError(
+            IWearWidgetUpdateRequester.UPDATE_ERROR_CODE_INVALID_REQUEST_ERROR,
+            "Invalid request",
+        )
     }
 
     private fun exceptionPushUpdateService() = BaseTestUpdateRequester {

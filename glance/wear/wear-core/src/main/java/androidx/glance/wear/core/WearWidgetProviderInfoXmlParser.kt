@@ -184,8 +184,10 @@ internal object WearWidgetProviderInfoXmlParser {
                     defaultValue
                 }
             } ?: throw XmlPullParserException("Failed to parse Container Type for $attrName")
-        if (type == ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN) {
-            throw XmlPullParserException("Fullscreen container type is not supported for widgets")
+        if (type == ContainerInfo.Companion.CONTAINER_TYPE_TILE_COMPAT) {
+            throw XmlPullParserException(
+                "Tile compat container type is not supported for widgets. It needs to be specified within Tile configuration."
+            )
         }
         return type
     }

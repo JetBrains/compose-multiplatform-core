@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.TransformEvent.TransformDelta
 import androidx.compose.foundation.gestures.TransformEvent.TransformStarted
@@ -70,11 +68,11 @@ import kotlinx.coroutines.launch
  *   detected.
  * @param enabled whether zooming by gestures is enabled or not
  */
-fun Modifier.transformable(
+public fun Modifier.transformable(
     state: TransformableState,
     lockRotationOnZoomPan: Boolean = false,
     enabled: Boolean = true,
-) = transformable(state, { true }, lockRotationOnZoomPan, enabled)
+): Modifier = transformable(state, { true }, lockRotationOnZoomPan, enabled)
 
 /**
  * Enable transformation gestures of the modified UI element.
@@ -98,12 +96,12 @@ fun Modifier.transformable(
  *   detected.
  * @param enabled whether zooming by gestures is enabled or not
  */
-fun Modifier.transformable(
+public fun Modifier.transformable(
     state: TransformableState,
     canPan: (Offset) -> Boolean,
     lockRotationOnZoomPan: Boolean = false,
     enabled: Boolean = true,
-) = this then TransformableElement(state, canPan, lockRotationOnZoomPan, enabled)
+): Modifier = this then TransformableElement(state, canPan, lockRotationOnZoomPan, enabled)
 
 private class TransformableElement(
     private val state: TransformableState,
@@ -375,19 +373,14 @@ private fun AwaitPointerEventScope.consumePointerEventAsCtrlScrollOrNull(
     ) {
         return null
     }
-    @OptIn(ExperimentalFoundationApi::class)
     val scrollDelta =
         with(scrollConfig) { calculateMouseWheelScroll(pointer, size) } +
-            if (ComposeFoundationFlags.isTrackpadGestureHandlingEnabled) {
-                (pointer.changes.firstOrNull()?.let {
-                    -it.panOffset +
-                        it.historical.fastFold(Offset.Zero) { acc, historicalChange ->
-                            acc - historicalChange.panOffset
-                        }
-                } ?: Offset.Zero)
-            } else {
-                Offset.Zero
-            }
+            (pointer.changes.firstOrNull()?.let {
+                -it.panOffset +
+                    it.historical.fastFold(Offset.Zero) { acc, historicalChange ->
+                        acc - historicalChange.panOffset
+                    }
+            } ?: Offset.Zero)
 
     if (scrollDelta == Offset.Zero) {
         return null
@@ -398,12 +391,10 @@ private fun AwaitPointerEventScope.consumePointerEventAsCtrlScrollOrNull(
 }
 
 private fun AwaitPointerEventScope.consumePointerEventAsPanOrNull(pointer: PointerEvent): Offset? {
-    @OptIn(ExperimentalFoundationApi::class)
     if (
-        !ComposeFoundationFlags.isTrackpadGestureHandlingEnabled ||
-            (pointer.type != PointerEventType.PanStart &&
-                pointer.type != PointerEventType.PanMove &&
-                pointer.type != PointerEventType.PanEnd)
+        pointer.type != PointerEventType.PanStart &&
+            pointer.type != PointerEventType.PanMove &&
+            pointer.type != PointerEventType.PanEnd
     ) {
         return null
     }
@@ -424,12 +415,10 @@ private fun AwaitPointerEventScope.consumePointerEventAsPanOrNull(pointer: Point
 }
 
 private fun AwaitPointerEventScope.consumePointerEventAsScaleOrNull(pointer: PointerEvent): Float? {
-    @OptIn(ExperimentalFoundationApi::class)
     if (
-        !ComposeFoundationFlags.isTrackpadGestureHandlingEnabled ||
-            (pointer.type != PointerEventType.ScaleStart &&
-                pointer.type != PointerEventType.ScaleChange &&
-                pointer.type != PointerEventType.ScaleEnd)
+        pointer.type != PointerEventType.ScaleStart &&
+            pointer.type != PointerEventType.ScaleChange &&
+            pointer.type != PointerEventType.ScaleEnd
     ) {
         return null
     }
@@ -461,16 +450,14 @@ private suspend fun AwaitPointerEventScope.detectZoom(
     awaitFirstDown(requireUnconsumed = false)
     do {
         val event = awaitPointerEvent()
-        @OptIn(ExperimentalFoundationApi::class)
         val canceled =
             event.changes.fastAny { it.isConsumed } ||
-                (ComposeFoundationFlags.isTrackpadGestureHandlingEnabled &&
-                    (event.type == PointerEventType.PanStart ||
-                        event.type == PointerEventType.PanMove ||
-                        event.type == PointerEventType.PanEnd ||
-                        event.type == PointerEventType.ScaleStart ||
-                        event.type == PointerEventType.ScaleChange ||
-                        event.type == PointerEventType.ScaleEnd))
+                event.type == PointerEventType.PanStart ||
+                event.type == PointerEventType.PanMove ||
+                event.type == PointerEventType.PanEnd ||
+                event.type == PointerEventType.ScaleStart ||
+                event.type == PointerEventType.ScaleChange ||
+                event.type == PointerEventType.ScaleEnd
         if (!canceled) {
             val zoomChange = event.calculateZoom()
             val rotationChange = event.calculateRotation()

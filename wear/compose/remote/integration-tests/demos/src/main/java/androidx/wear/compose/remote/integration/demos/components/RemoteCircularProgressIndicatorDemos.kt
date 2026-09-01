@@ -19,6 +19,7 @@ package androidx.wear.compose.remote.integration.demos.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.ListHeader
@@ -28,6 +29,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressEnabled
+import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressIndeterminate
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressIndicatorCustomColor
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressIndicatorDisabled
 import androidx.wear.compose.remote.material3.previews.RemoteCircularProgressNoGapCustomAngle
@@ -51,16 +53,19 @@ fun RemoteCircularProgressIndicatorDemos(modifier: Modifier = Modifier) {
                             ),
                     transformation = SurfaceTransformation(transformationSpec),
                 ) {
-                    Text("RemoteCircularProgressIndicator Demos")
+                    Text(
+                        "RemoteCircularProgressIndicator Demos",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
-            item { RemoteDemoItem("Enabled") { RemoteCircularProgressEnabled() } }
-            item { RemoteDemoItem("Disabled") { RemoteCircularProgressIndicatorDisabled() } }
-            item { RemoteDemoItem("Custom Color") { RemoteCircularProgressIndicatorCustomColor() } }
-            item {
-                RemoteDemoItem("No Gap Custom Angle") { RemoteCircularProgressNoGapCustomAngle() }
-            }
-            item { RemoteDemoItem("Animated") { RemoteCircularProgressIndicatorAnimatedSample() } }
+            remoteDemoItem("Enabled") { RemoteCircularProgressEnabled() }
+            remoteDemoItem("Disabled") { RemoteCircularProgressIndicatorDisabled() }
+            remoteDemoItem("Custom Color") { RemoteCircularProgressIndicatorCustomColor() }
+            remoteDemoItem("No Gap Custom Angle") { RemoteCircularProgressNoGapCustomAngle() }
+            remoteDemoItem("Animated") { RemoteCircularProgressIndicatorAnimatedSample() }
+            remoteDemoItem("Indeterminate") { RemoteCircularProgressIndeterminate() }
         }
     }
 }

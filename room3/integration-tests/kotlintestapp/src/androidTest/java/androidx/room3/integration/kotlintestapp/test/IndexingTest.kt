@@ -27,7 +27,6 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import org.junit.Test
@@ -82,10 +81,7 @@ class IndexingTest {
 
     @Test
     fun verifyIndices() {
-        val db =
-            Room.inMemoryDatabaseBuilder<IndexingDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        val db = Room.inMemoryDatabaseBuilder<IndexingDb>().setDriver(AndroidSQLiteDriver()).build()
         val indices = db.sqlMasterDao().loadIndices()
         assertThat(indices).hasSize(4)
         for (info in indices) {
@@ -108,10 +104,7 @@ class IndexingTest {
 
     @Test
     fun indexedByQuery() {
-        val db =
-            Room.inMemoryDatabaseBuilder<IndexingDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        val db = Room.inMemoryDatabaseBuilder<IndexingDb>().setDriver(AndroidSQLiteDriver()).build()
         db.entity1Dao().insert(Entity1(1, "a", "b", "c"))
         val result = db.entity1Dao().indexedBy("b")
         assertThat(result).hasSize(1)

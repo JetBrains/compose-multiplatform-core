@@ -19,16 +19,16 @@ package androidx.xr.arcore.apps.whitebox.mobile.samplerender
 import android.content.res.AssetManager
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
-import androidx.xr.runtime.XrLog
+import android.util.Log
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 /**
  * A SampleRender context.
  *
- * @param glSurfaceView Android GLSurfaceView
- * @param renderer Renderer implementation to receive callbacks
- * @param assetManager AssetManager for loading Android resources
+ * @param glSurfaceView [GLSurfaceView] instance to render into
+ * @param renderer renderer implementation to receive callbacks
+ * @param assetManager [AssetManager] for loading resources
  */
 public class SampleRender(
     glSurfaceView: GLSurfaceView,
@@ -52,7 +52,7 @@ public class SampleRender(
                 }
 
                 override fun onSurfaceChanged(gl: GL10, w: Int, h: Int) {
-                    XrLog.debug { "onSurfaceChanged: $w x $h" }
+                    Log.d("JetpackXR", "onSurfaceChanged: $w x $h")
                     viewportWidth = w
                     viewportHeight = h
                     renderer.onSurfaceChanged(this@SampleRender, w, h)

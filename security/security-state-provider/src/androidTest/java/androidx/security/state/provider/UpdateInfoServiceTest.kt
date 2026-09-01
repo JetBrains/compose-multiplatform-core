@@ -18,7 +18,11 @@ package androidx.security.state.provider
 
 import android.content.Context
 import android.content.Intent
+import android.os.Binder
+import android.os.IBinder
+import android.os.Process.myUid
 import androidx.security.state.IUpdateInfoService
+import androidx.security.state.SecurityPatchState
 import androidx.security.state.UpdateInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -26,7 +30,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -39,6 +45,9 @@ class UpdateInfoServiceTest {
 
     private lateinit var context: Context
     private lateinit var service: TestUpdateInfoService
+
+    // A service instance dedicated to testing the real implementation
+    private lateinit var realService: UpdateInfoService
 
     @Before
     fun setUp() {
@@ -54,8 +63,21 @@ class UpdateInfoServiceTest {
             .edit()
             .clear()
             .commit()
+
+        // Initialize the Test Double service used for logic and concurrency tests
         service = TestUpdateInfoService()
         service.attach(context)
+
+        // Initialize the Real service used strictly for package validation and security tests
+        realService =
+            object : UpdateInfoService() {
+                    override suspend fun fetchUpdates(): List<UpdateInfo> = emptyList()
+
+                    fun attach(c: Context) {
+                        super.attachBaseContext(c)
+                    }
+                }
+                .apply { attach(context) }
     }
 
     @Test
@@ -73,12 +95,144 @@ class UpdateInfoServiceTest {
     }
 
     @Test
+    fun openSession_returnsDistinctSessionsForMultipleClients() {
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = service.onBind(intent) as IUpdateInfoService
+
+        // WHEN multiple clients open sessions
+        val session1 = factory.openSession("com.client.one", Binder())
+        val session2 = factory.openSession("com.client.two", Binder())
+
+        // THEN they receive distinct binder instances
+        Assert.assertNotSame("Factory should return distinct session instances", session1, session2)
+    }
+
+    @Test(expected = SecurityException::class)
+    fun openSession_throwsSecurityException_forSpoofedPackage() {
+        // GIVEN the validation check will fail (simulating a spoofed package)
+        service.testIsValidPackage = false
+
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = service.onBind(intent) as IUpdateInfoService
+
+        // WHEN a malicious client tries to open a session with a spoofed name
+        // THEN it throws a SecurityException
+        factory.openSession("com.google.android.settings", Binder())
+    }
+
+    @Test
+    fun testSession_linksToClientTokenDeath() {
+        // GIVEN a fake client token
+        val fakeToken = FakeToken()
+        val factory =
+            service.onBind(Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE"))
+                as IUpdateInfoService
+
+        // WHEN the client opens a session
+        factory.openSession("com.example.client", fakeToken)
+
+        // THEN the service registers a death recipient on the provided token
+        assertNotNull("Service should register a DeathRecipient", fakeToken.deathRecipient)
+    }
+
+    @Test
+    fun testSession_unlinksFromClientTokenDeath_onClose() {
+        // GIVEN an active session with a fake token
+        val fakeToken = FakeToken()
+        val factory =
+            service.onBind(Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE"))
+                as IUpdateInfoService
+        val session = factory.openSession("com.example.client", fakeToken)
+
+        assertNotNull("DeathRecipient should be registered initially", fakeToken.deathRecipient)
+
+        // WHEN the client closes the session
+        session.close()
+
+        // THEN the service unregisters the death recipient to prevent memory/kernel leaks
+        assertNull(
+            "Service should unregister the DeathRecipient on close",
+            fakeToken.deathRecipient,
+        )
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun listAvailableUpdates_throwsException_ifSessionIsClosed() {
+        // GIVEN an active session
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = service.onBind(intent) as IUpdateInfoService
+        val session = factory.openSession("com.example.client", Binder())
+
+        // WHEN the client closes the session
+        session.close()
+
+        // THEN further calls on that session binder throw an IllegalStateException
+        session.listAvailableUpdates()
+    }
+
+    @Test
+    fun fetchUpdates_callsFetchUpdatesAsync_whenOverridden() = runBlocking {
+        // Create a service that ONLY overrides fetchUpdatesAsync
+        val asyncService =
+            object : ListenableFutureUpdateInfoService() {
+                    // Guarantee the network fetch is attempted
+                    override fun shouldFetchUpdates(): Boolean = true
+
+                    // Guarantee the request is never throttled by the rate limiter
+                    override fun shouldThrottle(): Boolean = false
+
+                    override fun fetchUpdatesAsync():
+                        com.google.common.util.concurrent.ListenableFuture<
+                            @JvmSuppressWildcards
+                            List<UpdateInfo>
+                        > {
+                        return androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture(
+                            kotlinx.coroutines.Dispatchers.IO
+                        ) {
+                            listOf(
+                                UpdateInfo.Builder()
+                                    .setComponent("SYSTEM")
+                                    .setSecurityPatchLevel(
+                                        SecurityPatchState.DateBasedSecurityPatchLevel.fromString(
+                                            "2025-01-01"
+                                        )
+                                    )
+                                    .build()
+                            )
+                        }
+                    }
+
+                    fun attach(c: Context) {
+                        super.attachBaseContext(c)
+                    }
+                }
+                .apply { attach(context) }
+
+        // We can't call fetchUpdates directly because it's protected,
+        // so we'll test it via the same path as callListAvailableUpdates
+        val intent = Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE")
+        val factory = asyncService.onBind(intent) as IUpdateInfoService
+        val session = factory.openSession(context.packageName, Binder())
+
+        // Use reflection or just test via the public API that it successfully fetches
+        // For simplicity, we just trigger listAvailableUpdates and see if it succeeds.
+        val result = session.listAvailableUpdates()
+        session.close()
+
+        assertEquals(1, result.updates.size)
+        assertEquals("SYSTEM", result.updates[0].component)
+        assertEquals("2025-01-01", result.updates[0].securityPatchLevel.toString())
+    }
+
+    @Test
     fun listAvailableUpdates_returnsCachedDataFromManager() {
         // 1. Setup: Seed the SharedPreferences with data
         val updateInfo =
             UpdateInfo.Builder()
                 .setComponent("SYSTEM")
-                .setSecurityPatchLevel("2025-01-01")
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2025-01-01")
+                )
                 .setPublishedDateMillis(1L)
                 .setLastCheckTimeMillis(1000L)
                 .build()
@@ -88,20 +242,28 @@ class UpdateInfoServiceTest {
         manager.registerUpdate(updateInfo)
         manager.setLastCheckTimeMillis(1000L)
 
-        // 2. Action: Call the Service method via the Binder interface
-        val binder =
+        val factory =
             service.onBind(Intent("androidx.security.state.provider.UPDATE_INFO_SERVICE"))
                 as IUpdateInfoService
 
-        val result = binder.listAvailableUpdates()
+        // Open the session with a verified package name
+        val session = factory.openSession("com.example.client", Binder())
+
+        // Retrieve the data from the session
+        val result = session.listAvailableUpdates()
 
         // 3. Verify
         assertEquals("Should return 1 update", 1, result.updates.size)
         assertEquals("SYSTEM", result.updates[0].component)
-        assertEquals("2025-01-01", result.updates[0].securityPatchLevel)
+        assertEquals("2025-01-01", result.updates[0].securityPatchLevel.toString())
         assertEquals(1L, result.updates[0].publishedDateMillis)
         assertEquals(1000L, result.updates[0].lastCheckTimeMillis)
+
+        // Verify the global check time matches
         assertEquals(1000L, result.lastCheckTimeMillis)
+
+        // Cleanup the session
+        session.close()
     }
 
     @Test
@@ -215,14 +377,18 @@ class UpdateInfoServiceTest {
         val u1 =
             UpdateInfo.Builder()
                 .setComponent("SYSTEM")
-                .setSecurityPatchLevel(futureDate)
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString(futureDate)
+                )
                 .setPublishedDateMillis(1L)
                 .build()
 
         val u2 =
             UpdateInfo.Builder()
                 .setComponent("SYSTEM_MODULES")
-                .setSecurityPatchLevel(futureDate)
+                .setSecurityPatchLevel(
+                    SecurityPatchState.DateBasedSecurityPatchLevel.fromString(futureDate)
+                )
                 .setPublishedDateMillis(1L)
                 .build()
 
@@ -260,5 +426,52 @@ class UpdateInfoServiceTest {
 
         // Assert: SHOULD fetch
         assertTrue("Should be stale (> 1 hour)", service.callShouldFetchUpdates())
+    }
+
+    @Test
+    fun enforceValidPackageForUid_returnsTrue_forActualApp() {
+        // WHEN we enforce validation using the actual test app's package and UID
+        // THEN it succeeds silently (no SecurityException is thrown) because the
+        // real Android OS confirms we own this process.
+        realService.enforceValidPackageForUid(context.packageName, myUid())
+    }
+
+    @Test(expected = SecurityException::class)
+    fun enforceValidPackageForUid_throwsException_forSpoofedPackage() {
+        // WHEN we validate a spoofed/malicious package name against our real UID
+        // THEN the real Android OS rejects it, throwing a SecurityException
+        realService.enforceValidPackageForUid("com.malicious.spoof.app", myUid())
+    }
+
+    @Test(expected = SecurityException::class)
+    fun enforceValidPackageForUid_throwsException_forUnknownUid() {
+        // WHEN we validate our real package name against a fake, unused UID
+        // THEN the OS rejects the mismatch, throwing a SecurityException
+        realService.enforceValidPackageForUid(
+            context.packageName,
+            9999999, // Non-existent UID
+        )
+    }
+
+    /**
+     * A Fake implementation of an Android Binder token.
+     *
+     * This avoids Mockito limitations on Android VMs and allows us to securely capture and trigger
+     * the DeathRecipient registered by the service.
+     */
+    class FakeToken : Binder() {
+        var deathRecipient: IBinder.DeathRecipient? = null
+
+        override fun linkToDeath(recipient: IBinder.DeathRecipient, flags: Int) {
+            this.deathRecipient = recipient
+        }
+
+        override fun unlinkToDeath(recipient: IBinder.DeathRecipient, flags: Int): Boolean {
+            if (this.deathRecipient === recipient) {
+                this.deathRecipient = null
+                return true
+            }
+            return false
+        }
     }
 }

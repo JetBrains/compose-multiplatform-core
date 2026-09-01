@@ -28,14 +28,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
 import kotlin.test.fail
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class DecoratedNavEntriesTest {
-    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun decoratedEntriesRemembered() {
@@ -230,13 +229,13 @@ class DecoratedNavEntriesTest {
     fun decorator_onPop_newlyAddedDecorator() {
         val decoratorPopCallback = mutableListOf<String>()
         val decorator1 =
-            NavEntryDecorator<Any>(onPop = { key -> decoratorPopCallback.add("decorator1") }) {
-                entry ->
+            NavEntryDecorator<Any>(onPop = { _ -> decoratorPopCallback.add("decorator1") }) { entry
+                ->
                 entry.Content()
             }
         val decorator2 =
-            NavEntryDecorator<Any>(onPop = { key -> decoratorPopCallback.add("decorator2") }) {
-                entry ->
+            NavEntryDecorator<Any>(onPop = { _ -> decoratorPopCallback.add("decorator2") }) { entry
+                ->
                 entry.Content()
             }
         val backStack = mutableStateListOf(1, 2)
@@ -277,13 +276,13 @@ class DecoratedNavEntriesTest {
     fun decorator_noOnPop_removedDecorator() {
         val decoratorPopCallback = mutableListOf<String>()
         val decorator1 =
-            NavEntryDecorator<Any>(onPop = { key -> decoratorPopCallback.add("decorator1") }) {
-                entry ->
+            NavEntryDecorator<Any>(onPop = { _ -> decoratorPopCallback.add("decorator1") }) { entry
+                ->
                 entry.Content()
             }
         val decorator2 =
-            NavEntryDecorator<Any>(onPop = { key -> decoratorPopCallback.add("decorator2") }) {
-                entry ->
+            NavEntryDecorator<Any>(onPop = { _ -> decoratorPopCallback.add("decorator2") }) { entry
+                ->
                 entry.Content()
             }
         val backStack = mutableStateListOf(1, 2)
@@ -324,13 +323,13 @@ class DecoratedNavEntriesTest {
     fun decorator_noOnPop_atomicRemoveDecoratorAndPopEntry() {
         val decoratorPopCallback = mutableListOf<String>()
         val decorator1 =
-            NavEntryDecorator<Any>(onPop = { key -> decoratorPopCallback.add("decorator1") }) {
-                entry ->
+            NavEntryDecorator<Any>(onPop = { _ -> decoratorPopCallback.add("decorator1") }) { entry
+                ->
                 entry.Content()
             }
         val decorator2 =
-            NavEntryDecorator<Any>(onPop = { key -> decoratorPopCallback.add("decorator2") }) {
-                entry ->
+            NavEntryDecorator<Any>(onPop = { _ -> decoratorPopCallback.add("decorator2") }) { entry
+                ->
                 entry.Content()
             }
         val backStack = mutableStateListOf(1, 2)
@@ -466,7 +465,7 @@ class DecoratedNavEntriesTest {
         var calledWrapContent = false
         var calledReWrapContent = false
 
-        val decorator = NavEntryDecorator<Any> { entry -> calledWrapContent = true }
+        val decorator = NavEntryDecorator<Any> { _ -> calledWrapContent = true }
         val redecorator =
             NavEntryDecorator<Any> { entry ->
                 calledReWrapContent = true
@@ -493,7 +492,7 @@ class DecoratedNavEntriesTest {
         var calledWrapContentCount = 0
         var calledReWrapContentCount = 0
 
-        val decorator = NavEntryDecorator<Any> { entry -> calledWrapContentCount++ }
+        val decorator = NavEntryDecorator<Any> { _ -> calledWrapContentCount++ }
         val redecorator =
             NavEntryDecorator<Any> { entry ->
                 calledReWrapContentCount++
@@ -521,7 +520,7 @@ class DecoratedNavEntriesTest {
         var outerEntryDecorator: Int = -1
         var innerEntryDecorator: Int = -1
 
-        val innerDecorator = NavEntryDecorator<Any> { entry -> innerEntryDecorator = ++callOrder }
+        val innerDecorator = NavEntryDecorator<Any> { _ -> innerEntryDecorator = ++callOrder }
         val outerDecorator =
             NavEntryDecorator<Any> { entry ->
                 outerEntryDecorator = ++callOrder

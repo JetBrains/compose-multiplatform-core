@@ -16,7 +16,6 @@
 package androidx.leanback.widget;
 
 import androidx.collection.CircularIntArray;
-import androidx.recyclerview.widget.GridLayoutManager;
 
 import java.io.PrintWriter;
 
@@ -29,20 +28,29 @@ class StandardGrid extends Grid {
     Object[] mTmpItems;
     private int[] mTmpItemsSize;
 
-    SpanSupport mSpanSupport;
+    LeanbackSpanSizeLookup mSpanSizeLookup;
 
     StandardGrid() {
         setNumRows(1);
     }
 
-    void setSpanSizeLookup(GridLayoutManager.SpanSizeLookup spanSizeLookup) {
+    void setSpanSizeLookup(LeanbackSpanSizeLookup spanSizeLookup) {
         if (spanSizeLookup != null
-                && !(spanSizeLookup instanceof GridLayoutManager.DefaultSpanSizeLookup)) {
-            mSpanSupport = new SpanSupport(spanSizeLookup);
+                && !(spanSizeLookup instanceof LeanbackSpanSizeLookup.DefaultSpanSizeLookup)) {
+            mSpanSizeLookup = spanSizeLookup;
             mSearchFocusInNextSpanGroup = true;
         } else {
-            mSpanSupport = null;
+            mSpanSizeLookup = null;
             mSearchFocusInNextSpanGroup = false;
+        }
+    }
+
+    @Override
+    public void resetVisibleIndex() {
+        super.resetVisibleIndex();
+        if (mSpanSizeLookup != null) {
+            mSpanSizeLookup.invalidateSpanIndexCache();
+            mSpanSizeLookup.invalidateSpanGroupIndexCache();
         }
     }
 
@@ -57,22 +65,22 @@ class StandardGrid extends Grid {
     }
 
     private int getSpanIndex(int index) {
-        if (mSpanSupport != null) {
-            return mSpanSupport.getCachedSpanIndex(index, mNumRows);
+        if (mSpanSizeLookup != null) {
+            return mSpanSizeLookup.getCachedSpanIndex(index, mNumRows);
         }
         return index % mNumRows;
     }
 
     int getSpanGroupIndex(int index) {
-        if (mSpanSupport != null) {
-            return mSpanSupport.getCachedSpanGroupIndex(index, mNumRows);
+        if (mSpanSizeLookup != null) {
+            return mSpanSizeLookup.getCachedSpanGroupIndex(index, mNumRows);
         }
         return index / mNumRows;
     }
 
     private int getSpanSize(int index) {
-        if (mSpanSupport != null) {
-            return mSpanSupport.getSpanSize(index, mNumRows);
+        if (mSpanSizeLookup != null) {
+            return mSpanSizeLookup.getSpanSize(index, mNumRows);
         }
         return 1;
     }
@@ -367,6 +375,32 @@ class StandardGrid extends Grid {
         } else {
             return mProvider.getCount() - 1;
         }
+    }
+
+    @Override
+    public int getNextPositionOfSameSpan(int focusPosition, int count, int spanGroupIndexDelta) {
+        if (spanGroupIndexDelta == 0) {
+            return focusPosition;
+        }
+        // spanGroupIndexDelta is positive or negative
+        boolean searchBackward = (mReversedFlow && spanGroupIndexDelta > 0)
+                || (!mReversedFlow && spanGroupIndexDelta < 0);
+        int searchIncremental = searchBackward ? -1 : 1;
+        int position = focusPosition;
+        int spanIndex = getSpanIndex(position);
+        int groupIndex = getSpanGroupIndex(position);
+        int targetGroupIndex = mReversedFlow ? groupIndex - spanGroupIndexDelta
+                : groupIndex + spanGroupIndexDelta;
+        for (;
+                searchBackward ? position < count : position >= 0;
+                position += searchIncremental) {
+            if (getSpanIndex(position) == spanIndex) {
+                if (getSpanGroupIndex(position) == targetGroupIndex) {
+                    break;
+                }
+            }
+        }
+        return position;
     }
 
     @Override

@@ -23,7 +23,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
@@ -38,7 +38,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +47,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class LevitatedPaneScreenshotTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3_ADAPTIVE)
 
@@ -190,7 +189,7 @@ private fun ThreePaneScaffoldWithLevitatedPane(
     secondaryContent: (@Composable ThreePaneScaffoldScope.() -> Unit) = {},
     tertiaryContent: (@Composable ThreePaneScaffoldScope.() -> Unit) = {},
 ) {
-    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     val value =
         ThreePaneScaffoldValue(
             PaneAdaptedValue.Expanded,

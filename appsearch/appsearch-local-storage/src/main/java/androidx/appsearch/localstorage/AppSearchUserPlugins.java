@@ -17,6 +17,7 @@
 package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.localstorage.stats.CallStats;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityChecker;
@@ -30,13 +31,12 @@ import org.jspecify.annotations.Nullable;
 /**
  * A container for optional plugins and instrumentation builders used by {@link AppSearchImpl}.
  *
- * <p> All params in this class MUST be nullable.
+ * <p> All params in this class MUST be optional.
  *
  * <p>This class encapsulates optional dependencies and stateful builders (like stats collectors)
  * to keep the {@link AppSearchImpl#create} signature clean and extensible.
- *
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class AppSearchUserPlugins {
     private final @Nullable VisibilityChecker mVisibilityChecker;
@@ -44,6 +44,7 @@ public final class AppSearchUserPlugins {
     private final @Nullable IcingSearchEngineInterface mIcingSearchEngine;
     private final InitializeStats.@Nullable Builder mInitStatsBuilder;
     private final CallStats.@Nullable Builder mCallStatsBuilder;
+    private final @Nullable LaunchVmFeatures mLaunchVmFeatures;
 
     /** An empty {@link AppSearchUserPlugins} instance with no plugins or stats builders. */
     public static final AppSearchUserPlugins EMPTY = new Builder().build();
@@ -54,6 +55,7 @@ public final class AppSearchUserPlugins {
         mIcingSearchEngine = builder.mIcingSearchEngine;
         mInitStatsBuilder = builder.mInitStatsBuilder;
         mCallStatsBuilder = builder.mCallStatsBuilder;
+        mLaunchVmFeatures = builder.mLaunchVmFeatures;
     }
 
     /**
@@ -94,6 +96,12 @@ public final class AppSearchUserPlugins {
         return mCallStatsBuilder;
     }
 
+    /** Returns the configuration of Virtual Machine features for system launches.  */
+    @Nullable
+    public LaunchVmFeatures getLaunchVmFeatures() {
+        return mLaunchVmFeatures;
+    }
+
     /** Builder for {@link AppSearchUserPlugins}. */
     public static final class Builder {
         private @Nullable VisibilityChecker mVisibilityChecker;
@@ -101,6 +109,7 @@ public final class AppSearchUserPlugins {
         private @Nullable IcingSearchEngineInterface mIcingSearchEngine;
         private InitializeStats.@Nullable Builder mInitStatsBuilder;
         private CallStats.@Nullable Builder mCallStatsBuilder;
+        private @Nullable LaunchVmFeatures mLaunchVmFeatures;
 
         public Builder() {}
 
@@ -137,15 +146,22 @@ public final class AppSearchUserPlugins {
 
         /** Sets the {@link InitializeStats.Builder} for collecting initialization telemetry. */
         @NonNull
-        public Builder setInitStatsBuilder(InitializeStats.@Nullable  Builder initStatsBuilder) {
+        public Builder setInitStatsBuilder(InitializeStats.@Nullable Builder initStatsBuilder) {
             mInitStatsBuilder = initStatsBuilder;
             return this;
         }
 
         /** Sets the {@link CallStats.Builder} for collecting general call telemetry. */
         @NonNull
-        public Builder setCallStatsBuilder(CallStats.@Nullable  Builder callStatsBuilder) {
+        public Builder setCallStatsBuilder(CallStats.@Nullable Builder callStatsBuilder) {
             mCallStatsBuilder = callStatsBuilder;
+            return this;
+        }
+
+        /** Sets whether the vm features are enabled. */
+        @NonNull
+        public Builder setLaunchVmFeatures(@NonNull LaunchVmFeatures launchVmFeatures) {
+            mLaunchVmFeatures = launchVmFeatures;
             return this;
         }
 

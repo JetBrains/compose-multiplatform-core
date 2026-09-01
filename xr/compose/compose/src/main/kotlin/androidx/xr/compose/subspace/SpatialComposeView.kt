@@ -18,6 +18,7 @@ package androidx.xr.compose.subspace
 
 import android.content.Context
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewParent
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.platform.ComposeView
@@ -28,6 +29,8 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.navigationevent.findViewTreeNavigationEventDispatcherOwner
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
@@ -52,14 +55,27 @@ internal fun spatialComposeView(
     parentView: View,
     context: Context,
     compositionContext: CompositionContext,
-    localId: Int,
+    localId: Long,
 ): ComposeView =
     ComposeView(context).apply {
         id = View.generateViewId()
+        // Set WRAP_CONTENT LayoutParams so that when the view is reparented or hosted in a
+        // ViewGroup (such as SceneCore's FrameLayout wrapper), it does not default to MATCH_PARENT
+        // and is allowed to size itself to its intrinsic Compose content.
+        layoutParams =
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
 
         setViewTreeLifecycleOwner(parentView.findViewTreeLifecycleOwner())
         setViewTreeViewModelStoreOwner(parentView.findViewTreeViewModelStoreOwner())
         setViewTreeSavedStateRegistryOwner(parentView.findViewTreeSavedStateRegistryOwner())
+
+        setViewTreeNavigationEventDispatcherOwner(
+            parentView.findViewTreeNavigationEventDispatcherOwner()
+        )
+
         setViewTreeDisjointParent(parentView as? ViewParent ?: parentView.parent)
 
         // Set the strategy to automatically dispose the composition

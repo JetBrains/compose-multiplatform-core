@@ -17,7 +17,7 @@
 package androidx.xr.arcore.apps.whitebox.mobile.samplerender
 
 import android.opengl.GLES30
-import androidx.xr.runtime.XrLog
+import android.util.Log
 import de.javagl.obj.ObjData
 import de.javagl.obj.ObjReader
 import de.javagl.obj.ObjUtils
@@ -26,7 +26,7 @@ import java.io.InputStream
 import java.nio.ShortBuffer
 
 /**
- * A collection of vertices, faces, and other attributes that define how to render a 3D object.
+ * Vertices, faces, and attributes defining a 3D mesh.
  *
  * To render the mesh, use [SampleRender.draw].
  *
@@ -38,10 +38,10 @@ import java.nio.ShortBuffer
  * [layout qualifier](https://www.khronos.org/opengl/wiki/Layout_Qualifier_(GLSL)) must be used in
  * the vertex shader code to explicitly associate attributes with these indices.
  *
- * @param render The [SampleRender] instance to use for rendering.
- * @param primitiveMode The kind of primitive to render.
- * @param indexBuffer The index buffer to use for rendering.
- * @param vertexBuffers The vertex buffers to use for rendering. Must be non-null and non-empty.
+ * @param render the [SampleRender] instance to use for rendering
+ * @param primitiveMode the kind of primitive to render
+ * @param indexBuffer the index buffer to use for rendering
+ * @param vertexBuffers the vertex buffers to use for rendering. Must be non-null and non-empty
  */
 class Mesh(
     val render: SampleRender,
@@ -112,11 +112,7 @@ class Mesh(
     override fun close() {
         if (vertexArrayId[0] != 0) {
             GLES30.glDeleteVertexArrays(1, vertexArrayId, 0)
-            maybeLogGLError(
-                XrLog.Level.WARN,
-                "Failed to free vertex array object",
-                "glDeleteVertexArrays",
-            )
+            maybeLogGLError(Log.WARN, "Failed to free vertex array object", "glDeleteVertexArrays")
         }
     }
 

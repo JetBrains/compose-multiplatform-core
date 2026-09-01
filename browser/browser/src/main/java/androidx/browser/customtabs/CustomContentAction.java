@@ -32,7 +32,6 @@ import org.jspecify.annotations.NonNull;
  * a {@link CustomTabsIntent} using
  * {@link CustomTabsIntent.Builder#addCustomContentAction(CustomContentAction)}.
  */
-@ExperimentalCustomContentAction
 public final class CustomContentAction {
 
     /**
@@ -65,6 +64,7 @@ public final class CustomContentAction {
     /**
      * Builder class for {@link CustomContentAction} objects.
      */
+    @SuppressWarnings("EmptyBuilder")
     public static final class Builder {
         private final int mId;
         private final @NonNull String mLabel;

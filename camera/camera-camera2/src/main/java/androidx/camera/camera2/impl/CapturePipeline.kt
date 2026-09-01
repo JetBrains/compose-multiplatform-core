@@ -34,12 +34,10 @@ package androidx.camera.camera2.impl
 
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_STATE_FLASH_REQUIRED
 import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.view.Surface
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
-import androidx.camera.camera2.adapter.CaptureResultAdapter
+import androidx.camera.camera2.adapter.FrameMetadataConverter.toCameraCaptureResult
 import androidx.camera.camera2.adapter.future
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.isFlashAvailable
@@ -52,19 +50,15 @@ import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.POST_CAPTUR
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.PRE_CAPTURE
 import androidx.camera.camera2.impl.TorchControl.TorchMode
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Lock3ABehavior
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
-import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
-import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.core.ImageCapture.CaptureMode
 import androidx.camera.core.ImageCapture.ERROR_CAMERA_CLOSED
@@ -79,7 +73,6 @@ import androidx.camera.core.ImageCapture.FlashType
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.TorchState
 import androidx.camera.core.imagecapture.CameraCapturePipeline
-import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ConvergenceUtils
@@ -87,7 +80,6 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Provider
-import kotlin.reflect.KClass
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -598,49 +590,6 @@ constructor(
     ): (frameMetadata: FrameMetadata) -> Boolean = convergeCondition@{ frameMetadata ->
         ConvergenceUtils.is3AConverged(frameMetadata.toCameraCaptureResult(), isTorchAsFlash)
     }
-
-    private fun FrameMetadata.toCameraCaptureResult(): CameraCaptureResult {
-        val frameInfo =
-            object : FrameInfo {
-                private val frameMetadata = this@toCameraCaptureResult
-                override val metadata: FrameMetadata = frameMetadata
-
-                override fun get(camera: CameraId): FrameMetadata? = frameMetadata
-
-                override val camera: CameraId = frameMetadata.camera
-                override val frameNumber: FrameNumber = frameMetadata.frameNumber
-                override val requestMetadata: RequestMetadata = emptyRequestMetadata
-
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
-            }
-
-        return CaptureResultAdapter(
-            emptyRequestMetadata,
-            /** RequestMetadata not to be used here */
-            frameNumber,
-            frameInfo,
-        )
-    }
-
-    private val emptyRequestMetadata =
-        object : RequestMetadata {
-            override fun <T> get(key: CaptureRequest.Key<T>): T? = null
-
-            override fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T = default
-
-            override val template: RequestTemplate = RequestTemplate(0)
-            override val streams: Map<StreamId, Surface> = mapOf()
-            override val repeating: Boolean = true
-            override val request: Request = Request(listOf())
-            override val requestNumber: RequestNumber = RequestNumber(0)
-
-            override fun <T> get(key: Metadata.Key<T>): T? = null
-
-            override fun <T> getOrDefault(key: Metadata.Key<T>, default: T): T = default
-
-            override fun <T : Any> unwrapAs(type: KClass<T>): T? = null
-        }
 
     /** Unlocks any active AF lock by triggering an AF cancel. */
     private suspend fun unlockAf(timeLimitNs: Long): Result3A =

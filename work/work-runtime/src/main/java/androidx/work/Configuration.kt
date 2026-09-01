@@ -20,6 +20,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.core.util.Consumer
 import androidx.tracing.Trace
 import androidx.work.impl.DefaultRunnableScheduler
@@ -28,11 +29,9 @@ import androidx.work.impl.utils.INITIAL_ID
 import androidx.work.multiprocess.RemoteWorkManager.DEFAULT_SESSION_TIMEOUT_MILLIS
 import androidx.work.multiprocess.RemoteWorkManager.MAX_SESSION_TIMEOUT_MILLIS
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
+import kotlin.jvm.JvmStatic
 import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineDispatcher
@@ -149,6 +148,14 @@ public class Configuration internal constructor(builder: Builder) {
     /** @return `true` If the default task [Executor] is being used */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val isUsingDefaultTaskExecutor: Boolean
 
+    /**
+     * @return `true` if remote worker cancellation propagation is enabled. Note: This flag guards
+     *   the cancellation propagation fix to allow running it experimentally to verify that
+     *   reliability metrics remain stable before removing the flag permanently.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val isRemoteCancellationPropagationFixEnabled: Boolean
+
     // Note: public experimental properties are not allowed because the accessors will not appear
     // experimental to Java clients. There is a public accessor for this property below.
     @property:ExperimentalConfigurationApi
@@ -172,13 +179,23 @@ public class Configuration internal constructor(builder: Builder) {
         return executionEventListener
     }
 
+    @property:ExperimentalEventsApi private val scheduleEventListener: ScheduleEventListener?
+
+    /** The [ScheduleEventListener] that listens to work execution events for all workers. */
+    @ExperimentalEventsApi
+    public fun getScheduleEventListener(): ScheduleEventListener? {
+        return scheduleEventListener
+    }
+
     /**
      * @return The [Tracer] instance that can be used by [WorkManager] to record trace spans when
      *   executing [WorkRequest]s.
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val tracer: Tracer
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) private val enableRepresentativeJobs: Boolean
+    private val enableRepresentativeJobs: Boolean
+
+    private val enableGreedyScheduler: Boolean
 
     /**
      * Specifies whether WorkManager will prioritize unique constraints when scheduling with
@@ -190,13 +207,24 @@ public class Configuration internal constructor(builder: Builder) {
         return enableRepresentativeJobs
     }
 
+    /**
+     * Specifies whether the in-process opportunistic greedy scheduler is enabled
+     *
+     * This is enabled by default and should only be disabled for experimental purposes.
+     */
+    @ExperimentalConfigurationApi
+    public fun isGreedySchedulerEnabled(): Boolean {
+        return enableGreedyScheduler
+    }
+
     init {
         val builderWorkerDispatcher = builder.workerContext
 
         executor =
             builder.executor
                 ?: builderWorkerDispatcher?.asExecutor()
-                ?: createDefaultExecutor(isTaskExecutor = false)
+                ?: Dispatchers.Default.limitedParallelism(calculateExecutorParallelismLimit())
+                    .asExecutor()
 
         workerCoroutineContext =
             when {
@@ -211,7 +239,7 @@ public class Configuration internal constructor(builder: Builder) {
         // This executor is used for *both* WorkManager's tasks and Room's query executor.
         // So this should not be a single threaded executor. Writes will still be serialized
         // as this will be wrapped with an SerialExecutor.
-        taskExecutor = builder.taskExecutor ?: createDefaultExecutor(isTaskExecutor = true)
+        taskExecutor = builder.taskExecutor ?: Dispatchers.Default.asExecutor()
         clock = builder.clock ?: SystemClock()
         workerFactory = builder.workerFactory ?: DefaultWorkerFactory
         inputMergerFactory = builder.inputMergerFactory ?: NoOpInputMergerFactory
@@ -235,8 +263,11 @@ public class Configuration internal constructor(builder: Builder) {
         contentUriTriggerWorkersLimit = builder.contentUriTriggerWorkersLimit
         isMarkingJobsAsImportantWhileForeground = builder.markJobsAsImportantWhileForeground
         executionEventListener = builder.executionEventListener
+        scheduleEventListener = builder.scheduleEventListener
         tracer = builder.tracer ?: createDefaultTracer()
         enableRepresentativeJobs = builder.enableRepresentativeJobs
+        enableGreedyScheduler = builder.enableGreedyScheduler
+        isRemoteCancellationPropagationFixEnabled = builder.remoteCancellationPropagationFixEnabled
     }
 
     /** A Builder for [Configuration]s. */
@@ -261,8 +292,11 @@ public class Configuration internal constructor(builder: Builder) {
         internal var contentUriTriggerWorkersLimit: Int = DEFAULT_CONTENT_URI_TRIGGERS_WORKERS_LIMIT
         internal var markJobsAsImportantWhileForeground: Boolean = true
         internal var executionEventListener: ExecutionEventListener? = null
+        internal var scheduleEventListener: ScheduleEventListener? = null
         internal var tracer: Tracer? = null
         internal var enableRepresentativeJobs: Boolean = false
+        internal var enableGreedyScheduler: Boolean = true
+        internal var remoteCancellationPropagationFixEnabled: Boolean = false
 
         /** Creates a new [Configuration.Builder]. */
         public constructor()
@@ -297,7 +331,12 @@ public class Configuration internal constructor(builder: Builder) {
             markJobsAsImportantWhileForeground =
                 configuration.isMarkingJobsAsImportantWhileForeground
             executionEventListener = configuration.executionEventListener
+            scheduleEventListener = configuration.scheduleEventListener
             tracer = configuration.tracer
+            enableRepresentativeJobs = configuration.isRepresentativeJobsEnabled()
+            enableGreedyScheduler = configuration.isGreedySchedulerEnabled()
+            remoteCancellationPropagationFixEnabled =
+                configuration.isRemoteCancellationPropagationFixEnabled
         }
 
         /**
@@ -613,6 +652,22 @@ public class Configuration internal constructor(builder: Builder) {
         }
 
         /**
+         * Set a [ScheduleEventListener] to run whenever work scheduling events occur for any
+         * worker.
+         *
+         * These callbacks will be invoked on a thread bound to [Configuration.taskExecutor].
+         *
+         * @param listener [ScheduleEventListener] to set
+         * @return This [Builder] instance
+         */
+        @SuppressLint("ExecutorRegistration") // Developer can configure taskExecutor directly
+        @ExperimentalEventsApi
+        public fun setScheduleEventListener(listener: ScheduleEventListener): Builder {
+            this.scheduleEventListener = listener
+            return this
+        }
+
+        /**
          * Specifies the [Tracer] that can be used by [WorkManager] to record trace spans.
          *
          * @param tracer The [Tracer] instance to be used.
@@ -639,6 +694,36 @@ public class Configuration internal constructor(builder: Builder) {
         }
 
         /**
+         * Specifies whether the in-process opportunistic greedy scheduler should be enabled.
+         *
+         * This is enabled by default and should only be disabled for experimental purposes.
+         *
+         * @param enabled whether to enable the greedy scheduler
+         * @return This [Builder] instance
+         */
+        @ExperimentalConfigurationApi
+        public fun setGreedySchedulerEnabled(enabled: Boolean): Builder {
+            this.enableGreedyScheduler = enabled
+            return this
+        }
+
+        /**
+         * Specifies whether remote worker cancellation propagation is enabled.
+         *
+         * Note: This flag guards the cancellation propagation fix to allow running it
+         * experimentally to verify that reliability metrics remain stable before removing the flag
+         * permanently.
+         *
+         * @param enabled `true` to enable remote worker cancellation propagation
+         * @return This [Builder] instance
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun setRemoteCancellationPropagationFixEnabled(enabled: Boolean): Builder {
+            this.remoteCancellationPropagationFixEnabled = enabled
+            return this
+        }
+
+        /**
          * Builds a [Configuration] object.
          *
          * @return A [Configuration] object with this [Builder]'s parameters.
@@ -653,7 +738,9 @@ public class Configuration internal constructor(builder: Builder) {
      * initialization of WorkManager. To do this:
      * - Disable `androidx.work.WorkManagerInitializer` in your manifest
      * - Implement the [Configuration.Provider] interface on your [android.app.Application] class
-     * - Use [WorkManager.getInstance] when accessing WorkManager (NOT [WorkManager.getInstance])
+     * - Use [`WorkManager.getInstance(Context)`](https://developer.android.com/reference/androidx/work/WorkManager#getInstance(android.content.Context))
+     *   when accessing WorkManager (NOT
+     *   [`WorkManager.getInstance`](https://developer.android.com/reference/androidx/work/WorkManager#getInstance()))
      *
      * Note that on-demand initialization may delay some useful features of WorkManager such as
      * automatic rescheduling of work following a crash and recovery from the application being
@@ -672,28 +759,19 @@ public class Configuration internal constructor(builder: Builder) {
          * [android.app.job.JobScheduler] or [android.app.AlarmManager].
          */
         public const val MIN_SCHEDULER_LIMIT: Int = 20
+
+        /** Calculates the maximum number of threads the executor should use. */
+        @VisibleForTesting
+        @JvmStatic
+        @JvmName("calculateExecutorParallelismLimit")
+        internal fun calculateExecutorParallelismLimit(): Int {
+            // This value is the same as the core pool size for AsyncTask#THREAD_POOL_EXECUTOR.
+            return max(1, min(Runtime.getRuntime().availableProcessors() - 1, 4))
+        }
     }
 }
 
 internal const val DEFAULT_CONTENT_URI_TRIGGERS_WORKERS_LIMIT = 8
-
-private fun createDefaultExecutor(isTaskExecutor: Boolean): Executor {
-    val factory =
-        object : ThreadFactory {
-            private val threadCount = AtomicInteger(0)
-
-            override fun newThread(runnable: Runnable): Thread {
-                // Thread names are constrained to a max of 15 characters by the Linux Kernel.
-                val prefix = if (isTaskExecutor) "WM.task-" else "androidx.work-"
-                return Thread(runnable, "$prefix${threadCount.incrementAndGet()}")
-            }
-        }
-    return Executors.newFixedThreadPool(
-        // This value is the same as the core pool size for AsyncTask#THREAD_POOL_EXECUTOR.
-        max(2, min(Runtime.getRuntime().availableProcessors() - 1, 4)),
-        factory,
-    )
-}
 
 private fun createDefaultTracer(): Tracer {
     // Delegate to AndroidX Tracing while leaving the implementation open-ended for a pluggable

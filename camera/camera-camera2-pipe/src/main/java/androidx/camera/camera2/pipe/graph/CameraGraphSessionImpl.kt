@@ -21,7 +21,9 @@ import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.FrameCapture
+import androidx.camera.camera2.pipe.ControlMode
+import androidx.camera.camera2.pipe.Converge3ABehavior
+import androidx.camera.camera2.pipe.FlashMode
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
@@ -29,7 +31,6 @@ import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.core.Token
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
-import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
 
@@ -39,7 +40,6 @@ internal class CameraGraphSessionImpl(
     private val token: Token,
     private val graphProcessor: GraphProcessor,
     private val controller3A: Controller3A,
-    private val frameCaptureQueue: FrameCaptureQueue,
     private val parameters: CameraGraphParametersImpl,
     private val listeners: CameraGraphRequestListenersImpl,
 ) : CameraGraph.Session {
@@ -59,18 +59,6 @@ internal class CameraGraphSessionImpl(
         check(!token.released) { "Cannot call submit on $this after close." }
         check(requests.isNotEmpty()) { "Cannot call submit with an empty list of Requests!" }
         graphProcessor.submit(requests)
-    }
-
-    override fun capture(request: Request): FrameCapture {
-        val frameCapture = frameCaptureQueue.enqueue(request)
-        submit(request)
-        return frameCapture
-    }
-
-    override fun capture(requests: List<Request>): List<FrameCapture> {
-        val frameCaptures = frameCaptureQueue.enqueue(requests)
-        submit(requests)
-        return frameCaptures
     }
 
     override fun startRepeating(request: Request) {
@@ -102,18 +90,24 @@ internal class CameraGraphSessionImpl(
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,
+        controlMode: ControlMode?,
+        flashMode: FlashMode?,
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
         awbRegions: List<MeteringRectangle>?,
+        retainLocks: Boolean,
     ): Deferred<Result3A> {
         check(!token.released) { "Cannot call update3A on $this after close." }
         return controller3A.update3A(
             aeMode = aeMode,
             afMode = afMode,
             awbMode = awbMode,
+            controlMode = controlMode,
+            flashMode = flashMode,
             aeRegions = aeRegions,
             afRegions = afRegions,
             awbRegions = awbRegions,
+            retainLocks = retainLocks,
         )
     }
 
@@ -141,6 +135,31 @@ internal class CameraGraphSessionImpl(
         return controller3A.setTorchOff(aeMode)
     }
 
+    override fun converge3A(
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeBehavior: Converge3ABehavior?,
+        afBehavior: Converge3ABehavior?,
+        awbBehavior: Converge3ABehavior?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int?,
+        timeLimitNs: Long?,
+    ): Deferred<Result3A> {
+        check(!token.released) { "Cannot call converge3A on $this after close." }
+        return controller3A.converge3A(
+            aeRegions,
+            afRegions,
+            awbRegions,
+            aeBehavior,
+            afBehavior,
+            awbBehavior,
+            convergedCondition,
+            frameLimit,
+            timeLimitNs,
+        )
+    }
+
     override suspend fun lock3A(
         aeMode: AeMode?,
         afMode: AfMode?,
@@ -163,18 +182,21 @@ internal class CameraGraphSessionImpl(
         // ae, af and awb respectively. If not supported return an exception or return early with
         // the right status code.
         return controller3A.lock3A(
-            aeRegions,
-            afRegions,
-            awbRegions,
-            aeLockBehavior,
-            afLockBehavior,
-            awbLockBehavior,
-            afTriggerStartAeMode,
-            convergedCondition,
-            lockedCondition,
-            frameLimit,
-            convergedTimeLimitNs,
-            lockedTimeLimitNs,
+            aeMode = aeMode,
+            afMode = afMode,
+            awbMode = awbMode,
+            aeRegions = aeRegions,
+            afRegions = afRegions,
+            awbRegions = awbRegions,
+            aeLockBehavior = aeLockBehavior,
+            afLockBehavior = afLockBehavior,
+            awbLockBehavior = awbLockBehavior,
+            afTriggerStartAeMode = afTriggerStartAeMode,
+            convergedCondition = convergedCondition,
+            lockedCondition = lockedCondition,
+            frameLimit = frameLimit,
+            convergedTimeLimitNs = convergedTimeLimitNs,
+            lockedTimeLimitNs = lockedTimeLimitNs,
         )
     }
 

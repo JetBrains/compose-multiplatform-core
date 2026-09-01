@@ -44,6 +44,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -210,7 +211,16 @@ class SysUiTileUpdateRequester implements TileUpdateRequester {
 
                         mUnbindExecutor.execute(
                                 () -> {
-                                    mAppContext.unbindService(this);
+                                    try {
+                                        mAppContext.unbindService(this);
+                                    } catch (IllegalArgumentException
+                                            | IllegalStateException
+                                            | NoSuchElementException e) {
+                                        // This can happen if before this callback is executed, the
+                                        // service has already been unbound by the system or
+                                        // disconnected.
+                                        Log.w(TAG, "Service is not bound.", e);
+                                    }
                                 });
                     }
 

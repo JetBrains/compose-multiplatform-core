@@ -44,7 +44,6 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -55,7 +54,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ScrollIndicatorScreenshotTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -250,6 +249,8 @@ class ScrollIndicatorScreenshotTest {
 
                             override val sizeFraction: Float
                                 get() = size
+
+                            override var jiggleAmount: Float = 0f
                         },
                     indicatorHeight = 50.dp,
                     indicatorWidth = 4.dp,

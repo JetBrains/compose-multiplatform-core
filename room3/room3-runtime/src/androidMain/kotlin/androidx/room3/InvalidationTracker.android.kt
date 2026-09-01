@@ -34,8 +34,7 @@ import kotlinx.coroutines.flow.onStart
  * starts being collected, if a database operation changes one of the tables that the [Flow] was
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
-@Suppress("KmpModifierMismatch") // expect is not open
-public actual open class InvalidationTracker
+public actual class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual constructor(
     internal val database: RoomDatabase,
@@ -115,6 +114,7 @@ actual constructor(
      * @see refreshAsync
      */
     internal actual suspend fun sync() {
+        database.throwIfClosed()
         implementation.syncTriggers()
     }
 
@@ -129,6 +129,7 @@ actual constructor(
      * function manually to trigger invalidation.
      */
     public actual fun refreshAsync() {
+        if (database.closeBarrier.isClosed) return
         implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -141,6 +142,7 @@ actual constructor(
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual suspend fun refresh(vararg tables: String): Boolean {
+        database.throwIfClosed()
         return implementation.refreshInvalidation(tables, onRefreshScheduled, onRefreshCompleted)
     }
 
@@ -185,6 +187,7 @@ actual constructor(
         vararg tables: String,
         emitInitialState: Boolean,
     ): Flow<Set<String>> {
+        database.throwIfClosed()
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         val trackerFlow = implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
         val multiInstanceFlow = multiInstanceInvalidationClient?.createFlow(resolvedTableNames)

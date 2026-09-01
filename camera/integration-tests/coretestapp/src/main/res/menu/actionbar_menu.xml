@@ -89,5 +89,10 @@
         android:checkable="true"
         android:title="@string/enable_auto_rotation"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/tap_to_focus_ae_awb_lock"
+        android:checkable="true"
+        android:title="@string/tap_to_focus_ae_awb_lock"
+        app:showAsAction="never" />
 
 </menu>

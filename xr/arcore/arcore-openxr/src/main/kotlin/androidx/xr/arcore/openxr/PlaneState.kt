@@ -17,13 +17,13 @@
 package androidx.xr.arcore.openxr
 
 import androidx.xr.arcore.runtime.Plane
-import androidx.xr.runtime.TrackingState
+import androidx.xr.arcore.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
 /**
- * Represents the current state of an [OpenXrPlane] instance's mutable fields.
+ * State of an [OpenXrPlane] instance's mutable fields.
  *
  * @property trackingState the [TrackingState] value describing if the plane is being updated
  * @property label the [Plane.Label] associated with the plane

@@ -21,7 +21,6 @@ import androidx.annotation.GuardedBy
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameBuffer
 import androidx.camera.camera2.pipe.FrameReference
-import androidx.camera.camera2.pipe.Metadata
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.FrameGraphCoroutineScope
@@ -29,6 +28,8 @@ import androidx.camera.camera2.pipe.config.FrameGraphScope
 import androidx.camera.camera2.pipe.filterToCaptureRequestParameters
 import androidx.camera.camera2.pipe.filterToMetadataParameters
 import androidx.camera.camera2.pipe.internal.FrameDistributor
+import androidx.camera.common.Metadata
+import java.util.Objects.deepEquals
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 
@@ -42,7 +43,7 @@ internal constructor(
     private val lock = Any()
     @GuardedBy("lock") private val buffers = mutableListOf<FrameBufferImpl>()
     @GuardedBy("lock") private var streams = mutableSetOf<StreamId>()
-    @GuardedBy("lock") private var parameters = mutableMapOf<Any, Any>()
+    @GuardedBy("lock") private var parameters = mutableMapOf<Any, Any?>()
 
     internal fun attach(
         streams: Set<StreamId>,
@@ -75,7 +76,7 @@ internal constructor(
     @GuardedBy("lock")
     private fun updateStreamsAndParameters(): Boolean {
         val newStreams = mutableSetOf<StreamId>()
-        val newParameters = mutableMapOf<Any, Any>()
+        val newParameters = mutableMapOf<Any, Any?>()
         for (buffer in buffers) {
             newStreams.addAll(buffer.streams)
 
@@ -87,13 +88,11 @@ internal constructor(
                 }
 
                 // If the key is present the values shouldn't conflict.
-                check(!newParameters.containsKey(key) || newParameters[key] == value) {
+                check(!newParameters.containsKey(key) || deepEquals(newParameters[key], value)) {
                     "Conflicting parameter values: $key has different values (${newParameters[key]} and $value)."
                 }
 
-                if (value != null) {
-                    newParameters[key] = value
-                }
+                newParameters[key] = value
             }
         }
         val modified: Boolean = newStreams != streams || newParameters != parameters
@@ -115,6 +114,13 @@ internal constructor(
                     extras = parameters.filterToMetadataParameters(),
                 )
             )
+        }
+    }
+
+    fun trimAll(streamId: StreamId) {
+        val buffersToTrim = synchronized(lock) { buffers.filter { it.streams.contains(streamId) } }
+        for (buffer in buffersToTrim) {
+            buffer.trimAll()
         }
     }
 

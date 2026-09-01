@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-actual fun DropdownMenu(
+public actual fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier,
@@ -45,19 +45,8 @@ actual fun DropdownMenu(
     content: @Composable ColumnScope.() -> Unit,
 ): Unit = implementedInJetBrainsFork()
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-actual fun DropdownMenuPopup(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    modifier: Modifier,
-    offset: DpOffset,
-    properties: PopupProperties,
-    content: @Composable ColumnScope.() -> Unit,
-): Unit = implementedInJetBrainsFork()
-
-@Composable
-actual fun DropdownMenuItem(
+public actual fun DropdownMenuItem(
     text: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier,
@@ -69,4 +58,10 @@ actual fun DropdownMenuItem(
     interactionSource: MutableInteractionSource?,
 ): Unit = implementedInJetBrainsFork()
 
-internal actual val DefaultMenuProperties: PopupProperties = implementedInJetBrainsFork()
+@Composable
+internal actual fun DropdownMenuPopupImpl(
+    onDismissRequest: () -> Unit,
+    popupPositionProvider: DropdownMenuPopupPositionProvider,
+    properties: PopupProperties,
+    content: @Composable () -> Unit,
+): Unit = implementedInJetBrainsFork()

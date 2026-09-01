@@ -16,9 +16,14 @@
 
 package androidx.webkit;
 
-import androidx.annotation.RequiresFeature;
+import androidx.annotation.RestrictTo;
 
+import org.chromium.support_lib_boundary.WebViewPageBoundaryInterface;
+import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
+
+import java.lang.reflect.InvocationHandler;
+import java.util.Objects;
 
 /**
  * This class serves solely as a key for Page-associated data.
@@ -34,13 +39,31 @@ import org.jspecify.annotations.NonNull;
  *     when {@link WebSettingsCompat#setBackForwardCacheEnabled} is enabled.</li>
  * </ul>
  */
-@WebNavigationClient.ExperimentalNavigationCallback
-public interface Page {
+public final class Page {
+
+    private final @NonNull WebViewPageBoundaryInterface mPageImpl;
+
+    private Page(@NonNull WebViewPageBoundaryInterface pageImpl) {
+        mPageImpl = pageImpl;
+    }
+
+    /**
+     * Factory method that returns the Page associated with the given invocationHandler.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static @NonNull Page forInvocationHandler(@NonNull InvocationHandler invocationHandler) {
+        WebViewPageBoundaryInterface boundaryInterface =
+                BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                        WebViewPageBoundaryInterface.class, invocationHandler);
+        assert boundaryInterface != null;
+        return (Page) Objects.requireNonNull(
+                boundaryInterface.getOrCreatePeer(() -> new Page(boundaryInterface)));
+    }
+
     /**
      * Returns the URL associated with this page instance.
      */
-    @RequiresFeature(name = WebViewFeature.PAGE_GET_URL,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @NonNull
-    String getUrl();
+    public @NonNull String getUrl() {
+        return mPageImpl.getUrl();
+    }
 }

@@ -33,10 +33,11 @@ import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -50,12 +51,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RemoteCanvasTest {
     @get:Rule
-    val remoteComposeTestRule: RemoteComposeScreenshotTestRule by lazy {
-        RemoteComposeScreenshotTestRule(
+    val remoteComposeTestRule =
+        RemoteScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
             matcher = MSSIMMatcher(threshold = 0.9995),
         )
-    }
 
     private val tests =
         listOf<@Composable () -> Unit>(
@@ -91,7 +92,7 @@ class RemoteCanvasTest {
     fun TestDrawAnchoredText_colorAndTextSize() {
         val text = "Hello".rs
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
@@ -162,12 +163,10 @@ class RemoteCanvasTest {
         RemoteCanvas(
             modifier =
                 RemoteModifier.size(100.rdp).drawWithContent {
-                    rotate(45.rf, pivot = RemoteOffset(remoteWidth / 2f, remoteHeight / 2f)) {
-                        drawContent()
-                    }
+                    rotate(45.rf, pivot = RemoteOffset(width / 2f, height / 2f)) { drawContent() }
                 }
         ) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = "Rotated by Canvas 45°".rs,
                 anchorX = 150f.rf,
@@ -192,14 +191,16 @@ class RemoteCanvasTest {
     fun TestDrawAnchoredText_brushAndTextSize() {
         val text = RemoteString("Hello")
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,
                 anchorY = 40f.rf,
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Red.rc), remoteSize)
+                        with(RemoteBrush.solidColor(Color.Red.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
                         textSize = SMALL_FONT_SIZE.rf
                     },
             )
@@ -209,7 +210,9 @@ class RemoteCanvasTest {
                 anchorY = 80f.rf,
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Green.rc), remoteSize)
+                        with(RemoteBrush.solidColor(Color.Green.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
                         textSize = MEDIUM_FONT_SIZE.rf
                     },
             )
@@ -219,7 +222,9 @@ class RemoteCanvasTest {
                 anchorY = 120f.rf,
                 paint =
                     RemotePaint {
-                        applyRemoteBrush(RemoteBrush.solidColor(Color.Blue.rc), remoteSize)
+                        with(RemoteBrush.solidColor(Color.Blue.rc)) {
+                            applyTo(this@RemotePaint, size)
+                        }
                         textSize = LARGE_FONT_SIZE.rf
                     },
             )
@@ -239,7 +244,7 @@ class RemoteCanvasTest {
             )
         val text = "Visible Hello".rs
         RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
-            val w = remoteWidth
+            val w = width
             drawAnchoredText(
                 text = text,
                 anchorX = w / 2f,

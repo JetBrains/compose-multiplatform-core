@@ -20,7 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 import androidx.car.app.model.Action;
+import androidx.car.app.model.Banner;
+import androidx.car.app.model.CarColor;
 import androidx.car.app.model.Header;
+import androidx.car.app.model.StrokeCap;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +49,7 @@ public class MediaPlaybackTemplateTest {
                 new MediaPlaybackTemplate.Builder().build();
 
         assertEquals(template.getHeader(), null);
+        assertEquals(template.getStyle(), null);
     }
 
     @Test
@@ -62,6 +66,28 @@ public class MediaPlaybackTemplateTest {
                 new MediaPlaybackTemplate.Builder().setHeader(HEADER).build();
 
         assertEquals(template.getHeader(), HEADER);
+    }
+
+    @Test
+    public void createInstance_bannerProvided_isValid() {
+        Banner banner = new Banner.Builder().setTitle("Banner").build();
+        MediaPlaybackTemplate template =
+                new MediaPlaybackTemplate.Builder().setBanner(banner).build();
+
+        assertEquals(template.getBanner(), banner);
+    }
+
+    @Test
+    public void createInstance_styleProvided_isValid() {
+        MediaPlaybackStyle style =
+                new MediaPlaybackStyle.Builder()
+                        .setMediaAccentColor(CarColor.BLUE)
+                        .setProgressBarStrokeCap(StrokeCap.ROUND)
+                        .build();
+        MediaPlaybackTemplate template =
+                new MediaPlaybackTemplate.Builder().setStyle(style).build();
+
+        assertEquals(template.getStyle(), style);
     }
 
     @Test
@@ -95,5 +121,53 @@ public class MediaPlaybackTemplateTest {
                 new MediaPlaybackTemplate.Builder().setHeader(null).build();
 
         assertNotEquals(template1, template2);
+    }
+
+    @Test
+    public void notEquals_differentBanners() {
+        Banner banner = new Banner.Builder().setTitle("Banner").build();
+        MediaPlaybackTemplate template1 =
+                new MediaPlaybackTemplate.Builder().setBanner(banner).build();
+
+        MediaPlaybackTemplate template2 =
+                new MediaPlaybackTemplate.Builder().setBanner(null).build();
+
+        assertNotEquals(template1, template2);
+    }
+
+    @Test
+    public void notEquals_differentStyles() {
+        MediaPlaybackStyle style1 =
+                new MediaPlaybackStyle.Builder()
+                        .setMediaAccentColor(CarColor.BLUE)
+                        .build();
+
+        MediaPlaybackStyle style2 =
+                new MediaPlaybackStyle.Builder()
+                        .setMediaAccentColor(CarColor.RED)
+                        .build();
+
+        MediaPlaybackTemplate template1 =
+                new MediaPlaybackTemplate.Builder().setStyle(style1).build();
+        MediaPlaybackTemplate template2 =
+                new MediaPlaybackTemplate.Builder().setStyle(style2).build();
+
+        assertNotEquals(template1, template2);
+    }
+
+    @Test
+    public void copyBuilder_copiesStyle() {
+        MediaPlaybackStyle style =
+                new MediaPlaybackStyle.Builder()
+                        .setMediaAccentColor(CarColor.BLUE)
+                        .setProgressBarStrokeCap(StrokeCap.SQUARE)
+                        .build();
+        MediaPlaybackTemplate template =
+                new MediaPlaybackTemplate.Builder().setStyle(style).build();
+        MediaPlaybackTemplate copy =
+                new MediaPlaybackTemplate.Builder(template).build();
+
+        assertEquals(template, copy);
+        assertEquals(copy.getStyle(), style);
     }
 }

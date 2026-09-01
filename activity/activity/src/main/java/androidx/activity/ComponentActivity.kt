@@ -255,6 +255,15 @@ public open class ComponentActivity() :
 
     private var hasPictureInPictureSystemFeature: Boolean = false
 
+    private val isExported: Boolean by lazy {
+        try {
+            val info = packageManager.getActivityInfo(componentName, 0)
+            info.exported
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
     /**
      * Default constructor for ComponentActivity. All Activities must have a default constructor for
      * API 27 and lower devices or when using the default [android.app.AppComponentFactory].
@@ -561,8 +570,29 @@ public open class ComponentActivity() :
         }
     }
 
+    /**
+     * The default arguments [Bundle] to pass to [DEFAULT_ARGS_KEY] in
+     * [defaultViewModelCreationExtras].
+     *
+     * For exported activities (activities that can be launched by external applications), this
+     * returns `null` by default to prevent untrusted intent extras from populating ViewModel saved
+     * state. For non-exported activities, this returns `intent?.extras`.
+     *
+     * Override this property to explicitly pass or validate intent extras for ViewModels created by
+     * this Activity.
+     */
+    public open val defaultViewModelArgs: Bundle?
+        @Suppress("NullableCollection") /* align with Intent.extras */
+        get() =
+            if (
+                @OptIn(ExperimentalActivityApi::class) @Suppress("DEPRECATION")
+                !ActivityFlags.isUntrustedActivityDefaultViewModelArgsEnabled && isExported
+            )
+                null
+            else intent?.extras
+
     override val defaultViewModelProviderFactory: ViewModelProvider.Factory by lazy {
-        SavedStateViewModelFactory(application, this, if (intent != null) intent.extras else null)
+        SavedStateViewModelFactory(application, this, defaultViewModelArgs)
     }
 
     @get:CallSuper
@@ -580,7 +610,7 @@ public open class ComponentActivity() :
             }
             extras[SAVED_STATE_REGISTRY_OWNER_KEY] = this
             extras[VIEW_MODEL_STORE_OWNER_KEY] = this
-            val intentExtras = intent?.extras
+            val intentExtras = defaultViewModelArgs
             if (intentExtras != null) {
                 extras[DEFAULT_ARGS_KEY] = intentExtras
             }
@@ -661,7 +691,7 @@ public open class ComponentActivity() :
      * compatibility with previous versions, but overriding this property is unsupported.
      */
     override val navigationEventDispatcher: NavigationEventDispatcher
-        get() = onBackPressedDispatcher.eventDispatcher
+        get() = onBackPressedDispatcher.asNavigationEventDispatcher()
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun addObserverForBackInvoker(dispatcher: OnBackPressedDispatcher) {

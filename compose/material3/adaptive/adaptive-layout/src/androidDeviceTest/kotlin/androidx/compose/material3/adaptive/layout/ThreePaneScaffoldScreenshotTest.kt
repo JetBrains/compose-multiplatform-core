@@ -20,7 +20,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -37,7 +37,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +46,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class ThreePaneScaffoldScreenshotTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3_ADAPTIVE)
 
@@ -727,7 +726,7 @@ class ThreePaneScaffoldScreenshotTest {
 private fun SampleThreePaneScaffoldStandardMode(
     overrideScaffoldValue: ThreePaneScaffoldValue? = null
 ) {
-    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     val scaffoldValue =
         overrideScaffoldValue
             ?: calculateThreePaneScaffoldValue(
@@ -746,7 +745,7 @@ private fun SampleThreePaneScaffoldStandardMode(
 @Composable
 private fun SampleThreePaneScaffoldDenseMode() {
     val scaffoldDirective =
-        calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(currentWindowAdaptiveInfo())
+        calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(currentWindowAdaptiveInfoV2())
     val scaffoldValue =
         calculateThreePaneScaffoldValue(
             scaffoldDirective.maxHorizontalPartitions,
@@ -764,7 +763,7 @@ private fun SampleThreePaneScaffoldDenseMode() {
 @Composable
 private fun SampleThreePaneScaffoldWithScaffoldState(scaffoldState: ThreePaneScaffoldState) {
     val scaffoldDirective =
-        calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(currentWindowAdaptiveInfo())
+        calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(currentWindowAdaptiveInfoV2())
     SampleThreePaneScaffold(
         scaffoldDirective,
         scaffoldState,
@@ -779,7 +778,7 @@ internal fun SampleThreePaneScaffoldWithPaneExpansion(
     paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
         null,
 ) {
-    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     val scaffoldValue =
         calculateThreePaneScaffoldValue(
             scaffoldDirective.maxHorizontalPartitions,

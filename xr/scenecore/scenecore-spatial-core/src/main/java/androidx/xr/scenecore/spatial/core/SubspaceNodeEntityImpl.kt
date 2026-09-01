@@ -38,17 +38,17 @@ internal class SubspaceNodeEntityImpl(
     context: Context,
     xrExtensions: XrExtensions,
     private val subspaceNode: Node,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
 ) :
-    AndroidXrEntity(context, xrExtensions.createNode(), xrExtensions, entityManager, executor),
+    AndroidXrEntity(context, xrExtensions.createNode(), xrExtensions, sceneNodeRegistry, executor),
     SubspaceNodeEntity {
 
     private var internalScale = Vector3(1f, 1f, 1f)
 
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
         super<AndroidXrEntity>.setPose(pose, relativeTo)
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             transaction
                 .setPosition(
                     subspaceNode,
@@ -76,7 +76,7 @@ internal class SubspaceNodeEntityImpl(
                 size.height * internalScale.y,
                 size.depth * internalScale.z,
             )
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             transaction
                 .setScale(subspaceNode, scaledSize.width, scaledSize.height, scaledSize.depth)
                 .apply()
@@ -85,7 +85,7 @@ internal class SubspaceNodeEntityImpl(
 
     override fun setAlpha(alpha: Float) {
         super.setAlpha(alpha)
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             // Get the final clamped alpha value from the inheritance chain (from BaseEntity).
             // This is then applied to mSubspaceNode to ensure its alpha is consistent with mNode's.
             transaction.setAlpha(subspaceNode, super<AndroidXrEntity>.getAlpha()).apply()
@@ -95,7 +95,7 @@ internal class SubspaceNodeEntityImpl(
     override var size = Dimensions(0f, 0f, 0f)
         set(size) {
             field = size
-            mExtensions.createNodeTransaction().use { transaction ->
+            extensions.createNodeTransaction().use { transaction ->
                 transaction
                     .setScale(
                         subspaceNode,
@@ -109,7 +109,7 @@ internal class SubspaceNodeEntityImpl(
 
     override fun setHidden(hidden: Boolean) {
         super.setHidden(hidden)
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             transaction.setVisibility(subspaceNode, !hidden).apply()
         }
     }

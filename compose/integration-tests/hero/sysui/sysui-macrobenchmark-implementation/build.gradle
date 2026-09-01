@@ -29,7 +29,7 @@ plugins {
 
 android {
     namespace = "androidx.compose.integration.hero.sysui.macrobenchmark.implementation"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) { minorApiLevel = 1 } }
     defaultConfig {
         minSdk { version = release(31) } // This benchmark does not run below API 31
     }
@@ -41,7 +41,7 @@ android {
 // Create a release build type and make sure it's the only one enabled.
 // This is needed because we benchmark the release build type only.
 android.buildTypes { release {} }
-androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'release' } }
+androidComponents { beforeVariants(selector().all()) { enabled = buildType == "release" } }
 
 dependencies {
     // Compose

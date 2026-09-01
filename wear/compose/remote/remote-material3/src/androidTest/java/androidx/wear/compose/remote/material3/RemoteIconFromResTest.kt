@@ -17,56 +17,61 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
-import androidx.compose.remote.creation.compose.RemoteComposeCreationComposeFlags
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteRow
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.padding
-import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.remote.material3.samples.R
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalRemoteCreationComposeApi::class)
 @MediumTest
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @RunWith(JUnit4::class)
 class RemoteIconFromResTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val creationDisplayInfo =
-        CreationDisplayInfo(500, 500, context.resources.displayMetrics.densityDpi)
-
-    @org.junit.Before
-    fun setup() {
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = true
-    }
-
-    @org.junit.After
-    fun tearDown() {
-        RemoteComposeCreationComposeFlags.isRemoteApplierEnabled = false
-    }
+    private val creationDisplayInfo = createCreationDisplayInfo(context, Size(500f, 500f))
 
     @Test
     fun iconsFromRes() {
-        remoteComposeTestRule.runScreenshotTest(creationDisplayInfo = creationDisplayInfo) {
+        remoteComposeTestRule.runScreenshotTest(remoteCreationDisplayInfo = creationDisplayInfo) {
+            RemoteRow {
+                Icon(resId = R.drawable.gs_map_wght500rond100_vd_theme_24)
+                Icon(resId = R.drawable.gs_work_wght500rond100_vd_theme_24)
+                Icon(resId = R.drawable.gs_category_search_wght500rond100_vd_theme_24)
+                Icon(resId = R.drawable.test_vector)
+            }
+        }
+    }
+
+    @Test
+    fun iconsFromRes_rtl() {
+        remoteComposeTestRule.runScreenshotTest(
+            remoteCreationDisplayInfo = creationDisplayInfo,
+            creationComposableWrapper = ComposableWrappers.rtl,
+        ) {
             RemoteRow {
                 Icon(resId = R.drawable.gs_map_wght500rond100_vd_theme_24)
                 Icon(resId = R.drawable.gs_work_wght500rond100_vd_theme_24)
@@ -77,10 +82,7 @@ class RemoteIconFromResTest {
     }
 
     @Composable
-    private fun Icon(
-        modifier: RemoteModifier = RemoteModifier.padding(8.dp).size(24.rdp),
-        resId: Int,
-    ) {
+    private fun Icon(modifier: RemoteModifier = RemoteModifier.padding(8.rdp), resId: Int) {
         RemoteIcon(
             modifier = modifier,
             imageVector = ImageVector.vectorResource(resId),

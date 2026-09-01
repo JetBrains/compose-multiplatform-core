@@ -23,14 +23,17 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rc
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rs
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.ComposableWrappers
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.remote.material3.util.SCREENSHOT_GOLDEN_DIRECTORY
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,15 +43,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LayoutDirectionTest {
     @get:Rule
-    val remoteComposeTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-    }
+    val remoteComposeTestRule =
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     @Test
     fun ltr() {
         remoteComposeTestRule.runScreenshotTest {
             RemoteRow(
-                modifier = RemoteModifier.fillMaxWidth().background(Color.Black),
+                modifier = RemoteModifier.fillMaxWidth().background(Color.Black.rc),
                 horizontalArrangement = RemoteArrangement.Start,
                 verticalAlignment = RemoteAlignment.CenterVertically,
             ) {
@@ -61,9 +66,11 @@ class LayoutDirectionTest {
 
     @Test
     fun rtl() {
-        remoteComposeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationComposableWrapper = ComposableWrappers.rtl
+        ) {
             RemoteRow(
-                modifier = RemoteModifier.fillMaxWidth().background(Color.Black),
+                modifier = RemoteModifier.fillMaxWidth().background(Color.Black.rc),
                 horizontalArrangement = RemoteArrangement.Start,
                 verticalAlignment = RemoteAlignment.CenterVertically,
             ) {
@@ -77,9 +84,11 @@ class LayoutDirectionTest {
     @Test
     fun rtl_manual() {
         // Do the manual workarounds to display correctly
-        remoteComposeTestRule.runScreenshotTest(layoutDirection = LayoutDirection.Rtl) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationComposableWrapper = ComposableWrappers.rtl
+        ) {
             RemoteRow(
-                modifier = RemoteModifier.fillMaxWidth().background(Color.Black),
+                modifier = RemoteModifier.fillMaxWidth().background(Color.Black.rc),
                 horizontalArrangement = RemoteArrangement.End,
                 verticalAlignment = RemoteAlignment.CenterVertically,
             ) {

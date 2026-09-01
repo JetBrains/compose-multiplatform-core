@@ -16,6 +16,7 @@
 
 package androidx.room3.paging
 
+import android.content.Context
 import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
@@ -71,7 +72,7 @@ class LimitOffsetPagingSourceTest {
     fun init() {
         database =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
+                    ApplicationProvider.getApplicationContext<Context>()
                 )
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(
@@ -105,9 +106,9 @@ class LimitOffsetPagingSourceTest {
     @Test
     fun load_usesQueryExecutor() = runTest {
         val testExecutor = TestExecutor()
-        database =
+        val customDatabase =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
+                    ApplicationProvider.getApplicationContext<Context>()
                 )
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(testExecutor.asCoroutineDispatcher())
@@ -118,7 +119,7 @@ class LimitOffsetPagingSourceTest {
 
         val job = Job()
         launch(job) {
-            LimitOffsetPagingSourceImpl(database)
+            LimitOffsetPagingSourceImpl(customDatabase)
                 .load(
                     PagingSource.LoadParams.Refresh(
                         key = null,
@@ -135,6 +136,7 @@ class LimitOffsetPagingSourceTest {
         assertThat(testExecutor.executeAll()).isTrue()
 
         job.cancel()
+        customDatabase.close()
     }
 
     @Test
@@ -734,7 +736,7 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
     fun init() {
         db =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
-                    ApplicationProvider.getApplicationContext()
+                    ApplicationProvider.getApplicationContext<Context>()
                 )
                 .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(queryContext)

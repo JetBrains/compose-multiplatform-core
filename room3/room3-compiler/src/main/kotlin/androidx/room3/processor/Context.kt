@@ -20,6 +20,7 @@ import androidx.room3.RewriteQueriesToDropUnusedColumns
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XProcessingEnv
+import androidx.room3.ext.RoomTypeNames
 import androidx.room3.log.RLog
 import androidx.room3.parser.optimization.RemoveUnusedColumnQueryRewriter
 import androidx.room3.preconditions.Checks
@@ -33,7 +34,7 @@ class Context
 private constructor(
     val processingEnv: XProcessingEnv,
     val logger: RLog,
-    private val typeConverters: CustomConverterProcessor.ProcessResult,
+    private val columnTypeConverters: CustomColumnConverterProcessor.ProcessResult,
     private val daoReturnTypeConverters: DaoReturnTypeConverterProcessor.ProcessResult,
     private val inheritedAdapterStore: TypeAdapterStore?,
     val cache: Cache,
@@ -47,8 +48,8 @@ private constructor(
         } else {
             TypeAdapterStore.create(
                 this,
-                typeConverters.builtInConverterFlags,
-                typeConverters.converters,
+                columnTypeConverters.builtInConverterFlags,
+                columnTypeConverters.converters,
                 daoReturnTypeConverters.converters,
             )
         }
@@ -86,7 +87,7 @@ private constructor(
     ) : this(
         processingEnv = processingEnv,
         logger = RLog(processingEnv.messager, emptySet(), null),
-        typeConverters = CustomConverterProcessor.ProcessResult.EMPTY,
+        columnTypeConverters = CustomColumnConverterProcessor.ProcessResult.EMPTY,
         daoReturnTypeConverters = DaoReturnTypeConverterProcessor.ProcessResult.EMPTY,
         inheritedAdapterStore = null,
         cache =
@@ -98,6 +99,10 @@ private constructor(
             ),
         canRewriteQueriesToDropUnusedColumns = false,
     )
+
+    val validateChunkSize by lazy {
+        processingEnv.options[ProcessorOptions.VALIDATION_SPLIT_SIZE.argName]?.toIntOrNull() ?: 300
+    }
 
     val schemaInFolderPath by lazy {
         val internalInputFolder =
@@ -140,7 +145,7 @@ private constructor(
             Context(
                 processingEnv = processingEnv,
                 logger = RLog(collector, logger.suppressedWarnings, logger.defaultElement),
-                typeConverters = this.typeConverters,
+                columnTypeConverters = this.columnTypeConverters,
                 daoReturnTypeConverters = this.daoReturnTypeConverters,
                 inheritedAdapterStore = typeAdapterStore,
                 cache = cache,
@@ -168,7 +173,7 @@ private constructor(
     ): Context {
         val suppressedWarnings = SuppressWarningProcessor.getSuppressedWarnings(element)
         val processConvertersResult =
-            CustomConverterProcessor.findConverters(this, element).let { result ->
+            CustomColumnConverterProcessor.findConverters(this, element).let { result ->
                 if (forceBuiltInConverters != null) {
                     result.copy(
                         builtInConverterFlags =
@@ -182,19 +187,19 @@ private constructor(
             this.daoReturnTypeConverters +
                 DaoReturnTypeConverterProcessor.findConverters(this, element)
         val subBuiltInConverterFlags =
-            typeConverters.builtInConverterFlags.withNext(
+            columnTypeConverters.builtInConverterFlags.withNext(
                 processConvertersResult.builtInConverterFlags
             )
         val canReUseAdapterStore =
-            subBuiltInConverterFlags == typeConverters.builtInConverterFlags &&
+            subBuiltInConverterFlags == columnTypeConverters.builtInConverterFlags &&
                 processConvertersResult.classes.isEmpty() &&
                 processDaoReturnTypeConvertersResult.classes.isEmpty()
         // order here is important since the sub context should give priority to new converters.
         val subTypeConverters =
             if (canReUseAdapterStore) {
-                this.typeConverters
+                this.columnTypeConverters
             } else {
-                processConvertersResult + this.typeConverters
+                processConvertersResult + this.columnTypeConverters
             }
         val subSuppressedWarnings =
             forceSuppressedWarnings + suppressedWarnings + logger.suppressedWarnings
@@ -213,7 +218,7 @@ private constructor(
             Context(
                 processingEnv = processingEnv,
                 logger = RLog(logger.messager, subSuppressedWarnings, element),
-                typeConverters = subTypeConverters,
+                columnTypeConverters = subTypeConverters,
                 daoReturnTypeConverters = processDaoReturnTypeConvertersResult,
                 inheritedAdapterStore = if (canReUseAdapterStore) typeAdapterStore else null,
                 cache = subCache,
@@ -238,6 +243,7 @@ private constructor(
         OPTION_SCHEMA_FOLDER("room.schemaLocation"),
         INTERNAL_SCHEMA_INPUT_FOLDER("room.internal.schemaInput"),
         INTERNAL_SCHEMA_OUTPUT_FOLDER("room.internal.schemaOutput"),
+        VALIDATION_SPLIT_SIZE("room.validationSplitSize"),
     }
 
     enum class BooleanProcessorOptions(val argName: String, private val defaultValue: Boolean) {
@@ -267,18 +273,24 @@ private constructor(
     /**
      * Check if the target platform is only Android.
      *
-     * Note that there is no 'Android' target in the `targetPlatforms` list, so instead we check for
-     * JVM and also validate that an Android only class `android.content.Context` is in the
-     * classpath.
+     * Note that there is no 'Android' target in the `targetPlatforms` list, so we check for JVM and
+     * also validate that an Android only function is found in the classpath of an expect / actual
+     * declaration.
      */
     fun isAndroidOnlyTarget(): Boolean {
         val targetPlatforms = this.processingEnv.targetPlatforms
         return targetPlatforms.size == 1 &&
             targetPlatforms.contains(XProcessingEnv.Platform.JVM) &&
-            this.processingEnv.findType("android.content.Context") != null
+            isAndroidMakerFunctionInProcessingEnv()
     }
 
-    /** Check if the target platform is JVM. */
+    private fun isAndroidMakerFunctionInProcessingEnv(): Boolean =
+        this.processingEnv
+            .findTypeElement(RoomTypeNames.ANDROID_MARKER)
+            ?.getDeclaredMethods()
+            ?.firstOrNull { it.name == "isAndroid" } != null
+
+    /** Check if the target platform is JVM, which includes Android. */
     fun isJvmOnlyTarget(): Boolean {
         val targetPlatforms = this.processingEnv.targetPlatforms
         return targetPlatforms.size == 1 && targetPlatforms.contains(XProcessingEnv.Platform.JVM)

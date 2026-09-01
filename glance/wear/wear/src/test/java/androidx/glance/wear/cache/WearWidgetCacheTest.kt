@@ -16,11 +16,14 @@
 
 package androidx.glance.wear.cache
 
+import androidx.collection.intSetOf
 import androidx.datastore.core.DataStoreFactory
 import androidx.glance.wear.core.ContainerInfo
+import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetParams
 import androidx.glance.wear.core.WidgetInstanceId
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -65,6 +68,41 @@ class WearWidgetCacheTest {
             cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_LARGE, INSTANCE_ID_1)
 
         assertThat(restoredParams).isEqualTo(params)
+    }
+
+    @Test
+    fun setAndGetWidgetParams_withCustomRendererVersionAndSupportedOps_restoresValue() = runTest {
+        val customVersion =
+            WearWidgetParams(
+                instanceId = INSTANCE_ID_1,
+                containerType = ContainerInfo.CONTAINER_TYPE_LARGE,
+                widthDp = 100f,
+                heightDp = 200f,
+                horizontalPaddingDp = 10f,
+                verticalPaddingDp = 20f,
+                cornerRadiusDp = 5f,
+                rendererVersion =
+                    RendererVersion(
+                        major = 3,
+                        minor = 8,
+                        revision = 2,
+                        supportedOperations = intSetOf(10, 20, 30),
+                    ),
+            )
+
+        cacheUnderTest.update { setWidgetParams(customVersion) }
+        val restoredParams =
+            cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_LARGE, INSTANCE_ID_1)
+
+        assertThat(restoredParams).isEqualTo(customVersion)
+        assertThat(restoredParams.rendererVersion.major).isEqualTo(3)
+        assertThat(restoredParams.rendererVersion.minor).isEqualTo(8)
+        assertThat(restoredParams.rendererVersion.revision).isEqualTo(2)
+        val restoredOps =
+            mutableListOf<Int>().apply {
+                restoredParams.rendererVersion.supportedOperations.forEach { add(it) }
+            }
+        assertThat(restoredOps).containsExactly(10, 20, 30)
     }
 
     @Test
@@ -126,53 +164,83 @@ class WearWidgetCacheTest {
                 cornerRadiusDp = 15f,
             )
 
-        cacheUnderTest.update {
-            setWidgetParams(params1)
-            setWidgetParams(params2)
-        }
-        val restoredParams =
-            cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_LARGE, INSTANCE_ID_1)
-        val restoredOtherParams =
-            cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_SMALL, INSTANCE_ID_1)
+        cacheUnderTest.update { setWidgetParams(params1) }
+        assertThat(
+                cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_LARGE, INSTANCE_ID_1)
+            )
+            .isEqualTo(params1)
 
-        assertThat(restoredParams).isEqualTo(params2)
-        assertThat(restoredOtherParams).isNull()
+        cacheUnderTest.update { setWidgetParams(params2) }
+        assertThat(
+                cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_LARGE, INSTANCE_ID_1)
+            )
+            .isEqualTo(params2)
     }
 
     @Test
-    fun setAndGetInstanceType_restoresValue() = runTest {
-        cacheUnderTest.update { setInstanceType(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_LARGE) }
+    fun getWidgetParams_cacheMiss_throwsException() = runTest {
+        assertFailsWith<WearWidgetCache.WidgetCacheMissException> {
+            cacheUnderTest.getWidgetParams(ContainerInfo.CONTAINER_TYPE_LARGE, INSTANCE_ID_1)
+        }
+    }
 
-        val readType = cacheUnderTest.getInstanceType(INSTANCE_ID_1)
+    @Test
+    fun setAndGetContainerTypeForInstance_restoresValue() = runTest {
+        cacheUnderTest.update {
+            setContainerTypeForInstance(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_LARGE)
+        }
+
+        val readType = cacheUnderTest.getContainerTypeForInstance(INSTANCE_ID_1)
 
         assertThat(readType).isEqualTo(ContainerInfo.CONTAINER_TYPE_LARGE)
     }
 
     @Test
-    fun setAndGetInstanceType_withMultipleIds_restoresValues() = runTest {
+    fun setAndGetContainerTypeForInstance_withMultipleIds_restoresValues() = runTest {
         cacheUnderTest.update {
-            setInstanceType(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_LARGE)
-            setInstanceType(INSTANCE_ID_2, ContainerInfo.CONTAINER_TYPE_SMALL)
+            setContainerTypeForInstance(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_LARGE)
+            setContainerTypeForInstance(INSTANCE_ID_2, ContainerInfo.CONTAINER_TYPE_SMALL)
         }
 
-        val readType1 = cacheUnderTest.getInstanceType(INSTANCE_ID_1)
-        val readType2 = cacheUnderTest.getInstanceType(INSTANCE_ID_2)
+        val readType1 = cacheUnderTest.getContainerTypeForInstance(INSTANCE_ID_1)
+        val readType2 = cacheUnderTest.getContainerTypeForInstance(INSTANCE_ID_2)
 
         assertThat(readType1).isEqualTo(ContainerInfo.CONTAINER_TYPE_LARGE)
         assertThat(readType2).isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
     }
 
     @Test
-    fun setAndGetInstanceType_withExistingId_overwritesValue() = runTest {
+    fun setAndGetContainerTypeForInstance_withExistingId_overwritesValue() = runTest {
         cacheUnderTest.update {
-            setInstanceType(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_LARGE)
-            setInstanceType(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_SMALL)
+            setContainerTypeForInstance(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_LARGE)
         }
-        val readType1 = cacheUnderTest.getInstanceType(INSTANCE_ID_1)
-        val readType2 = cacheUnderTest.getInstanceType(INSTANCE_ID_2)
+        assertThat(cacheUnderTest.getContainerTypeForInstance(INSTANCE_ID_1))
+            .isEqualTo(ContainerInfo.CONTAINER_TYPE_LARGE)
 
-        assertThat(readType1).isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
-        assertThat(readType2).isNull()
+        cacheUnderTest.update {
+            setContainerTypeForInstance(INSTANCE_ID_1, ContainerInfo.CONTAINER_TYPE_SMALL)
+        }
+        assertThat(cacheUnderTest.getContainerTypeForInstance(INSTANCE_ID_1))
+            .isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
+    }
+
+    @Test
+    fun getContainerTypeForInstance_cacheMiss_throwsException() = runTest {
+        assertFailsWith<WearWidgetCache.WidgetCacheMissException> {
+            cacheUnderTest.getContainerTypeForInstance(INSTANCE_ID_1)
+        }
+    }
+
+    @Test
+    fun setAndGetServiceToWidgetMapping_restoresValue() = runTest {
+        cacheUnderTest.update {
+            putServiceToWidgetMapping("service1", "widget1")
+            putServiceToWidgetMapping("service2", "widget2")
+        }
+
+        val mapping = cacheUnderTest.getServiceToWidgetMapping()
+
+        assertThat(mapping).containsExactly("service1", "widget1", "service2", "widget2")
     }
 
     private companion object {

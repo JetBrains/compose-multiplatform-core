@@ -15,6 +15,7 @@
  */
 package androidx.wear.compose.material3
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -34,11 +35,18 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.onVisibilityChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.onClick as semanticOnClick
@@ -53,13 +61,13 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
-import androidx.wear.compose.material3.AlertDialogDefaults.ConfirmIcon
-import androidx.wear.compose.material3.AlertDialogDefaults.DismissIcon
 import androidx.wear.compose.material3.AlertDialogDefaults.EdgeButton
 import androidx.wear.compose.material3.PaddingDefaults.horizontalContentPadding
 import androidx.wear.compose.material3.PaddingDefaults.verticalContentPadding
@@ -70,6 +78,18 @@ import androidx.wear.compose.material3.lazy.ResponsiveTransformationSpec
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureConfiguration
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureDefaults
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGesturePriority
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureScrollIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureScrollIndicatorState
+import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 // Confirm and dismiss buttons
 /**
@@ -81,6 +101,10 @@ import androidx.wear.compose.material3.lazy.transformedHeight
  * bottom of the dialog. It should be used when the user will be presented with a binary decision,
  * to either confirm or dismiss an action.
  *
+ * The [AlertDialog] supports one-handed gestures by default, for scrolling down and confirming (if
+ * using [AlertDialogDefaults.ConfirmButton]) using the primary gesture (e.g. double pinch) or
+ * dismissing using the dismiss gesture (e.g. wrist turn).
+ *
  * Where user input is not required, such as displaying a transient success or failure message, use
  * [ConfirmationDialog], [SuccessConfirmationDialog] or [FailureConfirmationDialog] instead.
  *
@@ -90,6 +114,11 @@ import androidx.wear.compose.material3.lazy.transformedHeight
  * Example of an [AlertDialog] with an icon, title and two buttons to confirm and dismiss:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithConfirmAndDismissSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithConfirmAndDismissSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping
  *   right (typically also called by the [dismissButton]). Implementation of this lambda must remove
@@ -138,7 +167,11 @@ public fun AlertDialog(
     properties: DialogProperties = DialogProperties(),
     content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
-    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
+    DialogWithDismissGesture(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
         AlertDialogContent(
             confirmButton = confirmButton,
             title = title,
@@ -167,6 +200,10 @@ public fun AlertDialog(
  * failure message, use [ConfirmationDialog], [SuccessConfirmationDialog] or
  * [FailureConfirmationDialog] instead.
  *
+ * The [AlertDialog] supports one-handed gestures by default, for scrolling down and confirming (if
+ * using [AlertDialogDefaults.ConfirmButton]) using the primary gesture (e.g. double pinch) or
+ * dismissing using the dismiss gesture (e.g. wrist turn).
+ *
  * The [transformationSpec] parameter enables the use of a [TransformingLazyColumn] internally for
  * advanced control over transformations of scrolling content, which can not be achieved with
  * [ScalingLazyColumn].
@@ -174,6 +211,11 @@ public fun AlertDialog(
  * Example of an [AlertDialog] with an icon, title and two buttons to confirm and dismiss:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithConfirmAndDismissTransformingContentSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithConfirmAndDismissTransformingContentSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping
  *   right (typically also called by the [dismissButton]). Implementation of this lambda must remove
@@ -234,7 +276,11 @@ public fun AlertDialog(
     properties: DialogProperties = DialogProperties(),
     content: (TransformingLazyColumnScope.() -> Unit)? = null,
 ) {
-    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
+    DialogWithDismissGesture(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
         AlertDialogContent(
             confirmButton = confirmButton,
             title = title,
@@ -258,7 +304,9 @@ public fun AlertDialog(
  *
  * This overload doesn't have any dedicated slots for buttons. It has a content slot so that the
  * caller has flexibility in how to seek user input. In most cases, we recommend using other
- * AlertDialog variations with 2 confirm/dismiss buttons or a single confirmation button.
+ * AlertDialog variations with 2 confirm/dismiss buttons or a single confirmation button. This
+ * [AlertDialog] also supports one-handed gestures by default for scrolling down using the primary
+ * gesture (e.g. double pinch) or dismissing using the dismiss gesture (e.g. wrist turn).
  *
  * Where user input is not required, such as displaying a transient success or failure message, use
  * [ConfirmationDialog], [SuccessConfirmationDialog] or [FailureConfirmationDialog] instead.
@@ -306,7 +354,11 @@ public fun AlertDialog(
     properties: DialogProperties = DialogProperties(),
     content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
-    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
+    DialogWithDismissGesture(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
         AlertDialogContent(
             title = title,
             modifier = modifier,
@@ -326,7 +378,9 @@ public fun AlertDialog(
  *
  * This overload doesn't have any dedicated slots for buttons, but it does have a content slot so
  * that the caller has flexibility in how to seek user input. It uses a [TransformationSpec] for
- * advanced control over transformations of scrolling content.
+ * advanced control over transformations of scrolling content. This [AlertDialog] also supports
+ * one-handed gestures by default for scrolling down using the primary gesture (e.g. double pinch)
+ * or dismissing using the dismiss gesture (e.g. wrist turn).
  *
  * In most cases, we recommend using other AlertDialog variations with 2 confirm/dismiss buttons or
  * a single confirmation button. Where user input is not required, such as displaying a transient
@@ -388,7 +442,11 @@ public fun AlertDialog(
     properties: DialogProperties = DialogProperties(),
     content: (TransformingLazyColumnScope.() -> Unit)? = null,
 ) {
-    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
+    DialogWithDismissGesture(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
         AlertDialogContent(
             title = title,
             modifier = modifier,
@@ -406,7 +464,9 @@ public fun AlertDialog(
 /**
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task. The dialog is scrollable by default if the content
- * exceeds the viewport height.
+ * exceeds the viewport height. This [AlertDialog] supports one-handed gestures by default for
+ * scrolling down using the primary gesture (e.g. double pinch) or dismissing using the dismiss
+ * gesture (e.g. wrist turn).
  *
  * This overload has a single slot for a confirm [EdgeButton] at the bottom of the dialog, which
  * should be used when the user will be presented with a single acknowledgement.
@@ -421,9 +481,18 @@ public fun AlertDialog(
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithEdgeButtonSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithEdgeButtonSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of an [AlertDialog] with content groups and a bottom [EdgeButton]:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithContentGroupsSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithContentGroupsSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping to
  *   the right or by other dismiss action. Implementation of this lambda must remove the dialog from
@@ -471,7 +540,11 @@ public fun AlertDialog(
     properties: DialogProperties = DialogProperties(),
     content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
-    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
+    DialogWithDismissGesture(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
         AlertDialogContent(
             edgeButton = edgeButton,
             title = title,
@@ -488,7 +561,9 @@ public fun AlertDialog(
 /**
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task. The dialog is scrollable by default if the content
- * exceeds the viewport height.
+ * exceeds the viewport height. This [AlertDialog] supports one-handed gestures by default for
+ * scrolling down using the primary gesture (e.g. double pinch) or dismissing using the dismiss
+ * gesture (e.g. wrist turn).
  *
  * This overload has a single slot for a confirm [EdgeButton] at the bottom of the dialog, which
  * should be used when the user will be presented with a single acknowledgement. It uses a
@@ -505,9 +580,18 @@ public fun AlertDialog(
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithEdgeButtonTransformingContentSample
  *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithEdgeButtonTransformingContentSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * Example of an [AlertDialog] with content groups and a bottom [EdgeButton]:
  *
  * @sample androidx.wear.compose.material3.samples.AlertDialogWithContentGroupsTransformingContentSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_AlertDialogWithContentGroupsTransformingContentSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param visible A boolean indicating whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping to
  *   the right or by other dismiss action. Implementation of this lambda must remove the dialog from
@@ -567,7 +651,11 @@ public fun AlertDialog(
     properties: DialogProperties = DialogProperties(),
     content: (TransformingLazyColumnScope.() -> Unit)? = null,
 ) {
-    Dialog(visible = visible, onDismissRequest = onDismissRequest, properties = properties) {
+    DialogWithDismissGesture(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
         AlertDialogContent(
             edgeButton = edgeButton,
             title = title,
@@ -591,6 +679,10 @@ public fun AlertDialog(
  * confirm or dismiss an action. Prefer using [AlertDialog] directly, which provides built-in
  * animations and a streamlined API. This composable may be used to provide the content for an alert
  * dialog if custom animations are required.
+ *
+ * This [AlertDialogContent] supports one-handed gestures by default, for scrolling down and
+ * confirming (if using [AlertDialogDefaults.ConfirmButton]) using the primary gesture (e.g. double
+ * pinch).
  *
  * AlertDialogContent now additionally offers an equivalent overload using TransformingLazyColumn,
  * which is recommended to achieve a consistent Material 3 scrolling experience throughout your app
@@ -634,17 +726,28 @@ public fun AlertDialogContent(
     content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
     val scrollableLayout: @Composable () -> Unit = {
-        val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
-        ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
-            contentPadding ->
+        val scrollState = rememberScalingLazyListState(initialCenterItemIndex = 0)
+        val gestureScrollState = rememberGestureScrollState()
+
+        ScreenScaffold(
+            scrollState = scrollState,
+            modifier = modifier,
+            contentPadding = contentPadding,
+            scrollIndicator = {
+                GestureScrollIndicator(
+                    gestureScrollState = gestureScrollState,
+                    scrollState = scrollState,
+                )
+            },
+        ) { contentPadding ->
             ScalingLazyColumn(
                 scalingParams = AlertScalingParams,
-                state = state,
+                state = scrollState,
                 contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = verticalArrangement,
                 autoCentering = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().gestureScroll(gestureScrollState, scrollState),
             ) {
                 alertDialogCommonContent(icon = icon, title = title, text = text, content = content)
                 item {
@@ -685,6 +788,10 @@ public fun AlertDialogContent(
  * Prefer using [AlertDialog] directly, which provides built-in animations and a streamlined API.
  * This composable may be used to provide the content for an alert dialog if custom animations are
  * required.
+ *
+ * This [AlertDialogContent] supports one-handed gestures by default, for scrolling down and
+ * confirming (if using [AlertDialogDefaults.ConfirmButton]) using the primary gesture (e.g. double
+ * pinch).
  *
  * @param confirmButton A slot for a [Button] indicating positive sentiment. Clicking the button
  *   must remove the dialog from the composition hierarchy. It's recommended to use
@@ -737,14 +844,26 @@ public fun AlertDialogContent(
     content: (TransformingLazyColumnScope.() -> Unit)? = null,
 ) {
     val scrollableLayout: @Composable () -> Unit = {
-        val state = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
-        ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
-            contentPadding ->
+        val scrollState = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+        val gestureScrollState = rememberGestureScrollState()
+
+        ScreenScaffold(
+            scrollState = scrollState,
+            modifier = modifier,
+            contentPadding = contentPadding,
+            scrollIndicator = {
+                GestureScrollIndicator(
+                    gestureScrollState = gestureScrollState,
+                    scrollState = scrollState,
+                )
+            },
+        ) { contentPadding ->
             TransformingLazyColumn(
-                state = state,
+                state = scrollState,
                 contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = verticalArrangement,
+                modifier = Modifier.fillMaxSize().gestureScroll(gestureScrollState, scrollState),
             ) {
                 alertDialogCommonContent(
                     icon = icon,
@@ -795,6 +914,9 @@ public fun AlertDialogContent(
  * animations and a streamlined API. This composable may be used to provide the content for an alert
  * dialog if custom animations are required.
  *
+ * This [AlertDialogContent] supports one-handed gestures by default, for scrolling down using the
+ * primary gesture (e.g. double pinch).
+ *
  * AlertDialogContent now additionally offers an equivalent overload using TransformingLazyColumn,
  * which is recommended to achieve a consistent Material 3 scrolling experience throughout your app
  *
@@ -829,17 +951,28 @@ public fun AlertDialogContent(
     content: (ScalingLazyListScope.() -> Unit)? = null,
 ) {
     val scrollableLayout: @Composable () -> Unit = {
-        val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
-        ScreenScaffold(scrollState = state, modifier = modifier, contentPadding = contentPadding) {
-            contentPadding ->
+        val scrollState = rememberScalingLazyListState(initialCenterItemIndex = 0)
+        val gestureScrollState = rememberGestureScrollState()
+
+        ScreenScaffold(
+            scrollState = scrollState,
+            modifier = modifier,
+            contentPadding = contentPadding,
+            scrollIndicator = {
+                GestureScrollIndicator(
+                    gestureScrollState = gestureScrollState,
+                    scrollState = scrollState,
+                )
+            },
+        ) { contentPadding ->
             ScalingLazyColumn(
                 scalingParams = AlertScalingParams,
-                state = state,
+                state = scrollState,
                 contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = verticalArrangement,
                 autoCentering = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().gestureScroll(gestureScrollState, scrollState),
             ) {
                 alertDialogCommonContent(icon = icon, title = title, text = text, content = content)
             }
@@ -871,6 +1004,9 @@ public fun AlertDialogContent(
  * Prefer using [AlertDialog] directly, which provides built-in animations and a streamlined API.
  * This composable may be used to provide the content for an alert dialog if custom animations are
  * required.
+ *
+ * This [AlertDialogContent] supports one-handed gestures by default, for scrolling down using the
+ * primary gesture (e.g. double pinch).
  *
  * @param title A slot for displaying the title of the dialog. Title should contain a summary of the
  *   dialog's purpose or content and should not exceed 3 lines of text. By default,
@@ -916,18 +1052,26 @@ public fun AlertDialogContent(
     content: (TransformingLazyColumnScope.() -> Unit)? = null,
 ) {
     val scrollableLayout: @Composable () -> Unit = {
-        val state = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+        val scrollState = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+        val gestureScrollState = rememberGestureScrollState()
+
         ScreenScaffold(
-            scrollState = state,
+            scrollState = scrollState,
             modifier = modifier,
             contentPadding = contentPadding(true),
+            scrollIndicator = {
+                GestureScrollIndicator(
+                    gestureScrollState = gestureScrollState,
+                    scrollState = scrollState,
+                )
+            },
         ) { contentPadding ->
             TransformingLazyColumn(
-                state = state,
+                state = scrollState,
                 contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = verticalArrangement,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().gestureScroll(gestureScrollState, scrollState),
             ) {
                 alertDialogCommonContent(
                     icon = icon,
@@ -965,6 +1109,9 @@ public fun AlertDialogContent(
  * [EdgeButton] to confirm an action. Prefer using [AlertDialog] directly, which provides built-in
  * animations and a streamlined API. This composable may be used to provide the content for an alert
  * dialog if custom animations are required.
+ *
+ * This [AlertDialogContent] supports one-handed gestures by default, for scrolling down using the
+ * primary gesture (e.g. double pinch).
  *
  * AlertDialogContent now additionally offers an equivalent overload using TransformingLazyColumn,
  * which is recommended to achieve a consistent Material 3 scrolling experience throughout your app
@@ -1008,25 +1155,33 @@ public fun AlertDialogContent(
     // AlertDialog + EdgeButton layout does not differentiate between scrollable/fixed content
     // (unlike the confirm/dismiss and button-stack layouts) - so DynamicScrollableOrFixedLayout
     // is not needed.
-    val state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+    val scrollState = rememberScalingLazyListState(initialCenterItemIndex = 0)
+    val gestureScrollState = rememberGestureScrollState()
     val noTextAndContent = text == null && content == null
+
     ScreenScaffold(
-        scrollState = state,
+        scrollState = scrollState,
         edgeButton = edgeButton,
         modifier = modifier,
         contentPadding = contentPadding,
         edgeButtonSpacing =
             if (noTextAndContent) AlertEdgeButtonSpacingWithoutTextAndContent
             else AlertEdgeButtonSpacing,
+        scrollIndicator = {
+            GestureScrollIndicator(
+                gestureScrollState = gestureScrollState,
+                scrollState = scrollState,
+            )
+        },
     ) { contentPadding ->
         ScalingLazyColumn(
             scalingParams = AlertScalingParams,
-            state = state,
+            state = scrollState,
             contentPadding = contentPadding,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = verticalArrangement,
             autoCentering = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().gestureScroll(gestureScrollState, scrollState),
         ) {
             alertDialogCommonContent(icon = icon, title = title, text = text, content = content)
         }
@@ -1039,6 +1194,9 @@ public fun AlertDialogContent(
  * Prefer using [AlertDialog] directly, which provides built-in animations and a streamlined API.
  * This composable may be used to provide the content for an alert dialog if custom animations are
  * required.
+ *
+ * This [AlertDialogContent] supports one-handed gestures by default, for scrolling down using the
+ * primary gesture (e.g. double pinch).
  *
  * @param edgeButton Slot for an [EdgeButton] indicating positive sentiment. Clicking the button
  *   must remove the dialog from the composition hierarchy. It's recommended to use
@@ -1097,23 +1255,31 @@ public fun AlertDialogContent(
     /*
        AlertDialog + EdgeButton layout does not differentiate between scrollable/fixed content (unlike the confirm/dismiss and button-stack layouts) - so DynamicScrollableOrFixedLayout is not needed.
     */
-    val state = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+    val scrollState = rememberTransformingLazyColumnState(initialAnchorItemIndex = 0)
+    val gestureScrollState = rememberGestureScrollState()
     val noTextAndContent = text == null && content == null
+
     ScreenScaffold(
-        scrollState = state,
+        scrollState = scrollState,
         modifier = modifier,
         edgeButton = edgeButton,
         contentPadding = contentPadding,
         edgeButtonSpacing =
             if (noTextAndContent) AlertEdgeButtonSpacingWithoutTextAndContent
             else AlertEdgeButtonSpacing,
+        scrollIndicator = {
+            GestureScrollIndicator(
+                gestureScrollState = gestureScrollState,
+                scrollState = scrollState,
+            )
+        },
     ) { contentPadding ->
         TransformingLazyColumn(
-            state = state,
+            state = scrollState,
             contentPadding = contentPadding,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = verticalArrangement,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().gestureScroll(gestureScrollState, scrollState),
         ) {
             alertDialogCommonContent(
                 icon = icon,
@@ -1174,13 +1340,51 @@ public object AlertDialogDefaults {
         val confirmWidth = 63.dp
         val confirmHeight = 54.dp
         val confirmShape = CircleShape
+        val interactionSource = remember { MutableInteractionSource() }
+        var buttonVisible by remember { mutableStateOf(false) }
+        val gestureConfig =
+            rememberOneHandedGestureConfiguration(
+                action = OneHandedGestureAction.Primary,
+                priority = OneHandedGesturePriority.Clickable,
+            )
+        val clickIndicatorState = remember { OneHandedGestureClickIndicatorState() }
+        val coroutineScope = rememberCoroutineScope()
+
         FilledIconButton(
             onClick = onClick,
-            modifier = modifier.rotate(-45f).size(confirmWidth, confirmHeight),
+            interactionSource = interactionSource,
+            modifier =
+                modifier
+                    .onVisibilityChanged(minFractionVisible = ConfirmButtonMinFractionVisible) {
+                        buttonVisible = it
+                    }
+                    .rotate(-45f)
+                    .size(confirmWidth, confirmHeight)
+                    .then(
+                        if (buttonVisible) {
+                            Modifier.oneHandedGesture(
+                                gestureConfiguration = gestureConfig,
+                                onGestureLabel =
+                                    stringResource(
+                                        R.string
+                                            .one_handed_gesture_alert_dialog_primary_action_confirm_accessibility_text
+                                    ),
+                                onGestureAvailable = {
+                                    coroutineScope.launch { clickIndicatorState.showIndicator() }
+                                },
+                                interactionSource = interactionSource,
+                                onGesture = onClick,
+                            )
+                        } else {
+                            Modifier
+                        }
+                    ),
             colors = colors,
             shapes = IconButtonDefaults.shapes(confirmShape),
         ) {
-            Row(
+            OneHandedGestureClickIndicator(
+                gestureConfiguration = gestureConfig,
+                state = clickIndicatorState,
                 modifier =
                     Modifier.semantics(mergeDescendants = true) {
                             semanticOnClick(
@@ -1191,11 +1395,10 @@ public object AlertDialogDefaults {
                             )
                             role = Role.Button
                         }
-                        .align(Alignment.Center)
-                        .graphicsLayer { rotationZ = 45f }
-                        .padding(10.dp),
-                content = content,
-            )
+                        .graphicsLayer { rotationZ = 45f },
+            ) {
+                Row(modifier = Modifier.align(Alignment.Center), content = content)
+            }
         }
     }
 
@@ -1372,6 +1575,117 @@ public object AlertDialogDefaults {
     internal val noEdgeButtonBottomPaddingFraction = 0.3646f
     internal val cancelButtonPadding = 1.dp
 }
+
+@Composable
+internal fun DialogWithDismissGesture(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    properties: DialogProperties,
+    content: @Composable () -> Unit,
+) {
+    val gestureConfig =
+        rememberOneHandedGestureConfiguration(action = OneHandedGestureAction.Dismiss)
+
+    Dialog(
+        visible = visible,
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+        modifier =
+            Modifier.oneHandedGesture(
+                gestureConfiguration = gestureConfig,
+                onGestureLabel =
+                    stringResource(
+                        R.string.one_handed_gesture_alert_dialog_dismiss_action_accessibility_text
+                    ),
+                onGesture = onDismissRequest,
+            ),
+        content = content,
+    )
+}
+
+@Composable
+private fun rememberGestureScrollState(): GestureScrollState {
+    val gestureConfiguration =
+        rememberOneHandedGestureConfiguration(
+            action = OneHandedGestureAction.Primary,
+            priority = OneHandedGesturePriority.Scrollable,
+        )
+    val indicatorState = remember { OneHandedGestureScrollIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
+    return remember(gestureConfiguration, indicatorState, coroutineScope) {
+        GestureScrollState(gestureConfiguration, indicatorState, coroutineScope)
+    }
+}
+
+private class GestureScrollState(
+    val gestureConfiguration: OneHandedGestureConfiguration,
+    val indicatorState: OneHandedGestureScrollIndicatorState,
+    val coroutineScope: CoroutineScope,
+)
+
+@Composable
+private fun BoxScope.GestureScrollIndicator(
+    gestureScrollState: GestureScrollState,
+    scrollState: ScalingLazyListState,
+) {
+    OneHandedGestureScrollIndicator(
+        gestureConfiguration = gestureScrollState.gestureConfiguration,
+        indicatorState = gestureScrollState.indicatorState,
+        scrollState = scrollState,
+        modifier = Modifier.align(Alignment.CenterEnd),
+    )
+}
+
+@Composable
+private fun BoxScope.GestureScrollIndicator(
+    gestureScrollState: GestureScrollState,
+    scrollState: TransformingLazyColumnState,
+) {
+    OneHandedGestureScrollIndicator(
+        gestureConfiguration = gestureScrollState.gestureConfiguration,
+        indicatorState = gestureScrollState.indicatorState,
+        scrollState = scrollState,
+        modifier = Modifier.align(Alignment.CenterEnd),
+    )
+}
+
+@Composable
+private fun Modifier.gestureScroll(
+    gestureScrollState: GestureScrollState,
+    scrollState: ScalingLazyListState,
+): Modifier =
+    oneHandedGesture(
+        gestureConfiguration = gestureScrollState.gestureConfiguration,
+        onGestureLabel =
+            stringResource(
+                R.string.one_handed_gesture_alert_dialog_primary_action_scroll_accessibility_text
+            ),
+        onGestureAvailable = {
+            gestureScrollState.coroutineScope.launch {
+                gestureScrollState.indicatorState.showIndicator()
+            }
+        },
+        onGesture = { OneHandedGestureDefaults.scrollDown(scrollState) },
+    )
+
+@Composable
+private fun Modifier.gestureScroll(
+    gestureScrollState: GestureScrollState,
+    scrollState: TransformingLazyColumnState,
+): Modifier =
+    oneHandedGesture(
+        gestureConfiguration = gestureScrollState.gestureConfiguration,
+        onGestureLabel =
+            stringResource(
+                R.string.one_handed_gesture_alert_dialog_primary_action_scroll_accessibility_text
+            ),
+        onGestureAvailable = {
+            gestureScrollState.coroutineScope.launch {
+                gestureScrollState.indicatorState.showIndicator()
+            }
+        },
+        onGesture = { OneHandedGestureDefaults.scrollDown(scrollState) },
+    )
 
 @Composable
 private fun DynamicScrollableOrFixedLayout(
@@ -1697,6 +2011,7 @@ internal const val AlertTitleMaxLines = 3
 private const val TextPaddingFraction = 0.0416f
 private const val TitlePaddingFraction = 0.12f
 private const val ConfirmDismissBetweenButtonsPaddingFraction = 0.03f
+private const val ConfirmButtonMinFractionVisible = 0.9f
 private val AlertScalingParams = ScalingLazyColumnDefaults.scalingParams(minTransitionArea = 0.2f)
 
 private val TopItemTransformationSpec: ResponsiveTransformationSpec =

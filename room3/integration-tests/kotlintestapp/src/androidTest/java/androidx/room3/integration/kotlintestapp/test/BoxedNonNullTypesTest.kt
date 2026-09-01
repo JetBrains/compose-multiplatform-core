@@ -36,7 +36,6 @@ import androidx.room3.paging.guava.ListenableFuturePagingSourceDaoReturnTypeConv
 import androidx.room3.paging.rxjava3.RxPagingSourceDaoReturnTypeConverter
 import androidx.room3.rxjava3.RxDaoReturnTypeConverters
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -64,10 +63,7 @@ class BoxedNonNullTypesTest {
 
     @Before
     fun init() {
-        db =
-            Room.inMemoryDatabaseBuilder<MyDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<MyDb>().setDriver(AndroidSQLiteDriver()).build()
     }
 
     @After

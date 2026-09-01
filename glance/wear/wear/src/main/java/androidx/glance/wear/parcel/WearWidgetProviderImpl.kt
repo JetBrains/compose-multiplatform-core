@@ -24,7 +24,7 @@ import androidx.glance.wear.ActiveWidgetStore
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.cache.WearWidgetCache
 import androidx.glance.wear.core.ActiveWearWidgetHandle
-import androidx.glance.wear.core.ContainerInfo
+import androidx.glance.wear.core.RendererVersion
 import androidx.glance.wear.core.WearWidgetEventBatch
 import androidx.glance.wear.core.WearWidgetParams
 import java.io.IOException
@@ -65,26 +65,20 @@ internal class WearWidgetProviderImpl(
         mainScope.launch {
             // TODO: Report errors in the callback if any of the following steps fail.
             val params =
-                WearWidgetParams.fromParcel(requestParcel).let { requestParams ->
-                    if (requestParams.containerType == ContainerInfo.CONTAINER_TYPE_FULLSCREEN) {
-                        requestParams.withContainerType(
-                            containerType = ContainerInfo.CONTAINER_TYPE_LARGE
-                        )
-                    } else {
-                        requestParams
-                    }
-                }
+                WearWidgetParams.fromParcel(
+                    parcel = requestParcel,
+                    getDefaultRendererVersion = { RendererVersion.fromPlHostPackage(context) },
+                )
 
             launch {
                 activeWidgetStore?.markWidgetAsActive(providerName, params.instanceId.id)
                 widgetCache.update {
-                    setInstanceType(params.instanceId, params.containerType)
+                    setContainerTypeForInstance(params.instanceId, params.containerType)
                     setWidgetParams(params)
                 }
             }
 
-            val widgetContent = widget.provideWidgetData(context, params)
-            val rawContent = widgetContent.captureRawContent(context, params)
+            val rawContent = widget.provideWidgetDataAsRawContentInternal(context, params)
             callback.updateWidgetContent(rawContent.toParcel())
         }
     }

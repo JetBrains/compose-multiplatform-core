@@ -212,8 +212,6 @@ public class EncoderImpl implements Encoder {
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     Range<Long> mStartStopTimeRangeUs = NO_RANGE;
     @SuppressWarnings("WeakerAccess") // synthetic accessor
-    long mTotalPausedDurationUs = 0L;
-    @SuppressWarnings("WeakerAccess") // synthetic accessor
     boolean mPendingCodecStop = false;
     // The data timestamp that an encoding stops at. If this timestamp is null, it means the
     // encoding hasn't receiving enough data to be stopped.
@@ -253,7 +251,10 @@ public class EncoderImpl implements Encoder {
             mTag = "AudioEncoder";
             mIsVideoEncoder = false;
             mEncoderInput = new ByteBufferInput();
-            mEncoderInfo = new AudioEncoderInfoImpl(mediaCodecInfo, encoderConfig.getMimeType());
+            AudioEncoderInfo audioEncoderInfo = new AudioEncoderInfoImpl(mediaCodecInfo,
+                    encoderConfig.getMimeType());
+            clampBitrateIfNotSupported(audioEncoderInfo, mMediaFormat);
+            mEncoderInfo = audioEncoderInfo;
             mCaptureToEncodeFrameRateRatio = new Rational(audioEncoderConfig.getCaptureSampleRate(),
                     audioEncoderConfig.getEncodeSampleRate());
         } else if (encoderConfig instanceof VideoEncoderConfig) {
@@ -263,7 +264,7 @@ public class EncoderImpl implements Encoder {
             mEncoderInput = new SurfaceInput();
             VideoEncoderInfo videoEncoderInfo = new VideoEncoderInfoImpl(mediaCodecInfo,
                     encoderConfig.getMimeType());
-            clampVideoBitrateIfNotSupported(videoEncoderInfo, mMediaFormat);
+            clampBitrateIfNotSupported(videoEncoderInfo, mMediaFormat);
             mEncoderInfo = videoEncoderInfo;
             mCaptureToEncodeFrameRateRatio = new Rational(videoEncoderConfig.getCaptureFrameRate(),
                     videoEncoderConfig.getEncodeFrameRate());
@@ -295,18 +296,23 @@ public class EncoderImpl implements Encoder {
     }
 
     /**
-     * Clamps the video bitrate in MediaFormat if the video bitrate is not supported by the
-     * supplied VideoEncoderInfo.
+     * Clamps the bitrate in MediaFormat if the bitrate is not supported by the
+     * supplied EncoderInfo.
      *
-     * @param videoEncoderInfo VideoEncoderInfo object
-     * @param mediaFormat      MediaFormat object
+     * @param encoderInfo EncoderInfo object
+     * @param mediaFormat MediaFormat object
      */
-    private void clampVideoBitrateIfNotSupported(@NonNull VideoEncoderInfo videoEncoderInfo,
+    private void clampBitrateIfNotSupported(@NonNull EncoderInfo encoderInfo,
             @NonNull MediaFormat mediaFormat) {
-        checkState(mIsVideoEncoder);
         if (mediaFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
             int origBitrate = mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE);
-            int newBitrate = videoEncoderInfo.getSupportedBitrateRange().clamp(origBitrate);
+            Range<Integer> supportedBitrateRange;
+            if (mIsVideoEncoder) {
+                supportedBitrateRange = ((VideoEncoderInfo) encoderInfo).getSupportedBitrateRange();
+            } else {
+                supportedBitrateRange = ((AudioEncoderInfo) encoderInfo).getBitrateRange();
+            }
+            int newBitrate = supportedBitrateRange.clamp(origBitrate);
             if (origBitrate != newBitrate) {
                 mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, newBitrate);
                 Logger.d(mTag, "updated bitrate from " + origBitrate + " to " + newBitrate);
@@ -317,7 +323,6 @@ public class EncoderImpl implements Encoder {
     @ExecutedBy("mEncoderExecutor")
     private void reset() {
         mStartStopTimeRangeUs = NO_RANGE;
-        mTotalPausedDurationUs = 0L;
         mActivePauseResumeTimeRanges.clear();
         mFreeInputBufferIndexQueue.clear();
 
@@ -376,19 +381,13 @@ public class EncoderImpl implements Encoder {
         return configuredBitrate;
     }
 
-    /**
-     * Starts the encoder.
-     *
-     * <p>If the encoder is not started yet, it will first trigger
-     * {@link EncoderCallback#onEncodeStart}. Then continually invoke the
-     * {@link EncoderCallback#onEncodedData} callback until the encoder is paused, stopped or
-     * released. It can call {@link #pause} to pause the encoding after started. If the encoder is
-     * in paused state, then calling this method will resume the encoding.
-     */
     @SuppressWarnings("StatementWithEmptyBody") // to better organize the logic and comments
     @Override
-    public void start() {
-        final long startTriggerTimeUs = generatePresentationTimeUs();
+    public void start(long expectedStartTimeUs) {
+        final long startTriggerTimeUs =
+                expectedStartTimeUs != NO_TIMESTAMP
+                        ? expectedStartTimeUs
+                        : generatePresentationTimeUs();
         mEncoderExecutor.execute(() -> {
             switch (mState) {
                 case CONFIGURED:
@@ -475,18 +474,6 @@ public class EncoderImpl implements Encoder {
         });
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void stop() {
-        stop(NO_TIMESTAMP);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void stop(long expectedStopTimeUs) {
         final long stopTriggerTimeUs = generatePresentationTimeUs();
@@ -588,15 +575,12 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    /**
-     * Pauses the encoder.
-     *
-     * <p>{@code pause} only work between {@link #start} and {@link #stop}. Once the encoder is
-     * paused, it will drop the input data until {@link #start} is invoked again.
-     */
     @Override
-    public void pause() {
-        final long pauseTriggerTimeUs = generatePresentationTimeUs();
+    public void pause(long expectedPauseTimeUs) {
+        final long pauseTriggerTimeUs =
+                expectedPauseTimeUs != NO_TIMESTAMP
+                        ? expectedPauseTimeUs
+                        : generatePresentationTimeUs();
         mEncoderExecutor.execute(() -> {
             switch (mState) {
                 case CONFIGURED:
@@ -976,31 +960,15 @@ public class EncoderImpl implements Encoder {
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
-    void updateTotalPausedDuration(long bufferPresentationTimeUs) {
+    void dropClosedPauseRanges(long bufferPresentationTimeUs) {
         while (!mActivePauseResumeTimeRanges.isEmpty()) {
             Range<Long> pauseRange = mActivePauseResumeTimeRanges.getFirst();
             if (bufferPresentationTimeUs > pauseRange.getUpper()) {
-                // Later than current pause, remove this pause and update total paused duration.
                 mActivePauseResumeTimeRanges.removeFirst();
-                mTotalPausedDurationUs += (pauseRange.getUpper() - pauseRange.getLower());
-                Logger.d(mTag,
-                        "Total paused duration = " + DebugUtils.readableUs(mTotalPausedDurationUs));
             } else {
                 break;
             }
         }
-    }
-
-    @SuppressWarnings("WeakerAccess") // synthetic accessor
-    @ExecutedBy("mEncoderExecutor")
-    long getAdjustedTimeUs(@NonNull BufferInfo bufferInfo) {
-        long adjustedTimeUs;
-        if (mTotalPausedDurationUs > 0L) {
-            adjustedTimeUs = bufferInfo.presentationTimeUs - mTotalPausedDurationUs;
-        } else {
-            adjustedTimeUs = bufferInfo.presentationTimeUs;
-        }
-        return adjustedTimeUs;
     }
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
@@ -1161,11 +1129,8 @@ public class EncoderImpl implements Encoder {
         private boolean mHasEndData = false;
         /** The last presentation time of BufferInfo without modified. */
         private long mLastPresentationTimeUs = 0L;
-        /**
-         * The last sent presentation time of BufferInfo. The value could be adjusted by total
-         * pause duration.
-         */
-        private long mLastSentAdjustedTimeUs = 0L;
+        /** The last sent presentation time of BufferInfo. */
+        private long mLastSentPresentationTimeUs = 0L;
         private boolean mIsOutputBufferInPauseState = false;
         private boolean mIsKeyFrameRequired = false;
         private boolean mStopped = false;
@@ -1276,11 +1241,10 @@ public class EncoderImpl implements Encoder {
                                                 + SystemClock.elapsedRealtime()
                                 );
                             }
-                            BufferInfo outBufferInfo = resolveOutputBufferInfo(bufferInfo);
-                            mLastSentAdjustedTimeUs = outBufferInfo.presentationTimeUs;
+                            mLastSentPresentationTimeUs = bufferInfo.presentationTimeUs;
                             try {
                                 EncodedDataImpl encodedData = new EncodedDataImpl(mediaCodec, index,
-                                        outBufferInfo);
+                                        bufferInfo);
                                 sendEncodedData(encodedData, encoderCallback, executor);
                             } catch (MediaCodec.CodecException e) {
                                 handleEncodeError(e);
@@ -1344,25 +1308,6 @@ public class EncoderImpl implements Encoder {
                     Logger.e(mTag, "Unable to post to the supplied executor.", e);
                 }
             });
-        }
-
-        @ExecutedBy("mEncoderExecutor")
-        private @NonNull BufferInfo resolveOutputBufferInfo(@NonNull BufferInfo bufferInfo) {
-            long adjustedTimeUs = getAdjustedTimeUs(bufferInfo);
-            if (bufferInfo.presentationTimeUs == adjustedTimeUs) {
-                return bufferInfo;
-            }
-
-            // If adjusted time <= last sent time, the buffer should have been detected and
-            // dropped in checkBufferInfo().
-            checkState(adjustedTimeUs > mLastSentAdjustedTimeUs);
-            if (DEBUG) {
-                Logger.d(mTag, "Adjust bufferInfo.presentationTimeUs to "
-                        + DebugUtils.readableUs(adjustedTimeUs));
-            }
-            BufferInfo newBufferInfo = new BufferInfo();
-            newBufferInfo.set(bufferInfo.offset, bufferInfo.size, adjustedTimeUs, bufferInfo.flags);
-            return newBufferInfo;
         }
 
         @ExecutedBy("mEncoderExecutor")
@@ -1456,9 +1401,11 @@ public class EncoderImpl implements Encoder {
                 return false;
             }
 
-            // We should check if the adjusted time is valid. see b/189114207.
-            if (getAdjustedTimeUs(bufferInfo) <= mLastSentAdjustedTimeUs) {
-                Logger.d(mTag, "Drop buffer by adjusted time is less than the last sent time.");
+            // We should check if the presentation time is valid. see b/189114207.
+            if (bufferInfo.presentationTimeUs <= mLastSentPresentationTimeUs) {
+                Logger.d(mTag,
+                        "Drop buffer because presentation time is less than or equal to the last "
+                                + "sent time.");
                 if (mIsVideoEncoder && isKeyFrame(bufferInfo)) {
                     mIsKeyFrameRequired = true;
                 }
@@ -1505,7 +1452,7 @@ public class EncoderImpl implements Encoder {
         @ExecutedBy("mEncoderExecutor")
         private boolean updatePauseRangeStateAndCheckIfBufferPaused(
                 @NonNull BufferInfo bufferInfo) {
-            updateTotalPausedDuration(bufferInfo.presentationTimeUs);
+            dropClosedPauseRanges(bufferInfo.presentationTimeUs);
             boolean isInPauseRange = isInPauseRange(bufferInfo.presentationTimeUs);
             if (!mIsOutputBufferInPauseState && isInPauseRange) {
                 Logger.d(mTag, "Switch to pause state");

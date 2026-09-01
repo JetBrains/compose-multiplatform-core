@@ -4,6 +4,6 @@ description:
     "The implementation associated with this version containing are"
     "preinstalled on WearOS devices."
 gerrit source: "vendor/google_clockwork/sdk/lib"
-API version: 37.0
-Build ID: 14976956
-Last updated: Thu Mar  5 01:51:39 AM UTC 2026
+API version: 37.2
+Build ID: 16043900
+Last updated: Sat Aug  8 11:02:27 AM UTC 2026

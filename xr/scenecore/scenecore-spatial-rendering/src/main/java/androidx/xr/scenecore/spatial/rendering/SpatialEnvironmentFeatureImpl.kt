@@ -18,22 +18,22 @@ package androidx.xr.scenecore.spatial.rendering
 
 import android.app.Activity
 import android.os.Looper
-import androidx.xr.runtime.XrLog
-import androidx.xr.scenecore.impl.impress.ExrImage
-import androidx.xr.scenecore.impl.impress.GltfModel
-import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.impl.impress.ImpressNode
 import androidx.xr.scenecore.runtime.ExrImageResource
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfModelResource
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature
+import androidx.xr.scenecore.spatial.rendering.impress.ExrImage
+import androidx.xr.scenecore.spatial.rendering.impress.GltfModel
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.androidxr.splitengine.SubspaceNode
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
+import kotlin.collections.ArrayDeque
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,7 +41,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 internal class SpatialEnvironmentFeatureImpl(
-    private val activity: Activity,
+    private var activity: Activity?,
     impressApi: ImpressApi,
     splitEngineSubspaceManager: SplitEngineSubspaceManager,
     extensions: XrExtensions,
@@ -95,13 +95,7 @@ internal class SpatialEnvironmentFeatureImpl(
 
         if (geometryEntity != null) {
             targetSubspaceNode = geometryEntity.extractedFeature?.subspace?.subspaceNode
-            if (targetSubspaceNode == null) {
-                XrLog.error(
-                    "GltfModelEntity does not have a valid subspace, can't use it for the" +
-                        " environment geometry."
-                )
-                return
-            }
+            check(targetSubspaceNode != null) { "geometryEntity does not have a valid subspace" }
             geometryEntity.setHidden(false)
         } else if (geometryResource != null) {
             val subspaceNode = impressApi.createImpressNode()
@@ -114,10 +108,7 @@ internal class SpatialEnvironmentFeatureImpl(
             targetSubspaceNode = geometrySubspaceSplitEngine?.subspaceNode
 
             val geometryImpressNode =
-                impressApi.instanceGltfModel(
-                    (geometryResource as GltfModel).nativeHandle,
-                    /* enableCollider= */ false,
-                )
+                impressApi.instanceGltfModel((geometryResource as GltfModel).nativeHandle)
             impressApi.setImpressNodeParent(geometryImpressNode, subspaceNode)
         }
 
@@ -164,7 +155,7 @@ internal class SpatialEnvironmentFeatureImpl(
 
             if (newPreference == null) {
                 // Detaching the app environment to go back to the system environment.
-                extensions.detachSpatialEnvironment(activity, Runnable::run) {}
+                activity?.let { extensions.detachSpatialEnvironment(it, Runnable::run) {} }
             } else {
                 // TODO(b/408276187): Add unit test that verifies that the skybox mode is correctly
                 // set.
@@ -192,14 +183,16 @@ internal class SpatialEnvironmentFeatureImpl(
                     currentRootEnvironmentNode = rootEnvironmentNode
                 }
                 onBeforeNodeAttachedListener?.accept(currentRootEnvironmentNode)
-                extensions.attachSpatialEnvironment(
-                    activity,
-                    currentRootEnvironmentNode,
-                    skyboxMode,
-                    Runnable::run,
-                ) {
-                    // Update the root environment node to the current root node.
-                    rootEnvironmentNode = currentRootEnvironmentNode
+                activity?.let {
+                    extensions.attachSpatialEnvironment(
+                        it,
+                        currentRootEnvironmentNode,
+                        skyboxMode,
+                        Runnable::run,
+                    ) {
+                        // Update the root environment node to the current root node.
+                        rootEnvironmentNode = currentRootEnvironmentNode
+                    }
                 }
             }
 
@@ -235,7 +228,8 @@ internal class SpatialEnvironmentFeatureImpl(
         geometrySubspaceImpressNode = null
         _spatialEnvironmentPreference.set(null)
         // TODO: b/376934871 - Check async results.
-        extensions.detachSpatialEnvironment(activity, Runnable::run) {}
+        activity?.let { extensions.detachSpatialEnvironment(it, Runnable::run) {} }
+        activity = null
     }
 
     // This is a workaround with a low blast radius since it will only ever be used by restricted
@@ -243,12 +237,36 @@ internal class SpatialEnvironmentFeatureImpl(
     // TODO(b/486200886): Revisit glTF Entity/Feature architecture to avoid having to access feature
     // fields by reflection.
     private val GltfEntity.extractedFeature: BaseRenderingFeature?
-        get() =
-            try {
-                val field = this.javaClass.getDeclaredField("gltfFeature")
-                field.isAccessible = true
-                field.get(this) as? BaseRenderingFeature
-            } catch (e: Exception) {
-                null
+        get() {
+            val visited = mutableSetOf<Any>()
+            val queue = ArrayDeque<Any>()
+            queue.add(this)
+
+            while (queue.isNotEmpty()) {
+                val current = queue.removeFirst()
+                if (!visited.add(current)) continue
+
+                var clazz: Class<*>? = current.javaClass
+                while (clazz != null) {
+                    val nonNullClazz = clazz
+                    for (field in nonNullClazz.declaredFields) {
+                        try {
+                            field.isAccessible = true
+                            val value = field.get(current) ?: continue
+
+                            if (value is BaseRenderingFeature) {
+                                return value
+                            }
+                            if (value is GltfEntity) {
+                                queue.add(value)
+                            }
+                        } catch (e: Exception) {
+                            // Ignore possible field access errors instead of crashing.
+                        }
+                    }
+                    clazz = nonNullClazz.superclass
+                }
             }
+            return null
+        }
 }

@@ -32,7 +32,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -84,9 +83,9 @@ public class GridLayoutManagerTest extends BaseGridLayoutManagerTest {
         focusSearchFailure(false);
     }
 
+    @SdkSuppress(maxSdkVersion = 36) // b/537526293
     @Test
     public void focusSearchFailureDown() throws Throwable {
-        assumeFalse("Test fails on cuttlefish b/460512080", Build.MODEL.contains("Cuttlefish"));
         focusSearchFailure(true);
     }
 

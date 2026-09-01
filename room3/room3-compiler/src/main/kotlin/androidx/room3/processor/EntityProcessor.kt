@@ -19,6 +19,7 @@ package androidx.room3.processor
 import androidx.room3.ForeignKey.Companion.NO_ACTION
 import androidx.room3.Fts3
 import androidx.room3.Fts4
+import androidx.room3.Fts5
 import androidx.room3.compiler.processing.XAnnotation
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
@@ -107,7 +108,7 @@ fun EntityProcessor(
     element: XTypeElement,
     referenceStack: LinkedHashSet<String> = LinkedHashSet(),
 ): EntityProcessor {
-    return if (element.hasAnyAnnotation(Fts3::class, Fts4::class)) {
+    return if (element.hasAnyAnnotation(Fts3::class, Fts4::class, Fts5::class)) {
         FtsTableEntityProcessor(context, element, referenceStack)
     } else {
         TableEntityProcessor(context, element, referenceStack)

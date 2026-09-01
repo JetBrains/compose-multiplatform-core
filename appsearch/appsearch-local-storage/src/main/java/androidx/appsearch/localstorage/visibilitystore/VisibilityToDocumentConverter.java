@@ -19,12 +19,14 @@ package androidx.appsearch.localstorage.visibilitystore;
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.annotation.HideInPlatform;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.VisibilityPermissionConfig;
+import androidx.appsearch.flags.Flags;
 import androidx.collection.ArraySet;
 
 import com.google.android.appsearch.proto.AndroidVOverlayProto;
@@ -37,14 +39,15 @@ import com.google.android.icing.protobuf.InvalidProtocolBufferException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Utilities for working with {@link VisibilityChecker} and {@link VisibilityStore}.
- * @exportToFramework:hide
  */
+@HideInPlatform
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class VisibilityToDocumentConverter {
     private static final String TAG = "AppSearchVisibilityToDo";
@@ -429,14 +432,37 @@ public class VisibilityToDocumentConverter {
 
     private static @NonNull PackageIdentifierProto convertPackageIdentifierToProto(
             @NonNull PackageIdentifier packageIdentifier) {
-        return PackageIdentifierProto.newBuilder()
-                .setPackageName(packageIdentifier.getPackageName())
-                .setPackageSha256Cert(ByteString.copyFrom(packageIdentifier.getSha256Certificate()))
-                .build();
+        // Always populate Tag 2 (primary certificate) for backward compatibility with
+        // older readers and single-cert packages.
+        PackageIdentifierProto.Builder builder =
+                PackageIdentifierProto.newBuilder()
+                        .setPackageName(packageIdentifier.getPackageName())
+                        .setPackageSha256Cert(
+                                ByteString.copyFrom(packageIdentifier.getSha256Certificate()));
+        if (Flags.enablePackageIdentifierMultiCert()) {
+            List<byte[]> certs = packageIdentifier.getMultiSignerSha256Certificates();
+            if (!certs.isEmpty()) {
+                for (int i = 0; i < certs.size(); i++) {
+                    builder.addPackageSha256Certs(ByteString.copyFrom(certs.get(i)));
+                }
+            }
+        }
+        return builder.build();
     }
 
     private static @NonNull PackageIdentifier convertPackageIdentifierFromProto(
             @NonNull PackageIdentifierProto packageIdentifierProto) {
+        // Prefer Tag 3 (repeated certs) when present for multi-signer packages;
+        // otherwise fall back to Tag 2 for single-cert and legacy documents.
+        if (Flags.enablePackageIdentifierMultiCert()
+                && packageIdentifierProto.getPackageSha256CertsCount() > 0) {
+            List<ByteString> certsList = packageIdentifierProto.getPackageSha256CertsList();
+            List<byte[]> certs = new ArrayList<>(certsList.size());
+            for (int i = 0; i < certsList.size(); i++) {
+                certs.add(certsList.get(i).toByteArray());
+            }
+            return new PackageIdentifier(packageIdentifierProto.getPackageName(), certs);
+        }
         return new PackageIdentifier(
                 packageIdentifierProto.getPackageName(),
                 packageIdentifierProto.getPackageSha256Cert().toByteArray());

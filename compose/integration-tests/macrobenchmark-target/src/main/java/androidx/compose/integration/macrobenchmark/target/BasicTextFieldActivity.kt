@@ -28,10 +28,14 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.contentDataType
+import androidx.compose.ui.semantics.semantics
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
@@ -40,6 +44,7 @@ class BasicTextFieldActivity : ComponentActivity() {
 
     private var didRequestFocus = false
     private var isImeAnimating = false
+    private var isDoneReported = false
     private var contentView: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +59,16 @@ class BasicTextFieldActivity : ComponentActivity() {
 
         ViewCompat.setWindowInsetsAnimationCallback(contentView!!, imeAnimationCallback)
 
+        ViewCompat.setOnApplyWindowInsetsListener(contentView!!) { view, insets ->
+            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val isImeVisible =
+                insets.isVisible(WindowInsetsCompat.Type.ime()) || imeInsets.bottom > 0
+            if (didRequestFocus && isImeVisible && !isImeAnimating && !isDoneReported) {
+                markDone(view)
+            }
+            insets
+        }
+
         setContent {
             val focusRequester = remember { FocusRequester() }
 
@@ -62,7 +77,12 @@ class BasicTextFieldActivity : ComponentActivity() {
                 val textFieldState = rememberTextFieldState()
                 BasicTextField(
                     state = textFieldState,
-                    modifier = Modifier.focusRequester(focusRequester),
+                    modifier =
+                        Modifier.focusRequester(focusRequester).semantics {
+                            if (intent.getStringExtra("CONTENT_TYPE") == "NONE") {
+                                contentDataType = ContentDataType.None
+                            }
+                        },
                 )
             }
 
@@ -74,9 +94,18 @@ class BasicTextFieldActivity : ComponentActivity() {
         }
     }
 
+    private fun markDone(view: View) {
+        if (!isDoneReported) {
+            isDoneReported = true
+            reportFullyDrawn()
+            view.contentDescription = "IME_ANIMATION_DONE"
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         contentView = null
+        isDoneReported = false
     }
 
     // We track the IME state at the View level to not muddy the Compose contents of this benchmark
@@ -99,8 +128,7 @@ class BasicTextFieldActivity : ComponentActivity() {
             override fun onEnd(animation: WindowInsetsAnimationCompat) {
                 if ((animation.typeMask and WindowInsetsCompat.Type.ime()) != 0) {
                     if (didRequestFocus && isImeAnimating) {
-                        reportFullyDrawn()
-                        contentView?.contentDescription = "IME_ANIMATION_DONE"
+                        contentView?.let { markDone(it) }
                     }
                     isImeAnimating = false
                 }

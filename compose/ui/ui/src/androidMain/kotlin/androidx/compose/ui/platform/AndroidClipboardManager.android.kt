@@ -50,15 +50,20 @@ private const val PLAIN_TEXT_LABEL = "plain text"
 
 /** Android implementation for [ClipboardManager]. */
 @Suppress("DEPRECATION")
-internal class AndroidClipboardManager
-internal constructor(private val clipboardManager: android.content.ClipboardManager) :
+internal class AndroidClipboardManager internal constructor(private val context: Context) :
     ClipboardManager {
-
-    internal constructor(
-        context: Context
-    ) : this(
-        context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-    )
+    private var _clipboardManager: android.content.ClipboardManager? = null
+    private val clipboardManager: android.content.ClipboardManager
+        get() {
+            var clipboardManager = _clipboardManager
+            if (clipboardManager == null) {
+                clipboardManager =
+                    context.getSystemService(Context.CLIPBOARD_SERVICE)
+                        as android.content.ClipboardManager
+                _clipboardManager = clipboardManager
+            }
+            return clipboardManager
+        }
 
     override fun setText(annotatedString: AnnotatedString) {
         clipboardManager.setPrimaryClip(
@@ -102,13 +107,13 @@ internal constructor(private val clipboardManager: android.content.ClipboardMana
 /** Android specific class that contains the primary clip in [android.content.ClipboardManager]. */
 // Defining this class not as a typealias but a wrapper gives us flexibility in the future to
 // add more functionality in it.
-actual class ClipEntry(val clipData: ClipData) {
+public actual class ClipEntry(public val clipData: ClipData) {
 
-    actual val clipMetadata: ClipMetadata
+    public actual val clipMetadata: ClipMetadata
         get() = clipData.description.toClipMetadata()
 }
 
-fun ClipData.toClipEntry(): ClipEntry = ClipEntry(this)
+public fun ClipData.toClipEntry(): ClipEntry = ClipEntry(this)
 
 /**
  * Android specific class that contains the metadata of primary clip in
@@ -116,11 +121,16 @@ fun ClipData.toClipEntry(): ClipEntry = ClipEntry(this)
  */
 // Defining this class not as a typealias but a wrapper gives us flexibility in the future to
 // add more functionality in it.
-actual class ClipMetadata(val clipDescription: ClipDescription)
+public actual class ClipMetadata(public val clipDescription: ClipDescription)
 
-fun ClipDescription.toClipMetadata(): ClipMetadata = ClipMetadata(this)
+public fun ClipDescription.toClipMetadata(): ClipMetadata = ClipMetadata(this)
 
-actual typealias NativeClipboard = android.content.ClipboardManager
+@Deprecated(
+    message = "Use android.content.ClipboardManager directly instead",
+    replaceWith = ReplaceWith("android.content.ClipboardManager"),
+)
+@Suppress("TypealiasDefinition")
+public actual typealias NativeClipboard = android.content.ClipboardManager
 
 @RequiresApi(28)
 private object Api28ClipboardManagerClipClear {

@@ -18,14 +18,15 @@ package androidx.xr.scenecore.spatial.core
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.xr.arcore.Anchor
-import androidx.xr.arcore.runtime.ExportableAnchor
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.AnchorEntity
+import androidx.xr.scenecore.runtime.CleanupAction
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SpaceValue
+import androidx.xr.scenecore.runtime.impl.PlatformReferenceScenePoseHelper
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import java.util.concurrent.ScheduledExecutorService
@@ -35,19 +36,16 @@ import java.util.concurrent.ScheduledExecutorService
  *
  * This entity creates trackable anchors in space.
  */
-@SuppressLint(
-    "NewApi",
-    "WrongConstant",
-) // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
+@SuppressLint("WrongConstant")
 internal class AnchorEntityImpl(
     context: Context,
     node: Node,
     private val activitySpace: ActivitySpaceImpl,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
-) : SystemSpaceEntityImpl(context, node, extensions, entityManager, executor), AnchorEntity {
-    private val openXrScenePoseHelper = OpenXrScenePoseHelper(activitySpace)
+) : SystemSpaceEntityImpl(context, node, extensions, sceneNodeRegistry, executor), AnchorEntity {
+    private val platformReferenceScenePoseHelper = PlatformReferenceScenePoseHelper(activitySpace)
     private var onStateChangedListener: AnchorEntity.OnStateChangedListener? = null
     private var _state: @AnchorEntity.State Int = AnchorEntity.State.UNANCHORED
     override val state: @AnchorEntity.State Int
@@ -57,28 +55,41 @@ internal class AnchorEntityImpl(
             }
         }
 
+    private val anchorCleanupAction: AnchorEntityCleanupAction
+
     init {
         extensions.createNodeTransaction().use { transaction ->
             transaction.setName(node, ANCHOR_NODE_NAME).apply()
         }
+        anchorCleanupAction = AnchorEntityCleanupAction(node, extensions)
+        registerCleanup(executor, anchorCleanupAction)
     }
+
+    private class AnchorEntityCleanupAction(node: Node, extensions: XrExtensions) :
+        CleanupAction({
+            extensions.createNodeTransaction().use { transaction ->
+                transaction.setAnchorId(node, null).setParent(node, null).apply()
+            }
+        })
 
     override fun setAnchor(anchor: Anchor): Boolean {
         synchronized(this) {
-            if (_state == AnchorEntity.State.ERROR || anchor.runtimeAnchor !is ExportableAnchor) {
+            if (_state == AnchorEntity.State.ERROR) {
                 return false
             }
-            val exportableAnchor = anchor.runtimeAnchor as ExportableAnchor
-            mExtensions.createNodeTransaction().use { transaction ->
-                // Attach to the root CPM node. This will enable the anchored content to be visible.
-                // Note that the parent of the Entity is null, but the CPM Node is still attached.
-                transaction
-                    .setParent(mNode, activitySpace.mNode)
-                    .setAnchorId(mNode, exportableAnchor.anchorToken)
-                    .apply()
-            }
-            updateState(AnchorEntity.State.ANCHORED)
-            return true
+            return anchor.anchorToken?.let { anchorToken ->
+                extensions.createNodeTransaction().use { transaction ->
+                    // Attach to the root CPM node. This will enable the anchored content to be
+                    // visible. Note that the parent of the Entity is null, but the CPM Node is
+                    // still attached.
+                    transaction
+                        .setParent(node, activitySpace.node)
+                        .setAnchorId(node, anchorToken)
+                        .apply()
+                }
+                updateState(AnchorEntity.State.ANCHORED)
+                return true
+            } ?: false
         }
     }
 
@@ -92,10 +103,10 @@ internal class AnchorEntityImpl(
     }
 
     override fun setOnStateChangedListener(
-        onStateChangedListener: AnchorEntity.OnStateChangedListener
+        onStateChangedListener: AnchorEntity.OnStateChangedListener?
     ) {
         this.onStateChangedListener = onStateChangedListener
-        mExecutor.execute { onStateChangedListener.onStateChanged(_state) }
+        scheduledExecutor.execute { onStateChangedListener?.onStateChanged(_state) }
     }
 
     override fun getPose(@SpaceValue relativeTo: Int): Pose {
@@ -105,7 +116,7 @@ internal class AnchorEntityImpl(
                     "AnchorEntity is a root space and it does not have a parent."
                 )
 
-            Space.ACTIVITY -> poseInActivitySpace
+            Space.ACTIVITY -> activitySpacePose
             Space.REAL_WORLD -> getPoseInPerceptionSpace()
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
@@ -132,27 +143,26 @@ internal class AnchorEntityImpl(
         }
     }
 
-    override val poseInActivitySpace: Pose
+    override val activitySpacePose: Pose
         get() {
             synchronized(this) {
                 if (_state != AnchorEntity.State.ANCHORED) {
                     return Pose()
                 }
-                return openXrScenePoseHelper.getPoseInActivitySpace(poseInOpenXrReferenceSpace)
+                return platformReferenceScenePoseHelper.getActivitySpacePose(
+                    poseInPlatformReferenceSpace
+                )
             }
         }
 
     fun getPoseInPerceptionSpace(): Pose {
         val perceptionSpaceScenePose =
-            mEntityManager.getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose::class.java)[0]
+            sceneNodeRegistry.getSystemSpaceScenePoseOfType(PerceptionSpaceScenePose::class.java)[0]
         return transformPoseTo(Pose(), perceptionSpaceScenePose)
     }
 
-    override val activitySpacePose: Pose
-        get() = openXrScenePoseHelper.getActivitySpacePose(poseInOpenXrReferenceSpace)
-
     override val activitySpaceScale: Vector3
-        get() = openXrScenePoseHelper.getActivitySpaceScale(worldSpaceScale)
+        get() = platformReferenceScenePoseHelper.getActivitySpaceScale(worldSpaceScale)
 
     override var parent: Entity? = null
         set(_) {
@@ -168,9 +178,6 @@ internal class AnchorEntityImpl(
             updateState(AnchorEntity.State.ERROR)
         }
 
-        mExtensions.createNodeTransaction().use { transaction ->
-            transaction.setAnchorId(mNode, null).setParent(mNode, null).apply()
-        }
         super.dispose()
     }
 
@@ -183,7 +190,7 @@ internal class AnchorEntityImpl(
             node: Node,
             activitySpace: ActivitySpaceImpl,
             extensions: XrExtensions,
-            entityManager: EntityManager,
+            sceneNodeRegistry: SceneNodeRegistry,
             executor: ScheduledExecutorService,
         ): AnchorEntityImpl {
             return AnchorEntityImpl(
@@ -191,7 +198,7 @@ internal class AnchorEntityImpl(
                 node,
                 activitySpace,
                 extensions,
-                entityManager,
+                sceneNodeRegistry,
                 executor,
             )
         }

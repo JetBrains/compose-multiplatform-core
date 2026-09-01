@@ -20,8 +20,8 @@ import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
-import androidx.xr.scenecore.impl.impress.ImpressNode
+import androidx.xr.scenecore.spatial.rendering.impress.FakeImpressApiImpl
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -73,9 +73,10 @@ class GltfModelNodeFeatureImplTest {
         nodeFeature.localPose = newPose
 
         val outTransform = fakeImpressApi.getImpressNodeLocalTransform(modelImpressSubNode)
+        val outPose = outTransform.toPose()
 
-        assertThat(outTransform.pose.translation).isEqualTo(newPose.translation)
-        assertThat(outTransform.pose.rotation).isEqualTo(newPose.rotation)
+        assertThat(outPose.translation).isEqualTo(newPose.translation)
+        assertThat(outPose.rotation).isEqualTo(newPose.rotation)
 
         val nodes = fakeImpressApi.getImpressNodes()
         val nodeData = nodes.keys.first { it.entityId == modelImpressNode.handle }
@@ -128,7 +129,7 @@ class GltfModelNodeFeatureImplTest {
 
         val outTransform =
             fakeImpressApi.getImpressNodeRelativeTransform(modelImpressSubNode, modelImpressNode)
-        assertThat(outTransform.pose.translation).isEqualTo(newPose.translation)
+        assertThat(outTransform.toPose().translation).isEqualTo(newPose.translation)
 
         val nodes = fakeImpressApi.getImpressNodes()
         val rootNodeData = nodes.keys.first { it.entityId == modelImpressNode.handle }

@@ -175,7 +175,7 @@ import kotlin.math.roundToInt
  *   interactions will still happen internally.
  */
 @Composable
-fun TextField(
+public fun TextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -321,7 +321,7 @@ fun TextField(
  *   this text field in different states. See [TextFieldDefaults.textFieldColors]
  */
 @Composable
-fun TextField(
+public fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -398,7 +398,7 @@ fun TextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun TextField(
+public fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -511,7 +511,7 @@ fun TextField(
  *   this text field in different states. See [TextFieldDefaults.textFieldColors]
  */
 @Composable
-fun TextField(
+public fun TextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -588,7 +588,7 @@ fun TextField(
     level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun TextField(
+public fun TextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -1103,11 +1103,14 @@ internal fun Modifier.drawIndicatorLine(indicatorBorder: BorderStroke): Modifier
 }
 
 /** Padding from the label's baseline to the top */
-internal val FirstBaselineOffset = 20.dp
+internal val FirstBaselineOffset
+    get() = 20.dp
 
 /** Padding from input field to the bottom */
-internal val TextFieldBottomPadding = 10.dp
+internal val TextFieldBottomPadding
+    get() = 10.dp
 
 /** Padding from label's baseline (or FirstBaselineOffset) to the input field */
 /*@VisibleForTesting*/
-internal val TextFieldTopPadding = 2.dp
+internal val TextFieldTopPadding
+    get() = 2.dp

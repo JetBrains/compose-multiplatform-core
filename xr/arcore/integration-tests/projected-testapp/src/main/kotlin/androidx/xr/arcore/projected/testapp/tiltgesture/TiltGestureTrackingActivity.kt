@@ -118,15 +118,18 @@ class TiltGestureTrackingActivity : ComponentActivity() {
         }
     }
 
-    private fun tryCreateSession() {
+    private suspend fun tryCreateSession() {
         Log.i(TAG, "Session.create($this)")
-        when (val result = Session.create(this)) {
+        // TODO(b/510012792): Use Projected Device Context after 1.55.
+        when (val result = Session.create(context = this, lifecycleOwner = this)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
                     val configResult =
                         session.configure(
-                            Config(deviceTracking = DeviceTrackingMode.INERTIAL_LAST_KNOWN)
+                            Config.Builder()
+                                .setDeviceTracking(createInertialDeviceTrackingMode())
+                                .build()
                         )
                     when (configResult) {
                         is SessionConfigureSuccess -> {
@@ -155,5 +158,14 @@ class TiltGestureTrackingActivity : ComponentActivity() {
                 Log.e(TAG, "Unexpected ${result::class.simpleName}")
             }
         }
+    }
+
+    private fun createInertialDeviceTrackingMode(): androidx.xr.runtime.DeviceTrackingMode {
+        val constructor =
+            androidx.xr.runtime.DeviceTrackingMode::class
+                .java
+                .getDeclaredConstructor(Int::class.javaPrimitiveType!!)
+        constructor.isAccessible = true
+        return constructor.newInstance(2)
     }
 }

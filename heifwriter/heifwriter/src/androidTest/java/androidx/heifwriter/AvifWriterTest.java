@@ -35,7 +35,6 @@ import android.util.Log;
 
 import androidx.heifwriter.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.GrantPermissionRule;
@@ -56,7 +55,6 @@ import java.io.InputStream;
  * Test {@link AvifWriter}.
  */
 @RunWith(AndroidJUnit4.class)
-@FlakyTest
 public class AvifWriterTest extends TestBase {
     private static final String TAG = AvifWriterTest.class.getSimpleName();
 
@@ -273,6 +271,58 @@ public class AvifWriterTest extends TestBase {
         avifWriter.close();
     }
 
+    @Test
+    @SmallTest
+    public void testAddExifData_InvalidIndex() throws Throwable {
+        if (shouldSkip()) return;
+
+        final String outputPath = new File(getApplicationContext().getExternalFilesDir(null),
+                OUTPUT_FILENAME).getAbsolutePath();
+        AvifWriter avifWriter = new AvifWriter.Builder(
+                outputPath, 1920, 1080, INPUT_MODE_SURFACE)
+                .setMaxImages(1)
+                .build();
+        avifWriter.start();
+
+        try {
+            byte[] exifData = new byte[100];
+            // index 1 is invalid for maxImages = 1
+            avifWriter.addExifData(1, exifData, 0, exifData.length);
+            throw new RuntimeException("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        } finally {
+            avifWriter.close();
+        }
+    }
+
+    @Test
+    @SmallTest
+    public void testAddExifData_TooManyBlocks() throws Throwable {
+        if (shouldSkip()) return;
+
+        final String outputPath = new File(getApplicationContext().getExternalFilesDir(null),
+                OUTPUT_FILENAME).getAbsolutePath();
+        AvifWriter avifWriter = new AvifWriter.Builder(
+                outputPath, 1920, 1080, INPUT_MODE_SURFACE)
+                .setMaxImages(1)
+                .build();
+        avifWriter.start();
+
+        try {
+            byte[] exifData = new byte[100];
+            // Add first block
+            avifWriter.addExifData(0, exifData, 0, exifData.length);
+            // Add second block, should fail as maxImages is 1
+            avifWriter.addExifData(0, exifData, 0, exifData.length);
+            throw new RuntimeException("Should have thrown IllegalStateException");
+        } catch (IllegalStateException e) {
+            // expected
+        } finally {
+            avifWriter.close();
+        }
+    }
+
     private void doTestForVariousNumberImages(TestConfig.Builder builder) throws Exception {
         builder.setHighBitDepthEnabled(false);
         builder.setNumImages(4);
@@ -283,14 +333,18 @@ public class AvifWriterTest extends TestBase {
         doTest(builder.setNumImages(1).build());
         doTest(builder.setNumImages(8).build());
 
-        builder.setHighBitDepthEnabled(true);
-        builder.setNumImages(1);
-        doTest(builder.setRotation(270).build());
-        doTest(builder.setRotation(180).build());
-        doTest(builder.setRotation(90).build());
-        doTest(builder.setRotation(0).build());
-        doTest(builder.setNumImages(1).build());
-        doTest(builder.setNumImages(8).build());
+        if (builder.mInputMode == INPUT_MODE_BUFFER || is10BitEglSupported()) {
+            builder.setHighBitDepthEnabled(true);
+            builder.setNumImages(1);
+            doTest(builder.setRotation(270).build());
+            doTest(builder.setRotation(180).build());
+            doTest(builder.setRotation(90).build());
+            doTest(builder.setRotation(0).build());
+            doTest(builder.setNumImages(1).build());
+            doTest(builder.setNumImages(8).build());
+        } else {
+            Log.i(TAG, "Skipping 10-bit EGL tests as 10-bit EGL is not supported");
+        }
     }
 
     private boolean shouldSkip() {

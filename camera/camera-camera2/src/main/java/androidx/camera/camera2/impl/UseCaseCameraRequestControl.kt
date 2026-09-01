@@ -20,6 +20,7 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.annotation.AnyThread
+import androidx.camera.camera2.adapter.CameraUseCaseAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.config.UseCaseCameraContext
 import androidx.camera.camera2.config.UseCaseCameraScope
@@ -28,6 +29,7 @@ import androidx.camera.camera2.interop.getCamera2CaptureRequestConfigurator
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Constants3A.METERING_REGIONS_DEFAULT
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
@@ -44,6 +46,7 @@ import androidx.camera.core.impl.MutableTagBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.TagBundle
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import dagger.Binds
 import dagger.Module
 import java.util.concurrent.Executor
@@ -206,6 +209,12 @@ public interface UseCaseCameraRequestControl {
      * @param afTriggerStartAeMode The AE mode to use when triggering AF.
      * @param timeLimitNs The time limit for the 3A operation in nanoseconds. Defaults to
      *   [CameraGraph.Constants3A.DEFAULT_TIME_LIMIT_NS].
+     * @param convergedCondition A custom condition for 3A convergence, null by default. Note that,
+     *   in CameraPipe, this refers to an additional 3A convergence used for AE/AWB locking which
+     *   happens before the actual AF trigger. This is separate from the `lockedCondition` parameter
+     *   in [CameraGraph.Session.lock3A] which is used for the 3A convergence condition after the
+     *   actual AF triggering. See [androidx.camera.camera2.pipe.graph.Controller3A.lock3A] code
+     *   flow for details.
      * @return A [Deferred] representing the asynchronous operation and its result ([Result3A]).
      */
     @AnyThread
@@ -218,6 +227,7 @@ public interface UseCaseCameraRequestControl {
         awbLockBehavior: Lock3ABehavior? = null,
         afTriggerStartAeMode: AeMode? = null,
         timeLimitNs: Long = CameraGraph.Constants3A.DEFAULT_TIME_LIMIT_NS,
+        convergedCondition: ((FrameMetadata) -> Boolean)? = null,
     ): Deferred<Result3A>
 
     /**
@@ -433,10 +443,45 @@ constructor(
         runIfNotClosed {
             runOnSequential {
                 Camera2Logger.debug { "UseCaseCameraRequestControlImpl#updateCamera2ConfigAsync" }
+                val camera2Config = Camera2ImplConfig(config)
+                val listeners = mutableSetOf<Request.Listener>()
+
+                camera2Config.getSessionCaptureCallback()?.let { callback ->
+                    val wrapped = CameraUseCaseAdapter.CaptureCallbackContainer.create(callback)
+                    listeners.add(
+                        CameraCallbackMap.createFor(
+                            listOf(wrapped),
+                            CameraXExecutors.directExecutor(),
+                        )
+                    )
+                }
+                camera2Config.getSessionRepeatingCaptureCallback()?.let { callback ->
+                    val wrapped = CameraUseCaseAdapter.CaptureCallbackContainer.create(callback)
+                    listeners.add(
+                        CameraCallbackMap.createFor(
+                            listOf(wrapped),
+                            CameraXExecutors.directExecutor(),
+                        )
+                    )
+                }
+
+                val template =
+                    if (config.containsOption(Camera2ImplConfig.TEMPLATE_TYPE_OPTION)) {
+                        RequestTemplate(
+                            camera2Config.getCaptureRequestTemplate(
+                                CaptureConfig.TEMPLATE_TYPE_NONE
+                            )
+                        )
+                    } else {
+                        null
+                    }
+
                 infoBundleMap[UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL] =
                     InfoBundle(
                         options = config.extractCamera2ImplConfigBuilder(),
                         tags = tags.toMutableMap(),
+                        listeners = listeners,
+                        template = template,
                     )
                 infoBundleMap.merge().updateCameraStateAsync()
             }
@@ -467,6 +512,7 @@ constructor(
         awbLockBehavior: Lock3ABehavior?,
         afTriggerStartAeMode: AeMode?,
         timeLimitNs: Long,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
     ): Deferred<Result3A> =
         runIfNotClosed {
             runOnSequential {
@@ -482,6 +528,7 @@ constructor(
                         afTriggerStartAeMode = afTriggerStartAeMode,
                         convergedTimeLimitNs = timeLimitNs,
                         lockedTimeLimitNs = timeLimitNs,
+                        convergedCondition = convergedCondition,
                     )
                 }
             }

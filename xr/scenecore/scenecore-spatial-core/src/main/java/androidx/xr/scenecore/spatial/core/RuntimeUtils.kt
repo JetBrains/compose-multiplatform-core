@@ -15,7 +15,9 @@
  */
 package androidx.xr.scenecore.spatial.core
 
+import android.util.DisplayMetrics
 import androidx.annotation.VisibleForTesting
+import androidx.xr.runtime.SpatialApiVersionHelper.spatialApiVersion
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -47,18 +49,18 @@ internal object RuntimeUtils {
     @VisibleForTesting
     fun getHitInfo(
         xrHitInfo: ExtensionsInputEvent.HitInfo?,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
     ): InputEvent.HitInfo? {
         if (xrHitInfo == null || xrHitInfo.inputNode == null || xrHitInfo.transform == null) {
             return null
         }
         // TODO: b/377541143 - Replace instance equality check in EntityManager.
         val sceneParentScale =
-            entityManager
-                .getSystemSpaceActivityPoseOfType(ActivitySpaceImpl::class.java)
+            sceneNodeRegistry
+                .getSystemSpaceScenePoseOfType(ActivitySpaceImpl::class.java)
                 .firstOrNull()
                 ?.sceneParentScaleAbs ?: Vector3.One
-        val hitEntity = entityManager.getEntityForNode(xrHitInfo.inputNode) ?: return null
+        val hitEntity = sceneNodeRegistry.getEntityForNode(xrHitInfo.inputNode) ?: return null
         return InputEvent.HitInfo(
             hitEntity,
             if (xrHitInfo.hitPosition == null) null
@@ -71,23 +73,23 @@ internal object RuntimeUtils {
      * Converts an XR InputEvent to a SceneCore InputEvent.
      *
      * @param xrInputEvent an [ExtensionsInputEvent] instance to be converted.
-     * @param entityManager an [EntityManager] instance to look up entities.
+     * @param sceneNodeRegistry an [SceneNodeRegistry] instance to look up entities.
      * @return a [InputEvent] instance representing the input event.
      */
     fun getInputEvent(
         xrInputEvent: ExtensionsInputEvent,
-        entityManager: EntityManager,
+        sceneNodeRegistry: SceneNodeRegistry,
     ): InputEvent {
         val sceneParentScale =
-            entityManager
-                .getSystemSpaceActivityPoseOfType(ActivitySpaceImpl::class.java)
+            sceneNodeRegistry
+                .getSystemSpaceScenePoseOfType(ActivitySpaceImpl::class.java)
                 .firstOrNull()
                 ?.sceneParentScaleAbs ?: Vector3.One
         val origin = getVector3(xrInputEvent.origin).scale(sceneParentScale)
         val direction = getVector3(xrInputEvent.direction).scale(sceneParentScale)
         // TODO: b/431250469 - Handle unregistered hitInfo nodes.
-        val hitInfo = getHitInfo(xrInputEvent.hitInfo, entityManager)
-        val secondaryHitInfo = getHitInfo(xrInputEvent.secondaryHitInfo, entityManager)
+        val hitInfo = getHitInfo(xrInputEvent.hitInfo, sceneNodeRegistry)
+        val secondaryHitInfo = getHitInfo(xrInputEvent.secondaryHitInfo, sceneNodeRegistry)
         val hitInfos = mutableListOf<InputEvent.HitInfo>()
         if (hitInfo != null) {
             hitInfos.add(hitInfo)
@@ -364,5 +366,26 @@ internal object RuntimeUtils {
             transform.rotation.z,
             transform.rotation.w,
         )
+    }
+
+    /**
+     * Returns the default number of virtual pixels that represent one meter in ActivitySpace.
+     *
+     * This value is a static property of the hardware and ignores user-level display preference
+     * overrides (system density changes).
+     */
+    internal fun getDefaultPixelsPerMeter(extensions: XrExtensions): Float {
+        // The pixels per meter should remain a constant value even when system density changes.
+        // The behavior of the two versions is identical, though they may produce different
+        // values.
+        return if (spatialApiVersion > 2) {
+            extensions.underlyingObject.config.defaultPixelsPerMeter()
+        } else {
+            // Align with V3 implementation
+            extensions.config.defaultPixelsPerMeter(
+                DisplayMetrics.DENSITY_DEVICE_STABLE.toFloat() /
+                    DisplayMetrics.DENSITY_DEFAULT.toFloat()
+            )
+        }
     }
 }

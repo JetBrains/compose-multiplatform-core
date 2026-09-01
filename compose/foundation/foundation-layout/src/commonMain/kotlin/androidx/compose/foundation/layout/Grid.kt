@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalGridApi::class)
-
 package androidx.compose.foundation.layout
 
 import androidx.annotation.FloatRange
@@ -24,7 +22,10 @@ import androidx.collection.LongList
 import androidx.collection.MutableIntList
 import androidx.collection.MutableIntSet
 import androidx.collection.MutableObjectList
+import androidx.collection.MutableObjectLongMap
+import androidx.collection.ObjectLongMap
 import androidx.collection.mutableLongListOf
+import androidx.collection.mutableObjectLongMapOf
 import androidx.compose.foundation.layout.GridScope.Companion.GridIndexUnspecified
 import androidx.compose.foundation.layout.GridScope.Companion.MaxGridIndex
 import androidx.compose.foundation.layout.internal.JvmDefaultWithCompatibility
@@ -53,6 +54,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastForEach
 import kotlin.jvm.JvmInline
 import kotlin.math.max
@@ -88,8 +91,7 @@ import kotlin.math.roundToInt
  * @see GridConfigurationScope
  */
 @Composable
-@ExperimentalGridApi
-inline fun Grid(
+public inline fun Grid(
     noinline config: GridConfigurationScope.() -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable GridScope.() -> Unit,
@@ -115,8 +117,7 @@ inline fun Grid(
 @LayoutScopeMarker
 @Immutable
 @JvmDefaultWithCompatibility
-@ExperimentalGridApi
-interface GridScope {
+public interface GridScope {
     /**
      * Configures the position, span, and alignment of an element within a [Grid] layout.
      *
@@ -154,7 +155,7 @@ interface GridScope {
      * @see MaxGridIndex
      */
     @Stable
-    fun Modifier.gridItem(
+    public fun Modifier.gridItem(
         @AndroidXIntRange(from = -MaxGridIndex.toLong(), to = MaxGridIndex.toLong())
         row: Int = GridIndexUnspecified,
         @AndroidXIntRange(from = -MaxGridIndex.toLong(), to = MaxGridIndex.toLong())
@@ -186,33 +187,67 @@ interface GridScope {
      * @see Modifier.gridItem
      */
     @Stable
-    fun Modifier.gridItem(
+    public fun Modifier.gridItem(
         rows: IntRange,
         columns: IntRange,
         alignment: Alignment = Alignment.TopStart,
     ): Modifier
 
-    companion object {
+    /**
+     * Configures the position and alignment of an element within a [Grid] layout by referencing a
+     * named area.
+     *
+     * Apply this modifier to direct children of a [Grid] composable. The [areaId] must correspond
+     * to an identifier defined using [GridConfigurationScope.area] within the `config` block of the
+     * [Grid].
+     *
+     * **Multiple Items & Overlapping:**
+     * - **2D Areas:** If multiple items are assigned to the same fully specified 2D area (both row
+     *   and column are fixed), they will stack on top of each other within those bounds. Z-ordering
+     *   is determined by composition order (items declared later draw on top, mirroring `Box`).
+     * - **1D Areas & Flow:** If the referenced area is one-dimensional (e.g., it defines a row but
+     *   leaves the column unspecified), placing multiple items into it triggers auto-flow. The
+     *   items will automatically flow into the next available cells within that specific track.
+     *
+     * **Fallback Behavior for Unknown Areas:** If the provided [areaId] identifier is not
+     * registered in the Grid configuration, this item will silently fall back to automatic
+     * placement to prevent runtime crashes.
+     *
+     * @sample androidx.compose.foundation.layout.samples.GridWithNamedAreas
+     * @sample androidx.compose.foundation.layout.samples.GridWithOneDimensionalAreas
+     * @param areaId The user-defined identifier corresponding to the area defined in the Grid
+     *   configuration. This identifier **must** have a stable `equals()` and `hashCode()`
+     *   implementation (e.g., an `enum`, `String`, `data class`, or singleton `object`) to
+     *   correctly match the area registered in the configuration.
+     * @param alignment Specifies how the content should be aligned within the grid cell(s).
+     *   Defaults to [Alignment.TopStart].
+     */
+    @Stable
+    public fun Modifier.gridItem(areaId: Any, alignment: Alignment = Alignment.TopStart): Modifier
+
+    public companion object {
         /**
          * The maximum allowed index for a row or column (inclusive).
          *
          * This hard limit prevents performance degradation, layout timeouts, or memory issues
          * potentially caused by accidental loop overflows or unreasonably large sparse grid
          * definitions.
+         *
+         * **Note:** This value MUST NOT exceed `Short.MAX_VALUE` (32767). Named Area bounds are
+         * bit-packed into 16-bit segments, and larger values will silently truncate.
          */
-        @ExperimentalGridApi const val MaxGridIndex: Int = 1000
+        public const val MaxGridIndex: Int = 1000
 
         /**
          * Sentinel value indicating that a grid position (row or column) is not manually specified
          * and should be determined automatically by the layout flow.
          */
-        @ExperimentalGridApi const val GridIndexUnspecified: Int = 0
+        public const val GridIndexUnspecified: Int = 0
     }
 }
 
 /** Internal implementation of [GridScope]. Stateless object to avoid allocations. */
 @PublishedApi
-@ExperimentalGridApi
 internal object GridScopeInstance : GridScope {
 
     override fun Modifier.gridItem(
@@ -234,7 +269,7 @@ internal object GridScopeInstance : GridScope {
         }
         require(rowSpan > 0) { "rowSpan must be > 0" }
         require(columnSpan > 0) { "columnSpan must be > 0" }
-        return this.then(GridItemElement(row, column, rowSpan, columnSpan, alignment))
+        return this.then(GridItemElement(null, row, column, rowSpan, columnSpan, alignment))
     }
 
     override fun Modifier.gridItem(
@@ -250,6 +285,19 @@ internal object GridScopeInstance : GridScope {
         val column = columns.first
         val columnSpan = columns.last - columns.first + 1
         return this.gridItem(row, column, rowSpan, columnSpan, alignment)
+    }
+
+    override fun Modifier.gridItem(areaId: Any, alignment: Alignment): Modifier {
+        return this.then(
+            GridItemElement(
+                areaId,
+                row = GridIndexUnspecified,
+                column = GridIndexUnspecified,
+                rowSpan = 1,
+                columnSpan = 1,
+                alignment,
+            )
+        )
     }
 }
 
@@ -270,8 +318,7 @@ internal object GridScopeInstance : GridScope {
  * @sample androidx.compose.foundation.layout.samples.GridWithConstraints
  */
 @LayoutScopeMarker
-@ExperimentalGridApi
-interface GridConfigurationScope : Density {
+public interface GridConfigurationScope : Density {
 
     /**
      * The layout constraints passed to this [Grid] from its parent.
@@ -282,45 +329,109 @@ interface GridConfigurationScope : Density {
      *
      * @see Constraints
      */
-    val constraints: Constraints
+    public val constraints: Constraints
 
     /**
      * The direction in which items that do not specify a position are placed. Defaults to
      * [GridFlow.Row].
      */
-    var flow: GridFlow
+    public var flow: GridFlow
 
     /** Defines a fixed-width column. Maps to [GridTrackSize.Fixed]. */
-    fun column(size: Dp)
+    public fun column(size: Dp)
 
     /** Defines a flexible column. Maps to [GridTrackSize.Flex]. */
-    fun column(weight: Fr)
+    public fun column(weight: Fr)
 
     /**
      * Defines a percentage-based column. Maps to [GridTrackSize.Percentage].
      *
      * @param percentage The percentage (0.0 to 1.0) of the available space.
      */
-    fun column(@FloatRange(from = 0.0, to = 1.0) percentage: Float)
+    public fun column(@FloatRange(from = 0.0, to = 1.0) percentage: Float)
 
     /** Defines a new column track with the specified [size]. */
-    fun column(size: GridTrackSize)
+    public fun column(size: GridTrackSize)
 
     /** Defines a fixed-width row. Maps to [GridTrackSize.Fixed]. */
-    fun row(size: Dp)
+    public fun row(size: Dp)
 
     /** Defines a flexible row. Maps to [GridTrackSize.Flex]. */
-    fun row(weight: Fr)
+    public fun row(weight: Fr)
 
     /**
      * Defines a percentage-based row. Maps to [GridTrackSize.Percentage].
      *
      * @param percentage The percentage (0.0 to 1.0) of the available space.
      */
-    fun row(@FloatRange(from = 0.0, to = 1.0) percentage: Float)
+    public fun row(@FloatRange(from = 0.0, to = 1.0) percentage: Float)
 
     /** Defines a new row track with the specified [size]. */
-    fun row(size: GridTrackSize)
+    public fun row(size: GridTrackSize)
+
+    /**
+     * Defines a named area or a 1-dimensional track within the grid by mapping an identifier to
+     * physical starting coordinates and spans.
+     *
+     * Once defined, this identifier can be referenced by child composables using
+     * `Modifier.gridItem(areaId)` to place them into this specific area. This decouples a
+     * component's semantic intent from its exact physical layout coordinates.
+     *
+     * **1D Areas & Flow:** To create a 1-dimensional track, explicitly pass [GridIndexUnspecified]
+     * to the dimension you want to auto-flow. For example, `area("Header", row = 1, column =
+     * GridIndexUnspecified)` restricts the area to the first row, allowing multiple items placed
+     * into it to automatically flow side-by-side into available columns.
+     *
+     * @sample androidx.compose.foundation.layout.samples.GridWithNamedAreas
+     * @sample androidx.compose.foundation.layout.samples.GridWithOneDimensionalAreas
+     * @param areaId A user-defined identifier (e.g., an Enum, String, or object marker) that
+     *   represents this area. This identifier **must** have a stable `equals()` and `hashCode()`.
+     * @param row The 1-based starting row index of the area. Defaults to [GridIndexUnspecified] to
+     *   create a 1D column-based area where items flow vertically.
+     * @param column The 1-based starting column index of the area. Defaults to
+     *   [GridIndexUnspecified] to create a 1D row-based area where items flow horizontally.
+     * @param rowSpan The number of rows this area should occupy. Must be greater than 0. Defaults
+     *   to 1.
+     * @param columnSpan The number of columns this area should occupy. Must be greater than 0.
+     *   Defaults to 1.
+     * @throws IllegalArgumentException if both [row] and [column] are [GridIndexUnspecified].
+     */
+    public fun area(
+        areaId: Any,
+        row: Int = GridIndexUnspecified,
+        column: Int = GridIndexUnspecified,
+        rowSpan: Int = 1,
+        columnSpan: Int = 1,
+    )
+
+    /**
+     * Defines a named area within the grid using explicit coordinate ranges.
+     *
+     * This is a convenience overload that computes the starting coordinate and span based on the
+     * provided [IntRange] boundaries.
+     *
+     * Example: `area(AppArea.Footer, rows = 2..3, columns = 1..2)` is functionally equivalent to
+     * `area(AppArea.Footer, row = 2, column = 1, rowSpan = 2, columnSpan = 2)`.
+     *
+     * @sample androidx.compose.foundation.layout.samples.GridWithAreaRanges
+     * @param areaId A user-defined identifier (e.g., an Enum, String, or object marker) that
+     *   represents this area.
+     * @param rows The range of rows to occupy (e.g., `1..2`). The start determines the 1-based row
+     *   index, and the size of the range determines the span.
+     * @param columns The range of columns to occupy (e.g., `1..3`). The start determines the
+     *   1-based column index, and the size of the range determines the span.
+     */
+    public fun area(areaId: Any, rows: IntRange, columns: IntRange) {
+        require(!rows.isEmpty()) { "Row range ($rows) cannot be empty" }
+        require(!columns.isEmpty()) { "Column range ($columns) cannot be empty" }
+        area(
+            areaId = areaId,
+            row = rows.first,
+            column = columns.first,
+            rowSpan = rows.last - rows.first + 1,
+            columnSpan = columns.last - columns.first + 1,
+        )
+    }
 
     /**
      * Sets both the row and column gaps (gutters) to [all].
@@ -330,7 +441,7 @@ interface GridConfigurationScope : Density {
      *
      * @throws IllegalArgumentException if [all] is negative.
      */
-    fun gap(all: Dp)
+    public fun gap(all: Dp)
 
     /**
      * Sets independent gaps for rows and columns.
@@ -340,7 +451,7 @@ interface GridConfigurationScope : Density {
      *
      * @throws IllegalArgumentException if [row] or [column] is negative.
      */
-    fun gap(row: Dp, column: Dp)
+    public fun gap(row: Dp, column: Dp)
 
     /**
      * Sets the gap (gutter) size between columns.
@@ -350,7 +461,7 @@ interface GridConfigurationScope : Density {
      *
      * @throws IllegalArgumentException if [gap] is negative.
      */
-    fun columnGap(gap: Dp)
+    public fun columnGap(gap: Dp)
 
     /**
      * Sets the gap (gutter) size between rows.
@@ -360,30 +471,41 @@ interface GridConfigurationScope : Density {
      *
      * @throws IllegalArgumentException if [gap] is negative.
      */
-    fun rowGap(gap: Dp)
+    public fun rowGap(gap: Dp)
+
+    /**
+     * A flexible track with an explicitly defined minimum base size and a flexible maximum size.
+     * Conceptually, this behaves identically to the CSS Grid `minmax(min, max)` function.
+     *
+     * **Usage with Lazy Lists:** Because `minmax` relies on a predefined [min] size (e.g., `0.dp`),
+     * it entirely bypasses the intrinsic measurement pass. This makes it the **required** choice
+     * when placing `SubcomposeLayout`-backed components (such as `LazyColumn` or `LazyRow`) inside
+     * a flexible grid track.
+     *
+     * @sample androidx.compose.foundation.layout.samples.GridWithLazyList
+     * @param min The explicit minimum fixed base size (e.g., `0.dp`).
+     * @param max The maximum flexible distribution weight (e.g., `1.fr`).
+     */
+    @Stable public fun minmax(min: Dp, max: Fr): GridTrackSize = GridTrackSize.MinMax(min, max)
 
     /** Creates an [Fr] unit from an [Int]. */
     @Stable
-    @ExperimentalGridApi
-    val Int.fr: Fr
+    public val Int.fr: Fr
         get() = Fr(this.toFloat())
 
     /** Creates an [Fr] unit from a [Float]. */
     @Stable
-    @ExperimentalGridApi
-    val Float.fr: Fr
+    public val Float.fr: Fr
         get() = Fr(this)
 
     /** Creates an [Fr] unit from a [Double]. */
     @Stable
-    @ExperimentalGridApi
-    val Double.fr: Fr
+    public val Double.fr: Fr
         get() = Fr(this.toFloat())
 }
 
 /** Adds multiple columns with the specified [specs]. */
-@ExperimentalGridApi
-fun GridConfigurationScope.columns(vararg specs: GridTrackSpec) {
+public fun GridConfigurationScope.columns(vararg specs: GridTrackSpec) {
     for (spec in specs) {
         if (spec is GridTrackSize) {
             column(spec)
@@ -392,8 +514,7 @@ fun GridConfigurationScope.columns(vararg specs: GridTrackSpec) {
 }
 
 /** Adds multiple rows with the specified [specs]. */
-@ExperimentalGridApi
-fun GridConfigurationScope.rows(vararg specs: GridTrackSpec) {
+public fun GridConfigurationScope.rows(vararg specs: GridTrackSpec) {
     for (spec in specs) {
         if (spec is GridTrackSize) {
             row(spec)
@@ -403,18 +524,15 @@ fun GridConfigurationScope.rows(vararg specs: GridTrackSpec) {
 
 /** Defines the direction in which auto-placed items flow within the grid. */
 @JvmInline
-@ExperimentalGridApi
-value class GridFlow @PublishedApi internal constructor(private val bits: Int) {
+public value class GridFlow @PublishedApi internal constructor(private val bits: Int) {
 
-    companion object {
+    public companion object {
         /** Items are placed filling the first row, then moving to the next row. */
-        @ExperimentalGridApi
-        inline val Row
+        public inline val Row: GridFlow
             get() = GridFlow(0)
 
         /** Items are placed filling the first column, then moving to the next column. */
-        @ExperimentalGridApi
-        inline val Column
+        public inline val Column: GridFlow
             get() = GridFlow(1)
     }
 
@@ -440,8 +558,7 @@ value class GridFlow @PublishedApi internal constructor(private val bits: Int) {
  * - The `2.fr` track would get 2/4 (or 1/2) of the remaining space.
  */
 @JvmInline
-@ExperimentalGridApi
-value class Fr(val value: Float) {
+public value class Fr(public val value: Float) {
     override fun toString(): String = "$value.fr"
 }
 
@@ -451,7 +568,7 @@ value class Fr(val value: Float) {
  * This allows the configuration DSL to accept [GridTrackSize] items in a vararg (e.g.,
  * `columns(Fixed(10.dp), Flex(1.fr))`), bypassing the Kotlin limitation on value class varargs.
  */
-@ExperimentalGridApi sealed interface GridTrackSpec
+public sealed interface GridTrackSpec
 
 /**
  * Defines the size of a track (a row or a column) in a [Grid].
@@ -460,14 +577,23 @@ value class Fr(val value: Float) {
  */
 @Immutable
 @JvmInline
-@ExperimentalGridApi
-value class GridTrackSize internal constructor(internal val encodedValue: Long) : GridTrackSpec {
+public value class GridTrackSize internal constructor(internal val encodedValue: Long) :
+    GridTrackSpec {
 
+    // 1. Unpacking the Type
     internal val type: Int
-        get() = (encodedValue ushr 32).toInt()
+        get() = (encodedValue ushr 60).toInt() // Top 4 bits
 
+    // 2. Unpacking a single value (for Fixed, Flex, Percentage)
     internal val value: Float
-        get() = Float.fromBits(encodedValue.toInt())
+        get() = Float.fromBits(encodedValue.toInt()) // Bottom 32 bits
+
+    // 3. Unpacking dual values (for MinMax)
+    internal val minValue: Float
+        get() = Float.fromBits(((encodedValue ushr 30) and 0x3FFFFFFF).toInt() shl 2)
+
+    internal val maxValue: Float
+        get() = Float.fromBits((encodedValue and 0x3FFFFFFF).toInt() shl 2)
 
     override fun toString(): String =
         when (type) {
@@ -477,16 +603,18 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
             TypeMinContent -> "MinContent"
             TypeMaxContent -> "MaxContent"
             TypeAuto -> "Auto"
+            TypeMinMax -> "MinMax(${minValue}dp, ${maxValue}fr)"
             else -> "Unknown"
         }
 
-    companion object {
+    public companion object {
         internal const val TypeFixed = 1
         internal const val TypePercentage = 2
         internal const val TypeFlex = 3
         internal const val TypeMinContent = 4
         internal const val TypeMaxContent = 5
         internal const val TypeAuto = 6
+        internal const val TypeMinMax = 7
 
         /**
          * A track with a fixed [Dp] size.
@@ -495,7 +623,7 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
          * @throws IllegalArgumentException if [size] is negative or [Dp.Unspecified].
          */
         @Stable
-        fun Fixed(size: Dp): GridTrackSize {
+        public fun Fixed(size: Dp): GridTrackSize {
             require(size != Dp.Unspecified && size.value >= 0f) {
                 "Fixed size must be non-negative and specified (was $size)"
             }
@@ -514,41 +642,93 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
          * @throws IllegalArgumentException if [value] is negative.
          */
         @Stable
-        fun Percentage(@FloatRange(from = 0.0) value: Float): GridTrackSize {
+        public fun Percentage(@FloatRange(from = 0.0) value: Float): GridTrackSize {
             require(value >= 0f) { "Percentage cannot be negative" }
             return pack(TypePercentage, value)
         }
 
         /**
-         * A flexible track that takes a share of the **remaining** space after Fixed and Percentage
-         * tracks are allocated.
+         * A flexible track that takes a share of the **remaining** space in the grid after
+         * non-flexible tracks (like [Fixed] and [Percentage]) are allocated.
          *
-         * @param weight The flexible weight. Space is distributed proportional to this weight
-         *   divided by the total flex weight. Must be non-negative.
+         * **Intrinsic Sizing:** By default, a [Flex] track behaves like CSS `1fr` (which implies
+         * `minmax(min-content, <weight>fr)`). Before distributing the remaining space, it queries
+         * the minimum intrinsic size (`min-content`) of its children to establish a base size and
+         * ensure content is not crushed.
+         *
+         * Jetpack Compose strictly forbids querying the intrinsic size of a `SubcomposeLayout`
+         * (such as [LazyColumn][androidx.compose.foundation.lazy.LazyColumn] or
+         * [LazyRow][androidx.compose.foundation.lazy.LazyRow]). Placing a lazy list directly inside
+         * a standard [Flex] track will result in an `IllegalStateException` crash. To safely place
+         * lazy lists in a flexible track, use [MinMax] instead.
+         *
+         * @param weight The flexible weight. Remaining space is distributed proportionally to this
+         *   weight divided by the sum of all flex weights. Must be non-negative.
          * @throws IllegalArgumentException if [weight] is negative.
+         * @see MinMax
          */
         @Stable
-        fun Flex(@FloatRange(from = 0.0) weight: Fr): GridTrackSize {
-            require(weight.value >= 0f) { "Flex weight must be positive" }
+        public fun Flex(@FloatRange(from = 0.0) weight: Fr): GridTrackSize {
+            require(weight.value >= 0f) { "Flex weight must be non-negative" }
             return pack(TypeFlex, weight.value)
         }
 
+        /**
+         * A flexible track with an explicitly defined minimum base size and a flexible maximum
+         * size. Conceptually, this behaves identically to the CSS Grid `minmax(min, max)` function.
+         *
+         * **Difference from [Flex]:** While a standard [Flex] track inherently queries the
+         * `min-content` intrinsic size of its children to determine its minimum base size, [MinMax]
+         * strictly uses the provided [min] size.
+         *
+         * **Usage with Lazy Lists:** Because [MinMax] relies on a predefined [min] size (e.g.,
+         * `0.dp`), it entirely bypasses the intrinsic measurement pass. This makes it the
+         * **required** choice when placing `SubcomposeLayout`-backed components (such as
+         * `LazyColumn` or `LazyRow`) inside a flexible grid track, as these components will crash
+         * if their intrinsic sizes are queried.
+         *
+         * @sample androidx.compose.foundation.layout.samples.GridWithLazyList
+         * @param min The explicit minimum fixed base size (e.g., `0.dp`).
+         * @param max The maximum flexible distribution weight (e.g., `1.fr`).
+         * @throws IllegalArgumentException if [min] is negative or [max] is negative.
+         * @see Flex
+         */
+        @Stable
+        public fun MinMax(min: Dp, @FloatRange(from = 0.0) max: Fr): GridTrackSize {
+            require(min.value >= 0f) { "MinMax minimum size cannot be negative" }
+            require(max.value >= 0f) { "MinMax max weight cannot be negative" }
+            return packMinMax(min.value, max.value)
+        }
+
         /** A track that sizes itself to fit the minimum intrinsic size of its contents. */
-        val MinContent = pack(TypeMinContent, 0f)
+        public val MinContent: GridTrackSize
+            get() = pack(TypeMinContent, 0f)
 
         /** A track that sizes itself to fit the maximum intrinsic size of its contents. */
-        val MaxContent = pack(TypeMaxContent, 0f)
+        public val MaxContent: GridTrackSize
+            get() = pack(TypeMaxContent, 0f)
 
         /**
          * A track that behaves as minmax(min-content, max-content). It occupies at least its
          * minimum content size, and grows to fit its maximum content size if space is available.
          */
-        val Auto = pack(TypeAuto, 0f)
+        public val Auto: GridTrackSize
+            get() = pack(TypeAuto, 0f)
+
+        private fun packMinMax(min: Float, max: Float): GridTrackSize {
+            require(min >= 0f && max >= 0f) { "minmax values must be non-negative" }
+            val typeLong = TypeMinMax.toLong() and 0xFL
+            val minLong = (min.toRawBits() ushr 2).toLong() and 0x3FFFFFFFL
+            val maxLong = (max.toRawBits() ushr 2).toLong() and 0x3FFFFFFFL
+            val raw = (typeLong shl 60) or (minLong shl 30) or maxLong
+            return GridTrackSize(raw)
+        }
 
         private fun pack(type: Int, value: Float): GridTrackSize {
-            // Pack Type (High 32) and Float bits (Low 32) into one Long.
-            // Mask 0xFFFFFFFFL prevents sign extension when casting int to long.
-            val raw = (type.toLong() shl 32) or (value.toRawBits().toLong() and 0xFFFFFFFFL)
+            val typeLong = type.toLong() and 0xFL // 4 bits
+            val valLong = value.toRawBits().toLong() and 0xFFFFFFFFL // 32 bits
+            // Format: [4 bits Type] [28 bits Empty] [32 bits Value]
+            val raw = (typeLong shl 60) or valLong
             return GridTrackSize(raw)
         }
     }
@@ -557,6 +737,8 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
 /**
  * The modifier element that creates and updates [GridItemNode].
  *
+ * @property areaId The user-defined identifier for named area placement, or null if explicit
+ *   coordinates are used.
  * @property row The 1-based row index, or [GridScope.GridIndexUnspecified] for auto-placement.
  * @property column The 1-based column index, or [GridScope.GridIndexUnspecified] for
  *   auto-placement.
@@ -566,15 +748,27 @@ value class GridTrackSize internal constructor(internal val encodedValue: Long) 
  * @see GridItemNode
  */
 private class GridItemElement(
+    val areaId: Any?,
     val row: Int,
     val column: Int,
     val rowSpan: Int,
     val columnSpan: Int,
     val alignment: Alignment,
 ) : ModifierNodeElement<GridItemNode>() {
-    override fun create(): GridItemNode = GridItemNode(row, column, rowSpan, columnSpan, alignment)
+
+    constructor(
+        row: Int,
+        column: Int,
+        rowSpan: Int,
+        columnSpan: Int,
+        alignment: Alignment,
+    ) : this(null, row, column, rowSpan, columnSpan, alignment)
+
+    override fun create(): GridItemNode =
+        GridItemNode(areaId, row, column, rowSpan, columnSpan, alignment)
 
     override fun update(node: GridItemNode) {
+        node.areaId = areaId
         node.row = row
         node.column = column
         node.rowSpan = rowSpan
@@ -584,10 +778,14 @@ private class GridItemElement(
 
     override fun InspectorInfo.inspectableProperties() {
         name = "gridItem"
-        properties["row"] = row
-        properties["column"] = column
-        properties["rowSpan"] = rowSpan
-        properties["columnSpan"] = columnSpan
+        if (areaId != null) {
+            properties["area"] = areaId
+        } else {
+            properties["row"] = row
+            properties["column"] = column
+            properties["rowSpan"] = rowSpan
+            properties["columnSpan"] = columnSpan
+        }
         properties["alignment"] = alignment
     }
 
@@ -599,6 +797,7 @@ private class GridItemElement(
         if (column != other.column) return false
         if (rowSpan != other.rowSpan) return false
         if (columnSpan != other.columnSpan) return false
+        if (areaId != other.areaId) return false
         if (alignment != other.alignment) return false
 
         return true
@@ -609,6 +808,7 @@ private class GridItemElement(
         result = 31 * result + column
         result = 31 * result + rowSpan
         result = 31 * result + columnSpan
+        result = 31 * result + (areaId?.hashCode() ?: 0)
         result = 31 * result + alignment.hashCode()
         return result
     }
@@ -621,6 +821,8 @@ private class GridItemElement(
  * configuration (row, column, spans) of this specific child during the measurement phase via the
  * [modifyParentData] method.
  *
+ * @property areaId The user-defined identifier for named area placement, or null if explicit
+ *   coordinates are used.
  * @property row The 1-based row index, or [GridScope.GridIndexUnspecified] for auto-placement.
  * @property column The 1-based column index, or [GridScope.GridIndexUnspecified] for
  *   auto-placement.
@@ -633,6 +835,7 @@ private class GridItemElement(
  * @see GridScope.gridItem for the public API and input validation.
  */
 private class GridItemNode(
+    var areaId: Any?,
     var row: Int,
     var column: Int,
     var rowSpan: Int,
@@ -644,7 +847,6 @@ private class GridItemNode(
 
 /** A stable MeasurePolicy that reads configuration from a State. */
 @PublishedApi
-@ExperimentalGridApi
 internal class GridMeasurePolicy(
     private val configState: State<GridConfigurationScope.() -> Unit>
 ) : MeasurePolicy {
@@ -664,6 +866,7 @@ internal class GridMeasurePolicy(
                 columnSpecs = gridConfig.columnSpecs,
                 rowSpecs = gridConfig.rowSpecs,
                 flow = gridConfig.flow,
+                namedAreas = gridConfig.namedAreas,
             )
 
         // 3. Resolve Track Sizes
@@ -715,6 +918,11 @@ private class GridConfigurationScopeImpl(density: Density, override val constrai
     GridConfigurationScope, Density by density {
     val columnSpecs = mutableLongListOf()
     val rowSpecs = mutableLongListOf()
+
+    private var _namedAreas: MutableObjectLongMap<Any>? = null
+    val namedAreas: ObjectLongMap<Any>?
+        get() = _namedAreas
+
     var columnGap: Dp = 0.dp
     var rowGap: Dp = 0.dp
 
@@ -750,6 +958,34 @@ private class GridConfigurationScopeImpl(density: Density, override val constrai
 
     override fun row(size: GridTrackSize) {
         rowSpecs.add(size.encodedValue)
+    }
+
+    override fun area(areaId: Any, row: Int, column: Int, rowSpan: Int, columnSpan: Int) {
+        require(row != GridIndexUnspecified || column != GridIndexUnspecified) {
+            "An area must specify at least a row or a column."
+        }
+        require(row in -MaxGridIndex..MaxGridIndex) {
+            "row must be between -$MaxGridIndex and $MaxGridIndex"
+        }
+        require(column in -MaxGridIndex..MaxGridIndex) {
+            "column must be between -$MaxGridIndex and $MaxGridIndex"
+        }
+        require(rowSpan in 1..MaxGridIndex) { "rowSpan must be between 1 and $MaxGridIndex" }
+        require(columnSpan in 1..MaxGridIndex) { "columnSpan must be between 1 and $MaxGridIndex" }
+
+        // Ensure future changes to MaxGridIndex don't break the 16-bit packing.
+        require(MaxGridIndex <= Short.MAX_VALUE) {
+            "MaxGridIndex ($MaxGridIndex) shouldn't exceed Short.MAX_VALUE for 16-bit bit-packing."
+        }
+
+        val packedRow = (row.toShort().toLong() and 0xFFFFL) shl 48
+        val packedCol = (column.toShort().toLong() and 0xFFFFL) shl 32
+        val packedRowSpan = (rowSpan.toShort().toLong() and 0xFFFFL) shl 16
+        val packedColSpan = (columnSpan.toShort().toLong() and 0xFFFFL)
+
+        val packedArea = packedRow or packedCol or packedRowSpan or packedColSpan
+        val map = _namedAreas ?: mutableObjectLongMapOf<Any>().also { _namedAreas = it }
+        map[areaId] = packedArea
     }
 
     override fun gap(all: Dp) {
@@ -845,11 +1081,13 @@ private class GridTrackSizes(
  * item has a specific (row, column) coordinate.
  *
  * **Algorithm Overview:**
- * 1. **Explicit Placement:** Items with both `row` and `column` manually specified are placed
+ * 1. **Named Areas Resolution:** If an item specifies an `area`, we look up its physical bounds
+ *    from the [namedAreas] map.
+ * 2. **Explicit Placement:** Items with both `row` and `column` manually specified are placed
  *    first. They anchor the grid and do not move.
- * 2. **Auto-Placement Cursor:** A "cursor" (current row/column pointer) tracks the next available
+ * 3. **Auto-Placement Cursor:** A "cursor" (current row/column pointer) tracks the next available
  *    position.
- * 3. **Filling Gaps:** The algorithm iterates through the remaining items. For each item:
+ * 4. **Filling Gaps:** The algorithm iterates through the remaining items. For each item:
  * - It advances the cursor to the first slot that can accommodate the item's span without
  *   overlapping existing items.
  * - It respects the [flow] direction (Row-major vs Column-major).
@@ -860,6 +1098,8 @@ private class GridTrackSizes(
  * @param columnSpecs The explicit column definitions (used to determine wrapping points).
  * @param rowSpecs The explicit row definitions (used to determine wrapping points).
  * @param flow The direction ([GridFlow.Row] or [GridFlow.Column]) to fill the grid.
+ * @param namedAreas The map of user-defined areas to their bit-packed coordinate and span
+ *   definitions.
  * @return A [ResolvedGridItemIndicesResult] containing the final positions and the *total* grid
  *   dimensions (Explicit + Implicit).
  */
@@ -868,6 +1108,7 @@ private fun resolveGridItemIndices(
     columnSpecs: LongList,
     rowSpecs: LongList,
     flow: GridFlow,
+    namedAreas: ObjectLongMap<Any>?,
 ): ResolvedGridItemIndicesResult {
     val gridItems = MutableObjectList<GridItem>(measurables.size)
 
@@ -916,28 +1157,85 @@ private fun resolveGridItemIndices(
     var autoPlacementCursorCol = 0
 
     measurables.fastForEach { measurable ->
-        val data = measurable.parentData as? GridItemNode
-        val rowSpan = data?.rowSpan ?: 1
-        val colSpan = data?.columnSpan ?: 1
+        val parentData = measurable.parentData as? GridItemNode
+        var rowSpan = 1
+        var colSpan = 1
+        var requestedRow = UnspecifiedResolvedIndex
+        var requestedCol = UnspecifiedResolvedIndex
+        var alignment = Alignment.TopStart
 
-        // Convert 1-based user indices to 0-based internal indices.
-        // Returns null if the user index was unspecified (Auto).
-        val requestedRow =
-            resolveToZeroBasedIndex(data?.row ?: GridIndexUnspecified, explicitRowCount)
-        val requestedCol =
-            resolveToZeroBasedIndex(data?.column ?: GridIndexUnspecified, explicitColCount)
+        if (parentData != null) {
+            alignment = parentData.alignment
+            // Determine the specified layout coordinates and spans for this item.
+            // These can originate from either a semantic Named Area or direct modifier coordinates.
+            val specifiedRow: Int
+            val specifiedCol: Int
+            val areaId = parentData.areaId
+            if (areaId != null) {
+                // Handle Named Area Placement
+                // Look up the bit-packed bounds that were registered in the Grid config block.
+                if (namedAreas != null && namedAreas.contains(areaId)) {
+                    val packedBounds = namedAreas[areaId]
+                    specifiedRow = (packedBounds ushr 48).toShort().toInt()
+                    specifiedCol = ((packedBounds ushr 32) and 0xFFFF).toShort().toInt()
+                    rowSpan = ((packedBounds ushr 16) and 0xFFFF).toShort().toInt()
+                    colSpan = (packedBounds and 0xFFFF).toShort().toInt()
+                } else {
+                    // Fallback for unknown area
+                    // If the user requested an area that was not defined in the config,
+                    // we gracefully fall back to Auto-Placement.
+                    specifiedRow = GridIndexUnspecified
+                    specifiedCol = GridIndexUnspecified
+                    rowSpan = 1
+                    colSpan = 1
+                }
+            } else {
+                // Explicit Coordinate Modifier
+                // No area was provided, meaning the user used the absolute coordinate modifier
+                // (e.g., Modifier.gridItem(row = 1, column = 2)). Use those exact values directly.
+                specifiedRow = parentData.row
+                specifiedCol = parentData.column
+                rowSpan = parentData.rowSpan
+                colSpan = parentData.columnSpan
+            }
 
-        var finalRow = -1
-        var finalCol = -1
+            // Clamp spans for items that rely on auto-placement.
+            // A child might request a large span (e.g., 4 columns) on a
+            // small screen that only defines 2 columns. Clamping ensures the item safely
+            // acts as a "full-width" item instead of measuring extra gap space and bleeding
+            // outside the grid's bounds.
+            // We leave explicitly positioned items alone so developers can still intentionally
+            // span items into implicit tracks.
+            if (
+                specifiedRow == GridIndexUnspecified &&
+                    explicitRowCount > 0 &&
+                    flow == GridFlow.Column
+            ) {
+                rowSpan = rowSpan.fastCoerceAtMost(explicitRowCount)
+            }
+            if (
+                specifiedCol == GridIndexUnspecified && explicitColCount > 0 && flow == GridFlow.Row
+            ) {
+                colSpan = colSpan.fastCoerceAtMost(explicitColCount)
+            }
+
+            // Convert 1-based user indices to 0-based internal indices.
+            // Returns null if the user index was unspecified (Auto).
+            requestedRow = resolveToZeroBasedIndex(specifiedRow, explicitRowCount)
+            requestedCol = resolveToZeroBasedIndex(specifiedCol, explicitColCount)
+        }
+
+        var finalRow = UnspecifiedResolvedIndex
+        var finalCol = UnspecifiedResolvedIndex
 
         // 1. Fully Explicit (Row & Column fixed)
         // We simply place it there. Overlaps are allowed for explicit placement.
-        if (requestedRow != -1 && requestedCol != -1) {
+        if (requestedRow != UnspecifiedResolvedIndex && requestedCol != UnspecifiedResolvedIndex) {
             finalRow = requestedRow
             finalCol = requestedCol
         }
         // 2. Fixed Row (Search for Column)
-        else if (requestedRow != -1) {
+        else if (requestedRow != UnspecifiedResolvedIndex) {
             // Search for the first available column in the specified row.
             finalRow = requestedRow
             var candidateCol = 0
@@ -955,7 +1253,7 @@ private fun resolveGridItemIndices(
             }
         }
         // 3. Fixed Column (Search for Row)
-        else if (requestedCol != -1) {
+        else if (requestedCol != UnspecifiedResolvedIndex) {
             // Search for the first available row in the specified column.
             finalCol = requestedCol
             var candidateRow = 0
@@ -1041,7 +1339,7 @@ private fun resolveGridItemIndices(
                 column = placementCol,
                 rowSpan = rowSpan,
                 columnSpan = colSpan,
-                alignment = data?.alignment ?: Alignment.TopStart,
+                alignment = alignment,
             )
         )
 
@@ -1049,10 +1347,10 @@ private fun resolveGridItemIndices(
         maxRow = max(maxRow, placementRow + rowSpan)
         maxCol = max(maxCol, placementCol + colSpan)
 
-        // Update Cursor (Only for non-explicit placements)
+        // Update Cursor (Only for non-explicit / fully auto placements)
         // Only update cursor if the item was NOT fully explicit.
-        // Explicit items are "out of flow" and shouldn't drag the cursor with them.
-        if (requestedRow == -1 || requestedCol == -1) {
+        // 1D areas (fixed row or fixed col) and explicit items shouldn't drag the global cursor.
+        if (requestedRow == UnspecifiedResolvedIndex && requestedCol == UnspecifiedResolvedIndex) {
             if (flow == GridFlow.Row) {
                 autoPlacementCursorRow = placementRow
                 autoPlacementCursorCol = placementCol + colSpan
@@ -1063,8 +1361,45 @@ private fun resolveGridItemIndices(
         }
     }
 
+    // Sort the items immediately after their physical coordinates are resolved.
+    // This ensures that Track Sizing, Measuring, and Placement all iterate over the
+    // items in spatial Z-order (top-start to bottom-end).
+    gridItems.sortWith(GridItemsComparator)
+
     return ResolvedGridItemIndicesResult(gridItems, IntSize(maxCol, maxRow))
 }
+
+/**
+ * A singleton comparator used to sort GridItems into their visual Z-order (row-major). Statically
+ * allocated to prevent object creation during the measure/layout pass.
+ */
+private val GridItemsComparator =
+    Comparator<GridItem> { a, b ->
+        val rowCompare = a.row.compareTo(b.row)
+        if (rowCompare != 0) rowCompare else a.column.compareTo(b.column)
+    }
+
+/**
+ * Temporary extension to sort a [MutableObjectList] using a [Comparator]. Uses an allocation-free
+ * insertion sort to guarantee zero memory allocations during the high-frequency measurement/layout
+ * phase.
+ *
+ * Remove this once `sortBy` / `sortWith` is natively added to `MutableObjectList`.
+ */
+private fun <T> MutableObjectList<T>.sortWith(comparator: Comparator<T>) {
+    for (i in 1 until size) {
+        val current = this[i]
+        var j = i - 1
+        // Shift elements to the right to make room for the current item
+        while (j >= 0 && comparator.compare(this[j], current) > 0) {
+            this[j + 1] = this[j]
+            j--
+        }
+        this[j + 1] = current
+    }
+}
+
+private const val UnspecifiedResolvedIndex = -1
 
 /**
  * Resolves a 1-based user index (positive or negative) to a 0-based concrete index.
@@ -1075,7 +1410,7 @@ private fun resolveGridItemIndices(
  *   of bounds).
  */
 private fun resolveToZeroBasedIndex(index: Int, maxCount: Int): Int {
-    if (index == GridIndexUnspecified) return -1
+    if (index == GridIndexUnspecified) return UnspecifiedResolvedIndex
 
     // Positive Index (e.g., 5): Maps to 4.
     // Always valid (allows creating implicit tracks if > maxCount).
@@ -1199,10 +1534,13 @@ private fun calculateGridTrackSizes(
             columnWidths = columnWidths,
             gridItems = gridItems,
             rowGap = rowGapPx,
+            columnGap = colGapPx,
         )
 
-    val totalColumnGap = max(0, columnSpecs.size - 1) * colGapPx
-    val totalRowGap = max(0, rowSpecs.size - 1) * rowGapPx
+    // Use totalColCount and totalRowCount instead of the explicit spec sizes.
+    // This ensures gaps between implicitly created tracks are included in the final Grid size.
+    val totalColumnGap = max(0, totalColCount - 1) * colGapPx
+    val totalRowGap = max(0, totalRowCount - 1) * rowGapPx
 
     return GridTrackSizes(
         columnWidths = columnWidths,
@@ -1266,7 +1604,7 @@ private fun calculateColumnWidths(
     var totalFlex = 0f
     // Calculate total space consumed by gaps.
     // e.g., 3 columns have 2 gaps. (N-1) * gap.
-    val totalGapSpace = (columnGap * (totalCount - 1)).coerceAtLeast(0)
+    val totalGapSpace = (columnGap * (totalCount - 1)).fastCoerceAtLeast(0)
 
     // Calculate space available for actual tracks (Total - Gaps).
     // If availableSpace is Infinity, availableTrackSpace value becomes Constraints.Infinity
@@ -1274,7 +1612,7 @@ private fun calculateColumnWidths(
         if (availableSpace == Constraints.Infinity) {
             Constraints.Infinity
         } else {
-            (availableSpace - totalGapSpace).coerceAtLeast(0)
+            (availableSpace - totalGapSpace).fastCoerceAtLeast(0)
         }
 
     // Keep track of which columns are Auto so we can expand them later
@@ -1336,6 +1674,12 @@ private fun calculateColumnWidths(
                         min
                     }
                 }
+                GridTrackSize.TypeMinMax -> {
+                    // Accumulate the max Fr weight for Pass 2
+                    totalFlex += spec.maxValue
+                    // The base size is the exact fixed minimum, skipping intrinsic queries.
+                    with(density) { spec.minValue.dp.roundToPx() }
+                }
                 // Measure the max intrinsic width of all items in this column.
                 else -> calculateMaxIntrinsicWidth(itemsByColumn[index])
             }
@@ -1352,7 +1696,8 @@ private fun calculateColumnWidths(
         isRowAxis = false,
         constraints = constraints,
         crossAxisSizes = null, // Not needed for column width calculation
-        gap = columnGap,
+        mainAxisGap = columnGap,
+        crossAxisGap = 0,
     )
 
     // --- Pass 1.8: Expand Auto Tracks ---
@@ -1367,44 +1712,14 @@ private fun calculateColumnWidths(
         )
     }
 
-    var usedSpace = 0
-    for (size in outSizes) {
-        usedSpace += size
-    }
-
     // --- Pass 2: Flex Distribution ---
-    // If we have finite width and unused space, distribute it to Flex columns.
-    val remainingSpace =
-        if (availableTrackSpace == Constraints.Infinity) 0
-        else max(0, availableTrackSpace - usedSpace)
-
-    var totalAddedFromFlex = 0
-    if (totalFlex > 0 && remainingSpace > 0) {
-        var distributed = 0
-        var accumulatedFlex = 0f
-
-        for (index in 0 until totalCount) {
-            val specRaw =
-                if (index < explicitSpecs.size) explicitSpecs[index]
-                else GridTrackSize.Auto.encodedValue
-            val spec = GridTrackSize(specRaw)
-
-            if (spec.type == GridTrackSize.TypeFlex) {
-                accumulatedFlex += spec.value
-                // Distribute space proportionally based on weight.
-                // Uses an accumulation algorithm to avoid rounding errors summing to >
-                // remainingSpace.
-                val targetSpace = (accumulatedFlex / totalFlex * remainingSpace).roundToInt()
-                val share = max(0, targetSpace - distributed)
-
-                outSizes[index] += share
-                distributed += share
-                totalAddedFromFlex = distributed
-            }
-        }
-    }
-
-    return usedSpace + totalAddedFromFlex
+    return distributeFlexSpaceAndGetTotal(
+        outSizes = outSizes,
+        availableTrackSpace = availableTrackSpace,
+        totalFlex = totalFlex,
+        totalCount = totalCount,
+        explicitSpecs = explicitSpecs,
+    )
 }
 
 /**
@@ -1455,13 +1770,14 @@ private fun calculateRowHeights(
     columnWidths: IntArray,
     gridItems: MutableObjectList<GridItem>,
     rowGap: Int,
+    columnGap: Int,
 ): Int {
     if (totalCount == 0) return 0
 
     var totalFlex = 0f
     // Calculate total space consumed by gaps.
     // e.g., 3 columns have 2 gaps. (N-1) * gap.
-    val totalGapSpace = (rowGap * (totalCount - 1)).coerceAtLeast(0)
+    val totalGapSpace = (rowGap * (totalCount - 1)).fastCoerceAtLeast(0)
 
     // Calculate space available for actual tracks (Total - Gaps).
     // If availableSpace is Infinity, availableTrackSpace value becomes Constraints.Infinity
@@ -1469,7 +1785,7 @@ private fun calculateRowHeights(
         if (availableSpace == Constraints.Infinity) {
             Constraints.Infinity
         } else {
-            (availableSpace - totalGapSpace).coerceAtLeast(0)
+            (availableSpace - totalGapSpace).fastCoerceAtLeast(0)
         }
 
     // Keep track of which columns are Auto so we can expand them later
@@ -1501,6 +1817,7 @@ private fun calculateRowHeights(
                             items = itemsByRow[index],
                             columnWidths = columnWidths,
                             fallbackWidth = constraints.maxWidth,
+                            columnGap = columnGap,
                         )
                     }
                 }
@@ -1515,6 +1832,7 @@ private fun calculateRowHeights(
                         items = itemsByRow[index],
                         columnWidths = columnWidths,
                         fallbackWidth = constraints.maxWidth,
+                        columnGap = columnGap,
                     )
                 }
 
@@ -1523,13 +1841,17 @@ private fun calculateRowHeights(
                         items = itemsByRow[index],
                         columnWidths = columnWidths,
                         fallbackWidth = constraints.maxWidth,
+                        columnGap = columnGap,
                     )
+
                 GridTrackSize.TypeMaxContent ->
                     calculateMaxIntrinsicHeight(
                         items = itemsByRow[index],
                         columnWidths = columnWidths,
                         fallbackWidth = constraints.maxWidth,
+                        columnGap = columnGap,
                     )
+
                 GridTrackSize.TypeAuto -> {
                     // If infinite space, Auto behaves like MaxContent
                     if (availableTrackSpace == Constraints.Infinity) {
@@ -1537,6 +1859,7 @@ private fun calculateRowHeights(
                             items = itemsByRow[index],
                             columnWidths = columnWidths,
                             fallbackWidth = constraints.maxWidth,
+                            columnGap = columnGap,
                         )
                     } else {
                         // Finite space: Auto needs Min (for base) and Max (for growth).
@@ -1545,6 +1868,7 @@ private fun calculateRowHeights(
                                 itemsByRow[index],
                                 columnWidths,
                                 constraints.maxWidth,
+                                columnGap = columnGap,
                             )
                         // Unpack the Long (High 32 = Max, Low 32 = Min)
                         val max = (packed ushr 32).toInt()
@@ -1557,11 +1881,20 @@ private fun calculateRowHeights(
                         min
                     }
                 }
+
+                GridTrackSize.TypeMinMax -> {
+                    // Accumulate the max [Fr] weight for Pass 2
+                    totalFlex += spec.maxValue
+                    // The base size is the fixed minimum, skipping intrinsic queries.
+                    with(density) { spec.minValue.dp.roundToPx() }
+                }
+
                 else ->
                     calculateMaxIntrinsicHeight(
                         items = itemsByRow[index],
                         columnWidths = columnWidths,
                         fallbackWidth = constraints.maxWidth,
+                        columnGap = columnGap,
                     )
             }
         outSizes[index] = size
@@ -1577,7 +1910,8 @@ private fun calculateRowHeights(
         isRowAxis = true,
         constraints = constraints,
         crossAxisSizes = columnWidths,
-        gap = rowGap,
+        mainAxisGap = rowGap,
+        crossAxisGap = columnGap,
     )
 
     // --- Pass 1.8: Expand Auto Tracks ---
@@ -1592,14 +1926,33 @@ private fun calculateRowHeights(
         )
     }
 
+    // --- Pass 2: Flex Distribution ---
+    return distributeFlexSpaceAndGetTotal(
+        outSizes = outSizes,
+        availableTrackSpace = availableTrackSpace,
+        totalFlex = totalFlex,
+        totalCount = totalCount,
+        explicitSpecs = explicitSpecs,
+    )
+}
+
+/**
+ * Calculates the total used space and distributes any remaining finite space proportionally among
+ * tracks defined as [GridTrackSize.Flex].
+ */
+private fun distributeFlexSpaceAndGetTotal(
+    outSizes: IntArray,
+    availableTrackSpace: Int,
+    totalFlex: Float,
+    totalCount: Int,
+    explicitSpecs: LongList,
+): Int {
     var usedSpace = 0
     for (size in outSizes) {
         usedSpace += size
     }
 
-    // --- Pass 2: Flex Distribution ---
-    //
-    // If we have finite height and unused space, distribute it to Flex rows.
+    // If we have finite space and unused space, distribute it to Flex tracks.
     val remainingSpace =
         if (availableTrackSpace == Constraints.Infinity) 0
         else max(0, availableTrackSpace - usedSpace)
@@ -1614,9 +1967,14 @@ private fun calculateRowHeights(
                 if (index < explicitSpecs.size) explicitSpecs[index]
                 else GridTrackSize.Auto.encodedValue
             val spec = GridTrackSize(specRaw)
-
-            if (spec.type == GridTrackSize.TypeFlex) {
-                accumulatedFlex += spec.value
+            val weight =
+                when (spec.type) {
+                    GridTrackSize.TypeFlex -> spec.value
+                    GridTrackSize.TypeMinMax -> spec.maxValue
+                    else -> 0f
+                }
+            if (weight > 0f) {
+                accumulatedFlex += weight
                 // Distribute space proportionally based on weight.
                 // Uses an accumulation algorithm to avoid rounding errors summing to >
                 // remainingSpace.
@@ -1661,13 +2019,13 @@ private fun calculateMaxIntrinsicHeight(
     items: MutableObjectList<GridItem>?,
     columnWidths: IntArray,
     fallbackWidth: Int,
+    columnGap: Int,
 ): Int {
     if (items == null) return 0
     var maxSize = 0
     items.forEach { item ->
         if (item.rowSpan == 1) {
-            val colIndex = item.column
-            val width = if (colIndex < columnWidths.size) columnWidths[colIndex] else fallbackWidth
+            val width = getSpannedWidth(item, columnWidths, fallbackWidth, columnGap)
             val size = item.measurable.maxIntrinsicHeight(width)
             if (size > maxSize) maxSize = size
         }
@@ -1679,13 +2037,13 @@ private fun calculateMinIntrinsicHeight(
     items: MutableObjectList<GridItem>?,
     columnWidths: IntArray,
     fallbackWidth: Int,
+    columnGap: Int,
 ): Int {
     if (items == null) return 0
     var maxSize = 0
     items.forEach { item ->
         if (item.rowSpan == 1) {
-            val colIndex = item.column
-            val width = if (colIndex < columnWidths.size) columnWidths[colIndex] else fallbackWidth
+            val width = getSpannedWidth(item, columnWidths, fallbackWidth, columnGap)
             val size = item.measurable.minIntrinsicHeight(width)
             if (size > maxSize) maxSize = size
         }
@@ -1733,14 +2091,14 @@ private fun calculateMinMaxIntrinsicHeight(
     items: MutableObjectList<GridItem>?,
     columnWidths: IntArray,
     fallbackWidth: Int,
+    columnGap: Int,
 ): Long {
     if (items == null) return 0L
     var maxMin = 0
     var maxMax = 0
     items.forEach { item ->
         if (item.rowSpan == 1) {
-            val colIndex = item.column
-            val width = if (colIndex < columnWidths.size) columnWidths[colIndex] else fallbackWidth
+            val width = getSpannedWidth(item, columnWidths, fallbackWidth, columnGap)
             val min = item.measurable.minIntrinsicHeight(width)
             val max = item.measurable.maxIntrinsicHeight(width)
             if (min > maxMin) maxMin = min
@@ -1748,6 +2106,40 @@ private fun calculateMinMaxIntrinsicHeight(
         }
     }
     return (maxMax.toLong() shl 32) or (maxMin.toLong() and 0xFFFFFFFFL)
+}
+
+/**
+ * Calculates the total width occupied by a [GridItem] spanning multiple columns.
+ *
+ * This function sums the widths of all columns the item spans and includes any gaps between these
+ * columns. This is necessary to provide the correct width constraint when calculating intrinsic
+ * heights for items in [GridTrackSize.Auto] rows.
+ *
+ * @param item The [GridItem] for which to calculate the spanned width.
+ * @param columnWidths An array containing the calculated widths of each column.
+ * @param fallbackWidth The width to use for columns outside the bounds of [columnWidths].
+ * @param columnGap The spacing in pixels between columns.
+ * @return The total width in pixels occupied by the item, including gaps.
+ */
+private fun getSpannedWidth(
+    item: GridItem,
+    columnWidths: IntArray,
+    fallbackWidth: Int,
+    columnGap: Int,
+): Int {
+    val colStart = item.column
+    if (colStart >= columnWidths.size) return fallbackWidth
+
+    var width = 0
+    val colEnd = (colStart + item.columnSpan).fastCoerceAtMost(columnWidths.size)
+    for (i in colStart until colEnd) {
+        width += columnWidths[i]
+    }
+    // Add the gaps that are included in the span
+    val spannedGaps = max(0, (colEnd - colStart) - 1) * columnGap
+    width += spannedGaps
+
+    return width
 }
 
 /**
@@ -1775,7 +2167,8 @@ private fun calculateMinMaxIntrinsicHeight(
  * @param crossAxisSizes The calculated sizes of the *opposite* axis (e.g., Column Widths when
  *   calculating Row Heights). This is crucial for correctly measuring the intrinsic height of items
  *   that wrap text based on specific column widths.
- * @param gap The spacing between tracks.
+ * @param mainAxisGap The spacing between tracks on the axis currently being calculated.
+ * @param crossAxisGap The spacing between tracks on the opposite axis.
  */
 private fun distributeSpanningSpace(
     explicitSpecs: LongList,
@@ -1784,7 +2177,8 @@ private fun distributeSpanningSpace(
     isRowAxis: Boolean,
     constraints: Constraints,
     crossAxisSizes: IntArray?,
-    gap: Int,
+    mainAxisGap: Int,
+    crossAxisGap: Int,
 ) {
     gridItems.forEach { item ->
         val trackIndex = if (isRowAxis) item.row else item.column
@@ -1793,7 +2187,7 @@ private fun distributeSpanningSpace(
         // Single-span items were already handled during Base Size calculation (Pass 1).
         if (span <= 1) return@forEach
 
-        val endIndex = (trackIndex + span).coerceAtMost(sizes.size)
+        val endIndex = (trackIndex + span).fastCoerceAtMost(sizes.size)
 
         // --- Step 1: Analyze current space & identifying growable tracks ---
         // We sum the current size of all tracks this item spans to see if they are already big
@@ -1817,6 +2211,12 @@ private fun distributeSpanningSpace(
             }
         }
 
+        // Add the gaps that are internal to the span on the main axis.
+        // If an item spans 3 columns, it spans 2 gaps. We must include these
+        // gaps in the 'currentSpannedSize' so we don't overestimate the deficit.
+        val spannedGapsMain = max(0, span - 1) * mainAxisGap
+        currentSpannedSize += spannedGapsMain
+
         // --- Step 2: Calculate the Item's Required Size (Intrinsic Measurement) ---
         // This differs based on the axis.
         val requiredSize =
@@ -1827,13 +2227,13 @@ private fun distributeSpanningSpace(
                 var itemWidth = 0
                 if (crossAxisSizes != null) {
                     val colStart = item.column
-                    val colEnd = (colStart + item.columnSpan).coerceAtMost(crossAxisSizes.size)
+                    val colEnd = (colStart + item.columnSpan).fastCoerceAtMost(crossAxisSizes.size)
                     for (i in colStart until colEnd) {
                         itemWidth += crossAxisSizes[i]
                     }
                     // Add the gaps that are included in the span.
-                    val spannedGaps = max(0, item.columnSpan - 1) * gap
-                    itemWidth += spannedGaps
+                    val spannedGapsCross = max(0, item.columnSpan - 1) * crossAxisGap
+                    itemWidth += spannedGapsCross
                 } else {
                     // If we don't know column widths, constrain only by parent max.
                     itemWidth = constraints.maxWidth
@@ -1990,7 +2390,7 @@ private fun measureItems(
 
         if (row < rowCount && col < colCount) {
             var width = 0
-            val colLimit = (col + item.columnSpan).coerceAtMost(colCount)
+            val colLimit = (col + item.columnSpan).fastCoerceAtMost(colCount)
             for (i in col until colLimit) {
                 width += trackSizes.columnWidths[i]
             }
@@ -2001,7 +2401,7 @@ private fun measureItems(
             }
 
             var height = 0
-            val rowLimit = (row + item.rowSpan).coerceAtMost(rowCount)
+            val rowLimit = (row + item.rowSpan).fastCoerceAtMost(rowCount)
             for (i in row until rowLimit) {
                 height += trackSizes.rowHeights[i]
             }

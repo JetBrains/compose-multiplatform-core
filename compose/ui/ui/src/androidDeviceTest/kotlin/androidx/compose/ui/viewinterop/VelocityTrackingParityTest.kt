@@ -23,6 +23,7 @@ import android.view.VelocityTracker
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.annotation.LayoutRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.draggable2D
@@ -34,13 +35,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
-import androidx.compose.ui.input.pointer.util.VelocityTrackerAddPointsFix
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -65,7 +64,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import kotlin.math.absoluteValue
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -76,7 +74,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VelocityTrackingParityTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val draggableView: VelocityTrackingView
         get() = rule.activity.findViewById(R.id.draggable_view)
@@ -89,7 +87,6 @@ class VelocityTrackingParityTest {
     @Before
     fun setUp() {
         latestComposeVelocity = Velocity.Zero
-        VelocityTrackerAddPointsFix = true
     }
 
     fun tearDown() {

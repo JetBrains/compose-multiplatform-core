@@ -19,8 +19,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.util.TypedValue
 import androidx.core.util.TypedValueCompat
-import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.SpatialApiVersionHelper.spatialApiVersion
+import androidx.xr.runtime.math.FieldOfView
 import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector3.Companion.distance
@@ -30,6 +29,7 @@ import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.Space
+import androidx.xr.scenecore.spatial.core.RuntimeUtils.getDefaultPixelsPerMeter
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
 import java.util.concurrent.ScheduledExecutorService
@@ -40,21 +40,10 @@ internal abstract class BasePanelEntity(
     context: Context,
     node: Node,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     executor: ScheduledExecutorService,
-) : AndroidXrEntity(context, node, extensions, entityManager, executor), PanelEntity {
-    protected val defaultPixelDensity: Float
-        get() {
-            // Spatial api versions 1 and 2+, have different density behaviors. In 2+, pixels per
-            // meter should remain a constant value even when system density changes.
-            return if (spatialApiVersion >= 2) {
-                mExtensions.underlyingObject.config.defaultPixelsPerMeter()
-            } else {
-                mExtensions.config.defaultPixelsPerMeter(
-                    Resources.getSystem().displayMetrics.density
-                )
-            }
-        }
+) : AndroidXrEntity(context, node, extensions, sceneNodeRegistry, executor), PanelEntity {
+    protected val defaultPixelDensity: Float by lazy { getDefaultPixelsPerMeter(extensions) }
 
     protected val defaultCornerRadiusInMeters: Float
         get() {
@@ -132,8 +121,8 @@ internal abstract class BasePanelEntity(
         set(value) {
             require(!(value < 0.0f)) { "Corner radius can't be negative: $value" }
             cornerRadiusValue = value
-            mExtensions.createNodeTransaction().use { transaction ->
-                transaction.setCornerRadius(mNode, value).apply()
+            extensions.createNodeTransaction().use { transaction ->
+                transaction.setCornerRadius(node, value).apply()
             }
         }
 

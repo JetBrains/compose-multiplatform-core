@@ -48,9 +48,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,7 +59,7 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 class FocusSearchUpInteropTest(private val moveFocusProgrammatically: Boolean) {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var focusManager: FocusManager
     private lateinit var view: View
@@ -114,6 +114,7 @@ class FocusSearchUpInteropTest(private val moveFocusProgrammatically: Boolean) {
         rule.runOnIdle { assertThat(view.isFocused).isTrue() }
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/539639299
     @Test
     fun viewViewInLinearLayout() {
         // Arrange.
@@ -416,6 +417,7 @@ class FocusSearchUpInteropTest(private val moveFocusProgrammatically: Boolean) {
         rule.runOnIdle { assertThat(view2.isFocused).isFalse() }
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/539639299
     @Test
     fun composableViewInColumn() {
         // Arrange.
@@ -477,6 +479,7 @@ class FocusSearchUpInteropTest(private val moveFocusProgrammatically: Boolean) {
         rule.onNodeWithTag(composable).assertIsNotFocused()
     }
 
+    @SdkSuppress(minSdkVersion = 25) // b/539639299
     @Test
     fun viewComposableInColumn() {
         // Arrange.

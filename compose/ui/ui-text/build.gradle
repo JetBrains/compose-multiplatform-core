@@ -32,13 +32,9 @@ plugins {
 
 androidXMultiplatform {
     androidLibrary {
-        compileSdk { version = release(35) }
+        compileSdk { version = release(37) }
         namespace = "androidx.compose.ui.text"
         androidResources.enable = true
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
     }
     jvmStubs()
     linuxX64Stubs()
@@ -59,8 +55,7 @@ androidXMultiplatform {
             implementation(project(":compose:ui:ui-util"))
 
             // TODO: Pin androidx.collection when SieveCache is available
-            // implementation("androidx.collection:collection:1.4.2")
-            implementation("androidx.collection:collection:1.5.0")
+            implementation("androidx.collection:collection:1.6.0")
         }
 
         androidMain.dependencies {
@@ -112,6 +107,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Compose Text primitives and utilities"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-text:ui-text-samples"))
 }

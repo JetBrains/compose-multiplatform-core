@@ -22,7 +22,6 @@ import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
-import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.documentation.DocumentationBuilder;
@@ -99,6 +98,25 @@ public class StateLayout extends LayoutManager {
         hideLayoutsOtherThan(currentLayoutIndex);
     }
 
+    private void collectAnimatedComponents(Component component, ArrayList<Component> outList) {
+        if (component.getAnimationId() != -1) {
+            outList.add(component);
+        }
+        if (component instanceof LayoutComponent) {
+            for (Component child : ((LayoutComponent) component).getChildrenComponents()) {
+                collectAnimatedComponents(child, outList);
+            }
+        }
+    }
+
+    private ArrayList<Component> getAnimatedComponentsIn(Component root) {
+        ArrayList<Component> list = new ArrayList<>();
+        if (root != null) {
+            collectAnimatedComponents(root, list);
+        }
+        return list;
+    }
+
     /** Traverse the list of children and identify animated components across states */
     public void findAnimatedComponents() {
         for (int i = 0; i < mChildrenComponents.size(); i++) {
@@ -107,17 +125,15 @@ public class StateLayout extends LayoutManager {
                 LayoutComponent state = (LayoutComponent) cs;
                 state.setX(0f);
                 state.setY(0f);
-                ArrayList<Component> childrenComponents = state.getChildrenComponents();
-                for (int j = 0; j < childrenComponents.size(); j++) {
-                    Component child = childrenComponents.get(j);
-                    if (child.getAnimationId() != -1) {
-                        if (!statePaintedComponents.containsKey(child.getAnimationId())) {
-                            statePaintedComponents.put(
-                                    child.getAnimationId(),
-                                    new Component[mChildrenComponents.size()]);
-                        }
-                        statePaintedComponents.get(child.getAnimationId())[i] = child;
+                ArrayList<Component> animatedChildren = getAnimatedComponentsIn(state);
+                for (int j = 0; j < animatedChildren.size(); j++) {
+                    Component child = animatedChildren.get(j);
+                    if (!statePaintedComponents.containsKey(child.getAnimationId())) {
+                        statePaintedComponents.put(
+                                child.getAnimationId(),
+                                new Component[mChildrenComponents.size()]);
                     }
+                    statePaintedComponents.get(child.getAnimationId())[i] = child;
                 }
             }
         }
@@ -146,11 +162,35 @@ public class StateLayout extends LayoutManager {
                 if (same) {
                     // TODO: Fix, shouldn't want to recopy all components
                     for (int i = 0; i < numStates; i++) {
+                        Component c2 = list[i];
+                        if (c2 != null && c2 != c1 && c2.getParent() instanceof LayoutComponent) {
+                            ArrayList<Component> children =
+                                    ((LayoutComponent) c2.getParent()).getChildrenComponents();
+                            int idx = children.indexOf(c2);
+                            if (idx != -1) {
+                                children.set(idx, c1);
+                            }
+                        }
                         list[i] = c1;
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Return the canonical shared component for the given animation ID and state index, if any.
+     *
+     * @param animationId the animation id
+     * @param stateIndex the current state layout index
+     * @return the shared component instance, or null if not found
+     */
+    public @Nullable Component getSharedComponent(int animationId, int stateIndex) {
+        Component[] components = statePaintedComponents.get(animationId);
+        if (components != null && stateIndex >= 0 && stateIndex < components.length) {
+            return components[stateIndex];
+        }
+        return null;
     }
 
     @Override
@@ -179,16 +219,25 @@ public class StateLayout extends LayoutManager {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
-            float minWidth, float maxWidth,
-            float minHeight, float maxHeight,
+            float minWidth,
+            float maxWidth,
+            float minHeight,
+            float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
             @NonNull MeasurePass measure,
             @NonNull Size size) {
         LayoutManager layout = getLayout(currentLayoutIndex);
         layout.computeWrapSize(
-                context, minWidth, maxWidth, minHeight , maxHeight,
-                horizontalWrap, verticalWrap, measure, size);
+                context,
+                minWidth,
+                maxWidth,
+                minHeight,
+                maxHeight,
+                horizontalWrap,
+                verticalWrap,
+                measure,
+                size);
     }
 
     @Override
@@ -213,6 +262,8 @@ public class StateLayout extends LayoutManager {
         // selected component that this being laid out.
         ComponentMeasure layoutMeasure = measure.get(layout.getComponentId());
         layoutMeasure.copyFrom(self);
+        layoutMeasure.setX(0f);
+        layoutMeasure.setY(0f);
 
         layout.layout(context, measure);
 
@@ -224,9 +275,11 @@ public class StateLayout extends LayoutManager {
                 if (c.getAnimationId() != -1) {
                     id = c.getAnimationId();
                     Component[] rc = statePaintedComponents.get(id);
-                    for (Component ac : rc) {
-                        if (ac != null) {
-                            ac.layout(context, measure);
+                    if (rc != null) {
+                        for (Component ac : rc) {
+                            if (ac != null) {
+                                ac.layout(context, measure);
+                            }
                         }
                     }
                 }
@@ -263,31 +316,28 @@ public class StateLayout extends LayoutManager {
 
         LayoutManager layout = getLayout(currentLayoutIndex);
 
-        // ok so *before* we do the layout, we should make sure to set the *new* widgets (that
+        layout.setVisibility(Visibility.VISIBLE);
+        layout.measure(context, minWidth, maxWidth, minHeight, maxHeight, measure);
+
+        // ok so *after* we do the layout, we should make sure to set the *new* widgets (that
         // share the same id) to be at the same bounds / position as the current displayed ones
         if (inTransition && currentLayoutIndex != previousLayoutIndex) {
             LayoutManager previousLayout = getLayout(previousLayoutIndex);
-            for (Component c : layout.getChildrenComponents()) {
+            ArrayList<Component> currentAnimated = getAnimatedComponentsIn((Component) layout);
+            ArrayList<Component> previousAnimated =
+                    getAnimatedComponentsIn((Component) previousLayout);
+            for (Component c : currentAnimated) {
                 int id = c.getAnimationId();
-                if (id == -1) {
-                    continue;
-                }
-                for (Component pc : previousLayout.getChildrenComponents()) {
+                for (Component pc : previousAnimated) {
                     if (pc.getAnimationId() == id) {
                         Component prev =
                                 statePaintedComponents.get(c.getAnimationId())[previousLayoutIndex];
-                        if (c != prev) {
-                            c.measure(
-                                    context,
-                                    prev.getWidth(),
-                                    prev.getWidth(),
-                                    prev.getHeight(),
-                                    prev.getHeight(),
-                                    measure);
-                            c.layout(context.getContext(), measure);
+                        if (c != prev && prev != null) {
+                            c.mFirstLayout = false;
                             c.setX(prev.getX());
                             c.setY(prev.getY());
-                            c.mVisibility = Visibility.GONE;
+                            c.setWidth(prev.getWidth());
+                            c.setHeight(prev.getHeight());
                         }
                         break;
                     }
@@ -295,53 +345,50 @@ public class StateLayout extends LayoutManager {
             }
         }
 
-        // Alright, now that things are set in place, let's go ahead and measure the new world...
-        layout.measure(context, minWidth, maxWidth, minHeight, maxHeight, measure);
-
         // recopy to animationIds the values
-        for (Component c : layout.getChildrenComponents()) {
+        ArrayList<Component> currentAnimated = getAnimatedComponentsIn((Component) layout);
+        for (Component c : currentAnimated) {
             ComponentMeasure cm = measure.get(c);
-            if (c.getAnimationId() != -1) {
+            if (cm != null && c.getAnimationId() != -1) {
+                cm.setVisibility(Visibility.VISIBLE);
+                c.setVisibility(Visibility.VISIBLE);
                 // First, we grab the current component for an animation id, and get its measure,
                 // then set this measure to the measure for the animation id
                 ComponentMeasure m = measure.get(c.getAnimationId());
-                m.copyFrom(cm);
-
-                m.setVisibility(Visibility.VISIBLE);
+                if (m != null) {
+                    m.copyFrom(cm);
+                    m.setVisibility(Visibility.VISIBLE);
+                }
 
                 // Then for each components sharing the id in all the states...
                 Component[] components = statePaintedComponents.get(c.getAnimationId());
-                for (int idx = 0; idx < components.length; idx++) {
-                    Component ac = components[idx];
-                    if (ac != null) {
-                        ComponentMeasure m2 = measure.get(ac.getComponentId());
+                if (components != null) {
+                    for (int idx = 0; idx < components.length; idx++) {
+                        Component ac = components[idx];
+                        if (ac != null) {
+                            ComponentMeasure m2 = measure.get(ac.getComponentId());
 
-                        // ... we set their measures to be the measure of the current component
-                        if (c != ac) {
-                            m2.copyFrom(cm);
-                        }
-
-                        // Finally let's make sure that for all components we set their visibility
-                        if (idx == currentLayoutIndex) {
-                            m2.setVisibility(Visibility.VISIBLE);
-                        } else {
-                            if (c != ac) {
-                                m2.setVisibility(Visibility.GONE);
+                            // ... we set their measures to be the measure of the current component
+                            if (m2 != null && c != ac) {
+                                m2.copyFrom(cm);
                             }
-                        }
 
-                        // if the component isn't the current one, we should measure it
-                        if (c != ac) {
-                            ac.measure(context, m.getW(), m.getW(), m.getH(), m.getH(), measure);
+                            // Finally let's make sure that for all components we set their
+                            // visibility
+                            if (m2 != null) {
+                                m2.setVisibility(Visibility.VISIBLE);
+                                ac.setVisibility(Visibility.VISIBLE);
+                            }
+
+                            // if the component isn't the current one, we should measure it
+                            if (c != ac) {
+                                float w = cm.getW();
+                                float h = cm.getH();
+                                ac.measure(context, w, w, h, h, measure);
+                            }
                         }
                     }
                 }
-            } else {
-                // TODO: Ideally unify the visibility handing so that we also work in terms of
-                // component and not panel visibility. Ideally do not change the .visibility
-                // attribute at all and actually use the "current index" to decide whether to
-                // draw or not.
-                cm.setVisibility(Visibility.VISIBLE);
             }
         }
 
@@ -349,11 +396,16 @@ public class StateLayout extends LayoutManager {
         if (previousLayoutIndex != currentLayoutIndex) {
             LayoutManager previousLayout = getLayout(previousLayoutIndex);
             for (Component c : previousLayout.getChildrenComponents()) {
-                int id = c.getComponentId();
+                boolean inNewLayout = false;
                 if (c.getAnimationId() != -1) {
-                    id = c.getAnimationId();
+                    Component[] rc = statePaintedComponents.get(c.getAnimationId());
+                    if (rc != null
+                            && currentLayoutIndex < rc.length
+                            && rc[currentLayoutIndex] != null) {
+                        inNewLayout = true;
+                    }
                 }
-                if (!measure.contains(id)) {
+                if (!inNewLayout) {
                     ComponentMeasure m = measure.get(c.getComponentId());
                     m.setX(c.getX());
                     m.setY(c.getY());
@@ -400,12 +452,23 @@ public class StateLayout extends LayoutManager {
         for (Component pane : mChildrenComponents) {
             if (pane instanceof LayoutComponent) {
                 if (index == idx) {
-                    return (LayoutManager) pane;
+                    if (pane instanceof LayoutManager) {
+                        return (LayoutManager) pane;
+                    } else {
+                        throw new RuntimeException("Child is not a LayoutManager");
+                    }
                 }
                 index++;
             }
         }
-        return (LayoutManager) mChildrenComponents.get(0);
+        if (mChildrenComponents.isEmpty()) {
+            throw new RuntimeException("StateLayout has no children");
+        }
+        Component firstChild = mChildrenComponents.get(0);
+        if (firstChild instanceof LayoutManager) {
+            return (LayoutManager) firstChild;
+        }
+        throw new RuntimeException("First child of StateLayout is not a LayoutManager");
     }
 
     @Override
@@ -416,8 +479,6 @@ public class StateLayout extends LayoutManager {
                 previousLayoutIndex = currentLayoutIndex;
                 currentLayoutIndex = newValue;
                 inTransition = true;
-                // System.out.println("currentLayout index is $currentLayoutIndex");
-                // executeValueSetActions(getLayout(currentLayoutIndex));
                 invalidateMeasure();
             }
         }
@@ -451,9 +512,6 @@ public class StateLayout extends LayoutManager {
                 MAX_CACHE_ELEMENTS *= 2;
                 cacheListElementsId = new int[MAX_CACHE_ELEMENTS];
             }
-            // Make sure to apply the animation if there...
-            previousLayout.applyAnimationAsNeeded(context);
-
             // Let's grab all the ids for the components of the previous layout...
             int idIndex = 0;
             for (Component c : previousLayout.getChildrenComponents()) {
@@ -486,33 +544,12 @@ public class StateLayout extends LayoutManager {
                 }
                 context.restore();
             }
-
-            // Make sure to apply the animation if there...
-            currentLayout.applyAnimationAsNeeded(context);
         }
 
         // We paint all the components and operations of the current layout
         context.save();
         context.translate(currentLayout.getX(), currentLayout.getY());
-        for (Operation op : currentLayout.getList()) {
-            if (op instanceof Component && ((Component) op).getAnimationId() != -1) {
-                Component[] stateComponents =
-                        statePaintedComponents.get(((Component) op).getAnimationId());
-                Component component = stateComponents[measuredLayoutIndex];
-                if (needsToPaintTransition) {
-                    // We might have two components to paint, as in case two different
-                    // components share the same id, we'll fade the previous components out
-                    // and fade in the new one
-                    Component previousComponent = stateComponents[previousLayoutIndex];
-                    if (previousComponent != null && component != previousComponent) {
-                        previousComponent.paint(context);
-                    }
-                }
-                component.paint(context);
-            } else if (op instanceof PaintOperation) {
-                ((PaintOperation) op).paint(context);
-            }
-        }
+        currentLayout.paint(context);
         context.restore();
 
         if (needsToPaintTransition) {
@@ -520,19 +557,41 @@ public class StateLayout extends LayoutManager {
         }
     }
 
+    private boolean isLayoutAnimating(@Nullable LayoutManager layout) {
+        if (layout == null) {
+            return false;
+        }
+        if (layout.mAnimateMeasure != null && !layout.mAnimateMeasure.isDone()) {
+            return true;
+        }
+        for (Component c : layout.getChildrenComponents()) {
+            if (c.mAnimateMeasure != null && !c.mAnimateMeasure.isDone()) {
+                return true;
+            }
+            if (c instanceof LayoutManager) {
+                if (isLayoutAnimating((LayoutManager) c)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /** Check if we are at the end of the transition, and if so handles it. */
     public void checkEndOfTransition() {
         LayoutManager currentLayout = getLayout(measuredLayoutIndex);
         LayoutManager previousLayout = getLayout(previousLayoutIndex);
         if (inTransition
-                && currentLayout.mAnimateMeasure == null
-                && previousLayout.mAnimateMeasure == null) {
+                && !isLayoutAnimating(currentLayout)
+                && !isLayoutAnimating(previousLayout)) {
             inTransition = false;
             LayoutManager previous = getLayout(previousLayoutIndex);
             if (previous != currentLayout && !previous.isGone()) {
                 previous.mVisibility = Visibility.GONE;
                 previous.needsRepaint();
             }
+        } else if (inTransition) {
+            needsRepaint();
         }
     }
 
@@ -601,14 +660,24 @@ public class StateLayout extends LayoutManager {
      * Read this operation and add it to the list of operations
      *
      * @param buffer the buffer to read
-     * @param operations the list of operations that will be added to
+     */
+    @Override
+    public void write(@NonNull WireBuffer buffer) {
+        apply(buffer, mComponentId, mAnimationId, 0, 0, mIndexId);
+    }
+
+    /**
+     * Read this operation and add it to the list of operations
+     *
+     * @param buffer the buffer to read
+     * @param operations the list of operations that will be added to the remap context
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
-        int componentId = buffer.readInt();
-        int animationId = buffer.readInt();
+        int componentId = buffer.declareId();
+        int animationId = buffer.declareId();
         buffer.readInt(); // horizontalPositioning
         buffer.readInt(); // verticalPositioning
-        int indexId = buffer.readInt();
+        int indexId = buffer.readId();
         operations.add(
                 new StateLayout(null, componentId, animationId, 0f, 0f, 100f, 100f, indexId));
     }

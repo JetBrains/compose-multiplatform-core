@@ -30,11 +30,15 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.annotation.RememberInComposition
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotId
+import androidx.compose.runtime.snapshots.StateObject
+import androidx.compose.runtime.snapshots.StateRecord
+import androidx.compose.runtime.snapshots.readable
+import androidx.compose.runtime.snapshots.withCurrent
+import androidx.compose.runtime.snapshots.writable
 import androidx.compose.ui.state.ToggleableState
 
 private const val PressedStateMask = 1 shl 0
@@ -76,7 +80,7 @@ private const val ToggleStateMask = 3 shl ToggleStateShift
  * @sample androidx.compose.foundation.samples.StyleStateKeySample
  */
 @ExperimentalFoundationStyleApi
-open class StyleStateKey<T>(internal val defaultValue: T) {
+public open class StyleStateKey<T>(internal val defaultValue: T) {
     /**
      * Called when an interaction is received on [MutableStyleState.interactionSource] when this key
      * is included in the style state.
@@ -109,7 +113,7 @@ open class StyleStateKey<T>(internal val defaultValue: T) {
         state.setCustomValue(this, value)
     }
 
-    companion object {
+    public companion object {
         /**
          * The style state key for the pressed state of a state.
          *
@@ -119,7 +123,7 @@ open class StyleStateKey<T>(internal val defaultValue: T) {
          * @see StyleState
          * @see clickable
          */
-        val Pressed: StyleStateKey<Boolean> = BooleanPredefinedKey(PressedStateMask)
+        public val Pressed: StyleStateKey<Boolean> = BooleanPredefinedKey(PressedStateMask)
 
         /**
          * The style state key for the hovered state of a style.
@@ -128,7 +132,7 @@ open class StyleStateKey<T>(internal val defaultValue: T) {
          * @see StyleState
          * @see androidx.compose.ui.Modifier.hoverable
          */
-        val Hovered: StyleStateKey<Boolean> = BooleanPredefinedKey(HoveredStateMask)
+        public val Hovered: StyleStateKey<Boolean> = BooleanPredefinedKey(HoveredStateMask)
 
         /**
          * The style state key for the focused state of a style.
@@ -137,7 +141,7 @@ open class StyleStateKey<T>(internal val defaultValue: T) {
          * @see StyleState
          * @see androidx.compose.ui.Modifier.focusable
          */
-        val Focused: StyleStateKey<Boolean> = BooleanPredefinedKey(FocusedStateMask)
+        public val Focused: StyleStateKey<Boolean> = BooleanPredefinedKey(FocusedStateMask)
 
         /**
          * The style state key for the selected state of a style.
@@ -145,14 +149,14 @@ open class StyleStateKey<T>(internal val defaultValue: T) {
          * @see MutableStyleState
          * @see StyleState
          */
-        val Selected: StyleStateKey<Boolean> = BooleanPredefinedKey(SelectedStateMask)
+        public val Selected: StyleStateKey<Boolean> = BooleanPredefinedKey(SelectedStateMask)
 
         /**
          * The style state key for the enabled state of a style.
          *
          * @see StyleState
          */
-        val Enabled: StyleStateKey<Boolean> =
+        public val Enabled: StyleStateKey<Boolean> =
             BooleanPredefinedKey(mask = EnabledStateMask, defaultValue = true)
 
         /**
@@ -160,26 +164,10 @@ open class StyleStateKey<T>(internal val defaultValue: T) {
          *
          * @see StyleState
          */
-        val Toggle: StyleStateKey<ToggleableState>
+        public val Toggle: StyleStateKey<ToggleableState>
             get() = PredefinedToggleStateKey
     }
 }
-
-/**
- * A utility function used to update boolean values of the predefined state of a [StyleState].
- *
- * @param predefinedState the value of [MutableStyleState.predefinedState] to update
- * @param mask the value mask of the state to update.
- * @param include whether to include the state or exclude it.
- * @see FocusedStateMask
- * @see HoveredStateMask
- * @see PressedStateMask
- * @see SelectedStateMask
- * @see ToggleStateMask
- */
-@Suppress("NOTHING_TO_INLINE")
-private inline fun updateFromMask(predefinedState: Int, mask: Int, include: Boolean): Int =
-    (predefinedState and mask.inv()) or if (include) mask else 0
 
 internal interface PredefinedKey
 
@@ -188,10 +176,10 @@ internal interface PredefinedKey
 internal class BooleanPredefinedKey(val mask: Int, defaultValue: Boolean = false) :
     StyleStateKey<Boolean>(defaultValue), PredefinedKey {
     override fun getValueFrom(state: MutableStyleState): Boolean =
-        state.predefinedState and mask != 0
+        state.predefinedState.getFlag(mask)
 
     override fun setValueTo(value: Boolean, state: MutableStyleState) {
-        state.predefinedState = updateFromMask(mask, state.predefinedState, value)
+        state.predefinedState.updateFlag(mask, value)
     }
 }
 
@@ -203,20 +191,21 @@ internal class BooleanPredefinedKey(val mask: Int, defaultValue: Boolean = false
 internal object PredefinedToggleStateKey :
     StyleStateKey<ToggleableState>(ToggleableState.Off), PredefinedKey {
     override fun getValueFrom(state: MutableStyleState): ToggleableState =
-        when (state.predefinedState and ToggleStateMask) {
+        when (state.predefinedState.flags and ToggleStateMask) {
             ToggleStateOn -> ToggleableState.On
             ToggleStateOff -> ToggleableState.Off
             else -> ToggleableState.Indeterminate
         }
 
     override fun setValueTo(value: ToggleableState, state: MutableStyleState) {
-        state.predefinedState =
-            (state.predefinedState and ToggleStateMask.inv()) or
-                when (value) {
-                    ToggleableState.On -> ToggleStateOn
-                    ToggleableState.Off -> ToggleStateOff
-                    else -> ToggleStateIndeterminate
-                }
+        state.predefinedState.updateFlags(
+            ToggleStateMask,
+            when (value) {
+                ToggleableState.On -> ToggleStateOn
+                ToggleableState.Off -> ToggleStateOff
+                else -> ToggleStateIndeterminate
+            },
+        )
     }
 }
 
@@ -230,7 +219,7 @@ internal object PredefinedToggleStateKey :
  * @see StyleScope.hovered
  */
 @ExperimentalFoundationStyleApi
-sealed class StyleState {
+public sealed class StyleState {
     /**
      * [isEnabled] is `true` when the stylable component is enabled.
      *
@@ -242,7 +231,7 @@ sealed class StyleState {
      * [androidx.compose.foundation.text.BasicTextField], for example, sets this value to the value
      * of the `enabled` parameter.
      */
-    abstract val isEnabled: Boolean
+    public abstract val isEnabled: Boolean
 
     /**
      * [isFocused] is `true` when the stylable component is focused.
@@ -257,7 +246,7 @@ sealed class StyleState {
      * watching an [InteractionSource] this state will be updated when the focus interactions are
      * received in the [InteractionSource].
      */
-    abstract val isFocused: Boolean
+    public abstract val isFocused: Boolean
 
     /**
      * [isHovered] is `true` when the stylable component is hovered.
@@ -272,7 +261,7 @@ sealed class StyleState {
      * [InteractionSource] this state will be updated when the focus interactions are received in
      * the [InteractionSource].
      */
-    abstract val isHovered: Boolean
+    public abstract val isHovered: Boolean
 
     /**
      * [isPressed] is `true` when the stylable component is pressed.
@@ -286,7 +275,7 @@ sealed class StyleState {
      * interactions when the component is pressed and released. When the style state is watching an
      * [InteractionSource] it will update this state.
      */
-    abstract val isPressed: Boolean
+    public abstract val isPressed: Boolean
 
     /**
      * [isSelected] is `true` when the stylable component is selected.
@@ -296,7 +285,7 @@ sealed class StyleState {
      * The [StyleScope.selected] function reads this state and will only set the properties in its
      * `block` parameter when [isSelected] is `true`.
      */
-    abstract val isSelected: Boolean
+    public abstract val isSelected: Boolean
 
     /**
      * [isChecked] is `true` when the stylable component is checked.
@@ -309,7 +298,7 @@ sealed class StyleState {
      * The [StyleScope.checked] function reads this state and will only set the properties in its
      * `block` parameter when [isChecked] is `true`.
      */
-    abstract val isChecked: Boolean
+    public abstract val isChecked: Boolean
 
     /**
      * [triStateToggle] is the state of a tri-state toggleable. A tri-state togglable is a component
@@ -327,7 +316,7 @@ sealed class StyleState {
      * properties in its `block` parameter when the [triStateToggle] is
      * [ToggleableState.Indeterminate].
      */
-    abstract val triStateToggle: ToggleableState
+    public abstract val triStateToggle: ToggleableState
 
     /**
      * Read the value of a style state [key]. This overloads the index operator which allows reading
@@ -338,7 +327,7 @@ sealed class StyleState {
      * `PlayingStyleState<Boolean>` and set the value of this state. This state can then be in a
      * [Style] to customize the look of the component when it moves in an out of playing a value.
      */
-    abstract operator fun <T> get(key: StyleStateKey<T>): T
+    public abstract operator fun <T> get(key: StyleStateKey<T>): T
 
     internal abstract suspend fun processInteractions(interactions: InteractionSource)
 
@@ -347,7 +336,7 @@ sealed class StyleState {
 
 /**
  * Defines a [Style] to be applied when the component is [StyleState.isChecked] is `true`. The
- * properties within the provided [value] Style will override or merge with the base style of the
+ * properties within the provided [block] will override or merge with the base style of the
  * component when a toggle interaction is detected.
  *
  * @see StyleState.isChecked
@@ -358,8 +347,8 @@ sealed class StyleState {
  * @see androidx.compose.ui.Modifier.toggleable
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.checked(value: Style) {
-    state(StyleStateKey.Toggle, value) { _, state -> state.isChecked }
+public fun StyleStateScope.checked(block: () -> Unit): Unit {
+    state(StyleStateKey.Toggle, block) { _, state -> state.isChecked }
 }
 
 /**
@@ -367,12 +356,12 @@ fun StyleScope.checked(value: Style) {
  * provided `value` Style will override or merge with the base style of the component when the style
  * state for the component is disabled.
  *
- * @param value The [Style] to apply on hover.
+ * @param block The [Style] to apply on hover.
  * @see StyleState.isEnabled
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.disabled(value: Style) {
-    state(StyleStateKey.Enabled, value) { _, state -> !state.isEnabled }
+public fun StyleStateScope.disabled(block: () -> Unit): Unit {
+    state(StyleStateKey.Enabled, block) { _, state -> !state.isEnabled }
 }
 
 /**
@@ -380,7 +369,7 @@ fun StyleScope.disabled(value: Style) {
  * `value` Style will override or merge with the base style of the component when a focus
  * interaction is detected.
  *
- * @param value The [Style] to apply on focus.
+ * @param block The [Style] to apply on focus.
  * @see StyleState.isFocused
  * @see checked
  * @see hovered
@@ -388,8 +377,8 @@ fun StyleScope.disabled(value: Style) {
  * @see selected
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.focused(value: Style) {
-    state(StyleStateKey.Focused, value) { _, state -> state.isFocused }
+public fun StyleStateScope.focused(block: () -> Unit): Unit {
+    state(StyleStateKey.Focused, block) { _, state -> state.isFocused }
 }
 
 /**
@@ -397,7 +386,7 @@ fun StyleScope.focused(value: Style) {
  * `value` Style will override or merge with the base style of the component when a hover
  * interaction is detected.
  *
- * @param value The [Style] to apply on hover.
+ * @param block The [Style] to apply on hover.
  * @see StyleState.isHovered
  * @see checked
  * @see focused
@@ -405,8 +394,8 @@ fun StyleScope.focused(value: Style) {
  * @see selected
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.hovered(value: Style) {
-    state(StyleStateKey.Hovered, value) { _, state -> state.isHovered }
+public fun StyleStateScope.hovered(block: () -> Unit): Unit {
+    state(StyleStateKey.Hovered, block) { _, state -> state.isHovered }
 }
 
 /**
@@ -414,7 +403,7 @@ fun StyleScope.hovered(value: Style) {
  * `value` Style will override or merge with the base style of the component when a press
  * interaction is detected.
  *
- * @param value The [Style] to apply on press.
+ * @param block The [Style] to apply on press.
  * @see StyleState.isPressed
  * @see checked
  * @see focused
@@ -422,59 +411,63 @@ fun StyleScope.hovered(value: Style) {
  * @see selected
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.pressed(value: Style) {
-    state(StyleStateKey.Pressed, value) { _, state -> state.isPressed }
+public fun StyleStateScope.pressed(block: () -> Unit): Unit {
+    state(StyleStateKey.Pressed, block) { _, state -> state.isPressed }
 }
 
 /**
  * Defines a [Style] to be applied when the component is [StyleState.isSelected] is `true`. The
- * properties within the provided [value] Style will override or merge with the base style of the
+ * properties within the provided [block] Style will override or merge with the base style of the
  * component when a toggle interaction is detected.
  *
+ * @param block The [Style] to apply on press.
  * @see StyleState.isSelected
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.selected(value: Style) {
-    state(StyleStateKey.Selected, value) { _, state -> state.isSelected }
+public fun StyleStateScope.selected(block: () -> Unit): Unit {
+    state(StyleStateKey.Selected, block) { _, state -> state.isSelected }
 }
 
 /**
  * Defines a [Style] to be applied when the component is [StyleState.triStateToggle] is
- * [ToggleableState.On]. The properties within the provided [value] Style will override or merge
+ * [ToggleableState.On]. The properties within the provided [block] Style will override or merge
  * with the base style of the component when a toggle interaction is detected.
  *
+ * @param block The [Style] to apply on press.
  * @see StyleState.triStateToggle
  * @see androidx.compose.ui.Modifier.triStateToggleable
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.triStateToggleOn(value: Style) {
-    state(StyleStateKey.Toggle, value) { _, state -> state.triStateToggle == ToggleableState.On }
+public fun StyleStateScope.triStateToggleOn(block: () -> Unit): Unit {
+    state(StyleStateKey.Toggle, block) { _, state -> state.triStateToggle == ToggleableState.On }
 }
 
 /**
  * Defines a [Style] to be applied when the component is [StyleState.triStateToggle] is
- * [ToggleableState.Off]. The properties within the provided [value] Style will override or merge
+ * [ToggleableState.Off]. The properties within the provided [block] Style will override or merge
  * with the base style of the component when a toggle interaction is detected.
  *
+ * @param block The [Style] to apply on press.
  * @see StyleState.triStateToggle
  * @see androidx.compose.ui.Modifier.triStateToggleable
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.triStateToggleOff(value: Style) {
-    state(StyleStateKey.Toggle, value) { _, state -> state.triStateToggle == ToggleableState.Off }
+public fun StyleStateScope.triStateToggleOff(block: () -> Unit): Unit {
+    state(StyleStateKey.Toggle, block) { _, state -> state.triStateToggle == ToggleableState.Off }
 }
 
 /**
  * Defines a [Style] to be applied when the component is [StyleState.triStateToggle] is
- * [ToggleableState.Indeterminate]. The properties within the provided [value] Style will override
+ * [ToggleableState.Indeterminate]. The properties within the provided [block] Style will override
  * or merge with the base style of the component when a toggle interaction is detected.
  *
+ * @param block The [Style] to apply on press.
  * @see StyleState.triStateToggle
  * @see androidx.compose.ui.Modifier.triStateToggleable
  */
 @ExperimentalFoundationStyleApi
-fun StyleScope.triStateToggleIndeterminate(value: Style) {
-    state(StyleStateKey.Toggle, value) { _, state ->
+public fun StyleStateScope.triStateToggleIndeterminate(block: () -> Unit): Unit {
+    state(StyleStateKey.Toggle, block) { _, state ->
         state.triStateToggle == ToggleableState.Indeterminate
     }
 }
@@ -493,40 +486,40 @@ fun StyleScope.triStateToggleIndeterminate(value: Style) {
  * @see StyleScope.hovered
  */
 @ExperimentalFoundationStyleApi
-class MutableStyleState
+public class MutableStyleState
 @RememberInComposition
 constructor(override val interactionSource: InteractionSource?) : StyleState() {
     internal var customStates = mutableStateMapOf<StyleStateKey<*>, Any>()
-    internal var predefinedState: Int by mutableIntStateOf(EnabledStateMask)
+    internal var predefinedState = MutableStateFlagSet(EnabledStateMask)
 
     override var isEnabled: Boolean
-        get() = predefinedState and EnabledStateMask != 0
+        get() = predefinedState.getFlag(EnabledStateMask)
         set(value) {
-            predefinedState = updateFromMask(predefinedState, EnabledStateMask, value)
+            predefinedState.updateFlag(EnabledStateMask, value)
         }
 
     override var isFocused: Boolean
-        get() = predefinedState and FocusedStateMask != 0
+        get() = predefinedState.getFlag(FocusedStateMask)
         set(value) {
-            predefinedState = updateFromMask(predefinedState, FocusedStateMask, value)
+            predefinedState.updateFlag(FocusedStateMask, value)
         }
 
     override var isHovered: Boolean
-        get() = predefinedState and HoveredStateMask != 0
+        get() = predefinedState.getFlag(HoveredStateMask)
         set(value) {
-            predefinedState = updateFromMask(predefinedState, HoveredStateMask, value)
+            predefinedState.updateFlag(HoveredStateMask, value)
         }
 
     override var isPressed: Boolean
-        get() = predefinedState and PressedStateMask != 0
+        get() = predefinedState.getFlag(PressedStateMask)
         set(value) {
-            predefinedState = updateFromMask(predefinedState, PressedStateMask, value)
+            predefinedState.updateFlag(PressedStateMask, value)
         }
 
     override var isSelected: Boolean
-        get() = predefinedState and SelectedStateMask != 0
+        get() = predefinedState.getFlag(SelectedStateMask)
         set(value) {
-            predefinedState = updateFromMask(predefinedState, SelectedStateMask, value)
+            predefinedState.updateFlag(SelectedStateMask, value)
         }
 
     override var triStateToggle: ToggleableState
@@ -547,7 +540,7 @@ constructor(override val interactionSource: InteractionSource?) : StyleState() {
     override operator fun <T> get(key: StyleStateKey<T>): T = key.getValueFrom(this)
 
     /** Set the [value] of the [key] in the [StyleState]. */
-    operator fun <T> set(key: StyleStateKey<T>, value: T) {
+    public operator fun <T> set(key: StyleStateKey<T>, value: T) {
         key.setValueTo(value, this)
     }
 
@@ -563,7 +556,7 @@ constructor(override val interactionSource: InteractionSource?) : StyleState() {
      * Predefined style keys, such as [StyleStateKey.Pressed] and [StyleStateKey.Hovered], cannot be
      * removed from the set of keys and this will throw if removed.
      */
-    fun <T> remove(key: StyleStateKey<T>) {
+    public fun <T> remove(key: StyleStateKey<T>) {
         check(key !is PredefinedKey) { "Cannot remove an internal StyleStateKey" }
         customStates.remove(key)
     }
@@ -640,7 +633,7 @@ constructor(override val interactionSource: InteractionSource?) : StyleState() {
  */
 @ExperimentalFoundationStyleApi
 @Composable
-inline fun rememberUpdatedStyleState(
+public inline fun rememberUpdatedStyleState(
     interactionSource: InteractionSource?,
     block: @Composable (MutableStyleState) -> Unit = {},
 ): StyleState {
@@ -680,5 +673,62 @@ private class InteractionSet<T : Interaction> {
                 }
             }
         }
+    }
+}
+
+/**
+ * A custom mutable state object that allows treating an integer as a bit set.
+ *
+ * This doesn't use [androidx.compose.runtime.MutableIntState] because there is no way to update a
+ * bit in intValue without reading it. It is important that the write not count as a read so that it
+ * can be updated in composition without causing a read from composition.
+ */
+internal class MutableStateFlagSet(flags: Int) : StateObject {
+    private var next = FlagStateStateRecord(Snapshot.current.snapshotId, flags)
+
+    override val firstStateRecord: StateRecord
+        get() = next
+
+    override fun prependStateRecord(value: StateRecord) {
+        next = value as FlagStateStateRecord
+    }
+
+    val flags: Int
+        get() = next.readable(this).value
+
+    /**
+     * Helper function to retrieve the value of one bit.
+     *
+     * Callers should ensure that [mask] only has one bit is set as this returns if any bits are set
+     * in [mask], not if all of them are set.
+     *
+     * More specialized uses of flags (e.g. multiple bits treated as a single value) should use
+     * [flags] and [updateFlags] instead of [getFlag] and [updateFlag]. See
+     * [PredefinedToggleStateKey] for an example of using more than one bit at a time.
+     */
+    fun getFlag(mask: Int) = flags and mask != 0
+
+    fun updateFlag(mask: Int, value: Boolean) = updateFlags(mask, if (value) mask else 0)
+
+    fun updateFlags(mask: Int, values: Int) {
+        next.withCurrent(this) {
+            val current = it.value
+            val newValue = (current and mask.inv()) or values
+            if (current != newValue) {
+                next.writable(this) { this.value = newValue }
+            }
+        }
+    }
+
+    private class FlagStateStateRecord(snapshotId: SnapshotId, var value: Int) :
+        StateRecord(snapshotId) {
+        override fun assign(value: StateRecord) {
+            this.value = (value as FlagStateStateRecord).value
+        }
+
+        override fun create(): StateRecord = create(Snapshot.current.snapshotId)
+
+        override fun create(snapshotId: SnapshotId): StateRecord =
+            FlagStateStateRecord(snapshotId, value)
     }
 }

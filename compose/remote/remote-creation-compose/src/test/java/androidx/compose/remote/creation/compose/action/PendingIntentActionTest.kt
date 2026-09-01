@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalRemoteCreationComposeApi::class)
-
 package androidx.compose.remote.creation.compose.action
 
 import android.app.PendingIntent
 import android.content.Intent
-import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.actions.HostAction
-import androidx.compose.remote.creation.compose.ExperimentalRemoteCreationComposeApi
 import androidx.compose.remote.creation.compose.action.PendingIntentAction.Companion.ACTION_NAME
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RemoteCreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.WriterEvents
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
@@ -52,7 +49,7 @@ class PendingIntentActionTest {
     fun toRemoteAction_withDefaultRemoteComposeWriter_throws() {
         val creationState =
             RemoteComposeCreationState(platform = AndroidxRcPlatformServices(), size = Size(1f, 1f))
-        val testAction = PendingIntentAction(testPendingIntent)
+        val testAction = PendingIntentAction({ testPendingIntent })
 
         assertThrows(IllegalStateException::class.java) {
             with(testAction) { creationState.toRemoteAction() }
@@ -64,13 +61,13 @@ class PendingIntentActionTest {
         val writerEvents = WriterEvents()
         val creationState =
             RemoteComposeCreationState(
-                creationDisplayInfo = CreationDisplayInfo(1, 1, 160),
+                creationDisplayInfo = RemoteCreationDisplayInfo(1, 1, 160, 1.0f),
                 profile = RcPlatformProfiles.ANDROIDX,
                 writerEvents = writerEvents,
                 layoutDirection = LayoutDirection.Ltr,
             )
 
-        val testAction = PendingIntentAction(testPendingIntent)
+        val testAction = PendingIntentAction({ testPendingIntent })
         val remoteAction = with(testAction) { creationState.toRemoteAction() }
 
         val pendingIntents = writerEvents.pendingIntents
@@ -78,5 +75,27 @@ class PendingIntentActionTest {
         assertThat(pendingIntents[0]).isEqualTo(testPendingIntent)
         assertThat(remoteAction is HostAction).isTrue()
         assertThat((remoteAction as HostAction).toString()).contains("mActionName='${ACTION_NAME}'")
+    }
+
+    @Test
+    fun toRemoteAction_callsLambda() {
+        var lambdaCalled = false
+        val testAction =
+            PendingIntentAction({
+                lambdaCalled = true
+                testPendingIntent
+            })
+        val writerEvents = WriterEvents()
+        val creationState =
+            RemoteComposeCreationState(
+                creationDisplayInfo = RemoteCreationDisplayInfo(1, 1, 160, 1.0f),
+                profile = RcPlatformProfiles.ANDROIDX,
+                writerEvents = writerEvents,
+                layoutDirection = LayoutDirection.Ltr,
+            )
+
+        assertThat(lambdaCalled).isFalse()
+        with(testAction) { creationState.toRemoteAction() }
+        assertThat(lambdaCalled).isTrue()
     }
 }

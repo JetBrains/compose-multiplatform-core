@@ -20,11 +20,12 @@ import androidx.driver.web.worker.createDefaultWebWorkerDriver
 import androidx.kruth.assertThat
 import androidx.sqlite.SQLITE_DATA_INTEGER
 import androidx.sqlite.driver.web.WebWorkerSQLiteDriver
-import androidx.sqlite.executeSQL
-import androidx.sqlite.open
-import androidx.sqlite.prepare
-import androidx.sqlite.step
+import androidx.sqlite.execSQL
 import kotlin.test.Test
+import kotlin.use
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 
 class WebWorkerSQLiteDriverTest {
@@ -32,13 +33,48 @@ class WebWorkerSQLiteDriverTest {
     fun openAndCloseConnection() = runTest {
         val driver: WebWorkerSQLiteDriver = createDefaultWebWorkerDriver()
         val connection = driver.open(":memory:")
-        connection.executeSQL("PRAGMA user_version = 5")
+        connection.execSQL("PRAGMA user_version = 5")
         connection.prepare("PRAGMA user_version").use { statement ->
             assertThat(statement.step()).isTrue()
             assertThat(statement.getColumnName(0)).isEqualTo("user_version")
             assertThat(statement.getColumnType(0)).isEqualTo(SQLITE_DATA_INTEGER)
             assertThat(statement.getLong(0)).isEqualTo(5)
         }
+        connection.close()
+    }
+
+    @Test
+    fun cancelBeginTransactionAndRecover() = runTest {
+        val driver: WebWorkerSQLiteDriver = createDefaultWebWorkerDriver()
+        val connection = driver.open(":memory:")
+        val begin = connection.prepare("BEGIN IMMEDIATE TRANSACTION")
+        val job = launch(start = CoroutineStart.UNDISPATCHED) { begin.step() }
+        job.cancelAndJoin()
+        begin.close()
+
+        assertThat(connection.inTransaction()).isTrue()
+        connection.execSQL("ROLLBACK TRANSACTION")
+        assertThat(connection.inTransaction()).isFalse()
+
+        connection.execSQL("BEGIN IMMEDIATE TRANSACTION")
+        assertThat(connection.inTransaction()).isTrue()
+        connection.execSQL("ROLLBACK TRANSACTION")
+        assertThat(connection.inTransaction()).isFalse()
+
+        connection.close()
+    }
+
+    @Test
+    fun cancelStatementAndContinue() = runTest {
+        val driver: WebWorkerSQLiteDriver = createDefaultWebWorkerDriver()
+        val connection = driver.open(":memory:")
+        connection.execSQL("CREATE TABLE t (id INT)")
+        val stmt = connection.prepare("INSERT INTO t VALUES (1)")
+        val job = launch(start = CoroutineStart.UNDISPATCHED) { stmt.step() }
+        job.cancelAndJoin()
+        stmt.close()
+
+        connection.prepare("SELECT * FROM t").use { stmt -> stmt.step() }
         connection.close()
     }
 }

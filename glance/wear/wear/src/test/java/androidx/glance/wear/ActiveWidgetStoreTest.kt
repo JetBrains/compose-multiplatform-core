@@ -56,7 +56,7 @@ class ActiveWidgetStoreTest {
         assertThat(widgets[0].instanceId.namespace)
             .isEqualTo(WidgetInstanceId.WIDGET_CAROUSEL_NAMESPACE)
         assertThat(widgets[0].provider).isEqualTo(COMPONENT1)
-        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_FULLSCREEN)
+        assertThat(widgets[0].containerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_TILE_COMPAT)
     }
 
     @Test

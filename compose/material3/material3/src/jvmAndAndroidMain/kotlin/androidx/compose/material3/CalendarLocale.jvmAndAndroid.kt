@@ -24,7 +24,8 @@ import java.util.WeakHashMap
  * Represents a Locale for the calendar. This locale will be used when formatting dates, determining
  * the input format, and more.
  */
-actual typealias CalendarLocale = Locale
+@Suppress("TypealiasDefinition")
+public actual typealias CalendarLocale = Locale
 
 /** Returns a string representation of an integer for the given Locale. */
 internal actual fun Int.toLocalString(

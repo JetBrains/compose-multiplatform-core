@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
@@ -24,6 +26,7 @@ import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.Space
 import androidx.xr.scenecore.runtime.SpaceValue
+import androidx.xr.scenecore.testing.internal.FakeEntity as InternalFakeEntity
 import java.util.Collections
 import java.util.concurrent.Executor
 
@@ -38,8 +41,13 @@ import java.util.concurrent.Executor
  *
  * @see androidx.xr.scenecore.runtime.Entity
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakeEntity(public val name: String = "") : FakeScenePose(), Entity {
+@Deprecated("Use SceneCoreTestRule instead.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class FakeEntity
+internal constructor(public val name: String = "", fakeInternal: InternalFakeEntity) :
+    FakeScenePose(fakeInternal), Entity {
+
+    public constructor(name: String = "") : this(name, InternalFakeEntity())
 
     private val _children = mutableSetOf<Entity>()
 
@@ -52,8 +60,6 @@ public open class FakeEntity(public val name: String = "") : FakeScenePose(), En
     /**
      * Sets the parent Entity for this Entity. The child Entity's pose will be relative to the pose
      * of its parent.
-     *
-     * @param parent The parent entity.
      */
     override var parent: Entity?
         get() = _parent
@@ -112,7 +118,7 @@ public open class FakeEntity(public val name: String = "") : FakeScenePose(), En
             )
         }
 
-        var parentPose = this.parent?.getPose(relativeTo)
+        val parentPose = this.parent?.getPose(relativeTo)
         return parentPose?.compose(pose) ?: pose
     }
 

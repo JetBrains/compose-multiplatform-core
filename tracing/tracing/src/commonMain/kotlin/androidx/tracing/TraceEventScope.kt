@@ -17,8 +17,6 @@
 package androidx.tracing
 
 /** Makes it possible to associate debug annotations & categories to a [TraceEvent]. */
-// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
-@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 internal class TraceEventScope() : EventMetadata() {
     /** The [TraceEvent] reference being mutated. */
     // Bare mutable fields for performance

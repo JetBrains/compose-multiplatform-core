@@ -7,7 +7,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 
 plugins {
     id("AndroidXPlugin")
@@ -17,11 +17,10 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.lifecycle.runtime"
         withJava()
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
         androidResources.enable = true
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
+        }
     }
     desktop()
     mac()
@@ -55,6 +54,7 @@ androidXMultiplatform {
 
         jvmAndAndroidMain.dependencies {
             api("androidx.arch.core:core-common:2.2.0")
+            implementation("androidx.tracing:tracing:2.0.0")
         }
 
         desktopTest.dependencies {

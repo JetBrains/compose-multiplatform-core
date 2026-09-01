@@ -26,7 +26,6 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import java.util.Locale
@@ -55,10 +54,7 @@ class CollationTest {
 
     private fun initDao(systemLocale: Locale) {
         Locale.setDefault(systemLocale)
-        db =
-            Room.inMemoryDatabaseBuilder<CollateDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(AndroidSQLiteDriver())
-                .build()
+        db = Room.inMemoryDatabaseBuilder<CollateDb>().setDriver(AndroidSQLiteDriver()).build()
         dao = db.dao()
         dao.insert(item1, item2, item3, item4)
     }

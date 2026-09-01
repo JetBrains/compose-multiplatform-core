@@ -23,6 +23,7 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
 import android.util.Rational
+import androidx.camera.camera2.adapter.FrameMetadataConverter.toCameraCaptureResult
 import androidx.camera.camera2.adapter.asListenableFuture
 import androidx.camera.camera2.compat.ZoomCompat
 import androidx.camera.camera2.compat.workaround.MeteringRegionCorrection
@@ -30,28 +31,35 @@ import androidx.camera.camera2.config.CameraScope
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.CameraGraph.Constants3A.METERING_REGIONS_DEFAULT
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsAeLock
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsAutoFocusTrigger
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsAwbLock
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.core.CameraControl.OperationCanceledException
 import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.FocusMeteringAction.FLAG_AE
+import androidx.camera.core.FocusMeteringAction.FLAG_AF
+import androidx.camera.core.FocusMeteringAction.FLAG_AWB
 import androidx.camera.core.FocusMeteringResult
 import androidx.camera.core.MeteringPoint
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CameraControlInternal
+import androidx.camera.core.impl.ConvergenceUtils
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoSet
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /** Implementation of focus and metering controls exposed by [CameraControlInternal]. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -104,7 +112,6 @@ constructor(
         cameraProperties.metadata.getOrDefault(CameraCharacteristics.CONTROL_MAX_REGIONS_AE, 0)
     private val maxAwbRegionCount =
         cameraProperties.metadata.getOrDefault(CameraCharacteristics.CONTROL_MAX_REGIONS_AWB, 0)
-    private val supportsAutoFocusTrigger = cameraProperties.metadata.supportsAutoFocusTrigger
     private val availableAeModes: List<AeMode?>? =
         cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES]?.map {
             AeMode.fromIntOrNull(it)
@@ -119,6 +126,7 @@ constructor(
 
     private var focusTimeoutJob: Job? = null
     private var autoCancelJob: Job? = null
+    private var activeFocusMetering3Result: Deferred<Result3A>? = null
 
     public fun startFocusAndMetering(
         action: FocusMeteringAction,
@@ -131,6 +139,8 @@ constructor(
             autoCancelJob?.cancel()
             cancelSignal?.setCancelException("Cancelled by another startFocusAndMetering()")
             updateSignal?.setCancelException("Cancelled by another startFocusAndMetering()")
+            activeFocusMetering3Result?.cancel()
+            activeFocusMetering3Result = null
 
             updateSignal = signal
 
@@ -140,7 +150,7 @@ constructor(
                     maxAeRegionCount,
                     cropSensorRegion,
                     defaultAspectRatio,
-                    FocusMeteringAction.FLAG_AE,
+                    FLAG_AE,
                     meteringRegionCorrection,
                 )
             val afRectangles =
@@ -149,7 +159,7 @@ constructor(
                     maxAfRegionCount,
                     cropSensorRegion,
                     defaultAspectRatio,
-                    FocusMeteringAction.FLAG_AF,
+                    FLAG_AF,
                     meteringRegionCorrection,
                 )
             val awbRectangles =
@@ -158,7 +168,7 @@ constructor(
                     maxAwbRegionCount,
                     cropSensorRegion,
                     defaultAspectRatio,
-                    FocusMeteringAction.FLAG_AWB,
+                    FLAG_AWB,
                     meteringRegionCorrection,
                 )
             if (aeRectangles.isEmpty() && afRectangles.isEmpty() && awbRectangles.isEmpty()) {
@@ -170,7 +180,77 @@ constructor(
                 )
                 return signal.asListenableFuture()
             }
-            if (afRectangles.isNotEmpty()) {
+
+            val aeLockBehavior =
+                if (
+                    maxAeRegionCount > 0 &&
+                        cameraProperties.metadata.supportsAeLock &&
+                        aeRectangles.isNotEmpty() &&
+                        (action.lockingMode and FLAG_AE) != 0
+                ) {
+                    Lock3ABehavior.AFTER_NEW_SCAN
+                } else null
+
+            if (aeLockBehavior == null && (action.lockingMode and FLAG_AE) != 0) {
+                Camera2Logger.debug {
+                    "AE lock requested but not supported. maxAeRegionCount = $maxAeRegionCount, " +
+                        "supportsAeLock = ${cameraProperties.metadata.supportsAeLock}, " +
+                        "aeRectangles.isNotEmpty() = ${aeRectangles.isNotEmpty()}"
+                }
+            }
+
+            val awbLockBehavior =
+                if (
+                    maxAwbRegionCount > 0 &&
+                        cameraProperties.metadata.supportsAwbLock &&
+                        awbRectangles.isNotEmpty() &&
+                        (action.lockingMode and FocusMeteringAction.FLAG_AWB) != 0
+                ) {
+                    Lock3ABehavior.AFTER_NEW_SCAN
+                } else null
+
+            if (
+                awbLockBehavior == null &&
+                    (action.lockingMode and FocusMeteringAction.FLAG_AWB) != 0
+            ) {
+                Camera2Logger.debug {
+                    "AWB lock requested but not supported. maxAwbRegionCount = $maxAwbRegionCount" +
+                        ", supportsAwbLock = ${cameraProperties.metadata.supportsAwbLock}, " +
+                        "awbRectangles.isNotEmpty() = ${awbRectangles.isNotEmpty()}"
+                }
+            }
+
+            val afLockBehavior =
+                if (
+                    maxAfRegionCount > 0 &&
+                        cameraProperties.metadata.supportsAutoFocusTrigger &&
+                        afRectangles.isNotEmpty() &&
+                        (action.lockingMode and FLAG_AF) != 0
+                ) {
+                    if (aeLockBehavior == null && awbLockBehavior == null) {
+                        /*
+                         * When Lock3ABehavior.AFTER_NEW_SCAN is used for AF, CameraPipe waits for
+                         * an additional 3A convergence BEFORE sending the AF_TRIGGER_START. This is
+                         * mainly to ensure AE and AWB are stable. If AE and AWB are not being
+                         * locked, we can use IMMEDIATE to skip this extra wait, as AF trigger will
+                         * perform its own scan and we wait for the final locked state anyway.
+                         */
+                        Lock3ABehavior.IMMEDIATE
+                    } else {
+                        Lock3ABehavior.AFTER_NEW_SCAN
+                    }
+                } else null
+
+            if (afLockBehavior == null && (action.lockingMode and FLAG_AF) != 0) {
+                Camera2Logger.debug {
+                    "AF lock requested but not supported. maxAfRegionCount = $maxAfRegionCount, " +
+                        "supportsAutoFocusTrigger = " +
+                        "${cameraProperties.metadata.supportsAutoFocusTrigger}, " +
+                        "afRectangles.isNotEmpty() = ${afRectangles.isNotEmpty()}"
+                }
+            }
+
+            if (afLockBehavior != null) {
                 state3AControl.setPreferredFocusModeAsync(CaptureRequest.CONTROL_AF_MODE_AUTO)
             }
 
@@ -185,8 +265,11 @@ constructor(
                     awbRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
                 else null
 
+            val shouldLockSomething =
+                afLockBehavior != null || aeLockBehavior != null || awbLockBehavior != null
+
             val deferredResult3A =
-                if (afRectangles.isEmpty() || !supportsAutoFocusTrigger) {
+                if (!shouldLockSomething) {
                     /*
                      * Controller3A.lock3A() returns early in such cases without updating the 3A
                      * regions which conflicts with [CameraControl.startFocusAndMetering] doc.
@@ -194,7 +277,13 @@ constructor(
                      * instead of all cases because Controller3A.update3A() will invalidate
                      * the CameraGraph and thus may cause extra requests to the camera.
                      */
-                    Camera2Logger.debug { "startFocusAndMetering: updating 3A regions only" }
+                    Camera2Logger.debug {
+                        "startFocusAndMetering: updating 3A regions only" +
+                            ", aeRegions = ${aeRegions?.isNotEmpty()}" +
+                            ", afRegions = ${afRegions?.isNotEmpty()}" +
+                            ", awbRegions = ${awbRegions?.isNotEmpty()}"
+                    }
+
                     requestControl.update3aRegions(
                         aeRegions = aeRegions,
                         afRegions = afRegions,
@@ -212,9 +301,18 @@ constructor(
                             autoFocusTimeoutMs
                         }
 
+                    val afTriggerStartAeMode = getSupportedAeMode(AeMode.ON)
+
                     Camera2Logger.debug {
-                        "startFocusAndMetering: updating 3A regions & triggering AF"
+                        "startFocusAndMetering: aeRegions = ${aeRegions?.isNotEmpty()}" +
+                            ", afRegions = ${afRegions?.isNotEmpty()}" +
+                            ", awbRegions = ${awbRegions?.isNotEmpty()}" +
+                            ", afLockBehavior = $afLockBehavior" +
+                            ", aeLockBehavior = $aeLockBehavior" +
+                            ", awbLockBehavior = $awbLockBehavior" +
+                            ", afTriggerStartAeMode = $afTriggerStartAeMode"
                     }
+
                     /*
                      * If device does not support a 3A region, we should not update it at all.
                      * If device does support but a region list is empty, it means any previously
@@ -224,13 +322,18 @@ constructor(
                         aeRegions = aeRegions,
                         afRegions = afRegions,
                         awbRegions = awbRegions,
-                        afLockBehavior =
-                            if (maxAfRegionCount > 0) Lock3ABehavior.IMMEDIATE else null,
-                        afTriggerStartAeMode = getSupportedAeMode(AeMode.ON),
+                        aeLockBehavior = aeLockBehavior,
+                        afLockBehavior = afLockBehavior,
+                        awbLockBehavior = awbLockBehavior,
+                        afTriggerStartAeMode = afTriggerStartAeMode,
                         timeLimitNs =
                             TimeUnit.NANOSECONDS.convert(finalFocusTimeout, TimeUnit.MILLISECONDS),
+                        convergedCondition =
+                            getAeAwbConvergedCondition(aeLockBehavior, awbLockBehavior),
                     )
                 }
+
+            activeFocusMetering3Result = deferredResult3A
 
             deferredResult3A.propagateToFocusMeteringResultDeferred(
                 resultDeferred = signal,
@@ -253,6 +356,33 @@ constructor(
         return signal.asListenableFuture()
     }
 
+    /**
+     * Returns a custom 3A convergence condition for AE/AWB locking.
+     *
+     * CameraPipe performs a 3A convergence scan before locking AE/AWB, and all of these happen
+     * before triggering AF. Since AF is set to [CaptureRequest.CONTROL_AF_MODE_AUTO], it does not
+     * converge during this initial scan. We exclude [FocusMeteringAction.FLAG_AF] to prevent a
+     * timeout that would block the subsequent AF trigger and the rest of the action.
+     */
+    private fun getAeAwbConvergedCondition(
+        aeLockBehavior: Lock3ABehavior?,
+        awbLockBehavior: Lock3ABehavior?,
+    ): ((FrameMetadata) -> Boolean)? {
+        if (aeLockBehavior == null && awbLockBehavior == null) {
+            // Fallback to default convergence condition
+            return null
+        }
+
+        return convergeCondition@{ frameMetadata ->
+            ConvergenceUtils.is3AConverged(
+                frameMetadata.toCameraCaptureResult(),
+                /* isTorchAsFlash= */ false,
+                /* required3aModes= */ (if (aeLockBehavior != null) FLAG_AE else 0) or
+                    (if (awbLockBehavior != null) FLAG_AWB else 0),
+            )
+        }
+    }
+
     private fun triggerAutoCancel(
         delayMillis: Long,
         resultToCancel: CompletableDeferred<FocusMeteringResult>,
@@ -261,7 +391,7 @@ constructor(
         autoCancelJob?.cancel()
 
         autoCancelJob =
-            threads.sequentialScope.launch {
+            threads.confineLaunch {
                 delay(delayMillis)
                 Camera2Logger.debug { "triggerAutoCancel: auto-canceling after $delayMillis ms" }
                 cancelFocusAndMeteringNowAsync(requestControl, resultToCancel)
@@ -275,7 +405,7 @@ constructor(
         focusTimeoutJob?.cancel()
 
         focusTimeoutJob =
-            threads.sequentialScope.launch {
+            threads.confineLaunch {
                 delay(delayMillis)
                 Camera2Logger.debug {
                     "triggerFocusTimeout:" +
@@ -285,16 +415,35 @@ constructor(
             }
     }
 
+    private fun cancel3ALocksAndResetMode(
+        requestControl: UseCaseCameraRequestControl
+    ): Deferred<Result3A> {
+        state3AControl.setPreferredFocusModeAsync(null)
+        return requestControl.cancelFocusAndMeteringAsync()
+    }
+
     private fun Deferred<Result3A>.propagateToFocusMeteringResultDeferred(
         resultDeferred: CompletableDeferred<FocusMeteringResult>,
         shouldTriggerAf: Boolean,
     ) {
         invokeOnCompletion { throwable ->
             if (throwable != null) {
-                Camera2Logger.warn(throwable) {
-                    "propagateToFocusMeteringResultDeferred: completed exceptionally!"
+                if (throwable is CancellationException) {
+                    Camera2Logger.debug(throwable) {
+                        "propagateToFocusMeteringResultDeferred: completed exceptionally!"
+                    }
+                } else {
+                    Camera2Logger.warn(throwable) {
+                        "propagateToFocusMeteringResultDeferred: completed exceptionally!"
+                    }
                 }
-                resultDeferred.completeExceptionally(throwable)
+                val exception =
+                    if (throwable is CancellationException) {
+                        OperationCanceledException("Focus/metering operation cancelled.", throwable)
+                    } else {
+                        throwable
+                    }
+                resultDeferred.completeExceptionally(exception)
             } else {
                 val result3A = getCompleted()
                 Camera2Logger.debug {
@@ -322,7 +471,7 @@ constructor(
                 maxAeRegionCount,
                 cropSensorRegion,
                 defaultAspectRatio,
-                FocusMeteringAction.FLAG_AE,
+                FLAG_AE,
                 meteringRegionCorrection,
             )
         val rectanglesAf =
@@ -331,7 +480,7 @@ constructor(
                 maxAfRegionCount,
                 cropSensorRegion,
                 defaultAspectRatio,
-                FocusMeteringAction.FLAG_AF,
+                FLAG_AF,
                 meteringRegionCorrection,
             )
         val rectanglesAwb =
@@ -366,6 +515,9 @@ constructor(
         requestControl?.let { requestControl ->
             focusTimeoutJob?.cancel()
             autoCancelJob?.cancel()
+            updateSignal?.setCancelException("Cancelled by cancelFocusAndMetering()")
+            activeFocusMetering3Result?.cancel()
+            activeFocusMetering3Result = null
             cancelSignal?.setCancelException("Cancelled by another cancelFocusAndMetering()")
             cancelSignal = signal
             cancelFocusAndMeteringNowAsync(requestControl, updateSignal).invokeOnCompletion {
@@ -383,9 +535,10 @@ constructor(
         requestControl: UseCaseCameraRequestControl,
         signalToCancel: CompletableDeferred<FocusMeteringResult>?,
     ): Deferred<Result3A> {
+        focusTimeoutJob?.cancel()
+        autoCancelJob?.cancel()
         signalToCancel?.setCancelException("Cancelled by cancelFocusAndMetering()")
-        state3AControl.setPreferredFocusModeAsync(null)
-        return requestControl.cancelFocusAndMeteringAsync()
+        return cancel3ALocksAndResetMode(requestControl)
     }
 
     private fun <T> CompletableDeferred<T>.setCancelException(message: String) {
@@ -457,6 +610,11 @@ constructor(
             for (meteringPoint in meteringPoints) {
                 // Only enable at most maxRegionCount.
                 if (meteringRegions.size >= maxRegionCount) {
+                    Camera2Logger.debug {
+                        "meteringRegionsFromMeteringPoints: maxRegionCount($maxRegionCount) " +
+                            "reached for meteringMode($meteringMode), dropping remaining " +
+                            "${meteringPoints.size - meteringRegions.size} metering points."
+                    }
                     break
                 }
                 if (!isValid(meteringPoint)) {

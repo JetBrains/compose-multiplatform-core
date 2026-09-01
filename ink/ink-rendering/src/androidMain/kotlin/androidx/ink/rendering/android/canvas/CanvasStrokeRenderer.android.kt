@@ -1,0 +1,284 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.ink.rendering.android.canvas
+
+import android.graphics.Canvas
+import android.graphics.Matrix
+import androidx.annotation.RestrictTo
+import androidx.ink.brush.ExperimentalInkAnimationApi
+import androidx.ink.brush.TextureBitmapStore
+import androidx.ink.geometry.AffineTransform
+import androidx.ink.nativeloader.InkInternalOnlyApi
+import androidx.ink.nativeloader.NativeLoader
+import androidx.ink.rendering.android.canvas.internal.CanvasStrokeUnifiedRenderer
+import androidx.ink.strokes.InProgressStroke
+import androidx.ink.strokes.Stroke
+
+/**
+ * Renders strokes to a [Canvas].
+ *
+ * Instead of calling the [draw] methods here directly, it may be simpler to pass an instance of
+ * [CanvasStrokeRenderer] to [androidx.ink.rendering.android.view.ViewStrokeRenderer] and use it to
+ * calculate transform matrix values.
+ *
+ * An example of how to use [CanvasStrokeRenderer.draw] directly:
+ * ```
+ * class MyView {
+ *   // Update these according to app business logic, and call `MyView.invalidate()`
+ *   val worldToViewTransform = Matrix() // Call e.g. `setScale(2F)` to zoom in 2x
+ *   val strokesWithTransforms = mutableMapOf<Stroke, Matrix>()
+ *
+ *   private val strokeToViewTransform = Matrix() // reusable scratch object
+ *   private val renderer = CanvasStrokeRenderer.create()
+ *
+ *   fun onDraw(canvas: Canvas) {
+ *     for ((stroke, strokeToWorldTransform) in strokesWithTransforms) {
+ *       // Combine worldToViewTransform (drawing surface being panned/zoomed/rotated) with
+ *       // strokeToWorldTransform (stroke itself being moved/scaled/rotated within the drawing
+ *       // surface) to get the overall transform of this stroke.
+ *       strokeToViewTransform.set(strokeToWorldTransform)
+ *       strokeToViewTransform.postConcat(worldToViewTransform)
+ *
+ *       canvas.withMatrix(strokeToViewTransform) {
+ *         // If coordinates of MyView are scaled/rotated from screen coordinates, then those
+ *         // scale/rotation values should be multiplied into the strokeToScreenTransform
+ *         // argument to renderer.draw.
+ *         renderer.draw(canvas, stroke, strokeToViewTransform)
+ *       }
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * In almost all cases, a developer should use an implementation of this interface obtained from
+ * [CanvasStrokeRenderer.create].
+ *
+ * However, some developers may find it helpful to use their own implementation of this interface,
+ * possibly to draw other effects to the [Canvas], typically delegating to a renderer from
+ * [CanvasStrokeRenderer.create] for part of the custom rendering behavior to have the additional
+ * effects add to or modify the standard stroke rendering behavior. Custom [CanvasStrokeRenderer]
+ * implementations are generally less efficient than effects that can be achieved with a custom
+ * [androidx.ink.brush.BrushFamily]. If a custom implementation draws to different screen locations
+ * than the standard implementation, for example surrounding a stroke with additional content, then
+ * that additional content will not be taken into account in geometry operations like
+ * [androidx.ink.geometry.Intersection] or [androidx.ink.geometry.PartitionedMesh.computeCoverage].
+ */
+@OptIn(InkInternalOnlyApi::class, ExperimentalInkAnimationApi::class)
+public interface CanvasStrokeRenderer {
+
+    /**
+     * Render a single [stroke] on the provided [canvas].
+     *
+     * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
+     * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
+     *
+     * The [strokeToScreenTransform] should represent the complete transformation from stroke
+     * coordinates to the screen, modulo translation. This transform will not be applied to the
+     * [canvas] in any way, as it may be made up of several individual transforms applied to the
+     * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
+     * blurry or aliased.
+     */
+    // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
+    public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: AffineTransform) {
+        draw(canvas, stroke, strokeToScreenTransform, 0L)
+    }
+
+    /**
+     * Render a single [stroke] on the provided [canvas], using the specified
+     * [animatorClockStateMillis] value for the stroke's animated textures, if any. Renderer
+     * implementations that don't support animated textures may ignore the
+     * [animatorClockStateMillis] argument.
+     *
+     * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
+     * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
+     *
+     * The [strokeToScreenTransform] should represent the complete transformation from stroke
+     * coordinates to the screen, modulo translation. This transform will not be applied to the
+     * [canvas] in any way, as it may be made up of several individual transforms applied to the
+     * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
+     * blurry or aliased.
+     */
+    @Suppress("HiddenAbstractMethodInInterface")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkAnimationApi
+    public fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: AffineTransform,
+        animatorClockStateMillis: Long,
+    )
+
+    /**
+     * Render a single [stroke] on the provided [canvas].
+     *
+     * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
+     * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
+     *
+     * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
+     * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
+     * to the [canvas] in any way, as it may be made up of several individual transforms applied to
+     * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
+     * appear blurry or aliased.
+     */
+    // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
+    public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: Matrix) {
+        draw(canvas, stroke, strokeToScreenTransform, 0L)
+    }
+
+    /**
+     * Render a single [stroke] on the provided [canvas], using the specified
+     * [animatorClockStateMillis] value for the stroke's animated textures, if any. Renderer
+     * implementations that don't support animated textures may ignore the
+     * [animatorClockStateMillis] argument.
+     *
+     * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
+     * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
+     *
+     * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
+     * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
+     * to the [canvas] in any way, as it may be made up of several individual transforms applied to
+     * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
+     * appear blurry or aliased.
+     */
+    @Suppress("HiddenAbstractMethodInInterface")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkAnimationApi
+    public fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: Matrix,
+        animatorClockStateMillis: Long,
+    )
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas].
+     *
+     * The [strokeToScreenTransform] should represent the complete transformation from stroke
+     * coordinates to the canvas, modulo translation. This transform will not be applied to the
+     * [canvas] in any way, as it may be made up of several individual transforms applied to the
+     * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
+     * blurry or aliased.
+     */
+    public fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: AffineTransform,
+    ) {
+        draw(canvas, inProgressStroke, strokeToScreenTransform, 0L)
+    }
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas], using the specified
+     * [animatorClockStateMillis] value for the stroke's animated textures, if any. Renderer
+     * implementations that don't support animated textures may ignore the
+     * [animatorClockStateMillis] argument.
+     *
+     * The [strokeToScreenTransform] should represent the complete transformation from stroke
+     * coordinates to the canvas, modulo translation. This transform will not be applied to the
+     * [canvas] in any way, as it may be made up of several individual transforms applied to the
+     * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
+     * blurry or aliased.
+     */
+    @Suppress("HiddenAbstractMethodInInterface")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkAnimationApi
+    public fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: AffineTransform,
+        animatorClockStateMillis: Long,
+    )
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas].
+     *
+     * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
+     * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
+     * to the [canvas] in any way, as it may be made up of several individual transforms applied to
+     * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
+     * appear blurry or aliased.
+     */
+    public fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: Matrix,
+    ) {
+        draw(canvas, inProgressStroke, strokeToScreenTransform, 0L)
+    }
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas], using the specified
+     * [animatorClockStateMillis] value for the stroke's animated textures, if any. Renderer
+     * implementations that don't support animated textures may ignore the
+     * [animatorClockStateMillis] argument.
+     *
+     * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
+     * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
+     * to the [canvas] in any way, as it may be made up of several individual transforms applied to
+     * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
+     * appear blurry or aliased.
+     */
+    @Suppress("HiddenAbstractMethodInInterface")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
+    @ExperimentalInkAnimationApi
+    public fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: Matrix,
+        animatorClockStateMillis: Long,
+    )
+
+    public companion object {
+
+        init {
+            NativeLoader.load()
+        }
+
+        /**
+         * Create a [CanvasStrokeRenderer] that is appropriate to the device's API version.
+         *
+         * @param textureStore The [TextureBitmapStore] that will be called to retrieve image data
+         *   for drawing textured strokes.
+         */
+        @JvmStatic
+        @JvmOverloads
+        public fun create(
+            textureStore: TextureBitmapStore = TextureBitmapStore { null }
+        ): CanvasStrokeRenderer {
+            return create(forcePathRendering = false, textureStore = textureStore)
+        }
+
+        /**
+         * Create a [CanvasStrokeRenderer] that is appropriate to the device's API version.
+         *
+         * @param textureStore The [TextureBitmapStore] that will be called to retrieve image data
+         *   for drawing textured strokes.
+         * @param forcePathRendering Overrides the drawing strategy selected based on API version to
+         *   always draw strokes using [Canvas.drawPath] instead of [Canvas.drawMesh].
+         */
+        @JvmStatic
+        @JvmOverloads
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @InkInternalOnlyApi
+        public fun create(
+            forcePathRendering: Boolean,
+            textureStore: TextureBitmapStore = TextureBitmapStore { null },
+        ): CanvasStrokeRenderer {
+            return CanvasStrokeUnifiedRenderer(textureStore, forcePathRendering)
+        }
+    }
+}

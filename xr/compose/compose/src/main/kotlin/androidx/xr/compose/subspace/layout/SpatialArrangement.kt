@@ -368,14 +368,16 @@ public object SpatialArrangement {
 
     /**
      * Children are placed next to each other with fixed [space] between them along the main axis.
+     *
+     * @param space fixed space [Dp] to place between adjacent children.
      */
     public fun spacedBy(space: Dp): AxisIndependent =
         SpacedAligned(space = space, rtlMirror = true, axisMultiplier = 0) {
             occupied,
             totalSize,
             layoutDirection ->
-            SpatialAlignment.CenterHorizontally.offset(
-                width = occupied,
+            SpatialAlignment.CenterHorizontally.align(
+                size = occupied,
                 space = totalSize,
                 layoutDirection = layoutDirection,
             )
@@ -384,14 +386,17 @@ public object SpatialArrangement {
     /**
      * Children are placed next to each other with fixed [space] between them horizontally and
      * aligned them according to the [spatialAlignment] given.
+     *
+     * @param space fixed space [Dp] to place between adjacent children.
+     * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
      */
     public fun spacedBy(space: Dp, spatialAlignment: SpatialAlignment.Horizontal): Horizontal =
         SpacedAligned(space = space, rtlMirror = true, axisMultiplier = 1) {
             occupied,
             totalSize,
             layoutDirection ->
-            spatialAlignment.offset(
-                width = occupied,
+            spatialAlignment.align(
+                size = occupied,
                 space = totalSize,
                 layoutDirection = layoutDirection,
             )
@@ -400,26 +405,31 @@ public object SpatialArrangement {
     /**
      * Children are placed next to each other with fixed [space] between them vertically and align
      * them according to the [spatialAlignment] given.
+     *
+     * @param space fixed space [Dp] to place between adjacent children.
+     * @param spatialAlignment [SpatialAlignment.Vertical] to align the children with.
      */
     public fun spacedBy(space: Dp, spatialAlignment: SpatialAlignment.Vertical): Vertical =
         SpacedAligned(space = space, rtlMirror = false, axisMultiplier = -1) {
             occupied,
             totalSize,
             _ ->
-            spatialAlignment.offset(height = occupied, space = totalSize)
+            spatialAlignment.align(size = occupied, space = totalSize)
         }
 
     /**
      * Children placed next to each other horizontally and align them according to the
      * [spatialAlignment] given.
+     *
+     * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
      */
     public fun aligned(spatialAlignment: SpatialAlignment.Horizontal): Horizontal =
         SpacedAligned(space = 0.dp, rtlMirror = true, axisMultiplier = 1) {
             occupied,
             totalSize,
             layoutDirection ->
-            spatialAlignment.offset(
-                width = occupied,
+            spatialAlignment.align(
+                size = occupied,
                 space = totalSize,
                 layoutDirection = layoutDirection,
             )
@@ -428,11 +438,13 @@ public object SpatialArrangement {
     /**
      * Children placed next to each other vertically and align them according to the
      * [spatialAlignment].
+     *
+     * @param spatialAlignment [SpatialAlignment.Vertical] to align the children with.
      */
     public fun aligned(spatialAlignment: SpatialAlignment.Vertical): Vertical =
         SpacedAligned(space = 0.dp, rtlMirror = false, axisMultiplier = -1) { occupied, totalSize, _
             ->
-            spatialAlignment.offset(height = occupied, space = totalSize)
+            spatialAlignment.align(size = occupied, space = totalSize)
         }
 
     /** Used to specify arrangement which doesn't change with layout direction. */
@@ -581,14 +593,17 @@ public object SpatialArrangement {
          * align them according to the [spatialAlignment] given. Unlike
          * [SpatialArrangement.spacedBy], when layout direction is RTL, children will not be
          * mirrored.
+         *
+         * @param space fixed space [Dp] to place between adjacent children.
+         * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
          */
         public fun spacedBy(space: Dp, spatialAlignment: SpatialAlignment.Horizontal): Horizontal {
             return SpacedAligned(space = space, rtlMirror = false, axisMultiplier = 1) {
                 occupied,
                 totalSize,
                 layoutDirection ->
-                spatialAlignment.offset(
-                    width = occupied,
+                spatialAlignment.align(
+                    size = occupied,
                     space = totalSize,
                     layoutDirection = layoutDirection,
                 )
@@ -599,13 +614,15 @@ public object SpatialArrangement {
          * Children placed next to each other horizontally and align them according to the
          * [spatialAlignment] given. Unlike [SpatialArrangement.spacedBy], when layout direction is
          * RTL, children will not be mirrored.
+         *
+         * @param spatialAlignment [SpatialAlignment.Horizontal] to align the children with.
          */
         public fun aligned(spatialAlignment: SpatialAlignment.Horizontal): Horizontal {
             return SpacedAligned(space = 0.dp, rtlMirror = false, axisMultiplier = 1) {
                 occupied,
                 totalSize,
                 layoutDirection ->
-                spatialAlignment.offset(width = occupied, space = totalSize, layoutDirection)
+                spatialAlignment.align(size = occupied, space = totalSize, layoutDirection)
             }
         }
     }

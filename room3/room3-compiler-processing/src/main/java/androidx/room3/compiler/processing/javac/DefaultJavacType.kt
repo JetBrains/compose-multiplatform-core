@@ -17,45 +17,23 @@
 package androidx.room3.compiler.processing.javac
 
 import androidx.room3.compiler.processing.XNullability
-import androidx.room3.compiler.processing.XType
+import androidx.room3.compiler.processing.XTypeArgument
 import androidx.room3.compiler.processing.javac.kotlin.KmTypeContainer
 import com.google.auto.common.MoreTypes
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 
 /** Catch-all class for XType implementation when we don't need/discover a sub-type */
-internal class DefaultJavacType
-private constructor(
+internal class DefaultJavacType(
     env: JavacProcessingEnv,
     typeMirror: TypeMirror,
-    nullability: XNullability?,
-    override val kotlinType: KmTypeContainer?,
+    nullability: XNullability? = null,
+    override val kotlinType: KmTypeContainer? = null,
 ) : JavacType(env, typeMirror, nullability) {
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: TypeMirror,
-    ) : this(env = env, typeMirror = typeMirror, nullability = null, kotlinType = null)
-
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: TypeMirror,
-        kotlinType: KmTypeContainer,
-    ) : this(
-        env = env,
-        typeMirror = typeMirror,
-        nullability = kotlinType.nullability,
-        kotlinType = kotlinType,
-    )
-
-    constructor(
-        env: JavacProcessingEnv,
-        typeMirror: TypeMirror,
-        nullability: XNullability,
-    ) : this(env = env, typeMirror = typeMirror, nullability = nullability, kotlinType = null)
 
     override val equalityItems by lazy { arrayOf(typeMirror) }
 
-    override val typeArguments: List<XType>
+    override val typeArguments: List<XTypeArgument>
         /**
          * This is always empty because if the type mirror is declared, we wrap it in a
          * JavacDeclaredType.

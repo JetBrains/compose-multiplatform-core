@@ -31,8 +31,8 @@ plugins {
 
 android {
     defaultConfig {
+        minSdk { version = release(24) }
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
-        consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.benchmark.junit4"
 }
@@ -61,16 +61,17 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     deviceTests {
         enableAlsoRunningOnPhysicalDevices = true
+        minSdkForFtlOverride = 25 // b/539512562
     }
     samples(project(":benchmark:benchmark-samples"))
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
+tasks.withType(KotlinCompile).configureEach { task ->
+    task.compilerOptions {
         // Enable using experimental APIs from within same version group
-        freeCompilerArgs += [
+        it.freeCompilerArgs.addAll(
                 "-opt-in=androidx.benchmark.ExperimentalBenchmarkConfigApi",
                 "-opt-in=androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi",
-        ]
+        )
     }
 }

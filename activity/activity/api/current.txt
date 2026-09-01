@@ -3,11 +3,14 @@ package androidx.activity {
 
   @SuppressCompatibility @androidx.activity.ExperimentalActivityApi public final class ActivityFlags {
     property public boolean isOnBackPressedLifecycleOrderMaintained;
+    property @Deprecated public boolean isUntrustedActivityDefaultViewModelArgsEnabled;
     field public static final androidx.activity.ActivityFlags INSTANCE;
     field public static boolean isOnBackPressedLifecycleOrderMaintained;
+    field @Deprecated public static boolean isUntrustedActivityDefaultViewModelArgsEnabled;
   }
 
   public final class ActivityViewModelLazyKt {
+    method @KotlinOnly @MainThread public static inline <reified T extends androidx.lifecycle.ViewModel> kotlin.Lazy<T> viewModels(androidx.activity.ComponentActivity, String key, optional kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>? extrasProducer, optional kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>? factoryProducer);
     method @KotlinOnly @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> kotlin.Lazy<VM> viewModels(androidx.activity.ComponentActivity, optional kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>? extrasProducer, optional kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>? factoryProducer);
   }
 
@@ -57,6 +60,7 @@ package androidx.activity {
     method public final void addOnUserLeaveHintListener(Runnable listener);
     method public final void enterPictureInPictureMode(androidx.core.app.PictureInPictureParamsCompat params);
     method @InaccessibleFromKotlin public final androidx.activity.result.ActivityResultRegistry getActivityResultRegistry();
+    method @InaccessibleFromKotlin public android.os.Bundle? getDefaultViewModelArgs();
     method @InaccessibleFromKotlin public androidx.lifecycle.ViewModelProvider.Factory getDefaultViewModelProviderFactory();
     method @InaccessibleFromKotlin public androidx.activity.FullyDrawnReporter getFullyDrawnReporter();
     method @InaccessibleFromKotlin @Deprecated public Object? getLastCustomNonConfigurationInstance();
@@ -89,6 +93,7 @@ package androidx.activity {
     method @Deprecated @kotlin.jvm.Throws(exceptionClasses=SendIntentException::class) public void startIntentSenderForResult(android.content.IntentSender intent, int requestCode, android.content.Intent? fillInIntent, int flagsMask, int flagsValues, int extraFlags) throws android.content.IntentSender.SendIntentException;
     method @Deprecated @kotlin.jvm.Throws(exceptionClasses=SendIntentException::class) public void startIntentSenderForResult(android.content.IntentSender intent, int requestCode, android.content.Intent? fillInIntent, int flagsMask, int flagsValues, int extraFlags, android.os.Bundle? options) throws android.content.IntentSender.SendIntentException;
     property public final androidx.activity.result.ActivityResultRegistry activityResultRegistry;
+    property public android.os.Bundle? defaultViewModelArgs;
     property @CallSuper public androidx.lifecycle.viewmodel.CreationExtras defaultViewModelCreationExtras;
     property public androidx.lifecycle.ViewModelProvider.Factory defaultViewModelProviderFactory;
     property public androidx.activity.FullyDrawnReporter fullyDrawnReporter;
@@ -145,6 +150,13 @@ package androidx.activity {
     property public abstract androidx.activity.FullyDrawnReporter fullyDrawnReporter;
   }
 
+  public final class NavigationEventDispatcherOwnerFactory {
+    method @KotlinOnly public static androidx.navigationevent.NavigationEventDispatcherOwner NavigationEventDispatcherOwner(androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher);
+    method @KotlinOnly public static androidx.navigationevent.NavigationEventDispatcherOwner NavigationEventDispatcherOwner(androidx.activity.OnBackPressedDispatcherOwner onBackPressedDispatcherOwner);
+    method @InaccessibleFromKotlin public static androidx.navigationevent.NavigationEventDispatcherOwner create(androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher);
+    method @InaccessibleFromKotlin public static androidx.navigationevent.NavigationEventDispatcherOwner create(androidx.activity.OnBackPressedDispatcherOwner onBackPressedDispatcherOwner);
+  }
+
   public abstract class OnBackPressedCallback {
     ctor public OnBackPressedCallback(boolean enabled);
     method @MainThread public void handleOnBackCancelled();
@@ -164,6 +176,7 @@ package androidx.activity {
     ctor @BytecodeOnly public OnBackPressedDispatcher(Runnable!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @MainThread public void addCallback(androidx.activity.OnBackPressedCallback onBackPressedCallback);
     method @MainThread public void addCallback(androidx.lifecycle.LifecycleOwner owner, androidx.activity.OnBackPressedCallback onBackPressedCallback);
+    method public androidx.navigationevent.NavigationEventDispatcher asNavigationEventDispatcher();
     method @MainThread @VisibleForTesting public void dispatchOnBackCancelled();
     method @MainThread @VisibleForTesting public void dispatchOnBackProgressed(androidx.activity.BackEventCompat backEvent);
     method @MainThread @VisibleForTesting public void dispatchOnBackStarted(androidx.activity.BackEventCompat backEvent);
@@ -180,6 +193,11 @@ package androidx.activity {
   public interface OnBackPressedDispatcherOwner extends androidx.lifecycle.LifecycleOwner {
     method @InaccessibleFromKotlin public androidx.activity.OnBackPressedDispatcher getOnBackPressedDispatcher();
     property public abstract androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher;
+  }
+
+  public final class OnBackPressedDispatcherOwnerFactory {
+    method @KotlinOnly public static androidx.activity.OnBackPressedDispatcherOwner OnBackPressedDispatcherOwner(androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher, androidx.lifecycle.Lifecycle lifecycle);
+    method @InaccessibleFromKotlin public static androidx.activity.OnBackPressedDispatcherOwner create(androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher, androidx.lifecycle.Lifecycle lifecycle);
   }
 
   public final class PipHintTrackerKt {

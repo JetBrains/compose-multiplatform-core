@@ -19,6 +19,7 @@ package androidx.glance.wear.parcel
 import android.content.ComponentName
 import android.content.Context
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.glance.wear.GlanceWearWidget
@@ -26,7 +27,6 @@ import androidx.glance.wear.WearWidgetBrush
 import androidx.glance.wear.WearWidgetData
 import androidx.glance.wear.WearWidgetDocument
 import androidx.glance.wear.core.ActiveWearWidgetHandle
-import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
 import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
 import androidx.glance.wear.core.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
 import androidx.glance.wear.core.WearWidgetEvent
@@ -94,29 +94,6 @@ class WearWidgetProviderImplTest {
         contentChannel.receive()
 
         assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetParams.instanceId)
-        assertThat(testWidget.lastRequestedContainerType).isEqualTo(CONTAINER_TYPE_LARGE)
-    }
-
-    @Test
-    fun onWidgetRequest_remapsFullscreenToLarge() = runTest {
-        val widgetParams =
-            WearWidgetParams(
-                instanceId = WidgetInstanceId("namespace", 17),
-                containerType = CONTAINER_TYPE_FULLSCREEN,
-                widthDp = 200f,
-                heightDp = 200f,
-                horizontalPaddingDp = 8f,
-                verticalPaddingDp = 8f,
-                cornerRadiusDp = 16f,
-            )
-        val channelWidgetCallback = ChannelWidgetCallback(this, contentChannel)
-        val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)
-
-        provider.onWidgetRequest(widgetParams.toParcel(), channelWidgetCallback)
-        contentChannel.receive()
-
-        assertThat(testWidget.lastRequestedInstanceId).isEqualTo(widgetParams.instanceId)
-        assertThat(testWidget.lastRequestedContainerType).isEqualTo(CONTAINER_TYPE_LARGE)
     }
 
     @Test
@@ -131,18 +108,18 @@ class WearWidgetProviderImplTest {
                 verticalPaddingDp = 0f,
                 cornerRadiusDp = 0f,
             )
-        testWidget.content = { RemoteText("Testing ...") }
+        testWidget.content = { RemoteText("Testing ...".rs) }
         val expectedRcDocumentHierarchy =
             """
             ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
               BOX [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 MODIFIERS
-                  ROUNDED_CLIP_RECT = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                  DRAW_CONTENT
                 BOX [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-                  DATA_TEXT<42> = "Testing ..."
+                  DATA_TEXT<46> = "Testing ..."
                   MODIFIERS
                     PADDING = [0.0, 0.0, 0.0, 0.0]
-                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                  TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (46:"null")
                     MODIFIERS
             """
                 .trimIndent()
@@ -296,11 +273,10 @@ class WearWidgetProviderImplTest {
 
     private class TestGlanceWearWidget : GlanceWearWidget() {
         var lastRequestedInstanceId: WidgetInstanceId? = null
-        var lastRequestedContainerType: Int? = null
         var addedHandle: ActiveWearWidgetHandle? = null
         var removedHandle: ActiveWearWidgetHandle? = null
         var enableFailureMode = false
-        var content = @Composable { RemoteText("WearWidgetProviderImplTest") }
+        var content = @Composable { RemoteText("WearWidgetProviderImplTest".rs) }
         var events: List<WearWidgetEvent>? = null
 
         override suspend fun provideWidgetData(
@@ -308,7 +284,6 @@ class WearWidgetProviderImplTest {
             params: WearWidgetParams,
         ): WearWidgetData {
             lastRequestedInstanceId = params.instanceId
-            lastRequestedContainerType = params.containerType
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }

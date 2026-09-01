@@ -21,6 +21,7 @@ import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
+import androidx.xr.scenecore.runtime.CleanupAction
 import androidx.xr.scenecore.runtime.PixelDimensions
 import com.android.extensions.xr.XrExtensions
 import com.android.extensions.xr.node.Node
@@ -33,11 +34,13 @@ internal class ActivityPanelEntityImpl(
     node: Node,
     name: String,
     extensions: XrExtensions,
-    entityManager: EntityManager,
+    sceneNodeRegistry: SceneNodeRegistry,
     private val activityPanel: ActivityPanel,
     windowBoundsPx: PixelDimensions,
     executor: ScheduledExecutorService,
-) : BasePanelEntity(context, node, extensions, entityManager, executor), ActivityPanelEntity {
+) : BasePanelEntity(context, node, extensions, sceneNodeRegistry, executor), ActivityPanelEntity {
+
+    private val activityPanelCleanupAction: ActivityPanelCleanupAction
 
     // TODO(b/352630140): Add a static factory method and remove the business logic from
     // SpatialSceneRuntime.
@@ -45,7 +48,7 @@ internal class ActivityPanelEntityImpl(
         super.sizeInPixels = windowBoundsPx
         // We need to notify our base class of the pixelDimensions, even though the Extensions are
         // initialized in the factory method. (ext.ActivityPanel.setWindowBounds, etc.)
-        mExtensions.createNodeTransaction().use { transaction ->
+        extensions.createNodeTransaction().use { transaction ->
             transaction
                 .setVisibility(activityPanel.node, true)
                 .setName(activityPanel.node, name)
@@ -53,7 +56,12 @@ internal class ActivityPanelEntityImpl(
                 .apply()
         }
         super.cornerRadiusValue = defaultCornerRadiusInMeters
+        activityPanelCleanupAction = ActivityPanelCleanupAction(activityPanel)
+        registerCleanup(executor, activityPanelCleanupAction)
     }
+
+    private class ActivityPanelCleanupAction(activityPanel: ActivityPanel) :
+        CleanupAction({ activityPanel.delete() })
 
     override fun launchActivity(intent: Intent, bundle: Bundle?) {
         // Note that launching an Activity into the Panel doesn't actually update the size. The
@@ -87,7 +95,6 @@ internal class ActivityPanelEntityImpl(
      * This will delete the ActivityPanel and destroy the embedded activity.
      */
     override fun dispose() {
-        activityPanel.delete()
         super.dispose()
     }
 }

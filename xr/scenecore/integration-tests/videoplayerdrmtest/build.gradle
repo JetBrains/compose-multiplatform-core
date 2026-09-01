@@ -37,15 +37,15 @@ android {
         //       Address API calls that require higher versions.
         minSdk { version = release(34) }
     }
-    compileSdk { version = release(35) }
+    compileSdk { version = release(36) }
     buildFeatures { viewBinding = true }
     namespace = "androidx.xr.scenecore.samples.videoplayerdrmtest"
 
     buildTypes {
         release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            optimization {
+                enable = true
+            }
         }
     }
 }

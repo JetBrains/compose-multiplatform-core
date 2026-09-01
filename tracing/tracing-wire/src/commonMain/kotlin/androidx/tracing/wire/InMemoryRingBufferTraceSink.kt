@@ -18,22 +18,24 @@ package androidx.tracing.wire
 
 import androidx.annotation.GuardedBy
 import androidx.annotation.IntRange
+import androidx.tracing.AbstractTraceSink
 import androidx.tracing.PooledTracePacketArray
 import androidx.tracing.TraceEvent
-import androidx.tracing.TraceSink
 import androidx.tracing.synchronized
 import com.squareup.wire.ProtoWriter
 import kotlin.concurrent.Volatile
 import okio.BufferedSink
 
 /**
- * A [TraceSink] that stores [TraceEvent]s in a fixed-size ring buffer to minimize allocations.
+ * A [AbstractTraceSink] that stores [TraceEvent]s in a fixed-size ring buffer to minimize
+ * allocations.
  *
  * This buffer is designed to hold trace events temporarily before they are flushed. When the buffer
  * is full, it overwrites the oldest events.
  *
- * A standard [flush] or [close] will simply clear the buffer and drop the events. To persist the
- * trace data, you must provide a [BufferedSink] by calling [flushTo] or [closeAndFlushTo].
+ * A standard [flush] will do nothing. A [close] will simply clear the buffer and drop the events.
+ * To persist the trace data, you **must** provide a [BufferedSink] by calling [flushTo] or
+ * [closeAndFlushTo].
  *
  * This implementation converts [androidx.tracing.TraceEvent]s into binary protos using
  * [the Wire library](https://square.github.io/wire/).
@@ -55,7 +57,7 @@ public class InMemoryRingBufferTraceSink(
      * is estimated based on an average event size of 1KB.
      */
     capacityInBytes: Long,
-) : TraceSink() {
+) : AbstractTraceSink() {
     // Estimate 1KB per event
     private val countLimit = (capacityInBytes / 1024).toInt().coerceAtLeast(1)
     @GuardedBy("lock") private val events = Array(countLimit) { TraceEvent() }
@@ -111,10 +113,11 @@ public class InMemoryRingBufferTraceSink(
         isDroppedTraceEvent = true
     }
 
-    /** Clears the current buffer and drops the events without writing them out. */
-    override fun flush() {
-        flushInternal(null)
-    }
+    /**
+     * Intentionally a no-op because we expect the caller to explicitly flush to a sink via
+     * [flushTo].
+     */
+    override fun flush() {}
 
     /**
      * Flushes the current buffer to the provided [BufferedSink].
@@ -131,16 +134,22 @@ public class InMemoryRingBufferTraceSink(
             var index = readIndex
 
             val reportDroppedTraceEvent = isDroppedTraceEvent
-            isDroppedTraceEvent = false
-            var firstEventInFlush = true
+            var firstEvent = true
+            // This is set to true only iff we managed to report the dropped event.
+            // Sometimes we may not be able to do it right away, if you only have preamble
+            // packets coming next.
+            var reported = false
 
             val protoWriter = sink?.let { ProtoWriter(it) }
 
             repeat(count) {
                 val event = events[index]
-                val isDropped = if (firstEventInFlush) reportDroppedTraceEvent else false
-                firstEventInFlush = false
-
+                val isPreamble = event.trackDescriptor != null
+                val isDropped = if (!isPreamble && firstEvent) reportDroppedTraceEvent else false
+                // Only treat the first non-preamble event as the first event in a batch.
+                if (!isPreamble) {
+                    firstEvent = false
+                }
                 if (protoWriter != null) {
                     wireTraceEventSerializer.writeTraceEvent(
                         protoWriter = protoWriter,
@@ -148,15 +157,19 @@ public class InMemoryRingBufferTraceSink(
                         reportDroppedTraceEvent = isDropped,
                     )
                 }
-
+                reported = reported || isDropped
                 // Reset the event to free up memory (strings, arrays, etc.)
                 // since it's no longer logically in the ring buffer.
                 event.reset()
-
-                index++
+                index += 1
                 if (index == countLimit) {
                     index = 0
                 }
+            }
+
+            // If there was a dropped event, and we reported it, we can clear the state.
+            if (reported) {
+                isDroppedTraceEvent = false
             }
 
             count = 0

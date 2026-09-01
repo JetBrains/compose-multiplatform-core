@@ -30,8 +30,9 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * @property state the current [State] of the AR device tracking
  */
+@SuppressWarnings("HiddenSuperclass")
 public class ArDevice internal constructor(internal val runtimeArDevice: RuntimeArDevice) :
-    Updatable {
+    Trackable<ArDevice.State>, Updatable() {
 
     public companion object {
         /**
@@ -44,7 +45,8 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
         @JvmStatic
         public fun getInstance(session: Session): ArDevice {
             val perceptionStateExtender = getPerceptionStateExtender(session)
-            val config = perceptionStateExtender.xrResourcesManager.lifecycleManager.config
+
+            val config = perceptionStateExtender.xrResourcesManager.perceptionRuntime.config
             check(config.deviceTracking != DeviceTrackingMode.DISABLED) {
                 "Config.DeviceTrackingMode is set to DISABLED."
             }
@@ -63,26 +65,53 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
      * Contains the current state of the AR Device tracking.
      *
      * @property devicePose the current [Pose] of the device
+     * @property trackingState the current [androidx.xr.arcore.TrackingState]
+     * @property owner self-reference to the object that owns this state
      */
-    public class State internal constructor(public val devicePose: Pose) {
+    public class State
+    internal constructor(
+        public val devicePose: Pose,
+        override val trackingState: TrackingState,
+        public val owner: ArDevice,
+    ) : Trackable.State {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is State) return false
-            return devicePose == other.devicePose
+            return devicePose == other.devicePose &&
+                trackingState == other.trackingState &&
+                owner == other.owner
         }
 
         override fun hashCode(): Int {
-            return devicePose.hashCode()
+            var result = devicePose.hashCode()
+            result = 31 * result + trackingState.hashCode()
+            result = 31 * result + owner.hashCode()
+            return result
         }
+
+        /**
+         * Returns a string representation of [ArDevice.State] for debugging.
+         *
+         * Note: Not intended for production use.
+         */
+        override fun toString(): String =
+            "State(devicePose=$devicePose, trackingState=$trackingState)"
     }
 
-    private val _state = MutableStateFlow<State>(State(Pose()))
+    private val _state = MutableStateFlow<State>(State(Pose(), TrackingState.STOPPED, owner = this))
 
-    public val state: StateFlow<State> = _state.asStateFlow()
+    override val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override suspend fun update() {
-        _state.emit(State(runtimeArDevice.devicePose))
+    // TODO b/482646486: Remove public visibility and unrestrict when no longer used in G3
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public override suspend fun update() {
+        _state.emit(
+            State(
+                runtimeArDevice.devicePose,
+                runtimeArDevice.trackingState.toTrackingState(),
+                owner = this,
+            )
+        )
     }
 
     override fun equals(other: Any?): Boolean {
@@ -92,4 +121,11 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
     }
 
     override fun hashCode(): Int = runtimeArDevice.hashCode()
+
+    /**
+     * Returns a string representation of [ArDevice] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String = "ArDevice(state=${state.value})"
 }

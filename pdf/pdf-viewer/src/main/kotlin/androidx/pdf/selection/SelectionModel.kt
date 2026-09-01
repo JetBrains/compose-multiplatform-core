@@ -19,13 +19,16 @@ package androidx.pdf.selection
 import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
+import android.util.SparseArray
 import androidx.core.util.isEmpty
 import androidx.pdf.PdfPoint
 import androidx.pdf.content.PageSelection
-import androidx.pdf.content.toViewSelection
-import androidx.pdf.view.pdfPointFromParcel
-import androidx.pdf.view.writeToParcel
-import kotlin.collections.firstOrNull
+import androidx.pdf.leftCenter
+import androidx.pdf.rightCenter
+import androidx.pdf.selection.model.ImageSelection
+import androidx.pdf.util.pdfPointFromParcel
+import androidx.pdf.util.toViewSelection
+import androidx.pdf.util.writeToParcel
 
 /** Value class containing all data necessary to display UI related to content selection */
 @SuppressLint("BanParcelableUsage")
@@ -33,6 +36,8 @@ internal class SelectionModel(
     val documentSelection: DocumentSelection,
     val startBoundary: UiSelectionBoundary,
     val endBoundary: UiSelectionBoundary,
+    val isOcr: Boolean = false,
+    val isPlaceholder: Boolean = false,
 ) : Parcelable {
     constructor(
         parcel: Parcel
@@ -40,6 +45,8 @@ internal class SelectionModel(
         documentSelection = DocumentSelection.selectionValueFromParcel(parcel = parcel),
         startBoundary = UiSelectionBoundary(parcel),
         endBoundary = UiSelectionBoundary(parcel),
+        isOcr = parcel.readInt() == 1,
+        isPlaceholder = parcel.readInt() == 1,
     )
 
     override fun describeContents(): Int = 0
@@ -48,6 +55,8 @@ internal class SelectionModel(
         documentSelection.writeToParcel(dest, flags)
         startBoundary.writeToParcel(dest, flags)
         endBoundary.writeToParcel(dest, flags)
+        dest.writeInt(if (isOcr) 1 else 0)
+        dest.writeInt(if (isPlaceholder) 1 else 0)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -57,6 +66,8 @@ internal class SelectionModel(
         if (other.documentSelection != documentSelection) return false
         if (other.startBoundary != startBoundary) return false
         if (other.endBoundary != endBoundary) return false
+        if (other.isOcr != isOcr) return false
+        if (other.isPlaceholder != isPlaceholder) return false
         return true
     }
 
@@ -64,54 +75,86 @@ internal class SelectionModel(
         var result = documentSelection.hashCode()
         result = 31 * result + startBoundary.hashCode()
         result = 31 * result + endBoundary.hashCode()
+        result = 31 * result + isOcr.hashCode()
+        result = 31 * result + isPlaceholder.hashCode()
         return result
+    }
+
+    fun toPlaceholder(): SelectionModel {
+        if (isPlaceholder) return this
+        val selection = documentSelection.selection
+        if (selection is ImageSelection) {
+            // ImageSelection already strips the bitmap and converts to a 20-byte placeholder
+            // in writeToParcel / imageSelectionFromParcel during IPC.
+            return this
+        }
+        return SelectionModel(
+            documentSelection = DocumentSelection(SparseArray()),
+            startBoundary = startBoundary,
+            endBoundary = endBoundary,
+            isOcr = isOcr,
+            isPlaceholder = true,
+        )
     }
 
     companion object {
         /**
-         * Combines multiple selections from different pages into a single [SelectionModel].
+         * Creates a [SelectionModel] from multiple selections from different pages.
          *
-         * @param currentSelection The current selection, can be `null` if no selection yet exists.
-         * @param newPageSelections New [androidx.pdf.content.PageSelection] objects on different
+         * @param pageSelections New [androidx.pdf.content.PageSelection] objects on different
          *   pages.
+         * @param isOcr Whether the selection was made using OCR.
          * @return A [SelectionModel] that encompasses all selections, or `null` if none were found.
          */
-        fun getCombinedSelectionModel(
-            currentSelection: DocumentSelection,
-            newPageSelections: List<PageSelection?>,
-        ): SelectionModel? {
+        fun create(pageSelections: List<PageSelection?>, isOcr: Boolean = false): SelectionModel? {
+            val selectedContents = SparseArray<List<Selection>>()
+            pageSelections.forEach { newPageSelection ->
+                if (newPageSelection != null) {
+                    selectedContents[newPageSelection.page] = newPageSelection.toViewSelection()
+                }
+            }
 
-            val selection = mergeSelection(currentSelection, newPageSelections)
-            if (selection.selectedContents.isEmpty()) return null
+            if (selectedContents.isEmpty()) return null
 
+            val selection = DocumentSelection(selectedContents)
             val selectionBounds = selection.getSelectionEndpoints()
 
-            val isRtl = newPageSelections.firstOrNull()?.start?.isRtl ?: false
+            val isRtl = pageSelections.firstOrNull()?.start?.isRtl ?: false
             return SelectionModel(
                 selection,
                 UiSelectionBoundary(selectionBounds.first, isRtl),
                 UiSelectionBoundary(selectionBounds.second, isRtl),
+                isOcr = isOcr,
             )
         }
 
         /**
-         * Returns a merged [DocumentSelection] from [currentSelection] with a list of
-         * [newPageSelections]
+         * Creates a [SelectionModel] from the provided [selection] on a specific page.
+         *
+         * @param pageNum The page number where the selection exists.
+         * @param selection The selected content.
+         * @param isRtl Whether the selection direction is Right-to-Left.
+         * @param isOcr Whether the selection was made using OCR.
+         * @return A [SelectionModel] representing the content selection, or `null` if the selection
+         *   bounds are empty.
          */
-        private fun mergeSelection(
-            currentSelection: DocumentSelection,
-            newPageSelections: List<PageSelection?>,
-        ): DocumentSelection {
+        fun create(
+            pageNum: Int,
+            selection: Selection,
+            isRtl: Boolean,
+            isOcr: Boolean = false,
+        ): SelectionModel? {
+            if (selection.bounds.isEmpty()) return null
 
-            // Process new selection
-            newPageSelections.forEach { newPageSelection ->
-                if (newPageSelection != null) {
-                    currentSelection.selectedContents[newPageSelection.page] =
-                        newPageSelection.toViewSelection()
-                }
-            }
+            val selectedContents =
+                SparseArray<List<Selection>>(1).apply { put(pageNum, listOf(selection)) }
 
-            return DocumentSelection(currentSelection.selectedContents)
+            return SelectionModel(
+                DocumentSelection(selectedContents),
+                UiSelectionBoundary(selection.bounds.first().leftCenter, isRtl),
+                UiSelectionBoundary(selection.bounds.last().rightCenter, isRtl),
+                isOcr = isOcr,
+            )
         }
 
         @JvmField
@@ -135,13 +178,13 @@ internal class SelectionModel(
  */
 @SuppressLint("BanParcelableUsage")
 internal class UiSelectionBoundary(val location: PdfPoint, val isRtl: Boolean) : Parcelable {
-    constructor(parcel: Parcel) : this(pdfPointFromParcel(parcel), parcel.readBoolean())
+    constructor(parcel: Parcel) : this(pdfPointFromParcel(parcel), parcel.readInt() == 1)
 
     override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         location.writeToParcel(dest)
-        dest.writeBoolean(isRtl)
+        dest.writeInt(if (isRtl) 1 else 0)
     }
 
     override fun equals(other: Any?): Boolean {

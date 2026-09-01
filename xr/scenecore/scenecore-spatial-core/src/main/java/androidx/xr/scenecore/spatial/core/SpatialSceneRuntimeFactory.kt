@@ -26,7 +26,7 @@ import java.util.concurrent.Executors
  * Factory for creating instances of [androidx.xr.scenecore.runtime.SceneRuntime] for devices that
  * support the [Feature.SPATIAL] feature.
  */
-internal class SpatialSceneRuntimeFactory() : SceneRuntimeFactory {
+internal class SpatialSceneRuntimeFactory : SceneRuntimeFactory {
     override val requirements: Set<Feature> =
         setOf(Feature.FULLSTACK, Feature.OPEN_XR, Feature.SPATIAL)
 
@@ -34,5 +34,15 @@ internal class SpatialSceneRuntimeFactory() : SceneRuntimeFactory {
         SpatialSceneRuntime.create(
             activity,
             Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "JXRRuntimeSession") },
+        )
+
+    override fun create(
+        activity: Activity,
+        unscaledGravityAlignedActivitySpace: Boolean,
+    ): SceneRuntime =
+        SpatialSceneRuntime.create(
+            activity,
+            Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "JXRRuntimeSession") },
+            unscaledGravityAlignedActivitySpace,
         )
 }

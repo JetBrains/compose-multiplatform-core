@@ -19,57 +19,105 @@ package androidx.tracing
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ThreadContextElement
 
-internal class DefaultThreadContextElement<T : Tracer>(
-    override val tracer: T,
+internal class PropagationElement(
+    override val tracer: PerfettoTracer,
     override var category: String,
     override var name: String,
     override val flowIds: List<Long>,
-    internal val updateThreadContextBlock: (context: CoroutineContext) -> Unit,
-    internal val restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
-    internal val close: (element: PlatformThreadContextElement<*, T>) -> Unit,
 ) :
     ThreadContextElement<Unit>,
-    PlatformThreadContextElement<Unit, T>(
+    PlatformThreadContextElement(
         tracer = tracer,
         category = category,
         name = name,
         flowIds = flowIds,
     ) {
-    /**
-     * This method is called **before a coroutine is resumed** on a thread that belongs to a
-     * dispatcher.
-     */
-    override fun restoreThreadContext(context: CoroutineContext, oldState: Unit) {
-        restoreThreadContextBlock(context)
-    }
-
-    /** This method is called **after** a coroutine is suspended on the current thread. */
     override fun updateThreadContext(context: CoroutineContext) {
-        updateThreadContextBlock(context)
+        // Do nothing
     }
 
-    override fun close() {
-        close(this)
+    override fun restoreThreadContext(context: CoroutineContext, oldState: Unit) {
+        // Do nothing
     }
 }
 
-@PublishedApi
-internal actual fun <T : Tracer> buildThreadContextElement(
-    tracer: T,
-    category: String,
-    name: String,
-    flowIds: List<Long>,
-    updateThreadContextBlock: (context: CoroutineContext) -> Unit,
-    restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
-    close: (platformThreadContextElement: PlatformThreadContextElement<*, T>) -> Unit,
-): PlatformThreadContextElement<Unit, T> {
-    return DefaultThreadContextElement(
+internal class CoroutinePropagationElement(
+    override val tracer: PerfettoTracer,
+    override var category: String,
+    override var name: String,
+    override val flowIds: List<Long>,
+) :
+    ThreadContextElement<Unit>,
+    PlatformThreadContextElement(
         tracer = tracer,
         category = category,
         name = name,
         flowIds = flowIds,
-        updateThreadContextBlock = updateThreadContextBlock,
-        restoreThreadContextBlock = restoreThreadContextBlock,
-        close = close,
+    ) {
+    // This method is called before a coroutine is resumed on a thread that
+    // belongs to a dispatcher. This can be called more than once. So avoid creating
+    // slices unless we transition to `STATE_END`.
+    override fun updateThreadContext(context: CoroutineContext) {
+        val contextElement = context.platformThreadContextElement()
+        val category = contextElement?.category
+        val name = contextElement?.name
+        if (
+            contextElement != null &&
+                category != null &&
+                name != null &&
+                contextElement.synchronizedCompareAndSet(
+                    expected = STATE_END,
+                    newValue = STATE_BEGIN,
+                )
+        ) {
+            val result =
+                contextElement.tracer.process
+                    .currentThreadTrack()
+                    .beginCoroutineSection(category = category, name = name, token = contextElement)
+            result.metadata.dispatchToTraceSink()
+        }
+    }
+
+    // This method is called **after** a coroutine is suspended on the current thread.
+    // This method might be called more than once as well. So we want to be
+    // idempotent.
+    override fun restoreThreadContext(context: CoroutineContext, oldState: Unit) {
+        val contextElement = context.platformThreadContextElement()
+        val name = contextElement?.name
+        if (
+            contextElement != null &&
+                name != null &&
+                contextElement.synchronizedCompareAndSet(
+                    expected = STATE_BEGIN,
+                    newValue = STATE_END,
+                )
+        ) {
+            contextElement.tracer.process.currentThreadTrack().endSection()
+        }
+    }
+}
+
+@Suppress("NOTHING_TO_INLINE")
+internal actual inline fun buildPropagationElement(
+    tracer: PerfettoTracer,
+    category: String,
+    name: String,
+    flowIds: List<Long>,
+): PlatformThreadContextElement {
+    return PropagationElement(tracer = tracer, category = category, name = name, flowIds = flowIds)
+}
+
+@Suppress("NOTHING_TO_INLINE")
+internal actual inline fun buildCoroutinePropagationElement(
+    tracer: PerfettoTracer,
+    category: String,
+    name: String,
+    flowIds: List<Long>,
+): PlatformThreadContextElement {
+    return CoroutinePropagationElement(
+        tracer = tracer,
+        category = category,
+        name = name,
+        flowIds = flowIds,
     )
 }

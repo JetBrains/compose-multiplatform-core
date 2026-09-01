@@ -16,12 +16,11 @@
 
 package androidx.xr.scenecore.spatial.rendering
 
-import android.util.Log
 import androidx.annotation.MainThread
-import androidx.xr.scenecore.impl.impress.ImpressApi
-import androidx.xr.scenecore.impl.impress.ImpressNode
 import androidx.xr.scenecore.runtime.GltfAnimationFeature
 import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressApi
+import androidx.xr.scenecore.spatial.rendering.impress.ImpressNode
 import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.function.Consumer
@@ -86,7 +85,7 @@ internal class GltfAnimationFeatureImpl(
                     // background thread (which is where executor put you), the native code looks
                     // for the context, doesn't find it (or finds a mismatch), and fails or crashes
                     withContext(Dispatchers.Main) {
-                        impressApi.animateGltfModelNew(
+                        impressApi.animateGltfModel(
                             /* modelImpressNode= */ modelImpressNode,
                             /* animationName= */ name,
                             /* loop= */ loop,
@@ -97,8 +96,7 @@ internal class GltfAnimationFeatureImpl(
                     }
                 } catch (e: Exception) {
                     if (e is CancellationException) throw e
-                    // Some other error happened.  Log it and stop the animation.
-                    Log.e("GltfAnimationFeatureImpl", "Could not start animation: $e")
+                    // Some other error happened. Stop the animation.
                 } finally {
                     if (currentAnimationJob === coroutineContext[Job]) {
                         animationState = GltfEntity.AnimationState.STOPPED
@@ -112,14 +110,14 @@ internal class GltfAnimationFeatureImpl(
             animationState == GltfEntity.AnimationState.PLAYING ||
                 animationState == GltfEntity.AnimationState.PAUSED
         ) {
-            impressApi.stopGltfModelAnimationNew(modelImpressNode, /* channelId= */ index)
+            impressApi.stopGltfModelAnimation(modelImpressNode, /* channelId= */ index)
             animationState = GltfEntity.AnimationState.STOPPED
         }
     }
 
     override fun pauseAnimation() {
         if (animationState == GltfEntity.AnimationState.PLAYING) {
-            impressApi.toggleGltfModelAnimationNew(
+            impressApi.toggleGltfModelAnimation(
                 modelImpressNode,
                 /* playing= */ false,
                 /* channelId= */ index,
@@ -130,7 +128,7 @@ internal class GltfAnimationFeatureImpl(
 
     override fun resumeAnimation() {
         if (animationState == GltfEntity.AnimationState.PAUSED) {
-            impressApi.toggleGltfModelAnimationNew(
+            impressApi.toggleGltfModelAnimation(
                 modelImpressNode,
                 /* playing= */ true,
                 /* channelId= */ index,

@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -55,7 +56,6 @@ import androidx.wear.compose.material3.TimeTextDefaults.timeTextStyle
 import androidx.wear.compose.materialcore.currentTimeMillis
 import androidx.wear.compose.materialcore.is24HourFormat
 import java.util.Calendar
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -77,13 +77,23 @@ import kotlinx.coroutines.flow.flowOn
  *
  * @sample androidx.wear.compose.material3.samples.TimeTextClockOnly
  *
+ * ![TimeTextClockOnly Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimeTextClockOnly_CompositeImage.png)
+ *
  * A [TimeText] with a short app status message shown:
  *
  * @sample androidx.wear.compose.material3.samples.TimeTextWithStatus
  *
+ * ![TimeTextWithStatus Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimeTextWithStatus_CompositeImage.png)
+ *
  * A [TimeText] with a long status message, that needs ellipsizing:
  *
  * @sample androidx.wear.compose.material3.samples.TimeTextWithStatusEllipsized
+ *
+ * ![TimeTextWithStatusEllipsized Composite
+ * Image](https://developer.android.com/wear/images/design/WearComposeM3_TimeTextWithStatusEllipsized_CompositeImage.png)
+ *
  * @param modifier The modifier to be applied to the component.
  * @param curvedModifier The [CurvedModifier] used to restrict the arc in which [TimeText] is drawn.
  * @param maxSweepAngle The default maximum sweep angle in degrees.
@@ -150,7 +160,7 @@ public object TimeTextDefaults {
     @Composable
     public fun timeFormat(): String {
         val format = if (is24HourFormat()) TimeFormat24Hours else TimeFormat12Hours
-        return DateFormat.getBestDateTimePattern(Locale.getDefault(), format)
+        return DateFormat.getBestDateTimePattern(Locale.current.platformLocale, format)
             .replace("a", "")
             .trim()
     }

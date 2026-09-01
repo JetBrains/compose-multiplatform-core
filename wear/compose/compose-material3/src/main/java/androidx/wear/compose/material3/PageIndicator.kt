@@ -16,15 +16,13 @@
 
 package androidx.wear.compose.material3
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -72,6 +70,11 @@ import kotlin.math.sin
  * Example usage with [HorizontalPager]:
  *
  * @sample androidx.wear.compose.material3.samples.HorizontalPageIndicatorWithPagerSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_HorizontalPageIndicatorWithPagerSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param pagerState State of the [HorizontalPager] used to control this indicator
  * @param modifier Modifier to be applied to the [HorizontalPageIndicator]
  * @param selectedColor The color which will be used for a selected indicator item.
@@ -113,6 +116,11 @@ public fun HorizontalPageIndicator(
  * Example usage with [VerticalPager]:
  *
  * @sample androidx.wear.compose.material3.samples.VerticalPageIndicatorWithPagerSample
+ *
+ * <video
+ * src=https://developer.android.com/wear/images/design/WearComposeM3_VerticalPageIndicatorWithPagerSample_CompositeImage.mp4
+ * autoplay loop muted playsinline style=border-radius:2.4%/6.8%;overflow:hidden; />
+ *
  * @param pagerState State of the [VerticalPager] used to control this indicator
  * @param modifier Modifier to be applied to the [VerticalPageIndicator]
  * @param selectedColor The color which will be used for a selected indicator item.
@@ -168,6 +176,8 @@ public object PageIndicatorDefaults {
         get() = ColorSchemeKeyTokens.Background.value.copy(alpha = 0.85f)
 }
 
+// TODO: Check usage of PagerState.currentPageOffsetFraction in this composable b/481303955
+@SuppressLint("FrequentlyChangingValue")
 @Composable
 internal fun PageIndicatorImpl(
     state: PagerState,
@@ -182,21 +192,6 @@ internal fun PageIndicatorImpl(
     val layoutDirection = LocalLayoutDirection.current
     val edgePadding = PaddingDefaults.edgePadding
 
-    // Converting offsetFraction into range 0..1f
-    val currentPageOffsetWithFraction = state.currentPage + state.currentPageOffsetFraction
-
-    val isLastPage =
-        currentPageOffsetWithFraction.equalsWithTolerance(
-            number = state.pageCount - 1f,
-            tolerance = 0.001f,
-        )
-
-    // If it's the last page, then we decrease its index by 1 and put a 1f to the offset
-    val selectedPage: Int =
-        if (isLastPage) currentPageOffsetWithFraction.toInt() - 1
-        else currentPageOffsetWithFraction.toInt()
-    val offset = currentPageOffsetWithFraction - selectedPage
-
     val pagesOnScreen = Integer.min(MaxNumberOfIndicators, state.pageCount)
     val pagesState =
         remember(state.pageCount) {
@@ -208,10 +203,6 @@ internal fun PageIndicatorImpl(
                 shrinkThresholdEnd = calculateShrinkThresholdEnd(spacing, indicatorSize),
             )
         }
-
-    if (pagesState.totalPages > 1) {
-        pagesState.recalculateState(selectedPage, offset)
-    }
 
     val spacerSize = indicatorSize + spacing
 
@@ -231,6 +222,25 @@ internal fun PageIndicatorImpl(
         val spacerSizePx = if (pagesOnScreen > 1) spacerSize.toPx() else 0f
         val backgroundStrokeWidthPx = BackgroundRadius.toPx() * 2 + indicatorSizePx
         val arcRadius = (screenWidthPx - backgroundStrokeWidthPx) / 2 - edgePadding.toPx()
+
+        // Converting offsetFraction into range 0..1f
+        val currentPageOffsetWithFraction = state.currentPage + state.currentPageOffsetFraction
+
+        val isLastPage =
+            currentPageOffsetWithFraction.equalsWithTolerance(
+                number = state.pageCount - 1f,
+                tolerance = 0.001f,
+            )
+
+        // If it's the last page, then we decrease its index by 1 and put a 1f to the offset
+        val selectedPage: Int =
+            if (isLastPage) currentPageOffsetWithFraction.toInt() - 1
+            else currentPageOffsetWithFraction.toInt()
+        val offset = currentPageOffsetWithFraction - selectedPage
+
+        if (pagesState.totalPages > 1) {
+            pagesState.recalculateState(selectedPage, offset)
+        }
 
         // The indicators are arranged along a circular arc, with `arcRadius` defining its
         // curvature.
@@ -485,7 +495,7 @@ private class PagesState(
     private var hiddenPagesToTheLeft = 0
 
     // Current visible position on the screen.
-    var visibleDotIndex by mutableIntStateOf(0)
+    var visibleDotIndex = 0
         private set
 
     // Sizes and alphas of all indicators on the screen. These parameters depend on the currently

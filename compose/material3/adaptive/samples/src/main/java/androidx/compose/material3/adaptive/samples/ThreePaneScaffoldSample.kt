@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -64,7 +65,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.AdaptStrategy
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.DockedEdge
@@ -248,7 +249,7 @@ fun ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog() {
             }
         },
         extraPane = {
-            AnimatedPane {
+            AnimatedPane(shape = RoundedCornerShape(16.dp)) {
                 ExtraPaneContent(
                     extraItems = extraItems,
                     selectedItem = selectedItem,
@@ -446,7 +447,7 @@ fun <T> reflowAdaptStrategySample(): ThreePaneScaffoldNavigator<T> =
 @Composable
 fun <T> levitateAsDialogSample(): ThreePaneScaffoldNavigator<T> {
     val coroutineScope = rememberCoroutineScope()
-    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     var navigator: ThreePaneScaffoldNavigator<T>? = null
     val onClick: () -> Unit = { coroutineScope.launch { navigator?.navigateBack() } }
     navigator =
@@ -493,10 +494,9 @@ fun <T> levitateAsDialogSample(): ThreePaneScaffoldNavigator<T> {
 @Sampled
 @Composable
 fun <T> levitateAsBottomSheetSample(): ThreePaneScaffoldNavigator<T> {
-    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+    val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
     val dragToResizeState = rememberDragToResizeState(dockedEdge = DockedEdge.Bottom)
-    var navigator: ThreePaneScaffoldNavigator<T>? = null
-    navigator =
+    val navigator: ThreePaneScaffoldNavigator<T> =
         rememberSupportingPaneScaffoldNavigator<T>(
             scaffoldDirective = scaffoldDirective,
             adaptStrategies =

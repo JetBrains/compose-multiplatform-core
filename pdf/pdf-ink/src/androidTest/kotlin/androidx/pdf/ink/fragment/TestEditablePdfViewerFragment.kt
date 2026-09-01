@@ -43,6 +43,7 @@ import java.util.UUID
  * [androidx.test.espresso.IdlingResource] while loading pdf document.
  */
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+@OptIn(ExperimentalPdfApi::class)
 internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
 
     constructor() : super()
@@ -85,8 +86,6 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
                 isFormFillingEnabled = true
             }
         }
-        // Disable animations on annotation toolbar for tests
-        annotationToolbar.areAnimationsEnabled = false
     }
 
     override fun onLoadDocumentSuccess(document: PdfDocument) {

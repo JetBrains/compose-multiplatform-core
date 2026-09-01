@@ -19,10 +19,10 @@ package androidx.ink.authoring
 import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.Brush
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
-import androidx.ink.brush.TextureAnimationProgressHelper
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.geometry.Box
 import androidx.ink.geometry.BoxAccumulator
+import androidx.ink.rendering.android.canvas.StrokePaintAnimationClock
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInputBatch
@@ -31,10 +31,15 @@ import kotlin.random.Random
 /**
  * An implementation of [InProgressShape] that simply wraps [androidx.ink.strokes.InProgressStroke].
  */
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // FutureJetpackApi
-@ExperimentalCustomShapeWorkflowApi
-public class InkInProgressShape : InProgressShape<Brush, Stroke> {
+@ExperimentalInkCustomShapeWorkflowApi
+@OptIn(ExperimentalInkAnimationApi::class)
+public class InkInProgressShape
+@ExperimentalInkAnimationApi
+public constructor(private val animationClock: StrokePaintAnimationClock) :
+    InProgressShape<Brush, Stroke> {
+
+    public constructor() : this(StrokePaintAnimationClock.STOPPED_CLOCK)
 
     internal val inProgressStroke = InProgressStroke()
 
@@ -49,9 +54,8 @@ public class InkInProgressShape : InProgressShape<Brush, Stroke> {
      */
     @get:JvmName("shouldPreserveNoiseSeed") public var shouldPreserveNoiseSeed: Boolean = false
 
-    private var shapeChangesWithTime = false
-    internal var textureAnimationDurationMillis: Long = Long.MIN_VALUE
-        private set
+    private var hasBrushPaintAnimation = false
+    private var hasBrushTipAnimation = false
 
     private var canceled = false
 
@@ -59,12 +63,6 @@ public class InkInProgressShape : InProgressShape<Brush, Stroke> {
 
     private var updateSinceResetUpdatedRegion = false
     private var cancelSinceResetUpdatedRegion = false
-
-    private var startSystemElapsedTimeMillis = Long.MIN_VALUE
-
-    /** The most recent value passed to [update]. Acts as the current time for all calculations. */
-    internal var lastUpdateSystemElapsedTimeMillis = Long.MIN_VALUE
-        private set
 
     /** Used by [getUpdatedRegion]. */
     private val scratchUpdatedRegion = BoxAccumulator()
@@ -78,18 +76,25 @@ public class InkInProgressShape : InProgressShape<Brush, Stroke> {
      */
     private val scratchBoxAccumulator = BoxAccumulator()
 
-    @OptIn(ExperimentalInkCustomBrushApi::class)
     override fun start(shapeSpec: Brush, systemElapsedTimeMillis: Long) {
         prepareToRecycle()
         this.brush = shapeSpec
         if (!shouldPreserveNoiseSeed) {
             this.noiseSeed = Random.Default.nextInt()
         }
-        inProgressStroke.start(brush = shapeSpec, noiseSeed = noiseSeed)
-        startSystemElapsedTimeMillis = systemElapsedTimeMillis
-        shapeChangesWithTime = inProgressStroke.changesWithTime()
-        textureAnimationDurationMillis =
-            TextureAnimationProgressHelper.getAnimationDurationMillis(shapeSpec.family)
+        val paintAnimationLoopDurationMillis = shapeSpec.family.textureAnimationLoopDurationMillis
+        val baseAnimationPhase =
+            StrokePaintAnimationClock.calculateBasePhaseForNewStroke(
+                clockStateMillis = animationClock.getClockStateMillis(),
+                animationLoopDurationMillis = paintAnimationLoopDurationMillis,
+            )
+        inProgressStroke.start(
+            brush = shapeSpec,
+            noiseSeed = noiseSeed,
+            baseAnimationPhase = baseAnimationPhase,
+        )
+        hasBrushPaintAnimation = paintAnimationLoopDurationMillis > 0L
+        hasBrushTipAnimation = inProgressStroke.changesWithTime()
     }
 
     override fun enqueueInputs(realInputs: StrokeInputBatch, predictedInputs: StrokeInputBatch) {
@@ -97,22 +102,16 @@ public class InkInProgressShape : InProgressShape<Brush, Stroke> {
             inProgressStroke.enqueueInputs(realInputs, predictedInputs)
         } catch (t: Throwable) {
             // TODO(b/306361370): Throw here once input is more sanitized.
-            Log.w(
-                InkInProgressShape::class.simpleName,
-                "Error during InProgressStroke.enqueueInputs",
-                t,
-            )
+            Log.w("InkInProgressShape", "Error during InProgressStroke.enqueueInputs", t)
         }
     }
 
-    override fun changesWithTime(): Boolean =
-        shapeChangesWithTime || textureAnimationDurationMillis > 0
+    override fun changesWithTime(): Boolean = hasBrushTipAnimation || hasBrushPaintAnimation
 
     override fun update(shapeDurationMillis: Long) {
         // Update these values even if the underlying [InProgressStroke] doesn't need updating, so
         // that
-        // texture animations can be properly rendered.
-        lastUpdateSystemElapsedTimeMillis = startSystemElapsedTimeMillis + shapeDurationMillis
+        // brush paint animations can be properly rendered.
         updateSinceResetUpdatedRegion = true
         runCatching { inProgressStroke.updateShape(shapeDurationMillis) }
             .exceptionOrNull()
@@ -140,15 +139,14 @@ public class InkInProgressShape : InProgressShape<Brush, Stroke> {
         }
         if (updateSinceResetUpdatedRegion) {
             scratchUpdatedRegion.add(inProgressStroke.populateUpdatedRegion(scratchBoxAccumulator))
-            // When a stroke has texture animation, assume it needs to fully re-render with each
-            // timestamp
-            // change. This means the updated region is mostly equivalent to the stroke's bounding
-            // box,
-            // but also include the stroke's updated region in case there's an update that lies
-            // outside
-            // the current bounding box - for example, an overshot prediction being erased or the
-            // disappearing end of a laser pointer style stroke.
-            if (textureAnimationDurationMillis > 0) {
+            // When a stroke has brush paint animation, assume it needs to fully re-render with each
+            // timestamp change. This means the updated region is mostly equivalent to the stroke's
+            // bounding box, but also include the stroke's updated region in case there's an update
+            // that
+            // lies outside the current bounding box - for example, an overshot prediction being
+            // erased or
+            // the disappearing end of a laser pointer style stroke.
+            if (hasBrushPaintAnimation) {
                 scratchUpdatedRegion.add(getBoundingBox())
             }
         }
@@ -187,13 +185,11 @@ public class InkInProgressShape : InProgressShape<Brush, Stroke> {
         }
 
     override fun prepareToRecycle() {
-        startSystemElapsedTimeMillis = Long.MIN_VALUE
-        lastUpdateSystemElapsedTimeMillis = Long.MIN_VALUE
         updateSinceResetUpdatedRegion = false
         cancelSinceResetUpdatedRegion = false
         canceled = false
-        textureAnimationDurationMillis = Long.MIN_VALUE
-        shapeChangesWithTime = false
+        hasBrushPaintAnimation = false
+        hasBrushTipAnimation = false
         inProgressStroke.clear()
     }
 }

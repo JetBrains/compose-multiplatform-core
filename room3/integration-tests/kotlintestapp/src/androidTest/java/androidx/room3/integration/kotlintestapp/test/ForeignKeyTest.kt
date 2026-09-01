@@ -33,7 +33,6 @@ import androidx.room3.withWriteTransaction
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -164,7 +163,7 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     @Before
     fun openDb() {
         db =
-            Room.inMemoryDatabaseBuilder<ForeignKeyDb>(ApplicationProvider.getApplicationContext())
+            Room.inMemoryDatabaseBuilder<ForeignKeyDb>()
                 .setDriver(
                     when (useDriver) {
                         UseDriver.ANDROID -> AndroidSQLiteDriver()

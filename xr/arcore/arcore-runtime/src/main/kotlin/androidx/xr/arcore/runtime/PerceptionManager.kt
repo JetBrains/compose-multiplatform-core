@@ -17,8 +17,12 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.ExperimentalSpatialAnnotationsApi
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quad
 import androidx.xr.runtime.math.Ray
+import java.nio.ByteBuffer
 import java.util.UUID
 
 /**
@@ -38,15 +42,15 @@ import java.util.UUID
  * @property rightRenderViewpoint the right [RenderViewpoint], or null if not available
  * @property monoRenderViewpoint the mono [RenderViewpoint], or null if not available
  * @property geospatial the [Geospatial] instance
- * @property leftDepthMap the left [DepthMap], or null if not available
- * @property rightDepthMap the right [DepthMap], or null if not available
- * @property monoDepthMap the mono [DepthMap], or null if not available
+ * @property leftDepth the left [Depth], or null if not available
+ * @property rightDepth the right [Depth], or null if not available
+ * @property monoDepth the mono [Depth], or null if not available
  * @property userFace the user's [Face], or null if not available
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface PerceptionManager {
     /**
-     * Defines a tracked location in the physical world.
+     * Tracked location in the physical world.
      *
      * @param pose the [Pose] of the anchor
      * @return the created [Anchor]
@@ -54,7 +58,7 @@ public interface PerceptionManager {
     public fun createAnchor(pose: Pose): Anchor
 
     /**
-     * Performs a ray cast in the direction of the given [ray] in the latest camera view.
+     * Performs a ray cast in direction of [ray].
      *
      * @param ray the [Ray] to cast
      * @return a list of [HitResult] objects
@@ -83,21 +87,84 @@ public interface PerceptionManager {
      */
     public fun unpersistAnchor(uuid: UUID)
 
+    /**
+     * Sets the display rotation on supported devices.
+     *
+     * @param rotation the angle in degrees to rotate the display from its default orientation, with
+     *   positive values representing clockwise rotations
+     * @param width the new display width after rotation
+     * @param height the new display width after rotation
+     * @throws [UnsupportedOperationException] if the current runtime does not support display
+     *   rotation
+     */
+    public fun setDisplayRotation(rotation: Int, width: Int, height: Int) {
+        throw UnsupportedOperationException()
+    }
+
+    /**
+     * Starts tracking a [SpatialAnnotation]
+     *
+     * @param imageBuffer the [ByteBuffer] containing the input image data
+     * @param imageSize the [IntSize2d] of the input image
+     * @param rowStride the row stride of the input image in bytes
+     * @param format the format of the input image
+     * @param alignment the requested tracking alignment
+     * @param quads a map of SpatialAnnotationIds to bounding quads
+     * @param timestampNanos the system timestamp of the input image in nanoseconds (typically
+     *   provided via [System.nanoTime])
+     * @throws [UnsupportedOperationException] if the current runtime does not support spatial
+     *   annotation tracking
+     * @throws [IllegalArgumentException] if any of the provided [quads] violate the geometric
+     *   constraints of the specified [alignment]
+     */
+    @OptIn(ExperimentalSpatialAnnotationsApi::class)
+    public fun startSpatialAnnotationTracking(
+        imageBuffer: ByteBuffer,
+        imageSize: IntSize2d,
+        rowStride: Int,
+        format: SpatialAnnotationImageFormat,
+        alignment: SpatialAnnotationQuadAlignment,
+        quads: Map<SpatialAnnotationId, Quad>,
+        timestampNanos: Long,
+    ) {
+        throw UnsupportedOperationException()
+    }
+
+    /**
+     * Tells the engine to stop tracking specific SpatialAnnotations by ID. If no IDs are provided,
+     * all SpatialAnnotations will be stopped.
+     *
+     * @param ids the list of unique SpatialAnnotationIds to stop tracking
+     */
+    public fun stopSpatialAnnotationTracking(ids: List<SpatialAnnotationId>) {
+        throw UnsupportedOperationException()
+    }
+
+    /**
+     * Returns the maximum number of images that can be added to an
+     * [androidx.xr.runtime.AugmentedImageDatabase]
+     */
+    public val imageDatabaseMaxLoadedImageCount: Int
+
+    /** Returns if the device support physical size estimation. Used for image tracking. */
+    public val isPhysicalSizeEstimationSupported: Boolean
+
+    /** Returns if the device supports QR code size estimation. Used for QR code tracking. */
+    public val isQrCodeSizeEstimationSupported: Boolean
+
     public val trackables: Collection<Trackable>
     public val leftEye: Eye?
     public val rightEye: Eye?
     public val leftHand: Hand?
     public val rightHand: Hand?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val arDevice: ArDevice
     public val leftRenderViewpoint: RenderViewpoint?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val rightRenderViewpoint: RenderViewpoint?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val monoRenderViewpoint: RenderViewpoint?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val geospatial: Geospatial
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val leftDepthMap: DepthMap?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val rightDepthMap: DepthMap?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val monoDepthMap: DepthMap?
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?
+    public val geospatial: Geospatial
+    public val leftDepth: Depth?
+    public val rightDepth: Depth?
+    public val monoDepth: Depth?
+    public val userFace: Face?
+    public val conversationSceneSignal: ConversationState?
 }

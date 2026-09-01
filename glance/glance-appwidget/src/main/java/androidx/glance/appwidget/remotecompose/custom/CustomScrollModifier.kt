@@ -71,6 +71,9 @@ internal class CustomScrollModifier(
         numItems: Int,
         scrollContainerSizePx: Float,
     ) {
+        if (numItems < 1) {
+            return
+        }
 
         val notchMaxVariable: Float = writer.reserveFloatVariable()
         val touchExpressionDirection: Float =
@@ -101,7 +104,8 @@ internal class CustomScrollModifier(
                 -1f,
                 AnimatedFloatExpression.MUL,
             ),
-            if (snapScrolling) TouchExpression.STOP_NOTCHES_EVEN else TouchExpression.STOP_GENTLY,
+            if (snapScrolling) TouchExpression.STOP_NOTCHES_SINGLE_EVEN
+            else TouchExpression.STOP_GENTLY,
             if (snapScrolling) floatArrayOf(numItems.toFloat())
             else null, // describes how many notches
             writer.easing(MaxTimeToSettle, MaxAcceleration, MaxVelocity),

@@ -77,10 +77,12 @@ public interface ComplicationText {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun isPlaceholder(): Boolean = false
 
+    @Suppress("HiddenAbstractMethodInInterface")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getTimeDependentText(): WireTimeDependentText
 
     /** Converts this value to [WireComplicationText] object used for serialization. */
+    @Suppress("HiddenAbstractMethodInInterface")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun toWireComplicationText(): WireComplicationText
 
@@ -148,6 +150,7 @@ public class PlainComplicationText internal constructor(delegate: WireComplicati
      *
      * @param[text] the text to be displayed.
      */
+    @SuppressLint("EmptyBuilder")
     public class Builder(private var text: CharSequence) {
         public fun build(): PlainComplicationText =
             PlainComplicationText(WireComplicationText.plainText(text))

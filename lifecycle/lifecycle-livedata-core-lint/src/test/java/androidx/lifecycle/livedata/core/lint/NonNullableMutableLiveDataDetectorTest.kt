@@ -27,8 +27,6 @@ import com.android.tools.lint.checks.infrastructure.TestLintTask.OptionSetter
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.useFirUast
-import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -972,7 +970,6 @@ src/com/example/Foo.kt:10: Error: Expected non-nullable value [NullSafeMutableLi
 
     @Test
     fun smartcastToNonNull() {
-        assumeTrue("Test fails under K1: b/353980920", useFirUast())
         check(
                 kotlin(
                         """
@@ -992,10 +989,7 @@ src/com/example/Foo.kt:10: Error: Expected non-nullable value [NullSafeMutableLi
                 """
                     )
                     .indented()
-            ) { flags ->
-                // smart-cast info is more accurate in AA FIR
-                flags.setUseK2Uast(true)
-            }
+            )
             .expectClean()
     }
 
@@ -1172,6 +1166,68 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
                 """
                     )
                     .indented(),
+            )
+            .expectClean()
+    }
+
+    @Test
+    fun bug_b_525093263_pattern1() {
+        check(
+                kotlin(
+                        """
+                package com.example
+
+                import androidx.lifecycle.MutableLiveData
+
+                class ExampleViewModel {
+                    // Pattern 1: Anonymous subclass with setValue override
+                    private val liveData1 = object : MutableLiveData<String?>() {
+                        override fun setValue(value: String?) {
+                            super.setValue(value)
+                        }
+                    }
+                }
+                """
+                    )
+                    .indented()
+            )
+            .expectClean()
+    }
+
+    @Test
+    fun bug_b_525093263_pattern2() {
+        check(
+                kotlin(
+                        """
+                package com.example
+
+                import androidx.lifecycle.MutableLiveData
+
+                class ExampleViewModel {
+                    // Pattern 2: Non-null MutableLiveData initialized with nullable value
+                    private val nullableSource: Boolean? = null
+                    val liveData2 = MutableLiveData<Boolean>(nullableSource)
+                }
+                """
+                    )
+                    .indented()
+            )
+            .expectClean()
+    }
+
+    @Test
+    fun unresolvedSetValueCall() {
+        check(
+                kotlin(
+                        """
+                package com.example
+
+                fun foo(unresolved: UnresolvedType) {
+                    unresolved.setValue(42)
+                }
+                """
+                    )
+                    .indented()
             )
             .expectClean()
     }

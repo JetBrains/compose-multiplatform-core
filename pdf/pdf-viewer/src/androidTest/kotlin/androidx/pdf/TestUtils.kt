@@ -22,6 +22,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 internal object TestUtils {
 
@@ -30,9 +31,14 @@ internal object TestUtils {
         assertNotNull(selectedObject)
     }
 
+    fun assertNullObjectByText(viewText: String) {
+        val selectedObject = selectUiObjectByText(viewText)
+        assertNull(selectedObject)
+    }
+
     fun selectUiObjectByText(viewText: String): UiObject2? {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        var selectedView: UiObject2?
+        val selectedView: UiObject2?
 
         // device.wait returns null if the timeout expires
         try {

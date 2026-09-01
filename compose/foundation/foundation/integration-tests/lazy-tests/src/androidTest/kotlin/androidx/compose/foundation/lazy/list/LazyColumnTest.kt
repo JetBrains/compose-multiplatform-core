@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
-
 package androidx.compose.foundation.lazy.list
 
 import android.os.Build
@@ -85,7 +82,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -108,7 +104,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
 
     private val LazyListTag = "LazyListTag"
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun compositionsAreDisposed_whenDataIsChanged() {

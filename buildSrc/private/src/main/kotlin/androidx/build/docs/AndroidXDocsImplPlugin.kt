@@ -17,8 +17,11 @@
 package androidx.build.docs
 
 import androidx.build.KonanPrebuiltsSetup
+import androidx.build.clang.ClangBuildService
 import androidx.build.configureTaskTimeouts
 import androidx.build.dackka.DackkaTask
+import androidx.build.dackka.DokkaAnalysisPlatform
+import androidx.build.dackka.DokkaUtils
 import androidx.build.dackka.GenerateMetadataTask
 import androidx.build.defaultAndroidConfig
 import androidx.build.getAndroidJar
@@ -29,7 +32,7 @@ import androidx.build.isIsolatedProjectsEnabled
 import androidx.build.metalava.versionMetadataUsage
 import androidx.build.multiplatformExtension
 import androidx.build.sources.PROJECT_STRUCTURE_METADATA_FILENAME
-import androidx.build.sources.multiplatformUsage
+import androidx.build.sources.SourceJarAttributeConfiguration.multiplatformUsage
 import androidx.build.versionCatalog
 import androidx.build.workaroundAndroidXDependencyResolutions
 import com.android.build.api.attributes.BuildTypeAttr
@@ -48,6 +51,7 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
@@ -91,6 +95,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinUsages
 import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetAttribute
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
@@ -100,14 +105,6 @@ import org.jetbrains.kotlin.gradle.targets.js.toAttribute
  * Plugin that allows to build documentation for a given set of prebuilt and tip of tree projects.
  */
 abstract class AndroidXDocsImplPlugin : Plugin<Project> {
-    lateinit var docsSourcesConfiguration: Configuration
-    lateinit var multiplatformDocsSourcesConfiguration: Configuration
-    lateinit var versionMetadataConfiguration: Configuration
-    // Classpath for non-KMP projects
-    lateinit var nonKmpDependencyClasspath: FileCollection
-    // Mapping from KMP target name to classpath for that target
-    lateinit var kmpDependencyClasspathMap: MapProperty<String, FileCollection>
-
     @get:Inject abstract val archiveOperations: ArchiveOperations
     @get:Inject abstract val buildFeatures: BuildFeatures
 
@@ -118,7 +115,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         configureTargets(project, docsType)
 
         disableUnneededTasks(project)
-        createConfigurations(project)
+        val configurations = Configurations(project)
         val buildOnServer =
             project.tasks.register<DocsBuildOnServer>("buildOnServer") {
                 requiredFile.set(project.getDistributionDirectory().file("docs-$docsType.zip"))
@@ -140,14 +137,14 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 project,
                 unzippedJvmSourcesDirectory,
                 unzippedJvmSamplesSourcesDirectory,
-                docsSourcesConfiguration,
+                configurations.docsSourcesConfiguration,
             )
         val configureMultiplatformSourcesTask =
             configureMultiplatformInputsTasks(
                 project,
                 unzippedMultiplatformSourcesDirectory,
                 unzippedKmpSamplesSourcesDirectory,
-                multiplatformDocsSourcesConfiguration,
+                configurations.multiplatformDocsSourcesConfiguration,
                 mergedProjectMetadata,
             )
 
@@ -160,11 +157,12 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             unzippedJvmSamplesSources = unzippedJvmSamplesSourcesDirectory,
             unzipJvmSamplesTask = unzipJvmSamplesTask,
             unzippedKmpSamplesSources = unzippedKmpSamplesSourcesDirectory,
-            nonKmpDependencyClasspath = nonKmpDependencyClasspath,
-            kmpDependencyClasspathMap = kmpDependencyClasspathMap,
+            nonKmpDependencyClasspath = configurations.nonKmpDependencyClasspath,
+            kmpDependencyClasspathMap = configurations.kmpDependencyClasspathMap,
             buildOnServer = buildOnServer,
-            docsConfiguration = docsSourcesConfiguration,
-            multiplatformDocsConfiguration = multiplatformDocsSourcesConfiguration,
+            docsConfiguration = configurations.docsSourcesConfiguration,
+            multiplatformDocsConfiguration = configurations.multiplatformDocsSourcesConfiguration,
+            versionMetadataConfiguration = configurations.versionMetadataConfiguration,
             mergedProjectMetadata = mergedProjectMetadata,
             docsType = docsType,
         )
@@ -206,6 +204,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     }
             )
             task.rewriteSamplesTags()
+            task.filterColGroup()
             // Files with the same path in different source jars of the same library will lead to
             // some classes/methods not appearing in the docs.
             task.duplicatesStrategy = DuplicatesStrategy.WARN
@@ -274,31 +273,42 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
      *   samples sources
      * - stubs(project(":foo:foo-stubs")) - stubs needed for a documented library
      */
-    private fun createConfigurations(project: Project) {
-        project.dependencies.components.all<SourcesVariantRule>()
-        val docsConfiguration =
+    private class Configurations(val project: Project) {
+        init {
+            project.dependencies.components.all<SourcesVariantRule>()
+        }
+
+        private val docsConfiguration =
             project.configurations.create("docs") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
+
         // This exists for libraries that are deprecated or not hosted in the AndroidX repo
-        val docsWithoutApiSinceConfiguration =
+        private val docsWithoutApiSinceConfiguration =
             project.configurations.create("docsWithoutApiSince") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
-        val multiplatformDocsConfiguration =
+        private val multiplatformDocsConfiguration =
             project.configurations.create("kmpDocs") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
-        val stubsConfiguration =
+
+        // b/491196586: a KMP project without a jvm/android target will not have version metadata
+        private val multiplatformDocsWithoutApiSinceConfiguration =
+            project.configurations.create("kmpDocsWithoutApiSince") {
+                it.isCanBeResolved = false
+                it.isCanBeConsumed = false
+            }
+        private val stubsConfiguration =
             project.configurations.create("stubs") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
 
-        fun Configuration.setResolveSources() {
+        private fun Configuration.setResolveSources() {
             isTransitive = false
             isCanBeConsumed = false
             attributes {
@@ -320,12 +330,14 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 )
             }
         }
-        docsSourcesConfiguration =
+
+        val docsSourcesConfiguration =
             project.configurations.create("docs-sources") {
                 it.setResolveSources()
                 it.extendsFrom(docsConfiguration, docsWithoutApiSinceConfiguration)
             }
-        multiplatformDocsSourcesConfiguration =
+
+        val multiplatformDocsSourcesConfiguration =
             project.configurations.create("multiplatform-docs-sources") { configuration ->
                 configuration.isTransitive = false
                 configuration.isCanBeConsumed = false
@@ -344,10 +356,13 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                         project.objects.named<LibraryElements>(LibraryElements.JAR),
                     )
                 }
-                configuration.extendsFrom(multiplatformDocsConfiguration)
+                configuration.extendsFrom(
+                    multiplatformDocsConfiguration,
+                    multiplatformDocsWithoutApiSinceConfiguration,
+                )
             }
 
-        versionMetadataConfiguration =
+        val versionMetadataConfiguration =
             project.configurations.create("library-version-metadata") {
                 it.isTransitive = false
                 it.isCanBeConsumed = false
@@ -365,178 +380,247 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.extendsFrom(docsConfiguration, multiplatformDocsConfiguration)
             }
 
-        fun Configuration.setResolveClasspathForUsage(usage: String) {
-            isCanBeConsumed = false
-            attributes {
-                it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
-                it.attribute(
-                    Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.LIBRARY),
-                )
-                it.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named<BuildTypeAttr>("release"),
-                )
-            }
-            extendsFrom(docsConfiguration, stubsConfiguration, docsWithoutApiSinceConfiguration)
-        }
+        private val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.LATEST.catalogVersion
+        private val kotlinVersionConstraint =
+            project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
 
-        // Build a compile & runtime classpaths for needed for documenting the libraries
-        // from the configurations above.
-        val docsCompileClasspath =
-            project.configurations.create("docs-compile-classpath") {
-                it.setResolveClasspathForUsage(Usage.JAVA_API)
-            }
-        val docsRuntimeClasspath =
-            project.configurations.create("docs-runtime-classpath") {
-                it.setResolveClasspathForUsage(Usage.JAVA_RUNTIME)
-            }
-        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.LATEST.catalogVersion
-        val kotlinLatest = project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
-        listOf(docsCompileClasspath, docsRuntimeClasspath).forEach { config ->
-            config.resolutionStrategy {
-                it.eachDependency { details ->
-                    if (details.requested.group == "org.jetbrains.kotlin") {
-                        details.useVersion(kotlinLatest.requiredVersion)
-                    }
-                }
-            }
-        }
-        nonKmpDependencyClasspath =
-            docsCompileClasspath.incoming
-                .artifactView {
-                    it.attributes.attribute(
-                        Attribute.of("artifactType", String::class.java),
-                        "android-classes",
-                    )
-                }
-                .files +
-                docsRuntimeClasspath.incoming
-                    .artifactView {
-                        it.attributes.attribute(
-                            Attribute.of("artifactType", String::class.java),
-                            "android-classes",
-                        )
-                    }
-                    .files
+        private val guavaAndroidVersionConstraint =
+            project.versionCatalog.findLibrary("guavaAndroid").get().map { it.version }
+
+        private val kmpExtension = project.extensions.getByType<KotlinMultiplatformExtension>()
+
+        // Use the android target to resolve the non-KMP classpath, so that for any KMP dependencies
+        // of non-KMP projects with both android and jvmstubs artifacts the android variant is used.
+        val nonKmpDependencyClasspath =
+            createClasspathConfigurationsForTarget(
+                extendsFromConfigurations =
+                    arrayOf(
+                        docsConfiguration,
+                        stubsConfiguration,
+                        docsWithoutApiSinceConfiguration,
+                    ),
+                target = kmpExtension.androidLibraryTarget(),
+                isKmp = false,
+            )
 
         // Create mapping from target name to classpath for that target.
-        kmpDependencyClasspathMap = project.objects.mapProperty<String, FileCollection>()
-        val kmpExtension = project.extensions.getByType<KotlinMultiplatformExtension>()
-        kmpExtension.targets.configureEach { target ->
+        val kmpDependencyClasspathMap = createKmpClasspaths()
+
+        private val clang = ClangBuildService.obtain(project)
+        private val stdLibKlibDir = clang.map { it.stdlibKlibDir() }
+        private val platformKlibDir = clang.flatMap { it.platformKlibDir() }
+
+        /** Returns the target-specific klibs required for docs. */
+        private fun klibsForTarget(target: KotlinNativeTarget): Provider<List<Directory>> {
+            return platformKlibDir.map {
+                val klibDir = it.dir(target.konanTarget.name)
+                listOf(
+                    klibDir.dir("org.jetbrains.kotlin.native.platform.posix"),
+                    klibDir.dir("org.jetbrains.kotlin.native.platform.Metal"),
+                    klibDir.dir("org.jetbrains.kotlin.native.platform.CoreGraphics"),
+                )
+            }
+        }
+
+        private fun createKmpClasspaths(): MapProperty<String, FileCollection> {
+            val map = project.objects.mapProperty<String, FileCollection>()
+            kmpExtension.targets.configureEach { target ->
+                val classpath =
+                    createClasspathConfigurationsForTarget(
+                        extendsFromConfigurations =
+                            arrayOf(
+                                multiplatformDocsConfiguration,
+                                multiplatformDocsWithoutApiSinceConfiguration,
+                                stubsConfiguration,
+                            ),
+                        target = target,
+                        isKmp = true,
+                    )
+                // Add the classpath for the target to the mapping.
+                map.put(target.name + "Main", classpath)
+                // It is an error to configure separate jvm and desktop targets, so treat the jvm
+                // target as both jvm and desktop.
+                if (target.name == "jvm") {
+                    map.put("desktopMain", classpath)
+                }
+            }
+            return map
+        }
+
+        /**
+         * Configures the classpath for the given [target] extending from all configurations in
+         * [extendsFromConfigurations], with both the API and runtime dependencies.
+         */
+        private fun createClasspathConfigurationsForTarget(
+            extendsFromConfigurations: Array<Configuration>,
+            target: KotlinTarget,
+            isKmp: Boolean,
+        ): Provider<FileCollection> {
             // Find both the API and runtime dependencies. Technically only the API dependencies
             // should be required for docs, but projects don't always use the correct configuration.
             val targetApiClasspath =
                 createClasspathConfigurationForTarget(
-                    project = project,
-                    multiplatformDocsConfiguration = multiplatformDocsConfiguration,
-                    stubsConfiguration = stubsConfiguration,
+                    extendsFromConfigurations = extendsFromConfigurations,
                     target = target,
                     usageDescription = "api",
                     javaUsage = Usage.JAVA_API,
                     kotlinUsage = KotlinUsages.KOTLIN_API,
+                    isKmp = isKmp,
                 )
             val targetRuntimeClasspath =
                 createClasspathConfigurationForTarget(
-                    project = project,
-                    multiplatformDocsConfiguration = multiplatformDocsConfiguration,
-                    stubsConfiguration = stubsConfiguration,
+                    extendsFromConfigurations = extendsFromConfigurations,
                     target = target,
                     usageDescription = "runtime",
                     javaUsage = Usage.JAVA_RUNTIME,
                     kotlinUsage = KotlinUsages.KOTLIN_RUNTIME,
+                    isKmp = isKmp,
                 )
-            val classpath =
-                targetApiClasspath.zip(targetRuntimeClasspath) { api, runtime -> api + runtime }
-            // Add the classpath for the target to the mapping.
-            kmpDependencyClasspathMap.put(target.name + "Main", classpath)
-            // It is an error to configure separate jvm and desktop targets, so treat the jvm target
-            // as both jvm and desktop.
-            if (target.name == "jvm") {
-                kmpDependencyClasspathMap.put("desktopMain", classpath)
+            return targetApiClasspath.zip(targetRuntimeClasspath) { api, runtime ->
+                val additionalFiles =
+                    if (target is KotlinNativeTarget) {
+                        project.files(stdLibKlibDir) + project.files(klibsForTarget(target))
+                    } else {
+                        project.files()
+                    }
+                api + runtime + additionalFiles
             }
         }
-    }
 
-    /**
-     * Configures the classpath for the given [target] extending from
-     * [multiplatformDocsConfiguration].
-     *
-     * The [usageDescription] is used in the configuration name. If [target] is JVM or android, the
-     * [javaUsage] is used as the usage attribute, otherwise [kotlinUsage] is used instead.
-     */
-    private fun createClasspathConfigurationForTarget(
-        project: Project,
-        multiplatformDocsConfiguration: Configuration,
-        stubsConfiguration: Configuration,
-        target: KotlinTarget,
-        usageDescription: String,
-        javaUsage: String,
-        kotlinUsage: String,
-    ): Provider<FileCollection> {
-        // Skip the common target, which is associated with the metadata compilation.
-        if (target.platformType == KotlinPlatformType.common)
-            return project.provider { project.files() }
-        val isJvm =
-            target.platformType == KotlinPlatformType.androidJvm ||
-                target.platformType == KotlinPlatformType.jvm
+        /**
+         * Configures the classpath for the given [target] extending from all configurations in
+         * [extendsFromConfigurations].
+         *
+         * The [usageDescription] is used in the configuration name. If [target] is JVM or android,
+         * the [javaUsage] is used as the usage attribute, otherwise [kotlinUsage] is used instead.
+         */
+        private fun createClasspathConfigurationForTarget(
+            extendsFromConfigurations: Array<Configuration>,
+            target: KotlinTarget,
+            usageDescription: String,
+            javaUsage: String,
+            kotlinUsage: String,
+            isKmp: Boolean,
+        ): Provider<FileCollection> {
+            // Skip the common target, which is associated with the metadata compilation.
+            if (target.platformType == KotlinPlatformType.common)
+                return project.provider { project.files() }
+            val isJvm =
+                target.platformType == KotlinPlatformType.androidJvm ||
+                    target.platformType == KotlinPlatformType.jvm
 
-        val configurationName = "docs-compile-classpath-${target.name}-$usageDescription"
-        return project.configurations
-            .register(configurationName) { config ->
-                config.extendsFrom(multiplatformDocsConfiguration, stubsConfiguration)
-                config.isCanBeConsumed = false
-                config.attributes {
-                    it.attribute(KotlinPlatformType.attribute, target.platformType)
-                    // Use the appropriate usage based on whether this is a jvm target.
-                    val usage =
-                        if (isJvm) {
-                            javaUsage
-                        } else {
-                            kotlinUsage
+            val kmpString = if (isKmp) "kmp" else "non-kmp"
+            val configurationName =
+                "docs-compile-classpath-${target.name}-$kmpString-$usageDescription"
+            return project.configurations
+                .register(configurationName) { config ->
+                    config.extendsFrom(*extendsFromConfigurations)
+                    config.isCanBeConsumed = false
+                    config.attributes {
+                        it.attribute(KotlinPlatformType.attribute, target.platformType)
+                        // Use the appropriate usage based on whether this is a jvm target.
+                        val usage =
+                            if (isJvm) {
+                                javaUsage
+                            } else {
+                                kotlinUsage
+                            }
+                        it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
+                        it.attribute(
+                            Category.CATEGORY_ATTRIBUTE,
+                            project.objects.named<Category>(Category.LIBRARY),
+                        )
+                        it.attribute(
+                            BuildTypeAttr.ATTRIBUTE,
+                            project.objects.named<BuildTypeAttr>("release"),
+                        )
+                        // Add additional attributes based on the target.
+                        target.attributes.keySet().forEach { key ->
+                            if (key.type == String::class.java) {
+                                val attributeValue = target.attributes.getAttribute(key)
+                                @Suppress("UNCHECKED_CAST")
+                                it.attribute(key as Attribute<String>, attributeValue as String)
+                            }
                         }
-                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
-                    it.attribute(
-                        Category.CATEGORY_ATTRIBUTE,
-                        project.objects.named<Category>(Category.LIBRARY),
-                    )
-                    // Add additional attributes based on the target.
-                    target.attributes.keySet().forEach { key ->
-                        if (key.type == String::class.java) {
-                            val attributeValue = target.attributes.getAttribute(key)
-                            @Suppress("UNCHECKED_CAST")
-                            it.attribute(key as Attribute<String>, attributeValue as String)
+                        // For wasm targets add an extra required attribute which isn't part of the
+                        // target attribute set already.
+                        if (target.platformType == KotlinPlatformType.wasm) {
+                            (target as? KotlinWasmTargetDsl)?.wasmTargetType?.let { wasmTargetType
+                                ->
+                                it.attribute(
+                                    KotlinWasmTargetAttribute.wasmTargetAttribute,
+                                    wasmTargetType.toAttribute(),
+                                )
+                            }
                         }
                     }
-                    // For wasm targets add an extra required attribute which isn't part of the
-                    // target attribute set already.
-                    if (target.platformType == KotlinPlatformType.wasm) {
-                        (target as? KotlinWasmTargetDsl)?.wasmTargetType?.let { wasmTargetType ->
-                            it.attribute(
-                                KotlinWasmTargetAttribute.wasmTargetAttribute,
-                                wasmTargetType.toAttribute(),
-                            )
+                    config.resolutionStrategy {
+                        it.eachDependency { details ->
+                            if (details.requested.group == "org.jetbrains.kotlin") {
+                                details.useVersion(kotlinVersionConstraint.requiredVersion)
+                            }
+                        }
+                        // Force a new enough version of android guava in all source sets. The older
+                        // version interferes with resolving new APIs in the non-KMP source set.
+                        it.eachDependency { details ->
+                            if (
+                                details.requested.group == "com.google.guava" &&
+                                    details.requested.name == "guava" &&
+                                    details.requested.version?.endsWith("-android") == true
+                            ) {
+                                details.useVersion(guavaAndroidVersionConstraint.get())
+                            }
                         }
                     }
                 }
-            }
-            .map { configuration ->
-                configuration.incoming
+                .map { configuration ->
+                    classpathArtifactsFromConfiguration(configuration, isJvm = isJvm, isKmp = isKmp)
+                }
+        }
+
+        /**
+         * Creates a file collection with jar and klib dependencies resolved from the
+         * [configuration].
+         *
+         * When [isJvm] is true, this transforms aar dependencies into jars which dackka can
+         * process.
+         *
+         * When [isKmp] is true, classpath resolution is lenient because not every KMP dependency
+         * exists for every target.
+         */
+        private fun classpathArtifactsFromConfiguration(
+            configuration: Configuration,
+            isJvm: Boolean,
+            isKmp: Boolean,
+        ): FileCollection {
+            fun getArtifacts(androidArtifactType: String? = null): FileCollection {
+                return configuration.incoming
                     .artifactView {
                         // Set the configuration to lenient because not every KMP project will have
                         // all targets configured.
-                        it.isLenient = true
-                        // For android/jvm projects, make sure to use the classes jar instead of the
-                        // aar for any android dependencies, since dackka can't handle the aars.
-                        if (isJvm) {
+                        if (isKmp) {
+                            it.isLenient = true
+                        }
+                        // Set the aar transformation as needed.
+                        androidArtifactType?.let { androidArtifactType ->
                             it.attributes.attribute(
-                                Attribute.of("artifactType", String::class.java),
-                                "android-classes",
+                                ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                                androidArtifactType,
                             )
                         }
                     }
                     .files
             }
+
+            return if (isJvm) {
+                // Dackka can't handle the aar dependencies, so this gets two jars from any aars:
+                // the regular jar contains kotlin module metadata and the android-classes jar
+                // contains resources.
+                getArtifacts("jar") + getArtifacts("android-classes")
+            } else {
+                getArtifacts()
+            }
+        }
     }
 
     private fun configureDackka(
@@ -548,11 +632,12 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         unzippedJvmSamplesSources: Provider<Directory>,
         unzipJvmSamplesTask: TaskProvider<Sync>,
         unzippedKmpSamplesSources: Provider<Directory>,
-        nonKmpDependencyClasspath: FileCollection,
+        nonKmpDependencyClasspath: Provider<FileCollection>,
         kmpDependencyClasspathMap: Provider<Map<String, FileCollection>>,
         buildOnServer: TaskProvider<*>,
         docsConfiguration: Configuration,
         multiplatformDocsConfiguration: Configuration,
+        versionMetadataConfiguration: Configuration,
         mergedProjectMetadata: Provider<RegularFile>,
         docsType: String,
     ) {
@@ -582,6 +667,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 task.argsJsonFile.set(
                     project.getDistributionDirectory().file("dackkaArgs-${project.name}.json")
                 )
+                task.traceFile.set(
+                    project.getDistributionDirectory().file("dackka-${project.name}.trace")
+                )
                 task.apply {
                     // Remove once there is property version of Copy#destinationDir
                     // Use samplesDir.set(unzipSamplesTask.flatMap { it.destinationDirectory })
@@ -606,7 +694,11 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                         File(project.getSupportRootFolder(), "docs-public/package-lists")
                     )
                     androidJars.setFrom(
-                        project.getAndroidJar(project.defaultAndroidConfig.latestStableCompileSdk)
+                        project.getAndroidJar(
+                            sdkNum = project.defaultAndroidConfig.latestStableCompileSdk,
+                            extNum = project.defaultAndroidConfig.latestCompileSdkExtension,
+                            minorNum = project.defaultAndroidConfig.latestStableMinorApiLevel,
+                        )
                     )
                     nonKmpDependenciesClasspath.from(nonKmpDependencyClasspath)
                     kmpDependenciesClasspathMap.set(kmpDependencyClasspathMap)
@@ -709,10 +801,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
     private fun configureTargets(project: Project, docsType: String) {
         val multiplatformExtension = project.multiplatformExtension!!
 
-        val androidLibraryTarget =
-            multiplatformExtension.extensions.getByType(
-                KotlinMultiplatformAndroidLibraryTarget::class.java
-            )
+        val androidLibraryTarget = multiplatformExtension.androidLibraryTarget()
         androidLibraryTarget.compileSdk {
             version = release(project.defaultAndroidConfig.latestStableCompileSdk)
         }
@@ -746,7 +835,13 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         if (!buildFeatures.isIsolatedProjectsEnabled()) { // KT-80311
             multiplatformExtension.js { browser() }
             multiplatformExtension.wasmJs { browser() }
-            multiplatformExtension.wasmWasi { nodejs() }
+        }
+    }
+
+    companion object {
+        private fun KotlinMultiplatformExtension.androidLibraryTarget():
+            KotlinMultiplatformAndroidLibraryTarget {
+            return extensions.getByType(KotlinMultiplatformAndroidLibraryTarget::class.java)
         }
     }
 }
@@ -811,7 +906,14 @@ private val hiddenPackages =
 
 // Set of packages to exclude from Java refdoc generation
 private val hiddenPackagesJava =
-    setOf("androidx.*compose.*", "androidx.*glance.*", "androidx\\.tv\\..*")
+    setOf(
+        "androidx.*compose.*",
+        "androidx.*glance.*",
+        "androidx\\.tv\\..*",
+        "androidx\\.xr\\.glimmer.*",
+        "androidx\\..*navigation3.*",
+        "androidx\\.appstate\\.transform.*",
+    )
 
 // List of annotations which should not be displayed in the docs
 private val hiddenAnnotations: List<String> =
@@ -867,23 +969,39 @@ private val annotationsToHideApis: List<String> =
         "androidx.annotation.RestrictTo",
         // Appears in androidx.test sources
         "dagger.internal.DaggerGenerated",
+        // Use for Ink internal APIs, which can be exposed via KMP so
+        // RestrictTo is not sufficient. Instead, those use a
+        // RequiresOptIn annotation that itself is restricted via
+        // RestrictTo.
+        "androidx.ink.nativeloader.InkInternalOnlyApi",
     )
 
 /** Data class that matches JSON structure of kotlin source set metadata */
 data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>) {
-    /** Computes the source sets which are dependent on [name] (including [name]. */
-    fun sourceSetsDependentOn(name: String): List<String> {
-        return sourceSets
-            .filter { otherSourceSet ->
-                name == otherSourceSet.name || name in otherSourceSet.dependencies
-            }
-            .map { it.name }
+    /**
+     * Mapping from source set name to transitive dependent source sets computed in
+     * [sourceSetsDependentOn], to avoid having to recompute.
+     */
+    private val cachedTransitiveDependentOn: MutableMap<String, Set<String>> = mutableMapOf()
+
+    /** Computes the source sets which are transitively dependent on [name] (including [name]). */
+    fun sourceSetsDependentOn(name: String): Set<String> {
+        // If the dependent source sets have already been found, return that.
+        return cachedTransitiveDependentOn.getOrPut(name) {
+            // Find all source sets which directly depend on this one.
+            val dependentOn =
+                sourceSets
+                    .filter { otherSourceSet -> name in otherSourceSet.dependencies }
+                    .map { it.name }
+            // Find the transitive dependent source sets, and also include [name] in the set.
+            dependentOn.flatMap { sourceSetsDependentOn(it) }.toSet() + name
+        }
     }
 }
 
 data class SourceSetMetadata(
     val name: String,
-    val analysisPlatform: String,
+    var analysisPlatform: DokkaAnalysisPlatform,
     var dependencies: List<String>,
 )
 
@@ -914,25 +1032,55 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
                 // jars. We want to handle sample jars separately, so filter by the name.
                 .partition { name -> "samples" !in name }
 
-        fileSystemOperations.sync {
+        // Sync all multiplatform metadata files.
+        sources.forEach { (name, fileTree) ->
+            fileSystemOperations.sync {
+                it.from(fileTree)
+                it.into(metadataOutput.file(name))
+                it.include("META-INF/*")
+            }
+        }
+
+        val gson = DokkaUtils.createGson()
+        // For each project, check whether the `commonMain` source set is actually jvm-only.
+        val (sourceWithOnlyJvm, sourcesWithNonJvm) =
+            sources.partition { name ->
+                val metadataFile =
+                    metadataOutput
+                        .file("$name/META-INF/$PROJECT_STRUCTURE_METADATA_FILENAME")
+                        .get()
+                        .asFile
+                val metadata =
+                    gson.fromJson(metadataFile.readText(), ProjectStructureMetadata::class.java)
+                metadata.sourceSets.singleOrNull { it.name == "commonMain" }?.analysisPlatform ==
+                    DokkaAnalysisPlatform.JVM
+            }
+
+        fileSystemOperations.copy {
             it.duplicatesStrategy = DuplicatesStrategy.FAIL
-            it.from(sources.values)
+            it.from(sourcesWithNonJvm.values)
             it.into(sourceOutput)
             it.exclude("META-INF/*")
-            // TODO(b/418945918): Remove when the files below are deduped:
-            // benchmark/benchmark-traceprocessor/src/androidMain/kotlin/perfetto/protos/package-info.java
-            // tracing/tracing-wire/src/androidMain/kotlin/perfetto/protos/package-info.java
-            var seenPath = false
-            it.eachFile { file ->
-                val relPath = file.relativePath.pathString
-                if (relPath == "androidMain/perfetto/protos/package-info.java") {
-                    if (seenPath) {
-                        file.exclude()
-                    }
-                    seenPath = true
+            it.rewriteSamplesTags()
+            it.filterColGroup()
+        }
+
+        // For projects which are jvm-only, move the "commonMain" files to "jvmAndAndroidMain".
+        // This is to enable those files to use jvm dependencies in the merged source sets sent to
+        // dackka. Otherwise, any references to jvm dependencies from these files would be
+        // unresolved because "commonMain" has the common analysis platform.
+        fileSystemOperations.copy {
+            it.duplicatesStrategy = DuplicatesStrategy.FAIL
+            it.from(sourceWithOnlyJvm.values).eachFile { fileCopyDetails ->
+                if (fileCopyDetails.path.startsWith("commonMain/")) {
+                    fileCopyDetails.path =
+                        fileCopyDetails.path.replaceFirst("commonMain/", "jvmAndAndroidMain/")
                 }
             }
+            it.into(sourceOutput)
+            it.exclude("META-INF/*")
             it.rewriteSamplesTags()
+            it.filterColGroup()
         }
 
         fileSystemOperations.sync {
@@ -943,13 +1091,6 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
             it.from(samples.values)
             it.into(samplesOutput)
             it.exclude("META-INF/*")
-        }
-        sources.forEach { (name, fileTree) ->
-            fileSystemOperations.sync {
-                it.from(fileTree)
-                it.into(metadataOutput.file(name))
-                it.include("META-INF/*")
-            }
         }
     }
 }
@@ -962,6 +1103,14 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
  */
 internal fun CopySpec.rewriteSamplesTags() {
     filter { line -> line.replace(" * @sample ", " * @author #@sample ") }
+}
+
+/**
+ * The AAPT2-generated R.java file contains colgroup tags, but the dokka parser doesn't handle them
+ * well (b/522904047).
+ */
+internal fun CopySpec.filterColGroup() {
+    filter { line -> line.takeUnless { line.contains("* <colgroup align=\"left\" />") } }
 }
 
 private fun <K, V> Map<K, V>.partition(condition: (K) -> Boolean): Pair<Map<K, V>, Map<K, V>> =
@@ -985,7 +1134,7 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
             .walkTopDown()
             .filter { file -> file.name == PROJECT_STRUCTURE_METADATA_FILENAME }
             .forEach { metaFile ->
-                val gson = GsonBuilder().create()
+                val gson = DokkaUtils.createGson()
                 val metadata =
                     gson.fromJson(metaFile.readText(), ProjectStructureMetadata::class.java)
                 mergedMetadata.merge(metadata)
@@ -1008,6 +1157,8 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
         metadata.sourceSets.forEach { newSourceSet ->
             val existingSourceSet = originalSourceSets.find { it.name == newSourceSet.name }
             if (existingSourceSet != null) {
+                existingSourceSet.analysisPlatform =
+                    existingSourceSet.analysisPlatform.merge(newSourceSet.analysisPlatform)
                 existingSourceSet.dependencies =
                     (newSourceSet.dependencies + existingSourceSet.dependencies).toSet().toList()
             } else {

@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +44,7 @@ fun SoftwareKeyboardControllerSample() {
 
     // used to ensure a TextField is focused when showing keyboard
     val focusRequester = remember { FocusRequester() }
-    var (text, setText) = remember { mutableStateOf("Close keyboard on done ime action (blue ✔️)") }
+    val (text, setText) = remember { mutableStateOf("Close keyboard on done ime action (blue ✔️)") }
     Column(Modifier.padding(16.dp)) {
         BasicTextField(
             text,

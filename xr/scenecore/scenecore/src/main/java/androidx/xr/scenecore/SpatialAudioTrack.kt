@@ -78,12 +78,13 @@ public object SpatialAudioTrack {
      * The new [PointSourceParams] will be applied if the [SpatializerConstants.SourceType] of the
      * AudioTrack was either [SpatializerConstants.SourceType.DEFAULT] or
      * [SpatializerConstants.SourceType.POINT_SOURCE]. If the [SpatializerConstants.SourceType] was
-     * [SpatializerConstants.SourceType.POINT_SOURCE], then this method will throw an
+     * [SpatializerConstants.SourceType.SOUND_FIELD], then this method will throw an
      * [IllegalStateException].
      *
      * @param session The current [Session] instance.
      * @param track The [AudioTrack] on which to set the [PointSourceParams].
      * @param params The [PointSourceParams] to be set.
+     * @param entity The [Entity] from which the sound will be played.
      * @throws IllegalStateException if the [SpatializerConstants.SourceType] of the [AudioTrack] is
      *   [SpatializerConstants.SourceType.SOUND_FIELD].
      * @throws IllegalArgumentException if the [PointSourceParams] cannot be set on this
@@ -94,10 +95,12 @@ public object SpatialAudioTrack {
         session: Session,
         track: AudioTrack,
         params: PointSourceParams,
+        entity: Entity,
     ) {
         session.sceneRuntime.audioTrackExtensionsWrapper.setPointSourceParams(
             track,
             params.rtPointSourceParams,
+            entity.rtEntity,
         )
     }
 }
@@ -112,6 +115,7 @@ public object SpatialAudioTrackBuilder {
      * @param session The current [Session] instance.
      * @param builder The Builder on which to set the attributes.
      * @param params The source params to be set.
+     * @param entity The [Entity] from which the sound will be played.
      */
     @Suppress("SetterReturnsThis")
     @JvmStatic
@@ -119,10 +123,12 @@ public object SpatialAudioTrackBuilder {
         session: Session,
         builder: AudioTrack.Builder,
         params: PointSourceParams,
+        entity: Entity,
     ) {
         session.sceneRuntime.audioTrackExtensionsWrapper.setPointSourceParams(
             builder,
             params.rtPointSourceParams,
+            entity.rtEntity,
         )
     }
 

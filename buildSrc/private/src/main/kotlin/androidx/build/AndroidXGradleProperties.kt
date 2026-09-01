@@ -17,6 +17,8 @@
 package androidx.build
 
 import androidx.build.dependencyTracker.AffectedModuleDetector
+import java.io.StringReader
+import java.util.Properties
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -111,6 +113,8 @@ const val YARN_OFFLINE_MODE = "androidx.yarnOfflineMode"
 /** Defined by AndroidX Benchmark Plugin, may be used for local experiments with compilation */
 const val FORCE_BENCHMARK_AOT_COMPILATION = "androidx.benchmark.forceaotcompilation"
 
+const val ALLOW_LOCKFILE_MISMATCH = "androidx.allowLockfileMismatch"
+
 val ALL_ANDROIDX_PROPERTIES =
     setOf(
         ADD_GROUP_CONSTRAINTS,
@@ -140,6 +144,7 @@ val ALL_ANDROIDX_PROPERTIES =
         FilteredAnchorTask.PROP_PATH_PREFIX,
         YARN_OFFLINE_MODE,
         FORCE_BENCHMARK_AOT_COMPILATION,
+        ALLOW_LOCKFILE_MISMATCH,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
 
 /**
@@ -206,6 +211,36 @@ fun Project.usingMaxDepVersions(): Provider<Boolean> {
     return project.providers.gradleProperty(USE_MAX_DEP_VERSIONS).map { true }.orElse(false)
 }
 
+/** Gradle property controlling whether Kotlin/Native KLIBs are cross-compiled on non-Mac hosts. */
+private const val KLIB_CROSS_COMPILATION_ENABLED = "kotlin.native.enableKlibsCrossCompilation"
+
+/**
+ * Returns whether Kotlin/Native KLIB cross-compilation is enabled for this project.
+ *
+ * When disabled (via `kotlin.native.enableKlibsCrossCompilation=false` in the project's
+ * `gradle.properties`), the project's Apple targets cannot be built on a non-Mac host because it,
+ * or one of its dependencies, uses C-interop.
+ *
+ * Gradle does not surface per-project `gradle.properties` values through the standard property
+ * APIs, so the project's own `gradle.properties` file is read directly, falling back to the global
+ * value which defaults to `true`.
+ */
+fun Project.isKlibCrossCompilationEnabled(): Provider<Boolean> {
+    val globalValue =
+        providers.gradleProperty(KLIB_CROSS_COMPILATION_ENABLED).map { it.toBoolean() }.orElse(true)
+    return providers
+        .fileContents(layout.projectDirectory.file("gradle.properties"))
+        .asText
+        .map { text -> Properties().apply { load(StringReader(text)) } }
+        .flatMap { props ->
+            when (val value = props.getProperty(KLIB_CROSS_COMPILATION_ENABLED)) {
+                null -> globalValue
+                else -> providers.provider { value.toBoolean() }
+            }
+        }
+        .orElse(globalValue)
+}
+
 /** Returns whether we should use the offline mirror for dependencies */
 fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false
 
@@ -215,6 +250,8 @@ fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false
  */
 fun Project.allowMissingLintProject() =
     findBooleanProperty(ALLOW_MISSING_LINT_CHECKS_PROJECT) ?: false
+
+fun Project.allowLockfileMismatch() = findBooleanProperty(ALLOW_LOCKFILE_MISMATCH) ?: true
 
 fun Project.findBooleanProperty(propName: String): Boolean? =
     project.providers.gradleProperty(propName).map { it.toBoolean() }.getOrNull()

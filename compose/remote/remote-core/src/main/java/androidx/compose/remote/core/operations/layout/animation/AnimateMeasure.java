@@ -60,8 +60,7 @@ public class AnimateMeasure {
             new FloatAnimation(
                     mVisibilityEasingType, mDurationVisibilityChange / 1000f, null, 0f, Float.NaN);
 
-    @Nullable
-    protected ParticleAnimation mParticleAnimation;
+    @Nullable protected ParticleAnimation mParticleAnimation;
 
     public AnimateMeasure(
             long startTime,
@@ -105,18 +104,15 @@ public class AnimateMeasure {
      */
     public void update(long currentTime) {
         long elapsed = currentTime - mStartTime;
-        float motionProgress = elapsed / (float) mDuration;
-        float visibilityProgress = elapsed / (float) mDurationVisibilityChange;
-        mP = mMotionEasing.get(motionProgress);
-        mVp = mVisibilityEasing.get(visibilityProgress);
+        float motionTimeInSeconds = elapsed / 1000f;
+        float visibilityTimeInSeconds = elapsed / 1000f;
+        mP = mMotionEasing.get(motionTimeInSeconds);
+        mVp = mVisibilityEasing.get(visibilityTimeInSeconds);
     }
 
-    @NonNull
-    public PaintBundle paint = new PaintBundle();
+    @NonNull public PaintBundle paint = new PaintBundle();
 
-    /**
-     * Apply the layout portion of the animation if any
-     */
+    /** Apply the layout portion of the animation if any */
     public void apply(@NonNull RemoteContext context) {
         update(context.currentTime);
         mComponent.setX(getX());
@@ -139,10 +135,9 @@ public class AnimateMeasure {
         }
     }
 
-    /**
-     * Paint the transition animation for the component owned
-     */
+    /** Paint the transition animation for the component owned */
     public void paint(@NonNull PaintContext context) {
+        apply(context.getContext());
         if (mOriginal.getVisibility() != mTarget.getVisibility()) {
             if (mTarget.isGone()) {
                 switch (mExitAnimation) {
@@ -329,6 +324,10 @@ public class AnimateMeasure {
 
         if (mP >= 1f && mVp >= 1f) {
             mComponent.mVisibility = mTarget.getVisibility();
+            mComponent.setX(mTarget.getX());
+            mComponent.setY(mTarget.getY());
+            mComponent.setWidth(mTarget.getW());
+            mComponent.setHeight(mTarget.getH());
         }
     }
 
@@ -370,12 +369,12 @@ public class AnimateMeasure {
     /**
      * Set the target values from the given measure
      *
-     * @param context     the current context
-     * @param measure     the target measure
+     * @param context the current context
+     * @param measure the target measure
      * @param currentTime the current time
      */
-    public void updateTarget(@NonNull RemoteContext context, @NonNull ComponentMeasure measure,
-            long currentTime) {
+    public void updateTarget(
+            @NonNull RemoteContext context, @NonNull ComponentMeasure measure, long currentTime) {
         float currentX = getX();
         float currentY = getY();
         float currentW = getWidth();
@@ -410,5 +409,18 @@ public class AnimateMeasure {
             // mStartTime = currentTime;
         }
     }
-}
 
+    public @NonNull ComponentMeasure getOriginal() {
+        return mOriginal;
+    }
+
+    public @NonNull ComponentMeasure getTarget() {
+        return mTarget;
+    }
+
+    @Override
+    public String toString() {
+        return "AnimateMeasure{isDone=" + isDone() + " origX=" + mOriginal.getX()
+                + " targetX=" + mTarget.getX() + " mP=" + mP + "}";
+    }
+}

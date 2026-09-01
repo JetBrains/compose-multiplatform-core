@@ -17,9 +17,11 @@
 package androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent;
 
 
+import androidx.annotation.OptIn;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
+import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
@@ -87,6 +89,7 @@ public class MapWithGridTemplateDemoScreen extends Screen {
         return builder.build();
     }
 
+    @OptIn(markerClass = ExperimentalCarApi.class)
     private GridItem createGridItem() {
         return new GridItem.Builder()
                 .setImage(new CarIcon.Builder(IconCompat.createWithResource(getCarContext(),

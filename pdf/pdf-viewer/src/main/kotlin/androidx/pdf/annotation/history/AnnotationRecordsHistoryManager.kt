@@ -17,14 +17,14 @@
 package androidx.pdf.annotation.history
 
 import androidx.annotation.RestrictTo
-import androidx.pdf.annotation.KeyedPdfAnnotation
+import androidx.pdf.annotation.content.KeyedPdfAnnotation
 import androidx.pdf.annotation.models.KeyedAnnotationRecord
 import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Manages the history of edits for PDF annotations.
  *
- * @param annotationRecordsHistory The underlying history log where all edits are stored.
+ * @property annotationRecordsHistory The underlying history log where all edits are stored.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AnnotationRecordsHistoryManager() {

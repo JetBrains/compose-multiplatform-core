@@ -27,7 +27,9 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.runtime.Config
@@ -45,7 +47,7 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.managers.SessionManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.tan
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -72,45 +74,49 @@ class SpatialUserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        session = SessionManager(this).createSession()
-        if (session == null) this.finish()
+        lifecycleScope.launch {
+            session = SessionManager(this@SpatialUserActivity).createSession()
+            if (session == null) this@SpatialUserActivity.finish()
 
-        enableEdgeToEdge()
-        setContentView(R.layout.common_test_panel)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+            enableEdgeToEdge()
+            setContentView(R.layout.common_test_panel)
+            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                insets
+            }
 
-        session!!.configure(
-            Config(
-                planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                deviceTracking = DeviceTrackingMode.SPATIAL_LAST_KNOWN,
+            session!!.configure(
+                Config.Builder()
+                    .setPlaneTracking(PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                    .setDeviceTracking(DeviceTrackingMode.SPATIAL)
+                    .build()
             )
-        )
-        session?.scene?.keyEntity = session?.scene?.mainPanelEntity
-        device = ArDevice.getInstance(session!!)
-        cameraLeft = RenderViewpoint.left(session!!)
-        cameraRight = RenderViewpoint.right(session!!)
+            session?.scene?.keyEntity = null
+            device = ArDevice.getInstance(session!!)
+            cameraLeft = runCatching { RenderViewpoint.left(session!!) }.getOrNull()
+            cameraRight = runCatching { RenderViewpoint.right(session!!) }.getOrNull()
 
-        // toolbar
-        findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
-            setSupportActionBar(it)
-            it.setTitle(R.string.cuj_spatial_user_test)
-            it.setNavigationOnClickListener { this.finish() }
+            // toolbar
+            findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
+                setSupportActionBar(it)
+                it.setTitle(R.string.cuj_spatial_user_test)
+                it.setNavigationOnClickListener { this@SpatialUserActivity.finish() }
+            }
+
+            // Recreate button
+            findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
+                it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
+                it.setOnClickListener { ActivityCompat.recreate(this@SpatialUserActivity) }
+            }
+
+            // Hide the default button in the layout
+            findViewById<Button>(R.id.spawn_activity_panel_button).also {
+                it.visibility = View.GONE
+            }
+
+            createPanel()
         }
-
-        // Recreate button
-        findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
-            it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@SpatialUserActivity) }
-        }
-
-        // Hide the default button in the layout
-        findViewById<Button>(R.id.spawn_activity_panel_button).also { it.visibility = View.GONE }
-
-        createPanel()
     }
 
     private fun createPanel() {
@@ -122,6 +128,7 @@ class SpatialUserActivity : AppCompatActivity() {
                 IntSize2d(640, 480),
                 "Spatial User Test Panel",
                 Pose(Vector3(0f, 0f, 0.5f)),
+                parent = session!!.scene.activitySpace,
             )
         spatialUserPanel.parent = session!!.scene.activitySpace
 
@@ -151,14 +158,18 @@ class SpatialUserActivity : AppCompatActivity() {
         panelRightView: TextView,
     ) {
         lifecycleScope.launch {
-            while (true) {
-                delay(16L)
-                val leftVisible =
-                    cameraLeft?.let { isEntityInView(session.scene.mainPanelEntity, it) } ?: false
-                val rightVisible =
-                    cameraRight?.let { isEntityInView(session.scene.mainPanelEntity, it) } ?: false
-                panelLeftView.text = "$leftVisible"
-                panelRightView.text = "$rightVisible"
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    awaitFrame()
+                    val leftVisible =
+                        cameraLeft?.let { isEntityInView(session.scene.mainPanelEntity, it) }
+                            ?: false
+                    val rightVisible =
+                        cameraRight?.let { isEntityInView(session.scene.mainPanelEntity, it) }
+                            ?: false
+                    panelLeftView.text = "$leftVisible"
+                    panelRightView.text = "$rightVisible"
+                }
             }
         }
     }

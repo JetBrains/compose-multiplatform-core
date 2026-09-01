@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.camera.integration.uiwidgets.foldable
 
 import android.content.ContentValues
@@ -411,7 +413,7 @@ class FoldableCameraActivity : AppCompatActivity() {
         popup.menu.add(0, 0, 0, FRONT_CAMERA_STR)
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         for (id in cameraManager.cameraIdList) {
-            popup.menu.add(0, 0, 0, "$id")
+            popup.menu.add(0, 0, 0, id)
         }
         popup.show()
 

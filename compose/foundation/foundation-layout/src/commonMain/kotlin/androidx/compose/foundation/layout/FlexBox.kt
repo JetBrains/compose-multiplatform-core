@@ -17,7 +17,7 @@
 package androidx.compose.foundation.layout
 
 import androidx.annotation.FloatRange
-import androidx.compose.foundation.layout.internal.JvmDefaultWithCompatibility
+import androidx.annotation.IntRange
 import androidx.compose.foundation.layout.internal.requirePrecondition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -64,34 +64,64 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * [FlexBox] provides a configurable layout system that is a superset of [Row], [Column], [FlowRow],
- * and [FlowColumn].
+ * A layout that aligns its children in a single direction (the main axis) and allows them to wrap
+ * onto multiple lines. [FlexBox] provides a highly configurable layout system, serving as a
+ * flexible superset of [Row], [Column], [FlowRow], and [FlowColumn].
  *
- * Example:
+ * The layout behavior of the container is controlled by the [config] parameter, which dictates the
+ * flex direction, wrapping behavior, alignment, and spacing. Individual children can further
+ * control their own flexibility (grow, shrink, and base size) and alignment using the
+ * [FlexBoxScope.flex] modifier.
+ *
+ * Understanding FlexBox requires familiarity with its axes:
+ * - **Main Axis**: The primary direction along which items are laid out, determined by the
+ *   [FlexBoxConfigScope.direction]. Items are placed starting from the **`main-start`** edge and
+ *   flowing toward the **`main-end`** edge. Defaults to [FlexDirection.Row].
+ *     - For [FlexDirection.Row]: `main-start` is the layout's start edge (left in LTR, right in
+ *       RTL) and `main-end` is the end edge (right in LTR, left in RTL).
+ *     - For [FlexDirection.RowReverse]: `main-start` is the layout's end edge (right in LTR, left
+ *       in RTL) and `main-end` is the start edge (left in LTR, right in RTL).
+ *     - For [FlexDirection.Column]: `main-start` is the top edge and `main-end` is the bottom edge.
+ *     - For [FlexDirection.ColumnReverse]: `main-start` is the bottom edge and `main-end` is the
+ *       top edge.
+ * - **Cross Axis**: The axis perpendicular to the main axis. Wrapped lines are added, and items are
+ *   aligned within their lines, starting from the **`cross-start`** edge and flowing toward the
+ *   **`cross-end`** edge.
+ *     - For horizontal directions ([FlexDirection.Row] and [FlexDirection.RowReverse]):
+ *       `cross-start` is the top edge and `cross-end` is the bottom edge.
+ *     - For vertical directions ([FlexDirection.Column] and [FlexDirection.ColumnReverse]):
+ *       `cross-start` is the layout's start edge and `cross-end` is the end edge.
+ *
+ * Children can dictate how they share available space using the [FlexBoxScope.flex] modifier:
+ * - [FlexConfigScope.grow]: Defines how much of the remaining positive free space the item should
+ *   consume relative to its siblings. Defaults to 0f (no growth).
+ * - [FlexConfigScope.shrink]: Defines how much the item should shrink when the combined sizes of
+ *   the items exceed the container's main axis size. Defaults to 1f.
+ * - [FlexConfigScope.basis]: Sets the initial main axis size of the item before any free space
+ *   distribution (grow or shrink) is calculated. Defaults to [FlexBasis.Auto].
+ *
+ * [FlexBox] provides granular control over the placement of items and lines:
+ * - [FlexBoxConfigScope.wrap]: Controls whether items are forced onto a single line or allowed to
+ *   wrap onto multiple lines when they exceed the available space. Defaults to [FlexWrap.NoWrap].
+ * - [FlexBoxConfigScope.maxItemsInEachLine]: Limits how many items can be placed in each line when
+ *   wrapping is enabled. Defaults to no limit.
+ * - [FlexBoxConfigScope.justifyContent]: Distributes items along the main axis (for example,
+ *   spacing them evenly). Defaults to [FlexJustifyContent.Start].
+ * - [FlexBoxConfigScope.alignItems]: Aligns items within a specific line along the cross axis (for
+ *   example, centering them vertically within a Row). Defaults to [FlexAlignItems.Start].
+ * - [FlexConfigScope.alignSelf]: Allows an individual item to override the container's
+ *   [FlexBoxConfigScope.alignItems]. Defaults to [FlexAlignSelf.Auto].
+ * - [FlexBoxConfigScope.alignContent]:Distributes multiple wrapped lines along the cross axis. This
+ *   only applies when wrapping is enabled. Defaults to [FlexAlignContent.Start].
+ *
+ * By default, children are placed in a horizontal row without wrapping. If wrapping is disabled
+ * ([FlexWrap.NoWrap]), children will shrink to fit the container if they have a shrink factor > 0.
+ * If children cannot shrink enough due to their minimum intrinsic sizes, they will visually
+ * overflow the container's bounds along the main axis. You can explicitly apply
+ * [Modifier.clipToBounds][androidx.compose.ui.draw.clipToBounds] on the FlexBox if you wish to hide
+ * overflowing content.
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleFlexBox
- *
- * ## Key Concepts
- *
- * ### Main Axis and Cross Axis
- * The **main axis** is the primary axis along which flex items are laid out, determined by
- * - [FlexBoxConfigScope.direction]. The **cross axis** is perpendicular to it.
- * - [FlexDirection.Row]/[FlexDirection.RowReverse]: main axis is horizontal, cross axis is vertical
- * - [FlexDirection.Column]/[FlexDirection.ColumnReverse]: main axis is vertical, cross axis is
- *   horizontal
- *
- * ### Flexibility
- * Children can grow or shrink to fill available space using the [FlexBoxScope.flex] modifier:
- * - [FlexConfigScope.grow]: Sets the growth factor relative to siblings
- * - [FlexConfigScope.shrink]: Sets the shrink factor relative to siblings
- * - [FlexConfigScope.basis]: Sets the initial size before flex distribution
- *
- * ### Alignment
- * FlexBox provides granular control over alignment:
- * - [FlexBoxConfigScope.justifyContent]: Distributes items along the main axis
- * - [FlexBoxConfigScope.alignItems]: Aligns items within a line along the cross axis
- * - [FlexBoxConfigScope.alignContent]: Aligns multiple lines along the cross axis (when wrapping)
- *
  * @param modifier The modifier to be applied to the FlexBox container.
  * @param config A [FlexBoxConfig] that configures the container's layout properties. Defaults to a
  *   horizontal row layout without wrapping, with items aligned to the start on both axes and no
@@ -99,14 +129,9 @@ import kotlin.math.roundToInt
  * @param content The content of the FlexBox, defined within a [FlexBoxScope].
  * @see FlexBoxConfig
  * @see FlexBoxScope
- * @see Row
- * @see Column
- * @see FlowRow
- * @see FlowColumn
  */
 @Composable
-@ExperimentalFlexBoxApi
-inline fun FlexBox(
+public inline fun FlexBox(
     modifier: Modifier = Modifier,
     config: FlexBoxConfig = FlexBoxConfig,
     content: @Composable FlexBoxScope.() -> Unit,
@@ -126,7 +151,6 @@ inline fun FlexBox(
  */
 @PublishedApi
 @Composable
-@ExperimentalFlexBoxApi
 internal fun flexMultiContentMeasurePolicy(
     flexBoxConfigState: State<FlexBoxConfig>
 ): MeasurePolicy {
@@ -135,7 +159,6 @@ internal fun flexMultiContentMeasurePolicy(
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBoxConfig>) :
     MeasurePolicy {
 
@@ -178,9 +201,7 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
 
         // Determine if we need upfront cross-axis calculation
         var needsUpfrontCrossAxisCalculation =
-            flexBoxConfig.alignItems == FlexAlignItems.Stretch ||
-                flexBoxConfig.alignItems == FlexAlignItems.Baseline ||
-                flexBoxConfig.isWrapEnabled
+            flexBoxConfig.needUpfrontCrossAxisCalculation(constraints)
 
         var needsSorting = false
         measurables.fastForEach { measurable ->
@@ -274,7 +295,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
             layoutHeight = mainAxisSize
         }
 
-        // final placement
         return layout(layoutWidth, layoutHeight) {
             placeFlexItems(
                 lines = lines,
@@ -300,23 +320,19 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         mainAxisGap: Int,
         isHorizontal: Boolean,
     ) {
-        lines.fastForEach { line ->
-            // main-axis positions for this line
+        val isMainAxisReverse = isMainAxisReversedForLayout(flexBoxConfig = flexBoxConfig)
+        lines.fastForEach(flexBoxConfig.isCrossAxisReverse, 0, lines.size) { line ->
             positionItemsOnMainAxis(
                 items = items,
                 flexBoxConfig = flexBoxConfig,
                 containerMainAxisSize = if (isHorizontal) layoutWidth else layoutHeight,
                 line = line,
                 mainAxisGap = mainAxisGap,
-                isMainAxisReverse =
-                    isMainAxisReversedForLayout(
-                        flexBoxConfig = flexBoxConfig,
-                        layoutDirection = layoutDirection,
-                    ),
+                isMainAxisReverse = isMainAxisReverse,
             )
 
-            // Place each item
-            items.fastForEachUntil(line.startIndex, line.endIndex) { item ->
+            // In reverse directions the last item of a line has the smallest main-axis position.
+            items.fastForEach(isMainAxisReverse, line.startIndex, line.endIndex) { item ->
                 val x =
                     if (isHorizontal) {
                         item.mainPosition
@@ -330,12 +346,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                     } else {
                         item.mainPosition
                     }
-
-                // Skip placing items that overflow the layout bounds.
-                // Items are measured with clamped constraints to fit remaining space,
-                // but if their position still exceeds bounds, they are not placed.
-                if (x >= layoutWidth || y >= layoutHeight) return@fastForEachUntil
-
                 item.placeable?.placeRelative(x = x, y = y)
             }
         }
@@ -348,15 +358,27 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
     ): ResolvedFlexItemInfo {
         val node = measurable.parentData as? FlexBoxChildDataNode
         val resolvedItemInfo = ResolvedFlexItemInfo()
+        resolvedItemInfo.prepare(this, constraints)
         if (node != null) {
-            resolvedItemInfo.prepare(this, constraints)
             with(node.config) { resolvedItemInfo.configure() }
+        }
+        // A main-axis fill modifier (e.g. Modifier.fillMaxWidth() in a Row) implies growth, but
+        // only when no explicit grow factor was configured.
+        if (resolvedItemInfo.isGrowUnset) {
+            val fillParentData = measurable.parentData as? FillModifierParentData
+            val mainAxisFillFraction =
+                if (isHorizontal) {
+                    fillParentData?.fillHorizontalFraction ?: 0f
+                } else {
+                    fillParentData?.fillVerticalFraction ?: 0f
+                }
+
+            resolvedItemInfo.grow = if (mainAxisFillFraction > 0f) mainAxisFillFraction else 0f
         }
 
         resolvedItemInfo.measurable = measurable
         // Calculate flex base size
         val minMainAxisSize = resolvedItemInfo.getMinMainAxisSize(isHorizontal)
-        val maxContentSize = resolvedItemInfo.getMaxContentSize(isHorizontal)
 
         val flexBaseSize =
             when {
@@ -366,13 +388,13 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                         constraints.mainAxisMax == Constraints.Infinity ||
                             resolvedItemInfo.basis.value.isNaN()
                     ) {
-                        maxContentSize
+                        resolvedItemInfo.getMaxContentSize(isHorizontal)
                     } else {
                         (constraints.mainAxisMax * resolvedItemInfo.basis.value).toInt()
                     }
                 }
-                resolvedItemInfo.basis.isAuto -> maxContentSize
-                else -> maxContentSize
+                resolvedItemInfo.basis.isAuto -> resolvedItemInfo.getMaxContentSize(isHorizontal)
+                else -> resolvedItemInfo.getMaxContentSize(isHorizontal)
             }
 
         resolvedItemInfo.flexBaseSize = flexBaseSize
@@ -381,6 +403,15 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
 
         return resolvedItemInfo
     }
+
+    private fun ResolvedFlexBoxConfig.needUpfrontCrossAxisCalculation(
+        constraints: OrientationIndependentConstraints
+    ) =
+        (alignItems == FlexAlignItems.Stretch) ||
+            (alignItems == FlexAlignItems.Baseline) ||
+            (isWrapEnabled &&
+                alignContent == FlexAlignContent.Stretch &&
+                constraints.crossAxisMax != Constraints.Infinity)
 
     // Builds flex lines by distributing items according to wrap settings
     private inline fun buildFlexLines(
@@ -406,8 +437,9 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
             if (
                 flexBoxConfig.isWrapEnabled &&
                     index > lineStartIndex &&
-                    currentLineHypotheticalMainAxisSize + item.hypotheticalMainSize >
-                        constraints.mainAxisMax
+                    (index - lineStartIndex >= flexBoxConfig.maxItemsInEachLine ||
+                        currentLineHypotheticalMainAxisSize + item.hypotheticalMainSize >
+                            constraints.mainAxisMax)
             ) {
                 currentLine.startIndex = lineStartIndex
                 currentLine.endIndex = index
@@ -483,14 +515,12 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                 hypotheticalLineSize = currentLineHypotheticalMainAxisSize,
                 containerMainAxisSize = constraints.mainAxisMax,
             )
-
         // calculate the line's height.
         if (needsUpfrontCrossAxisCalculation) {
             calculateLineCrossAxisSize(
                 flexBoxConfig = flexBoxConfig,
                 line = line,
                 items = items,
-                constraints = constraints,
                 remainingCrossAxisSize = remainingCrossAxisSize,
             )
         }
@@ -509,80 +539,138 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         val totalGap = if (itemCount > 0) (itemCount - 1) * flexBoxConfig.mainAxisGap() else 0
 
         if (containerMainAxisSize == Constraints.Infinity) {
-            return items.fastSumBy(startIndex, endIndex) { it.targetMainSize } + totalGap
+            var lineMainAxisSize = totalGap
+            items.fastForEachUntil(startIndex, endIndex) { item ->
+                item.targetMainSize = item.hypotheticalMainSize
+                lineMainAxisSize += item.targetMainSize
+            }
+            return lineMainAxisSize
         }
 
-        var remainingFreeSpace = (containerMainAxisSize - hypotheticalLineSize).toDouble()
-        val isGrowing = remainingFreeSpace > 0
+        val isGrowing = hypotheticalLineSize < containerMainAxisSize
 
-        var sumOfFrozenSizes = 0
-        var sumOfBaseSizes = 0
-        var sumOfGrowFactors = 0.0
-        var sumOfScaledShrinkFactors = 0.0
+        var unfrozenCount = 0
+        var sumGrow = 0f
+        var sumScaledShrink = 0f
+        var sumFlexBaseSize = 0
+        var sumFrozenTargetSize = 0
+        var sumFactors = 0f
 
-        // initial freeze
+        // Initial Pass
         items.fastForEachUntil(startIndex, endIndex) { item ->
             val flexFactor = if (isGrowing) item.grow else item.shrink
 
             if (flexFactor == 0f || (!isGrowing && item.flexBaseSize < item.hypotheticalMainSize)) {
-                item.isFrozen = true
                 item.targetMainSize = item.hypotheticalMainSize
-                sumOfFrozenSizes += item.targetMainSize
+                item.isFrozen = true
+                sumFrozenTargetSize += item.targetMainSize
             } else {
-                sumOfBaseSizes += item.flexBaseSize
-                sumOfGrowFactors += item.grow.toDouble()
-                sumOfScaledShrinkFactors += (item.shrink.toDouble() * item.flexBaseSize.toDouble())
+                item.isFrozen = false
+                unfrozenCount++
+                sumFlexBaseSize += item.flexBaseSize
+                sumFactors += flexFactor
+                if (isGrowing) {
+                    sumGrow += item.grow
+                } else {
+                    sumScaledShrink += (item.shrink * item.flexBaseSize)
+                }
             }
         }
-        var lineMainAxisSize = sumOfFrozenSizes
+
+        val initialFreeSpace =
+            (containerMainAxisSize - totalGap - sumFrozenTargetSize - sumFlexBaseSize).toFloat()
+
+        var allocatedUnfrozenSize = 0
 
         if (isGrowing) {
-            if (sumOfGrowFactors > 0) {
-                var remainingGrowFactors = sumOfGrowFactors
+            // For growth, there isn't any upper bound so we only need single pass
+            val sumSizes = totalGap + sumFrozenTargetSize + sumFlexBaseSize
+            var freeSpace = (containerMainAxisSize - sumSizes).toFloat()
 
-                items.fastForEachUntil(startIndex, endIndex) { item ->
-                    if (!item.isFrozen) {
-                        // Calculate share based on REMAINING space and weight
-                        // This absorbs rounding errors into the subsequent items
-                        val share = (item.grow / remainingGrowFactors) * remainingFreeSpace
-                        val roundedShare = share.fastRoundToInt()
-
-                        item.targetMainSize = item.flexBaseSize + roundedShare
-                        item.isFrozen = true
-
-                        lineMainAxisSize += item.targetMainSize
-                        remainingFreeSpace -= roundedShare
-                        remainingGrowFactors -= item.grow
-                    }
+            if (sumFactors < 1f) {
+                val fractionalSpace = initialFreeSpace * sumFactors
+                if (abs(fractionalSpace) < abs(freeSpace)) {
+                    freeSpace = fractionalSpace
                 }
             }
-        } else { // shrinking
-            if (sumOfScaledShrinkFactors > 0) {
-                var remainingShrinkFactors = sumOfScaledShrinkFactors
-                var spaceToRemove = abs(remainingFreeSpace)
+
+            var currentFreeSpace = freeSpace
+            var currentSumGrow = sumGrow
+
+            items.fastForEachUntil(startIndex, endIndex) { item ->
+                if (!item.isFrozen) {
+                    val share = if (currentSumGrow > 0f) item.grow / currentSumGrow else 0f
+                    val spaceToAllocate = (currentFreeSpace * share).fastRoundToInt()
+
+                    currentFreeSpace -= spaceToAllocate
+                    currentSumGrow -= item.grow
+
+                    item.targetMainSize = item.flexBaseSize + spaceToAllocate
+                    allocatedUnfrozenSize += item.targetMainSize
+                }
+            }
+        } else {
+            var needsRedistribution = true
+            var loopCount = 0
+
+            while (needsRedistribution && loopCount < itemCount) {
+                needsRedistribution = false
+                loopCount++
+                allocatedUnfrozenSize = 0
+
+                if (unfrozenCount == 0) break
+
+                val sumSizes = totalGap + sumFrozenTargetSize + sumFlexBaseSize
+                var freeSpace = (containerMainAxisSize - sumSizes).toFloat()
+
+                if (sumFactors < 1f) {
+                    val fractionalSpace = initialFreeSpace * sumFactors
+                    if (abs(fractionalSpace) < abs(freeSpace)) {
+                        freeSpace = fractionalSpace
+                    }
+                }
+
+                var currentFreeSpace = abs(freeSpace)
+                var currentSumScaledShrink = sumScaledShrink
 
                 items.fastForEachUntil(startIndex, endIndex) { item ->
                     if (!item.isFrozen) {
-                        val weight = (item.shrink * item.flexBaseSize).toDouble()
+                        val scaledShrink = item.shrink * item.flexBaseSize
+                        val share =
+                            if (currentSumScaledShrink > 0f) scaledShrink / currentSumScaledShrink
+                            else 0f
+                        val spaceToTake = (currentFreeSpace * share).fastRoundToInt()
 
-                        val share = (weight / remainingShrinkFactors) * spaceToRemove
-                        val roundedShare = share.fastRoundToInt()
-
+                        val targetSize = item.flexBaseSize - spaceToTake
                         val minSize = item.getMinMainAxisSize(isHorizontal)
-                        val newSize = (item.flexBaseSize - roundedShare).fastCoerceAtLeast(minSize)
 
-                        item.targetMainSize = newSize
-                        item.isFrozen = true
+                        if (targetSize < minSize) {
+                            item.isFrozen = true
+                            needsRedistribution = true
 
-                        lineMainAxisSize += item.targetMainSize
-                        spaceToRemove -= roundedShare
-                        remainingShrinkFactors -= weight
+                            val actualSpaceTaken = item.flexBaseSize - minSize
+                            currentFreeSpace -= actualSpaceTaken
+                            currentSumScaledShrink -= scaledShrink
+
+                            item.targetMainSize = minSize
+                            unfrozenCount--
+                            sumFrozenTargetSize += minSize
+                            sumFlexBaseSize -= item.flexBaseSize
+                            sumScaledShrink -= scaledShrink
+                            sumFactors -= item.shrink
+                        } else {
+                            currentFreeSpace -= spaceToTake
+                            currentSumScaledShrink -= scaledShrink
+
+                            item.targetMainSize = targetSize
+                            allocatedUnfrozenSize += item.targetMainSize
+                        }
                     }
                 }
             }
         }
 
-        return lineMainAxisSize + totalGap
+        return totalGap + sumFrozenTargetSize + allocatedUnfrozenSize
     }
 
     // stretch to distribute extra cross-axis space to lines.
@@ -632,7 +720,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         constraints: OrientationIndependentConstraints,
     ): Int {
         var updatedTotalCrossSize = totalLinesCrossSize
-        var remainingMainAxisSize: Int = constraints.mainAxisMax
         var remainingCrossAxisSize: Int = constraints.crossAxisMax
 
         lines.fastForEach { line ->
@@ -657,7 +744,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                         flexBoxConfig = flexBoxConfig,
                         lineCrossAxisSize = if (shouldStretch) line.crossAxisSize else 0,
                         shouldStretch = shouldStretch,
-                        remainingMainAxisSize = remainingMainAxisSize,
                         remainingCrossAxisSize = remainingCrossAxisSize,
                     )
                 if (!needsUpfrontCrossAxisCalculation) {
@@ -669,16 +755,11 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                 if (lines.size == 1) {
                     lineCrossAxisSize = max(lineCrossAxisSize, constraints.crossAxisMin)
                 }
-                remainingMainAxisSize =
-                    (remainingMainAxisSize - (item.mainAxisSize + flexBoxConfig.mainAxisGap()))
-                        .fastCoerceAtLeast(0)
             }
             if (!needsUpfrontCrossAxisCalculation) {
                 line.crossAxisSize = lineCrossAxisSize
                 updatedTotalCrossSize += lineCrossAxisSize
             }
-            // reset main axis size for new line
-            remainingMainAxisSize = constraints.mainAxisMax
 
             remainingCrossAxisSize =
                 (remainingCrossAxisSize - line.crossAxisSize - flexBoxConfig.crossAxisGap())
@@ -697,7 +778,7 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
     ) {
         if (lines.isEmpty() || lines.size == 1) return
         val totalGap = (lines.size - 1) * crossAxisGap
-        val freeSpace = totalCrossAxisSpace.fastCoerceAtLeast(0) - totalLinesCrossSize - totalGap
+        val freeSpace = totalCrossAxisSpace - totalLinesCrossSize - totalGap
 
         val spaceInBetweenLines =
             when (flexBoxConfig.alignContent) {
@@ -714,10 +795,7 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                 else -> if (flexBoxConfig.isCrossAxisReverse) freeSpace else 0
             }
 
-        val indices =
-            if (flexBoxConfig.isCrossAxisReverse) lines.indices.reversed() else lines.indices
-        for (index in indices) {
-            val line = lines[index]
+        lines.fastForEach(flexBoxConfig.isCrossAxisReverse, 0, lines.size) { line ->
             line.crossStart = crossPosition
             crossPosition += line.crossAxisSize + spaceInBetweenLines + crossAxisGap
         }
@@ -741,9 +819,7 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         val itemCount = line.endIndex - line.startIndex
         if (itemCount == 0) return
 
-        val totalItemsGap = (itemCount - 1) * mainAxisGap
-        val remainingSpace =
-            (containerMainAxisSize - line.mainAxisSize - totalItemsGap).fastCoerceAtLeast(0)
+        val remainingSpace = containerMainAxisSize - line.mainAxisSize
 
         val spaceBetweenItems =
             when (flexBoxConfig.justifyContent) {
@@ -760,6 +836,8 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                 FlexJustifyContent.Center -> (remainingSpace) / 2
                 FlexJustifyContent.SpaceAround -> (spaceBetweenItems) / 2
                 FlexJustifyContent.SpaceEvenly -> spaceBetweenItems
+                FlexJustifyContent.SpaceBetween ->
+                    if (itemCount == 1 && isMainAxisReverse) remainingSpace else 0
                 else -> if (isMainAxisReverse) remainingSpace else 0
             }
 
@@ -829,19 +907,9 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         }
     }
 
-    private fun isMainAxisReversedForLayout(
-        flexBoxConfig: ResolvedFlexBoxConfig,
-        layoutDirection: LayoutDirection,
-    ): Boolean {
-        val isMainAxisReverse =
-            flexBoxConfig.direction == FlexDirection.RowReverse ||
-                flexBoxConfig.direction == FlexDirection.ColumnReverse
-
-        return when {
-            !flexBoxConfig.isHorizontal -> isMainAxisReverse
-            layoutDirection == LayoutDirection.Rtl -> !isMainAxisReverse // RTL flips row behavior
-            else -> isMainAxisReverse
-        }
+    private fun isMainAxisReversedForLayout(flexBoxConfig: ResolvedFlexBoxConfig): Boolean {
+        return flexBoxConfig.direction == FlexDirection.RowReverse ||
+            flexBoxConfig.direction == FlexDirection.ColumnReverse
     }
 
     // calculate cross axis size for line
@@ -849,7 +917,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         items: ArrayList<ResolvedFlexItemInfo>,
         flexBoxConfig: ResolvedFlexBoxConfig,
         line: FlexLine,
-        constraints: OrientationIndependentConstraints,
         remainingCrossAxisSize: Int,
     ) {
 
@@ -857,7 +924,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         var maxAboveBaseline = 0
         var maxBelowBaseline = 0
         val isHorizontal = flexBoxConfig.isHorizontal
-        var remainingMainAxisSize: Int = constraints.mainAxisMax
         items.fastForEachUntil(line.startIndex, line.endIndex) { itemInfo ->
             val crossAxisSize =
                 if (
@@ -869,7 +935,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                         flexBoxConfig,
                         lineCrossAxisSize = 0,
                         shouldStretch = false,
-                        remainingMainAxisSize = remainingMainAxisSize,
                         remainingCrossAxisSize = remainingCrossAxisSize,
                     )
 
@@ -879,11 +944,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
 
                     maxAboveBaseline = max(maxAboveBaseline, baseline)
                     maxBelowBaseline = max(maxBelowBaseline, itemInfo.crossAxisSize - baseline)
-                    remainingMainAxisSize =
-                        (remainingMainAxisSize -
-                                itemInfo.mainAxisSize -
-                                flexBoxConfig.mainAxisGap())
-                            .fastCoerceAtLeast(0)
                     // line cross Axis size
                     maxAboveBaseline + maxBelowBaseline
                 } else {
@@ -894,11 +954,6 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                         else
                             itemInfo.measurable?.maxIntrinsicWidth(height = itemInfo.targetMainSize)
                                 ?: 0
-                    remainingMainAxisSize =
-                        (remainingMainAxisSize -
-                                itemInfo.targetMainSize -
-                                flexBoxConfig.mainAxisGap())
-                            .fastCoerceAtLeast(0)
                     itemInfo.crossAxisSize
                 }
             lineCrossAxisSize = max(lineCrossAxisSize, crossAxisSize)
@@ -916,17 +971,15 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         flexBoxConfig: ResolvedFlexBoxConfig,
         lineCrossAxisSize: Int,
         shouldStretch: Boolean,
-        remainingMainAxisSize: Int,
         remainingCrossAxisSize: Int,
     ): Int {
         val isHorizontal = flexBoxConfig.isHorizontal
-        val clampedMainAxisSize =
-            item.targetMainSize.fastCoerceAtMost(maximumValue = remainingMainAxisSize)
+
         val itemConstraints =
             if (shouldStretch && lineCrossAxisSize > 0) {
                 Constraints.fixed(
                     width =
-                        if (isHorizontal) clampedMainAxisSize
+                        if (isHorizontal) item.targetMainSize
                         else
                             lineCrossAxisSize.fastCoerceAtMost(
                                 maximumValue = remainingCrossAxisSize
@@ -936,14 +989,14 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                             lineCrossAxisSize.fastCoerceAtMost(
                                 maximumValue = remainingCrossAxisSize
                             )
-                        else clampedMainAxisSize,
+                        else item.targetMainSize,
                 )
             } else {
 
                 if (isHorizontal) {
                     Constraints.fitPrioritizingWidth(
-                        minWidth = clampedMainAxisSize,
-                        maxWidth = clampedMainAxisSize,
+                        minWidth = item.targetMainSize,
+                        maxWidth = item.targetMainSize,
                         minHeight = 0,
                         maxHeight = remainingCrossAxisSize,
                     )
@@ -951,8 +1004,8 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
                     Constraints.fitPrioritizingHeight(
                         minWidth = 0,
                         maxWidth = remainingCrossAxisSize,
-                        minHeight = clampedMainAxisSize,
-                        maxHeight = clampedMainAxisSize,
+                        minHeight = item.targetMainSize,
+                        maxHeight = item.targetMainSize,
                     )
                 }
             }
@@ -979,22 +1032,32 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         height: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxHeight = height))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, height) { h ->
-                minIntrinsicWidth(h)
+        return if (config.isHorizontal) {
+            // Main axis. Min = narrowest without clipping.
+            // Wrap: widest child (each child could be its own line).
+            // NoWrap: sum of all children (they must all fit on one line).
+            val gap = config.mainAxisGap()
+            if (config.isWrapEnabled) {
+                var maxSize = 0
+                measurables.fastForEach { maxSize = max(maxSize, it.minIntrinsicWidth(height)) }
+                maxSize
+            } else {
+                measurables.fastSumBy { it.minIntrinsicWidth(height) } +
+                    (measurables.size - 1).coerceAtLeast(0) * gap
             }
         } else {
+            // Cross axis. Simulate line breaks along the vertical main axis,
+            // then take the widest line.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                height,
-                mainAxisSize = { h -> minIntrinsicHeight(h) },
-            ) { w ->
-                minIntrinsicWidth(w)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = height,
+                mainAxisSize = { it.minIntrinsicHeight(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.minIntrinsicWidth(mainSize) },
+            )
         }
     }
 
@@ -1002,21 +1065,29 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         width: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxWidth = width))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
+        return if (config.isHorizontal) {
+            // Cross axis. Simulate line breaks along the horizontal main axis,
+            // then sum the tallest-child-per-line heights + cross gaps.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                width,
-                mainAxisSize = { w -> minIntrinsicWidth(w) },
-            ) { h ->
-                minIntrinsicHeight(h)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = width,
+                mainAxisSize = { it.minIntrinsicWidth(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.minIntrinsicHeight(mainSize) },
+            )
         } else {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, width) { w ->
-                minIntrinsicHeight(w)
+            // Main axis.
+            val gap = config.mainAxisGap()
+            if (config.isWrapEnabled) {
+                var maxSize = 0
+                measurables.fastForEach { maxSize = max(maxSize, it.minIntrinsicHeight(width)) }
+                maxSize
+            } else {
+                measurables.fastSumBy { it.minIntrinsicHeight(width) } +
+                    (measurables.size - 1).coerceAtLeast(0) * gap
             }
         }
     }
@@ -1025,22 +1096,21 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         height: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxHeight = height))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, height) { h ->
-                maxIntrinsicWidth(h)
-            }
+        return if (config.isHorizontal) {
+            // Main axis. Max = preferred size without size-based wrapping.
+            maxIntrinsicMainAxisSize(config, measurables) { it.maxIntrinsicWidth(height) }
         } else {
+            // Cross axis.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                height,
-                mainAxisSize = { h -> maxIntrinsicHeight(h) },
-            ) { w ->
-                maxIntrinsicWidth(w)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = height,
+                mainAxisSize = { it.maxIntrinsicHeight(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.maxIntrinsicWidth(mainSize) },
+            )
         }
     }
 
@@ -1048,23 +1118,111 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
         measurables: List<IntrinsicMeasurable>,
         width: Int,
     ): Int {
-        val resolvedFlexBoxConfig =
+        if (measurables.isEmpty()) return 0
+        val config =
             resolveFlexBoxConfig(flexBoxConfigState.value, this, Constraints(maxWidth = width))
-
-        return if (resolvedFlexBoxConfig.isHorizontal) {
+        return if (config.isHorizontal) {
+            // Cross axis.
             intrinsicCrossAxisSize(
-                resolvedFlexBoxConfig,
-                measurables,
-                width,
-                mainAxisSize = { w -> maxIntrinsicWidth(w) },
-            ) { h ->
-                maxIntrinsicHeight(h)
-            }
+                config = config,
+                measurables = measurables,
+                mainAxisAvailable = width,
+                mainAxisSize = { it.maxIntrinsicWidth(Constraints.Infinity) },
+                crossAxisSize = { measurable, mainSize -> measurable.maxIntrinsicHeight(mainSize) },
+            )
         } else {
-            intrinsicMainAxisSize(resolvedFlexBoxConfig, measurables, width) { w ->
-                maxIntrinsicHeight(w)
+            // Main axis. Max = preferred size without size-based wrapping.
+            maxIntrinsicMainAxisSize(config, measurables) { it.maxIntrinsicHeight(width) }
+        }
+    }
+
+    /**
+     * Computes the preferred (max intrinsic) main-axis size. Without a per-line item cap this is
+     * the size of all items laid out on a single line; with wrapping and a
+     * [FlexBoxConfigScope.maxItemsInEachLine] cap it is the size of the largest line when breaking
+     * after every maxItemsInEachLine items.
+     */
+    private inline fun maxIntrinsicMainAxisSize(
+        config: ResolvedFlexBoxConfig,
+        measurables: List<IntrinsicMeasurable>,
+        mainAxisSize: (IntrinsicMeasurable) -> Int,
+    ): Int {
+        val gap = config.mainAxisGap()
+        val maxItemsInEachLine =
+            if (config.isWrapEnabled) config.maxItemsInEachLine else Int.MAX_VALUE
+        var maxLineSize = 0
+        var currentLineSize = 0
+        var itemsInCurrentLine = 0
+        measurables.fastForEach { measurable ->
+            currentLineSize +=
+                if (itemsInCurrentLine == 0) mainAxisSize(measurable)
+                else gap + mainAxisSize(measurable)
+            itemsInCurrentLine++
+            if (itemsInCurrentLine == maxItemsInEachLine) {
+                maxLineSize = max(maxLineSize, currentLineSize)
+                currentLineSize = 0
+                itemsInCurrentLine = 0
             }
         }
+        return max(maxLineSize, currentLineSize)
+    }
+
+    /**
+     * Simulates line-breaking along the main axis and sums up per-line cross-axis sizes to compute
+     * the total cross-axis intrinsic size.
+     *
+     * This is an approximation: child cross sizes are queried at their unconstrained main-axis size
+     * rather than their post-flex-resolution size, since the full flex algorithm cannot run during
+     * intrinsic measurement.
+     */
+    private inline fun intrinsicCrossAxisSize(
+        config: ResolvedFlexBoxConfig,
+        measurables: List<IntrinsicMeasurable>,
+        mainAxisAvailable: Int,
+        mainAxisSize: (IntrinsicMeasurable) -> Int,
+        crossAxisSize: (IntrinsicMeasurable, Int) -> Int,
+    ): Int {
+        val mainAxisGap = config.mainAxisGap()
+        val crossAxisGap = config.crossAxisGap()
+
+        var currentLineMainAxisSize = 0
+        var currentLineCrossAxisSize = 0
+        var totalCrossAxisSize = 0
+        var itemsInCurrentLine = 0
+
+        measurables.fastForEach { measurable ->
+            val itemMainAxisSize = mainAxisSize(measurable)
+            val itemCrossAxisSize = crossAxisSize(measurable, itemMainAxisSize)
+
+            // Would adding this item (plus the gap before it) overflow the line?
+            val projectedLineSize =
+                if (itemsInCurrentLine == 0) {
+                    itemMainAxisSize
+                } else {
+                    currentLineMainAxisSize + mainAxisGap + itemMainAxisSize
+                }
+
+            if (
+                config.isWrapEnabled &&
+                    itemsInCurrentLine > 0 &&
+                    (itemsInCurrentLine >= config.maxItemsInEachLine ||
+                        projectedLineSize > mainAxisAvailable)
+            ) {
+                // Finalize current line and start a new one.
+                totalCrossAxisSize += currentLineCrossAxisSize + crossAxisGap
+                currentLineMainAxisSize = itemMainAxisSize
+                currentLineCrossAxisSize = itemCrossAxisSize
+                itemsInCurrentLine = 1
+            } else {
+                currentLineMainAxisSize = projectedLineSize
+                currentLineCrossAxisSize = max(currentLineCrossAxisSize, itemCrossAxisSize)
+                itemsInCurrentLine++
+            }
+        }
+
+        // Add the last line (no trailing crossAxisGap).
+        totalCrossAxisSize += currentLineCrossAxisSize
+        return totalCrossAxisSize
     }
 
     /** Resolves and snapshots the container configuration. */
@@ -1079,66 +1237,9 @@ private class FlexBoxMeasurePolicy(private val flexBoxConfigState: State<FlexBox
     }
 }
 
-private inline fun intrinsicMainAxisSize(
-    flexBoxConfig: ResolvedFlexBoxConfig,
-    measurables: List<IntrinsicMeasurable>,
-    crossAxisAvailable: Int,
-    mainAxisSize: IntrinsicMeasurable.(Int) -> Int,
-): Int {
-    if (measurables.isEmpty()) return 0
-
-    val mainAxisGap = flexBoxConfig.mainAxisGap()
-
-    return if (!flexBoxConfig.isWrapEnabled) {
-        measurables.fastSumBy { it.mainAxisSize(crossAxisAvailable) } +
-            (measurables.size - 1).coerceAtLeast(0) * mainAxisGap
-    } else {
-        var maxSize = 0
-        measurables.fastForEach { maxSize = max(maxSize, it.mainAxisSize(crossAxisAvailable)) }
-        maxSize
-    }
-}
-
-private inline fun intrinsicCrossAxisSize(
-    flexBoxConfig: ResolvedFlexBoxConfig,
-    measurables: List<IntrinsicMeasurable>,
-    mainAxisAvailable: Int,
-    mainAxisSize: IntrinsicMeasurable.(Int) -> Int,
-    crossAxisSize: IntrinsicMeasurable.(Int) -> Int,
-): Int {
-    if (measurables.isEmpty()) return 0
-
-    val mainAxisGap = flexBoxConfig.mainAxisGap()
-    val crossAxisGap = flexBoxConfig.crossAxisGap()
-
-    var currentLineMainAxisSize = 0
-    var currentLineCrossAxisSize = 0
-    var totalCrossAxisSize = 0
-
-    measurables.fastForEach { measurable ->
-        val itemMainAxisSize = measurable.mainAxisSize(Constraints.Infinity)
-        val itemCrossAxisSize = measurable.crossAxisSize(itemMainAxisSize)
-
-        if (
-            flexBoxConfig.isWrapEnabled &&
-                currentLineMainAxisSize != 0 &&
-                currentLineMainAxisSize + itemMainAxisSize > mainAxisAvailable
-        ) {
-            totalCrossAxisSize += currentLineCrossAxisSize + crossAxisGap
-            currentLineMainAxisSize = itemMainAxisSize + mainAxisGap
-            currentLineCrossAxisSize = itemCrossAxisSize
-        } else {
-            currentLineMainAxisSize += itemMainAxisSize + mainAxisGap
-            currentLineCrossAxisSize = max(currentLineCrossAxisSize, itemCrossAxisSize)
-        }
-    }
-    totalCrossAxisSize += currentLineCrossAxisSize
-    return totalCrossAxisSize
-}
-
 /**
- * Receiver scope for the content of a [FlexBox]. Provides the [flex] modifier for configuring
- * individual flex item properties.
+ * Scope for the content of a [FlexBox]. Provides the [flex] modifier for configuring individual
+ * flex item properties.
  *
  * @sample androidx.compose.foundation.layout.samples.FlexBoxScopeSample
  * @see FlexBox
@@ -1146,36 +1247,34 @@ private inline fun intrinsicCrossAxisSize(
  */
 @LayoutScopeMarker
 @Immutable
-@JvmDefaultWithCompatibility
-@ExperimentalFlexBoxApi
-interface FlexBoxScope {
+public interface FlexBoxScope {
     /**
-     * Applies flex item properties using a [FlexConfig].
-     *
-     * Example:
+     * Configures the flex properties of this element within the [FlexBox] using the provided
+     * [FlexConfig].
      *
      * @sample androidx.compose.foundation.layout.samples.FlexModifierWithConfigSample
      * @param flexConfig The flex configuration to apply.
      * @see FlexConfig
      */
-    @Stable fun Modifier.flex(flexConfig: FlexConfig): Modifier
+    @Stable public fun Modifier.flex(flexConfig: FlexConfig): Modifier
 
     /**
-     * Applies flex item properties using a configuration lambda.
+     * Configures the flex properties of this element within the [FlexBox] using a configuration
+     * lambda.
      *
-     * Example:
+     * This modifier allows you to specify how an individual item should share available space
+     * (grow, shrink, basis) and how it aligns itself along the cross axis (alignSelf).
      *
      * @sample androidx.compose.foundation.layout.samples.FlexModifierWithLambdaSample
-     * @param flexConfig A lambda that configures the flex properties.
+     * @param flexConfig A lambda that configures the flex properties within a [FlexConfigScope].
      * @see FlexConfigScope
      */
     @Stable
-    fun Modifier.flex(flexConfig: FlexConfigScope.() -> Unit): Modifier =
+    public fun Modifier.flex(flexConfig: FlexConfigScope.() -> Unit): Modifier =
         flex(FlexConfig(flexConfig))
 }
 
 @PublishedApi
-@ExperimentalFlexBoxApi
 internal object FlexBoxScopeInstance : FlexBoxScope {
     @Stable
     override fun Modifier.flex(flexConfig: FlexConfig): Modifier {
@@ -1184,7 +1283,6 @@ internal object FlexBoxScopeInstance : FlexBoxScope {
 }
 
 /** ModifierNodeElement for flex item config. */
-@OptIn(ExperimentalFlexBoxApi::class)
 internal class FlexBoxChildElement(val config: FlexConfig) :
     ModifierNodeElement<FlexBoxChildDataNode>() {
 
@@ -1208,25 +1306,35 @@ internal class FlexBoxChildElement(val config: FlexConfig) :
     }
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 internal class FlexBoxChildDataNode(var config: FlexConfig) :
-    ParentDataModifierNode, Modifier.Node() {
+    ParentDataModifierNode, FillModifierParentData, Modifier.Node() {
 
-    override fun Density.modifyParentData(parentData: Any?): Any = this@FlexBoxChildDataNode
+    override var fillHorizontalFraction: Float = 0f
+    override var fillVerticalFraction: Float = 0f
+
+    override fun Density.modifyParentData(parentData: Any?): Any =
+        this@FlexBoxChildDataNode.also {
+            it.fillHorizontalFraction = 0f
+            it.fillVerticalFraction = 0f
+            if (parentData is FillModifierParentData) {
+                it.fillHorizontalFraction = parentData.fillHorizontalFraction
+                it.fillVerticalFraction = parentData.fillVerticalFraction
+            }
+        }
 }
 
 /**
  * Defines the direction of the main axis in a [FlexBox] container.
  *
- * The main axis determines the primary direction in which children are laid out. The cross axis is
- * always perpendicular to the main axis.
+ * The main axis determines the primary direction in which children are laid out. It establishes the
+ * `main-start` and `main-end` edges of the container. The cross axis is always perpendicular to the
+ * main axis.
  *
  * @see FlexBoxConfigScope.direction
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexDirection @PublishedApi internal constructor(private val bits: Int) {
-    override fun toString() =
+public value class FlexDirection @PublishedApi internal constructor(private val bits: Int) {
+    override fun toString(): String =
         when (bits) {
             0 -> "Row"
             1 -> "Column"
@@ -1235,33 +1343,53 @@ value class FlexDirection @PublishedApi internal constructor(private val bits: I
             else -> "INVALID"
         }
 
-    companion object {
-        /** Main axis is horizontal, items placed from start (left in LTR) to end. */
-        inline val Row
+    public companion object {
+        /**
+         * The main axis is horizontal. Items are placed starting from the `main-start` edge and
+         * flowing toward the `main-end` edge.
+         *
+         * In a Left-To-Right (LTR) layout direction, `main-start` corresponds to the start (left)
+         * edge of the container. In a Right-To-Left (RTL) layout direction, `main-start`
+         * corresponds to the end (right).
+         */
+        public inline val Row: FlexDirection
             get() = FlexDirection(0)
 
-        /** Main axis is vertical, items placed from top to bottom. */
-        inline val Column
+        /**
+         * The main axis is vertical. Items are placed starting from the `main-start` edge (the top
+         * of the container) and flowing toward the `main-end` edge (the bottom).
+         */
+        public inline val Column: FlexDirection
             get() = FlexDirection(1)
 
-        /** Main axis is horizontal, items placed from end (right in LTR) to start. */
-        inline val RowReverse
+        /**
+         * The main axis is horizontal, but the placement direction is reversed. The `main-start`
+         * and `main-end` edges are swapped.
+         *
+         * In a Left-To-Right (LTR) layout direction, `main-start` becomes the right edge of the
+         * container, and items flow leftward. In a Right-To-Left (RTL) layout direction,
+         * `main-start` becomes the left edge.
+         */
+        public inline val RowReverse: FlexDirection
             get() = FlexDirection(2)
 
-        /** Main axis is vertical, items placed from bottom to top. */
-        inline val ColumnReverse
+        /**
+         * The main axis is vertical, but the placement direction is reversed. The `main-start` edge
+         * becomes the bottom of the container, and items flow toward the `main-end` edge at the
+         * top.
+         */
+        public inline val ColumnReverse: FlexDirection
             get() = FlexDirection(3)
     }
 }
 
 /**
- * Defines whether flex items wrap onto multiple lines.
+ * Defines whether flex items are forced onto a single line or can wrap onto multiple lines.
  *
  * @see FlexBoxConfigScope.wrap
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexWrap @PublishedApi internal constructor(private val bits: Int) {
+public value class FlexWrap @PublishedApi internal constructor(private val bits: Int) {
     override fun toString(): String =
         when (bits) {
             0 -> "NoWrap"
@@ -1270,45 +1398,46 @@ value class FlexWrap @PublishedApi internal constructor(private val bits: Int) {
             else -> "INVALID"
         }
 
-    companion object {
+    public companion object {
 
         /**
-         * Items are laid out in a single line, which may overflow the container. Items will shrink
-         * (if `shrink > 0`) to fit, but won't wrap.
+         * Items are laid out in a single line. Items will shrink to fit the container if their
+         * [FlexConfigScope.shrink] factor allows it. If they cannot shrink enough to fit the main
+         * axis (for example, due to their minimum intrinsic sizes), they will visually overflow on
+         * main axis of the container.
          */
-        inline val NoWrap
+        public inline val NoWrap: FlexWrap
             get() = FlexWrap(0)
 
         /**
-         * Items wrap onto multiple lines toward the cross axis end.
-         *
-         * For [FlexDirection.Row] and [FlexDirection.RowReverse]: lines wrap top to bottom. For
-         * [FlexDirection.Column] and [FlexDirection.ColumnReverse]: lines wrap start to end.
+         * Items wrap onto multiple lines if they exceed the main axis size. New lines are added
+         * along the cross axis, starting from the `cross-start` edge and flowing toward the
+         * `cross-end` edge. (For example, top-to-bottom in a [FlexDirection.Row]).
          */
-        inline val Wrap
+        public inline val Wrap: FlexWrap
             get() = FlexWrap(1)
 
         /**
-         * Items wrap onto multiple lines toward the cross axis start.
-         *
-         * For [FlexDirection.Row] and [FlexDirection.RowReverse]: lines wrap bottom to top. For
-         * [FlexDirection.Column] and [FlexDirection.ColumnReverse]: lines wrap end to start.
+         * Items wrap onto multiple lines if they exceed the main axis size. New lines are added in
+         * the reverse direction along the cross axis, starting from the `cross-end` edge and
+         * flowing toward the `cross-start` edge. (For example, bottom-to-top in a
+         * [FlexDirection.Row]).
          */
-        inline val WrapReverse
+        public inline val WrapReverse: FlexWrap
             get() = FlexWrap(2)
     }
 }
 
 /**
- * Defines the default cross-axis alignment for items within a [FlexBox]. This can be overridden for
- * each item using [FlexAlignSelf].
+ * Defines the default alignment for items along the cross axis within their respective lines. This
+ * controls how items are positioned perpendicular to the main axis. This can be overridden for an
+ * individual item using [FlexConfigScope.alignSelf].
  *
  * @see FlexBoxConfigScope.alignItems
  * @see FlexAlignSelf
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexAlignItems @PublishedApi internal constructor(private val bits: Int) {
+public value class FlexAlignItems @PublishedApi internal constructor(private val bits: Int) {
     override fun toString(): String =
         when (bits) {
             0 -> "Start"
@@ -1319,41 +1448,44 @@ value class FlexAlignItems @PublishedApi internal constructor(private val bits: 
             else -> "INVALID"
         }
 
-    companion object {
-        /** Items are aligned to the start of the cross axis. */
-        inline val Start
+    public companion object {
+        /** Items are aligned toward the cross-start edge of their line. */
+        public inline val Start: FlexAlignItems
             get() = FlexAlignItems(0)
 
-        /** Items are aligned to the end of the cross axis. */
-        inline val End
+        /** Items are aligned toward the cross-end edge of their line. */
+        public inline val End: FlexAlignItems
             get() = FlexAlignItems(1)
 
-        /** Items are centered along the cross axis. */
-        inline val Center
+        /** Items are centered along the cross axis within their line. */
+        public inline val Center: FlexAlignItems
             get() = FlexAlignItems(2)
 
-        /** Items are stretched to fill the line's cross axis size. */
-        inline val Stretch
+        /** Items are stretched to fill the cross axis size of their line. */
+        public inline val Stretch: FlexAlignItems
             get() = FlexAlignItems(3)
 
         /**
-         * Items are aligned based on their first baseline. Items without a baseline fall back to
-         * [Start] alignment.
+         * Items are aligned such that their baselines match along the cross axis. Items without a
+         * baseline fall back to [Start] alignment.
          */
-        inline val Baseline
+        public inline val Baseline: FlexAlignItems
             get() = FlexAlignItems(4)
     }
 }
 
 /**
- * Defines the cross-axis alignment for a single flex item, overriding [FlexAlignItems].
+ * Defines the cross-axis alignment for a single flex item, overriding the container's
+ * [FlexAlignItems].
+ *
+ * This controls how an individual item is positioned perpendicular to the main axis within its
+ * respective line.
  *
  * @see FlexConfigScope.alignSelf
  * @see FlexAlignItems
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexAlignSelf @PublishedApi internal constructor(private val bits: Int) {
+public value class FlexAlignSelf @PublishedApi internal constructor(private val bits: Int) {
     override fun toString(): String =
         when (bits) {
             0 -> "Auto"
@@ -1365,45 +1497,49 @@ value class FlexAlignSelf @PublishedApi internal constructor(private val bits: I
             else -> "INVALID"
         }
 
-    companion object {
+    public companion object {
 
         /**
-         * Inherits the alignment from the container's [FlexAlignItems]. This is the default value.
+         * Inherits the alignment from the container's [FlexBoxConfigScope.alignItems]. This is the
+         * default value.
          */
-        inline val Auto
+        public inline val Auto: FlexAlignSelf
             get() = FlexAlignSelf(0)
 
-        /** The item is aligned to the start of the cross axis. */
-        inline val Start
+        /** The item is aligned toward the `cross-start` edge of its line. */
+        public inline val Start: FlexAlignSelf
             get() = FlexAlignSelf(1)
 
-        /** The item is aligned to the end of the cross axis. */
-        inline val End
+        /** The item is aligned toward the `cross-end` edge of its line. */
+        public inline val End: FlexAlignSelf
             get() = FlexAlignSelf(2)
 
-        /** The item is centered along the cross axis. */
-        inline val Center
+        /** The item is centered along the cross axis within its line. */
+        public inline val Center: FlexAlignSelf
             get() = FlexAlignSelf(3)
 
-        /** The item is stretched to fill the line's cross axis size. */
-        inline val Stretch
+        /** The item is stretched to fill the cross axis size of its line. */
+        public inline val Stretch: FlexAlignSelf
             get() = FlexAlignSelf(4)
 
-        /** The item is aligned based on its first baseline. */
-        inline val Baseline
+        /**
+         * The item is aligned such that its baseline matches the baseline of other baseline-aligned
+         * items in the line. Items without a baseline fall back to [Start] alignment.
+         */
+        public inline val Baseline: FlexAlignSelf
             get() = FlexAlignSelf(5)
     }
 }
 
 /**
- * Defines how multiple lines are distributed along the cross axis. Only applies when there is more
- * than one line.
+ * Defines how multiple lines are distributed along the cross axis. This only applies when wrapping
+ * is enabled ([FlexWrap.Wrap] or [FlexWrap.WrapReverse]), the container has extra cross-axis space,
+ * and there is more than one line of items.
  *
  * @see FlexBoxConfigScope.alignContent
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexAlignContent @PublishedApi internal constructor(private val bits: Int) {
+public value class FlexAlignContent @PublishedApi internal constructor(private val bits: Int) {
     override fun toString(): String =
         when (bits) {
             0 -> "Start"
@@ -1415,50 +1551,61 @@ value class FlexAlignContent @PublishedApi internal constructor(private val bits
             else -> "INVALID"
         }
 
-    companion object {
-        /** Lines are aligned toward the start of the cross axis. */
-        inline val Start
+    public companion object {
+        /**
+         * Place lines such that they are as close as possible to the `cross-start` edge of the
+         * container.
+         */
+        public inline val Start: FlexAlignContent
             get() = FlexAlignContent(0)
 
-        /** Lines are aligned toward the end of the container. */
-        inline val End
+        /**
+         * Place lines such that they are as close as possible to the `cross-end` edge of the
+         * container.
+         */
+        public inline val End: FlexAlignContent
             get() = FlexAlignContent(1)
 
-        /** Lines are centered along the cross axis. */
-        inline val Center
+        /**
+         * Place lines such that they are as close as possible to the middle of the container's
+         * cross axis.
+         */
+        public inline val Center: FlexAlignContent
             get() = FlexAlignContent(2)
 
         /**
-         * Lines are stretched to fill the available cross-axis space. Extra space is distributed
-         * equally among all lines.
+         * Distribute remaining free space evenly among all lines, increasing their cross-axis size
+         * to fill the available space.
          */
-        inline val Stretch
+        public inline val Stretch: FlexAlignContent
             get() = FlexAlignContent(3)
 
         /**
-         * Lines are evenly distributed; first line at start, last at end. Equal space between
-         * lines, no space at container edges.
+         * Place lines such that they are spaced evenly across the cross axis, without free space
+         * before the first line or after the last line.
          */
-        inline val SpaceBetween
+        public inline val SpaceBetween: FlexAlignContent
             get() = FlexAlignContent(4)
 
         /**
-         * Lines are evenly distributed with equal space around each line. Space at edges is half
-         * the space between lines.
+         * Place lines such that they are spaced evenly across the cross axis, including free space
+         * before the first line and after the last line, but half the amount of space existing
+         * otherwise between two consecutive lines.
          */
-        inline val SpaceAround
+        public inline val SpaceAround: FlexAlignContent
             get() = FlexAlignContent(5)
     }
 }
 
 /**
- * Defines how items are distributed along the main axis.
+ * Defines the arrangement of items along the main axis of their respective lines. This controls how
+ * free space is distributed between and around items after their main axis sizes have been
+ * resolved.
  *
  * @see FlexBoxConfigScope.justifyContent
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexJustifyContent @PublishedApi internal constructor(private val bits: Int) {
+public value class FlexJustifyContent @PublishedApi internal constructor(private val bits: Int) {
     override fun toString(): String =
         when (bits) {
             0 -> "Start"
@@ -1470,84 +1617,100 @@ value class FlexJustifyContent @PublishedApi internal constructor(private val bi
             else -> "INVALID"
         }
 
-    companion object {
-        /** Items are aligned toward the start of the main axis. */
-        inline val Start
+    public companion object {
+        /**
+         * Place items such that they are as close as possible to the `main-start` edge of their
+         * line.
+         */
+        public inline val Start: FlexJustifyContent
             get() = FlexJustifyContent(0)
 
-        /** Items are aligned toward the end of the main axis. */
-        inline val End
+        /**
+         * Place items such that they are as close as possible to the `main-end` edge of their line.
+         */
+        public inline val End: FlexJustifyContent
             get() = FlexJustifyContent(1)
 
-        /** Items are centered along the main axis. */
-        inline val Center
+        /**
+         * Place items such that they are as close as possible to the middle of the main axis within
+         * their line.
+         */
+        public inline val Center: FlexJustifyContent
             get() = FlexJustifyContent(2)
 
         /**
-         * Items are evenly distributed; first item at start, last at end. Equal space between
-         * items, no space at container edges.
+         * Place items such that they are spaced evenly across the main axis, without free space
+         * before the first item or after the last item.
          */
-        inline val SpaceBetween
+        public inline val SpaceBetween: FlexJustifyContent
             get() = FlexJustifyContent(3)
 
         /**
-         * Items are evenly distributed with equal space around each item. Space at edges is half
-         * the space between items.
+         * Place items such that they are spaced evenly across the main axis, including free space
+         * before the first item and after the last item, but half the amount of space existing
+         * otherwise between two consecutive items.
          */
-        inline val SpaceAround
+        public inline val SpaceAround: FlexJustifyContent
             get() = FlexJustifyContent(4)
 
-        /** Items are evenly distributed with equal space between and at edges. */
-        inline val SpaceEvenly
+        /**
+         * Place items such that they are spaced evenly across the main axis, including free space
+         * before the first item and after the last item.
+         */
+        public inline val SpaceEvenly: FlexJustifyContent
             get() = FlexJustifyContent(5)
     }
 }
 
 /**
  * Defines the initial main size of a flex item before free space distribution.
- * - [Auto]: Uses the item's maximum intrinsic size
- * - [Dp]: Uses a fixed size in dp
- * - [Percent]: Uses a percentage of the container's main axis size
+ * - [Auto]: Uses the item's explicitly set size, or falls back to its natural content size.
+ * - [Dp]: Uses a fixed exact size in [androidx.compose.ui.unit.Dp].
+ * - [Percent]: Uses a fraction of the container's main axis size.
  *
  * @see FlexConfigScope.basis
  */
 @JvmInline
-@ExperimentalFlexBoxApi
-value class FlexBasis
+public value class FlexBasis
 @PublishedApi
 internal constructor(@PublishedApi internal val packedValue: Long) {
-    companion object {
+    public companion object {
         private const val TypeShift = 32
         private const val TypeAuto = 0L
         private const val TypeDp = 1L
         private const val TypePercent = 2L
 
         /**
-         * Use the item's maximum intrinsic (natural) size as the basis. This measures the item's
-         * preferred size without constraints.
+         * Use the item's maximum intrinsic size as the basis.
+         *
+         * If the item has an explicitly set size modifier along the main axis (for example,
+         * `Modifier.width` in a [FlexDirection.Row]), that exact size will be used as the basis.
+         * Otherwise, it falls back to measuring the item's preferred natural content size without
+         * constraints.
          *
          * This is the default value.
          */
-        val Auto = FlexBasis(TypeAuto shl TypeShift)
+        public val Auto: FlexBasis
+            get() = FlexBasis(TypeAuto shl TypeShift)
 
         /**
-         * Use a fixed size in Dp as the basis.
+         * Use a fixed size in [androidx.compose.ui.unit.Dp] as the basis.
          *
          * @sample androidx.compose.foundation.layout.samples.FlexBasisDpSample
          * @param value The basis size in Dp.
          */
-        fun Dp(value: Dp): FlexBasis {
+        public fun Dp(value: Dp): FlexBasis {
             val valueBits = value.value.toBits().toLong() and 0xFFFFFFFFL
             return FlexBasis((TypeDp shl TypeShift) or valueBits)
         }
 
         /**
-         * Use a percentage of the container's main axis size as the basis.
+         * Use a fraction of the container's main axis size as the basis.
          *
          * @sample androidx.compose.foundation.layout.samples.FlexBasisPercentSample
          * @param value A value between 0.0 and 1.0 representing the percentage.
          */
-        fun Percent(@FloatRange(0.0, 1.0) value: Float): FlexBasis {
+        public fun Percent(@FloatRange(0.0, 1.0) value: Float): FlexBasis {
             val valueBits = value.toBits().toLong() and 0xFFFFFFFFL
             return FlexBasis((TypePercent shl TypeShift) or valueBits)
         }
@@ -1577,221 +1740,263 @@ internal constructor(@PublishedApi internal val packedValue: Long) {
 /**
  * Represents a configuration for a [FlexBox] container.
  *
- * FlexBoxConfig is implemented as a functional interface where the lambda is executed on
- * [FlexBoxConfigScope] during the layout phase. This means that reading state inside the lambda
- * will only trigger relayout, not recomposition.
+ * This configuration is defined via a lambda that operates on a [FlexBoxConfigScope]. Because this
+ * configuration block is executed during the layout phase rather than the composition phase,
+ * reading state variables inside the block will only trigger a layout pass, completely avoiding
+ * costly recompositions.
  *
- * **Note**: Configuration is applied sequentially. If a function is called multiple times, the last
- * call takes precedence.
+ * Configuration properties are applied sequentially. If a property is configured multiple times
+ * within the block, the final call takes precedence.
  *
- * ## Reusable Configs
+ * **Reusability and Responsiveness**
+ *
+ * Configurations can be extracted, saved, and reused across multiple [FlexBox] containers:
  *
  * @sample androidx.compose.foundation.layout.samples.FlexBoxConfigReusableSample
  *
- * ## Responsive Configs
- *
- * Access [FlexBoxConfigScope.constraints] for responsive layouts:
+ * Furthermore, because the [FlexBoxConfigScope] provides direct access to the incoming
+ * [Constraints][androidx.compose.ui.unit.Constraints], you can easily create responsive
+ * configurations that dynamically adapt their direction, wrapping, or gaps based on the available
+ * screen space:
  *
  * @sample androidx.compose.foundation.layout.samples.FlexBoxConfigResponsiveSample
  * @see FlexBoxConfigScope
  * @see FlexBox
  */
 @Stable
-@ExperimentalFlexBoxApi
-fun interface FlexBoxConfig {
+public fun interface FlexBoxConfig {
     /**
-     * Configures the FlexBox container properties. Called during the layout phase, not during
-     * composition.
+     * Applies the configuration to the given [FlexBoxConfigScope]. This method is invoked by the
+     * layout system during the measurement phase, not during composition.
      */
-    fun FlexBoxConfigScope.configure()
+    public fun FlexBoxConfigScope.configure()
 
-    companion object : FlexBoxConfig {
-        /** Default Config: Row direction, NoWrap, Start alignment. */
+    /**
+     * Merges this config with another. Configs further "to the right" will override properties to
+     * the left of them, on a per-property basis.
+     *
+     * @sample androidx.compose.foundation.layout.samples.FlexBoxConfigCombineSample
+     * @param other the config to merge into the receiver.
+     */
+    public infix fun then(other: FlexBoxConfig): FlexBoxConfig =
+        when {
+            (other === Companion) -> this
+            other is CombinedFlexBoxConfig -> CombinedFlexBoxConfig(this, *other.configs)
+            else -> CombinedFlexBoxConfig(this, other)
+        }
+
+    public companion object : FlexBoxConfig {
+
+        /**
+         * A default configuration that lays out items in a horizontal row without wrapping, with
+         *
+         * items aligned to the start on both axes and no gaps.
+         */
         override fun FlexBoxConfigScope.configure() {}
+
+        /** Identity elision: merging the identity with any config yields that config. */
+        override fun then(other: FlexBoxConfig): FlexBoxConfig = other
     }
 }
 
 /**
- * Scope for configuring [FlexBox] container properties.
+ * Receiver scope for configuring [FlexBox] container properties.
  *
- * All configuration functions are called during the layout/measure phase, not during composition.
- * Changes to state-backed values trigger relayout, not recomposition.
+ * This scope is provided by [FlexBoxConfig]. All configuration functions are called during the
+ * layout/measure phase, not during composition. Changes to state-backed values read within this
+ * scope will trigger a relayout, entirely skipping recomposition.
  *
  * @see FlexBoxConfig
  */
-@ExperimentalFlexBoxApi
-sealed interface FlexBoxConfigScope : Density {
+public sealed interface FlexBoxConfigScope : Density {
 
     /**
      * The layout constraints passed to this [FlexBox] from its parent.
      *
-     * Use this for creating responsive layouts that adapt based on available space.
+     * Use this for creating responsive layouts that dynamically adapt their properties (like
+     * direction, wrapping, or gaps) based on the available incoming space.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxConstraintsSample
      * @see Constraints
      */
-    val constraints: Constraints
+    public val constraints: Constraints
 
     /**
      * Sets the direction of the main axis along which children are laid out.
      *
      * The main axis determines the primary direction of item placement:
-     * - [FlexDirection.Row]: Items placed horizontally, start to end (left to right in LTR)
-     * - [FlexDirection.RowReverse]: Items placed horizontally, end to start
-     * - [FlexDirection.Column]: Items placed vertically, top to bottom
-     * - [FlexDirection.ColumnReverse]: Items placed vertically, bottom to top
+     * - [FlexDirection.Row]: Items placed horizontally, `main-start` to `main-end` (end to start in
+     *   RTL).
+     * - [FlexDirection.RowReverse]: Items placed horizontally, end to start (start to end in RTL).
+     * - [FlexDirection.Column]: Items placed vertically, top to bottom.
+     * - [FlexDirection.ColumnReverse]: Items placed vertically, bottom to top.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxDirectionSample
      * @param value The flex direction. Default is [FlexDirection.Row].
      * @see FlexDirection
      */
-    fun direction(value: FlexDirection)
+    public fun direction(value: FlexDirection)
 
     /**
-     * Sets whether children should wrap to new lines when they exceed the main axis size.
-     * - [FlexWrap.NoWrap]: All items stay on one line, may overflow or shrink
-     * - [FlexWrap.Wrap]: Items wrap to new lines toward the cross axis end
-     * - [FlexWrap.WrapReverse]: Items wrap to new lines toward the cross axis start
+     * Sets whether children are forced onto a single line or can wrap onto multiple lines.
+     * - [FlexWrap.NoWrap]: All items stay on one line. Items may visually overflow on main axis if
+     *   they cannot shrink enough.
+     * - [FlexWrap.Wrap]: Items wrap to new lines toward the `cross-end` edge.
+     * - [FlexWrap.WrapReverse]: Items wrap to new lines toward the `cross-start` edge.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxWrapSample
      * @param value The wrap behavior. Default is [FlexWrap.NoWrap].
      * @see FlexWrap
      */
-    fun wrap(value: FlexWrap)
+    public fun wrap(value: FlexWrap)
 
     /**
      * Sets how children are distributed along the main axis.
      *
-     * This controls the spacing and positioning of items within each line:
-     * - [FlexJustifyContent.Start]: Items packed toward the start
-     * - [FlexJustifyContent.End]: Items packed toward the end
-     * - [FlexJustifyContent.Center]: Items centered along the main axis
-     * - [FlexJustifyContent.SpaceBetween]: Items evenly distributed; first at start, last at end
-     * - [FlexJustifyContent.SpaceAround]: Items evenly distributed with half-size space at edges
-     * - [FlexJustifyContent.SpaceEvenly]: Items evenly distributed with equal space everywhere
+     * This controls the spacing and positioning of items within each line after their main axis
+     * sizes have been resolved.
+     * - [FlexJustifyContent.Start]: Items packed toward the `main-start` edge.
+     * - [FlexJustifyContent.End]: Items packed toward the `main-end` edge.
+     * - [FlexJustifyContent.Center]: Items centered along the main axis.
+     * - [FlexJustifyContent.SpaceBetween]: Items evenly distributed; first at start, last at end.
+     * - [FlexJustifyContent.SpaceAround]: Items evenly distributed with half-size space at edges.
+     * - [FlexJustifyContent.SpaceEvenly]: Items evenly distributed with equal space everywhere.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxJustifyContentSample
      * @param value The justify content value. Default is [FlexJustifyContent.Start].
      * @see FlexJustifyContent
      */
-    fun justifyContent(value: FlexJustifyContent)
+    public fun justifyContent(value: FlexJustifyContent)
 
     /**
      * Sets the default alignment for children along the cross axis within each line.
      *
-     * This controls how items are positioned perpendicular to the main axis:
-     * - [FlexAlignItems.Start]: Items aligned to the cross axis start
-     * - [FlexAlignItems.End]: Items aligned to the cross axis end
-     * - [FlexAlignItems.Center]: Items centered along the cross axis
-     * - [FlexAlignItems.Stretch]: Items stretched to fill the line's cross axis size
-     * - [FlexAlignItems.Baseline]: Items aligned by their first baseline
-     *
-     * Individual items can override this using [FlexConfigScope.alignSelf].
+     * This controls how items are positioned perpendicular to the main axis. Individual items can
+     * override this default alignment using [FlexConfigScope.alignSelf].
+     * - [FlexAlignItems.Start]: Items aligned to the `cross-start` edge within the line.
+     * - [FlexAlignItems.End]: Items aligned to the `cross-end` edge within the line.
+     * - [FlexAlignItems.Center]: Items centered along the cross axis within the line.
+     * - [FlexAlignItems.Stretch]: Items stretched to fill the line's cross-axis size.
+     * - [FlexAlignItems.Baseline]: Items aligned by their baseline within the line.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxAlignItemsSample
      * @param value The align items value. Default is [FlexAlignItems.Start].
      * @see FlexAlignItems
      * @see FlexConfigScope.alignSelf
      */
-    fun alignItems(value: FlexAlignItems)
+    public fun alignItems(value: FlexAlignItems)
 
     /**
      * Aligns all items to a specific baseline.
      *
      * This is equivalent to calling `alignItems(FlexAlignItems.Baseline)` but allows specifying
-     * which alignment line to use.
+     * exactly which alignment line to use (e.g., [FirstBaseline] or [LastBaseline]).
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxAlignItemsBaselineSample
-     * @param alignmentLine The alignment line to use (e.g., [FirstBaseline], [LastBaseline]).
+     * @param alignmentLine The alignment line to use.
      * @see AlignmentLine
-     * @see FirstBaseline
-     * @see LastBaseline
      */
-    fun alignItems(alignmentLine: AlignmentLine)
+    public fun alignItems(alignmentLine: AlignmentLine)
 
     /**
      * Aligns all items to a custom baseline computed from each measured item.
      *
-     * Use this when you need custom baseline calculation logic. This is same as using
-     * [RowScope.alignBy] and [ColumnScope.alignBy]
+     * Use this when you need custom baseline calculation logic. This functions similarly to
+     * [RowScope.alignBy] and [ColumnScope.alignBy].
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxAlignItemsCustomBaselineSample
      * @param alignmentLineBlock A function that computes the baseline position from a [Measured]
      *   item.
      * @see Measured
      */
-    fun alignItems(alignmentLineBlock: (Measured) -> Int)
+    public fun alignItems(alignmentLineBlock: (Measured) -> Int)
 
     /**
-     * Sets how multiple lines are aligned along the cross axis.
+     * Sets how multiple lines are distributed along the cross axis.
      *
      * This only applies when [wrap] is [FlexWrap.Wrap] or [FlexWrap.WrapReverse] and there are
      * multiple lines of items.
-     * - [FlexAlignContent.Start]: Lines packed toward the cross axis start
-     * - [FlexAlignContent.End]: Lines packed toward the cross axis end
-     * - [FlexAlignContent.Center]: Lines centered along the cross axis
-     * - [FlexAlignContent.Stretch]: Lines stretched to fill available cross axis space
-     * - [FlexAlignContent.SpaceBetween]: Lines evenly distributed; first at start, last at end
-     * - [FlexAlignContent.SpaceAround]: Lines evenly distributed with half-size space at edges
+     * - [FlexAlignContent.Start]: Lines packed toward the `cross-start` edge.
+     * - [FlexAlignContent.End]: Lines packed toward the `cross-end` edge.
+     * - [FlexAlignContent.Center]: Lines centered along the cross axis.
+     * - [FlexAlignContent.Stretch]: Lines stretched to fill available cross-axis space.
+     * - [FlexAlignContent.SpaceBetween]: Lines evenly distributed; first at start, last at end.
+     * - [FlexAlignContent.SpaceAround]: Lines evenly distributed with half-size space at edges.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxAlignContentSample
      * @param value The align content value. Default is [FlexAlignContent.Start].
      * @see FlexAlignContent
      * @see wrap
      */
-    fun alignContent(value: FlexAlignContent)
+    public fun alignContent(value: FlexAlignContent)
 
     /**
-     * Sets the vertical spacing between rows.
+     * Sets the maximum number of items allowed in each line.
      *
-     * In a [FlexDirection.Row] layout with [FlexWrap.Wrap], this is the space between lines. In a
-     * [FlexDirection.Column] layout, this is the space between items on main axis.
+     * A new line is started once the current line already holds [value] items, even if there is
+     * still enough main-axis space for more. This only takes effect when [wrap] is [FlexWrap.Wrap]
+     * or [FlexWrap.WrapReverse]; with [FlexWrap.NoWrap] all items are always placed on a single
+     * line.
+     *
+     * @sample androidx.compose.foundation.layout.samples.FlexBoxMaxItemsInEachLineSample
+     * @param value The maximum number of items per line. Must be positive. Defaults to no limit.
+     * @throws IllegalArgumentException if [value] is not positive.
+     * @see wrap
+     */
+    public fun maxItemsInEachLine(@IntRange(from = 1) value: Int)
+
+    /**
+     * Sets the vertical spacing between items or lines.
+     *
+     * Regardless of the flex [direction], this always applies spacing along the vertical axis
+     * (Y-axis). In a horizontal layout with wrapping, this represents the space between wrapped
+     * lines. In a vertical layout, this represents the space between the items themselves.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxRowGapSample
-     * @param value The row gap size. Default is `0.dp`.
+     * @param value The vertical gap size. Default is `0.dp`.
      * @see columnGap
      * @see gap
      */
-    fun rowGap(value: Dp)
+    public fun rowGap(value: Dp)
 
     /**
-     * Sets the horizontal spacing between columns.
+     * Sets the horizontal spacing between items or columns.
      *
-     * In a [FlexDirection.Row] layout, this is the space between items on main axis. In a
-     * [FlexDirection.Column] layout with [FlexWrap.Wrap], this is the space between lines.
+     * Regardless of the flex [direction], this always applies spacing along the horizontal axis
+     * (X-axis). In a horizontal layout, this represents the space between the items themselves. In
+     * a vertical layout with wrapping, this represents the space between wrapped columns.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxColumnGapSample
-     * @param value The column gap size. Default is `0.dp`.
+     * @param value The horizontal gap size. Default is `0.dp`.
      * @see rowGap
      * @see gap
      */
-    fun columnGap(value: Dp)
+    public fun columnGap(value: Dp)
 
     /**
      * Sets both [rowGap] and [columnGap] to the same value.
      *
-     * This is a convenience function for uniform spacing.
+     * This is a convenience function for uniform spacing across both axes.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxGapSample
-     * @param value The gap size to apply to both row and column gaps.
+     * @param all The gap size to apply to both row and column gaps.
      * @see rowGap
      * @see columnGap
      */
-    fun gap(value: Dp)
+    public fun gap(all: Dp)
 
     /**
-     * Sets row and column gaps to different values.
+     * Sets [rowGap] and [columnGap] to different values.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBoxGapDifferentSample
-     * @param row The vertical spacing between rows.
-     * @param column The horizontal spacing between columns.
+     * @param row The vertical spacing (Y-axis).
+     * @param column The horizontal spacing (X-axis).
      * @see rowGap
      * @see columnGap
      */
-    fun gap(row: Dp, column: Dp)
+    public fun gap(row: Dp, column: Dp)
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
 
     private var _density: Density = DefaultDensity
@@ -1800,7 +2005,7 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
     var baselineAlignmentLine: AlignmentLine? = null
         private set
 
-    var baselineAlignmentBlock: ((Measured) -> Int)? = null
+    var baselineAlignmentBlock: AlignmentLineProviderBlock? = null
         private set
 
     override val density: Float
@@ -1826,6 +2031,8 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
 
     internal var alignContent: FlexAlignContent = FlexAlignContent.Start
 
+    internal var maxItemsInEachLine: Int = Int.MAX_VALUE
+
     internal var rowGap: Dp = 0.dp
 
     internal var columnGap: Dp = 0.dp
@@ -1846,9 +2053,9 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
         this.alignItems = value
     }
 
-    override fun gap(value: Dp) {
-        rowGap = value
-        columnGap = value
+    override fun gap(all: Dp) {
+        rowGap = all
+        columnGap = all
     }
 
     override fun alignItems(alignmentLine: AlignmentLine) {
@@ -1860,11 +2067,16 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
     override fun alignItems(alignmentLineBlock: (Measured) -> Int) {
         alignItems = FlexAlignItems.Baseline
         baselineAlignmentLine = null
-        baselineAlignmentBlock = alignmentLineBlock
+        baselineAlignmentBlock = AlignmentLineProviderBlock { alignmentLineBlock(it) }
     }
 
     override fun alignContent(value: FlexAlignContent) {
         this.alignContent = value
+    }
+
+    override fun maxItemsInEachLine(value: Int) {
+        requirePrecondition(value > 0) { "maxItemsInEachLine must be positive: $value" }
+        this.maxItemsInEachLine = value
     }
 
     override fun rowGap(value: Dp) {
@@ -1882,7 +2094,8 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
 
     internal fun getBaseline(placeable: Placeable): Int {
         return when {
-            baselineAlignmentBlock != null -> baselineAlignmentBlock!!.invoke(placeable)
+            baselineAlignmentBlock != null ->
+                baselineAlignmentBlock!!.calculateAlignmentLinePosition(placeable)
             baselineAlignmentLine != null -> {
                 val value = placeable[baselineAlignmentLine!!]
 
@@ -1912,6 +2125,7 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
         justifyContent = FlexJustifyContent.Start
         alignItems = FlexAlignItems.Start
         alignContent = FlexAlignContent.Start
+        maxItemsInEachLine = Int.MAX_VALUE
         rowGap = 0.dp
         columnGap = 0.dp
         baselineAlignmentLine = null
@@ -1944,6 +2158,7 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
             justifyContent = ${justifyContent},
             alignItems = ${alignItems},
             alignContent = ${alignContent},
+            maxItemsInEachLine = ${maxItemsInEachLine},
             rowGap = ${rowGap},
             columnGap = $columnGap
         )
@@ -1953,28 +2168,50 @@ internal class ResolvedFlexBoxConfig : FlexBoxConfigScope {
 }
 
 /**
- * FlexConfig represents a configuration for a flex item within a [FlexBox].
+ * Represents a configuration for a flex item within a [FlexBox].
  *
- * FlexConfig is implemented as a functional interface where the lambda is executed on
- * [FlexConfigScope] during the layout phase.
+ * This configuration is defined via a lambda that operates on a [FlexConfigScope]. Because this
+ * configuration block is executed during the layout phase rather than the composition phase,
+ * reading state variables inside the block will only trigger a layout pass, completely avoiding
+ * costly recompositions.
  *
- * **Note**: Configuration properties are **not additive**. If a property is assigned multiple times
- * within the configuration block, the last assignment overrides previous values.
- *
- * Example:
+ * Configuration properties are applied sequentially. If a property (such as
+ * [grow][FlexConfigScope.grow] or [shrink][FlexConfigScope.shrink]) is assigned multiple times
+ * within the configuration block, the final call takes precedence.
  *
  * @sample androidx.compose.foundation.layout.samples.FlexConfigSample
  * @see FlexConfigScope
  * @see FlexBoxScope.flex
  */
 @Stable
-@ExperimentalFlexBoxApi
-fun interface FlexConfig {
+public fun interface FlexConfig {
 
     /**
-     * Configures the flex item properties. Called during the layout phase, not during composition.
+     * Applies the configuration to the given [FlexConfigScope].This method is invoked by the layout
+     * system during the measurement phase, not during composition.
      */
-    fun FlexConfigScope.configure()
+    public fun FlexConfigScope.configure()
+
+    /**
+     * Merges this config with another. Configs further "to the right" will override properties to
+     * the left of them, on a per-property basis.
+     *
+     * @sample androidx.compose.foundation.layout.samples.FlexConfigCombineSample
+     * @param other the config to merge into the receiver.
+     */
+    public infix fun then(other: FlexConfig): FlexConfig =
+        when {
+            (other === Companion) -> this
+            other is CombinedFlexConfig -> CombinedFlexConfig(this, *other.configs)
+            else -> CombinedFlexConfig(this, other)
+        }
+
+    public companion object : FlexConfig {
+        override fun FlexConfigScope.configure() {}
+
+        /** Merging the identity with any config yields that config. */
+        override fun then(other: FlexConfig): FlexConfig = other
+    }
 }
 
 /**
@@ -1982,179 +2219,179 @@ fun interface FlexConfig {
  *
  * All configuration functions are called during the layout/measure phase, not during composition.
  *
- * Example:
- *
  * @sample androidx.compose.foundation.layout.samples.FlexConfigScopeSample
  * @see FlexConfig
  */
-@ExperimentalFlexBoxApi
-sealed interface FlexConfigScope : Density {
+public sealed interface FlexConfigScope : Density {
 
     /**
-     * The maximum size of the FlexBox container along the main axis.
-     *
-     * Corresponds to [Constraints.maxWidth] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
-     * [Constraints.maxHeight] for [FlexDirection.Column]/[FlexDirection.ColumnReverse].
-     *
-     * Use this for responsive item sizing based on container size.
+     * The maximum size of the FlexBox container along the main axis, in pixels. Corresponds to
+     * [Constraints.maxWidth] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
+     * [Constraints.maxHeight] for [FlexDirection.Column]/[FlexDirection.ColumnReverse]. Use this
+     * for responsive item sizing based on the container's available space.
      */
-    val flexBoxMainAxisMax: Int
+    public val flexBoxMainAxisMaxPx: Int
 
     /**
-     * The minimum size of the FlexBox container along the main axis.
-     *
-     * Corresponds to [Constraints.minWidth] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
+     * The minimum size of the FlexBox container along the main axis, in pixels. Corresponds to
+     * [Constraints.minWidth] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
      * [Constraints.minHeight] for [FlexDirection.Column]/[FlexDirection.ColumnReverse].
      */
-    val flexBoxMainAxisMin: Int
+    public val flexBoxMainAxisMinPx: Int
 
     /**
-     * The maximum size of the FlexBox container along the cross axis.
-     *
-     * Corresponds to [Constraints.maxHeight] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
+     * The maximum size of the FlexBox container along the cross axis, in pixels. Corresponds to
+     * [Constraints.maxHeight] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
      * [Constraints.maxWidth] for [FlexDirection.Column]/[FlexDirection.ColumnReverse].
      */
-    val flexBoxCrossAxisMax: Int
+    public val flexBoxCrossAxisMaxPx: Int
 
     /**
-     * The minimum size of the FlexBox container along the cross axis.
-     *
-     * Corresponds to [Constraints.minHeight] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
+     * The minimum size of the FlexBox container along the cross axis, in pixels. Corresponds to
+     * [Constraints.minHeight] for [FlexDirection.Row]/[FlexDirection.RowReverse], or
      * [Constraints.minWidth] for [FlexDirection.Column]/[FlexDirection.ColumnReverse].
      */
-    val flexBoxCrossAxisMin: Int
+    public val flexBoxCrossAxisMinPx: Int
 
     /**
      * Overrides the container's [FlexBoxConfigScope.alignItems] for this specific item.
-     * - [FlexAlignSelf.Auto]: Use the container's [FlexBoxConfigScope.alignItems] value
-     * - [FlexAlignSelf.Start]: Align to the cross axis start
-     * - [FlexAlignSelf.End]: Align to the cross axis end
-     * - [FlexAlignSelf.Center]: Center along the cross axis
-     * - [FlexAlignSelf.Stretch]: Stretch to fill the line's cross axis size
-     * - [FlexAlignSelf.Baseline]: Align by baseline
      *
-     * Example:
+     * This controls how the individual item is positioned perpendicular to the main axis within its
+     * respective line.
+     * - [FlexAlignSelf.Auto]: Inherits the container's alignment (default).
+     * - [FlexAlignSelf.Start]: Aligns to the `cross-start` edge of its line.
+     * - [FlexAlignSelf.End]: Aligns to the `cross-end` edge of its line.
+     * - [FlexAlignSelf.Center]: Centers along the cross axis within its line.
+     * - [FlexAlignSelf.Stretch]: Stretches to fill the line's cross-axis size.
+     * - [FlexAlignSelf.Baseline]: Aligns by baseline within its line.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexAlignSelfSample
      * @param value The alignment for this item. Default is [FlexAlignSelf.Auto].
      * @see FlexAlignSelf
      * @see FlexBoxConfigScope.alignItems
      */
-    fun alignSelf(value: FlexAlignSelf)
+    public fun alignSelf(value: FlexAlignSelf)
 
     /**
-     * Aligns this item to a specific baseline, overriding the container's alignment.
+     * Aligns this item to a specific baseline within its line, overriding the container's
+     * alignment.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexAlignSelfBaselineSample
      * @param alignmentLine The alignment line to use (e.g., [FirstBaseline], [LastBaseline]).
      * @see AlignmentLine
      */
-    fun alignSelf(alignmentLine: AlignmentLine)
+    public fun alignSelf(alignmentLine: AlignmentLine)
 
     /**
-     * Aligns this item to a custom baseline computed from the measured item.
+     * Aligns this item to a custom baseline computed from the measured item within its line,
+     * overriding the container's alignment.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexAlignSelfCustomBaselineSample
      * @param alignmentLineBlock A function that computes the baseline from a [Measured] item.
      */
-    fun alignSelf(alignmentLineBlock: (Measured) -> Int)
+    public fun alignSelf(alignmentLineBlock: (Measured) -> Int)
 
     /**
-     * Sets the visual order of this item relative to siblings.
+     * ◦ Sets the visual order of this item relative to its siblings.
      *
-     * Items are sorted by order value in ascending order before layout. Lower values appear first
-     * (closer to the start of the main axis). Items with the same order maintain their original
-     * declaration order.
+     * Items are sorted by their order value in ascending order before layout. Lower values are
+     * placed first, starting from the main-start edge of the container. Note that in reverse
+     * directions (like [FlexDirection.RowReverse]), the main-start edge is visually flipped (e.g.,
+     * to the right side of the container).
      *
-     * Default is `0`. Use negative values to move items before default-ordered items, or positive
-     * values to move items after.
-     *
-     * Example:
+     * The sorting is stable; items with the same order maintain the exact sequence in which they
+     * were emitted in the composition. By default, all items have an order of 0. You can use
+     * negative values to move items before default-ordered items, or positive values to move them
+     * after.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexOrderSample
-     * @param value The order value. Default is `0`.
+     * @param value The order value. Default is 0.
      */
-    fun order(value: Int)
+    public fun order(value: Int)
 
     /**
-     * Sets the flex grow factor, determining how much this item grows relative to siblings.
+     * Sets the flex grow factor, determining how much of the remaining positive free space this
+     * item should consume relative to its siblings.
      *
-     * When there is free space on the main axis, it is distributed among items proportional to
-     * their growth factors. Items with `grow(0f)` (the default) do not grow.
+     * When the sum of all item base sizes is less than the container's main axis size, the leftover
+     * space is distributed among items proportional to their growth factors. An item with a grow
+     * factor of 0f (the default) will not grow beyond its base size.
      *
-     * **Note:** Items will grow even with explicit size constraints (e.g.,
-     * `Modifier.width(100.dp)`). Set `grow(0f)` to prevent growth.
-     *
-     * Example:
+     * If no grow factor is configured, an item with a main-axis fill modifier (for example,
+     * [Modifier.fillMaxWidth][fillMaxWidth] in a [FlexDirection.Row]) uses its fill fraction as the
+     * grow factor. Calling this function always takes precedence over fill modifiers; in
+     * particular, an explicit `grow(0f)` keeps the item from growing even when a fill modifier is
+     * present.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexGrowSample
-     * @param value The growth factor. Must be non-negative. Default is `0f`.
+     * @param value The growth factor. Must be non-negative. Default is 0f.
      * @throws IllegalArgumentException if [value] is negative.
      * @see shrink
+     * @see basis
      */
-    fun grow(@FloatRange(from = 0.0) value: Float)
+    public fun grow(@FloatRange(from = 0.0) value: Float)
 
     /**
-     * Sets the flex shrink factor, determining how much this item shrinks relative to siblings.
+     * ◦ Sets the flex shrink factor, determining how much this item should shrink relative to its
+     * siblings when there is not enough space.
      *
-     * When items overflow the main axis, they shrink proportional to their shrink factors
-     * multiplied by their base size. Items with `shrink(0f)` do not shrink.
+     * When the sum of all item base sizes exceeds the container's main axis size, items will shrink
+     * proportionally based on their shrink factor multiplied by their base size. An item with a
+     * shrink factor of 0f will not shrink.
      *
-     * **Note:** Items will not shrink below their minimum intrinsic size. Items with explicit size
-     * modifiers (e.g., `Modifier.width(100.dp)`) will not shrink.
-     *
-     * Example:
+     * **Note:** Items will never shrink below their minimum intrinsic size. If the total minimum
+     * size of all items exceeds the container's size, the items will overflow visually on main
+     * axis. Use [Modifier.clipToBounds][androidx.compose.ui.draw.clipToBounds] on the container if
+     * you need to hide the overflow.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexShrinkSample
-     * @param value The shrink factor. Must be non-negative. Default is `1f`.
+     * @param value The shrink factor. Must be non-negative. Default is 1f.
      * @throws IllegalArgumentException if [value] is negative.
      * @see grow
+     * @see basis
      */
-    fun shrink(@FloatRange(from = 0.0) value: Float)
+    public fun shrink(@FloatRange(from = 0.0) value: Float)
 
     /**
-     * Sets the initial main size of this item before flex distribution.
+     * Sets the initial main axis size of this item before any free space distribution (grow or
+     * shrink) is calculated.
      *
      * The basis determines the starting size before [grow] and [shrink] are applied:
-     * - [FlexBasis.Auto]: Use the item's maximum intrinsic size
-     * - [FlexBasis.Dp]: Use a fixed size in dp
-     * - [FlexBasis.Percent]: Use a percentage of the container's main axis size
-     *
-     * Example:
+     * - [FlexBasis.Auto]: Uses the item's explicitly set size, or falls back to its natural content
+     *   size.
+     * - [FlexBasis.Dp]: Uses a fixed exact size in dp.
+     * - [FlexBasis.Percent]: Uses a fraction of the container's main axis size.
      *
      * @sample androidx.compose.foundation.layout.samples.FlexBasisSample
      * @param value The basis value. Default is [FlexBasis.Auto].
      * @see FlexBasis
      */
-    fun basis(value: FlexBasis)
+    public fun basis(value: FlexBasis)
 
     /**
-     * Sets the basis to a fixed Dp value.
-     *
-     * This is equivalent to `basis(FlexBasis.Dp(value))`.
+     * Sets the basis to a fixed Dp value. This is a convenience function equivalent to
+     * `basis(FlexBasis.Dp(value))`.
      *
      * @param value The basis size in Dp.
      * @see FlexBasis.Dp
      */
-    fun basis(value: Dp)
+    public fun basis(value: Dp)
 
     /**
-     * Sets the basis to a percentage of the container's main axis size.
+     * ◦ Sets the basis to a fraction of the container's main axis size.This is a convenience
+     * function equivalent to `basis(FlexBasis.Percent(value))`.
      *
-     * This is equivalent to `basis(FlexBasis.Percent(value))`.
-     *
-     * @param value A value between 0.0 and 1.0 representing the percentage.
+     * @param value A value between 0.0 and 1.0 representing the fraction of the container's size.
      * @see FlexBasis.Percent
      */
-    fun basis(@FloatRange(from = 0.0, to = 1.0) value: Float)
+    public fun basis(@FloatRange(from = 0.0, to = 1.0) value: Float)
 }
 
-@OptIn(ExperimentalFlexBoxApi::class)
 internal class ResolvedFlexItemInfo : FlexConfigScope {
     var baselineAlignmentLine: AlignmentLine? = null
         private set
 
-    var baselineAlignmentBlock: ((Measured) -> Int)? = null
+    var baselineAlignmentBlock: AlignmentLineProviderBlock? = null
         private set
 
     private var _density: Density = DefaultDensity
@@ -2169,16 +2406,16 @@ internal class ResolvedFlexItemInfo : FlexConfigScope {
 
     override fun TextUnit.toDp(): Dp = with(_density) { this@toDp.toDp() }
 
-    override var flexBoxMainAxisMax: Int = 0
+    override var flexBoxMainAxisMaxPx: Int = 0
         private set
 
-    override var flexBoxMainAxisMin: Int = 0
+    override var flexBoxMainAxisMinPx: Int = 0
         private set
 
-    override var flexBoxCrossAxisMax: Int = 0
+    override var flexBoxCrossAxisMaxPx: Int = 0
         private set
 
-    override var flexBoxCrossAxisMin: Int = 0
+    override var flexBoxCrossAxisMinPx: Int = 0
         private set
 
     override fun alignSelf(value: FlexAlignSelf) {
@@ -2194,7 +2431,7 @@ internal class ResolvedFlexItemInfo : FlexConfigScope {
     override fun alignSelf(alignmentLineBlock: (Measured) -> Int) {
         this.alignSelf = FlexAlignSelf.Baseline
         this.baselineAlignmentLine = null
-        this.baselineAlignmentBlock = alignmentLineBlock
+        this.baselineAlignmentBlock = AlignmentLineProviderBlock { alignmentLineBlock(it) }
     }
 
     override fun order(value: Int) {
@@ -2219,7 +2456,10 @@ internal class ResolvedFlexItemInfo : FlexConfigScope {
 
     internal var order: Int = 0
 
-    internal var grow: Float = 0f
+    internal var grow: Float = Float.NaN
+
+    internal val isGrowUnset: Boolean
+        get() = grow.isNaN()
 
     internal var shrink: Float = 1f
 
@@ -2235,7 +2475,8 @@ internal class ResolvedFlexItemInfo : FlexConfigScope {
 
     fun getBaseline(placeable: Placeable, fallback: ResolvedFlexBoxConfig): Int {
         return when {
-            baselineAlignmentBlock != null -> baselineAlignmentBlock!!.invoke(placeable)
+            baselineAlignmentBlock != null ->
+                baselineAlignmentBlock!!.calculateAlignmentLinePosition(placeable)
             baselineAlignmentLine != null -> {
                 val value = placeable[baselineAlignmentLine!!]
                 if (value != AlignmentLine.Unspecified) {
@@ -2260,10 +2501,10 @@ internal class ResolvedFlexItemInfo : FlexConfigScope {
 
     fun prepare(density: Density, constraints: OrientationIndependentConstraints) {
         this._density = density
-        this.flexBoxMainAxisMax = constraints.mainAxisMax
-        this.flexBoxMainAxisMin = constraints.mainAxisMin
-        this.flexBoxCrossAxisMax = constraints.crossAxisMax
-        this.flexBoxCrossAxisMin = constraints.crossAxisMin
+        this.flexBoxMainAxisMaxPx = constraints.mainAxisMax
+        this.flexBoxMainAxisMinPx = constraints.mainAxisMin
+        this.flexBoxCrossAxisMaxPx = constraints.crossAxisMax
+        this.flexBoxCrossAxisMinPx = constraints.crossAxisMin
     }
 
     // Measurable and measurement state
@@ -2331,6 +2572,172 @@ private class FlexLine {
 }
 
 /**
+ * Combine two [FlexBoxConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+public fun FlexBoxConfig(first: FlexBoxConfig, second: FlexBoxConfig): FlexBoxConfig =
+    first then second
+
+/**
+ * Combine three [FlexBoxConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+public fun FlexBoxConfig(
+    first: FlexBoxConfig,
+    second: FlexBoxConfig,
+    third: FlexBoxConfig,
+): FlexBoxConfig =
+    when {
+        first === FlexBoxConfig -> FlexBoxConfig(second, third)
+        second === FlexBoxConfig -> FlexBoxConfig(first, third)
+        third === FlexBoxConfig -> FlexBoxConfig(first, second)
+        first is CombinedFlexBoxConfig &&
+            second is CombinedFlexBoxConfig &&
+            third is CombinedFlexBoxConfig ->
+            FlexBoxConfig(*first.configs, *second.configs, *third.configs)
+        first is CombinedFlexBoxConfig && second is CombinedFlexBoxConfig ->
+            FlexBoxConfig(*first.configs, *second.configs, third)
+        first is CombinedFlexBoxConfig && third is CombinedFlexBoxConfig ->
+            FlexBoxConfig(*first.configs, second, *third.configs)
+        second is CombinedFlexBoxConfig && third is CombinedFlexBoxConfig ->
+            FlexBoxConfig(first, *second.configs, *third.configs)
+        first is CombinedFlexBoxConfig -> FlexBoxConfig(*first.configs, second, third)
+        second is CombinedFlexBoxConfig -> FlexBoxConfig(first, *second.configs, third)
+        third is CombinedFlexBoxConfig -> FlexBoxConfig(first, second, *third.configs)
+        else -> CombinedFlexBoxConfig(first, second, third)
+    }
+
+/**
+ * Combine multiple [FlexBoxConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ *
+ * @sample androidx.compose.foundation.layout.samples.FlexBoxConfigCombineSample
+ */
+public fun FlexBoxConfig(vararg configs: FlexBoxConfig): FlexBoxConfig =
+    if (configs.isEmpty()) {
+        FlexBoxConfig
+    } else if (configs.any { it === FlexBoxConfig }) {
+        val count = configs.count { it !== FlexBoxConfig }
+        when (count) {
+            0 -> FlexBoxConfig
+            1 -> configs.first { it !== FlexBoxConfig }
+            else -> {
+                val filtered = arrayOfNulls<FlexBoxConfig>(count)
+                var cursor = 0
+                configs.forEach { config ->
+                    if (config !== FlexBoxConfig) {
+                        filtered[cursor++] = config
+                    }
+                }
+                @Suppress("UNCHECKED_CAST")
+                CombinedFlexBoxConfig(*(filtered as Array<FlexBoxConfig>))
+            }
+        }
+    } else {
+        CombinedFlexBoxConfig(*configs)
+    }
+
+/**
+ * Internal representation for a composition of two or more [FlexBoxConfig] objects.
+ *
+ * This class holds a **flat** array of configs. The [FlexBoxConfig] factory functions ensure that
+ * [CombinedFlexBoxConfig] instances are never nested — if a factory receives a
+ * [CombinedFlexBoxConfig] as input, its [configs] array is spread into the new result. This
+ * guarantees that [configure] is always a single-pass flat iteration regardless of how many
+ * composition steps produced this instance.
+ *
+ * @property configs the flattened array of configs to apply in order. Later entries override
+ *   earlier entries on a per-property basis.
+ */
+internal class CombinedFlexBoxConfig(vararg val configs: FlexBoxConfig) : FlexBoxConfig {
+    override fun FlexBoxConfigScope.configure() {
+        configs.forEach { config -> with(config) { configure() } }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CombinedFlexBoxConfig) return false
+        return configs.contentEquals(other.configs)
+    }
+
+    override fun hashCode(): Int = configs.contentHashCode()
+}
+
+/**
+ * Combine two [FlexConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+public fun FlexConfig(first: FlexConfig, second: FlexConfig): FlexConfig = first then second
+
+/**
+ * Combine three [FlexConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ */
+public fun FlexConfig(first: FlexConfig, second: FlexConfig, third: FlexConfig): FlexConfig =
+    when {
+        first === FlexConfig -> FlexConfig(second, third)
+        second === FlexConfig -> FlexConfig(first, third)
+        third === FlexConfig -> FlexConfig(first, second)
+        first is CombinedFlexConfig &&
+            second is CombinedFlexConfig &&
+            third is CombinedFlexConfig ->
+            FlexConfig(*first.configs, *second.configs, *third.configs)
+        first is CombinedFlexConfig && second is CombinedFlexConfig ->
+            FlexConfig(*first.configs, *second.configs, third)
+        first is CombinedFlexConfig && third is CombinedFlexConfig ->
+            FlexConfig(*first.configs, second, *third.configs)
+        second is CombinedFlexConfig && third is CombinedFlexConfig ->
+            FlexConfig(first, *second.configs, *third.configs)
+        first is CombinedFlexConfig -> FlexConfig(*first.configs, second, third)
+        second is CombinedFlexConfig -> FlexConfig(first, *second.configs, third)
+        third is CombinedFlexConfig -> FlexConfig(first, second, *third.configs)
+        else -> CombinedFlexConfig(first, second, third)
+    }
+
+/**
+ * Combine multiple [FlexConfig] objects together. Configs further "to the right" will override
+ * properties to the left of them, on a per-property basis.
+ *
+ * @sample androidx.compose.foundation.layout.samples.FlexConfigCombineSample
+ */
+public fun FlexConfig(vararg configs: FlexConfig): FlexConfig =
+    if (configs.isEmpty()) {
+        FlexConfig
+    } else if (configs.any { it === FlexConfig }) {
+        val count = configs.count { it !== FlexConfig }
+        when (count) {
+            0 -> FlexConfig
+            1 -> configs.first { it !== FlexConfig }
+            else -> {
+                val filtered = arrayOfNulls<FlexConfig>(count)
+                var cursor = 0
+                configs.forEach { config ->
+                    if (config !== FlexConfig) {
+                        filtered[cursor++] = config
+                    }
+                }
+                @Suppress("UNCHECKED_CAST") CombinedFlexConfig(*(filtered as Array<FlexConfig>))
+            }
+        }
+    } else {
+        CombinedFlexConfig(*configs)
+    }
+
+internal class CombinedFlexConfig(vararg val configs: FlexConfig) : FlexConfig {
+    override fun FlexConfigScope.configure() {
+        configs.forEach { config -> with(config) { configure() } }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CombinedFlexConfig) return false
+        return configs.contentEquals(other.configs)
+    }
+
+    override fun hashCode(): Int = configs.contentHashCode()
+}
+
+/**
  * Iterates through a specific range of the [ArrayList] from [fromIndex] to [toIndex] (Exclusive)
  * and calls [action] for each item.
  *
@@ -2359,13 +2766,20 @@ private inline fun <T> ArrayList<T>.fastForEachUntil(
 
 @Suppress("BanInlineOptIn")
 @OptIn(ExperimentalContracts::class)
-private inline fun <T> ArrayList<T>.fastSumBy(
-    fromIndex: Int,
-    toIndex: Int,
-    selector: (T) -> Int,
-): Int {
+private inline fun <T> ArrayList<T>.fastForEach(
+    isReversed: Boolean,
+    startIndex: Int,
+    endIndex: Int,
+    selector: (T) -> Unit,
+) {
     contract { callsInPlace(selector) }
-    var sum = 0
-    fastForEachUntil(fromIndex, toIndex) { sum += selector(it) }
-    return sum
+    if (isReversed) {
+        for (i in endIndex - 1 downTo startIndex) {
+            selector(get(i))
+        }
+    } else {
+        for (i in startIndex until endIndex) {
+            selector(get(i))
+        }
+    }
 }

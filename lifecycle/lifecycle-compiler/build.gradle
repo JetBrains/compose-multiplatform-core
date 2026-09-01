@@ -29,6 +29,7 @@ plugins {
 
 dependencies {
     implementation(project(":lifecycle:lifecycle-common"))
+    implementation(libs.guava)
     implementation(libs.autoCommon)
     implementation(libs.javapoet)
     testImplementation(libs.googleCompileTesting)
@@ -55,11 +56,16 @@ sourceSets.test.output.dir(testLibraryJar.map { it.destinationDirectory })
 tasks.withType(Test).configureEach {
     // https://github.com/google/compile-testing/issues/222
     it.jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
+    it.jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"
+    it.jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+    it.jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"
+    it.jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"
+    it.jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED"
 }
 
 androidx {
     name = "Lifecycles Compiler"
     type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2017"
-    description = "Android Lifecycles annotation processor"
+    description = "Android Lifecycles annotation processor (Deprecated)"
 }

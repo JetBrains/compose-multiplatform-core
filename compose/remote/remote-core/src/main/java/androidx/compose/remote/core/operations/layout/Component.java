@@ -23,6 +23,7 @@ import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.SerializableToString;
 import androidx.compose.remote.core.TouchListener;
+import androidx.compose.remote.core.VariableProvider;
 import androidx.compose.remote.core.VariableSupport;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.core.operations.BitmapData;
@@ -33,9 +34,12 @@ import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.layout.animation.AnimateMeasure;
 import androidx.compose.remote.core.operations.layout.animation.AnimationSpec;
 import androidx.compose.remote.core.operations.layout.managers.LayoutManager;
+import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
+import androidx.compose.remote.core.operations.layout.measure.ComponentMeasurePool;
 import androidx.compose.remote.core.operations.layout.measure.Measurable;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
 import androidx.compose.remote.core.serialize.MapSerializer;
@@ -51,7 +55,7 @@ import java.util.HashSet;
 /** Generic Component class */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Component extends PaintOperation
-        implements Container, Measurable, SerializableToString, Serializable {
+        implements Container, Measurable, SerializableToString, Serializable, VariableProvider {
 
     private static final boolean DEBUG = false;
 
@@ -60,26 +64,21 @@ public class Component extends PaintOperation
     protected float mY;
     protected float mWidth;
     protected float mHeight;
-    @Nullable
-    protected Component mParent;
+    @Nullable protected Component mParent;
     protected int mAnimationId = -1;
     public int mVisibility = Visibility.VISIBLE;
+    public int mInternalLayoutIndex = -1; // index used by FlatMeasurePass
     public int mScheduledVisibility = Visibility.VISIBLE;
-    @NonNull
-    public ArrayList<Operation> mList = new ArrayList<>();
+    @NonNull public ArrayList<Operation> mList = new ArrayList<>();
     public @Nullable PaintOperation
             mPreTranslate; // todo, can we initialize this here and make it NonNull?
     public boolean mNeedsMeasure = true;
     public boolean mNeedsRepaint = false;
-    @Nullable
-    public AnimateMeasure mAnimateMeasure;
-    @NonNull
-    public AnimationSpec mAnimationSpec = AnimationSpec.DEFAULT;
+    @Nullable public AnimateMeasure mAnimateMeasure;
+    @NonNull public AnimationSpec mAnimationSpec = AnimationSpec.DEFAULT;
     public boolean mFirstLayout = true;
-    @NonNull
-    PaintBundle mPaint = new PaintBundle();
-    @NonNull
-    protected HashSet<ComponentValue> mComponentValues = new HashSet<>();
+    @NonNull PaintBundle mPaint = new PaintBundle();
+    @NonNull protected HashSet<ComponentValue> mComponentValues = new HashSet<>();
 
     protected float mZIndex = 0f;
 
@@ -178,7 +177,8 @@ public class Component extends PaintOperation
      *
      * @param context the current context
      */
-    protected void updateComponentValues(@NonNull RemoteContext context) {
+    protected void updateComponentValues(
+            @NonNull RemoteContext context, float width, float height) {
         if (DEBUG) {
             System.out.println(
                     "UPDATE COMPONENT VALUES ("
@@ -192,7 +192,7 @@ public class Component extends PaintOperation
             } else {
                 switch (v.getType()) {
                     case ComponentValue.WIDTH:
-                        context.loadFloat(v.getValueId(), mWidth);
+                        context.loadFloat(v.getValueId(), width);
                         if (DEBUG) {
                             System.out.println(
                                     "Updating WIDTH("
@@ -200,11 +200,11 @@ public class Component extends PaintOperation
                                             + ") for "
                                             + mComponentId
                                             + " to "
-                                            + mWidth);
+                                            + width);
                         }
                         break;
                     case ComponentValue.HEIGHT:
-                        context.loadFloat(v.getValueId(), mHeight);
+                        context.loadFloat(v.getValueId(), height);
                         if (DEBUG) {
                             System.out.println(
                                     "Updating HEIGHT("
@@ -212,7 +212,7 @@ public class Component extends PaintOperation
                                             + ") for "
                                             + mComponentId
                                             + " to "
-                                            + mHeight);
+                                            + height);
                         }
                         break;
                     case ComponentValue.POS_X:
@@ -234,7 +234,7 @@ public class Component extends PaintOperation
                         context.loadFloat(v.getValueId(), mLocation[1]);
                         break;
                     case ComponentValue.CONTENT_WIDTH:
-                        float contentWidth = mWidth;
+                        float contentWidth = width;
                         if (this instanceof LayoutComponent) {
                             LayoutComponent layoutComponent = (LayoutComponent) this;
                             if (layoutComponent.mHorizontalScrollDelegate != null) {
@@ -245,7 +245,7 @@ public class Component extends PaintOperation
                         context.loadFloat(v.getValueId(), contentWidth);
                         break;
                     case ComponentValue.CONTENT_HEIGHT:
-                        float contentHeight = mHeight;
+                        float contentHeight = height;
                         if (this instanceof LayoutComponent) {
                             LayoutComponent layoutComponent = (LayoutComponent) this;
                             if (layoutComponent.mVerticalScrollDelegate != null) {
@@ -266,6 +266,16 @@ public class Component extends PaintOperation
 
     public void setAnimationId(int id) {
         mAnimationId = id;
+    }
+
+    @Override
+    public int getId() {
+        return mComponentId;
+    }
+
+    @Override
+    public void setId(int id) {
+        mComponentId = id;
     }
 
     public Component(
@@ -341,14 +351,12 @@ public class Component extends PaintOperation
         context.mLastComponent = this;
 
         if (!mComponentValues.isEmpty()) {
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
         }
         context.mLastComponent = prev;
     }
 
-    /**
-     * Add a component value to the component
-     */
+    /** Add a component value to the component */
     public void addComponentValue(@NonNull ComponentValue v) {
         mComponentValues.add(v);
     }
@@ -411,9 +419,7 @@ public class Component extends PaintOperation
         mAnimationSpec = animationSpec;
     }
 
-    /**
-     * If the component contains variables beside mList, make sure to register them here
-     */
+    /** If the component contains variables beside mList, make sure to register them here */
     public void registerVariables(@NonNull RemoteContext context) {
         // Nothing here
     }
@@ -427,18 +433,30 @@ public class Component extends PaintOperation
         return 0f;
     }
 
-    /**
-     * Returns true if the component contains computed modifiers
-     */
+    /** Returns true if the component contains computed modifiers */
     public boolean hasComputedLayout() {
         return false;
     }
 
-    /**
-     * Apply computed modifiers
-     */
-    public boolean applyComputedLayout(int type, @NonNull PaintContext context,
-            @NonNull ComponentMeasure m, @NonNull ComponentMeasure parent) {
+    /** Returns true if any child component contains computed layout modifiers */
+    public boolean hasChildWithComputedLayout() {
+        for (Operation op : mList) {
+            if (op instanceof Component) {
+                Component child = (Component) op;
+                if (child.hasComputedLayout() || child.hasChildWithComputedLayout()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Apply computed modifiers */
+    public boolean applyComputedLayout(
+            int type,
+            @NonNull PaintContext context,
+            @NonNull ComponentMeasure m,
+            @NonNull ComponentMeasure parent) {
         // nothing here
         return false;
     }
@@ -453,12 +471,9 @@ public class Component extends PaintOperation
         public static final int OVERRIDE_INVISIBLE = 64;
         public static final int CLEAR_OVERRIDE = 128;
 
-        private Visibility() {
-        }
+        private Visibility() {}
 
-        /**
-         * Returns a string representation of the field
-         */
+        /** Returns a string representation of the field */
         public static @NonNull String toString(int value) {
             switch (value) {
                 case GONE:
@@ -482,9 +497,7 @@ public class Component extends PaintOperation
             return "" + value;
         }
 
-        /**
-         * Returns true if gone
-         */
+        /** Returns true if gone */
         public static boolean isGone(int value) {
             if ((value >> 4) > 0) {
                 return (value & OVERRIDE_GONE) == OVERRIDE_GONE;
@@ -492,9 +505,7 @@ public class Component extends PaintOperation
             return value == GONE;
         }
 
-        /**
-         * Returns true if visible
-         */
+        /** Returns true if visible */
         public static boolean isVisible(int value) {
             if ((value >> 4) > 0) {
                 return (value & OVERRIDE_VISIBLE) == OVERRIDE_VISIBLE;
@@ -502,9 +513,7 @@ public class Component extends PaintOperation
             return value == VISIBLE;
         }
 
-        /**
-         * Returns true if invisible
-         */
+        /** Returns true if invisible */
         public static boolean isInvisible(int value) {
             if ((value >> 4) > 0) {
                 return (value & OVERRIDE_INVISIBLE) == OVERRIDE_INVISIBLE;
@@ -512,23 +521,17 @@ public class Component extends PaintOperation
             return value == INVISIBLE;
         }
 
-        /**
-         * Returns true if the field has an override
-         */
+        /** Returns true if the field has an override */
         public static boolean hasOverride(int value) {
             return (value >> 4) > 0;
         }
 
-        /**
-         * Clear the override values
-         */
+        /** Clear the override values */
         public static int clearOverride(int value) {
             return value & 15;
         }
 
-        /**
-         * Add an override value
-         */
+        /** Add an override value */
         public static int add(int value, int visibility) {
             int v = value & 15;
             v += visibility;
@@ -539,9 +542,7 @@ public class Component extends PaintOperation
         }
     }
 
-    /**
-     * Returns true if the component is visible
-     */
+    /** Returns true if the component is visible */
     public boolean isVisible() {
         if (mParent == null || !Visibility.isVisible(mVisibility)) {
             return Visibility.isVisible(mVisibility);
@@ -549,16 +550,12 @@ public class Component extends PaintOperation
         return mParent.isVisible();
     }
 
-    /**
-     * Returns true if the component is gone
-     */
+    /** Returns true if the component is gone */
     public boolean isGone() {
         return Visibility.isGone(mVisibility);
     }
 
-    /**
-     * Returns true if the component is invisible
-     */
+    /** Returns true if the component is invisible */
     public boolean isInvisible() {
         return Visibility.isInvisible(mVisibility);
     }
@@ -572,6 +569,9 @@ public class Component extends PaintOperation
         if (visibility != mVisibility || visibility != mScheduledVisibility) {
             mScheduledVisibility = visibility;
             invalidateMeasure();
+            if (mParent != null) {
+                mParent.invalidateMeasure();
+            }
         }
     }
 
@@ -611,15 +611,46 @@ public class Component extends PaintOperation
         m.setH(mHeight);
     }
 
+    /** Returns true if the component has dynamic position computed modifiers. */
+    public boolean hasDynamicPosition() {
+        for (Operation op : mList) {
+            if (op instanceof LayoutComputeOperation) {
+                if (((LayoutComputeOperation) op).getType()
+                        == LayoutComputeOperation.TYPE_POSITION) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Returns true if the component has dynamic size computed modifiers. */
+    public boolean hasDynamicSize() {
+        for (Operation op : mList) {
+            if (op instanceof LayoutComputeOperation) {
+                if (((LayoutComputeOperation) op).getType()
+                        == LayoutComputeOperation.TYPE_MEASURE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Apply the measurement to the component.
+     *
      * @param m the ComponentMeasure to apply
      */
     public void applyMeasure(@NonNull ComponentMeasure m) {
-        mWidth = m.getW();
-        mHeight = m.getH();
-        mX = m.getX();
-        mY = m.getY();
+        if (!hasDynamicPosition()) {
+            mX = m.getX();
+            mY = m.getY();
+        }
+        if (!hasDynamicSize()) {
+            mWidth = m.getW();
+            mHeight = m.getH();
+        }
         mVisibility = m.getVisibility();
     }
 
@@ -632,10 +663,11 @@ public class Component extends PaintOperation
                 && m.getAllowsAnimation()
                 && !(this instanceof LayoutComponentContent)) {
             if (mAnimateMeasure == null) {
+                ComponentMeasurePool pool = context.getComponentMeasurePool();
                 ComponentMeasure origin =
-                        new ComponentMeasure(mComponentId, mX, mY, mWidth, mHeight, mVisibility);
+                        pool.obtain(mComponentId, mX, mY, mWidth, mHeight, mVisibility);
                 ComponentMeasure target =
-                        new ComponentMeasure(
+                        pool.obtain(
                                 mComponentId,
                                 m.getX(),
                                 m.getY(),
@@ -655,6 +687,9 @@ public class Component extends PaintOperation
                                     mAnimationSpec.getExitAnimation(),
                                     mAnimationSpec.getMotionEasingType(),
                                     mAnimationSpec.getVisibilityEasingType());
+                } else {
+                    pool.recycle(origin);
+                    pool.recycle(target);
                 }
             } else {
                 mAnimateMeasure.updateTarget(context, m, context.currentTime);
@@ -662,11 +697,13 @@ public class Component extends PaintOperation
         }
         if (mAnimateMeasure == null) {
             applyMeasure(m);
-            updateComponentValues(context);
-            clearNeedsBoundsAnimation();
+            updateComponentValues(context, mWidth, mHeight);
+            if (mParent != null) {
+                clearNeedsBoundsAnimation();
+            }
         } else {
             mAnimateMeasure.apply(context);
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
             markNeedsBoundsAnimation();
         }
         mFirstLayout = false;
@@ -681,9 +718,22 @@ public class Component extends PaintOperation
     public void animatingBounds(@NonNull RemoteContext context) {
         if (mAnimateMeasure != null) {
             mAnimateMeasure.apply(context);
-            updateComponentValues(context);
+            updateComponentValues(context, mWidth, mHeight);
+            if (mAnimateMeasure.isDone()) {
+                ComponentMeasurePool pool = context.getComponentMeasurePool();
+                pool.recycle(mAnimateMeasure.getOriginal());
+                pool.recycle(mAnimateMeasure.getTarget());
+                mAnimateMeasure = null;
+                if (mParent != null) {
+                    clearNeedsBoundsAnimation();
+                }
+            } else {
+                markNeedsBoundsAnimation();
+            }
         } else {
-            clearNeedsBoundsAnimation();
+            if (mParent != null) {
+                clearNeedsBoundsAnimation();
+            }
         }
         for (Operation op : mList) {
             if (op instanceof Measurable) {
@@ -695,9 +745,7 @@ public class Component extends PaintOperation
 
     protected float @NonNull [] mLocation = new float[2];
 
-    /**
-     * Hit detection -- returns true if the point (x, y) is inside the component
-     */
+    /** Hit detection -- returns true if the point (x, y) is inside the component */
     public boolean contains(@NonNull RemoteContext context, float x, float y) {
         mLocation[0] = 0f;
         mLocation[1] = 0f;
@@ -730,10 +778,10 @@ public class Component extends PaintOperation
     /**
      * Click handler
      *
-     * @param context  the current context
+     * @param context the current context
      * @param document the current document
-     * @param x        x location on screen or -1 if unconditional click
-     * @param y        y location on screen or -1 if unconditional click
+     * @param x x location on screen or -1 if unconditional click
+     * @param y y location on screen or -1 if unconditional click
      * @return true if the click was handled
      */
     public boolean onClick(
@@ -783,9 +831,97 @@ public class Component extends PaintOperation
     }
 
     /**
+     * Long press handler
+     *
+     * @param context the current context
+     * @param document the current document
+     * @param x x location on screen or -1 if unconditional click
+     * @param y y location on screen or -1 if unconditional click
+     * @return true if the long press was handled
+     */
+    public boolean onLongPress(
+            @NonNull RemoteContext context, @NonNull CoreDocument document, float x, float y) {
+        boolean isUnconditional = x == -1 && y == -1;
+        if (!isUnconditional && !contains(context, x, y)) {
+            return false;
+        }
+
+        mLocation[0] = 0f;
+        mLocation[1] = 0f;
+        getLocationInWindow(context, mLocation, true);
+        float lx = isUnconditional ? -1 : x - mLocation[0];
+        float ly = isUnconditional ? -1 : y - mLocation[1];
+
+        mLocation[0] = 0f;
+        mLocation[1] = 0f;
+        getLocationInWindow(context, mLocation, false);
+
+        // Iterate backwards
+        for (int i = mList.size() - 1; i >= 0; i--) {
+            Operation op = mList.get(i);
+            if (op instanceof Component) {
+                if (((Component) op).onLongPress(context, document, x, y)) {
+                    return true;
+                }
+            }
+            if (op instanceof ClickHandler) {
+                if (((ClickHandler) op).onLongPress(context, document, this, lx, ly)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Double click handler
+     *
+     * @param context the current context
+     * @param document the current document
+     * @param x x location on screen or -1 if unconditional click
+     * @param y y location on screen or -1 if unconditional click
+     * @return true if the double click was handled
+     */
+    public boolean onDoubleClick(
+            @NonNull RemoteContext context, @NonNull CoreDocument document, float x, float y) {
+        boolean isUnconditional = x == -1 && y == -1;
+        if (!isUnconditional && !contains(context, x, y)) {
+            return false;
+        }
+
+        mLocation[0] = 0f;
+        mLocation[1] = 0f;
+        getLocationInWindow(context, mLocation, true);
+        float lx = isUnconditional ? -1 : x - mLocation[0];
+        float ly = isUnconditional ? -1 : y - mLocation[1];
+
+        mLocation[0] = 0f;
+        mLocation[1] = 0f;
+        getLocationInWindow(context, mLocation, false);
+
+        // Iterate backwards
+        for (int i = mList.size() - 1; i >= 0; i--) {
+            Operation op = mList.get(i);
+            if (op instanceof Component) {
+                if (((Component) op).onDoubleClick(context, document, x, y)) {
+                    return true;
+                }
+            }
+            if (op instanceof ClickHandler) {
+                if (((ClickHandler) op).onDoubleClick(context, document, this, lx, ly)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Touch down handler
      *
-     * @param context  the current context
+     * @param context the current context
      * @param document the current document
      * @return true if handled
      */
@@ -819,6 +955,10 @@ public class Component extends PaintOperation
                     if (((TouchHandler) op).onTouchDown(context, document, this, lx, ly)) {
                         handled = true;
                     }
+                // ClickHandler handles high-level click-responsiveness and consumes the down event
+                // structurally, positioned after custom pointers/TouchHandlers.
+                } else if (op instanceof ClickHandler) {
+                    handled = true;
                 } else if (op instanceof TouchExpression) {
                     TouchExpression touchExpression = (TouchExpression) op;
                     touchExpression.updateVariables(context);
@@ -1056,14 +1196,13 @@ public class Component extends PaintOperation
     /**
      * Returns the location of the component relative to the root component
      *
-     * @param value   a 2 dimension float array that will receive the horizontal and vertical
-     *                position
-     *                of the component.
+     * @param value a 2 dimension float array that will receive the horizontal and vertical position
+     *     of the component.
      * @param forSelf whether the location is for this container or a child, relevant for scrollable
-     *                items.
+     *     items.
      */
-    public void getLocationInWindow(@NonNull RemoteContext context, float @NonNull [] value,
-            boolean forSelf) {
+    public void getLocationInWindow(
+            @NonNull RemoteContext context, float @NonNull [] value, boolean forSelf) {
         value[0] += mX;
         value[1] += mY;
         if (context.getTouchVersion() == LayoutManager.FIX_TOUCH_EVENT) {
@@ -1081,7 +1220,7 @@ public class Component extends PaintOperation
      * Returns the location of the component relative to the root component
      *
      * @param value a 2 dimension float array that will receive the horizontal and vertical position
-     *              of the component.
+     *     of the component.
      */
     public void getLocationInWindow(@NonNull RemoteContext context, float @NonNull [] value) {
         getLocationInWindow(context, value, true);
@@ -1092,12 +1231,12 @@ public class Component extends PaintOperation
      * (semantic parent).
      *
      * <p>This method traverses up the component tree, accumulating coordinates and accounting for
-     * layout offsets such as padding and scroll positions if the intermediate components are
-     * {@link LayoutComponent}s.
+     * layout offsets such as padding and scroll positions if the intermediate components are {@link
+     * LayoutComponent}s.
      *
-     * @param bounds   A 4-element array that will receive the bounds: [left, top, right, bottom].
-     * @param parentId The ID of the ancestor component to calculate the bounds relative to.
-     *                 If {@code null}, the coordinates will be relative to the root component.
+     * @param bounds A 4-element array that will receive the bounds: [left, top, right, bottom].
+     * @param parentId The ID of the ancestor component to calculate the bounds relative to. If
+     *     {@code null}, the coordinates will be relative to the root component.
      */
     public void getBoundsInSemanticParent(int @NonNull [] bounds, @Nullable Integer parentId) {
         float x = 0;
@@ -1215,12 +1354,73 @@ public class Component extends PaintOperation
     }
 
     /**
+     * Returns true if this component contains dynamic computed operations or variable expressions.
+     */
+    public boolean hasDynamicComputes() {
+        for (Operation op : mList) {
+            if (op instanceof androidx.compose.remote.core.VariableSupport) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isRelayoutBoundary() {
+        return isRelayoutBoundary((CoreDocument) null);
+    }
+
+    /**
+     * Returns true if this node acts as a relayout boundary, meaning changes inside this node
+     * do not affect the size or position of its parent.
+     */
+    public boolean isRelayoutBoundary(@Nullable CoreDocument document) {
+        boolean enabled = document == null || document.isRelayoutBoundaryEnabled();
+        if (!enabled) {
+            return false;
+        }
+        if (hasComputedLayout()) {
+            return false;
+        }
+        if (this instanceof LayoutComponent) {
+            LayoutComponent lc = (LayoutComponent) this;
+            if (lc.getWidthModifier() != null && lc.getHeightModifier() != null) {
+                if (lc.getWidthModifier().isExact() && lc.getHeightModifier().isExact()) {
+                    return true;
+                }
+                if (lc.getWidthModifier().isFill() && lc.getHeightModifier().isFill()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Mark itself as needing to be remeasured, and walk back up the tree to mark each parents as
      * well.
      */
     public void invalidateMeasure() {
         needsRepaint();
         mNeedsMeasure = true;
+
+        try {
+            RootLayoutComponent root = getRoot();
+            if (root != null) {
+                Component p = mParent;
+                while (p != null) {
+                    p.mNeedsMeasure = true;
+                    if (p.isRelayoutBoundary()) {
+                        root.registerDirtyBoundary(p);
+                        break;
+                    }
+                    p = p.mParent;
+                }
+                return;
+            }
+        } catch (Exception e) {
+            // Fallback during inflation/setup
+        }
+
         Component p = mParent;
         while (p != null) {
             p.mNeedsMeasure = true;
@@ -1253,9 +1453,7 @@ public class Component extends PaintOperation
         return builder.toString();
     }
 
-    /**
-     * Returns a string containing the text operations if any
-     */
+    /** Returns a string containing the text operations if any */
     @NonNull
     public String textContent() {
         StringBuilder builder = new StringBuilder();
@@ -1269,9 +1467,7 @@ public class Component extends PaintOperation
         return builder.toString();
     }
 
-    /**
-     * Utility debug function
-     */
+    /** Utility debug function */
     public void debugBox(@NonNull Component component, @NonNull PaintContext context) {
         float width = component.mWidth;
         float height = component.mHeight;
@@ -1301,9 +1497,7 @@ public class Component extends PaintOperation
         this.mY = y;
     }
 
-    /**
-     * The vertical position of this component relative to its parent
-     */
+    /** The vertical position of this component relative to its parent */
     public float getTranslateX() {
         if (mParent != null) {
             return mX - mParent.mX;
@@ -1311,9 +1505,7 @@ public class Component extends PaintOperation
         return 0f;
     }
 
-    /**
-     * The horizontal position of this component relative to its parent
-     */
+    /** The horizontal position of this component relative to its parent */
     public float getTranslateY() {
         if (mParent != null) {
             return mY - mParent.mY;
@@ -1321,9 +1513,7 @@ public class Component extends PaintOperation
         return 0f;
     }
 
-    /**
-     * Paint the component itself.
-     */
+    /** Paint the component itself. */
     public void paintingComponent(@NonNull PaintContext context) {
         if (mPreTranslate != null) {
             mPreTranslate.paint(context);
@@ -1352,22 +1542,44 @@ public class Component extends PaintOperation
         context.getContext().mLastComponent = prev;
     }
 
-    /**
-     * If animation is turned on and we need to be animated, we'll apply it.
-     */
+    /** If animation is turned on and we need to be animated, we'll apply it. */
     public boolean applyAnimationAsNeeded(@NonNull PaintContext context) {
         if (context.isAnimationEnabled() && mAnimateMeasure != null) {
             mAnimateMeasure.paint(context);
             if (mAnimateMeasure.isDone()) {
+                ComponentMeasurePool pool = context.getContext().getComponentMeasurePool();
+                pool.recycle(mAnimateMeasure.getOriginal());
+                pool.recycle(mAnimateMeasure.getTarget());
                 mAnimateMeasure = null;
-                clearNeedsBoundsAnimation();
+                if (mParent != null) {
+                    clearNeedsBoundsAnimation();
+                }
                 needsRepaint();
             } else {
                 markNeedsBoundsAnimation();
+                needsRepaint();
             }
             return true;
         }
         return false;
+    }
+
+    /**
+     * Find an ancestor component of the specified class.
+     *
+     * @param clazz the target component class
+     * @param <T> the type of component
+     * @return the ancestor component instance if found, or null
+     */
+    public <T extends Component> @Nullable T findAncestor(@NonNull Class<T> clazz) {
+        Component p = mParent;
+        while (p != null) {
+            if (clazz.isInstance(p)) {
+                return clazz.cast(p);
+            }
+            p = p.mParent;
+        }
+        return null;
     }
 
     @Override
@@ -1392,6 +1604,18 @@ public class Component extends PaintOperation
         }
         if (applyAnimationAsNeeded(context)) {
             return;
+        }
+        if (mAnimationId != -1) {
+            StateLayout stateLayout = findAncestor(StateLayout.class);
+            if (stateLayout != null) {
+                Component shared =
+                        stateLayout.getSharedComponent(
+                                mAnimationId, stateLayout.measuredLayoutIndex);
+                if (shared != null && shared != this) {
+                    shared.paint(context);
+                    return;
+                }
+            }
         }
         if (isGone() || isInvisible()) {
             return;
@@ -1424,7 +1648,7 @@ public class Component extends PaintOperation
     /**
      * Extract child data elements
      *
-     * @param data             an ArrayList that will be populated with the Data elements (if any)
+     * @param data an ArrayList that will be populated with the Data elements (if any)
      * @param allButComponents if true, all elements other than components will be added.
      */
     public void getData(@NonNull ArrayList<Operation> data, boolean allButComponents) {
@@ -1443,9 +1667,7 @@ public class Component extends PaintOperation
         }
     }
 
-    /**
-     * Returns the number of children components
-     */
+    /** Returns the number of children components */
     public int getComponentCount() {
         int count = 0;
         for (Operation op : mList) {
@@ -1467,16 +1689,12 @@ public class Component extends PaintOperation
         return mComponentId;
     }
 
-    /**
-     * Return true if the needsRepaint flag is set on this component
-     */
+    /** Return true if the needsRepaint flag is set on this component */
     public boolean doesNeedsRepaint() {
         return mNeedsRepaint;
     }
 
-    /**
-     * Utility function to return a component from its id
-     */
+    /** Utility function to return a component from its id */
     @Nullable
     public Component getComponent(int cid) {
         if (mComponentId == cid || mAnimationId == cid) {
@@ -1506,9 +1724,7 @@ public class Component extends PaintOperation
         serializer.add("list", mList);
     }
 
-    /**
-     * Return ourself or a matching modifier. Used by the semantics / accessibility layer.
-     */
+    /** Return ourself or a matching modifier. Used by the semantics / accessibility layer. */
     public <T> @Nullable T selfOrModifier(@NonNull Class<T> operationClass) {
         if (operationClass.isInstance(this)) {
             return operationClass.cast(this);

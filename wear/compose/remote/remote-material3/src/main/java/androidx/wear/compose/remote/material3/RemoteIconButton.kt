@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.wear.compose.remote.material3
 
-import android.annotation.SuppressLint
-import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -65,11 +62,10 @@ import androidx.compose.ui.graphics.Color
  *   different states.
  * @param borderColor Optional [RemoteColor] that will be used to resolve the border color for this
  *   button in different states.
- * @param content The content displayed on the text button, expected to be text or image.
+ * @param content The content displayed on the icon button, expected to be icon or image.
  */
 @Composable
 @RemoteComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun RemoteIconButton(
     onClick: Action,
     modifier: RemoteModifier = RemoteModifier,
@@ -91,14 +87,13 @@ public fun RemoteIconButton(
         content =
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
-                LocalRemoteTypography.current.labelMedium,
+                RemoteMaterialTheme.typography.labelMedium,
                 content,
             ),
     )
 }
 
 /** Contains the default values used by [RemoteIconButton]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteIconButtonDefaults {
     /** Recommended [RemoteShape] for [RemoteIconButton]. */
     public val shape: RemoteRoundedCornerShape
@@ -108,8 +103,8 @@ public object RemoteIconButtonDefaults {
     public val DisabledImageOpacity: RemoteFloat = DisabledContentAlpha.rf
 
     /**
-     * Returns a [iconButtonColors] for a text button - by default, a transparent background with
-     * contrasting content color. If the button is disabled then the colors default to
+     * Returns a [RemoteIconButtonColors] for an icon button - by default, a transparent background
+     * with contrasting content color. If the button is disabled then the colors default to
      * [RemoteColorScheme.onSurface] with suitable alpha values applied.
      */
     @Composable
@@ -117,14 +112,14 @@ public object RemoteIconButtonDefaults {
         RemoteMaterialTheme.colorScheme.defaultIconButtonColors
 
     /**
-     * Returns a [RemoteIconButtonColors] for a text button - by default, a transparent background
+     * Returns a [RemoteIconButtonColors] for an icon button - by default, a transparent background
      * with contrasting content color. If the button is disabled then the colors default to
      * [RemoteColorScheme.onSurface] with suitable alpha values applied.
      *
-     * @param containerColor the background color of this text button when enabled
-     * @param contentColor the content color of this text button when enabled
-     * @param disabledContainerColor the background color of this text button when not enabled
-     * @param disabledContentColor the content color of this text button when not enabled
+     * @param containerColor the background color of this icon button when enabled
+     * @param contentColor the content color of this icon button when enabled
+     * @param disabledContainerColor the background color of this icon button when not enabled
+     * @param disabledContentColor the content color of this icon button when not enabled
      */
     @Composable
     public fun iconButtonColors(
@@ -150,15 +145,10 @@ public object RemoteIconButtonDefaults {
      *
      * @param buttonSize The size of the icon button
      */
-    @SuppressLint("RestrictedApiAndroidX")
     public fun iconSizeFor(buttonSize: RemoteDp): RemoteDp =
-        buttonSize.value
-            .gt(LargeButtonSize.value)
-            .select(
-                ifTrue = LargeIconSize.value,
-                ifFalse = max(SmallIconSize.value, buttonSize.value / 2f),
-            )
-            .asRemoteDp()
+        buttonSize
+            .isGreaterThan(LargeButtonSize)
+            .select(ifTrue = LargeIconSize, ifFalse = max(SmallIconSize, buttonSize / 2f.rf))
 
     /**
      * The recommended size of an icon when used inside an icon button with size [SmallButtonSize]
@@ -202,15 +192,17 @@ public object RemoteIconButtonDefaults {
 }
 
 /**
- * Represents the container and content colors used in a text button in different states.
+ * Represents the container and content colors used in an icon button in different states.
  *
- * @param containerColor the background color of this text button when enabled.
- * @param contentColor the content color of this text button when enabled.
- * @param disabledContainerColor the background color of this text button when not enabled.
- * @param disabledContentColor the content color of this text button when not enabled.
+ * See [RemoteIconButtonDefaults.iconButtonColors] for the default colors used in a
+ * [RemoteIconButton].
+ *
+ * @param containerColor the background color of this icon button when enabled.
+ * @param contentColor the content color of this icon button when enabled.
+ * @param disabledContainerColor the background color of this icon button when not enabled.
+ * @param disabledContentColor the content color of this icon button when not enabled.
  */
 @Immutable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteIconButtonColors(
     public val containerColor: RemoteColor,
     public val contentColor: RemoteColor,

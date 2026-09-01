@@ -36,6 +36,7 @@ import androidx.room3.compiler.processing.PropertySpecHelper
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.KotlinCollectionMemberNames
 import androidx.room3.ext.KotlinTypeNames
+import androidx.room3.ext.RoomMemberNames
 import androidx.room3.ext.RoomTypeNames
 import androidx.room3.ext.decapitalize
 import androidx.room3.ext.stripNonJava
@@ -58,19 +59,39 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
             setVisibility(VisibilityModifier.INTERNAL)
             addFunction(createOpenDelegate())
             addFunction(createCreateInvalidationTracker())
-            if (database.overrideClearAllTables) {
-                addFunction(createClearAllTables())
-            }
+            addFunction(createClearAllTables())
             addFunction(createCreateTypeConvertersMap())
+            addFunction(createCreateDaoReturnTypeConvertersMap())
             addFunction(createCreateAutoMigrationSpecsSet())
             addFunction(createGetAutoMigrations())
             addDaoImpls(this)
         }
     }
 
-    private fun createCreateTypeConvertersMap(): XFunSpec {
+    private fun createCreateTypeConvertersMap(): XFunSpec =
+        createRequiredConvertersMap(
+            javaMethodName = "getRequiredColumnTypeConverters",
+            kotlinMethodName = "getRequiredColumnTypeConverterClasses",
+            tmpVarName = "_columnTypeConvertersMap",
+            daoFunctionGetName = DaoWriter.GET_LIST_OF_COLUMN_TYPE_CONVERTERS_FUNCTION,
+        )
+
+    private fun createCreateDaoReturnTypeConvertersMap(): XFunSpec =
+        createRequiredConvertersMap(
+            javaMethodName = "getRequiredDaoReturnTypeConverters",
+            kotlinMethodName = "getRequiredDaoReturnTypeConverterClasses",
+            tmpVarName = "_daoReturnTypeConvertersMap",
+            daoFunctionGetName = DaoWriter.GET_LIST_OF_DAO_RETURN_TYPE_CONVERTERS_FUNCTION,
+        )
+
+    private fun createRequiredConvertersMap(
+        javaMethodName: String,
+        kotlinMethodName: String,
+        tmpVarName: String,
+        daoFunctionGetName: String,
+    ): XFunSpec {
         val scope = CodeGenScope(this)
-        val typeConvertersVar = scope.getTmpVar("_typeConvertersMap")
+        val typeConvertersVar = scope.getTmpVar(tmpVarName)
         val classOfAnyTypeName = CommonTypeNames.KOTLIN_CLASS.parametrizedBy(XTypeName.ANY_WILDCARD)
         val typeConvertersTypeName =
             CommonTypeNames.MUTABLE_MAP.parametrizedBy(
@@ -92,18 +113,14 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                             typeConvertersVar,
                             XCodeBlock.ofKotlinClassLiteral(it.dao.typeName),
                             it.dao.implTypeName,
-                            DaoWriter.GET_LIST_OF_TYPE_CONVERTERS_FUNCTION,
+                            daoFunctionGetName,
                         )
                     }
                 }
                 .addStatement("return %L", typeConvertersVar)
                 .build()
         return XFunSpec.builder(
-                name =
-                    XName.of(
-                        java = "getRequiredTypeConverters",
-                        kotlin = "getRequiredTypeConverterClasses",
-                    ),
+                name = XName.of(java = javaMethodName, kotlin = kotlinMethodName),
                 visibility = VisibilityModifier.PROTECTED,
                 isOverride = true,
             )
@@ -169,13 +186,19 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                 name = "clearAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
+                isSuspend = true,
             )
             .apply {
                 val tableNames =
                     database.entities.sortedWith(EntityDeleteComparator()).joinToString(", ") {
                         "\"${it.tableName}\""
                     }
-                addStatement("super.performClear(%L, %L)", database.enableForeignKeys, tableNames)
+                addStatement(
+                    "%M(this, %L, %L)",
+                    RoomMemberNames.DB_UTIL_PERFORM_CLEAR,
+                    database.enableForeignKeys,
+                    tableNames,
+                )
             }
             .build()
     }
@@ -390,7 +413,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
             )
-            .applyTo { language ->
+            .applyTo { _ ->
                 val classOfAutoMigrationSpecTypeName =
                     CommonTypeNames.KOTLIN_CLASS.parametrizedBy(
                         XTypeName.getProducerExtendsName(RoomTypeNames.AUTO_MIGRATION_SPEC)

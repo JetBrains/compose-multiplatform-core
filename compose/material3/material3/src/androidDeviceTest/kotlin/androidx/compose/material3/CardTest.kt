@@ -52,7 +52,6 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,7 +60,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CardTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -98,7 +97,7 @@ class CardTest {
     @Test
     fun cardColors_customValues() {
         rule.setContent() {
-            var colorScheme =
+            val colorScheme =
                 MaterialTheme.colorScheme.copy(
                     surface = Color.Green,
                     onSurface = Color.Blue,
@@ -120,7 +119,7 @@ class CardTest {
     @Test
     fun elevatedCardColors_customValues() {
         rule.setContent() {
-            var colorScheme =
+            val colorScheme =
                 MaterialTheme.colorScheme.copy(
                     surface = Color.Green,
                     onSurface = Color.Blue,
@@ -142,7 +141,7 @@ class CardTest {
     @Test
     fun outlinedCardColors_customValues() {
         rule.setContent() {
-            var colorScheme =
+            val colorScheme =
                 MaterialTheme.colorScheme.copy(
                     surface = Color.Green,
                     onSurface = Color.Blue,

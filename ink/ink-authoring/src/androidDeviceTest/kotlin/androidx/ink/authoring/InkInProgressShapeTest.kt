@@ -18,7 +18,7 @@ package androidx.ink.authoring
 import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.ExperimentalInkAnimationApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.strokes.ImmutableStrokeInputBatch
 import androidx.ink.strokes.MutableStrokeInputBatch
@@ -28,7 +28,7 @@ import kotlin.test.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalInkCustomBrushApi::class, ExperimentalCustomShapeWorkflowApi::class)
+@OptIn(ExperimentalInkCustomShapeWorkflowApi::class, ExperimentalInkAnimationApi::class)
 @RunWith(AndroidJUnit4::class)
 class InkInProgressShapeTest {
 
@@ -39,10 +39,8 @@ class InkInProgressShapeTest {
         // Create a brush with a texture animation.
         val brushSize = 10f
         val texture =
-            BrushPaint.TextureLayer(
+            BrushPaint.StampingTexture(
                 clientTextureId = "test",
-                sizeX = 10f,
-                sizeY = 10f,
                 animationFrames = 8,
                 animationRows = 3,
                 animationColumns = 3,

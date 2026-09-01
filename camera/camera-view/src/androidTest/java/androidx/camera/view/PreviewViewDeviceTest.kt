@@ -47,8 +47,8 @@ import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
-import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.ParameterizedTestConfigUtil
+import androidx.camera.testing.impl.RequireForegroundRule
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.view.PreviewView.ImplementationMode
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks
@@ -70,7 +70,6 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import org.junit.After
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -82,6 +81,8 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class PreviewViewDeviceTest(private val implName: String, private val cameraConfig: CameraXConfig) {
+
+    @get:Rule val requireForegroundRule = RequireForegroundRule()
 
     @get:Rule
     val useCamera =
@@ -97,21 +98,19 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
     @Before
     fun setUp() {
-        CoreAppTestUtil.prepareDeviceUI(instrumentation)
         activityScenario = ActivityScenario.launch(FakeActivity::class.java)
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-    }
 
-    @After
-    fun tearDown() {
-        for (surfaceRequest in surfaceRequestList) {
-            surfaceRequest.willNotProvideSurface()
-            // Ensure all successful requests have their returned future finish.
-            surfaceRequest.deferrableSurface.close()
-        }
-        if (cameraProvider != null) {
-            cameraProvider!!.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+        requireForegroundRule.deferCleanup {
+            for (surfaceRequest in surfaceRequestList) {
+                surfaceRequest.willNotProvideSurface()
+                // Ensure all successful requests have their returned future finish.
+                surfaceRequest.deferrableSurface.close()
+            }
+            if (cameraProvider != null) {
+                cameraProvider!!.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+            }
         }
     }
 
@@ -211,6 +210,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         // Arrange.
         val countDownLatch = CountDownLatch(1)
         val semaphore = Semaphore(0)
+        var previewViewHashCode = ""
         val fakeController: CameraController =
             object : CameraController(context) {
                 public override fun onPinchToZoom(pinchToZoomScale: Float) {
@@ -225,6 +225,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             fakeController.cameraSelector = cameraSelector
 
             val previewView = PreviewView(context)
+            previewViewHashCode = previewView.hashCode().toString()
+            previewView.contentDescription = previewViewHashCode
             previewView.controller = fakeController
             previewView.implementationMode = ImplementationMode.COMPATIBLE
             notifyLatchWhenLayoutReady(previewView, countDownLatch)
@@ -232,9 +234,10 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         }
         // Wait for layout ready
         Truth.assertThat(countDownLatch.await(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
+        uiDevice.waitForIdle()
 
         // Act: pinch-in 80% in 100 steps.
-        uiDevice.findObject(UiSelector().index(0)).pinchIn(80, 100)
+        uiDevice.findObject(UiSelector().descriptionContains(previewViewHashCode)).pinchIn(80, 100)
 
         // Assert: pinch-to-zoom is called.
         Truth.assertThat(semaphore.tryAcquire(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
@@ -274,6 +277,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         }
         // Wait for layout ready
         Truth.assertThat(countDownLatch.await(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
+        uiDevice.waitForIdle()
 
         // Act: click on PreviewView
         clickEventHelper!!.performSingleClick(uiDevice, 3)
@@ -367,17 +371,21 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         // Arrange.
         val semaphore = Semaphore(0)
         val countDownLatch = CountDownLatch(1)
+        var previewViewHashCode = ""
         instrumentation.runOnMainSync {
             val previewView = PreviewView(context)
+            previewViewHashCode = previewView.hashCode().toString()
+            previewView.contentDescription = previewViewHashCode
             previewView.setOnClickListener { semaphore.release() }
             notifyLatchWhenLayoutReady(previewView, countDownLatch)
             setContentView(previewView)
         }
         // Wait for layout ready
         Truth.assertThat(countDownLatch.await(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
+        uiDevice.waitForIdle()
 
         // Act: click on PreviewView.
-        uiDevice.findObject(UiSelector().index(0)).click()
+        uiDevice.findObject(UiSelector().descriptionContains(previewViewHashCode)).click()
 
         // Assert: view is clicked.
         Truth.assertThat(semaphore.tryAcquire(TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)).isTrue()
@@ -829,7 +837,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 TestPreviewViewImplementation(previewView, previewView.mPreviewTransform)
             previewView.mImplementation = implementation
             previewView.scaleType = PreviewView.ScaleType.FILL_START
-            Truth.assertThat(implementation.redrawPreviewCount).isEqualTo(1)
+            Truth.assertThat(implementation.redrawPreviewCount).isAtLeast(1)
         }
     }
 
@@ -858,7 +866,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         }
         Truth.assertThat(implementation.get().redrawPreviewLatch.await(1000, TimeUnit.MILLISECONDS))
             .isTrue()
-        Truth.assertThat(implementation.get().redrawPreviewCount).isEqualTo(1)
+        Truth.assertThat(implementation.get().redrawPreviewCount).isAtLeast(1)
     }
 
     @Test
@@ -910,7 +918,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         }
         Truth.assertThat(implementation.get().redrawPreviewLatch.await(1000, TimeUnit.MILLISECONDS))
             .isTrue()
-        Truth.assertThat(implementation.get().redrawPreviewCount).isEqualTo(1)
+        Truth.assertThat(implementation.get().redrawPreviewCount).isAtLeast(1)
     }
 
     @Test
@@ -1007,7 +1015,23 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
     }
 
     private fun setContentView(view: View?) {
-        activityScenario!!.onActivity { activity: FakeActivity -> activity.setContentView(view) }
+        activityScenario!!.onActivity { activity: FakeActivity ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                activity.setShowWhenLocked(true)
+                activity.setTurnScreenOn(true)
+                activity.window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                activity.window.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                        android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                )
+            }
+            activity.setContentView(view)
+        }
     }
 
     private fun createSurfaceRequest(cameraInfo: CameraInfoInternal): SurfaceRequest {

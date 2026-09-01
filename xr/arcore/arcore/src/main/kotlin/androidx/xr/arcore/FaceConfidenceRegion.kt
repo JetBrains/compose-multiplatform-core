@@ -16,24 +16,25 @@
 
 package androidx.xr.arcore
 
-/** Represents the regions of face tracking confidence. */
+/** Regions of face tracking confidence. */
 public class FaceConfidenceRegion private constructor(private val value: Int) {
     public companion object {
-        /** Represents the lower region of the face. */
-        @JvmField
-        public val FACE_CONFIDENCE_REGION_LOWER: FaceConfidenceRegion = FaceConfidenceRegion(0)
+        /** Lower region of the face. */
+        @JvmField public val LOWER: FaceConfidenceRegion = FaceConfidenceRegion(0)
 
-        /** Represents the left upper region of the face. */
-        @JvmField
-        public val FACE_CONFIDENCE_REGION_LEFT_UPPER: FaceConfidenceRegion = FaceConfidenceRegion(1)
+        /** Left upper region of the face. */
+        @JvmField public val LEFT_UPPER: FaceConfidenceRegion = FaceConfidenceRegion(1)
 
-        /** Represents the right upper region of the face. */
-        @JvmField
-        public val FACE_CONFIDENCE_REGION_RIGHT_UPPER: FaceConfidenceRegion =
-            FaceConfidenceRegion(2)
+        /** Right upper region of the face. */
+        @JvmField public val RIGHT_UPPER: FaceConfidenceRegion = FaceConfidenceRegion(2)
     }
 
-    public override fun toString(): String =
+    /**
+     * Returns a string representation of [FaceConfidenceRegion] for debugging.
+     *
+     * Note: Not intended for production use.
+     */
+    override fun toString(): String =
         when (value) {
             0 -> "LOWER"
             1 -> "LEFT_UPPER"

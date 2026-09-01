@@ -35,8 +35,10 @@ import androidx.car.app.model.PaneTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.RowSection
 import androidx.car.app.model.SectionedItemTemplate
+import androidx.car.app.model.Shape
 import androidx.car.app.model.Tab
 import androidx.car.app.model.TabContents
+import androidx.car.app.model.TabStyle
 import androidx.car.app.model.TabTemplate
 import androidx.car.app.model.TabTemplate.TabCallback
 import androidx.car.app.model.Template
@@ -68,6 +70,7 @@ class TabTemplateDemoScreen(carContext: CarContext) : Screen(carContext) {
                 .setIcon(
                     CarIcon.Builder(IconCompat.createWithResource(carContext, entry.value)).build()
                 )
+                .setStyle(TabStyle.Builder().setShape(Shape.CORNER_MEDIUM).build())
                 .build()
         }
     private var mActiveContentId: String = "0"
@@ -93,8 +96,7 @@ class TabTemplateDemoScreen(carContext: CarContext) : Screen(carContext) {
                             "2" -> createSectionedItemTemplate()
                             "3" -> createGridTemplate()
                             else -> throw IllegalStateException("Invalid tab id: $mActiveContentId")
-                        },
-                        true,
+                        }
                     )
                     .build()
             )
@@ -191,7 +193,7 @@ class TabTemplateDemoScreen(carContext: CarContext) : Screen(carContext) {
     }
 
     private fun buildRowForTemplate(title: String, clickable: Boolean): Row {
-        val rowBuilder = Row.Builder().setTitle("$title")
+        val rowBuilder = Row.Builder().setTitle(title)
         if (clickable) {
             rowBuilder.setOnClickListener {
                 screenManager.push(ShortMessageTemplateDemoScreen(carContext))
@@ -220,8 +222,7 @@ class TabTemplateDemoScreen(carContext: CarContext) : Screen(carContext) {
                             R.drawable.ic_emoji_food_beverage_white_48dp,
                         )
                     )
-                    .build(),
-                GridItem.IMAGE_TYPE_ICON,
+                    .build()
             )
             .setTitle(title)
             .build()

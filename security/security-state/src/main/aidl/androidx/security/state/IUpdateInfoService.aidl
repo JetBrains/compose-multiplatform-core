@@ -16,33 +16,43 @@
 
 package androidx.security.state;
 
-import androidx.security.state.UpdateCheckResult;
+import androidx.security.state.IUpdateInfoSession;
 
 /**
- * Interface for a service that provides information about available security updates.
+ * Factory interface for establishing a security update information session.
  *
- * <p>Trusted system applications (such as the System Updater or Google Play Store)
- * implement this interface to expose pending update information to the
- * {@link androidx.security.state.SecurityPatchState} library.
+ * <p>This interface serves as the primary IPC entry point for the Security State library.
+ * Trusted system applications (such as the System Updater or Google Play Store)
+ * implement this interface to expose their pending security update information to the
+ * {@link androidx.security.state.SecurityPatchState} client library.
  *
- * <p>Host applications must declare a service that handles the
- * {@code "androidx.security.state.provider.UPDATE_INFO_SERVICE"} action.
+ * <p>Host applications must declare a bound service in their manifest that handles the
+ * {@code "androidx.security.state.provider.UPDATE_INFO_SERVICE"} action and returns
+ * an implementation of this factory.
  */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IUpdateInfoService {
 
     /**
-     * Retrieves available updates and the time they were last synchronized.
+     * Creates a unique, stateful session for the calling client.
      *
-     * <p>This method returns the latest available update information currently known
-     * to the provider.
+     * <p>This method initiates the handshake between the client application and the
+     * update provider. The provider uses this method to capture the caller's identity
+     * securely on the Binder thread before establishing the session.
      *
-     * <p>The result includes a timestamp indicating when the data was last synchronized
-     * with the backend. Clients should inspect this timestamp to determine if the
-     * data is fresh enough for their needs.
+     * <h3>Security & Validation</h3>
+     * To prevent Intent spoofing, the provider must validate that the provided {@code packageName}
+     * is officially owned by the Kernel-verified Linux UID of the calling process.
+     * If the validation fails, the provider will throw a {@link SecurityException}.
      *
-     * @return An {@link UpdateCheckResult} containing the list of available updates and the
-     *         timestamp of the last successful synchronization with the backend.
+     * @param packageName The package name of the calling application. This is used for
+     *                    accurate attribution, telemetry, and debugging on the provider side.
+     * @param clientToken An anonymous Binder token provided by the client. The provider
+     *                    uses this token to register a {@link android.os.IBinder.DeathRecipient},
+     *                    allowing it to clean up resources and log disconnection telemetry
+     *                    if the client process crashes unexpectedly.
+     * @return An {@link IUpdateInfoSession} instance dedicated to this specific client,
+     *         which can be used to query the latest update information.
      */
-    UpdateCheckResult listAvailableUpdates();
+    IUpdateInfoSession openSession(String packageName, IBinder clientToken);
 }

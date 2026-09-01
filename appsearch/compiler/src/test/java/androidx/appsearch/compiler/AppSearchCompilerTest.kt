@@ -1271,6 +1271,227 @@ class AppSearchCompilerTest : CompilerTestBase() {
         checkEqualsGolden("Gift.java")
     }
 
+    /**
+     * Tests that annotations are propagated correctly when using the implicit value syntax (e.g.
+     * `@RequiresApi(31)`).
+     *
+     * <p>This test compiles a class annotated with `@RequiresApi(31)` (implicit value) and
+     * `@ExperimentalAppSearchApi`. It verifies that the generated document factory class retains
+     * both annotations.
+     */
+    @Test
+    fun testAnnotationPropagationMultipleAnnotation() {
+        val compilation =
+            compile(
+                """
+                import java.util.*;
+                import androidx.annotation.RequiresApi;
+                import androidx.appsearch.app.ExperimentalAppSearchApi;
+
+                @Document
+                @RequiresApi(31)
+                @ExperimentalAppSearchApi
+                public class Gift {
+                  @Document.Namespace String namespace;
+                  @Document.Id String id;
+                }
+                """
+                    .trimIndent()
+            )
+
+        CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
+        checkEqualsGolden("Gift.java")
+
+        checkResultContains(
+            className = "Gift.java",
+            content =
+                """
+                @RequiresApi(31)
+                @ExperimentalAppSearchApi
+                @Generated("androidx.appsearch.compiler.AppSearchCompiler")
+                public final class ${"$$"}__AppSearch__Gift implements DocumentClassFactory<Gift> {
+                """
+                    .trimIndent(),
+        )
+    }
+
+    /**
+     * Tests that annotations using specific attribute names (e.g. `@RequiresApi(api = 31)`) are
+     * propagated correctly, others are not propagated.
+     *
+     * <p>This test compiles a class annotated with `@RequiresApi(api = 31)` and `@Deprecated`. It
+     * verifies that `@RequiresApi` is propagated to the generated class, but `@Deprecated` is
+     * ignored because it is not in the compiler's allowlist of annotations to propagate (see
+     * CodeGenerator.shouldPropagateAnnotation).
+     */
+    @Test
+    fun testAnnotationPropagationApiEquals() {
+        val compilation =
+            compile(
+                """
+                import java.util.*;
+                import androidx.annotation.RequiresApi;
+
+                @Document
+                @RequiresApi(api = 31)
+                @Deprecated
+                public class Gift {
+                  @Document.Namespace String namespace;
+                  @Document.Id String id;
+                }
+                """
+                    .trimIndent()
+            )
+
+        CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
+        checkEqualsGolden("Gift.java")
+
+        checkResultContains(
+            className = "Gift.java",
+            content =
+                """
+                @RequiresApi(
+                    api = 31
+                )
+                @Generated("androidx.appsearch.compiler.AppSearchCompiler")
+                public final class ${"$$"}__AppSearch__Gift implements DocumentClassFactory<Gift> {
+                """
+                    .trimIndent(),
+        )
+        checkResultDoesNotContain(className = "Gift.java", content = "@Deprecated")
+    }
+
+    /**
+     * Tests that annotations are propagated correctly when using the explicit value syntax (e.g.
+     * `@RequiresApi(value = 31)`).
+     *
+     * <p>This test compiles a class annotated with `@RequiresApi(value = 31)`. It verifies that the
+     * generated document factory class retains the annotation, normalizing it to the standard
+     * format.
+     */
+    @Test
+    fun testAnnotationPropagationValueEquals() {
+        val compilation =
+            compile(
+                """
+                import androidx.annotation.RequiresApi;
+
+                @Document
+                @RequiresApi(value = 31)
+                public class Gift {
+                  @Document.Namespace String namespace;
+                  @Document.Id String id;
+                }
+                """
+                    .trimIndent()
+            )
+
+        CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
+        checkEqualsGolden("Gift.java")
+
+        checkResultContains(
+            className = "Gift.java",
+            content =
+                """
+                @RequiresApi(31)
+                @Generated("androidx.appsearch.compiler.AppSearchCompiler")
+                public final class ${"$$"}__AppSearch__Gift implements DocumentClassFactory<Gift> {
+                """
+                    .trimIndent(),
+        )
+    }
+
+    /**
+     * Tests that the Java `@OptIn` annotation is propagated correctly to the generated document
+     * class.
+     *
+     * <p>This test defines a custom experimental annotation and uses it in an `@OptIn` declaration
+     * on the document class. It verifies that the generated code includes the correct `@OptIn`
+     * annotation referencing the marker class.
+     */
+    @Test
+    fun testAnnotationPropagationOptIn() {
+        val compilation =
+            compile(
+                """
+                import androidx.annotation.OptIn;
+                import androidx.appsearch.annotation.Document;
+
+                @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)
+                @interface MyExperimentalFeature {}
+
+                @Document
+                @OptIn(markerClass = MyExperimentalFeature.class)
+                public class Gift {
+                  @Document.Namespace String namespace;
+                  @Document.Id String id;
+                }
+                """
+                    .trimIndent()
+            )
+
+        CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
+        checkResultContains(
+            className = "Gift.java",
+            content =
+                """
+                @OptIn(
+                    markerClass = MyExperimentalFeature.class
+                )
+                @Generated("androidx.appsearch.compiler.AppSearchCompiler")
+                public final class ${"$$"}__AppSearch__Gift implements DocumentClassFactory<Gift> {
+                """
+                    .trimIndent(),
+        )
+
+        checkEqualsGolden("Gift.java")
+    }
+
+    /**
+     * Tests that the Kotlin `@OptIn` annotation on a Kotlin data class is correctly propagated as a
+     * Java `@OptIn` annotation in the generated code.
+     *
+     * <p>This test compiles a Kotlin data class using the `kotlin.OptIn` syntax. It verifies that
+     * the generated Java code converts this to the `androidx.annotation.OptIn` syntax with the
+     * correct marker class format.
+     */
+    @Test
+    fun testAnnotationPropagationKotlinOptIn() {
+        val compilation =
+            compileKotlin(
+                """
+                import kotlin.OptIn
+
+                @RequiresOptIn
+                @Retention(AnnotationRetention.BINARY)
+                annotation class MyKotlinExperimentalApi
+
+                @OptIn(MyKotlinExperimentalApi::class)
+                @Document
+                data class Gift(
+                        @Document.Namespace val namespace: String,
+                        @Document.Id val id: String
+                )
+                """
+                    .trimIndent()
+            )
+
+        checkKotlinCompilation(compilation)
+        checkEqualsGolden("Gift.java")
+        checkResultContains(
+            className = "Gift.java",
+            content =
+                """
+                @OptIn(
+                    markerClass = MyKotlinExperimentalApi.class
+                )
+                @Generated("androidx.appsearch.compiler.AppSearchCompiler")
+                public final class ${"$$"}__AppSearch__Gift implements DocumentClassFactory<Gift> {
+                """
+                    .trimIndent(),
+        )
+    }
+
     @Test
     fun testAllSingleTypes() {
         // TODO(b/156296904): Uncomment Gift in this test when it's supported
@@ -3314,8 +3535,16 @@ class AppSearchCompilerTest : CompilerTestBase() {
             )
         CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
         checkResultContains("Gift.java", "GiftBuilder builder = Gift.getBuilder()")
-        checkResultContains("Gift.java", "builder.setNamespace(getNamespaceConv)")
-        checkResultContains("Gift.java", "builder.setId(getIdConv)")
+        checkResultContains(
+            "Gift.java",
+            "if (getNamespaceConv != null) {\n" +
+                "      builder.setNamespace(getNamespaceConv);\n" +
+                "    }",
+        )
+        checkResultContains(
+            "Gift.java",
+            "if (getIdConv != null) {\n      builder.setId(getIdConv);\n    }",
+        )
         checkResultContains("Gift.java", "builder.setPrice(getPriceConv)")
         checkResultContains("Gift.java", "builder.build()")
         checkEqualsGolden("Gift.java")
@@ -3420,8 +3649,16 @@ class AppSearchCompilerTest : CompilerTestBase() {
             )
         CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
         checkResultContains("Gift.java", "GiftBuilder builder = Gift.getBuilder(getPriceConv)")
-        checkResultContains("Gift.java", "builder.setNamespace(getNamespaceConv)")
-        checkResultContains("Gift.java", "builder.setId(getIdConv)")
+        checkResultContains(
+            "Gift.java",
+            "if (getNamespaceConv != null) {\n" +
+                "      builder.setNamespace(getNamespaceConv);\n" +
+                "    }",
+        )
+        checkResultContains(
+            "Gift.java",
+            "if (getIdConv != null) {\n      builder.setId(getIdConv);\n    }",
+        )
         checkResultContains("Gift.java", "builder.build()")
         checkEqualsGolden("Gift.java")
     }
@@ -3476,8 +3713,16 @@ class AppSearchCompilerTest : CompilerTestBase() {
             )
         CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
         checkResultContains("Gift.java", "Gift.GiftBuilder builder = new Gift.GiftBuilder()")
-        checkResultContains("Gift.java", "builder.setNamespace(getNamespaceConv)")
-        checkResultContains("Gift.java", "builder.setId(getIdConv)")
+        checkResultContains(
+            "Gift.java",
+            "if (getNamespaceConv != null) {\n" +
+                "      builder.setNamespace(getNamespaceConv);\n" +
+                "    }",
+        )
+        checkResultContains(
+            "Gift.java",
+            "if (getIdConv != null) {\n      builder.setId(getIdConv);\n    }",
+        )
         checkResultContains("Gift.java", "builder.setPrice(getPriceConv)")
         checkResultContains("Gift.java", "builder.build()")
         checkEqualsGolden("Gift.java")
@@ -3535,8 +3780,16 @@ class AppSearchCompilerTest : CompilerTestBase() {
             "Gift.java",
             "Gift.GiftBuilder builder = new Gift.GiftBuilder(getPriceConv)",
         )
-        checkResultContains("Gift.java", "builder.setNamespace(getNamespaceConv)")
-        checkResultContains("Gift.java", "builder.setId(getIdConv)")
+        checkResultContains(
+            "Gift.java",
+            "if (getNamespaceConv != null) {\n" +
+                "      builder.setNamespace(getNamespaceConv);\n" +
+                "    }",
+        )
+        checkResultContains(
+            "Gift.java",
+            "if (getIdConv != null) {\n      builder.setId(getIdConv);\n    }",
+        )
         checkResultContains("Gift.java", "builder.build()")
         checkEqualsGolden("Gift.java")
     }
@@ -3582,8 +3835,16 @@ class AppSearchCompilerTest : CompilerTestBase() {
             )
         CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
         checkResultContains("Gift.java", "GiftBuilder builder = Gift.getBuilder()")
-        checkResultContains("Gift.java", "builder.setNamespace(namespaceConv)")
-        checkResultContains("Gift.java", "builder.setId(idConv)")
+        checkResultContains(
+            "Gift.java",
+            "if (namespaceConv != null) {\n" +
+                "      builder.setNamespace(namespaceConv);\n" +
+                "    }",
+        )
+        checkResultContains(
+            "Gift.java",
+            "if (idConv != null) {\n      builder.setId(idConv);\n    }",
+        )
         checkResultContains("Gift.java", "builder.setPrice(priceConv)")
         checkResultContains("Gift.java", "builder.build()")
         checkEqualsGolden("Gift.java")
@@ -3632,8 +3893,16 @@ class AppSearchCompilerTest : CompilerTestBase() {
 
         CompilationSubject.assertThat(compilation).succeededWithoutWarnings()
         checkResultContains("AutoValue_Gift.java", "GiftBuilder builder = Gift.getBuilder()")
-        checkResultContains("AutoValue_Gift.java", "builder.setNamespace(namespaceConv)")
-        checkResultContains("AutoValue_Gift.java", "builder.setId(idConv)")
+        checkResultContains(
+            "AutoValue_Gift.java",
+            "if (namespaceConv != null) {\n" +
+                "      builder.setNamespace(namespaceConv);\n" +
+                "    }",
+        )
+        checkResultContains(
+            "AutoValue_Gift.java",
+            "if (idConv != null) {\n      builder.setId(idConv);\n    }",
+        )
         checkResultContains("AutoValue_Gift.java", "builder.setPrice(priceConv)")
         checkResultContains("AutoValue_Gift.java", "builder.build()")
         checkEqualsGolden("AutoValue_Gift.java")
@@ -4279,6 +4548,7 @@ class AppSearchCompilerTest : CompilerTestBase() {
                   @EmbeddingProperty(indexingType=1) List<EmbeddingVector> listVec;
                   @EmbeddingProperty(indexingType=1) Collection<EmbeddingVector> collectVec;
                   @EmbeddingProperty(indexingType=1) EmbeddingVector[] arrVec;
+                  @EmbeddingProperty(indexingType=2) EmbeddingVector annVec;
                 }
                 """
                     .trimIndent()
@@ -4289,6 +4559,10 @@ class AppSearchCompilerTest : CompilerTestBase() {
         checkResultContains(
             "Gift.java",
             "AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY",
+        )
+        checkResultContains(
+            "Gift.java",
+            "AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_APPROXIMATE_NEAREST_NEIGHBOR",
         )
         checkResultContains(
             "Gift.java",

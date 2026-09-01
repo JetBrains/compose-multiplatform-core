@@ -21,12 +21,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.Alignment
@@ -41,24 +48,27 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.LocalScreenIsActive
+import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import com.google.common.truth.Truth.assertThat
 import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlin.OptIn
 import org.junit.Rule
 import org.junit.Test
 
 class ScaffoldTest {
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun app_scaffold_supports_testtag() {
@@ -112,6 +122,129 @@ class ScaffoldTest {
         rule.onNodeWithText(TIME_TEXT_MESSAGE).assertIsDisplayed()
     }
 
+    @Test
+    fun displays_screen_time_text_after_app_scaffold_recomposes() {
+        val count = mutableStateOf(0)
+
+        rule.setContentWithTheme {
+            AppScaffold(
+                contentColor =
+                    if (count.value % 2 == 0) Color.White else Color.White.copy(alpha = 0.99f),
+                timeText = { Text("App Time Text") },
+            ) {
+                ScreenScaffold(timeText = { Text(TIME_TEXT_MESSAGE) }) {}
+            }
+        }
+
+        rule.onNodeWithText(TIME_TEXT_MESSAGE).assertIsDisplayed()
+
+        // Force AppScaffold to recompose
+        count.value++
+        rule.waitForIdle()
+
+        rule.onNodeWithText(TIME_TEXT_MESSAGE).assertIsDisplayed()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun screen_scaffold_preserves_scroll_info_provider_across_recompositions() {
+        val timeTextColor = Color.Red
+        val recomposeTrigger = mutableStateOf(0)
+
+        rule.setContentWithTheme {
+            AppScaffold {
+                val scrollState = rememberScalingLazyListState()
+                ScreenScaffold(
+                    modifier =
+                        Modifier.testTag(TEST_TAG)
+                            .background(
+                                if (recomposeTrigger.value == 0) Color.White else Color.Black
+                            ),
+                    scrollState = scrollState,
+                    scrollIndicator = {
+                        Box(
+                            modifier =
+                                Modifier.size(20.dp)
+                                    .align(Alignment.CenterEnd)
+                                    .background(Color.Blue)
+                        )
+                    },
+                    timeText = { Box(Modifier.size(20.dp).background(timeTextColor)) },
+                ) {
+                    ScalingLazyColumn(
+                        state = scrollState,
+                        modifier =
+                            Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
+                    ) {
+                        items(50) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    }
+                }
+            }
+        }
+
+        // Initially, TimeText (Red) is displayed.
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(timeTextColor)
+
+        // Scroll down slightly (50px) so Item 1 remains visible in viewport.
+        rule.onNodeWithTag(SCROLL_TAG).performTouchInput {
+            swipe(start = center, end = center.copy(y = center.y - 50f), durationMillis = 200)
+        }
+        rule.waitForIdle()
+
+        // Verify TimeText is scrolled away.
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(timeTextColor)
+
+        // Force ScreenScaffold to recompose
+        recomposeTrigger.value++
+        rule.waitForIdle()
+
+        // Without 'remember' in ScreenScaffold, ScrollInfoProvider is recreated, resetting
+        // initialStartOffset and causing TimeText to snap back into view (failing this assertion).
+        // With 'remember' in ScreenScaffold, ScrollInfoProvider is preserved, so TimeText stays
+        // scrolled away.
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(timeTextColor)
+    }
+
+    @Test
+    fun app_scaffold_time_text_updates_dynamically() {
+        val currentLambda =
+            androidx.compose.runtime.mutableStateOf<@Composable () -> Unit>({
+                Text("Initial Time")
+            })
+
+        rule.setContentWithTheme {
+            AppScaffold(timeText = currentLambda.value) { ScreenScaffold {} }
+        }
+
+        rule.onNodeWithText("Initial Time").assertIsDisplayed()
+
+        // Swap the actual lambda instance reference completely
+        currentLambda.value = { Text("Updated Time") }
+        rule.waitForIdle()
+
+        rule.onNodeWithText("Updated Time").assertIsDisplayed()
+    }
+
+    @Test
+    fun screen_scaffold_time_text_updates_dynamically() {
+        val currentLambda =
+            androidx.compose.runtime.mutableStateOf<@Composable () -> Unit>({
+                Text("Initial Screen Time")
+            })
+
+        rule.setContentWithTheme {
+            AppScaffold { ScreenScaffold(timeText = currentLambda.value) {} }
+        }
+
+        rule.onNodeWithText("Initial Screen Time").assertIsDisplayed()
+
+        // Swap the actual lambda instance reference completely
+        currentLambda.value = { Text("Updated Screen Time") }
+        rule.waitForIdle()
+
+        rule.onNodeWithText("Updated Screen Time").assertIsDisplayed()
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun app_scaffold_contains_container_color() {
@@ -137,6 +270,41 @@ class ScaffoldTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(scrollIndicatorColor)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun updateIdlingDetector_resetsStageToNew_whenScrollInfoProviderChanges() {
+        var scaffoldState: ScaffoldState? = null
+        val providerState = mutableStateOf<ScrollInfoProvider?>(null)
+
+        rule.setContentWithTheme {
+            AppScaffold {
+                scaffoldState = LocalScaffoldState.current
+                val currentProvider = providerState.value
+                if (currentProvider != null) {
+                    ScreenScaffold(scrollInfoProvider = currentProvider) {}
+                } else {
+                    ScreenScaffold {}
+                }
+            }
+        }
+
+        rule.runOnIdle { scaffoldState?.screenContent?.screenStage?.value = ScreenStage.Scrolling }
+
+        providerState.value =
+            object : ScrollInfoProvider {
+                override val isScrollAwayValid = true
+                override val isScrollable = true
+                override val isScrollInProgress = false
+                override val anchorItemOffset = 0f
+                override val lastItemOffset = 0f
+            }
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            assertThat(scaffoldState?.screenContent?.screenStage?.value).isEqualTo(ScreenStage.New)
+        }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -364,26 +532,29 @@ class ScaffoldTest {
         assertEquals(0, spaceAvailable)
     }
 
+    @OptIn(ExperimentalLayoutApi::class)
     @Test
     fun plenty_of_room_for_edge_button_after_scroll() {
         var spaceAvailable: Int = Int.MAX_VALUE
         var expectedSpace = 0f
 
-        val screenSize = 300.dp
+        // The logic for this test only works if `screenSize` <= the actual screen size on the
+        // device under test.
+        val screenSize = SMALL_SCREEN_WIDTH.dp
         rule.setContentWithTheme {
-            // The available space is half the screen size minus half a Button height (converting
-            // dps to pixels).
-            expectedSpace =
-                with(LocalDensity.current) { ((screenSize - ButtonDefaults.Height) / 2).toPx() }
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides false) {
+                val density = LocalDensity.current
+                expectedSpace = with(density) { ((screenSize - ButtonDefaults.Height) / 2).toPx() }
 
-            Box(Modifier.size(screenSize)) {
-                TestScreenScaffoldWithSLCAndEdgeButton(
-                    scrollIndicatorColor = Color.Blue,
-                    timeTextColor = Color.Red,
-                    itemsCount = 10,
-                ) {
-                    // Check how much space we have for the edge button
-                    BoxWithConstraints { spaceAvailable = constraints.maxHeight }
+                Box(Modifier.size(screenSize)) {
+                    TestScreenScaffoldWithSLCAndEdgeButton(
+                        scrollIndicatorColor = Color.Blue,
+                        timeTextColor = Color.Red,
+                        itemsCount = 10,
+                    ) {
+                        // Check how much space we have for the edge button
+                        BoxWithConstraints { spaceAvailable = constraints.maxHeight }
+                    }
                 }
             }
         }
@@ -463,8 +634,9 @@ class ScaffoldTest {
         rule.onNodeWithTag(SCROLL_TAG).performTouchInput { repeat(5) { swipeUp() } }
         rule.waitForIdle()
 
-        // Use floats so we can specify a pixel of tolerance.
-        assertThat(spaceAvailable.toFloat()).isWithin(1f).of(expectedSpace)
+        // Use floats so we can specify a pixel of tolerance. SLC is less precise with respect to
+        // contentPadding, hence the tolerance is higher.
+        assertThat(spaceAvailable.toFloat()).isWithin(1.5f).of(expectedSpace)
     }
 
     @Test
@@ -472,6 +644,48 @@ class ScaffoldTest {
 
     @Test
     fun some_room_for_edge_button_after_scroll_reversed_lc() = check_edge_button_reversed_lc(50.dp)
+
+    @Test
+    fun test_edge_button_added_dynamically() {
+        val edgeButtonTag = "EB_TAG"
+        val showEdgeButton = mutableStateOf(false)
+        rule.setContentWithTheme {
+            AppScaffold {
+                val scrollState = rememberTransformingLazyColumnState()
+                ScreenScaffold(
+                    scrollState = scrollState,
+                    edgeButton = {
+                        if (showEdgeButton.value) {
+                            EdgeButton(onClick = {}, Modifier.testTag(edgeButtonTag)) { Text("EB") }
+                        }
+                    },
+                ) { padding ->
+                    TransformingLazyColumn(
+                        state = scrollState,
+                        modifier =
+                            Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
+                        contentPadding = padding,
+                    ) {
+                        items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    }
+                }
+            }
+        }
+
+        repeat(3) {
+            rule.onNodeWithTag(SCROLL_TAG).performTouchInput { swipeUp() }
+            rule.waitForIdle()
+        }
+
+        rule.onNodeWithTag(edgeButtonTag).assertDoesNotExist()
+        showEdgeButton.value = true
+
+        rule.waitForIdle()
+        rule.onNodeWithTag(SCROLL_TAG).performTouchInput { swipeUp() }
+
+        rule.waitForIdle()
+        rule.onNodeWithTag(edgeButtonTag).assertIsDisplayed()
+    }
 
     /*
      * Setup a  AppScaffold + ScreenScaffold(with a EdgeButton slot) + LazyColumn
@@ -568,7 +782,7 @@ class ScaffoldTest {
             ) {
                 ScalingLazyColumn(
                     state = scrollState,
-                    contentPadding = PaddingValues(horizontal = 0.dp),
+                    contentPadding = PaddingValues(0.dp),
                     modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
                 ) {
                     items(itemsCount) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
@@ -749,9 +963,335 @@ class ScaffoldTest {
                 }
         )
     }
+
+    @Test
+    fun screenStack_timeText_topScreenOverride_takesPrecedence() {
+        rule.setContentWithTheme {
+            AppScaffold(timeText = { Text("App Time") }) {
+                ScreenScaffold(timeText = { Text("Screen 1 Time") }) {
+                    ScreenScaffold(timeText = { Text("Screen 2 Time") }) {}
+                }
+            }
+        }
+
+        rule.onNodeWithText("Screen 2 Time").assertExists()
+    }
+
+    @Test
+    fun screenStack_timeText_topScreenNull_inheritsUnderlyingScreenOverride() {
+        rule.setContentWithTheme {
+            AppScaffold(timeText = { Text("App Time") }) {
+                ScreenScaffold(timeText = { Text("Screen 1 Time") }) {
+                    ScreenScaffold(timeText = null) {}
+                }
+            }
+        }
+
+        rule.onNodeWithText("Screen 1 Time").assertExists()
+    }
+
+    @Test
+    fun screenStack_timeText_allScreensNull_fallsBackToAppScaffold() {
+        rule.setContentWithTheme {
+            AppScaffold(timeText = { Text("App Time") }) {
+                ScreenScaffold(timeText = null) { ScreenScaffold(timeText = null) {} }
+            }
+        }
+
+        rule.onNodeWithText("App Time").assertExists()
+    }
+
+    @Test
+    fun screenStack_statusBar_topScreenExplicitOverride_takesPrecedence() {
+        var scaffoldState: ScaffoldState? = null
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    scaffoldState = LocalScaffoldState.current
+                    ScreenScaffold(statusBarMode = StatusBarMode.Disabled) {
+                        ScreenScaffold(statusBarMode = StatusBarMode.Enabled) {}
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(scaffoldState?.screenContent?.currentShowStatusBar?.value).isTrue()
+        }
+    }
+
+    @Test
+    fun screenStack_statusBar_topScreenInherit_inheritsUnderlyingScreenOverride() {
+        var scaffoldState: ScaffoldState? = null
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    scaffoldState = LocalScaffoldState.current
+                    ScreenScaffold(statusBarMode = StatusBarMode.Disabled) {
+                        ScreenScaffold(statusBarMode = StatusBarMode.Inherit) {}
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(scaffoldState?.screenContent?.currentShowStatusBar?.value).isFalse()
+        }
+    }
+
+    @Test
+    fun screenStack_statusBar_allScreensInherit_fallsBackToAppScaffold() {
+        var scaffoldState: ScaffoldState? = null
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    scaffoldState = LocalScaffoldState.current
+                    ScreenScaffold(statusBarMode = StatusBarMode.Inherit) {
+                        ScreenScaffold(statusBarMode = StatusBarMode.Inherit) {}
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(scaffoldState?.screenContent?.currentShowStatusBar?.value).isTrue()
+        }
+    }
+
+    @Test
+    fun resolveShowStatusBarForScreen_explicitModes_returnDirectly() {
+        var screenContent: ScreenContent? = null
+        val dummyKey = Any()
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    screenContent = LocalScaffoldState.current.screenContent
+                    // Even with a disabled screen registered on the stack
+                    ScreenScaffold(statusBarMode = StatusBarMode.Disabled) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Enabled)
+                )
+                .isTrue()
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Disabled)
+                )
+                .isFalse()
+        }
+    }
+
+    @Test
+    fun resolveShowStatusBarForScreen_inheritMode_scansDownwardFromCallingScreen() {
+        var screenContent: ScreenContent? = null
+        val key1 = Any()
+        val key2 = Any()
+        val key3 = Any()
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    screenContent = LocalScaffoldState.current.screenContent
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            val content = screenContent!!
+            // Screen 1: Disabled
+            content.addScreen(key1, null, null, StatusBarMode.Disabled, null)
+            // Screen 2: Inherit
+            content.addScreen(key2, null, null, StatusBarMode.Inherit, null)
+            // Screen 3: Enabled
+            content.addScreen(key3, null, null, StatusBarMode.Enabled, null)
+
+            // Screen 3 is Enabled -> true
+            assertThat(content.resolveShowStatusBarForScreen(key3, StatusBarMode.Enabled)).isTrue()
+
+            // Screen 2 has Inherit mode; scanning downward from Screen 2 finds Screen 1 (Disabled)
+            // -> false. Note that it must NOT see Screen 3 above it.
+            assertThat(content.resolveShowStatusBarForScreen(key2, StatusBarMode.Inherit)).isFalse()
+
+            // Screen 1 is Disabled -> false
+            assertThat(content.resolveShowStatusBarForScreen(key1, StatusBarMode.Disabled))
+                .isFalse()
+        }
+    }
+
+    @Test
+    fun resolveShowStatusBarForScreen_inheritMode_whenNoAncestors_fallsBackToAppScaffold() {
+        var screenContent: ScreenContent? = null
+        val dummyKey = Any()
+        var appShowStatusBar by mutableStateOf(true)
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = appShowStatusBar) {
+                    screenContent = LocalScaffoldState.current.screenContent
+                    ScreenScaffold(statusBarMode = StatusBarMode.Inherit) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Inherit)
+                )
+                .isTrue()
+        }
+
+        rule.runOnUiThread { appShowStatusBar = false }
+        rule.runOnIdle {
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Inherit)
+                )
+                .isFalse()
+        }
+    }
+
+    @Test
+    fun resolveShowStatusBarForScreen_whenHardwareUnsupported_alwaysReturnsFalse() {
+        var screenContent: ScreenContent? = null
+        val dummyKey = Any()
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides false) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    screenContent = LocalScaffoldState.current.screenContent
+                    ScreenScaffold(statusBarMode = StatusBarMode.Enabled) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Enabled)
+                )
+                .isFalse()
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Disabled)
+                )
+                .isFalse()
+            assertThat(
+                    screenContent?.resolveShowStatusBarForScreen(dummyKey, StatusBarMode.Inherit)
+                )
+                .isFalse()
+        }
+    }
+
+    @Test
+    fun screenStack_statusBar_screenIsActive_togglesPrecedence() {
+        var scaffoldState: ScaffoldState? = null
+        var screenIsActive by mutableStateOf(true)
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalStatusBarEnabledForTest provides true) {
+                AppScaffold(isStatusBarEnabled = true) {
+                    scaffoldState = LocalScaffoldState.current
+                    CompositionLocalProvider(LocalScreenIsActive provides screenIsActive) {
+                        ScreenScaffold(statusBarMode = StatusBarMode.Disabled) {}
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            // When screen is active, its Disabled mode takes precedence
+            assertThat(scaffoldState?.screenContent?.currentShowStatusBar?.value).isFalse()
+        }
+
+        rule.runOnUiThread { screenIsActive = false }
+        rule.runOnIdle {
+            // When screen is inactive, it leaves the stack and falls back to AppScaffold (true)
+            assertThat(scaffoldState?.screenContent?.currentShowStatusBar?.value).isTrue()
+        }
+
+        rule.runOnUiThread { screenIsActive = true }
+        rule.runOnIdle {
+            // When reactivated, it re-joins the top of stack and its Disabled mode takes precedence
+            assertThat(scaffoldState?.screenContent?.currentShowStatusBar?.value).isFalse()
+        }
+    }
+
+    @Test
+    fun screenStack_timeText_screenIsActive_togglesPrecedence() {
+        var screenIsActive by mutableStateOf(true)
+
+        rule.setContentWithTheme {
+            AppScaffold(timeText = { Text("App Time") }) {
+                CompositionLocalProvider(LocalScreenIsActive provides screenIsActive) {
+                    ScreenScaffold(timeText = { Text("Screen Time") }) {}
+                }
+            }
+        }
+
+        // When screen is active, its timeText is displayed
+        rule.onNodeWithText("Screen Time").assertExists()
+        rule.onNodeWithText("App Time").assertDoesNotExist()
+
+        // When screen is deactivated, it drops off stack and AppScaffold timeText is displayed
+        rule.runOnUiThread { screenIsActive = false }
+        rule.onNodeWithText("App Time").assertExists()
+        rule.onNodeWithText("Screen Time").assertDoesNotExist()
+
+        // When screen is reactivated, ScreenScaffold timeText is displayed again
+        rule.runOnUiThread { screenIsActive = true }
+        rule.onNodeWithText("Screen Time").assertExists()
+        rule.onNodeWithText("App Time").assertDoesNotExist()
+    }
+
+    @Test
+    fun screenStack_scrollInfo_topScreenScrollable_returnsTopProvider() {
+        var scaffoldState: ScaffoldState? = null
+        var state2Provider: ScrollInfoProvider? = null
+
+        rule.setContentWithTheme {
+            AppScaffold {
+                scaffoldState = LocalScaffoldState.current
+                val state1 = rememberScalingLazyListState()
+                val state2 = rememberScalingLazyListState()
+                state2Provider = remember(state2) { ScrollInfoProvider(state2) }
+
+                ScreenScaffold(scrollState = state1) {
+                    ScreenScaffold(scrollInfoProvider = state2Provider) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(scaffoldState?.screenContent?.currentScrollInfoProvider?.value)
+                .isEqualTo(state2Provider)
+        }
+    }
+
+    @Test
+    fun screenStack_scrollInfo_topScreenNonScrollable_returnsNull() {
+        var scaffoldState: ScaffoldState? = null
+
+        rule.setContentWithTheme {
+            AppScaffold {
+                scaffoldState = LocalScaffoldState.current
+                val state1 = rememberScalingLazyListState()
+
+                ScreenScaffold(scrollState = state1) { ScreenScaffold {} }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(scaffoldState?.screenContent?.currentScrollInfoProvider?.value).isNull()
+        }
+    }
 }
 
 private const val CONTENT_MESSAGE = "The Content"
 private const val TIME_TEXT_MESSAGE = "The Time Text"
 private const val SCROLL_TAG = "ScrollTag"
 private const val DEFAULT_ITEMS_COUNT = 100
+private const val SMALL_SCREEN_WIDTH = 190
+
+@Suppress("UNCHECKED_CAST")
+private val LocalStatusBarEnabledForTest: ProvidableCompositionLocal<Boolean>
+    get() = LocalStatusBarEnabled as ProvidableCompositionLocal<Boolean>

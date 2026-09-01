@@ -16,10 +16,13 @@
 
 package androidx.compose.remote.integration.view.demos
 
+import android.content.res.Resources
+import android.graphics.BitmapFactory
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.integration.view.demos.examples.*
 import androidx.compose.runtime.Composable
+import java.io.File
 
 @Suppress("RestrictedApiAndroidX")
 sealed class DumperSample(val name: String) {
@@ -27,15 +30,55 @@ sealed class DumperSample(val name: String) {
         DumperSample(name)
 
     class Context(name: String, val getContext: () -> RemoteComposeContext) : DumperSample(name)
+
+    class FileSample(name: String, val file: File) : DumperSample(name)
 }
 
 @Suppress("RestrictedApiAndroidX")
 val AllSamples =
     listOf(
+        DumperSample.ComposableSample(
+            "NotificationListDemo",
+            @Composable @RemoteComposable { NotificationListDemo() },
+        ),
+        DumperSample.ComposableSample(
+            "MultiDocument",
+            @Composable @RemoteComposable { MultiDocumentDemo() },
+        ),
         DumperSample.ComposableSample("Clock", @Composable @RemoteComposable { RcSimpleClock1() }),
         DumperSample.Context("Cube") { cube3d() },
         DumperSample.Context("Timer") { RemoteComposeContext(basicTimer()) },
         DumperSample.Context("PressureGauge") { RemoteComposeContext(demoPressureGauge()) },
         DumperSample.Context("Countdown") { countDown() },
         DumperSample.Context("ParticleShader") { shaderFireworks() },
+        DumperSample.ComposableSample("AiAgent", @Composable @RemoteComposable { AiAgent() }),
+        DumperSample.ComposableSample(
+            "DogeCalendar",
+            @Composable @RemoteComposable { DogeCalendar() },
+        ),
+        DumperSample.Context("RideShare") {
+            val rideShare = checkNotNull(RideShareHolder.get()) { "ride share not initialized" }
+            rideShare.rideShare()
+        },
     )
+
+object RideShareHolder {
+    private var rideShare: RideShare? = null
+
+    fun init(resources: Resources) {
+        if (rideShare != null) {
+            return
+        }
+
+        val carLogo = BitmapFactory.decodeResource(resources, R.drawable.car_logo)
+        val carDriver = BitmapFactory.decodeResource(resources, R.drawable.car_driver)
+        val carIcon = BitmapFactory.decodeResource(resources, R.drawable.car_icon)
+
+        rideShare = RideShare()
+        rideShare?.setBitmaps(carLogo, carDriver, carIcon)
+    }
+
+    fun get(): RideShare? {
+        return rideShare
+    }
+}

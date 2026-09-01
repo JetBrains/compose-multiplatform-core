@@ -17,12 +17,11 @@
 package androidx.compose.ui.test.v2
 
 import androidx.compose.ui.test.ComposeUiTest
-import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.MainTestClock
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
@@ -47,7 +46,26 @@ import kotlinx.coroutines.test.TestResult
  * This means you may need to explicitly advance time or run current coroutines when testing complex
  * coroutine logic, as tasks are queued on the scheduler rather than running eagerly.
  *
+ * This function follows the semantics of [kotlinx.coroutines.test.runTest]. On JVM and Native it
+ * behaves similarly to `runBlocking`. On web targets it returns a [TestResult] backed by a
+ * `Promise`.
+ *
+ * For multiplatform tests, make the test return [TestResult] and immediately return the result of
+ * [runComposeUiTest]. Keep assertions inside the [block], and do not execute code after this call.
+ *
+ * Example:
+ * ```kotlin
+ * @Test
+ * fun myTest(): TestResult = runComposeUiTest {
+ *     setContent { /* content under test */ }
+ * }
+ * ```
+ *
  * Keeping a reference to the [ComposeUiTest] outside of this function is an error.
+ *
+ * See also:
+ * * [kotlinx.coroutines.test.runTest](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/run-test.html)
+ * * [TestResult](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-result/)
  *
  * @sample androidx.compose.ui.test.samples.RunComposeUiTestSample
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
@@ -62,10 +80,79 @@ import kotlinx.coroutines.test.TestResult
  *   platform specific timeout exception will be thrown.
  * @param block The test function.
  */
-@ExperimentalTestApi
-expect fun runComposeUiTest(
-    effectContext: CoroutineContext = EmptyCoroutineContext,
-    runTestContext: CoroutineContext = EmptyCoroutineContext,
-    testTimeout: Duration = 60.seconds,
+@Deprecated(
+    level = DeprecationLevel.WARNING,
+    message =
+        "Use runComposeUiTest(config, block) instead. " +
+            "The individual parameters `effectContext`, `runTestContext`, and `testTimeout` " +
+            "have been consolidated into [ComposeUiTestConfig] to allow for more flexible test " +
+            "environment configuration.\n" +
+            "Before:\n" +
+            "runComposeUiTest(effectContext, runTestContext, testTimeout) { ... }\n" +
+            "After:\n" +
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout)) { ... }",
+    replaceWith =
+        ReplaceWith(
+            "runComposeUiTest(ComposeUiTestConfig(effectContext, runTestContext, testTimeout), block)"
+        ),
+)
+public expect fun runComposeUiTest(
+    effectContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext,
+    runTestContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext,
+    testTimeout: Duration = kotlin.time.Duration.parse("60s"),
     block: suspend ComposeUiTest.() -> Unit,
 ): TestResult
+
+/**
+ * Sets up the test environment, runs the given [test][block] and then tears down the test
+ * environment. Use the methods on [ComposeUiTest] in the test to find Compose content and make
+ * assertions on it. If you need access to platform specific elements (such as the Activity on
+ * Android), use one of the platform specific variants of this method, e.g.
+ * `runAndroidComposeUiTest` on Android.
+ *
+ * Implementations of this method will launch a Compose host (such as an Activity on Android) for
+ * you. If your test needs to launch its own host, use a platform specific variant that doesn't
+ * launch anything for you (if available), e.g. `runEmptyComposeUiTest` on Android. Always make sure
+ * that the Compose content is set during execution of the [test lambda][block] so the test
+ * framework is aware of the content. Whether you need to launch the host from within the test
+ * lambda as well depends on the platform.
+ *
+ * Keeping a reference to the [ComposeUiTest] outside of this function is an error.
+ *
+ * @sample androidx.compose.ui.test.samples.RunComposeUiTestConfigSample
+ * @param config The [ComposeUiTestConfig] used to set up the test environment, providing control
+ *   over the [CoroutineContext] used for composition, the test timeout, and other
+ *   environment-specific settings.
+ * @param block The test function.
+ */
+public expect fun runComposeUiTest(
+    config: ComposeUiTestConfig,
+    block: suspend ComposeUiTest.() -> Unit,
+): TestResult
+
+/**
+ * Sets up the test environment, runs the given [test][block] and then tears down the test
+ * environment. Use the methods on [ComposeUiTest] in the test to find Compose content and make
+ * assertions on it. If you need access to platform specific elements (such as the Activity on
+ * Android), use one of the platform specific variants of this method, e.g.
+ * `runAndroidComposeUiTest` on Android.
+ *
+ * Implementations of this method will launch a Compose host (such as an Activity on Android) for
+ * you. If your test needs to launch its own host, use a platform specific variant that doesn't
+ * launch anything for you (if available), e.g. `runEmptyComposeUiTest` on Android. Always make sure
+ * that the Compose content is set during execution of the [test lambda][block] so the test
+ * framework is aware of the content. Whether you need to launch the host from within the test
+ * lambda as well depends on the platform.
+ *
+ * Keeping a reference to the [ComposeUiTest] outside of this function is an error.
+ *
+ * The default [ComposeUiTestConfig] sets the [InputMode][androidx.compose.ui.input.InputMode] to
+ * [Touch][androidx.compose.ui.input.InputMode.Companion.Touch] for each test. To configure the test
+ * * to run with a different input mode (such as
+ *   [Keyboard][androidx.compose.ui.input.InputMode.Companion.Keyboard])
+ * * or customize other environment settings, use the overload that accepts a [ComposeUiTestConfig].
+ *
+ * @sample androidx.compose.ui.test.samples.RunComposeUiTestConfigSample
+ * @param block The test function.
+ */
+public expect fun runComposeUiTest(block: suspend ComposeUiTest.() -> Unit): TestResult

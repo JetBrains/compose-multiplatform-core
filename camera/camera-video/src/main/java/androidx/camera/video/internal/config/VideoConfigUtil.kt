@@ -15,6 +15,9 @@
  */
 package androidx.camera.video.internal.config
 
+import android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10
+import android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10HDR10
+import android.media.MediaCodecInfo.CodecProfileLevel.APVProfile422_10HDR10Plus
 import android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10
 import android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10HDR10
 import android.media.MediaCodecInfo.CodecProfileLevel.AV1ProfileMain10HDR10Plus
@@ -42,6 +45,7 @@ import androidx.camera.core.Logger
 import androidx.camera.core.SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
 import androidx.camera.core.impl.Timebase
+import androidx.camera.video.MediaConstants.MIME_TYPE_UNSPECIFIED
 import androidx.camera.video.MediaSpec.Companion.OUTPUT_FORMAT_WEBM
 import androidx.camera.video.MediaSpec.OutputFormat
 import androidx.camera.video.VideoSpec
@@ -106,6 +110,12 @@ public object VideoConfigUtil {
                 // For Dolby Vision profile 9, we only support 9.2 (8-bit AVC SDR BT.709)
                 DolbyVisionProfileDvavSe to ENCODER_DATA_SPACE_BT709,
             )
+        val profApvMap =
+            mapOf<Int, VideoEncoderDataSpace>(
+                APVProfile422_10 to ENCODER_DATA_SPACE_BT2020_HLG,
+                APVProfile422_10HDR10 to ENCODER_DATA_SPACE_BT2020_PQ,
+                APVProfile422_10HDR10Plus to ENCODER_DATA_SPACE_BT2020_PQ,
+            )
         // Combine all mime type maps
         MIME_TO_DATA_SPACE_MAP =
             mutableMapOf(
@@ -113,6 +123,7 @@ public object VideoConfigUtil {
                 MediaFormat.MIMETYPE_VIDEO_AV1 to profAv1Map,
                 MediaFormat.MIMETYPE_VIDEO_VP9 to profVp9Map,
                 MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION to profDvMap,
+                MediaFormat.MIMETYPE_VIDEO_APV to profApvMap,
             )
         // --------------------------------------------------------------------------------------//
     }
@@ -123,8 +134,8 @@ public object VideoConfigUtil {
      *
      * This method attempts to find the first profile in the provided list that matches the
      * requested [videoMime] and the constraints (HDR format and bit depth) of the [dynamicRange].
-     * If the [videoMime] is set to [VideoSpec.MIME_TYPE_UNSPECIFIED], it will return the first
-     * profile that satisfies the [dynamicRange] requirements.
+     * If the [videoMime] is set to [MIME_TYPE_UNSPECIFIED], it will return the first profile that
+     * satisfies the [dynamicRange] requirements.
      *
      * @param videoMime The desired video MIME type.
      * @param dynamicRange The fully specified [DynamicRange] required for the profile.
@@ -144,7 +155,7 @@ public object VideoConfigUtil {
             hdrFormats.contains(it.hdrFormat) &&
                 bitDepths.contains(it.bitDepth) &&
                 // is MIME type compatible
-                (videoMime == VideoSpec.MIME_TYPE_UNSPECIFIED || it.mediaType == videoMime)
+                (videoMime == MIME_TYPE_UNSPECIFIED || it.mediaType == videoMime)
         }
     }
 

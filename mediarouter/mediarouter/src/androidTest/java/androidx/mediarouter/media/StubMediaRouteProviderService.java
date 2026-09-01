@@ -20,9 +20,10 @@ import android.content.Context;
 import android.content.IntentFilter;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +82,12 @@ public class StubMediaRouteProviderService extends MediaRouteProviderService {
         return new StubMediaRouteProvider(this);
     }
 
-    static class StubMediaRouteProvider extends MediaRouteProvider {
+    @Override
+    public @Nullable StubMediaRouteProvider getMediaRouteProvider() {
+        return (StubMediaRouteProvider) super.getMediaRouteProvider();
+    }
+
+    public static class StubMediaRouteProvider extends MediaRouteProvider {
         Map<String, MediaRouteDescriptor> mRoutes = new ArrayMap<>();
         Map<String, StubRouteController> mControllers = new ArrayMap<>();
         boolean mSupportsDynamicGroup = false;

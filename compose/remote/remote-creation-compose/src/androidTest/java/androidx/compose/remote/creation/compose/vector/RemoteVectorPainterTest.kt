@@ -17,10 +17,12 @@
 package androidx.compose.remote.creation.compose.vector
 
 import android.content.Context
-import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
+import androidx.compose.remote.creation.compose.capture.createCreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.path
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -31,8 +33,10 @@ import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.test.R
-import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.RemoteScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,22 +56,27 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RemoteVectorPainterTest {
     @get:Rule
-    val remoteComposeTestRule by lazy {
-        RemoteComposeScreenshotTestRule(moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY)
-    }
+    val remoteComposeTestRule =
+        RemoteScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            context = ApplicationProvider.getApplicationContext(),
+        )
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+
+    private val whiteBackground: @Composable (composable: @Composable () -> Unit) -> Unit = {
+        Box(modifier = Modifier.background(Color.White)) { it() }
+    }
 
     @Test
     fun fromImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromImageVector(
                 imageVector = TestImageVectors.VolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
             )
         }
     }
@@ -75,24 +84,22 @@ class RemoteVectorPainterTest {
     @Test
     fun fromRes() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
-            LoadFromRes(res = R.drawable.android, modifier = RemoteModifier.size(48.rdp))
+            LoadFromRes(res = R.drawable.android, modifier = RemoteModifier.size(size))
         }
     }
 
     @Test
     fun fromRemoteImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromRemoteImageVector(
                 imageVector = TestImageVectors.RemoteVolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
             )
         }
     }
@@ -100,13 +107,12 @@ class RemoteVectorPainterTest {
     @Test
     fun tinted_fromImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromImageVector(
                 imageVector = TestImageVectors.VolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
                 tint = RemoteColor(Color.Red),
             )
         }
@@ -115,13 +121,12 @@ class RemoteVectorPainterTest {
     @Test
     fun tinted_fromRes() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromRes(
                 res = R.drawable.android,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
                 tint = RemoteColor(Color.Red),
             )
         }
@@ -130,13 +135,12 @@ class RemoteVectorPainterTest {
     @Test
     fun tinted_fromRemoteImageVector() {
         remoteComposeTestRule.runScreenshotTest(
-            creationDisplayInfo =
-                CreationDisplayInfo(48, 48, context.resources.displayMetrics.densityDpi),
-            backgroundColor = Color.White,
+            remoteCreationDisplayInfo = createCreationDisplayInfo(context, Size(48f, 48f)),
+            playComposableWrapper = whiteBackground,
         ) {
             LoadFromRemoteImageVector(
                 imageVector = TestImageVectors.RemoteVolumeUp,
-                modifier = RemoteModifier.size(48.rdp),
+                modifier = RemoteModifier.size(size),
                 tint = RemoteColor(Color.Red),
             )
         }
@@ -147,7 +151,7 @@ class RemoteVectorPainterTest {
 @Composable
 private fun LoadFromImageVector(
     imageVector: ImageVector,
-    modifier: RemoteModifier = RemoteModifier.size(size),
+    modifier: RemoteModifier = RemoteModifier,
     tint: RemoteColor = RemoteColor(color),
 ) {
     RemoteBox(modifier) {
@@ -173,7 +177,7 @@ private fun LoadFromRes(
 @Composable
 private fun LoadFromRemoteImageVector(
     imageVector: RemoteImageVector,
-    modifier: RemoteModifier = RemoteModifier.size(size),
+    modifier: RemoteModifier = RemoteModifier,
     tint: RemoteColor = RemoteColor(color),
 ) {
     RemoteBox(modifier) {
@@ -226,62 +230,42 @@ private object TestImageVectors {
             )
             .build()
 
-    val testRemoteStateScope = NoRemoteCompose()
-
     val RemoteVolumeUp =
         RemoteImageVector.Builder(
-                testRemoteStateScope,
-                name = "Volume up",
                 viewportWidth = 24.0f.rf,
                 viewportHeight = 24.0f.rf,
                 tintColor = RemoteColor(Color.Black),
+                name = "Volume up",
             )
-            .addPath(
-                RemotePathData(testRemoteStateScope) {
-                    moveTo(3.0f.rf, 9.0f.rf)
-                    verticalLineToRelative(6.0f.rf)
-                    horizontalLineToRelative(4.0f.rf)
-                    lineToRelative(5.0f.rf, 5.0f.rf)
-                    lineTo(12.0f.rf, 4.0f.rf)
-                    lineTo(7.0f.rf, 9.0f.rf)
-                    lineTo(3.0f.rf, 9.0f.rf)
-                    close()
-                    moveTo(16.5f.rf, 12.0f.rf)
-                    curveToRelative(
-                        0.0f.rf,
-                        (-1.77f).rf,
-                        (-1.02f).rf,
-                        (-3.29f).rf,
-                        (-2.5f).rf,
-                        (-4.03f).rf,
-                    )
-                    verticalLineToRelative(8.05f.rf)
-                    curveToRelative(
-                        1.48f.rf,
-                        (-0.73f).rf,
-                        2.5f.rf,
-                        (-2.25f).rf,
-                        2.5f.rf,
-                        (-4.02f).rf,
-                    )
-                    close()
-                    moveTo(14.0f.rf, 3.23f.rf)
-                    verticalLineToRelative(2.06f.rf)
-                    curveToRelative(2.89f.rf, 0.86f.rf, 5.0f.rf, 3.54f.rf, 5.0f.rf, 6.71f.rf)
-                    reflectiveCurveToRelative((-2.11f).rf, 5.85f.rf, (-5.0f).rf, 6.71f.rf)
-                    verticalLineToRelative(2.06f.rf)
-                    curveToRelative(
-                        4.01f.rf,
-                        (-0.91f).rf,
-                        7.0f.rf,
-                        (-4.49f).rf,
-                        7.0f.rf,
-                        (-8.77f).rf,
-                    )
-                    reflectiveCurveToRelative((-2.99f).rf, (-7.86f).rf, (-7.0f).rf, (-8.77f).rf)
-                    close()
-                },
-                fill = SolidColor(Color.Black),
-            )
+            .path(fill = SolidColor(Color.Black)) {
+                moveTo(3.0f.rf, 9.0f.rf)
+                verticalLineToRelative(6.0f.rf)
+                horizontalLineToRelative(4.0f.rf)
+                lineToRelative(5.0f.rf, 5.0f.rf)
+                lineTo(12.0f.rf, 4.0f.rf)
+                lineTo(7.0f.rf, 9.0f.rf)
+                lineTo(3.0f.rf, 9.0f.rf)
+                close()
+                moveTo(16.5f.rf, 12.0f.rf)
+                curveToRelative(
+                    0.0f.rf,
+                    (-1.77f).rf,
+                    (-1.02f).rf,
+                    (-3.29f).rf,
+                    (-2.5f).rf,
+                    (-4.03f).rf,
+                )
+                verticalLineToRelative(8.05f.rf)
+                curveToRelative(1.48f.rf, (-0.73f).rf, 2.5f.rf, (-2.25f).rf, 2.5f.rf, (-4.02f).rf)
+                close()
+                moveTo(14.0f.rf, 3.23f.rf)
+                verticalLineToRelative(2.06f.rf)
+                curveToRelative(2.89f.rf, 0.86f.rf, 5.0f.rf, 3.54f.rf, 5.0f.rf, 6.71f.rf)
+                reflectiveCurveToRelative((-2.11f).rf, 5.85f.rf, (-5.0f).rf, 6.71f.rf)
+                verticalLineToRelative(2.06f.rf)
+                curveToRelative(4.01f.rf, (-0.91f).rf, 7.0f.rf, (-4.49f).rf, 7.0f.rf, (-8.77f).rf)
+                reflectiveCurveToRelative((-2.99f).rf, (-7.86f).rf, (-7.0f).rf, (-8.77f).rf)
+                close()
+            }
             .build()
 }

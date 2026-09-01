@@ -18,17 +18,19 @@ package androidx.compose.foundation.layout.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.GridFlow
 import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.GridTrackSize.Companion.Fixed
 import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.rows
-import androidx.compose.material.Text
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +39,6 @@ import androidx.compose.ui.unit.dp
 
 @Sampled
 @Composable
-@OptIn(ExperimentalGridApi::class)
 fun SimpleGrid() {
     Grid(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -103,7 +104,6 @@ fun SimpleGrid() {
 
 @Sampled
 @Composable
-@OptIn(ExperimentalGridApi::class)
 fun GridWithSpanningItems() {
     Grid(
         config = {
@@ -128,7 +128,6 @@ fun GridWithSpanningItems() {
 
 @Sampled
 @Composable
-@OptIn(ExperimentalGridApi::class)
 fun GridWithAutoPlacement() {
     Grid(
         config = {
@@ -147,7 +146,6 @@ fun GridWithAutoPlacement() {
 
 @Sampled
 @Composable
-@OptIn(ExperimentalGridApi::class)
 fun GridConfigurationDslSample() {
     Grid(
         config = {
@@ -182,7 +180,6 @@ fun GridConfigurationDslSample() {
 
 @Sampled
 @Composable
-@OptIn(ExperimentalGridApi::class)
 fun GridWithConstraints() {
     Grid(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -207,6 +204,195 @@ fun GridWithConstraints() {
             ) {
                 Text("Item $index")
             }
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun GridWithLazyList() {
+    Grid(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        config = {
+            column(120.dp) // Sidebar width
+            column(minmax(0.dp, 1.fr)) // Content width
+
+            row(60.dp) // Header height
+            // IMPORTANT:
+            // Flex track '1.fr' queries child intrinsic sizes. Since SubcomposeLayouts
+            // (like LazyColumn) crash on intrinsic queries, we MUST use 'GridTrackSize.MinMax' with
+            // an explicit minimum size (0.dp) to bypass the measurement crash safely!
+            row(minmax(0.dp, 1.fr))
+
+            gap(16.dp)
+        },
+    ) {
+        // Top Header spanning both columns
+        Box(
+            Modifier.gridItem(row = 1, column = 1, columnSpan = 2)
+                .background(Color.DarkGray)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("App Header", color = Color.White)
+        }
+
+        // Left Sidebar
+        Box(
+            Modifier.gridItem(row = 2, column = 1).background(Color.LightGray).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Navigation")
+        }
+
+        // Scrollable LazyColumn safely constrained in the flex area
+        LazyColumn(
+            modifier = Modifier.gridItem(row = 2, column = 2).fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(50) { index ->
+                Box(Modifier.fillMaxWidth().background(Color(0xFFE0E0FF)).padding(16.dp)) {
+                    Text("Scrollable Content #$index")
+                }
+            }
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun GridWithNamedAreas() {
+    Grid(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        config = {
+            // 1. Define Physical Tracks
+            column(100.dp) // Sidebar track
+            column(1.fr) // Main content track
+
+            row(60.dp) // Header track
+            row(1.fr) // Main content track
+            row(50.dp) // Footer track
+
+            gap(8.dp)
+
+            // 2. Map Semantic Strings to physical coordinates
+            area("header", row = 1, column = 1, columnSpan = 2)
+            area("sidebar", row = 2, column = 1)
+            area("content", row = 2, column = 2)
+            area("footer", rows = 3..3, columns = 1..2)
+        },
+    ) {
+        // 3. Place items purely by semantic intent!
+        Box(
+            modifier = Modifier.gridItem("header").background(Color.DarkGray).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Header", color = Color.White)
+        }
+
+        Box(
+            modifier = Modifier.gridItem("sidebar").background(Color.LightGray).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Sidebar")
+        }
+
+        Box(
+            modifier = Modifier.gridItem("content").background(Color.Cyan).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Main Content")
+        }
+
+        Box(
+            modifier = Modifier.gridItem("footer").background(Color.Gray).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Footer", color = Color.White)
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun GridWithAreaRanges() {
+    Grid(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        config = {
+            repeat(4) { column(1.fr) }
+            repeat(4) { row(1.fr) }
+
+            // Easily define a 2x2 area right in the center using IntRanges
+            area("CenterBox", rows = 2..3, columns = 2..3)
+        },
+    ) {
+        Box(
+            modifier = Modifier.gridItem("CenterBox").background(Color.Blue).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("I span rows 2-3 and columns 2-3", color = Color.White)
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun GridWithOneDimensionalAreas() {
+    Grid(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        config = {
+            // 1. Define physical tracks
+            column(100.dp) // Sidebar track
+            column(1.fr) // Main content track
+
+            row(60.dp) // Header track
+            row(1.fr) // Main content track
+
+            gap(8.dp)
+
+            // 2. Define 1-Dimensional Areas
+            // 1D Area: Fix the row, leave column unspecified
+            area("header", row = 1)
+
+            // 1D Area: Fix the column, leave row unspecified
+            area("sidebar", column = 1)
+
+            // Fully specified 2D area
+            area("content", row = 2, column = 2)
+        },
+    ) {
+        // Because "header" is 1D, items automatically flow into available columns!
+        // Logo takes the first available slot (row 1, col 1)
+        Box(
+            modifier = Modifier.gridItem("header").background(Color.Red).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Logo", color = Color.White)
+        }
+
+        // Search automatically flows into the next available slot (row 1, col 2)
+        Box(
+            modifier = Modifier.gridItem("header").background(Color.Magenta).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Search Bar", color = Color.White)
+        }
+
+        // Because "sidebar" is 1D (col=1), it flows into the next available row.
+        // Since (row 1, col 1) is taken by Logo, this flows to (row 2, col 1).
+        Box(
+            modifier = Modifier.gridItem("sidebar").background(Color.Blue).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Sidebar Menu", color = Color.White)
+        }
+
+        // Exact 2D placement
+        Box(
+            modifier = Modifier.gridItem("content").background(Color.Green).fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Main Content", color = Color.White)
         }
     }
 }
