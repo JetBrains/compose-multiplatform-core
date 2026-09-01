@@ -19,38 +19,41 @@ package androidx.navigation3.runtime.deeplink
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.IgnoreAndroidHostTestTarget
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 @IgnoreAndroidHostTestTarget
 class DeepLinkRequestTest {
 
     @Test
-    fun fromUri() {
-        val string = "navigation3.test.com/test"
-        val uri = DeepLinkUri(string)
-        val request = DeepLinkRequest.fromUri(uri)
+    fun testExtra() {
+        val testKey = "TestKey"
+        val request = DeepLinkRequest(null, mapOf(testKey to 1))
 
-        assertThat(request.uri).isEqualTo(uri)
-        assertThat(request.mimeType).isNull()
-        assertThat(request.action).isNull()
+        assertThat(request.uri).isNull()
+        assertThat(request.extras[testKey]).isNotNull()
+        assertThat(request.extras[testKey]).isEqualTo(1)
     }
 
     @Test
-    fun fromMimeType() {
-        val mimeType = "image/png"
-        val request = DeepLinkRequest.fromMimeType(mimeType)
+    fun fromExtraDsl() {
+        val testKey = object : RequestExtrasKey<Boolean> {}
+        val request = DeepLinkRequest(null, requestExtras { put(testKey, true) })
 
         assertThat(request.uri).isNull()
-        assertThat(request.mimeType).isEqualTo(mimeType)
-        assertThat(request.action).isNull()
+        assertThat(request.extras[testKey]).isNotNull()
+        assertThat(request.extras[testKey]).isEqualTo(true)
     }
 
     @Test
-    fun fromAction() {
-        val action = "action"
-        val request = DeepLinkRequest.fromAction(action)
+    fun testExtraWrongKey() {
+        val request = DeepLinkRequest(null, mapOf("TestKey" to 1))
 
         assertThat(request.uri).isNull()
-        assertThat(request.mimeType).isNull()
-        assertThat(request.action).isEqualTo(action)
+        assertThat(request.extras["wrongKey"]).isNull()
+    }
+
+    @Test
+    fun testEmptyRequestFails() {
+        assertFailsWith<IllegalArgumentException> { DeepLinkRequest() }
     }
 }
