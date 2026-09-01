@@ -176,7 +176,7 @@ internal class ComposeWebSemanticsListener(
     private val targetChildToParent = MutableScatterMap<HTMLElement, HTMLElement>()
 
     // Responsible for scroll synchronization between Compose and Dom tree
-    private val a11YScrollState = A11YScrollState(idToA11YNode, a11yNodeToSemanticsNode)
+    private val a11YScrollController = A11YScrollController(idToA11YNode, a11yNodeToSemanticsNode)
 
     /**
      * Event delegation: Single shared click listener for all a11y nodes with SemanticsActions.OnClick.
@@ -232,10 +232,10 @@ internal class ComposeWebSemanticsListener(
             if (htmlNode != null) {
                 a11yNodeToSemanticsNode.remove(htmlNode)
             }
-            a11YScrollState.onNodeRemoved(id, htmlNode)
+            a11YScrollController.onNodeRemoved(id, htmlNode)
         }
 
-        a11YScrollState.applyScrollOffsets()
+        a11YScrollController.applyScrollOffsets()
         updateInertRoots()
     }
 
@@ -447,7 +447,7 @@ internal class ComposeWebSemanticsListener(
             htmlNode.removeAttribute("aria-modal")
         }
 
-        a11YScrollState.syncNodeScrollability(semanticsNode, config, htmlNode)
+        a11YScrollController.syncNodeScrollability(semanticsNode, config, htmlNode)
 
         val density = semanticsNode.layoutNode.density.density
         // Use unclipped geometry so descendants retain their content-space positions outside a
@@ -468,7 +468,7 @@ internal class ComposeWebSemanticsListener(
             )
         } else {
             htmlNode.style.position = "absolute"
-            val parentScroll = a11YScrollState.getScrollOffset(parentSemanticsNode)
+            val parentScroll = a11YScrollController.getScrollOffset(parentSemanticsNode)
             setSizeAndPosition(
                 htmlNode,
                 (positionInRoot.x - parentSemanticsNode.positionInRoot.x) / density + parentScroll.x,
@@ -571,7 +571,7 @@ internal class ComposeWebSemanticsListener(
             targetTextAndLinks.add(textParts.last())
         }
 
-        updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollState.getScrollSizer(node))
+        updateTextAndLinks(htmlNode, targetTextAndLinks, a11YScrollController.getScrollSizer(node))
         deferredChildren?.let { pushNodesForTraversal(it, htmlNode) }
         return htmlNode
     }
@@ -630,7 +630,7 @@ internal class ComposeWebSemanticsListener(
         if (!hasStarted || hasStopped) return
 
         webSemanticsRoot.removeEventListener("click", onClick)
-        a11YScrollState.clear()
+        a11YScrollController.clear()
 
         dfsSemanticsNodes.clear()
         dfsA11YParents.clear()
