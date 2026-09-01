@@ -96,6 +96,12 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
+        iosTest {
+            dependencies {
+                implementation(project(":compose:ui:ui-test"))
+            }
+        }
+
         webMain {
             dependsOn(nonAndroidMain)
         }

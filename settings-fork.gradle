@@ -21,19 +21,9 @@ skikoSetup.defineSkikoInVersionCatalog(settings)
 
 def supportRootFolder = buildscript.sourceFile.getParentFile()
 
-/* In JetBrains Fork we don't force Android Studio usage.
-// Abort immediately if we're running in Studio, but not a managed instance of Studio.
-if (startParameter.projectProperties.containsKey('android.injected.invoked.from.ide')) {
-    def expectedAgpVersion = System.getenv().get("EXPECTED_AGP_VERSION")
-    if (expectedAgpVersion == null) {
-        throw new Exception("Android Studio must be run from studiow or gradlew studio.")
-    }
-}
-*/
-
-// Makes strong assumptions about the project structure.
+ // TODO remove, it doesn't exist and not used in fork
 def prebuiltsRoot = new File(
-        supportRootFolder.parentFile.parentFile,
+        supportRootFolder,
         "prebuilts"
 ).absolutePath
 def rootProjectRepositories
@@ -363,14 +353,13 @@ includeProject(":compose:material3:adaptive:adaptive-layout")
 includeProject(":compose:material3:adaptive:adaptive-navigation")
 includeProject(":compose:material3:adaptive:adaptive-navigation3")
 includeProject(":compose:material3:material3-lint")
+includeProject(":compose:material3:material3-ripple")
 includeProject(":compose:material3:material3-window-size-class")
 includeProject(":compose:material3:material3-adaptive-navigation-suite")
 includeProject(":compose:material:material")
 includeProject(":compose:material:material-lint")
 includeProject(":compose:material:material-navigation")
 includeProject(":compose:material:material-ripple")
-// on an empty project it causes an error during sync in IDEA
-//  Corrupt serialized resolution result. Cannot find selected module (287) for releaseVariantReleaseRuntimePublication -> androidx.lifecycle:lifecycle-common-java8:2.5.1
 includeProject(":compose:runtime:runtime")
 includeProject(":compose:runtime:runtime-lint")
 includeProject(":compose:runtime:runtime-saveable")
@@ -396,23 +385,11 @@ includeProject(":kruth:kruth")
 
 includeProject(":lint-checks")
 
-includeProject(":lifecycle:lifecycle-common")
-includeProject(":lifecycle:lifecycle-runtime")
-includeProject(":lifecycle:lifecycle-runtime-compose")
-includeProject(":lifecycle:lifecycle-runtime-lint")
-includeProject(":lifecycle:lifecycle-runtime-testing-lint")
-includeProject(":lifecycle:lifecycle-viewmodel")
-includeProject(":lifecycle:lifecycle-viewmodel-compose")
-includeProject(":lifecycle:lifecycle-viewmodel-navigation3")
-includeProject(":lifecycle:lifecycle-viewmodel-savedstate")
 includeProject(":navigation:navigation-common")
 includeProject(":navigation:navigation-compose")
 includeProject(":navigation:navigation-runtime")
 includeProject(":navigation:navigation-testing")
 includeProject(":navigation3:navigation3-ui")
-includeProject(":navigationevent:navigationevent-compose")
-includeProject(":savedstate:savedstate")
-includeProject(":savedstate:savedstate-compose")
 
 includeProject(":internal-testutils-fonts", "testutils/testutils-fonts")
 includeProject(":internal-testutils-navigation", "testutils/testutils-navigation")

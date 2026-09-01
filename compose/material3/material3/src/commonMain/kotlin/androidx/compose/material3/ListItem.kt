@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
@@ -44,7 +43,7 @@ import androidx.compose.material3.internal.subtractConstraintSafely
 import androidx.compose.material3.internal.widthOrZero
 import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
-import androidx.compose.material3.tokens.TypographyKeyTokens
+import androidx.compose.material3.tokens.TypographyToken
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +72,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -86,6 +86,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.takeOrElse
+import androidx.compose.ui.util.fastCoerceIn
 import kotlin.jvm.JvmInline
 import kotlin.math.max
 
@@ -94,8 +95,9 @@ import kotlin.math.max
  *
  * Lists are continuous, vertical indexes of text or images.
  *
- * This overload of list item does not handle any user interaction. See other overloads for handling
- * general click actions, single-selection, or multi-selection.
+ * This overload of list item uses the baseline (legacy) specifications for the component. For an
+ * updated component, use the overload with renamed parameters and a trailing content lambda. Also
+ * see other overloads for handling general click actions, single-selection, or multi-selection.
  *
  * ![Lists
  * image](https://developer.android.com/images/reference/androidx/compose/material3/lists.png)
@@ -103,19 +105,8 @@ import kotlin.math.max
  * This component can be used to achieve the list item templates existing in the spec. One-line list
  * items have a singular line of headline content. Two-line list items additionally have either
  * supporting or overline content. Three-line list items have either both supporting and overline
- * content, or extended (two-line) supporting text. For example:
- * - one-line item
+ * content, or extended (two-line) supporting text.
  *
- * @sample androidx.compose.material3.samples.OneLineListItem
- * - two-line item
- *
- * @sample androidx.compose.material3.samples.TwoLineListItem
- * - three-line item with both overline and supporting content
- *
- * @sample androidx.compose.material3.samples.ThreeLineListItemWithOverlineAndSupporting
- * - three-line item with extended supporting content
- *
- * @sample androidx.compose.material3.samples.ThreeLineListItemWithExtendedSupporting
  * @param headlineContent the headline content of the list item
  * @param modifier [Modifier] to be applied to the list item
  * @param overlineContent the content displayed above the headline content
@@ -127,8 +118,25 @@ import kotlin.math.max
  * @param tonalElevation the tonal elevation of this list item
  * @param shadowElevation the shadow elevation of this list item
  */
+@Deprecated(
+    message = "Use the overload where `headlineContent` is now a trailing `content` lambda",
+    replaceWith =
+        ReplaceWith(
+            "ListItem(\n" +
+                "    modifier = modifier,\n" +
+                "    leadingContent = leadingContent,\n" +
+                "    trailingContent = trailingContent,\n" +
+                "    overlineContent = overlineContent,\n" +
+                "    supportingContent = supportingContent,\n" +
+                "    colors = colors,\n" +
+                "    elevation = ListItemDefaults.elevation(shadowElevation),\n" +
+                "    content = headlineContent,\n" +
+                ")"
+        ),
+)
 @Composable
-fun ListItem(
+@Suppress("DEPRECATION")
+public fun ListItem(
     headlineContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     overlineContent: @Composable (() -> Unit)? = null,
@@ -226,6 +234,75 @@ fun ListItem(
  *
  * Lists are continuous, vertical indexes of text or images.
  *
+ * This overload of [ListItem] does not handle any interaction events. See other overloads for
+ * handling general click actions, single-selection, or multi-selection interactions.
+ *
+ * @sample androidx.compose.material3.samples.StandardListItems
+ * @param modifier the [Modifier] to be applied to this list item.
+ * @param enabled controls the enabled state of this list item. Note that the component does not
+ *   handle interactions internally. Nonetheless, when `false`, this component will appear visually
+ *   disabled and disabled to accessibility services.
+ * @param leadingContent the leading content of this list item, such as an icon or avatar.
+ * @param trailingContent the trailing content of this list item, such as a checkbox, switch, or
+ *   icon.
+ * @param overlineContent the content displayed above the main content of the list item.
+ * @param supportingContent the content displayed below the main content of the list item.
+ * @param verticalAlignment the vertical alignment of children within the list item, after
+ *   accounting for [contentPadding].
+ * @param shapes the [ListItemShapes] that will be used to resolve the shapes used for this list
+ *   item in different states. See [ListItemDefaults.shapes].
+ * @param colors the [ListItemColors] that will be used to resolve the colors used for this list
+ *   item in different states. See [ListItemDefaults.colors].
+ * @param elevation the [ListItemElevation] used to resolve the elevation for this list item in
+ *   different states. See [ListItemDefaults.elevation].
+ * @param contentPadding the padding to be applied to the content of this list item.
+ * @param content the main content of this list item. Also known as the headline or label.
+ */
+@Composable
+public fun ListItem(
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    leadingContent: @Composable (() -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    overlineContent: @Composable (() -> Unit)? = null,
+    supportingContent: @Composable (() -> Unit)? = null,
+    verticalAlignment: Alignment.Vertical = ListItemDefaults.verticalAlignment(),
+    shapes: ListItemShapes = ListItemDefaults.shapes(),
+    colors: ListItemColors = ListItemDefaults.colors(),
+    elevation: ListItemElevation = ListItemDefaults.elevation(),
+    contentPadding: PaddingValues = ListItemDefaults.ContentPadding,
+    content: @Composable () -> Unit,
+) {
+    InteractiveListItem(
+        modifier = modifier,
+        content = content,
+        leadingContent = leadingContent,
+        trailingContent = trailingContent,
+        overlineContent = overlineContent,
+        supportingContent = supportingContent,
+        verticalAlignment = verticalAlignment,
+        enabled = enabled,
+        selected = false,
+        applySemantics = {
+            // Need to set it separately since there's no interaction handling.
+            if (!enabled) disabled()
+        },
+        onClick = null,
+        onLongClick = null,
+        onLongClickLabel = null,
+        interactionSource = null,
+        colors = colors,
+        shapes = shapes,
+        elevation = elevation,
+        contentPadding = contentPadding,
+    )
+}
+
+/**
+ * [Material Design standard list item](https://m3.material.io/components/lists/overview)
+ *
+ * Lists are continuous, vertical indexes of text or images.
+ *
  * This overload of [ListItem] handles click events, calling its [onClick] lambda to trigger an
  * action. See other overloads for handling single-selection, multi-selection, or no interaction
  * handling.
@@ -260,9 +337,8 @@ fun ListItem(
  *   interactions will still happen internally.
  * @param content the main content of this list item. Also known as the headline or label.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun ListItem(
+public fun ListItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -339,9 +415,8 @@ fun ListItem(
  *   interactions will still happen internally.
  * @param content the main content of this list item. Also known as the headline or label.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun ListItem(
+public fun ListItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -424,9 +499,8 @@ fun ListItem(
  *   interactions will still happen internally.
  * @param content the main content of this list item. Also known as the headline or label.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun ListItem(
+public fun ListItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -475,6 +549,76 @@ fun ListItem(
  *
  * Lists are continuous, vertical indexes of text or images.
  *
+ * This overload of [SegmentedListItem] does not handle any interaction events. See other overloads
+ * for handling general click actions, single-selection, or multi-selection interactions.
+ *
+ * @sample androidx.compose.material3.samples.SegmentedListItems
+ * @param shapes the [ListItemShapes] used to resolve the shapes of this list item in different
+ *   states. The base shape depends on the index of the item within the overall list. See
+ *   [ListItemDefaults.segmentedShapes].
+ * @param modifier the [Modifier] to be applied to this list item.
+ * @param enabled controls the enabled state of this list item. Note that the component does not
+ *   handle interactions internally. Nonetheless, when `false`, this component will appear visually
+ *   disabled and disabled to accessibility services.
+ * @param leadingContent the leading content of this list item, such as an icon or avatar.
+ * @param trailingContent the trailing content of this list item, such as a checkbox, switch, or
+ *   icon.
+ * @param overlineContent the content displayed above the main content of the list item.
+ * @param supportingContent the content displayed below the main content of the list item.
+ * @param verticalAlignment the vertical alignment of children within the list item, after
+ *   accounting for [contentPadding].
+ * @param colors the [ListItemColors] that will be used to resolve the colors used for this list
+ *   item in different states. See [ListItemDefaults.segmentedColors].
+ * @param elevation the [ListItemElevation] used to resolve the elevation for this list item in
+ *   different states. See [ListItemDefaults.elevation].
+ * @param contentPadding the padding to be applied to the content of this list item.
+ * @param content the main content of this list item. Also known as the headline or label.
+ */
+@Composable
+public fun SegmentedListItem(
+    shapes: ListItemShapes,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    leadingContent: @Composable (() -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    overlineContent: @Composable (() -> Unit)? = null,
+    supportingContent: @Composable (() -> Unit)? = null,
+    verticalAlignment: Alignment.Vertical = ListItemDefaults.verticalAlignment(),
+    colors: ListItemColors = ListItemDefaults.segmentedColors(),
+    elevation: ListItemElevation = ListItemDefaults.elevation(),
+    contentPadding: PaddingValues = ListItemDefaults.ContentPadding,
+    content: @Composable () -> Unit,
+) {
+    InteractiveListItem(
+        modifier = modifier,
+        content = content,
+        leadingContent = leadingContent,
+        trailingContent = trailingContent,
+        overlineContent = overlineContent,
+        supportingContent = supportingContent,
+        verticalAlignment = verticalAlignment,
+        enabled = enabled,
+        selected = false,
+        applySemantics = {
+            // Need to set it separately since there's no interaction handling.
+            if (!enabled) disabled()
+        },
+        onClick = null,
+        onLongClick = null,
+        onLongClickLabel = null,
+        interactionSource = null,
+        colors = colors,
+        shapes = shapes,
+        elevation = elevation,
+        contentPadding = contentPadding,
+    )
+}
+
+/**
+ * [Material Design segmented list item](https://m3.material.io/components/lists/overview)
+ *
+ * Lists are continuous, vertical indexes of text or images.
+ *
  * This overload of [SegmentedListItem] handles click events, calling its [onClick] lambda to
  * trigger an action. See other overloads for handling single-selection, multi-selection, or no
  * interaction handling.
@@ -508,9 +652,8 @@ fun ListItem(
  *   interactions will still happen internally.
  * @param content the main content of this list item. Also known as the headline or label.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun SegmentedListItem(
+public fun SegmentedListItem(
     onClick: () -> Unit,
     shapes: ListItemShapes,
     modifier: Modifier = Modifier,
@@ -589,9 +732,8 @@ fun SegmentedListItem(
  *   interactions will still happen internally.
  * @param content the main content of this list item. Also known as the headline or label.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun SegmentedListItem(
+public fun SegmentedListItem(
     selected: Boolean,
     onClick: () -> Unit,
     shapes: ListItemShapes,
@@ -674,9 +816,8 @@ fun SegmentedListItem(
  *   interactions will still happen internally.
  * @param content the main content of this list item. Also known as the headline or label.
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun SegmentedListItem(
+public fun SegmentedListItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     shapes: ListItemShapes,
@@ -1074,7 +1215,7 @@ private fun MeasureScope.place(
 @Composable
 private fun ProvideTextStyleFromToken(
     color: Color,
-    textToken: TypographyKeyTokens,
+    textToken: TypographyToken,
     content: @Composable () -> Unit,
 ) =
     ProvideContentColorTextStyle(
@@ -1092,13 +1233,16 @@ private value class ListItemType private constructor(private val lines: Int) :
 
     companion object {
         /** One line list item */
-        val OneLine = ListItemType(1)
+        val OneLine
+            get() = ListItemType(1)
 
         /** Two line list item */
-        val TwoLine = ListItemType(2)
+        val TwoLine
+            get() = ListItemType(2)
 
         /** Three line list item */
-        val ThreeLine = ListItemType(3)
+        val ThreeLine
+            get() = ListItemType(3)
 
         internal operator fun invoke(
             hasOverline: Boolean,
@@ -1147,7 +1291,7 @@ private fun verticalPadding(listItemType: ListItemType): Dp =
 private fun LeadingDecorator(
     startPadding: Dp,
     color: Color,
-    textStyle: TypographyKeyTokens,
+    textStyle: TypographyToken,
     content: (@Composable () -> Unit)?,
 ) {
     if (content != null) {
@@ -1172,7 +1316,7 @@ private fun LeadingDecorator(
 private fun TrailingDecorator(
     endPadding: Dp,
     color: Color,
-    textStyle: TypographyKeyTokens,
+    textStyle: TypographyToken,
     content: (@Composable () -> Unit)?,
 ) {
     if (content != null) {
@@ -1196,7 +1340,7 @@ private fun TrailingDecorator(
 @Composable
 private fun OverlineDecorator(
     color: Color,
-    textStyle: TypographyKeyTokens,
+    textStyle: TypographyToken,
     content: (@Composable () -> Unit)?,
 ) {
     if (content != null) {
@@ -1213,7 +1357,7 @@ private fun OverlineDecorator(
 @Composable
 private fun SupportingDecorator(
     color: Color,
-    textStyle: TypographyKeyTokens,
+    textStyle: TypographyToken,
     content: (@Composable () -> Unit)?,
 ) {
     if (content != null) {
@@ -1230,7 +1374,7 @@ private fun SupportingDecorator(
 @Composable
 private fun ContentDecorator(
     color: Color,
-    textStyle: TypographyKeyTokens,
+    textStyle: TypographyToken,
     content: @Composable () -> Unit,
 ) {
     Box {
@@ -1247,14 +1391,15 @@ private fun ContentDecorator(
  * [LaunchedEffect]. The [MutableState] parameters, if provided, will be set to the corresponding
  * state value.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun InteractionSource.CollectInteractionsAsState(
+private fun InteractionSource?.CollectInteractionsAsState(
     pressedState: MutableState<Boolean>? = null,
     focusedState: MutableState<Boolean>? = null,
     hoveredState: MutableState<Boolean>? = null,
     draggedState: MutableState<Boolean>? = null,
 ) {
+    if (this == null) return
+
     LaunchedEffect(this) {
         val pressInteractions = pressedState?.let { mutableListOf<PressInteraction.Press>() }
         val focusInteractions = focusedState?.let { mutableListOf<FocusInteraction.Focus>() }
@@ -1300,7 +1445,6 @@ private data class InteractiveListColorState(
     val dragged: Boolean,
 )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 @Suppress("ComposableLambdaParameterPosition")
 private fun InteractiveListItem(
@@ -1314,7 +1458,7 @@ private fun InteractiveListItem(
     enabled: Boolean,
     selected: Boolean,
     applySemantics: SemanticsPropertyReceiver.() -> Unit,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     onLongClick: (() -> Unit)?,
     onLongClickLabel: String?,
     interactionSource: MutableInteractionSource?,
@@ -1324,7 +1468,12 @@ private fun InteractiveListItem(
     contentPadding: PaddingValues,
 ) {
     @Suppress("NAME_SHADOWING")
-    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val interactionSource =
+        if (onClick == null) {
+            null
+        } else {
+            interactionSource ?: remember { MutableInteractionSource() }
+        }
 
     val pressed = remember { mutableStateOf(false) }
     val focused = remember { mutableStateOf(false) }
@@ -1421,8 +1570,13 @@ private fun InteractiveListItem(
             modifier =
                 modifier
                     .semantics(mergeDescendants = true, properties = applySemantics)
-                    .defaultMinSize(minHeight = ListTokens.ItemOneLineContainerHeight)
-                    .minimumInteractiveComponentSize()
+                    .then(
+                        if (onClick != null) {
+                            Modifier.minimumInteractiveComponentSize()
+                        } else {
+                            Modifier
+                        }
+                    )
                     .zIndexLambda { if (shadowElevation.value > 0.dp) 1f else 0f }
                     .graphicsLayer {
                         this.shadowElevation = with(density) { shadowElevation.value.toPx() }
@@ -1431,17 +1585,26 @@ private fun InteractiveListItem(
                     }
                     .background(color = containerColor, shape = shape)
                     .clip(shape)
-                    .combinedClickable(
-                        interactionSource = interactionSource,
-                        indication =
-                            @OptIn(ExperimentalMaterial3Api::class) ripple(focusRingShape = shape),
-                        enabled = enabled,
-                        onLongClick = onLongClick,
-                        onLongClickLabel = onLongClickLabel,
-                        onClick = onClick,
+                    .then(
+                        if (onClick != null) {
+                            Modifier.combinedClickable(
+                                interactionSource = interactionSource,
+                                indication =
+                                    @OptIn(ExperimentalMaterial3Api::class)
+                                    ripple(focusRingShape = shape),
+                                enabled = enabled,
+                                onLongClick = onLongClick,
+                                onLongClickLabel = onLongClickLabel,
+                                onClick = onClick,
+                            )
+                        } else {
+                            Modifier
+                        }
                     )
                     .padding(contentPadding),
             verticalAlignment = verticalAlignment,
+            verticalPadding =
+                contentPadding.calculateTopPadding() + contentPadding.calculateBottomPadding(),
             leading = {
                 LeadingDecorator(
                     startPadding = contentPadding.calculateStartPadding(layoutDirection),
@@ -1487,6 +1650,7 @@ private fun InteractiveListItem(
 private fun InteractiveListItemLayout(
     modifier: Modifier,
     verticalAlignment: Alignment.Vertical,
+    verticalPadding: Dp,
     leading: @Composable () -> Unit,
     trailing: @Composable () -> Unit,
     overline: @Composable () -> Unit,
@@ -1494,8 +1658,11 @@ private fun InteractiveListItemLayout(
     content: @Composable () -> Unit,
 ) {
     val measurePolicy =
-        remember(verticalAlignment) {
-            InteractiveListItemMeasurePolicy(verticalAlignment = verticalAlignment)
+        remember(verticalAlignment, verticalPadding) {
+            InteractiveListItemMeasurePolicy(
+                verticalAlignment = verticalAlignment,
+                verticalPadding = verticalPadding,
+            )
         }
     Layout(
         modifier = modifier,
@@ -1504,8 +1671,10 @@ private fun InteractiveListItemLayout(
     )
 }
 
-private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.Vertical) :
-    MultiContentMeasurePolicy {
+private class InteractiveListItemMeasurePolicy(
+    val verticalAlignment: Alignment.Vertical,
+    val verticalPadding: Dp,
+) : MultiContentMeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<List<Measurable>>,
         constraints: Constraints,
@@ -1558,6 +1727,17 @@ private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.
                     )
                 )
 
+        val isSupportingMultiline =
+            supportingPlaceable != null &&
+                (supportingPlaceable[FirstBaseline] != supportingPlaceable[LastBaseline])
+
+        val listItemType =
+            ListItemType(
+                hasOverline = overlinePlaceable != null,
+                hasSupporting = supportingPlaceable != null,
+                isSupportingMultiline = isSupportingMultiline,
+            )
+
         val width =
             calculateWidth(
                 leadingWidth = leadingPlaceable.widthOrZero,
@@ -1575,6 +1755,7 @@ private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.
                 supportingHeight = supportingPlaceable.heightOrZero,
                 contentHeight = contentPlaceable.heightOrZero,
                 constraints = constraints,
+                listItemType = listItemType,
             )
 
         return place(
@@ -1631,7 +1812,7 @@ private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.
         )
     }
 
-    private fun calculateIntrinsicHeight(
+    private fun Density.calculateIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
         width: Int,
         intrinsicMeasure: IntrinsicMeasurable.(width: Int) -> Int,
@@ -1669,6 +1850,14 @@ private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.
             supportingMeasurable.firstOrNull()?.intrinsicMeasure(remainingWidth) ?: 0
         val contentHeight = contentMeasurable.firstOrNull()?.intrinsicMeasure(remainingWidth) ?: 0
 
+        val isSupportingMultiline = isSupportingMultilineHeuristic(supportingHeight)
+        val listItemType =
+            ListItemType(
+                hasOverline = overlineHeight > 0,
+                hasSupporting = supportingHeight > 0,
+                isSupportingMultiline = isSupportingMultiline,
+            )
+
         return calculateHeight(
             leadingHeight = leadingHeight,
             trailingHeight = trailingHeight,
@@ -1676,6 +1865,7 @@ private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.
             supportingHeight = supportingHeight,
             contentHeight = contentHeight,
             constraints = Constraints(),
+            listItemType = listItemType,
         )
     }
 
@@ -1733,17 +1923,47 @@ private class InteractiveListItemMeasurePolicy(val verticalAlignment: Alignment.
         return leadingWidth + mainContentWidth + trailingWidth
     }
 
-    private fun calculateHeight(
+    private fun Density.calculateHeight(
         leadingHeight: Int,
         trailingHeight: Int,
         overlineHeight: Int,
         supportingHeight: Int,
         contentHeight: Int,
         constraints: Constraints,
+        listItemType: ListItemType,
     ): Int {
         val mainContentHeight = contentHeight + overlineHeight + supportingHeight
+        val calculatedHeight = maxOf(leadingHeight, mainContentHeight, trailingHeight)
 
-        return constraints.constrainHeight(maxOf(leadingHeight, mainContentHeight, trailingHeight))
+        @OptIn(ExperimentalMaterial3Api::class)
+        val defaultMinHeight =
+            if (ComposeMaterial3Flags.isExpressiveListItemHeightBasedOnTextLinesFixEnabled) {
+                when (listItemType) {
+                    ListItemType.OneLine -> ListTokens.ItemOneLineContainerHeight
+                    ListItemType.TwoLine -> ListTokens.ItemTwoLineContainerHeight
+                    else /*ListItemType.ThreeLine*/ -> ListTokens.ItemThreeLineContainerHeight
+                }
+            } else {
+                ListTokens.ItemOneLineContainerHeight
+            }
+        val defaultMinHeightNoPadding = (defaultMinHeight - verticalPadding).coerceAtLeast(0.dp)
+        // Same behavior as Modifier.defaultMinSize: only set min height if user hasn't set one.
+        val minHeight =
+            if (constraints.minHeight == 0) {
+                defaultMinHeightNoPadding.roundToPx().fastCoerceIn(0, constraints.maxHeight)
+            } else {
+                constraints.minHeight
+            }
+
+        val newConstraints =
+            Constraints(
+                minWidth = constraints.minWidth,
+                maxWidth = constraints.maxWidth,
+                minHeight = minHeight,
+                maxHeight = constraints.maxHeight,
+            )
+
+        return newConstraints.constrainHeight(calculatedHeight)
     }
 }
 
@@ -1753,9 +1973,12 @@ private fun Modifier.zIndexLambda(zIndex: FloatProducer): Modifier =
         layout(placeable.width, placeable.height) { placeable.place(0, 0, zIndex = zIndex()) }
     }
 
-internal val InteractiveListStartPadding = ListTokens.ItemLeadingSpace
-internal val InteractiveListEndPadding = ListTokens.ItemTrailingSpace
-internal val InteractiveListInternalSpacing = ListTokens.ItemBetweenSpace
+internal val InteractiveListStartPadding
+    get() = ListTokens.ItemLeadingSpace
+internal val InteractiveListEndPadding
+    get() = ListTokens.ItemTrailingSpace
+internal val InteractiveListInternalSpacing
+    get() = ListTokens.ItemBetweenSpace
 
 /**
  * How tall a list item (excluding padding) needs to be before internal content is top-aligned

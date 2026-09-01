@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.width
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +56,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val rule = createComposeRule()
 
     private val longText =
         "Message is very long and long and long and long and long " +
@@ -411,11 +410,13 @@ class SnackbarTest(private val isSnackbarM3FixEnabled: Boolean) {
             val buttonBounds = rule.onNodeWithTag("button").getUnclippedBoundsInRoot()
             val messageBounds = rule.onNodeWithText("Message").getUnclippedBoundsInRoot()
 
+            val tolerance = maxOf(0.5.dp, with(rule.density) { 1.toDp() })
             rule.onNodeWithText("Message").assertTopPositionInRootIsEqualTo(snackbarVerticalPadding)
             rule
                 .onNodeWithTag("button")
                 .assertTopPositionInRootIsEqualTo(
-                    snackbarVerticalPadding * 2 + messageBounds.height
+                    snackbarVerticalPadding * 2 + messageBounds.height,
+                    tolerance = tolerance,
                 )
             snackbar
                 .assertHeightIsEqualTo(

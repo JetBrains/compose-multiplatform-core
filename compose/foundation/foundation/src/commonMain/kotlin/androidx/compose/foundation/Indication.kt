@@ -22,6 +22,7 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
@@ -59,7 +60,7 @@ import kotlinx.coroutines.launch
  * components such as [clickable].
  */
 @Stable
-interface Indication {
+public interface Indication {
 
     /**
      * [remember]s a new [IndicationInstance], and updates its state based on [Interaction]s emitted
@@ -79,7 +80,7 @@ interface Indication {
     @Suppress("DEPRECATION_ERROR")
     @Deprecated(RememberUpdatedInstanceDeprecationMessage, level = DeprecationLevel.ERROR)
     @Composable
-    fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance =
+    public fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance =
         NoIndicationInstance
 }
 
@@ -101,7 +102,7 @@ interface Indication {
  * components such as [clickable].
  */
 @Stable
-interface IndicationNodeFactory : Indication {
+public interface IndicationNodeFactory : Indication {
     /**
      * Creates a node that will be applied to a specific component and render indication for the
      * provided [interactionSource]. This method will be re-invoked for a given layout node if a new
@@ -122,7 +123,7 @@ interface IndicationNodeFactory : Indication {
      * @return a [DelegatableNode] that renders visual effects for the provided [interactionSource]
      *   by also implementing / delegating to a [DrawModifierNode]
      */
-    fun create(interactionSource: InteractionSource): DelegatableNode
+    public fun create(interactionSource: InteractionSource): DelegatableNode
 
     /**
      * Require hashCode() to be implemented. Using a data class is sufficient. Singletons and
@@ -147,7 +148,7 @@ interface IndicationNodeFactory : Indication {
  * different [indication] modifiers.
  */
 @Deprecated(IndicationInstanceDeprecationMessage, level = DeprecationLevel.ERROR)
-interface IndicationInstance {
+public interface IndicationInstance {
 
     /**
      * Draws visual effects for the current interactions present on this component.
@@ -160,7 +161,7 @@ interface IndicationInstance {
      * component itself underneath any indication. Typically this is called at the beginning, so
      * that indication can be drawn as an overlay on top.
      */
-    fun ContentDrawScope.drawIndication()
+    public fun ContentDrawScope.drawIndication()
 }
 
 /**
@@ -172,7 +173,7 @@ interface IndicationInstance {
  * @param indication [Indication] used to draw visual effects. If `null`, no visual effects will be
  *   shown for this component.
  */
-fun Modifier.indication(
+public fun Modifier.indication(
     interactionSource: InteractionSource,
     indication: Indication?
 ): Modifier = indicationImpl(
@@ -213,7 +214,8 @@ private fun Modifier.indicationImpl(
  *
  * By default this will provide a debug indication, this should always be replaced.
  */
-val LocalIndication = compositionLocalOf<Indication> { DefaultDebugIndication }
+public val LocalIndication: ProvidableCompositionLocal<Indication> =
+    compositionLocalOf<Indication> { DefaultDebugIndication }
 
 /** Empty [IndicationInstance] for backwards compatibility - this is not expected to be used. */
 @Suppress("DEPRECATION_ERROR")

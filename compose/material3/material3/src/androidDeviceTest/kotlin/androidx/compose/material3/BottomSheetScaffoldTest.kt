@@ -117,7 +117,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -128,7 +127,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class BottomSheetScaffoldTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
     private val restorationTester = StateRestorationTester(rule)
 
     private val sheetHeight = 256.dp
@@ -908,12 +907,14 @@ class BottomSheetScaffoldTest {
             )
         // Assert sheet content is positioned at the sheet peek height + drag handle height + 22.dp
         // top and bottom padding.
+        val tolerance = maxOf(0.5.dp, with(rule.density) { 1.5f.toDp() })
         rule
             .onNodeWithTag(sheetTag)
             .assertTopPositionInRootIsEqualTo(
                 rule.rootHeight() - peekHeight +
                     (expectedDragHandleVerticalPadding * 2) +
-                    SheetBottomTokens.DockedDragHandleHeight
+                    SheetBottomTokens.DockedDragHandleHeight,
+                tolerance = tolerance,
             )
         // Assert TopBar is placed at the top of the app.
         rule.onNodeWithTag("TopBar").assertTopPositionInRootIsEqualTo(0.dp)

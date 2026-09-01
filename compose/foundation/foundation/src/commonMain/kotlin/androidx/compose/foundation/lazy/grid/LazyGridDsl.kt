@@ -22,6 +22,7 @@ import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -32,6 +33,75 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+
+/**
+ * A lazy vertical grid layout. It composes only visible rows of the grid.
+ *
+ * Sample:
+ *
+ * @sample androidx.compose.foundation.samples.LazyVerticalGridSample
+ *
+ * Sample with custom item spans:
+ *
+ * @sample androidx.compose.foundation.samples.LazyVerticalGridSpanSample
+ *
+ * Sample with custom cache window:
+ *
+ * @sample androidx.compose.foundation.samples.LazyGridCacheWindowSample
+ * @param columns describes the count and the size of the grid's columns, see [GridCells] doc for
+ *   more information
+ * @param modifier the modifier to apply to this layout
+ * @param state the state object to be used to control or observe the list's state
+ * @param contentPadding specify a padding around the whole content
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, items will be
+ *   laid out in the reverse order and [LazyGridState.firstVisibleItemIndex] == 0 means that grid is
+ *   scrolled to the bottom. Note that [reverseLayout] does not change the behavior of
+ *   [verticalArrangement], e.g. with [Arrangement.Top] (top) 123### (bottom) becomes (top) 321###
+ *   (bottom).
+ * @param verticalArrangement The vertical arrangement of the layout's children
+ * @param horizontalArrangement The horizontal arrangement of the layout's children
+ * @param flingBehavior logic describing fling behavior
+ * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
+ *   allowed. You can still scroll programmatically using the state even when it is disabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
+ * @param cacheWindow specifies the size of the ahead and behind window to be used as per
+ *   [LazyLayoutCacheWindow].
+ * @param content the [LazyGridScope] which describes the content
+ */
+@Composable
+public fun LazyVerticalGrid(
+    columns: GridCells,
+    modifier: Modifier = Modifier,
+    state: LazyGridState = rememberLazyGridState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical =
+        if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    cacheWindow: LazyLayoutCacheWindow = DefaultLazyGridCacheWindow,
+    content: LazyGridScope.() -> Unit,
+) {
+    LazyGrid(
+        slots = rememberColumnWidthSums(columns, horizontalArrangement),
+        modifier = modifier,
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        isVertical = true,
+        horizontalArrangement = horizontalArrangement,
+        verticalArrangement = verticalArrangement,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        overscrollEffect = overscrollEffect,
+        cacheWindow = cacheWindow,
+        content = content,
+    )
+}
 
 /**
  * A lazy vertical grid layout. It composes only visible rows of the grid.
@@ -64,7 +134,8 @@ import androidx.compose.ui.unit.dp
  * @param content the [LazyGridScope] which describes the content
  */
 @Composable
-fun LazyVerticalGrid(
+@Deprecated("Use the non-deprecated overload", level = DeprecationLevel.HIDDEN)
+public fun LazyVerticalGrid(
     columns: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -78,25 +149,25 @@ fun LazyVerticalGrid(
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyGridScope.() -> Unit,
 ) {
-    LazyGrid(
-        slots = rememberColumnWidthSums(columns, horizontalArrangement),
+    LazyVerticalGrid(
+        columns = columns,
         modifier = modifier,
         state = state,
         contentPadding = contentPadding,
         reverseLayout = reverseLayout,
-        isVertical = true,
-        horizontalArrangement = horizontalArrangement,
         verticalArrangement = verticalArrangement,
+        horizontalArrangement = horizontalArrangement,
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
+        cacheWindow = DefaultLazyGridCacheWindow,
         content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyVerticalGrid(
+public fun LazyVerticalGrid(
     columns: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -134,6 +205,73 @@ fun LazyVerticalGrid(
  * Sample with custom item spans:
  *
  * @sample androidx.compose.foundation.samples.LazyHorizontalGridSpanSample
+ *
+ * Sample with custom cache window:
+ *
+ * @sample androidx.compose.foundation.samples.LazyGridCacheWindowSample
+ * @param rows a class describing how cells form rows, see [GridCells] doc for more information
+ * @param modifier the modifier to apply to this layout
+ * @param state the state object to be used to control or observe the list's state
+ * @param contentPadding specify a padding around the whole content
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, items are laid
+ *   out in the reverse order and [LazyGridState.firstVisibleItemIndex] == 0 means that grid is
+ *   scrolled to the end. Note that [reverseLayout] does not change the behavior of
+ *   [horizontalArrangement], e.g. with [Arrangement.Start] [123###] becomes [321###].
+ * @param verticalArrangement The vertical arrangement of the layout's children
+ * @param horizontalArrangement The horizontal arrangement of the layout's children
+ * @param flingBehavior logic describing fling behavior
+ * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
+ *   allowed. You can still scroll programmatically using the state even when it is disabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
+ * @param cacheWindow specifies the size of the ahead and behind window to be used as per
+ *   [LazyLayoutCacheWindow].
+ * @param content the [LazyGridScope] which describes the content
+ */
+@Composable
+public fun LazyHorizontalGrid(
+    rows: GridCells,
+    modifier: Modifier = Modifier,
+    state: LazyGridState = rememberLazyGridState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    horizontalArrangement: Arrangement.Horizontal =
+        if (!reverseLayout) Arrangement.Start else Arrangement.End,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    cacheWindow: LazyLayoutCacheWindow = DefaultLazyGridCacheWindow,
+    content: LazyGridScope.() -> Unit,
+) {
+    LazyGrid(
+        slots = rememberRowHeightSums(rows, verticalArrangement),
+        modifier = modifier,
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        isVertical = false,
+        horizontalArrangement = horizontalArrangement,
+        verticalArrangement = verticalArrangement,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        overscrollEffect = overscrollEffect,
+        cacheWindow = cacheWindow,
+        content = content,
+    )
+}
+
+/**
+ * A lazy horizontal grid layout. It composes only visible columns of the grid.
+ *
+ * Sample:
+ *
+ * @sample androidx.compose.foundation.samples.LazyHorizontalGridSample
+ *
+ * Sample with custom item spans:
+ *
+ * @sample androidx.compose.foundation.samples.LazyHorizontalGridSpanSample
  * @param rows a class describing how cells form rows, see [GridCells] doc for more information
  * @param modifier the modifier to apply to this layout
  * @param state the state object to be used to control or observe the list's state
@@ -153,7 +291,8 @@ fun LazyVerticalGrid(
  * @param content the [LazyGridScope] which describes the content
  */
 @Composable
-fun LazyHorizontalGrid(
+@Deprecated("Use the non-deprecated overload", level = DeprecationLevel.HIDDEN)
+public fun LazyHorizontalGrid(
     rows: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -167,25 +306,25 @@ fun LazyHorizontalGrid(
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: LazyGridScope.() -> Unit,
 ) {
-    LazyGrid(
-        slots = rememberRowHeightSums(rows, verticalArrangement),
+    LazyHorizontalGrid(
+        rows = rows,
         modifier = modifier,
         state = state,
         contentPadding = contentPadding,
         reverseLayout = reverseLayout,
-        isVertical = false,
         horizontalArrangement = horizontalArrangement,
         verticalArrangement = verticalArrangement,
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
+        cacheWindow = DefaultLazyGridCacheWindow,
         content = content,
     )
 }
 
 @Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 @Composable
-fun LazyHorizontalGrid(
+public fun LazyHorizontalGrid(
     rows: GridCells,
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
@@ -297,7 +436,7 @@ private class GridSlotCache(private val calculation: Density.(Constraints) -> La
  * grids.
  */
 @Stable
-interface GridCells {
+public interface GridCells {
     /**
      * Calculates the number of cells and their cross axis size based on [availableSize] and
      * [spacing].
@@ -314,7 +453,7 @@ interface GridCells {
      * @param spacing cross axis spacing, e.g. horizontal spacing for [LazyVerticalGrid]. The
      *   spacing is passed from the corresponding [Arrangement] param of the lazy grid.
      */
-    fun Density.calculateCrossAxisCellSizes(availableSize: Int, spacing: Int): List<Int>
+    public fun Density.calculateCrossAxisCellSizes(availableSize: Int, spacing: Int): List<Int>
 
     /**
      * Defines a grid with fixed number of rows or columns.
@@ -322,7 +461,7 @@ interface GridCells {
      * For example, for the vertical [LazyVerticalGrid] Fixed(3) would mean that there are 3 columns
      * 1/3 of the parent width.
      */
-    class Fixed(private val count: Int) : GridCells {
+    public class Fixed(private val count: Int) : GridCells {
         init {
             requirePrecondition(count > 0) { "Provided count should be larger than zero" }
         }
@@ -351,7 +490,7 @@ interface GridCells {
      * be as many columns as possible and every column will be at least 20.dp and all the columns
      * will have equal width. If the screen is 88.dp wide then there will be 4 columns 22.dp each.
      */
-    class Adaptive(private val minSize: Dp) : GridCells {
+    public class Adaptive(private val minSize: Dp) : GridCells {
         init {
             requirePrecondition(minSize > 0.dp) { "Provided min size should be larger than zero." }
         }
@@ -384,7 +523,7 @@ interface GridCells {
      * tne there will be 4 columns 20.dp each with remaining 8.dp distributed through
      * [Arrangement.Horizontal].
      */
-    class FixedSize(private val size: Dp) : GridCells {
+    public class FixedSize(private val size: Dp) : GridCells {
         init {
             requirePrecondition(size > 0.dp) { "Provided size should be larger than zero." }
         }
@@ -425,7 +564,7 @@ private fun calculateCellsCrossAxisSizeImpl(
 
 /** Receiver scope which is used by [LazyVerticalGrid]. */
 @LazyGridScopeMarker
-sealed interface LazyGridScope {
+public sealed interface LazyGridScope {
     /**
      * Adds a single item to the scope.
      *
@@ -443,7 +582,7 @@ sealed interface LazyGridScope {
      *   type will be considered compatible.
      * @param content the content of the item
      */
-    fun item(
+    public fun item(
         key: Any? = null,
         span: (LazyGridItemSpanScope.() -> GridItemSpan)? = null,
         contentType: Any? = null,
@@ -469,7 +608,7 @@ sealed interface LazyGridScope {
      *   such type will be considered compatible.
      * @param itemContent the content displayed by a single item
      */
-    fun items(
+    public fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
         span: (LazyGridItemSpanScope.(index: Int) -> GridItemSpan)? = null,
@@ -496,7 +635,7 @@ sealed interface LazyGridScope {
      * @param content the content of the header. The header index is provided, this is the item
      *   position within the total set of items in this lazy list (the global index).
      */
-    fun stickyHeader(
+    public fun stickyHeader(
         key: Any? = null,
         contentType: Any? = null,
         content: @Composable LazyGridItemScope.(Int) -> Unit,
@@ -521,13 +660,13 @@ sealed interface LazyGridScope {
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyGridScope.items(
+public inline fun <T> LazyGridScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
     noinline contentType: (item: T) -> Any? = { null },
     crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit,
-) =
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
@@ -558,13 +697,13 @@ inline fun <T> LazyGridScope.items(
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyGridScope.itemsIndexed(
+public inline fun <T> LazyGridScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
     crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit,
-) =
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
@@ -595,13 +734,13 @@ inline fun <T> LazyGridScope.itemsIndexed(
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyGridScope.items(
+public inline fun <T> LazyGridScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
     noinline contentType: (item: T) -> Any? = { null },
     crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit,
-) =
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
@@ -632,13 +771,13 @@ inline fun <T> LazyGridScope.items(
  *   will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
-inline fun <T> LazyGridScope.itemsIndexed(
+public inline fun <T> LazyGridScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
     crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit,
-) =
+): Unit =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
@@ -650,3 +789,10 @@ inline fun <T> LazyGridScope.itemsIndexed(
     ) {
         itemContent(it, items[it])
     }
+
+internal object DefaultLazyGridCacheWindow :
+    LazyLayoutCacheWindow by LazyLayoutCacheWindow(
+        behindFraction = 0f,
+        aheadFraction = 0.5f,
+        isNonScrollCachingEnabled = false,
+    )

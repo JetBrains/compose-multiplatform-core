@@ -27,9 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.UiMediaScope
 import androidx.compose.ui.areWindowInsetsRulersEnabled
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusDirection
@@ -73,6 +75,7 @@ import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.createPlatformClipboardManager
+import androidx.compose.ui.platform.createPlatformUriHandler
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
@@ -540,8 +543,14 @@ internal class RootNodeOwner(
             PointerIconServiceImpl()
         }
 
+        override val uriHandler by lazy(LazyThreadSafetyMode.NONE) { createPlatformUriHandler() }
+
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
+
+        //TODO https://youtrack.jetbrains.com/issue/CMP-10709/Support-mediaQuery-derivedMediaQuery
+        @ExperimentalMediaQueryApi
+        override val uiMediaScope: UiMediaScope? get() = null
         override val retainedValuesStore: RetainedValuesStore get() = ForgetfulRetainedValuesStore
         override val rectManager = RectManager(layoutNodes)
 

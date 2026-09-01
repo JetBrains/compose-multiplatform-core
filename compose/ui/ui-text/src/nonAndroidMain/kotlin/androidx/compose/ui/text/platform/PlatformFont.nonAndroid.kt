@@ -27,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 
 expect sealed class PlatformFont() : Font {
     abstract val identity: String
-    abstract val variationSettings: FontVariation.Settings
+    abstract override val variationSettings: FontVariation.Settings
 
     /** Used by the registered font backend to key typefaces. */
     @InternalComposeUiApi

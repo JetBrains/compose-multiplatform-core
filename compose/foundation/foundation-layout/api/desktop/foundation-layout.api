@@ -250,6 +250,7 @@ public abstract interface class androidx/compose/foundation/layout/FlexBoxConfig
 	public abstract fun gap-YgX7TsA (FF)V
 	public abstract fun getConstraints-msEJaDk ()J
 	public abstract fun justifyContent-q3qUS_E (I)V
+	public abstract fun maxItemsInEachLine (I)V
 	public abstract fun rowGap-0680j_4 (F)V
 	public abstract fun wrap-CLQ35Ag (I)V
 }
