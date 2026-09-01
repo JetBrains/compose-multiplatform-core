@@ -32,6 +32,7 @@ import androidx.a2ui.model.schema.commontypes.A2uiDynamicStringListSchema
 import androidx.a2ui.model.schema.commontypes.A2uiDynamicStringSchema
 import androidx.a2ui.model.schema.commontypes.A2uiDynamicValueSchema
 import com.google.common.truth.Truth.assertThat
+import java.lang.StringBuilder
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -64,6 +65,29 @@ class A2uiPropertyTest {
                     properties = mapOf("name" to A2uiStringSchema(), "age" to A2uiNumberSchema()),
                     required = setOf("name"),
                     description = "A user object",
+                )
+            )
+    }
+
+    @Test
+    fun nestedProperty_initialization_withAdditionalProperties_setsCorrectFieldsAndSchema() {
+        val child = A2uiProperty.string("name")
+
+        val prop =
+            A2uiProperty.nested(
+                key = "user",
+                properties = listOf(child),
+                isAdditionalPropertiesAllowed = false,
+                additionalPropertiesSchema = A2uiNumberSchema.INSTANCE,
+            )
+
+        assertThat(prop.key).isEqualTo("user")
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiObjectSchema(
+                    properties = mapOf("name" to A2uiStringSchema()),
+                    isAdditionalPropertiesAllowed = false,
+                    additionalPropertiesSchema = A2uiNumberSchema.INSTANCE,
                 )
             )
     }
@@ -115,6 +139,8 @@ class A2uiPropertyTest {
                 properties = listOf(child1, child2),
                 required = true,
                 description = "A list of tabs",
+                minItems = 1,
+                maxItems = 10,
             )
 
         assertThat(prop.key).isEqualTo("tabs")
@@ -132,6 +158,51 @@ class A2uiPropertyTest {
                             required = setOf("title"),
                         ),
                     description = "A list of tabs",
+                    minItems = 1,
+                    maxItems = 10,
+                )
+            )
+    }
+
+    @Test
+    fun nestedListProperty_initialization_defaultMinMaxItems() {
+        val child = A2uiProperty.string("title")
+        val prop = A2uiProperty.nestedList("tabs", listOf(child))
+
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiArraySchema(
+                    items = A2uiObjectSchema(properties = mapOf("title" to A2uiStringSchema())),
+                    minItems = 0,
+                    maxItems = -1,
+                )
+            )
+    }
+
+    @Test
+    fun nestedListProperty_initialization_withAdditionalProperties_setsCorrectFieldsAndSchema() {
+        val child = A2uiProperty.string("title")
+
+        val prop =
+            A2uiProperty.nestedList(
+                key = "tabs",
+                properties = listOf(child),
+                isAdditionalPropertiesAllowed = false,
+                additionalPropertiesSchema = A2uiNumberSchema.INSTANCE,
+            )
+
+        assertThat(prop.key).isEqualTo("tabs")
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiArraySchema(
+                    items =
+                        A2uiObjectSchema(
+                            properties = mapOf("title" to A2uiStringSchema()),
+                            isAdditionalPropertiesAllowed = false,
+                            additionalPropertiesSchema = A2uiNumberSchema.INSTANCE,
+                        ),
+                    minItems = 0,
+                    maxItems = -1,
                 )
             )
     }
@@ -283,11 +354,29 @@ class A2uiPropertyTest {
 
     @Test
     fun stringListProperty_initialization_setsCorrectFieldsAndSchema() {
-        val prop = A2uiProperty.stringList("test", required = true, description = "Test list")
+        val prop =
+            A2uiProperty.stringList(
+                "test",
+                required = true,
+                description = "Test list",
+                minItems = 2,
+                maxItems = 4,
+            )
 
         assertThat(prop.key).isEqualTo("test")
         assertThat(prop.isRequired).isTrue()
-        assertThat(prop.schema).isEqualTo(A2uiArraySchema(A2uiStringSchema.INSTANCE, "Test list"))
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiArraySchema(A2uiStringSchema.INSTANCE, "Test list", minItems = 2, maxItems = 4)
+            )
+    }
+
+    @Test
+    fun stringListProperty_initialization_defaultMinMaxItems() {
+        val prop = A2uiProperty.stringList("test")
+
+        assertThat(prop.schema)
+            .isEqualTo(A2uiArraySchema(A2uiStringSchema.INSTANCE, minItems = 0, maxItems = -1))
     }
 
     @Test
@@ -313,12 +402,33 @@ class A2uiPropertyTest {
     @Test
     fun numberListProperty_initialization_setsCorrectFieldsAndSchema() {
         val prop =
-            A2uiProperty.numberList("test", required = true, description = "Test number list")
+            A2uiProperty.numberList(
+                "test",
+                required = true,
+                description = "Test number list",
+                minItems = 2,
+                maxItems = 4,
+            )
 
         assertThat(prop.key).isEqualTo("test")
         assertThat(prop.isRequired).isTrue()
         assertThat(prop.schema)
-            .isEqualTo(A2uiArraySchema(A2uiNumberSchema.INSTANCE, "Test number list"))
+            .isEqualTo(
+                A2uiArraySchema(
+                    A2uiNumberSchema.INSTANCE,
+                    "Test number list",
+                    minItems = 2,
+                    maxItems = 4,
+                )
+            )
+    }
+
+    @Test
+    fun numberListProperty_initialization_defaultMinMaxItems() {
+        val prop = A2uiProperty.numberList("test")
+
+        assertThat(prop.schema)
+            .isEqualTo(A2uiArraySchema(A2uiNumberSchema.INSTANCE, minItems = 0, maxItems = -1))
     }
 
     @Test
@@ -344,12 +454,33 @@ class A2uiPropertyTest {
     @Test
     fun booleanListProperty_initialization_setsCorrectFieldsAndSchema() {
         val prop =
-            A2uiProperty.booleanList("test", required = true, description = "Test boolean list")
+            A2uiProperty.booleanList(
+                "test",
+                required = true,
+                description = "Test boolean list",
+                minItems = 2,
+                maxItems = 4,
+            )
 
         assertThat(prop.key).isEqualTo("test")
         assertThat(prop.isRequired).isTrue()
         assertThat(prop.schema)
-            .isEqualTo(A2uiArraySchema(A2uiBooleanSchema.INSTANCE, "Test boolean list"))
+            .isEqualTo(
+                A2uiArraySchema(
+                    A2uiBooleanSchema.INSTANCE,
+                    "Test boolean list",
+                    minItems = 2,
+                    maxItems = 4,
+                )
+            )
+    }
+
+    @Test
+    fun booleanListProperty_initialization_defaultMinMaxItems() {
+        val prop = A2uiProperty.booleanList("test")
+
+        assertThat(prop.schema)
+            .isEqualTo(A2uiArraySchema(A2uiBooleanSchema.INSTANCE, minItems = 0, maxItems = -1))
     }
 
     @Test
@@ -374,11 +505,29 @@ class A2uiPropertyTest {
 
     @Test
     fun anyListProperty_initialization_setsCorrectFieldsAndSchema() {
-        val prop = A2uiProperty.anyList("test", required = true, description = "Test any list")
+        val prop =
+            A2uiProperty.anyList(
+                "test",
+                required = true,
+                description = "Test any list",
+                minItems = 2,
+                maxItems = 4,
+            )
 
         assertThat(prop.key).isEqualTo("test")
         assertThat(prop.isRequired).isTrue()
-        assertThat(prop.schema).isEqualTo(A2uiArraySchema(A2uiAnySchema.INSTANCE, "Test any list"))
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiArraySchema(A2uiAnySchema.INSTANCE, "Test any list", minItems = 2, maxItems = 4)
+            )
+    }
+
+    @Test
+    fun anyListProperty_initialization_defaultMinMaxItems() {
+        val prop = A2uiProperty.anyList("test")
+
+        assertThat(prop.schema)
+            .isEqualTo(A2uiArraySchema(A2uiAnySchema.INSTANCE, minItems = 0, maxItems = -1))
     }
 
     @Test
@@ -497,6 +646,181 @@ class A2uiPropertyTest {
     }
 
     // ========================================================================
+    // EnumProperty tests
+    // ========================================================================
+
+    @Test
+    fun enumProperty_initialization_handlesEmptyEnumList() {
+        val prop =
+            A2uiProperty.enum(
+                key = "test",
+                enumValues = emptyList(),
+                mapToString = { it.value },
+                convertFromString = TestEnum::fromValue,
+                description = "Test enum",
+            )
+
+        assertThat(prop.key).isEqualTo("test")
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiStringSchema(
+                    description = "Test enum",
+                    keywords = listOf(A2uiSchemaKeyword.Enum(emptyList())),
+                )
+            )
+    }
+
+    @Test
+    fun enumProperty_initialization_setsCorrectFieldsAndSchema() {
+        val enumValues = TestEnum.entries
+        val prop =
+            A2uiProperty.enum(
+                key = "test",
+                enumValues = enumValues,
+                mapToString = { it.value },
+                convertFromString = TestEnum::fromValue,
+                required = true,
+                description = "Test enum",
+            )
+
+        assertThat(prop.key).isEqualTo("test")
+        assertThat(prop.isRequired).isTrue()
+        assertThat(prop.schema)
+            .isEqualTo(
+                A2uiStringSchema(
+                    description = "Test enum",
+                    keywords =
+                        listOf(
+                            A2uiSchemaKeyword.Enum(
+                                listOf(TestEnum.OPTION_A.value, TestEnum.OPTION_B.value)
+                            )
+                        ),
+                )
+            )
+    }
+
+    @Test
+    fun enumProperty_safeCast_resolvesValuesCorrectly() {
+        val prop =
+            A2uiProperty.enum(
+                key = "test",
+                enumValues = listOf(TestEnum.OPTION_A, TestEnum.OPTION_B),
+                mapToString = { it.value },
+                convertFromString = TestEnum::fromValue,
+            )
+
+        assertThat(prop.safeCast("optionA")).isEqualTo(TestEnum.OPTION_A)
+        assertThat(prop.safeCast(TestEnum.OPTION_B)).isEqualTo(TestEnum.OPTION_B)
+    }
+
+    @Test
+    fun enumProperty_safeCast_returnsNullForInvalidValues() {
+        val prop =
+            A2uiProperty.enum(
+                key = "test",
+                enumValues = listOf(TestEnum.OPTION_A, TestEnum.OPTION_B),
+                mapToString = { it.value },
+                convertFromString = TestEnum::fromValue,
+            )
+
+        assertThat(prop.safeCast("invalidOption")).isNull()
+        assertThat(prop.safeCast(123)).isNull()
+        assertThat(prop.safeCast(mapOf("key" to "value"))).isNull()
+        assertThat(prop.safeCast(OtherEnum.OPTION_C)).isNull()
+    }
+
+    // ========================================================================
+    // CustomProperty tests
+    // ========================================================================
+
+    @Test
+    fun customProperty_initialization_setsCorrectFieldsAndSchema() {
+        val customSchema = A2uiStringSchema(keywords = listOf(A2uiSchemaKeyword.Const("test")))
+        val prop =
+            A2uiProperty.custom(
+                key = "customStatic",
+                schema = customSchema,
+                safeCast = { it as? String },
+                required = true,
+            )
+
+        assertThat(prop.key).isEqualTo("customStatic")
+        assertThat(prop.isRequired).isTrue()
+        assertThat(prop.schema)
+            .isEqualTo(A2uiStringSchema(keywords = listOf(A2uiSchemaKeyword.Const("test"))))
+    }
+
+    @Test
+    fun customProperty_safeCast_usesProvidedLambda() {
+        val prop =
+            A2uiProperty.custom(
+                key = "customStatic",
+                schema = A2uiAnySchema.INSTANCE,
+                safeCast = { value ->
+                    if (value is String && value.startsWith("prefix_")) value else null
+                },
+            )
+
+        assertThat(prop.safeCast("prefix_valid")).isEqualTo("prefix_valid")
+        assertThat(prop.safeCast("invalid")).isNull()
+        assertThat(prop.safeCast(123)).isNull()
+    }
+
+    @Test
+    fun customProperty_safeCast_handlesComplexTransforms() {
+        val prop =
+            A2uiProperty.custom(
+                key = "customStatic",
+                schema = A2uiAnySchema.INSTANCE,
+                safeCast = { value -> (value as? Map<*, *>)?.get("data") as? String },
+            )
+
+        assertThat(prop.safeCast(mapOf("data" to "extracted"))).isEqualTo("extracted")
+        assertThat(prop.safeCast(mapOf("wrong" to "extracted"))).isNull()
+        assertThat(prop.safeCast("not a map")).isNull()
+    }
+
+    @Test
+    fun customProperty_safeCast_convertsToCustomDataClass() {
+        val userSchema =
+            A2uiObjectSchema(
+                properties =
+                    mapOf(
+                        "id" to A2uiStringSchema.INSTANCE,
+                        "age" to A2uiNumberSchema.INSTANCE,
+                        "isAdmin" to A2uiBooleanSchema.INSTANCE,
+                    ),
+                required = setOf("id", "age"),
+            )
+
+        val prop =
+            A2uiProperty.custom(
+                key = "user",
+                schema = userSchema,
+                safeCast = { value ->
+                    val map = value as? Map<*, *> ?: return@custom null
+                    val id = map["id"] as? String ?: return@custom null
+                    val age = (map["age"] as? Number)?.toInt() ?: return@custom null
+                    val isAdmin = (map["isAdmin"] as? Boolean) ?: false
+                    UserProfile(id = id, age = age, isAdmin = isAdmin)
+                },
+            )
+
+        val validPayload = mapOf("id" to "user_123", "age" to 30, "isAdmin" to true)
+        assertThat(prop.safeCast(validPayload))
+            .isEqualTo(UserProfile(id = "user_123", age = 30, isAdmin = true))
+
+        val partialPayload = mapOf("id" to "user_456", "age" to 25)
+        assertThat(prop.safeCast(partialPayload))
+            .isEqualTo(UserProfile(id = "user_456", age = 25, isAdmin = false))
+
+        val invalidPayload = mapOf("id" to "user_789") // missing age
+        assertThat(prop.safeCast(invalidPayload)).isNull()
+
+        assertThat(prop.safeCast("not a map")).isNull()
+    }
+
+    // ========================================================================
     // DynamicStringProperty tests
     // ========================================================================
 
@@ -607,7 +931,7 @@ class A2uiPropertyTest {
         val prop = A2uiProperty.dynamicNumber("test")
 
         // Simulating a dynamic numeric value bound from a text layout or rich-text builder
-        val stringBuilder = java.lang.StringBuilder("42.5")
+        val stringBuilder = StringBuilder("42.5")
 
         assertThat(prop.safeCast(stringBuilder)).isEqualTo(42.5)
     }
@@ -701,7 +1025,7 @@ class A2uiPropertyTest {
         val prop = A2uiProperty.dynamicBoolean("test")
 
         // Simulating a dynamic value bound from a text layout or rich-text builder
-        val stringBuilder = java.lang.StringBuilder("true")
+        val stringBuilder = StringBuilder("true")
 
         assertThat(prop.safeCast(stringBuilder)).isTrue()
     }
@@ -804,6 +1128,133 @@ class A2uiPropertyTest {
         val prop = A2uiProperty.dynamicStringList("test")
 
         assertThat(prop.safeCast(listOf(mapOf("key" to null)))).containsExactly("{\"key\":null}")
+    }
+
+    // ========================================================================
+    // DynamicCustomProperty tests
+    // ========================================================================
+
+    @Test
+    fun dynamicCustomProperty_initialization_setsCorrectFieldsAndSchema() {
+        val customSchema = A2uiAnySchema()
+        val prop =
+            A2uiProperty.dynamicCustom(
+                key = "dynamicCustom",
+                schema = customSchema,
+                safeCast = { it as? Int },
+                required = true,
+            )
+
+        assertThat(prop.key).isEqualTo("dynamicCustom")
+        assertThat(prop.isRequired).isTrue()
+        assertThat(prop.schema).isEqualTo(customSchema)
+    }
+
+    @Test
+    fun dynamicCustomProperty_safeCast_usesProvidedLambda() {
+        val prop =
+            A2uiProperty.dynamicCustom(
+                key = "dynamicCustom",
+                schema = A2uiAnySchema.INSTANCE,
+                safeCast = { value -> if (value is Int && value > 10) value else null },
+            )
+
+        assertThat(prop.safeCast(20)).isEqualTo(20)
+        assertThat(prop.safeCast(5)).isNull()
+        assertThat(prop.safeCast("20")).isNull() // Custom cast can be strict
+    }
+
+    @Test
+    fun dynamicCustomProperty_safeCast_evaluatesUnionTypes() {
+        // Models the complex Icon `name` schema requirement from the basic catalog
+        val iconNameSchema =
+            A2uiAnySchema(
+                keywords =
+                    listOf(
+                        A2uiSchemaKeyword.OneOf(
+                            listOf(
+                                A2uiStringSchema(
+                                    keywords =
+                                        listOf(
+                                            A2uiSchemaKeyword.Enum(
+                                                listOf("accountCircle", "add", "arrowBack")
+                                            )
+                                        )
+                                ),
+                                A2uiObjectSchema(
+                                    properties = mapOf("svgPath" to A2uiStringSchema.INSTANCE),
+                                    required = setOf("svgPath"),
+                                    isAdditionalPropertiesAllowed = false,
+                                ),
+                            )
+                        )
+                    )
+            )
+
+        val prop =
+            A2uiProperty.dynamicCustom(
+                key = "dynamicCustomUnion",
+                schema = iconNameSchema,
+                safeCast = { value ->
+                    when (value) {
+                        is String -> value
+                        is Map<*, *> -> if (value["svgPath"] is String) value else null
+                        else -> null
+                    }
+                },
+            )
+
+        assertThat(prop.safeCast("accountCircle")).isEqualTo("accountCircle")
+
+        val validMap = mapOf("svgPath" to "M10 10 H 90 V 90 H 10 Z")
+        assertThat(prop.safeCast(validMap)).isEqualTo(validMap)
+
+        val invalidMap = mapOf("unknown" to "value")
+        assertThat(prop.safeCast(invalidMap)).isNull()
+
+        assertThat(prop.safeCast(mapOf("svgPath" to 123))).isNull()
+
+        assertThat(prop.safeCast(123)).isNull()
+    }
+
+    @Test
+    fun dynamicCustomProperty_safeCast_convertsToCustomDataClass() {
+        val userSchema =
+            A2uiObjectSchema(
+                properties =
+                    mapOf(
+                        "id" to A2uiStringSchema.INSTANCE,
+                        "age" to A2uiNumberSchema.INSTANCE,
+                        "isAdmin" to A2uiBooleanSchema.INSTANCE,
+                    ),
+                required = setOf("id", "age"),
+            )
+
+        val prop =
+            A2uiProperty.dynamicCustom(
+                key = "user",
+                schema = userSchema,
+                safeCast = { value ->
+                    val map = value as? Map<*, *> ?: return@dynamicCustom null
+                    val id = map["id"] as? String ?: return@dynamicCustom null
+                    val age = (map["age"] as? Number)?.toInt() ?: return@dynamicCustom null
+                    val isAdmin = (map["isAdmin"] as? Boolean) ?: false
+                    UserProfile(id = id, age = age, isAdmin = isAdmin)
+                },
+            )
+
+        val validPayload = mapOf("id" to "user_123", "age" to 30, "isAdmin" to true)
+        assertThat(prop.safeCast(validPayload))
+            .isEqualTo(UserProfile(id = "user_123", age = 30, isAdmin = true))
+
+        val partialPayload = mapOf("id" to "user_456", "age" to 25)
+        assertThat(prop.safeCast(partialPayload))
+            .isEqualTo(UserProfile(id = "user_456", age = 25, isAdmin = false))
+
+        val invalidPayload = mapOf("id" to "user_789") // missing required age
+        assertThat(prop.safeCast(invalidPayload)).isNull()
+
+        assertThat(prop.safeCast("not a map")).isNull()
     }
 
     // ========================================================================
@@ -1043,4 +1494,19 @@ class A2uiPropertyTest {
         // Assert that the app didn't crash from a StackOverflowError
         assertThat(TypeConversion.toString(cyclicList)).isNotNull()
     }
+}
+
+private data class UserProfile(val id: String, val age: Int, val isAdmin: Boolean = false)
+
+private enum class TestEnum(val value: String) {
+    OPTION_A("optionA"),
+    OPTION_B("optionB");
+
+    companion object {
+        fun fromValue(value: String): TestEnum? = entries.firstOrNull { it.value == value }
+    }
+}
+
+private enum class OtherEnum {
+    OPTION_C
 }
