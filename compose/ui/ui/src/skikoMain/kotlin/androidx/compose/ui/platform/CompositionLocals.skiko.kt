@@ -19,13 +19,14 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LocalHostDefaultProvider
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.ExperimentalMediaQueryApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.LocalUiMediaScope
 import androidx.lifecycle.LifecycleOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
@@ -66,7 +67,7 @@ val LocalPlatformPrefetchScheduler = staticCompositionLocalOf<PlatformPrefetchSc
     error("CompositionLocal LocalPlatformPrefetchScheduler not present")
 }
 
-@OptIn(InternalComposeApi::class)
+@OptIn(ExperimentalMediaQueryApi::class)
 @Composable
 internal fun ProvidePlatformCompositionLocals(
     vararg values: ProvidedValue<*>,
@@ -94,6 +95,7 @@ internal fun ProvidePlatformCompositionLocals(
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
         LocalPlatformPrefetchScheduler provides platformContext.prefetchScheduler,
+        LocalUiMediaScope provides platformContext.mediaScope,
         androidx.lifecycle.compose.LocalLifecycleOwner provides platformContext.architectureComponentsOwner.lifecycleOwner,
         LocalSavedStateRegistryOwner provides platformContext.architectureComponentsOwner.savedStateRegistryOwner,
         LocalSaveableStateRegistry provides saveableStateRegistry,
