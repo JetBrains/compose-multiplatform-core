@@ -692,6 +692,7 @@ public class ColorScheme(
     internal var defaultSegmentedListItemColorsCached: ListItemColors? = null
 
     internal var defaultMenuItemColorsCached: MenuItemColors? = null
+    internal var defaultMenuItemVibrantColorsCached: MenuItemColors? = null
     internal var defaultMenuSelectableItemColorsCached: SelectableMenuItemColors? = null
     internal var defaultMenuSelectableItemVibrantColorsCached: SelectableMenuItemColors? = null
 
@@ -720,7 +721,11 @@ public class ColorScheme(
     internal var defaultTimePickerColorsCached: TimePickerColors? = null
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
-    internal var defaultRichTimePickerColorsCached: TimePickerColors? = null
+    internal var defaultVibrantTimePickerColorsCached: TimePickerColors? = null
+
+    internal var defaultTimeInputColorsCached: TimeInputColors? = null
+
+    internal var defaultVibrantTimeInputColorsCached: TimeInputColors? = null
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
     internal var defaultScrollFieldColorsCached: ScrollFieldColors? = null

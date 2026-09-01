@@ -20,6 +20,10 @@ import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.TimePickerScreenshotTest.ColorSchemeWrapper
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -121,7 +125,7 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun rich_time_picker_dialog() {
-        rule.setMaterialContent(scheme.colorScheme) { RichDialog(TimePickerDisplayMode.Picker) }
+        rule.setMaterialContent(scheme.colorScheme) { VibrantDialog(TimePickerDisplayMode.Picker) }
 
         rule
             .onNode(isDialog())
@@ -133,7 +137,7 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun rich_time_picker_scroll_dialog() {
         rule.setMaterialContent(scheme.colorScheme) {
-            RichScrollDialog(TimePickerDisplayMode.Scroll)
+            VibrantScrollDialog(TimePickerDisplayMode.Scroll)
         }
 
         rule
@@ -145,12 +149,40 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun rich_time_input_dialog() {
-        rule.setMaterialContent(scheme.colorScheme) { RichDialog(TimePickerDisplayMode.Input) }
+        rule.setMaterialContent(scheme.colorScheme) { VibrantDialog(TimePickerDisplayMode.Input) }
 
         rule
             .onNode(isDialog())
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "rich_time_input_dialog_${scheme.name}")
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun rich_time_picker_uncontained_scroll_dialog() {
+        rule.setMaterialContent(scheme.colorScheme) { VibrantUncontainedScrollDialog() }
+
+        rule
+            .onNodeWithTag(TestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "rich_time_picker_uncontained_scroll_dialog_${scheme.name}",
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun rich_time_picker_uncontained_input_dialog() {
+        rule.setMaterialContent(scheme.colorScheme) { VibrantUncontainedInputDialog() }
+
+        rule
+            .onNodeWithTag(TestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "rich_time_picker_uncontained_input_dialog_${scheme.name}",
+            )
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -176,8 +208,8 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun RichDialog(displayMode: TimePickerDisplayMode = TimePickerDisplayMode.Picker) {
-        RichTimePickerDialog(
+    private fun VibrantDialog(displayMode: TimePickerDisplayMode = TimePickerDisplayMode.Picker) {
+        VibrantTimePickerDialog(
             modifier = Modifier,
             onDismissRequest = {},
             confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
@@ -200,10 +232,10 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun RichScrollDialog(
+    private fun VibrantScrollDialog(
         displayMode: TimePickerDisplayMode = TimePickerDisplayMode.Scroll
     ) {
-        RichTimePickerDialog(
+        VibrantTimePickerDialog(
             modifier = Modifier,
             onDismissRequest = {},
             confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
@@ -216,6 +248,62 @@ class TimePickerDialogScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         shapes = TimePickerDefaults.shapes(),
                     )
             }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun VibrantUncontainedScrollDialog() {
+        var displayMode by remember { mutableStateOf(TimePickerDisplayMode.Scroll) }
+        val toggleButton =
+            @Composable {
+                TimePickerDialogDefaults.ScrollDisplayModeToggle(
+                    onDisplayModeChange = {
+                        displayMode =
+                            if (displayMode == TimePickerDisplayMode.Scroll) {
+                                TimePickerDisplayMode.Input
+                            } else {
+                                TimePickerDisplayMode.Scroll
+                            }
+                    },
+                    displayMode = displayMode,
+                )
+            }
+
+        Box(modifier = Modifier.testTag(TestTag)) {
+            TimeScroll(
+                state = rememberTimePickerState(),
+                shapes = TimePickerDefaults.shapes(),
+                toggle = toggleButton,
+            )
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun VibrantUncontainedInputDialog() {
+        var displayMode by remember { mutableStateOf(TimePickerDisplayMode.Input) }
+        val toggleButton =
+            @Composable {
+                TimePickerDialogDefaults.ScrollDisplayModeToggle(
+                    onDisplayModeChange = {
+                        displayMode =
+                            if (displayMode == TimePickerDisplayMode.Scroll) {
+                                TimePickerDisplayMode.Input
+                            } else {
+                                TimePickerDisplayMode.Scroll
+                            }
+                    },
+                    displayMode = displayMode,
+                )
+            }
+
+        Box(modifier = Modifier.testTag(TestTag)) {
+            TimeInput(
+                state = rememberTimePickerState(),
+                shapes = TimePickerDefaults.shapes(),
+                toggle = toggleButton,
+            )
         }
     }
 

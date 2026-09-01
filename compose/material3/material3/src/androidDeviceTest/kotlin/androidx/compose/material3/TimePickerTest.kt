@@ -21,6 +21,9 @@ import android.content.res.Resources
 import androidx.compose.material3.internal.Strings
 import androidx.compose.material3.internal.getString
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
@@ -1080,7 +1083,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_24Hour_invalidHour_showsErrorText() {
+    fun vibrantTimeInput_24Hour_invalidHour_showsErrorText() {
         val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = true)
         lateinit var expectedErrorText: String
 
@@ -1107,7 +1110,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_24Hour_invalidMinute_showsErrorText() {
+    fun vibrantTimeInput_24Hour_invalidMinute_showsErrorText() {
         val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = true)
         state.selection = TimePickerSelectionMode.Minute
         lateinit var expectedErrorText: String
@@ -1134,7 +1137,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_12Hour_invalidHour_am_showsErrorText() {
+    fun vibrantTimeInput_12Hour_invalidHour_am_showsErrorText() {
         val state = TimePickerState(initialHour = 10, initialMinute = 0, is24Hour = false)
         lateinit var expectedErrorText: String
 
@@ -1161,7 +1164,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_12Hour_invalidHour_pm_showsErrorText() {
+    fun vibrantTimeInput_12Hour_invalidHour_pm_showsErrorText() {
         val state = TimePickerState(initialHour = 22, initialMinute = 0, is24Hour = false)
         lateinit var expectedErrorText: String
 
@@ -1246,7 +1249,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_keyboardInput_valid() {
+    fun vibrantTimeInput_keyboardInput_valid() {
         val state = TimePickerState(initialHour = 10, initialMinute = 23, is24Hour = false)
 
         rule.setMaterialContent(lightColorScheme()) {
@@ -1271,7 +1274,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_keyboardInput_switchAmPm() {
+    fun vibrantTimeInput_keyboardInput_switchAmPm() {
         val state = TimePickerState(initialHour = 10, initialMinute = 23, is24Hour = false)
 
         rule.setMaterialContent(lightColorScheme()) {
@@ -1285,7 +1288,7 @@ class TimePickerTest {
     }
 
     @Test
-    fun richTimeInput_keyboardInput_maintainsPm() {
+    fun vibrantTimeInput_keyboardInput_maintainsPm() {
         val state = TimePickerState(initialHour = 23, initialMinute = 23, is24Hour = false)
 
         rule.setMaterialContent(lightColorScheme()) {
@@ -1378,6 +1381,48 @@ class TimePickerTest {
         rule
             .onNode(hasStateDescription(expectedMinuteDescription), useUnmergedTree = true)
             .assertExists()
+    }
+
+    @Test
+    fun timePicker_displayModeToggle_contentDescription() {
+        var displayMode by mutableStateOf(TimePickerDisplayMode.Picker)
+        lateinit var keyboardToggleDescription: String
+        lateinit var touchToggleDescription: String
+
+        rule.setMaterialContent(lightColorScheme()) {
+            keyboardToggleDescription = getString(Strings.TimePickerToggleKeyboard)
+            touchToggleDescription = getString(Strings.TimePickerToggleTouch)
+            TimePickerDialogDefaults.DisplayModeToggle(
+                onDisplayModeChange = {},
+                displayMode = displayMode,
+            )
+        }
+
+        rule.onNodeWithContentDescription(keyboardToggleDescription).assertExists()
+
+        displayMode = TimePickerDisplayMode.Input
+        rule.onNodeWithContentDescription(touchToggleDescription).assertExists()
+    }
+
+    @Test
+    fun timePicker_scrollDisplayModeToggle_contentDescription() {
+        var displayMode by mutableStateOf(TimePickerDisplayMode.Scroll)
+        lateinit var keyboardToggleDescription: String
+        lateinit var scrollToggleDescription: String
+
+        rule.setMaterialContent(lightColorScheme()) {
+            keyboardToggleDescription = getString(Strings.TimePickerToggleKeyboard)
+            scrollToggleDescription = getString(Strings.TimePickerToggleScroll)
+            TimePickerDialogDefaults.ScrollDisplayModeToggle(
+                onDisplayModeChange = {},
+                displayMode = displayMode,
+            )
+        }
+
+        rule.onNodeWithContentDescription(keyboardToggleDescription).assertExists()
+
+        displayMode = TimePickerDisplayMode.Input
+        rule.onNodeWithContentDescription(scrollToggleDescription).assertExists()
     }
 }
 
