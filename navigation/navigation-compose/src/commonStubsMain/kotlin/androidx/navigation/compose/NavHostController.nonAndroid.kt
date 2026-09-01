@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.internal
+package androidx.navigation.compose
 
-import androidx.compose.ui.implementedInJetBrainsFork
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.Navigator
+import androidx.navigation.compose.internal.implementedInJetBrainsFork
 
-internal actual fun identityHashCode(instance: Any?): Int =
+@Composable
+public actual fun rememberNavController(
+    vararg navigators: Navigator<out NavDestination>
+): NavHostController {
     implementedInJetBrainsFork()
+}
